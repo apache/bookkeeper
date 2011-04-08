@@ -19,15 +19,13 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.apache.hedwig</groupId>
-    <artifactId>hedwig</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <groupId>org.apache.bookkeeper</groupId>
+    <artifactId>bookkeeper</artifactId>
+    <version>3.4.0-SNAPSHOT</version>
   </parent>
-  <groupId>org.apache.hedwig</groupId>
-  <artifactId>protocol</artifactId>
+  <artifactId>hedwig-protocol</artifactId>
   <packaging>jar</packaging>
-  <version>1.0-SNAPSHOT</version>
-  <name>protocol</name>
+  <name>hedwig-protocol</name>
   <url>http://maven.apache.org</url>
   <dependencies>
     <dependency>

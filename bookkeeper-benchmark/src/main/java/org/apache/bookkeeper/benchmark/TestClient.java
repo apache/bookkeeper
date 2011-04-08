@@ -27,14 +27,13 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
 
-import org.apache.bookkeeper.client.AddCallback;
+import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
+import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.QuorumEngine;
-import org.apache.bookkeeper.client.ReadCallback;
-import org.apache.bookkeeper.client.LedgerHandle.QMode;
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.log4j.Logger;
 
 import org.apache.zookeeper.KeeperException;
@@ -67,7 +66,7 @@ public class TestClient
         this();
         x = new BookKeeper(servers);
         try{
-        lh = x.createLedger(new byte[] {'a', 'b'});
+	    lh = x.createLedger(DigestType.MAC, new byte[] {'a', 'b'});
         } catch (BKException e) {
             LOG.error(e.toString());
         }
@@ -78,7 +77,7 @@ public class TestClient
         this();
         x = new BookKeeper(servers);
         try{
-        lh = x.createLedger(ensSize, qSize, QMode.VERIFIABLE, new byte[] {'a', 'b'});
+        lh = x.createLedger(ensSize, qSize, DigestType.MAC, new byte[] {'a', 'b'});
         } catch (BKException e) {
             LOG.error(e.toString());
         }
@@ -115,7 +114,7 @@ public class TestClient
     }
 
     public void closeHandle() throws KeeperException, InterruptedException{
-        x.closeLedger(lh);
+        lh.close();
     }
     /**
      * First says if entries should be written to BookKeeper (0) or to the local
@@ -175,7 +174,7 @@ public class TestClient
         int count = times;
         LOG.debug("Data: " + new String(data) + ", " + data.length);
         while(count-- > 0){
-            x.asyncAddEntry(lh, data, this, this.getFreshEntryId(2));
+            lh.asyncAddEntry(data, this, this.getFreshEntryId(2));
         }
         LOG.debug("Finished " + times + " async writes in ms: " + (System.currentTimeMillis() - start));       
         synchronized (map) {
@@ -196,7 +195,7 @@ public class TestClient
             int k = (count+1)%100;
             write[0] = (byte) j;
             write[1] = (byte) k;
-            x.asyncAddEntry(lh, write, this, this.getFreshEntryId(2));
+            lh.asyncAddEntry(write, this, this.getFreshEntryId(2));
         }
         LOG.debug("Finished " + times + " async writes in ms: " + (System.currentTimeMillis() - start));       
         synchronized (map) {
@@ -207,13 +206,9 @@ public class TestClient
         
         Integer mon = Integer.valueOf(0);
         synchronized(mon){
-            try{
-                x.asyncReadEntries(lh, 1, times - 1, this, mon);
-                mon.wait();
-            } catch (BKException e){
-                LOG.error(e);
-            }
-        }
+	    lh.asyncReadEntries(1, times - 1, this, mon);
+	    mon.wait();
+         }
         LOG.error("Ended computation");
     }
 
@@ -235,11 +230,13 @@ public class TestClient
     }
         
    
-    public void addComplete(int rc, long ledgerId, long entryId, Object ctx) {
+    @Override
+    public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
         this.removeEntryId((Integer) ctx);
     }
    
-    public void readComplete(int rc, long ledgerId, Enumeration<LedgerEntry> seq, Object ctx){
+    @Override
+    public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx){
         System.out.println("Read callback: " + rc);
         while(seq.hasMoreElements()){
             LedgerEntry le = seq.nextElement();

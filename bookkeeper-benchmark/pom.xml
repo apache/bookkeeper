@@ -3,13 +3,12 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <artifactId>bookkeeper_project</artifactId>
+    <artifactId>bookkeeper</artifactId>
     <groupId>org.apache.bookkeeper</groupId>
     <version>3.4.0-SNAPSHOT</version>
   </parent>
   <groupId>org.apache.bookkeeper</groupId>
   <artifactId>bookkeeper-benchmark</artifactId>
-  <version>3.4.0-SNAPSHOT</version>
   <name>bookkeeper-benchmark</name>
   <url>http://maven.apache.org</url>
   <properties>
@@ -32,14 +31,14 @@
     <dependency>
     	<groupId>org.apache.zookeeper</groupId>
     	<artifactId>zookeeper</artifactId>
-    	<version>3.3.3</version>
+    	<version>3.4.0</version>
     	<type>jar</type>
     	<scope>compile</scope>
     </dependency>
     <dependency>
     	<groupId>org.apache.zookeeper</groupId>
     	<artifactId>zookeeper-test</artifactId>
-    	<version>3.3.3</version>
+    	<version>3.4.0</version>
     	<type>jar</type>
     	<scope>compile</scope>
     </dependency>
@@ -51,8 +50,8 @@
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
-      <artifactId>bookkeeper</artifactId>
-      <version>3.4.0</version>
+      <artifactId>bookkeeper-server</artifactId>
+      <version>3.4.0-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
