@@ -1,0 +1,13 @@
+Trunk
+
+Non-backward compatible changes:
+
+BUGFIXES:
+
+Backward compatible changes:
+
+BUGFIXES:
+
+bookkeeper-server/
+
+BOOKKEEPER-19: BookKeeper doesn't support more than 2Gig of memory (ivan via fpj)

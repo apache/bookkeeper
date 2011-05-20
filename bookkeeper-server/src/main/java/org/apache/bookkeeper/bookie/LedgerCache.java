@@ -79,7 +79,7 @@ public class LedgerCache {
     }
     
     // allocate half of the memory to the page cache
-    private static int pageLimit = (int)(Runtime.getRuntime().maxMemory() / 3) / LedgerEntryPage.PAGE_SIZE;
+    private static int pageLimit = (int)((Runtime.getRuntime().maxMemory() / 3) / LedgerEntryPage.PAGE_SIZE);
     static {
         LOG.info("maxMemory = " + Runtime.getRuntime().maxMemory());
         if (System.getProperty("pageLimit") != null) {
@@ -88,7 +88,7 @@ public class LedgerCache {
         LOG.info("pageLimit is " + pageLimit);
     }
     // The number of pages that have actually been used
-    private int pageCount;
+    private int pageCount = 0;
     HashMap<Long, HashMap<Long,LedgerEntryPage>> pages = new HashMap<Long, HashMap<Long,LedgerEntryPage>>();
     
     private void putIntoTable(HashMap<Long, HashMap<Long,LedgerEntryPage>> table, LedgerEntryPage lep) {
