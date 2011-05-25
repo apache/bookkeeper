@@ -8,6 +8,8 @@ Backward compatible changes:
 
 BUGFIXES:
 
-bookkeeper-server/
+ bookkeeper-server/
 
-BOOKKEEPER-19: BookKeeper doesn't support more than 2Gig of memory (ivan via fpj)
+  BOOKKEEPER-1: Static variable makes tests fail (fpj via ivank)
+
+  BOOKKEEPER-19: BookKeeper doesn't support more than 2Gig of memory (ivan via fpj)
