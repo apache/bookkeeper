@@ -423,7 +423,7 @@ public class LedgerCache {
                     Iterator<Map.Entry<Long, LedgerEntryPage>> it = map.entrySet().iterator();
                     LedgerEntryPage lep = it.next().getValue();
                     while((lep.inUse() || !lep.isClean())) {
-                        if (it.hasNext()) {
+                        if (!it.hasNext()) {
                             continue outerLoop;
                         }
                         lep = it.next().getValue();

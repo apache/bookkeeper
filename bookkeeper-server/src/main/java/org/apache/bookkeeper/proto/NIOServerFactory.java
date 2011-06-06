@@ -120,12 +120,11 @@ public class NIOServerFactory extends Thread {
                 }
                 selected.clear();
             } catch (Exception e) {
-                LOG.warn(e);
+                LOG.warn("Exception in server socket loop: " + ss.socket().getInetAddress(), e);
             }
         }
-        LOG.debug("NIOServerCnxn factory exitedloop.");
+        LOG.info("NIOServerCnxn factory exitedloop.");
         clear();
-        // System.exit(0);
     }
 
     /**

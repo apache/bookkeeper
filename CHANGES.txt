@@ -13,3 +13,5 @@ BUGFIXES:
   BOOKKEEPER-1: Static variable makes tests fail (fpj via ivank)
 
   BOOKKEEPER-19: BookKeeper doesn't support more than 2Gig of memory (ivan via fpj)
+
+  BOOKEEPER-22: Exception in LedgerCache causes addEntry request to fail (fpj via fpj)
