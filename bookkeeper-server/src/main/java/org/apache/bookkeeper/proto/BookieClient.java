@@ -64,6 +64,8 @@ public class BookieClient {
             PerChannelBookieClient prevChannel = channels.putIfAbsent(addr, channel);
             if (prevChannel != null) {
                 channel = prevChannel;
+            } else {
+                channel.connect();
             }
         }
 

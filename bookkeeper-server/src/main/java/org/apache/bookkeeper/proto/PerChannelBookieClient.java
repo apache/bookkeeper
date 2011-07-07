@@ -92,11 +92,9 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         this.executor = executor;
         this.totalBytesOutstanding = totalBytesOutstanding;
         this.channelFactory = channelFactory;
-        connect(channelFactory);
     }
 
-    void connect(ChannelFactory channelFactory) {
-
+    void connect() {
         if (LOG.isDebugEnabled())
             LOG.debug("Connecting to bookie: " + addr);
 
@@ -178,7 +176,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                     pendingOps.add(op);
 
                     if (!connectionAttemptInProgress) {
-                        connect(channelFactory);
+                        connect();
                     }
 
                 }
@@ -282,7 +280,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
     public void close() {
         if (channel != null) {
-            channel.close();
+            channel.close().awaitUninterruptibly();
         }
     }
 
