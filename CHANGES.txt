@@ -17,3 +17,6 @@ BUGFIXES:
   BOOKEEPER-22: Exception in LedgerCache causes addEntry request to fail (fpj via fpj)
 
   BOOKEEPER-5: Issue with Netty in BookKeeper (fpj and ivank via fpj)
+
+  BOOKKEEPER-30: Test are too noisy (ivank via fpj)
+

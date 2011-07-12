@@ -76,7 +76,7 @@ public class ServerControlDaemon {
 	    try {
 		t.kill();
 	    } catch (Exception e) {
-		e.printStackTrace();
+		LOG.error("Error killing server", e);
 		// do nothing, should be killed, we won't use it again anyhow
 	    }
 	}
@@ -131,7 +131,7 @@ public class ServerControlDaemon {
 		    ctx.getChannel().write("ERR Bad Command\n");
 		}
 	    } catch (Exception ex) {
-		ex.printStackTrace();
+		LOG.error("Error handling message", ex);
 		ctx.getChannel().write("ERR " + ex.toString() + "\n");
 	    }
 	}

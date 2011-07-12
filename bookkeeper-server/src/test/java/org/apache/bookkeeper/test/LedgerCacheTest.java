@@ -90,7 +90,7 @@ public class LedgerCacheTest extends TestCase {
             recursiveDelete(txnDir);
             recursiveDelete(ledgerDir);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("Error tearing down", e);
         }
     }
     

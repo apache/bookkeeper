@@ -119,7 +119,7 @@ public abstract class BaseTestCase extends TestCase {
         zkc.close();
         bkc = new BookKeeper("127.0.0.1");
         } catch(Exception e) {
-            e.printStackTrace();
+            LOG.error("Error setting up", e);
             throw e;
         }
     }

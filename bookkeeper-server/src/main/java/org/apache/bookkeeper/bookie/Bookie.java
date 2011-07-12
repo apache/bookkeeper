@@ -122,12 +122,12 @@ public class Bookie extends Thread {
                 try {
                     ledgerCache.flushLedger(true);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    LOG.error("Exception flushing Ledger", e);
                 }
                 try {
                     entryLogger.flush();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    LOG.error("Exception flushing entry logger", e);
                 }
                 lastLogMark.rollLog();
             }

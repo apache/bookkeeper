@@ -27,11 +27,15 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
+import org.apache.log4j.Logger;
+
 /**
  * This is the file handle for a ledger's index file that maps entry ids to location.
  * It is used by LedgerCache.
  */
 class FileInfo {
+    static Logger LOG = Logger.getLogger(FileInfo.class);
+
     private FileChannel fc;
     private final File lf;
     /**
@@ -108,7 +112,7 @@ class FileInfo {
             try {
                 fc.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                LOG.error("Error closing file channel", e);
             }
         }
     }

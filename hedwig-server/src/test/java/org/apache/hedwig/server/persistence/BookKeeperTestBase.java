@@ -33,6 +33,7 @@ import org.junit.Test;
 
 import org.apache.hedwig.util.FileUtils;
 import org.apache.hedwig.zookeeper.ZooKeeperTestBase;
+import org.apache.log4j.Logger;
 
 /**
  * This is a base class for any tests that require a BookKeeper client/server
@@ -40,6 +41,7 @@ import org.apache.hedwig.zookeeper.ZooKeeperTestBase;
  * 
  */
 public class BookKeeperTestBase extends ZooKeeperTestBase {
+    private static Logger logger = Logger.getLogger(BookKeeperTestBase.class);
 
     // BookKeeper Server variables
     private List<BookieServer> bookiesList;
@@ -84,9 +86,9 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
             zk.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             zk.create("/ledgers/available", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         } catch (KeeperException e) {
-            e.printStackTrace();
+            LOG.error("Error setting up", e);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("Error setting up", e);
         }
 
         // Create Bookie Servers
@@ -116,7 +118,7 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
                 bs.shutdown();
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("Error tearing down", e);
         }
         // Close the BookKeeper client
         bk.halt();

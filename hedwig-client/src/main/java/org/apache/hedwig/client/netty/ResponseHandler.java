@@ -358,7 +358,7 @@ public class ResponseHandler extends SimpleChannelHandler {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-        e.getCause().printStackTrace();
+        logger.error("Exception caught on client channel", e.getCause());
         e.getChannel().close();
     }
 

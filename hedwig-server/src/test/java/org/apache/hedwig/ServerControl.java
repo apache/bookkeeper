@@ -31,8 +31,11 @@ import org.apache.hedwig.server.netty.PubSubServer;
 import java.net.ConnectException;
 import java.io.File;
 import java.io.IOException;
+import org.apache.log4j.Logger;
 
 public class ServerControl {
+    static Logger LOG = Logger.getLogger(ServerControl.class);
+
     public class TestException extends Exception {
 	public TestException(String str) {
 	    super(str);
@@ -192,7 +195,6 @@ public class ServerControl {
 	}
 	String journal = createTempDirectory("-bookie-" + port + "-journal");
 	String ledger = createTempDirectory("-bookie-" + port + "-ledger");
-	System.out.println(journal);
 	BookKeeperServer bookie = new BookKeeperServer(port, zookeeperServer, journal, ledger);
 	return bookie;
     }
@@ -216,8 +218,8 @@ public class ServerControl {
 	TestServer hw2 = control.startPubSubServer(12350, "foobar", zk);
 	TestServer hw3 = control.startPubSubServer(12351, "foobar", zk);
 	TestServer hw4 = control.startPubSubServer(12352, "barfoo", zk);
-	System.out.println("Started " + zk.getAddress());
-	System.out.println("Sleeping for 10 seconds");
+	LOG.info("Started " + zk.getAddress());
+	LOG.info("Sleeping for 10 seconds");
 	Thread.sleep(10000);
 	bk3.kill();
 	bk2.kill();

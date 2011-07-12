@@ -36,11 +36,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import junit.framework.TestCase;
+import org.apache.log4j.Logger;
 
 /**
  * Tests writing to concurrent ledgers
  */
 public class ConcurrentLedgerTest extends TestCase {
+    static Logger LOG = Logger.getLogger(ConcurrentLedgerTest.class);
+
     Bookie bookie;
     File txnDir, ledgerDir;
     int recvTimeout = 10000;
@@ -87,7 +90,7 @@ public class ConcurrentLedgerTest extends TestCase {
             recursiveDelete(txnDir);
             recursiveDelete(ledgerDir);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("Error tearing down", e);
         }
     }
 
@@ -114,17 +117,17 @@ public class ConcurrentLedgerTest extends TestCase {
         if (System.getProperty("totalwrites") != null) {
             totalwrites = Integer.parseInt(System.getProperty("totalwrites"));
         }
-        System.out.println("Running up to " + iterations + " iterations");
-        System.out.println("Total writes = " + totalwrites);
+        LOG.info("Running up to " + iterations + " iterations");
+        LOG.info("Total writes = " + totalwrites);
         int ledgers;
         for(ledgers = 1; ledgers <= iterations; ledgers += iterationStep) {
             long duration = doWrites(ledgers, size, totalwrites);
-            System.out.println(totalwrites + " on " + ledgers + " took " + duration + " ms");
+            LOG.info(totalwrites + " on " + ledgers + " took " + duration + " ms");
         }
-        System.out.println("ledgers " + ledgers);
+        LOG.info("ledgers " + ledgers);
         for(ledgers = 1; ledgers <= iterations; ledgers += iterationStep) {
             long duration = doReads(ledgers, size, totalwrites);
-            System.out.println(ledgers + " read " + duration + " ms");
+            LOG.info(ledgers + " read " + duration + " ms");
         }
     }
 
