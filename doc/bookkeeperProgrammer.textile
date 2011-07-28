@@ -145,7 +145,7 @@ p. To read from a ledger, a client must open it first. The following methods bel
 
  @public LedgerHandle openLedger(long lId, DigestType type, byte passwd[]) throws InterruptedException, BKException @ 
 
-*  @ledgerId@ is the ledger identifier; 
+*  @lId@ is the ledger identifier; 
 *  @type@ is the type of digest used with entries: either MAC or CRC32. 
 *  @passwd@ is a password to access the ledger (used only in the case of @VERIFIABLE@ ledgers); 
 
@@ -164,6 +164,30 @@ p. where:
 *  @lh@ is a @LedgerHandle@ object to manipulate a ledger; 
 *  @ctx@ is control object used for accountability purposes. 
 
+p. The two calls above to open a ledger recover the ledger if it has not been closed properly before it reads entries from it. It is also possible to open a ledger and read from it without triggering the recovery process with the following methods of @org.apache.bookkeeper.client.BookKeeper@ . 
+
+ _Synchronous open:_ 
+
+ @public LedgerHandle openLedgerNoRecovery(long lId, DigestType type, byte passwd[]) throws InterruptedException, BKException @ 
+
+*  @lId@ is the ledger identifier; 
+*  @type@ is the type of digest used with entries: either MAC or CRC32. 
+*  @passwd@ is a password to access the ledger (used only in the case of @VERIFIABLE@ ledgers); 
+
+
+ _Asynchronous open:_ 
+
+ @public void asyncOpenLedgerNoRecovery(long lId, DigestType type, byte passwd[], OpenCallback cb, Object ctx) @ 
+
+p. It also takes a a ledger identifier and a password. Additionaly, it takes a callback object  @cb@ and a control object @ctx@ . The callback object must implement the @OpenCallback@ interface in @org.apache.bookkeeper.client.AsyncCallback@ , and a class implementing it has to implement a method called @openComplete@ that has the following signature: 
+
+ @public void openComplete(int rc, LedgerHandle lh, Object ctx) @ 
+
+p. where: 
+
+*  @rc@ is a return code (please refer to @org.apache.bookeeper.client.BKDefs@ for a list); 
+*  @lh@ is a @LedgerHandle@ object to manipulate a ledger; 
+*  @ctx@ is control object used for accountability purposes. 
 
 h1.  Reading from ledger 
 
@@ -217,3 +241,24 @@ p. where:
 *  @rc@ is a return code (please refer to @org.apache.bookeeper.client.BKDefs@ for a list); 
 *  @ctx@ is control object used for accountability purposes. 
 
+h1.  Reading the last confirmed entry from a ledger 
+
+p. When reading from an open ledger (opening without recovery enables it), it is often necessary to read the last confirmed hint that the writer client writes along with every entry. The general idea is to obtain the hint from a quorum and return the largest value. The following methods belong to @org.apache.bookkeeper.client.BookKeeper@ . 
+
+ _Synchronous read:_ 
+
+ @public long readLastConfirmed() @ 
+
+ _Asynchronous read:_ 
+
+ @public void asyncReadLastConfirmed(ReadLastConfirmedComplete cb, Object ctx) @ 
+ 
+p. It takes a callback object  @cb@ and a control object @ctx@ . The callback object must implement the @ReadLastConfirmedCallback@ interface in @org.apache.bookkeeper.client.AsyncCallback@ , and a class implementing it has to implement a method called @readLastConfirmedComplete@ that has the following signature: 
+
+@public void readLastConfirmedComplete (int rc, long lastConfirmed, Object ctx) @
+
+p. where: 
+
+*  @rc@ is a return code (please refer to @org.apache.bookeeper.client.BKDefs@ for a list); 
+*  @lastConfirmed@ is the maximum last confirmed hint received among a quorum of bookies; 
+*  @ctx@ is control object used for accountability purposes. 

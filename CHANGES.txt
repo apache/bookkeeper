@@ -20,3 +20,4 @@ BUGFIXES:
 
   BOOKKEEPER-30: Test are too noisy (ivank via fpj)
 
+  BOOKKEEPER-11: Read from open ledger (fpj via ivank)

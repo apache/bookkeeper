@@ -283,10 +283,35 @@ public class BookKeeper implements OpenCallback, CreateCallback, DeleteCallback 
   public void asyncOpenLedger(long lId, DigestType digestType, byte passwd[],
       OpenCallback cb, Object ctx) {
 
-    new LedgerOpenOp(this, lId, digestType, passwd, cb, ctx).initiate();
+      new LedgerOpenOp(this, lId, digestType, passwd, false, cb, ctx).initiate();
 
   }
 
+  /**
+   * Open existing ledger asynchronously for reading, but it does not try to
+   * recover the ledger if it is not yet closed. The application needs to use
+   * it carefully, since the writer might have crash and ledger will remain 
+   * unsealed forever if there is no external mechanism to detect the failure 
+   * of the writer and the ledger is not open in a safe manner, invoking the
+   * recovery procedure.
+   * 
+   * @param lId
+   *          ledger identifier
+   * @param digestType
+   *          digest type, either MAC or CRC32
+   * @param passwd
+   *          password
+   * @param ctx
+   *          optional control object
+   */
+  
+  public void asyncOpenLedgerNoRecovery(long lId, DigestType digestType, byte passwd[],
+          OpenCallback cb, Object ctx) {
+
+      new LedgerOpenOp(this, lId, digestType, passwd, true, cb, ctx).initiate();
+
+  }
+  
   /**
    * Callback method for synchronous open operation
    * 
@@ -341,6 +366,40 @@ public class BookKeeper implements OpenCallback, CreateCallback, DeleteCallback 
     return counter.getLh();
   }
 
+  /**
+   * Synchronous, unsafe open ledger call
+   * 
+   * @param lId
+   *          ledger identifier
+   * @param digestType
+   *          digest type, either MAC or CRC32
+   * @param passwd
+   *          password
+   * @return
+   * @throws InterruptedException
+   * @throws BKException
+   */
+
+  public LedgerHandle openLedgerNoRecovery(long lId, DigestType digestType, byte passwd[])
+  throws BKException, InterruptedException {
+      SyncCounter counter = new SyncCounter();
+      counter.inc();
+
+      /*
+       * Calls async open ledger
+       */
+      asyncOpenLedgerNoRecovery(lId, digestType, passwd, this, counter);
+
+      /*
+       * Wait
+       */
+      counter.block(0);
+      if (counter.getrc() != BKException.Code.OK)
+          throw BKException.create(counter.getrc());
+
+      return counter.getLh();
+  }
+  
   /**
    * Deletes a ledger asynchronously.
    * 

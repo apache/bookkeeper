@@ -29,6 +29,7 @@ import java.util.Enumeration;
 import java.util.Queue;
 import java.util.concurrent.Semaphore;
 
+import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
@@ -51,9 +52,10 @@ import org.jboss.netty.buffer.ChannelBuffer;
  * Ledger handle contains ledger metadata and is used to access the read and
  * write operations to a ledger.
  */
-public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback {
+public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, ReadLastConfirmedCallback {
   final static Logger LOG = Logger.getLogger(LedgerHandle.class);
-
+  final static long LAST_ADD_CONFIRMED = -1;
+  
   final byte[] ledgerKey;
   final LedgerMetadata metadata;
   final BookKeeper bk;
@@ -381,6 +383,64 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback {
       }
   }
 
+  /**
+   * Obtains last confirmed write from a quorum of bookies.
+   * 
+   * @param cb
+   * @param ctx
+   */
+  
+  public void asyncReadLastConfirmed(ReadLastConfirmedCallback cb, Object ctx){
+      new ReadLastConfirmedOp(this, cb, ctx).initiate();
+  }
+  
+  
+  /**
+   * Context objects for synchronous call to read last confirmed. 
+   */
+  class LastConfirmedCtx {
+      long response;
+      int rc;
+      
+      LastConfirmedCtx(){
+          this.response = -1;
+      }
+      
+      void setLastConfirmed(long lastConfirmed){
+          this.response = lastConfirmed;
+      }
+      
+      long getlastConfirmed(){
+          return this.response;
+      }
+      
+      void setRC(int rc){
+          this.rc = rc;
+      }
+      
+      int getRC(){
+          return this.rc;
+      }
+      
+      boolean ready(){
+          return (this.response != -1);
+      }
+  }
+  
+  public long readLastConfirmed()
+  throws InterruptedException, BKException {   
+      LastConfirmedCtx ctx = new LastConfirmedCtx();
+      asyncReadLastConfirmed(this, ctx);
+      synchronized(ctx){
+          while(!ctx.ready()){
+              ctx.wait();
+          }
+      }
+      
+      if(ctx.getRC() != BKException.Code.OK) throw BKException.create(ctx.getRC());
+      return ctx.getlastConfirmed();
+  }
+  
   // close the ledger and send fails to all the adds in the pipeline
   void handleUnrecoverableErrorDuringAdd(int rc) {
     asyncClose(NoopCloseCallback.instance, null, rc);
@@ -527,6 +587,21 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback {
     counter.dec();
   }
 
+  
+
+  /**
+   * Implementation of  callback interface for synchronous read last confirmed method.
+   */
+  public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
+      LastConfirmedCtx lcCtx = (LastConfirmedCtx) ctx;
+      
+      synchronized(lcCtx){
+          lcCtx.setRC(rc);
+          lcCtx.setLastConfirmed(lastConfirmed);
+          lcCtx.notify();
+      }
+  }
+  
   /**
    * Close callback method
    * 

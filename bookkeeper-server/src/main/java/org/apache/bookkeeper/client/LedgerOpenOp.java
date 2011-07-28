@@ -39,13 +39,14 @@ import org.apache.zookeeper.data.Stat;
 class LedgerOpenOp implements DataCallback {
     static final Logger LOG = Logger.getLogger(LedgerOpenOp.class);
     
-    BookKeeper bk;
-    long ledgerId;
-    OpenCallback cb;
-    Object ctx;
+    final BookKeeper bk;
+    final long ledgerId;
+    final OpenCallback cb;
+    final Object ctx;
     LedgerHandle lh;
-    byte[] passwd;
-    DigestType digestType;
+    final byte[] passwd;
+    final DigestType digestType;
+    final boolean unsafe;
     
     /**
      * Constructor.
@@ -58,13 +59,14 @@ class LedgerOpenOp implements DataCallback {
      * @param ctx
      */
     
-    public LedgerOpenOp(BookKeeper bk, long ledgerId, DigestType digestType, byte[] passwd, OpenCallback cb, Object ctx) {
+    public LedgerOpenOp(BookKeeper bk, long ledgerId, DigestType digestType, byte[] passwd, boolean unsafe, OpenCallback cb, Object ctx) {
         this.bk = bk;
         this.ledgerId = ledgerId;
         this.passwd = passwd;
         this.cb = cb;
         this.ctx = ctx;
         this.digestType = digestType;
+        this.unsafe = unsafe;
     }
 
     /**
@@ -126,15 +128,16 @@ class LedgerOpenOp implements DataCallback {
             return;
         }
 
-        lh.recover(new GenericCallback<Void>() {
-            @Override
-            public void operationComplete(int rc, Void result) {
-                if (rc != BKException.Code.OK) {
-                    cb.openComplete(BKException.Code.LedgerRecoveryException, null, LedgerOpenOp.this.ctx);
-                } else {
+        if(!unsafe)
+            lh.recover(new GenericCallback<Void>() {
+                @Override
+                public void operationComplete(int rc, Void result) {
+                    if (rc != BKException.Code.OK) {
+                        cb.openComplete(BKException.Code.LedgerRecoveryException, null, LedgerOpenOp.this.ctx);
+                    } else {
                     cb.openComplete(BKException.Code.OK, lh, LedgerOpenOp.this.ctx);
+                    }
                 }
-            }
-        });
+            });
     }
 }

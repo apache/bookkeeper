@@ -36,11 +36,12 @@ import java.util.concurrent.Semaphore;
 
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
+import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
+import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.streaming.LedgerInputStream;
 import org.apache.bookkeeper.streaming.LedgerOutputStream;
@@ -58,7 +59,8 @@ import org.junit.Test;
  * 
  */
 
-public class BookieReadWriteTest extends BaseTestCase implements AddCallback, ReadCallback {
+public class BookieReadWriteTest extends BaseTestCase 
+implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
 
     // Depending on the taste, select the amount of logging
     // by decommenting one of the two lines below
@@ -88,11 +90,13 @@ public class BookieReadWriteTest extends BaseTestCase implements AddCallback, Re
     Set<Object> syncObjs;
 
     class SyncObj {
+        long lastConfirmed;
         volatile int counter;
         boolean value;
 
         public SyncObj() {
             counter = 0;
+            lastConfirmed = -1;
             value = false;
         }
     }
@@ -714,6 +718,157 @@ public class BookieReadWriteTest extends BaseTestCase implements AddCallback, Re
         }
     }
     
+    public void testReadFromOpenLedger() throws IOException {
+        try {
+            // Create a BookKeeper client and a ledger
+            bkc = new BookKeeper("127.0.0.1");
+            lh = bkc.createLedger(digestType, ledgerPassword);
+            // bkc.initMessageDigest("SHA1");
+            ledgerId = lh.getId();
+            LOG.info("Ledger ID: " + lh.getId());
+            for (int i = 0; i < numEntriesToWrite; i++) {
+                ByteBuffer entry = ByteBuffer.allocate(4);
+                entry.putInt(rng.nextInt(maxInt));
+                entry.position(0);
+
+                entries.add(entry.array());
+                entriesSize.add(entry.array().length);
+                lh.addEntry(entry.array());
+                if(i == numEntriesToWrite/2){
+                    LedgerHandle lhOpen = bkc.openLedgerNoRecovery(ledgerId, digestType, ledgerPassword);
+                    Enumeration<LedgerEntry> readEntry = lh.readEntries(i, i);
+                    assertTrue("Enumeration of ledger entries has no element", readEntry.hasMoreElements() == true);
+                }
+            }
+
+            long last = lh.readLastConfirmed();
+            assertTrue("Last confirmed add: " + last, last == (numEntriesToWrite - 2));
+            
+            LOG.debug("*** WRITE COMPLETE ***");
+            // close ledger
+            lh.close();
+            /*
+             * Asynchronous call to read last confirmed entry
+             */
+            lh = bkc.createLedger(digestType, ledgerPassword);
+            // bkc.initMessageDigest("SHA1");
+            ledgerId = lh.getId();
+            LOG.info("Ledger ID: " + lh.getId());
+            for (int i = 0; i < numEntriesToWrite; i++) {
+                ByteBuffer entry = ByteBuffer.allocate(4);
+                entry.putInt(rng.nextInt(maxInt));
+                entry.position(0);
+
+                entries.add(entry.array());
+                entriesSize.add(entry.array().length);
+                lh.addEntry(entry.array());
+            }
+
+            
+            SyncObj sync = new SyncObj();
+            lh.asyncReadLastConfirmed(this, sync);
+            
+            // Wait for for last confirmed
+            synchronized (sync) {
+                while (sync.lastConfirmed == -1) {
+                    LOG.debug("Counter = " + sync.lastConfirmed);
+                    sync.wait();
+                }
+            }
+            
+            assertTrue("Last confirmed add: " + sync.lastConfirmed, sync.lastConfirmed == (numEntriesToWrite - 2));
+            
+            LOG.debug("*** WRITE COMPLETE ***");
+            // close ledger
+            lh.close();
+            
+
+        } catch (KeeperException e) {
+            LOG.error("Test failed", e);
+            fail("Test failed due to ZooKeeper exception");
+        } catch (BKException e) {
+            LOG.error("Test failed", e);
+            fail("Test failed due to BookKeeper exception");
+        } catch (InterruptedException e) {
+            LOG.error("Test failed", e);
+            fail("Test failed due to interruption");
+        }
+    }
+    
+    
+    @Test
+    public void testLastConfirmedAdd() throws IOException {
+        try {
+            // Create a BookKeeper client and a ledger
+            bkc = new BookKeeper("127.0.0.1");
+            lh = bkc.createLedger(digestType, ledgerPassword);
+            // bkc.initMessageDigest("SHA1");
+            ledgerId = lh.getId();
+            LOG.info("Ledger ID: " + lh.getId());
+            for (int i = 0; i < numEntriesToWrite; i++) {
+                ByteBuffer entry = ByteBuffer.allocate(4);
+                entry.putInt(rng.nextInt(maxInt));
+                entry.position(0);
+
+                entries.add(entry.array());
+                entriesSize.add(entry.array().length);
+                lh.addEntry(entry.array());
+            }
+
+            long last = lh.readLastConfirmed();
+            assertTrue("Last confirmed add: " + last, last == (numEntriesToWrite - 2));
+            
+            LOG.debug("*** WRITE COMPLETE ***");
+            // close ledger
+            lh.close();
+            /*
+             * Asynchronous call to read last confirmed entry
+             */
+            lh = bkc.createLedger(digestType, ledgerPassword);
+            // bkc.initMessageDigest("SHA1");
+            ledgerId = lh.getId();
+            LOG.info("Ledger ID: " + lh.getId());
+            for (int i = 0; i < numEntriesToWrite; i++) {
+                ByteBuffer entry = ByteBuffer.allocate(4);
+                entry.putInt(rng.nextInt(maxInt));
+                entry.position(0);
+
+                entries.add(entry.array());
+                entriesSize.add(entry.array().length);
+                lh.addEntry(entry.array());
+            }
+
+            
+            SyncObj sync = new SyncObj();
+            lh.asyncReadLastConfirmed(this, sync);
+            
+            // Wait for for last confirmed
+            synchronized (sync) {
+                while (sync.lastConfirmed == -1) {
+                    LOG.debug("Counter = " + sync.lastConfirmed);
+                    sync.wait();
+                }
+            }
+            
+            assertTrue("Last confirmed add: " + sync.lastConfirmed, sync.lastConfirmed == (numEntriesToWrite - 2));
+            
+            LOG.debug("*** WRITE COMPLETE ***");
+            // close ledger
+            lh.close();
+            
+
+        } catch (KeeperException e) {
+            LOG.error("Test failed", e);
+            fail("Test failed due to ZooKeeper exception");
+        } catch (BKException e) {
+            LOG.error("Test failed", e);
+            fail("Test failed due to BookKeeper exception");
+        } catch (InterruptedException e) {
+            LOG.error("Test failed", e);
+            fail("Test failed due to interruption");
+        }
+    }
+    
     
     public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
         if(rc != BKException.Code.OK) fail("Return code is not OK: " + rc);
@@ -737,6 +892,15 @@ public class BookieReadWriteTest extends BaseTestCase implements AddCallback, Re
         }
     }
 
+    public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
+        SyncObj sync = (SyncObj) ctx;
+        
+        synchronized(sync){
+            sync.lastConfirmed = lastConfirmed;
+            sync.notify();
+        }
+    }
+    
     @Before
     public void setUp() throws Exception{
         super.setUp();

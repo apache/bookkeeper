@@ -122,5 +122,18 @@ public interface AsyncCallback {
        */
       void recoverComplete(int rc, Object ctx);
     }
+  
+  public interface ReadLastConfirmedCallback {
+      /**
+       * Callback definition for bookie recover operations
+       * 
+       * @param rc
+       *          return code
+       * @param ctx
+       *          control object
+       */
+      void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx);
+    }
+  
 
 }
