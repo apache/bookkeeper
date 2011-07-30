@@ -41,6 +41,7 @@
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>hedwig-protocol</artifactId>
       <version>3.4.0-SNAPSHOT</version>
+      <type>jar</type>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -68,9 +69,9 @@
     </dependency>
     <dependency>
     	<groupId>org.apache.bookkeeper</groupId>
-    	<artifactId>bookkeeper</artifactId>
+    	<artifactId>bookkeeper-server</artifactId>
     	<version>3.4.0-SNAPSHOT</version>
-    	<type>pom</type>
+    	<type>jar</type>
     	<scope>compile</scope>
     </dependency>
   </dependencies>

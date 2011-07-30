@@ -54,6 +54,32 @@
 	<artifactId>maven-surefire-plugin</artifactId>
 	<version>2.9</version>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.8</version>
+	<configuration>
+          <groups>
+	    <group>
+              <title>Bookkeeper</title>
+	      <packages>org.apache.bookkeeper*</packages>
+            </group>
+            <group>
+              <title>Hedwig</title>
+	      <packages>org.apache.hedwig*</packages>
+            </group>
+	  </groups>
+	</configuration>
+        <executions>
+          <execution>
+            <id>aggregate</id>
+            <goals>
+              <goal>aggregate</goal>
+            </goals>
+            <phase>site</phase>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
   <reporting>

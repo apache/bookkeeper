@@ -21,3 +21,5 @@ BUGFIXES:
   BOOKKEEPER-30: Test are too noisy (ivank via fpj)
 
   BOOKKEEPER-11: Read from open ledger (fpj via ivank)
+
+  BOOKKEEPER-27: mvn site failed with unresolved dependencies (ivank via fpj)
