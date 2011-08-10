@@ -23,3 +23,6 @@ BUGFIXES:
   BOOKKEEPER-11: Read from open ledger (fpj via ivank)
 
   BOOKKEEPER-27: mvn site failed with unresolved dependencies (ivank via fpj)
+  
+  BOOKKEEPER-29: BookieRecoveryTest fails intermittently (fpj via ivank)
+

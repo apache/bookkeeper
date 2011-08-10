@@ -39,6 +39,8 @@ import org.apache.bookkeeper.tools.BookKeeperTools;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,7 +48,7 @@ import org.junit.Test;
 /**
  * This class tests the bookie recovery admin functionality.
  */
-public class BookieRecoveryTest extends BaseTestCase {
+public class BookieRecoveryTest extends BaseTestCase implements Watcher {
     static Logger LOG = Logger.getLogger(BookieRecoveryTest.class);
 
     // Object used for synchronizing async method calls
@@ -75,7 +77,7 @@ public class BookieRecoveryTest extends BaseTestCase {
 
     // Objects to use for this jUnit test.
     DigestType digestType;
-    SyncObject sync;
+    SyncObject sync, zkSync;
     BookieRecoverCallback bookieRecoverCb;
     BookKeeperTools bkTools;
 
@@ -93,6 +95,7 @@ public class BookieRecoveryTest extends BaseTestCase {
         System.setProperty("digestType", digestType.toString());
         System.setProperty("passwd", "");
         sync = new SyncObject();
+        zkSync = new SyncObject();
         bookieRecoverCb = new BookieRecoverCallback();
         bkTools = new BookKeeperTools(HOSTPORT);
     }
@@ -155,20 +158,30 @@ public class BookieRecoveryTest extends BaseTestCase {
      * @throws IOException
      */
     private void startNewBookie(int port)
-    throws IOException, InterruptedException {
+    throws IOException, InterruptedException, KeeperException {
         File f = File.createTempFile("bookie", "test");
         tmpDirs.add(f);
         f.delete();
         f.mkdir();
+        zkSync.value = false;
+        bkc.getZkHandle().getChildren("/ledgers/available", this);
+        
         BookieServer server = new BookieServer(port, HOSTPORT, f, new File[] { f });
         server.start();
         bs.add(server);
-        while(!server.isRunning()){
+        
+        while(!zkSync.value){
             Thread.sleep(500);
         }
+        
         LOG.info("New bookie on port " + port + " has been created.");
     }
 
+    @Override
+    public void process(WatchedEvent event) {
+        zkSync.value = true;
+    }
+    
     /**
      * Helper method to verify that we can read the recovered ledger entries.
      * 
@@ -221,9 +234,16 @@ public class BookieRecoveryTest extends BaseTestCase {
         writeEntriestoLedgers(numMsgs, 0, lhs);
 
         // Shutdown the first bookie server
+        zkSync.value = false;
+        bkc.getZkHandle().getChildren("/ledgers/available", this);
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
         bs.get(0).shutdown();
         bs.remove(0);
+        
+        // Block until I get a notification 
+        while(!zkSync.value){
+            Thread.sleep(100);
+        }
 
         // Startup a new bookie server
         int newBookiePort = initialPort + numBookies;
@@ -274,10 +294,17 @@ public class BookieRecoveryTest extends BaseTestCase {
         writeEntriestoLedgers(numMsgs, 0, lhs);
 
         // Shutdown the first bookie server
+        zkSync.value = false;
+        bkc.getZkHandle().getChildren("/ledgers/available", this);
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
         bs.get(0).shutdown();
         bs.remove(0);
-
+        
+        // Block until I get a notification 
+        while(!zkSync.value){
+            Thread.sleep(100);
+        }
+        
         // Startup three new bookie servers
         for (int i = 0; i < 3; i++) {
             int newBookiePort = initialPort + numBookies + i;
@@ -328,10 +355,17 @@ public class BookieRecoveryTest extends BaseTestCase {
         writeEntriestoLedgers(numMsgs, 0, lhs);
 
         // Shutdown the first bookie server
+        zkSync.value = false;
+        bkc.getZkHandle().getChildren("/ledgers/available", this);
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
         bs.get(0).shutdown();
         bs.remove(0);
 
+        // Block until I get a notification 
+        while(!zkSync.value){
+            Thread.sleep(100);
+        }
+        
         // Startup a new bookie server
         int newBookiePort = initialPort + numBookies;
         startNewBookie(newBookiePort);
@@ -372,10 +406,16 @@ public class BookieRecoveryTest extends BaseTestCase {
         writeEntriestoLedgers(numMsgs, 0, lhs);
 
         // Shutdown the first bookie server
+        zkSync.value = false;
+        bkc.getZkHandle().getChildren("/ledgers/available", this);
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
         bs.get(0).shutdown();
         bs.remove(0);
 
+        // Block until I get a notification 
+        while(!zkSync.value){
+            Thread.sleep(100);
+        }
         // Startup three new bookie servers
         for (int i = 0; i < 3; i++) {
             int newBookiePort = initialPort + numBookies + i;
