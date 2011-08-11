@@ -119,7 +119,8 @@ public class LedgerCacheTest extends TestCase {
             byte[] masterKey = "blah".getBytes();
             for( int i = 0; i < 30000; i++){
                 MacDigestManager dm = new MacDigestManager(i, masterKey);
-                ByteBuffer entry = dm.computeDigestAndPackageForSending(0, 0, 10, "0123456789".getBytes()).toByteBuffer();
+                byte[] data = "0123456789".getBytes();
+                ByteBuffer entry = dm.computeDigestAndPackageForSending(0, 0, 10, data, 0, data.length).toByteBuffer();
                 bookie.addEntry(entry, new TestWriteCallback(), null, masterKey);
             }
         } catch (IOException e) {

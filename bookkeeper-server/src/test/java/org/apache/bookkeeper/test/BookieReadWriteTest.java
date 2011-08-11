@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Random;
 import java.util.Set;
+import java.util.Arrays;
 import java.util.concurrent.Semaphore;
 
 
@@ -232,6 +233,137 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
                 i++;
             }
             assertTrue("Checking number of read entries", i == numEntriesToWrite);
+
+            lh.close();
+        } catch (KeeperException e) {
+            LOG.error("Test failed", e);
+            fail("Test failed due to ZooKeeper exception");
+        } catch (BKException e) {
+            LOG.error("Test failed", e);
+            fail("Test failed due to BookKeeper exception");
+        } catch (InterruptedException e) {
+            LOG.error("Test failed", e);
+            fail("Test failed due to interruption");
+        }
+    }
+
+    /**
+     * Check that the add api with offset and length work correctly.
+     * First try varying the offset. Then the length with a fixed non-zero
+     * offset.
+     */
+    @Test
+    public void testReadWriteRangeAsyncSingleClient() throws IOException {
+        try {
+            // Create a BookKeeper client and a ledger
+            bkc = new BookKeeper("127.0.0.1");
+            lh = bkc.createLedger(digestType, ledgerPassword);
+            // bkc.initMessageDigest("SHA1");
+            ledgerId = lh.getId();
+            LOG.info("Ledger ID: " + lh.getId());
+            byte bytes[] = {'a','b','c','d','e','f','g','h','i'};
+            
+            lh.asyncAddEntry(bytes, 0, bytes.length, this, sync);
+            lh.asyncAddEntry(bytes, 0, 4, this, sync); // abcd
+            lh.asyncAddEntry(bytes, 3, 4, this, sync); // defg
+            lh.asyncAddEntry(bytes, 3, (bytes.length-3), this, sync); // defghi
+            int numEntries = 4;
+
+            // wait for all entries to be acknowledged
+            synchronized (sync) {
+                while (sync.counter < numEntries) {
+                    LOG.debug("Entries counter = " + sync.counter);
+                    sync.wait();
+                }
+            }
+
+            try {
+                lh.asyncAddEntry(bytes, -1, bytes.length, this, sync); 
+                fail("Shouldn't be able to use negative offset");
+            } catch (ArrayIndexOutOfBoundsException aiob) {
+                // expected
+            }
+            try {
+                lh.asyncAddEntry(bytes, 0, bytes.length+1, this, sync); 
+                fail("Shouldn't be able to use that much length");
+            } catch (ArrayIndexOutOfBoundsException aiob) {
+                // expected
+            }
+            try {
+                lh.asyncAddEntry(bytes, -1, bytes.length+2, this, sync); 
+                fail("Shouldn't be able to use negative offset "
+                     + "with that much length");
+            } catch (ArrayIndexOutOfBoundsException aiob) {
+                // expected
+            }
+            try {
+                lh.asyncAddEntry(bytes, 4, -3, this, sync); 
+                fail("Shouldn't be able to use negative length");
+            } catch (ArrayIndexOutOfBoundsException aiob) {
+                // expected
+            }
+            try {
+                lh.asyncAddEntry(bytes, -4, -3, this, sync); 
+                fail("Shouldn't be able to use negative offset & length");
+            } catch (ArrayIndexOutOfBoundsException aiob) {
+                // expected
+            }
+            
+
+            LOG.debug("*** WRITE COMPLETE ***");
+            // close ledger
+            lh.close();
+
+            // *** WRITING PART COMPLETE // READ PART BEGINS ***
+
+            // open ledger
+            lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
+            LOG.debug("Number of entries written: " + (lh.getLastAddConfirmed() + 1));
+            assertTrue("Verifying number of entries written", 
+                       lh.getLastAddConfirmed() == (numEntries - 1));
+
+            // read entries
+            lh.asyncReadEntries(0, numEntries - 1, this, (Object) sync);
+
+            synchronized (sync) {
+                while (sync.value == false) {
+                    sync.wait();
+                }
+            }
+
+            LOG.debug("*** READ COMPLETE ***");
+
+            // at this point, Enumeration<LedgerEntry> ls is filled with the returned
+            // values
+            int i = 0;
+            while (ls.hasMoreElements()) {
+                byte[] expected = null;
+                byte[] entry = ls.nextElement().getEntry();
+                
+                switch (i) {
+                case 0: 
+                    expected = Arrays.copyOfRange(bytes, 0, bytes.length);
+                    break;
+                case 1: 
+                    expected = Arrays.copyOfRange(bytes, 0, 4);
+                    break;
+                case 2: 
+                    expected = Arrays.copyOfRange(bytes, 3, 3+4);
+                    break;
+                case 3: 
+                    expected = Arrays.copyOfRange(bytes, 3, 3+(bytes.length-3));
+                    break;
+                }
+                assertNotNull("There are more checks than writes", expected);
+                
+                String message = "Checking entry " + i + " for equality ["
+                    + new String(entry, "UTF-8") + "," 
+                    + new String(expected, "UTF-8") + "]";
+                assertTrue(message, Arrays.equals(entry, expected));
+
+                i++;
+            }
+            assertTrue("Checking number of read entries", i == numEntries);
 
             lh.close();
         } catch (KeeperException e) {

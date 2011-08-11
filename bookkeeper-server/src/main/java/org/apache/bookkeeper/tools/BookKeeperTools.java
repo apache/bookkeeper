@@ -687,8 +687,9 @@ public class BookKeeperTools {
                  * bookie we've selected.
                  */
                 LedgerEntry entry = seq.nextElement();
+                byte[] data = entry.getEntry();
                 ChannelBuffer toSend = lh.getDigestManager().computeDigestAndPackageForSending(entryId,
-                        lh.getLastAddConfirmed(), entry.getLength(), entry.getEntry());
+                        lh.getLastAddConfirmed(), entry.getLength(), data, 0, data.length);
                 bkc.getBookieClient().addEntry(newBookie, lh.getId(), lh.getLedgerKey(), entryId, toSend,
                         new WriteCallback() {
                             @Override

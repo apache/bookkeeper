@@ -79,7 +79,7 @@ public abstract class DigestManager {
      * @return
      */
     
-    public ChannelBuffer computeDigestAndPackageForSending(long entryId, long lastAddConfirmed, long length, byte[] data) {
+    public ChannelBuffer computeDigestAndPackageForSending(long entryId, long lastAddConfirmed, long length, byte[] data, int doffset, int dlength) {
 
         byte[] bufferArray = new byte[METADATA_LENGTH + macCodeLength];
         ByteBuffer buffer = ByteBuffer.wrap(bufferArray);
@@ -90,7 +90,7 @@ public abstract class DigestManager {
         buffer.flip();
 
         update(buffer.array(), 0, METADATA_LENGTH);
-        update(data);
+        update(data, doffset, dlength);
         byte[] digest = getValueAndReset();
 
         buffer.limit(buffer.capacity());
@@ -98,7 +98,7 @@ public abstract class DigestManager {
         buffer.put(digest);
         buffer.flip();
 
-        return ChannelBuffers.wrappedBuffer(ChannelBuffers.wrappedBuffer(buffer), ChannelBuffers.wrappedBuffer(data));
+        return ChannelBuffers.wrappedBuffer(ChannelBuffers.wrappedBuffer(buffer), ChannelBuffers.wrappedBuffer(data, doffset, dlength));
     }
 
     private void verifyDigest(ChannelBuffer dataReceived) throws BKDigestMatchException {

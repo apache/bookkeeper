@@ -319,23 +319,37 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, R
     }
   }
 
-  /**
-   * Add entry synchronously to an open ledger.
-   * 
-   * @param data
-   *         array of bytes to be written to the ledger
-   */
+    /**
+     * Add entry synchronously to an open ledger.
+     * 
+     * @param data
+     *         array of bytes to be written to the ledger
+     */
+    public long addEntry(byte[] data) throws InterruptedException, BKException {
+        return addEntry(data, 0, data.length);
+    }
 
-  public long addEntry(byte[] data) throws InterruptedException, BKException {
-    LOG.debug("Adding entry " + data);
-    SyncCounter counter = new SyncCounter();
-    counter.inc();
+    /**
+     * Add entry synchronously to an open ledger.
+     * 
+     * @param data
+     *         array of bytes to be written to the ledger
+     * @param offset
+     *          offset from which to take bytes from data
+     * @param length
+     *          number of bytes to take from data
+     */
+    public long addEntry(byte[] data, int offset, int length) 
+            throws InterruptedException, BKException {
+        LOG.debug("Adding entry " + data);
+        SyncCounter counter = new SyncCounter();
+        counter.inc();
+        
+        asyncAddEntry(data, offset, length, this, counter);
+        counter.block(0);
 
-    asyncAddEntry(data, this, counter);
-    counter.block(0);
-
-    return counter.getrc();
-  }
+        return counter.getrc();
+    }
 
   /**
    * Add entry asynchronously to an open ledger.
@@ -347,41 +361,68 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, R
    * @param ctx
    *          some control object
    */
-  public void asyncAddEntry(final byte[] data, final AddCallback cb,
-      final Object ctx) {
-      try{
-          opCounterSem.acquire();
-      } catch (InterruptedException e) {
-          cb.addComplete(BKException.Code.InterruptedException,
-                  LedgerHandle.this, -1, ctx);
-      }
-      
-      try{
-          bk.mainWorkerPool.submitOrdered(ledgerId, new SafeRunnable() {
-              @Override
-              public void safeRun() {
-                  if (metadata.isClosed()) {
-                      LOG.warn("Attempt to add to closed ledger: " + ledgerId);
-                      LedgerHandle.this.opCounterSem.release();
-                      cb.addComplete(BKException.Code.LedgerClosedException,
-                              LedgerHandle.this, -1, ctx);
-                      return;
-                  }
+    public void asyncAddEntry(final byte[] data, final AddCallback cb, 
+                              final Object ctx) {
+        asyncAddEntry(data, 0, data.length, cb, ctx);
+    }
 
-                  long entryId = ++lastAddPushed;
-                  long currentLength = addToLength(data.length);
-                  PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx, entryId);
-                  pendingAddOps.add(op);
-                  ChannelBuffer toSend = macManager.computeDigestAndPackageForSending(
-                          entryId, lastAddConfirmed, currentLength, data);
-                  op.initiate(toSend);
-              }
-          });
-      } catch (RuntimeException e) {
-          opCounterSem.release();
-          throw e;
-      }
-  }
+    /**
+     * Add entry asynchronously to an open ledger, using an offset and range.
+     * 
+     * @param data
+     *          array of bytes to be written
+     * @param offset
+     *          offset from which to take bytes from data
+     * @param length
+     *          number of bytes to take from data
+     * @param cb
+     *          object implementing callbackinterface
+     * @param ctx
+     *          some control object
+     * @throws ArrayIndexOutOfBoundsException if offset or length is negative or 
+     *          offset and length sum to a value higher than the length of data.
+     */
+    public void asyncAddEntry(final byte[] data, final int offset, final int length, 
+                              final AddCallback cb, final Object ctx) {
+        if (offset < 0 || length < 0
+            || (offset + length) > data.length) {
+            throw new ArrayIndexOutOfBoundsException(
+                    "Invalid values for offset("+offset
+                    +") or length("+length+")");
+        }
+        try{
+            opCounterSem.acquire();
+        } catch (InterruptedException e) {
+            cb.addComplete(BKException.Code.InterruptedException,
+                    LedgerHandle.this, -1, ctx);
+        }
+        
+        try{
+            bk.mainWorkerPool.submitOrdered(ledgerId, new SafeRunnable() {
+                    @Override
+                    public void safeRun() {
+                        if (metadata.isClosed()) {
+                            LOG.warn("Attempt to add to closed ledger: " + ledgerId);
+                            LedgerHandle.this.opCounterSem.release();
+                            cb.addComplete(BKException.Code.LedgerClosedException,
+                                           LedgerHandle.this, -1, ctx);
+                            return;
+                        }
+                        
+                        long entryId = ++lastAddPushed;
+                        long currentLength = addToLength(length);
+                        PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx, entryId);
+                        pendingAddOps.add(op);
+                        ChannelBuffer toSend = macManager.computeDigestAndPackageForSending(
+                                entryId, lastAddConfirmed, currentLength, data, offset, length);
+                        op.initiate(toSend);
+                    }
+                });
+        } catch (RuntimeException e) {
+            opCounterSem.release();
+            throw e;
+        }
+    }
 
   /**
    * Obtains last confirmed write from a quorum of bookies.
