@@ -28,7 +28,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.log4j.Logger;
@@ -64,7 +64,7 @@ public abstract class BaseTestCase extends TestCase {
     List<BookieServer> bs = new ArrayList<BookieServer>();
     Integer initialPort = 5000;
     int numBookies;
-    BookKeeper bkc;
+    BookKeeperTestClient bkc;
 
     public BaseTestCase(int numBookies) {
         this.numBookies = numBookies;
@@ -117,7 +117,7 @@ public abstract class BaseTestCase extends TestCase {
             bs.add(server);
         }
         zkc.close();
-        bkc = new BookKeeper("127.0.0.1");
+        bkc = new BookKeeperTestClient("127.0.0.1");
         } catch(Exception e) {
             LOG.error("Error setting up", e);
             throw e;

@@ -79,7 +79,7 @@ class BookieWatcher implements Watcher, ChildrenCallback {
     }
 
     public void readBookies(ChildrenCallback callback) {
-        bk.getZkHandle().getChildren( BOOKIE_REGISTRATION_PATH, this, callback, null);
+        bk.getZkHandle().getChildren(BOOKIE_REGISTRATION_PATH, this, callback, null);
     }
 
     @Override

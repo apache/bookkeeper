@@ -135,7 +135,6 @@ public class Bookie extends Thread {
     }
     SyncThread syncThread = new SyncThread();
     public Bookie(int port, String zkServers, File journalDirectory, File ledgerDirectories[]) throws IOException {
-        instantiateZookeeperClient(port, zkServers);
         this.journalDirectory = journalDirectory;
         this.ledgerDirectories = ledgerDirectories;
         entryLogger = new EntryLogger(ledgerDirectories, this);
@@ -202,6 +201,7 @@ public class Bookie extends Thread {
                 }
             }
         }
+        instantiateZookeeperClient(port, zkServers);
         setDaemon(true);
         LOG.debug("I'm starting a bookie with journal directory " + journalDirectory.getName());
         start();

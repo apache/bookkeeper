@@ -31,7 +31,7 @@ import java.util.Set;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
@@ -121,8 +121,6 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
     
     @Test
     public void testBookieRecovery() throws Exception{
-        bkc = new BookKeeper("127.0.0.1");
-        
         //Shutdown all but 1 bookie
         bs.get(0).shutdown();
         bs.get(1).shutdown();
@@ -157,7 +155,7 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
 
     void auxTestReadWriteAsyncSingleClient(BookieServer bs) throws IOException {
         try {
-            // Create a BookKeeper client and a ledger
+            // Create a ledger
             lh = bkc.createLedger(3, 2, digestType, ledgerPassword);
 
             ledgerId = lh.getId();
@@ -193,7 +191,7 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
 
             // open ledger
             bkc.halt();
-            bkc = new BookKeeper("127.0.0.1");
+            bkc = new BookKeeperTestClient("127.0.0.1");
             lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
             LOG.debug("Number of entries written: " + (lh.getLastAddConfirmed() + 1));
             assertTrue("Verifying number of entries written", lh.getLastAddConfirmed() == (numEntriesToWrite - 1));

@@ -28,3 +28,5 @@ BUGFIXES:
 
   BOOKKEEPER-33: Add length and offset parameter to addEntry (ivank via fpj)
 
+  BOOKKEEPER-29: BookieRecoveryTest fails intermittently (ivank, fpj via fpj)
+
