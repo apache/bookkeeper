@@ -30,6 +30,8 @@ BUGFIXES:
 
   BOOKKEEPER-29: BookieRecoveryTest fails intermittently (ivank, fpj via fpj)
 
+  BOOKKEEPER-38: Bookie Server doesn't exit when its zookeeper session is expired. So the process is hang there. (Sijie Guo via breed)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)

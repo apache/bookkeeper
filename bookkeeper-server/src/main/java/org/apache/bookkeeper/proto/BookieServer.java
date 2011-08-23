@@ -40,6 +40,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     NIOServerFactory nioServerFactory;
     private volatile boolean running = false;
     Bookie bookie;
+    DeathWatcher deathWatcher;
     static Logger LOG = Logger.getLogger(BookieServer.class);
 
     public BookieServer(int port, String zkServers, File journalDirectory, File ledgerDirectories[]) throws IOException {
@@ -50,20 +51,68 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     public void start() throws IOException {
         nioServerFactory = new NIOServerFactory(port, this);
         running = true;
+        deathWatcher = new DeathWatcher();
+        deathWatcher.start();
     }
 
-    public void shutdown() throws InterruptedException {
-        running = false;
+    public synchronized void shutdown() throws InterruptedException {
+        if (!running) {
+            return;
+        }
         nioServerFactory.shutdown();
         bookie.shutdown();
+        running = false;
     }
 
     public boolean isRunning(){
         return bookie.isRunning() && nioServerFactory.isRunning() && running;
     }
 
+    /**
+     * Whether bookie is running?
+     *
+     * @return true if bookie is running, otherwise return false
+     */
+    public boolean isBookieRunning() {
+        return bookie.isRunning();
+    }
+
+    /**
+     * Whether nio server is running?
+     *
+     * @return true if nio server is running, otherwise return false
+     */
+    public boolean isNioServerRunning() {
+        return nioServerFactory.isRunning();
+    }
+
     public void join() throws InterruptedException {
         nioServerFactory.join();
+    }
+
+    /**
+     * A thread to watch whether bookie & nioserver is still alive
+     */
+    class DeathWatcher extends Thread {
+        @Override
+        public void run() {
+            int watchInterval = Integer.getInteger("bookie_death_watch_interval", 1000);
+            while(true) {
+                try {
+                    Thread.sleep(watchInterval);
+                } catch (InterruptedException ie) {
+                    // do nothing
+                }
+                if (!isBookieRunning() || !isNioServerRunning()) {
+                    try {
+                        shutdown();
+                    } catch (InterruptedException ie) {
+                        System.exit(-1);
+                    }
+                    break;
+                }
+            }
+        }
     }
 
     /**
