@@ -130,7 +130,13 @@ public class HedwigPublisher implements Publisher {
             // default server host/port as defined in the configs. This should
             // point to the server VIP which would redirect to a random server
             // (which might not be the server hosting the topic).
-            client.doConnect(pubSubData, cfg.getDefaultServerHost());
+            InetSocketAddress host = cfg.getDefaultServerHost();
+            if (host2Channel.containsKey(host)) {
+                // if there is a channel to default server, use it!
+                doPublish(pubSubData, host2Channel.get(host));
+                return;
+            }
+            client.doConnect(pubSubData, host);
         }
     }
 

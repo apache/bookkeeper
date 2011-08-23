@@ -35,3 +35,9 @@ BUGFIXES:
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)
+
+IMPROVEMENTS:
+
+ hedwig-client/
+
+  BOOKKEEPER-44: Reuse publish channel to default server to avoid too many connect requests to default server when lots of producers came in same time (Sijie Guo via breed)
