@@ -217,8 +217,9 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
     @Override
     public void lostTopic(ByteString topic) {
         top2sub2seq.remove(topic);
+        AtomicInteger count = topic2LocalCounts.remove(topic);
         // Notify listeners if necessary.
-        if (topic2LocalCounts.remove(topic).get() > 0)
+        if (null != count && count.get() > 0)
             notifyUnsubcribe(topic);
     }
 

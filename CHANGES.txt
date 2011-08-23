@@ -30,3 +30,6 @@ BUGFIXES:
 
   BOOKKEEPER-29: BookieRecoveryTest fails intermittently (ivank, fpj via fpj)
 
+ hedwig-server/
+
+  BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)
