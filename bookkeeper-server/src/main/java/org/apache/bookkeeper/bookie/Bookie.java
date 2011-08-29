@@ -222,6 +222,7 @@ public class Bookie extends Thread {
         if (zkServers == null) {
             LOG.warn("No ZK servers passed to Bookie constructor so BookKeeper clients won't know about this server!");
             zk = null;
+            isZkExpired = false;
             return;
         }
         int zkTimeout = Integer.getInteger("zkTimeout", 10000);
