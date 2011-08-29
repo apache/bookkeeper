@@ -34,6 +34,8 @@ BUGFIXES:
 
   BOOKKEEPER-58: Changes introduced in BK-38 cause BookieClientTest to hang indefinitely. (ivank)
 
+  BOOKKEEPER-18: maven build is unstable (morel, ivank via ivank)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)

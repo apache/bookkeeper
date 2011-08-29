@@ -50,19 +50,14 @@
         <artifactId>maven-antrun-plugin</artifactId>
         <executions>
           <execution>
-            <id>generate-sources</id>
-            <phase>generate-sources</phase>
+            <id>default-cli</id>
             <configuration>
               <tasks>
-                <mkdir dir="target/generated-sources/java" />
-                <mkdir dir="target/generated-sources/cpp" />
                 <exec executable="protoc" failonerror="true">
-                  <arg value="--java_out=target/generated-sources/java" />
-                  <arg value="--cpp_out=target/generated-sources/cpp" />
+                  <arg value="--java_out=src/main/java" />
                   <arg value="src/main/protobuf/PubSubProtocol.proto" />
                 </exec>
               </tasks>
-              <sourceRoot>target/generated-sources/java</sourceRoot>
             </configuration>
             <goals>
               <goal>run</goal>
