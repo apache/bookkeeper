@@ -20,138 +20,32 @@ The main class for running the server is @org.apache.hedwig.server.netty.PubSubS
 
 The client is a library intended to be consumed by user applications. It takes a Commons Configuration object, for which the source/documentation is in @org.apache.hedwig.client.conf.ClientConfiguration@.
 
-We have provided a simple client application, @org.apache.hedwig.client.App@, that can drive a number of benchmarks. This also takes a single configuration file argument, which is fed to the client library.
-
-We've provided a number of scripts to faciliate running servers and clients in a variety of configurations, including over distributed hosts. These are all consolidated in @scripts/hw.bash@. Although the snippets in this documentation run the script from the hedwig main directory, you can run it from any location. Apologies in advance for these being bash scripts; time permitting, a more robust and maintainable support/tooling infrastructure would be ideal.
-
 h1. Deployment
 
-When ssh-ing into a new host, you are requested to verify and accept the host key. In order to automatically accept the host keys for many new hosts (dangerous), use:
+h2. Limits
 
-hosts=&quot;$host1 $host2 ...&quot; scripts/hw.bash warmup
+Because the current implementation uses a single socket per subscription, the Hedwig requires a high @ulimit@ on the number of open file descriptors. Non-root users can only use up to the limit specified in @/etc/security/limits.conf@; to raise this to 1024^2, as root, modify the &quot;nofile&quot; line in /etc/security/limits.conf on all hubs.
 
-The @hosts@ variable is set here to the list of hosts that you would like to warm up.
+h2. Running Servers
 
-To set up JDK6 on some hosts, use:
+Hedwig requires BookKeeper to run. For BookKeeper setup instructions see "BookKeeper Getting Started":./bookkeeperStarted.html.
 
-hosts=&quot;...&quot; scripts/hw.bash setup-java $path&#95;to&#95;modified&#95;jdk6
+To start a Hedwig hub server:
 
-The argument must point to a JDK6 binary self-extracting executable, but with the @more@ command that displays the License agreement replaced with @cat@. Unfortunately, this step must be performed manually. This script will extract the JDK directly into the home directory and update @$PATH@ in @~/.bashrc@ (in an idempotent fashion).
+ @ hedwig-server/bin/hedwig server
 
-Because the current implementation uses a single socket per subscription, the Hedwig launching scripts all require a high @ulimit@ on the number of open file descriptors. Non-root users can only use up to the limit specified in @/etc/security/limits.conf@; to raise this to 1024^2, run:
+Hedwig takes its configuration from hedwig-server/conf/hw_server.conf by default. To change location of the conf file, modify the HEDWIG_SERVER_CONF environment variable.
 
-hosts=&quot;...&quot; scripts/hw.bash setup-limits
+h1. Debugging
 
-This uses @ssh@ so that you need to enter your password for @sudo@ just once.
+You can attach an Eclipse debugger (or any debugger) to a Java process running on a remote host, as long as it has been started with the appropriate JVM flags. (See the Building Hedwig document to set up your Eclipse environment.) To launch something using @bin/hedwig@ with debugger attachment enabled, prefix the command with @HEDWIG_EXTRA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,address=5000@, e.g.:
 
-For most of the commands presented in the next section, you may prefix the command with:
+@ HEDWIG_EXTRA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,address=5000 hedwig-server/bin/hedwig server
 
-push&#95;jar=true ...
+h1. Logging
 
-to first push the assembly jar (assumed to be available in @server/target/@) to all hosts.
+To control the logging in Hedwig server, set HEDWIG_LOG_CONF to the location of a log4j.properties file.
 
-h1. Running Servers
+@ HEDWIG_LOG_CONF=../hw_testing/log4j.properties hedwig-server/bin/hedwig server
 
-To start three BK bookies on ports 3181-3183 on localhost (directories must all exist):
-
-scripts/hw.bash bk 3181 $bk1&#95;journal&#95;dir $bk1&#95;ledger&#95;dir &amp; scripts/hw.bash bk 3182 $bk2&#95;journal&#95;dir $bk2&#95;ledger&#95;dir &amp; scripts/hw.bash bk 3183 $bk3&#95;journal&#95;dir $bk3&#95;ledger&#95;dir &amp;
-
-To start a ZK on port 2181 (directory must exist):
-
-scripts/hw.bash zk 2181 /path/for/zk/ &amp;
-
-To register the BKs with the ZK (so that Hedwig knows where to find the bookies):
-
-scripts/hw.bash setup-bk localhost:2181 @hostname@:3181 @hostname@:3182 @hostname@:3183
-
-Everything up to this point may be done using a single command over a set of hosts, with ZK on port 9877 and BK on port 9878. The following function takes 2 arguments. The first is the ZK host. The second is a string list of BK hosts:
-
-scripts/hw.bash start-zk-bks <span class="math">zkhost &quot;</math>bk1host $bk2host $bk3host ...&quot;
-
-Note that the hosts may be SSH profile aliases in your @~/.ssh/config@; the script will parse this file and look up their hostnames where necessary. This applies for the hosts specified in the other commands.
-
-Also, the scripts use the @bk-journal@ and @bk-ledger@ functions in @hw.bash@ to determine where to place the BK journal and ledger, given a hostname.
-
-To start a Hedwig server locally:
-
-scripts/hw.bash hw server.conf &amp;
-
-To start Hedwig servers on some hosts &quot;$hw1host $hw2host $hw3host ...&quot; on port 9876, using $zkhost as the ZK server:
-
-scripts/hw.bash start-hw '' &quot;$hw1host $hw2host $hw3host ...&quot; $zkhost
-
-Above, the first empty string argument is the list of default servers to each of the other regions. You may run multiple connected instances of Hedwig this way.
-E.g., to start three regions each with a single Hedwig hub that talk to each other, and using the hw.bash default server ports of 9875 (non-SSL) and 9876 (SSL):
-
-scripts/hw.bash start-hw &quot;$hw2host:9875:9876 <span class="math">hw3host:9875:9876&quot; &quot;</math>hw1host&quot; <span class="math">zk1host scripts/hw.bash start-hw &quot;</math>hw1host:9875:9876 <span class="math">hw3host:9875:9876&quot; &quot;</math>hw2host&quot; <span class="math">zk2host scripts/hw.bash start-hw &quot;</math>hw1host:9875:9876 <span class="math">hw2host:9875:9876&quot; &quot;</math>hw3host&quot; $zk3host
-
-Everything up to this point may be done using a single command over a set of hosts:
-
-scripts/hw.bash start-region '' &quot;$hw1host $hw2host $hw3host ...&quot; <span class="math">zkhost &quot;</math>bk1host $bk2host $bk3host ...&quot;
-
-The first three arguments are the same as for @start-hw@.
-
-You may start multiple regions as well:
-
-scripts/hw.bash start-regions regions.cfg
-
-&quot;regions.cfg&quot; is a list of all regions, one per line, with each region having the following format:
-
-region=<Region name>, hub=<list of hub servers>, default=<single hub server>, zk=<single ZK server>, bk=<list of BK servers>
-
-This will create all of the regions with an all-to-all topology. Each region is connected to the default hub server of every other region. The &quot;, &quot; delimiter is used to separate out the different parts of a region along with the hard-coded parameter names. There also needs to be a newline after the last region line. Here is an example file specifying three regions:
-
-region=wilbur, hub=wilbur90 wilbur91, default=wilbur90, zk=wilbur93, bk=wilbur93 wilbur94 wilbur95 region=re1, hub=sherpa7 sherpa8, default=sherpa7, zk=sherpa9, bk=sherpa9 sherpa10 sherpa11 region=peanuts, hub=peanuts1 peanuts2, default=peanuts2, zk=peanuts3, bk=peanuts3 peanuts4 peanuts5
-
-h1. Running the Client
-
-To run the test client:
-
-JAVAFLAGS=&quot;...&quot; scripts/hw.bash hwc $conf&#95;path
-
-where @$conf_path@ is a client configuration file.
-
-To run the test client on some other hosts:
-
-hosts=&quot;...&quot; JAVAFLAGS=&quot;...&quot; scripts/hw.bash app $hwhost
-
-This will generate a simple configuration file assuming $hwhost is listening on the default SSL and non-SSL ports which are specified as global variables in hw.bash. Currently these are 9875 for non-SSL and 9876 for SSL.
-
-Client usage is currently documented in the source. To run a subscription benchmark, set @JAVAFLAGS@ to:
-
--Dmode=sub -Dcount=10000 -Dnpar=100 -Dstart=5 -Dnwarmups=30
-
-This will first create 30 warm-up subscriptions to topics &quot;warmup-5&quot; through &quot;warmup-34&quot;, then 10,000 benchmarked subscriptions to topics &quot;topic-5&quot; through &quot;topic-10,004&quot;. It will have a pipeline depth of 100 requests, meaning that there will be at most 100 outstanding (unresponded) messages in flight at any moment.
-
-To run a publishing benchmark, set @JAVAFLAGS@ to:
-
--Dmode=pub -Dcount=10000 -Dnpar=100 -Dstart=5
-
-This will publish 10,000 messages to topic &quot;topic-5&quot;, with a pipeline depth of 100 requests.
-
-At the end, the programs will print throughput and latency information.
-
-h1. Utilities
-
-To kill all the user's Java processes running on some machines, use:
-
-hosts=&quot;...&quot; scripts/hw.bash dkill
-
-To check if any processes are running and are using ports of interest (esp. 9876-9878):
-
-hosts=&quot;...&quot; scripts/hw.bash dstatus
-
-Add an argument to @dstatus@ (may be anything) to get a more detailed listing.
-
-To check if there's anything consuming the CPU on some machines:
-
-hosts=&quot;...&quot; scripts/hw.bash tops
-
-To run an arbitrary command on multiple hosts in parallel:
-
-hosts=&quot;...&quot; scripts/hw.bash parssh $command
-
-To do this in sequence:
-
-hosts=&quot;...&quot; xargs= scripts/hw.bash parssh $command
 

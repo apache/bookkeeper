@@ -1,0 +1,140 @@
+#!/bin/sh
+#
+#/**
+# * Copyright 2007 The Apache Software Foundation
+# *
+# * Licensed to the Apache Software Foundation (ASF) under one
+# * or more contributor license agreements.  See the NOTICE file
+# * distributed with this work for additional information
+# * regarding copyright ownership.  The ASF licenses this file
+# * to you under the Apache License, Version 2.0 (the
+# * "License"); you may not use this file except in compliance
+# * with the License.  You may obtain a copy of the License at
+# *
+# *     http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# */
+
+BINDIR=`dirname "$0"`
+BK_HOME=`cd $BINDIR/..;pwd`
+
+DEFAULT_ZOOKEEPER=localhost:2181
+DEFAULT_PORT=3181
+DEFAULT_TXN_DIR=/tmp/bk-txn
+DEFAULT_DATA_DIR=/tmp/bk-data
+
+source $BK_HOME/conf/bkenv.sh
+
+RELEASE_JAR=`ls $BK_HOME/bookkeeper-server-*.jar 2> /dev/null | tail -1` 
+if [ $? == 0 ]; then
+    BOOKIE_JAR=$RELEASE_JAR
+fi
+
+BUILT_JAR=`ls $BK_HOME/target/bookkeeper-server-*.jar 2> /dev/null | tail -1`
+if [ $? != 0 ] && [ ! -e "$BOOKIE_JAR" ]; then 
+    echo "\nCouldn't find bookkeeper jar.";
+    echo "Make sure you've run 'mvn package'\n";
+    exit 1;
+elif [ -e "$BUILT_JAR" ]; then
+    BOOKIE_JAR=$BUILT_JAR
+fi
+
+bookkeeper_help() {
+    cat <<EOF
+Usage: bookkeeper <command>
+where command is one of:
+    bookie              Run a bookie server
+    localbookie <n>     Run a test ensemble of <n> bookies locally
+    help                This help message
+
+or command is the full name of a class with a defined main() method.
+
+Environment variables:
+   BOOKIE_ZOOKEEPER       Zookeeper ensemble (default: $DEFAULT_ZOOKEEPER)
+   BOOKIE_PORT            Port to listen on (default: $DEFAULT_PORT)
+   BOOKIE_TXN_LOGDIR      Directory for transaction logs (default: $DEFAULT_TXN_DIR)
+   BOOKIE_DATA_DIR        Directory for data (default: $DEFAULT_DATA_DIR)
+   BOOKIE_LOG_CONF        Log4j configuration file
+   BOOKIE_EXTRA_OPTS      Extra options to be passed to the jvm
+
+These variable can also be set in conf/bkenv.sh
+EOF
+}
+
+add_maven_deps_to_classpath() {
+    MVN="mvn"
+    if [ "$MAVEN_HOME" != "" ]; then
+	MVN=${MAVEN_HOME}/bin/mvn
+    fi
+    
+    # Need to generate classpath from maven pom. This is costly so generate it
+    # and cache it. Save the file into our target dir so a mvn clean will get
+    # clean it up and force us create a new one.
+    f="${BK_HOME}/target/cached_classpath.txt"
+    if [ ! -f "${f}" ]
+    then
+	${MVN} -f "${BK_HOME}/pom.xml" dependency:build-classpath -Dmdep.outputFile="${f}" &> /dev/null
+    fi
+    BOOKIE_CLASSPATH=${CLASSPATH}:`cat "${f}"`
+}
+
+if [ -d "$BK_HOME/lib" ]; then
+    for i in $BK_HOME/lib/*.jar; do
+	BOOKIE_CLASSPATH=$BOOKIE_CLASSPATH:$i
+    done
+else
+    add_maven_deps_to_classpath
+fi
+
+# if no args specified, show usage
+if [ $# = 0 ]; then
+    bookkeeper_help;
+    exit 1;
+fi
+
+# get arguments
+COMMAND=$1
+shift
+
+if [ "$BOOKIE_ZOOKEEPER" == "" ]; then
+    BOOKIE_ZOOKEEPER=$DEFAULT_ZOOKEEPER
+fi
+
+if [ "$BOOKIE_PORT" == "" ]; then
+    BOOKIE_PORT=$DEFAULT_PORT
+fi
+
+if [ "$BOOKIE_TXN_LOGDIR" == "" ]; then
+    BOOKIE_TXN_LOGDIR=$DEFAULT_TXN_DIR
+fi
+
+if [ "$BOOKIE_DATA_DIR" == "" ]; then
+    BOOKIE_DATA_DIR=$DEFAULT_DATA_DIR
+fi
+
+BOOKIE_CLASSPATH="$BOOKIE_JAR:$BOOKIE_CLASSPATH"
+if [ "$BOOKIE_LOG_CONF" != "" ]; then
+    BOOKIE_CLASSPATH="`dirname $BOOKIE_LOG_CONF`:$BOOKIE_CLASSPATH"
+    OPTS="$OPTS -Dlog4j.configuration=`basename $BOOKIE_LOG_CONF`"
+fi
+OPTS="-cp $BOOKIE_CLASSPATH $OPTS $BOOKIE_EXTRA_OPTS"
+
+OPTS="$OPTS $BOOKIE_EXTRA_OPTS"
+
+if [ $COMMAND == "bookie" ]; then
+    exec java $OPTS org.apache.bookkeeper.proto.BookieServer $BOOKIE_PORT $BOOKIE_ZOOKEEPER $BOOKIE_TXN_LOGDIR $BOOKIE_DATA_DIR $@
+elif [ $COMMAND == "localbookie" ]; then
+    NUMBER=$1
+    shift
+    exec java $OPTS org.apache.bookkeeper.util.LocalBookKeeper $NUMBER $@
+elif [ $COMMAND == "help" ]; then
+    bookkeeper_help;
+else
+    exec java $OPTS $COMMAND $@
+fi
+

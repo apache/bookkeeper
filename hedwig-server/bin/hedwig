@@ -1,0 +1,115 @@
+#!/bin/sh
+#
+#/**
+# * Copyright 2007 The Apache Software Foundation
+# *
+# * Licensed to the Apache Software Foundation (ASF) under one
+# * or more contributor license agreements.  See the NOTICE file
+# * distributed with this work for additional information
+# * regarding copyright ownership.  The ASF licenses this file
+# * to you under the Apache License, Version 2.0 (the
+# * "License"); you may not use this file except in compliance
+# * with the License.  You may obtain a copy of the License at
+# *
+# *     http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# */
+
+BINDIR=`dirname "$0"`
+HW_HOME=`cd $BINDIR/..;pwd`
+
+DEFAULT_CONF=$HW_HOME/conf/hw_server.conf
+
+RELEASE_JAR=`ls $HW_HOME/hedwig-server-*.jar 2> /dev/null | tail -1`
+if [ $? == 0 ]; then
+    HEDWIG_JAR=$RELEASE_JAR
+fi
+
+BUILT_JAR=`ls $HW_HOME/target/hedwig-server-*.jar 2> /dev/null | tail -1`
+if [ $? != 0 ] && [ ! -e "$HEDWIG_JAR" ]; then 
+    echo "\nCouldn't find hedwig jar.";
+    echo "Make sure you've run 'mvn package'\n";
+    exit 1;
+elif [ -e "$BUILT_JAR" ]; then
+    HEDWIG_JAR=$BUILT_JAR
+fi
+
+add_maven_deps_to_classpath() {
+    MVN="mvn"
+    if [ "$MAVEN_HOME" != "" ]; then
+	MVN=${MAVEN_HOME}/bin/mvn
+    fi
+    
+    # Need to generate classpath from maven pom. This is costly so generate it
+    # and cache it. Save the file into our target dir so a mvn clean will get
+    # clean it up and force us create a new one.
+    f="${HW_HOME}/target/cached_classpath.txt"
+    if [ ! -f "${f}" ]
+    then
+	${MVN} -f "${HW_HOME}/pom.xml" dependency:build-classpath -Dmdep.outputFile="${f}" &> /dev/null
+    fi
+    HEDWIG_CLASSPATH=${CLASSPATH}:`cat "${f}"`
+}
+
+if [ -d "$HW_HOME/lib" ]; then
+    for i in $HW_HOME/lib/*.jar; do
+	HEDWIG_CLASSPATH=$HEDWIG_CLASSPATH:$i
+    done
+else
+    add_maven_deps_to_classpath
+fi
+
+hedwig_help() {
+    cat <<EOF
+Usage: hedwig <command>
+where command is one of:
+    server           Run the hedwig server
+    help             This help message
+
+or command is the full name of a class with a defined main() method.
+
+Environment variables:
+   HEDWIG_SERVER_CONF     Hedwig server configuration file (default $DEFAULT_CONF)
+   HEDWIG_LOG_CONF        Log4j configuration file
+   HEDWIG_EXTRA_OPTS      Extra options to be passed to the jvm
+
+These variable can also be set in conf/hwenv.sh
+EOF
+}
+
+# if no args specified, show usage
+if [ $# = 0 ]; then
+    hedwig_help;
+    exit 1;
+fi
+
+# get arguments
+COMMAND=$1
+shift
+
+if [ "$HEDWIG_SERVER_CONF" == "" ]; then
+    HEDWIG_SERVER_CONF=$DEFAULT_CONF;
+fi
+
+HEDWIG_CLASSPATH="$HEDWIG_JAR:$HEDWIG_CLASSPATH"
+
+if [ "$HEDWIG_LOG_CONF" != "" ]; then
+    HEDWIG_CLASSPATH="`dirname $HEDWIG_LOG_CONF`:$HEDWIG_CLASSPATH"
+    OPTS="$OPTS -Dlog4j.configuration=`basename $HEDWIG_LOG_CONF`"
+fi
+OPTS="-cp $HEDWIG_CLASSPATH $OPTS $HEDWIG_EXTRA_OPTS"
+
+if [ $COMMAND == "server" ]; then
+    exec java $OPTS org.apache.hedwig.server.netty.PubSubServer $HEDWIG_SERVER_CONF $@
+elif [ $COMMAND == "help" ]; then
+    hedwig_help;
+else
+    exec java $OPTS $COMMAND $@
+fi
+
+

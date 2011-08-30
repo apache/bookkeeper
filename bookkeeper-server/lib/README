@@ -1,5 +1,0 @@
-the zookeeper test classes are not part of the standard distribution,
-so we need to manually install a jar file with the test classes.
-use the following command:
-
-mvn -q install:install-file -Dfile=zookeeper-test-3.3.3.jar -DgroupId=org.apache.zookeeper -DartifactId=zookeeper-test -Dpackaging=jar  -Dversion=3.3.3

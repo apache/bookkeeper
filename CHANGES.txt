@@ -42,6 +42,8 @@ BUGFIXES:
 
 IMPROVEMENTS:
 
+ BOOKKEEPER-28: Create useful startup scripts for bookkeeper and hedwig (ivank)
+
  hedwig-client/
 
   BOOKKEEPER-44: Reuse publish channel to default server to avoid too many connect requests to default server when lots of producers came in same time (Sijie Guo via breed)

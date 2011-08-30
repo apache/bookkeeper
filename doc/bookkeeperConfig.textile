@@ -30,15 +30,14 @@ h1. Running bookies
 
 p. To run a bookie, we execute the following command: 
 
- @java -cp .:./zookeeper-<version>-bookkeeper.jar:./zookeeper-<version>.jar\ :../log4j/apache-log4j-1.2.15/log4j-1.2.15.jar -Dlog4j.configuration=log4j.properties\ org.apache.bookkeeper.proto.BookieServer 3181 127.0.0.1:2181 /path_to_log_device/\ /path_to_ledger_device/ @ 
+ @ bookkeeper-server/bin/bookkeeper bookie
 
-p. The parameters are: 
+p. The configuration parameters, which can be set in bookkeeper-server/conf/bkenv.sh
 
-* Port number that the bookie listens on; 
-* Comma separated list of ZooKeeper servers with a hostname:port format; 
-* Path for Log Device (stores bookie write-ahead log); 
-* Path for Ledger Device (stores ledger entries); 
-
+* BOOKIE_PORT: Port number that the bookie listens on; 
+* BOOKIE_ZOOKEEPER: Comma separated list of ZooKeeper servers with a hostname:port format; 
+* BOOKIE_TXN_LOGDIR: Path for Log Device (stores bookie write-ahead log); 
+* BOOKIE_DATA_DIR: Path for Ledger Device (stores ledger entries); 
 
 p. Ideally, @/path_to_log_device/@ and @/path_to_ledger_device/@ are each in a different device. 
 
