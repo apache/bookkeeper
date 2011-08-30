@@ -250,6 +250,10 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
             throw new UnexpectedError("No delivery pointers found while disconnecting " + "channel for topic:" + topic);
         }
 
+        if(null == deliveryPtrs) {
+            return;
+        }
+
         if (!MapMethods.removeFromMultiMap(deliveryPtrs, seqId, subscriber) && !isAbsenceOk) {
 
             throw new UnexpectedError("Could not find subscriber:" + subscriber + " at the expected delivery pointer");

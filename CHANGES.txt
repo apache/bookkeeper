@@ -39,6 +39,8 @@ BUGFIXES:
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)
+  
+  BOOKKEEPER-51: NullPointException at FIFODeliveryManager#deliveryPtrs (xulei via ivank)
 
 IMPROVEMENTS:
 
