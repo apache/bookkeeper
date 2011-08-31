@@ -142,7 +142,7 @@ public class EntryLogger {
                     }
                 }
                 // Initialization check. No need to run any logic if we are still starting up.
-                if (entryLogs2LedgersMap.isEmpty() || bookie.ledgerCache == null
+                if (bookie.zk == null || entryLogs2LedgersMap.isEmpty() || bookie.ledgerCache == null
                         || bookie.ledgerCache.activeLedgers == null) {
                     continue;
                 }
