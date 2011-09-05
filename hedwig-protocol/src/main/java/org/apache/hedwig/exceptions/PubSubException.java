@@ -135,7 +135,7 @@ public abstract class PubSubException extends Exception {
             super(StatusCode.UNEXPECTED_CONDITION, msg);
         }
     }
-    
+
     // The composite exception (for concurrent operations).
     public static class CompositeException extends PubSubException {
         private final Collection<PubSubException> exceptions;

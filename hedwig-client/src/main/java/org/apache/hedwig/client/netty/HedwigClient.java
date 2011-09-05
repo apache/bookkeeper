@@ -44,7 +44,7 @@ import org.apache.hedwig.exceptions.PubSubException.UncertainStateException;
 /**
  * This is a top level Hedwig Client class that encapsulates the common
  * functionality needed for both Publish and Subscribe operations.
- * 
+ *
  */
 public class HedwigClient {
 
@@ -182,7 +182,7 @@ public class HedwigClient {
         }
 
         private void checkPubSubDataToTimeOut(PubSubData pubSubData, ResponseHandler responseHandler, long curTime,
-                long timeoutInterval) {
+                                              long timeoutInterval) {
             if (curTime > pubSubData.requestWriteTime + timeoutInterval) {
                 // Current PubSubRequest has timed out so remove it from the
                 // ResponseHandler's map and invoke the VoidCallback's
@@ -190,7 +190,7 @@ public class HedwigClient {
                 logger.error("Current PubSubRequest has timed out for pubSubData: " + pubSubData);
                 responseHandler.txn2PubSubData.remove(pubSubData.txnId);
                 pubSubData.callback.operationFailed(pubSubData.context, new UncertainStateException(
-                        "Server ack response never received so PubSubRequest has timed out!"));
+                                                        "Server ack response never received so PubSubRequest has timed out!"));
             }
         }
     }
@@ -236,7 +236,7 @@ public class HedwigClient {
      * to the one that is responsible for the topic. Once the connect to the
      * server is done, we will perform the corresponding PubSub write on that
      * channel.
-     * 
+     *
      * @param pubSubData
      *            PubSub call's data wrapper object
      * @param serverHost
@@ -261,7 +261,7 @@ public class HedwigClient {
      * Helper method to store the topic2Host mapping in the HedwigClient cache
      * map. This method is assumed to be called when we've done a successful
      * connection to the correct server topic master.
-     * 
+     *
      * @param pubSubData
      *            PubSub wrapper data
      * @param channel
@@ -282,7 +282,7 @@ public class HedwigClient {
         // Store the relevant mappings for this topic and host combination.
         if (logger.isDebugEnabled())
             logger.debug("Storing info for topic: " + pubSubData.topic.toStringUtf8() + ", old host: "
-                    + topic2Host.get(pubSubData.topic) + ", new host: " + host);
+                         + topic2Host.get(pubSubData.topic) + ", new host: " + host);
         topic2Host.put(pubSubData.topic, host);
         if (host2Topics.containsKey(host)) {
             host2Topics.get(host).add(pubSubData.topic);
@@ -297,7 +297,7 @@ public class HedwigClient {
      * Helper static method to get the String Hostname:Port from a netty
      * Channel. Assumption is that the netty Channel was originally created with
      * an InetSocketAddress. This is true with the Hedwig netty implementation.
-     * 
+     *
      * @param channel
      *            Netty channel to extract the hostname and port from.
      * @return String representation of the Hostname:Port from the Netty Channel
@@ -310,7 +310,7 @@ public class HedwigClient {
      * Helper static method to get the ResponseHandler instance from a Channel
      * via the ChannelPipeline it is associated with. The assumption is that the
      * last ChannelHandler tied to the ChannelPipeline is the ResponseHandler.
-     * 
+     *
      * @param channel
      *            Channel we are retrieving the ResponseHandler instance for
      * @return ResponseHandler Instance tied to the Channel's Pipeline

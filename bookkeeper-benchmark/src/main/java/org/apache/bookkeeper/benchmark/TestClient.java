@@ -1,6 +1,6 @@
 package org.apache.bookkeeper.benchmark;
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,16 +8,16 @@ package org.apache.bookkeeper.benchmark;
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
 
 
@@ -41,71 +41,71 @@ import org.apache.zookeeper.KeeperException;
 /**
  * This is a simple test program to compare the performance of writing to
  * BookKeeper and to the local file system.
- * 
+ *
  */
 
-public class TestClient 
-    implements AddCallback, ReadCallback{
+public class TestClient
+    implements AddCallback, ReadCallback {
     private static final Logger LOG = Logger.getLogger(TestClient.class);
-    
+
     BookKeeper x;
     LedgerHandle lh;
     Integer entryId;
     HashMap<Integer, Integer> map;
-    
+
     FileOutputStream fStream;
     FileOutputStream fStreamLocal;
     long start, lastId;
-    
+
     public TestClient() {
         entryId = 0;
         map = new HashMap<Integer, Integer>();
     }
-    
-    public TestClient(String servers) throws KeeperException, IOException, InterruptedException{
+
+    public TestClient(String servers) throws KeeperException, IOException, InterruptedException {
         this();
         x = new BookKeeper(servers);
-        try{
-	    lh = x.createLedger(DigestType.MAC, new byte[] {'a', 'b'});
+        try {
+            lh = x.createLedger(DigestType.MAC, new byte[] {'a', 'b'});
         } catch (BKException e) {
             LOG.error(e.toString());
         }
     }
-    
+
     public TestClient(String servers, int ensSize, int qSize)
-    throws KeeperException, IOException, InterruptedException{
+            throws KeeperException, IOException, InterruptedException {
         this();
         x = new BookKeeper(servers);
-        try{
-        lh = x.createLedger(ensSize, qSize, DigestType.MAC, new byte[] {'a', 'b'});
+        try {
+            lh = x.createLedger(ensSize, qSize, DigestType.MAC, new byte[] {'a', 'b'});
         } catch (BKException e) {
             LOG.error(e.toString());
         }
     }
-    
+
     public TestClient(FileOutputStream fStream)
-    throws FileNotFoundException {
+            throws FileNotFoundException {
         this.fStream = fStream;
         this.fStreamLocal = new FileOutputStream("./local.log");
     }
-    
-    
-    public Integer getFreshEntryId(int val){
+
+
+    public Integer getFreshEntryId(int val) {
         ++this.entryId;
         synchronized (map) {
             map.put(this.entryId, val);
         }
         return this.entryId;
     }
-    
-    public boolean removeEntryId(Integer id){
+
+    public boolean removeEntryId(Integer id) {
         boolean retVal = false;
         synchronized (map) {
-                map.remove(id);
-                retVal = true;
-     
+            map.remove(id);
+            retVal = true;
+
             if(map.size() == 0) map.notifyAll();
-            else{
+            else {
                 if(map.size() < 4)
                     LOG.error(map.toString());
             }
@@ -113,32 +113,32 @@ public class TestClient
         return retVal;
     }
 
-    public void closeHandle() throws KeeperException, InterruptedException{
+    public void closeHandle() throws KeeperException, InterruptedException {
         lh.close();
     }
     /**
      * First says if entries should be written to BookKeeper (0) or to the local
-     * disk (1). Second parameter is an integer defining the length of a ledger entry. 
+     * disk (1). Second parameter is an integer defining the length of a ledger entry.
      * Third parameter is the number of writes.
-     * 
+     *
      * @param args
      */
     public static void main(String[] args) {
-        
+
         int lenght = Integer.parseInt(args[1]);
         StringBuilder sb = new StringBuilder();
-        while(lenght-- > 0){
+        while(lenght-- > 0) {
             sb.append('a');
         }
-        
+
         Integer selection = Integer.parseInt(args[0]);
-        switch(selection){
-        case 0:           
+        switch(selection) {
+        case 0:
             StringBuilder servers_sb = new StringBuilder();
-            for (int i = 4; i < args.length; i++){
+            for (int i = 4; i < args.length; i++) {
                 servers_sb.append(args[i] + " ");
             }
-        
+
             String servers = servers_sb.toString().trim().replace(' ', ',');
             try {
                 TestClient c = new TestClient(servers, Integer.parseInt(args[3]), Integer.parseInt(args[4]));
@@ -156,11 +156,11 @@ public class TestClient
             }
             break;
         case 1:
-            
-            try{
+
+            try {
                 TestClient c = new TestClient(new FileOutputStream(args[2]));
                 c.writeSameEntryBatchFS(sb.toString().getBytes(), Integer.parseInt(args[3]));
-            } catch(FileNotFoundException e){
+            } catch(FileNotFoundException e) {
                 LOG.error(e);
             }
             break;
@@ -169,27 +169,27 @@ public class TestClient
         }
     }
 
-    void writeSameEntryBatch(byte[] data, int times) throws InterruptedException{
+    void writeSameEntryBatch(byte[] data, int times) throws InterruptedException {
         start = System.currentTimeMillis();
         int count = times;
         LOG.debug("Data: " + new String(data) + ", " + data.length);
-        while(count-- > 0){
+        while(count-- > 0) {
             lh.asyncAddEntry(data, this, this.getFreshEntryId(2));
         }
-        LOG.debug("Finished " + times + " async writes in ms: " + (System.currentTimeMillis() - start));       
+        LOG.debug("Finished " + times + " async writes in ms: " + (System.currentTimeMillis() - start));
         synchronized (map) {
             if(map.size() != 0)
                 map.wait();
         }
         LOG.debug("Finished processing in ms: " + (System.currentTimeMillis() - start));
-        
+
         LOG.debug("Ended computation");
     }
-    
-    void writeConsecutiveEntriesBatch(int times) throws InterruptedException{
+
+    void writeConsecutiveEntriesBatch(int times) throws InterruptedException {
         start = System.currentTimeMillis();
         int count = times;
-        while(count-- > 0){
+        while(count-- > 0) {
             byte[] write = new byte[2];
             int j = count%100;
             int k = (count+1)%100;
@@ -197,52 +197,52 @@ public class TestClient
             write[1] = (byte) k;
             lh.asyncAddEntry(write, this, this.getFreshEntryId(2));
         }
-        LOG.debug("Finished " + times + " async writes in ms: " + (System.currentTimeMillis() - start));       
+        LOG.debug("Finished " + times + " async writes in ms: " + (System.currentTimeMillis() - start));
         synchronized (map) {
             if(map.size() != 0)
                 map.wait();
         }
         LOG.debug("Finished processing writes (ms): " + (System.currentTimeMillis() - start));
-        
+
         Integer mon = Integer.valueOf(0);
-        synchronized(mon){
-	    lh.asyncReadEntries(1, times - 1, this, mon);
-	    mon.wait();
-         }
+        synchronized(mon) {
+            lh.asyncReadEntries(1, times - 1, this, mon);
+            mon.wait();
+        }
         LOG.error("Ended computation");
     }
 
     void writeSameEntryBatchFS(byte[] data, int times) {
         int count = times;
         LOG.debug("Data: " + data.length + ", " + times);
-        try{
+        try {
             start = System.currentTimeMillis();
-            while(count-- > 0){
+            while(count-- > 0) {
                 fStream.write(data);
                 fStreamLocal.write(data);
                 fStream.flush();
             }
             fStream.close();
             System.out.println("Finished processing writes (ms): " + (System.currentTimeMillis() - start));
-        } catch(IOException e){
+        } catch(IOException e) {
             LOG.error(e);
         }
     }
-        
-   
+
+
     @Override
     public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
         this.removeEntryId((Integer) ctx);
     }
-   
+
     @Override
-    public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx){
+    public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
         System.out.println("Read callback: " + rc);
-        while(seq.hasMoreElements()){
+        while(seq.hasMoreElements()) {
             LedgerEntry le = seq.nextElement();
             LOG.debug(new String(le.getEntry()));
         }
-        synchronized(ctx){
+        synchronized(ctx) {
             ctx.notify();
         }
     }

@@ -76,7 +76,7 @@ public class StubPersistenceManager implements PersistenceManagerWithRangeScan {
         }
 
         request.getCallback().messageScanned(request.getCtx(),
-                messages.get(request.getTopic()).get((int) request.getStartSeqId()));
+                                             messages.get(request.getTopic()).get((int) request.getStartSeqId()));
 
     }
 
@@ -90,7 +90,7 @@ public class StubPersistenceManager implements PersistenceManagerWithRangeScan {
         long startSeqId = request.getStartSeqId();
         for (int i = 0; i < request.getMessageLimit(); i++) {
             List<Message> messageList = MapMethods.getAfterInsertingIfAbsent(messages, request.getTopic(),
-                    ArrayListMessageFactory.instance);
+                                        ArrayListMessageFactory.instance);
             if (startSeqId + i > messageList.size()) {
                 request.getCallback().scanFinished(request.getCtx(), ReasonForFinish.NO_MORE_MESSAGES);
                 return;

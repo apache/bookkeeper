@@ -35,7 +35,7 @@ public class UnsubscribeHandler extends BaseHandler {
     DeliveryManager deliveryMgr;
 
     public UnsubscribeHandler(TopicManager tm, ServerConfiguration cfg, SubscriptionManager subMgr,
-            DeliveryManager deliveryMgr) {
+                              DeliveryManager deliveryMgr) {
         super(tm, cfg);
         this.subMgr = subMgr;
         this.deliveryMgr = deliveryMgr;

@@ -30,7 +30,7 @@ import com.google.protobuf.ByteString;
  * {@link ScanCallback} used should be prepared to deal with more or less
  * messages scanned. If an error occurs during scanning, the
  * {@link ScanCallback} is notified of the error.
- * 
+ *
  */
 public class RangeScanRequest {
     ByteString topic;
@@ -41,7 +41,7 @@ public class RangeScanRequest {
     Object ctx;
 
     public RangeScanRequest(ByteString topic, long startSeqId, int messageLimit, long sizeLimit, ScanCallback callback,
-            Object ctx) {
+                            Object ctx) {
         this.topic = topic;
         this.startSeqId = startSeqId;
         this.messageLimit = messageLimit;

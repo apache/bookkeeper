@@ -60,7 +60,7 @@ public class ProxySubscribeHandler implements Handler, ChannelDisconnectListener
         final TopicSubscriber topicSubscriber = new TopicSubscriber(request.getTopic(), subRequest.getSubscriberId());
 
         subscriber.asyncSubscribe(topicSubscriber.getTopic(), subRequest.getSubscriberId(), subRequest
-                .getCreateOrAttach(), new Callback<Void>() {
+        .getCreateOrAttach(), new Callback<Void>() {
             @Override
             public void operationFailed(Object ctx, PubSubException exception) {
                 channel.write(PubSubResponseUtils.getResponseForException(exception, request.getTxnId()));

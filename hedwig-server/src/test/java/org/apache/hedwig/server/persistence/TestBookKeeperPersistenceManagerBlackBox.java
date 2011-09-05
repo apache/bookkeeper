@@ -31,8 +31,8 @@ import org.apache.hedwig.server.topics.TrivialOwnAllTopicManager;
 
 public class TestBookKeeperPersistenceManagerBlackBox extends TestPersistenceManagerBlackBox {
     BookKeeperTestBase bktb;
-    private final int numBookies = 3;   
-    
+    private final int numBookies = 3;
+
     @Override
     @Before
     protected void setUp() throws Exception {
@@ -61,7 +61,7 @@ public class TestBookKeeperPersistenceManagerBlackBox extends TestPersistenceMan
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
         return new BookkeeperPersistenceManager(bktb.bk, bktb.getZooKeeperClient(), new TrivialOwnAllTopicManager(conf,
-                scheduler), conf, scheduler);
+                                                scheduler), conf, scheduler);
     }
 
     @Override

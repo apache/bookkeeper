@@ -30,8 +30,8 @@ import org.jboss.netty.buffer.ChannelBuffer;
  * sends ack back to the application. If a bookie fails, a replacement is made
  * and placed at the same position in the ensemble. The pending adds are then
  * rereplicated.
- * 
- * 
+ *
+ *
  */
 class PendingAddOp implements WriteCallback {
     final static Logger LOG = Logger.getLogger(PendingAddOp.class);
@@ -55,7 +55,7 @@ class PendingAddOp implements WriteCallback {
 
     void sendWriteRequest(int bookieIndex, int arrayIndex) {
         lh.bk.bookieClient.addEntry(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey, entryId, toSend,
-                this, arrayIndex);
+                                    this, arrayIndex);
     }
 
     void unsetSuccessAndSendWriteRequest(int bookieIndex) {
@@ -70,14 +70,14 @@ class PendingAddOp implements WriteCallback {
         if (replicaIndex < 0) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Leaving unchanged, ledger: " + lh.ledgerId + " entry: " + entryId + " bookie index: "
-                        + bookieIndex);
+                          + bookieIndex);
             }
             return;
         }
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Unsetting success for ledger: " + lh.ledgerId + " entry: " + entryId + " bookie index: "
-                    + bookieIndex);
+                      + bookieIndex);
         }
 
         // if we had already heard a success from this array index, need to
@@ -87,8 +87,8 @@ class PendingAddOp implements WriteCallback {
             successesSoFar[replicaIndex] = false;
             numResponsesPending++;
         }
-        
-         sendWriteRequest(bookieIndex, replicaIndex);
+
+        sendWriteRequest(bookieIndex, replicaIndex);
     }
 
     void initiate(ChannelBuffer toSend) {
@@ -110,7 +110,7 @@ class PendingAddOp implements WriteCallback {
             LOG.warn("Write did not succeed: " + ledgerId + ", " + entryId + ". But we have already fixed it.");
             return;
         }
-        
+
         if (rc != BKException.Code.OK) {
             LOG.warn("Write did not succeed: " + ledgerId + ", " + entryId);
             lh.handleBookieFailure(addr, bookieIndex);
@@ -121,13 +121,13 @@ class PendingAddOp implements WriteCallback {
         if (!successesSoFar[replicaIndex]) {
             successesSoFar[replicaIndex] = true;
             numResponsesPending--;
-            
+
             // do some quick checks to see if some adds may have finished. All
             // this will be checked under locks again
             if (numResponsesPending == 0 && lh.pendingAddOps.peek() == this) {
                 lh.sendAddSuccessCallbacks();
             }
-        } 
+        }
     }
 
     void submitCallback(final int rc) {

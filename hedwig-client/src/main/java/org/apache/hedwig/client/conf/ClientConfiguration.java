@@ -79,7 +79,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     // automatically send the consume message to the server based on the
     // configured amount of messages consumed by the client app. The client app
     // could choose to override this behavior and instead, manually send the
-    // consume message to the server via the client library using its own 
+    // consume message to the server via the client library using its own
     // logic and policy.
     public boolean isAutoSendConsumeMessageEnabled() {
         return conf.getBoolean(AUTO_SEND_CONSUME_MESSAGE_ENABLED, true);

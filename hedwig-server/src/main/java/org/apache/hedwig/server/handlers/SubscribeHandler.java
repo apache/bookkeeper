@@ -42,7 +42,7 @@ import org.apache.hedwig.server.subscriptions.TrueFilter;
 import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.util.Callback;
 
-public class SubscribeHandler extends BaseHandler implements ChannelDisconnectListener{
+public class SubscribeHandler extends BaseHandler implements ChannelDisconnectListener {
     static Logger logger = Logger.getLogger(SubscribeHandler.class);
 
     private DeliveryManager deliveryMgr;
@@ -52,7 +52,7 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
     ConcurrentHashMap<Channel, TopicSubscriber> channel2sub;
 
     public SubscribeHandler(TopicManager topicMgr, DeliveryManager deliveryManager, PersistenceManager persistenceMgr,
-            SubscriptionManager subMgr, ServerConfiguration cfg) {
+                            SubscriptionManager subMgr, ServerConfiguration cfg) {
         super(topicMgr, cfg);
         this.deliveryMgr = deliveryManager;
         this.persistenceMgr = persistenceMgr;
@@ -89,7 +89,7 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
             seqId = persistenceMgr.getCurrentSeqIdForTopic(topic);
         } catch (ServerNotResponsibleForTopicException e) {
             channel.write(PubSubResponseUtils.getResponseForException(e, request.getTxnId())).addListener(
-                    ChannelFutureListener.CLOSE);
+                ChannelFutureListener.CLOSE);
             return;
         }
 
@@ -103,7 +103,7 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
             @Override
             public void operationFailed(Object ctx, PubSubException exception) {
                 channel.write(PubSubResponseUtils.getResponseForException(exception, request.getTxnId())).addListener(
-                        ChannelFutureListener.CLOSE);
+                    ChannelFutureListener.CLOSE);
             }
 
             @Override
@@ -124,9 +124,9 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
                     if (null != sub2Channel.putIfAbsent(topicSub, channel)) {
                         // there was another channel mapped to this sub
                         PubSubException pse = new PubSubException.TopicBusyException(
-                                "subscription for this topic, subscriberId is already being served on a different channel");
+                            "subscription for this topic, subscriberId is already being served on a different channel");
                         channel.write(PubSubResponseUtils.getResponseForException(pse, request.getTxnId()))
-                                .addListener(ChannelFutureListener.CLOSE);
+                        .addListener(ChannelFutureListener.CLOSE);
                         return;
                     } else {
                         // channel2sub is just a cache, so we can add to it
@@ -141,10 +141,10 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
 
                 // want to start 1 ahead of the consume ptr
                 MessageSeqId seqIdToStartFrom = MessageSeqId.newBuilder(resultOfOperation).setLocalComponent(
-                        resultOfOperation.getLocalComponent() + 1).build();
+                                                    resultOfOperation.getLocalComponent() + 1).build();
                 deliveryMgr.startServingSubscription(topic, subscriberId, seqIdToStartFrom,
-                        new ChannelEndPoint(channel), TrueFilter.instance(), SubscriptionStateUtils
-                                .isHubSubscriber(subRequest.getSubscriberId()));
+                                                     new ChannelEndPoint(channel), TrueFilter.instance(), SubscriptionStateUtils
+                                                     .isHubSubscriber(subRequest.getSubscriberId()));
             }
         }, null);
 

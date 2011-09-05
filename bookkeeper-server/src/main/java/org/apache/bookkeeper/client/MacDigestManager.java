@@ -36,15 +36,15 @@ public class MacDigestManager extends DigestManager {
         SecretKeySpec keySpec = new SecretKeySpec(macKey, KEY_ALGORITHM);
         mac = Mac.getInstance(KEY_ALGORITHM);
         mac.init(keySpec);
-        
-        
+
+
     }
 
     static byte[] genDigest(String pad, byte[] passwd) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance(DIGEST_ALGORITHM);
         digest.update(pad.getBytes());
         digest.update(passwd);
-                return digest.digest();
+        return digest.digest();
     }
 
     @Override
@@ -52,16 +52,16 @@ public class MacDigestManager extends DigestManager {
         return 20;
     }
 
-    
+
     @Override
     byte[] getValueAndReset() {
         return mac.doFinal();
     }
-    
+
     @Override
     void update(byte[] data, int offset, int length) {
         mac.update(data, offset, length);
     }
-    
-    
+
+
 }

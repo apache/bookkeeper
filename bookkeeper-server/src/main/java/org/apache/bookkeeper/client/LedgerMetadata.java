@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 /**
  * This class encapsulates all the ledger metadata that is persistently stored
  * in zookeeper. It provides parsing and serialization methods of such metadata.
- * 
+ *
  */
 public class LedgerMetadata {
     static final Logger LOG = Logger.getLogger(LedgerMetadata.class);
@@ -53,9 +53,9 @@ public class LedgerMetadata {
     public LedgerMetadata(int ensembleSize, int quorumSize) {
         this.ensembleSize = ensembleSize;
         this.quorumSize = quorumSize;
-        
+
         /*
-         * It is set in PendingReadOp.readEntryComplete, and 
+         * It is set in PendingReadOp.readEntryComplete, and
          * we read it in LedgerRecoveryOp.readComplete.
          */
         this.length = 0;
@@ -67,16 +67,16 @@ public class LedgerMetadata {
     }
 
     /**
-     * Get the Map of bookie ensembles for the various ledger fragments 
+     * Get the Map of bookie ensembles for the various ledger fragments
      * that make up the ledger.
-     * 
-     * @return SortedMap of Ledger Fragments and the corresponding 
+     *
+     * @return SortedMap of Ledger Fragments and the corresponding
      * bookie ensembles that store the entries.
      */
     public SortedMap<Long, ArrayList<InetSocketAddress>> getEnsembles() {
         return ensembles;
     }
-    
+
     boolean isClosed() {
         return close != NOTCLOSED;
     }
@@ -84,7 +84,7 @@ public class LedgerMetadata {
     void close(long entryId) {
         close = entryId;
     }
-    
+
     void addEnsemble(long startEntryId, ArrayList<InetSocketAddress> ensemble) {
         assert ensembles.isEmpty() || startEntryId >= ensembles.lastKey();
 
@@ -101,7 +101,7 @@ public class LedgerMetadata {
     /**
      * the entry id > the given entry-id at which the next ensemble change takes
      * place ( -1 if no further ensemble changes)
-     * 
+     *
      * @param entryId
      * @return
      */
@@ -117,7 +117,7 @@ public class LedgerMetadata {
 
     /**
      * Generates a byte array based on a LedgerConfig object received.
-     * 
+     *
      * @param config
      *            LedgerConfig object
      * @return byte[]
@@ -133,7 +133,7 @@ public class LedgerMetadata {
                 StringUtils.addrToString(s, addr);
             }
         }
-        
+
         if (close != NOTCLOSED) {
             s.append(lSplitter).append(close).append(tSplitter).append(closed);
         }
@@ -147,7 +147,7 @@ public class LedgerMetadata {
 
     /**
      * Parses a given byte array and transforms into a LedgerConfig object
-     * 
+     *
      * @param array
      *            byte array to parse
      * @return LedgerConfig
@@ -173,8 +173,8 @@ public class LedgerMetadata {
         try {
             lc.quorumSize = new Integer(lines[0]);
             lc.ensembleSize = new Integer(lines[1]);
-            lc.length = new Long(lines[2]); 
-            
+            lc.length = new Long(lines[2]);
+
             for (int i = 3; i < lines.length; i++) {
                 String parts[] = lines[i].split(tSplitter);
 

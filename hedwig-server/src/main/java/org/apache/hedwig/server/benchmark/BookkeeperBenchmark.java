@@ -26,65 +26,65 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.log4j.Logger;
 
-public class BookkeeperBenchmark extends AbstractBenchmark{
-    
+public class BookkeeperBenchmark extends AbstractBenchmark {
+
     static final Logger logger = Logger.getLogger(BookkeeperBenchmark.class);
-    
+
     BookKeeper bk;
     LedgerHandle[] lh;
-    
-    public BookkeeperBenchmark(String zkHostPort) throws Exception{
+
+    public BookkeeperBenchmark(String zkHostPort) throws Exception {
         bk = new BookKeeper(zkHostPort);
         int numLedgers = Integer.getInteger("nLedgers",5);
         lh = new LedgerHandle[numLedgers];
         int quorumSize = Integer.getInteger("quorum", 2);
         int ensembleSize = Integer.getInteger("ensemble", 4);
         DigestType digestType = DigestType.valueOf(System.getProperty("digestType", "CRC32"));
-        for (int i=0; i< numLedgers; i++){
+        for (int i=0; i< numLedgers; i++) {
             lh[i] = bk.createLedger(ensembleSize, quorumSize, digestType, "blah".getBytes());
         }
-        
+
     }
-    
-    
+
+
     @Override
     void doOps(final int numOps) throws Exception {
-    	int size = Integer.getInteger("size", 1024);
-    	byte[] msg = new byte[size];
-        
-    	int numOutstanding = Integer.getInteger("nPars",1000);
+        int size = Integer.getInteger("size", 1024);
+        byte[] msg = new byte[size];
+
+        int numOutstanding = Integer.getInteger("nPars",1000);
         final Semaphore outstanding = new Semaphore(numOutstanding);
 
         AddCallback callback = new AddCallback() {
-            	AbstractCallback handler = new AbstractCallback(outstanding, numOps);
-            	
+            AbstractCallback handler = new AbstractCallback(outstanding, numOps);
 
-        	@Override
+
+            @Override
             public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                handler.handle(rc == BKException.Code.OK, ctx);   
-        	}
-        				
-		};
+                handler.handle(rc == BKException.Code.OK, ctx);
+            }
 
-        
-        
+        };
+
+
+
         Random rand = new Random();
-    	
-    	for (int i=0; i<numOps; i++){
+
+        for (int i=0; i<numOps; i++) {
             outstanding.acquire();
             lh[rand.nextInt(lh.length)].asyncAddEntry(msg, callback, System.currentTimeMillis());
         }
-        
-    	
+
+
     }
- 
+
     @Override
-	public void tearDown() throws Exception{
+    public void tearDown() throws Exception {
         bk.halt();
     }
-    
-    
-    public static void main(String[] args) throws Exception{
+
+
+    public static void main(String[] args) throws Exception {
         BookkeeperBenchmark benchmark = new BookkeeperBenchmark(args[0]);
         benchmark.run();
     }

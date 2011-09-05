@@ -46,7 +46,7 @@ public class BookieZKExpireTest extends BaseTestCase {
             File f = File.createTempFile("bookieserver", "test");
             f.delete();
             f.mkdir();
-            
+
             HashSet<Thread> threadset = new HashSet<Thread>();
             int threadCount = Thread.activeCount();
             Thread threads[] = new Thread[threadCount*2];
@@ -56,10 +56,10 @@ public class BookieZKExpireTest extends BaseTestCase {
                     threadset.add(threads[i]);
                 }
             }
-            
+
             server = new BookieServer(initialPort + 1, HOSTPORT, f, new File[] { f });
             server.start();
-            
+
             Thread.sleep(10);
             Thread sendthread = null;
             threadCount = Thread.activeCount();
@@ -67,17 +67,17 @@ public class BookieZKExpireTest extends BaseTestCase {
             threadCount = Thread.enumerate(threads);
             for(int i = 0; i < threadCount; i++) {
                 if (threads[i].getName().indexOf("SendThread") != -1
-                    && !threadset.contains(threads[i])) {
+                        && !threadset.contains(threads[i])) {
                     sendthread = threads[i];
                     break;
                 }
             }
             assertNotNull("Send thread not found", sendthread);
-            
+
             sendthread.suspend();
             Thread.sleep(2*10000);
             sendthread.resume();
-            
+
             // allow watcher thread to run
             Thread.sleep(3000);
             assertFalse("Bookie should have shutdown on losing zk session", server.isBookieRunning());

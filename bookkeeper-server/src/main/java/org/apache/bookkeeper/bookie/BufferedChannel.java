@@ -28,7 +28,7 @@ import java.nio.channels.FileChannel;
 /**
  * Provides a buffering layer in front of a FileChannel.
  */
-public class BufferedChannel 
+public class BufferedChannel
 {
     ByteBuffer writeBuffer;
     ByteBuffer readBuffer;
@@ -43,10 +43,10 @@ public class BufferedChannel
         position = bc.position();
         writeBufferStartPosition = position;
     }
-/*    public void close() throws IOException {
-        bc.close();
-    }
-*/
+    /*    public void close() throws IOException {
+            bc.close();
+        }
+    */
 //    public boolean isOpen() {
 //        return bc.isOpen();
 //    }
@@ -75,22 +75,22 @@ public class BufferedChannel
         position += copied;
         return copied;
     }
-    
+
     public long position() {
         return position;
     }
-    
+
     /**
      * Retrieve the current size of the underlying FileChannel
-     * 
+     *
      * @return FileChannel size measured in bytes
-     * 
+     *
      * @throws IOException if some I/O error occurs reading the FileChannel
      */
     public long size() throws IOException {
         return bc.size();
     }
-    
+
     public void flush(boolean sync) throws IOException {
         synchronized(this) {
             if (writeBuffer == null) {
@@ -116,7 +116,7 @@ public class BufferedChannel
         }
         int rc = buff.remaining();
         while(buff.remaining() > 0) {
-            // check if it is in the write buffer    
+            // check if it is in the write buffer
             if (writeBuffer != null && writeBufferStartPosition <= pos) {
                 long positionInBuffer = pos - writeBufferStartPosition;
                 long bytesToCopy = writeBuffer.position()-positionInBuffer;
@@ -143,7 +143,7 @@ public class BufferedChannel
                 src.limit((int) (positionInBuffer+bytesToCopy));
                 buff.put(src);
                 pos += bytesToCopy;
-            // let's read it
+                // let's read it
             } else {
                 readBufferStartPosition = pos;
                 readBuffer.clear();

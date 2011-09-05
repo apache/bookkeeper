@@ -44,123 +44,123 @@ import org.apache.zookeeper.server.ZooKeeperServer;
 public class LocalBookKeeper {
     protected static final Logger LOG = Logger.getLogger(LocalBookKeeper.class);
     public static final int CONNECTION_TIMEOUT = 30000;
-    
+
     ConsoleAppender ca;
     int numberOfBookies;
-    
+
     public LocalBookKeeper() {
-	ca = new ConsoleAppender(new PatternLayout());
-	LOG.addAppender(ca);
-	LOG.setLevel(Level.INFO);
-	numberOfBookies = 3;
+        ca = new ConsoleAppender(new PatternLayout());
+        LOG.addAppender(ca);
+        LOG.setLevel(Level.INFO);
+        numberOfBookies = 3;
     }
-    
-    public LocalBookKeeper(int numberOfBookies){
-	this();
-	this.numberOfBookies = numberOfBookies;
-	LOG.info("Running " + this.numberOfBookies + " bookie(s).");
+
+    public LocalBookKeeper(int numberOfBookies) {
+        this();
+        this.numberOfBookies = numberOfBookies;
+        LOG.info("Running " + this.numberOfBookies + " bookie(s).");
     }
-    
+
     private final String HOSTPORT = "127.0.0.1:2181";
     NIOServerCnxnFactory serverFactory;
     ZooKeeperServer zks;
     ZooKeeper zkc;
     int ZooKeeperDefaultPort = 2181;
     File ZkTmpDir;
-    
+
     //BookKeeper variables
     File tmpDirs[];
     BookieServer bs[];
     Integer initialPort = 5000;
-    
+
     /**
      * @param args
      */
-	
-    private void runZookeeper(int maxCC) throws IOException{
-	// create a ZooKeeper server(dataDir, dataLogDir, port)
-	LOG.info("Starting ZK server");
-	//ServerStats.registerAsConcrete();
-	//ClientBase.setupTestEnv();
-	ZkTmpDir = File.createTempFile("zookeeper", "test");
+
+    private void runZookeeper(int maxCC) throws IOException {
+        // create a ZooKeeper server(dataDir, dataLogDir, port)
+        LOG.info("Starting ZK server");
+        //ServerStats.registerAsConcrete();
+        //ClientBase.setupTestEnv();
+        ZkTmpDir = File.createTempFile("zookeeper", "test");
         ZkTmpDir.delete();
         ZkTmpDir.mkdir();
-		    
-	try {
-	    zks = new ZooKeeperServer(ZkTmpDir, ZkTmpDir, ZooKeeperDefaultPort);
-	    serverFactory =  new NIOServerCnxnFactory();
-	    serverFactory.configure(new InetSocketAddress(ZooKeeperDefaultPort), maxCC);
-	    serverFactory.startup(zks);
-	} catch (Exception e) {
-	    // TODO Auto-generated catch block
-	    LOG.fatal("Exception while instantiating ZooKeeper", e);
-	} 
+
+        try {
+            zks = new ZooKeeperServer(ZkTmpDir, ZkTmpDir, ZooKeeperDefaultPort);
+            serverFactory =  new NIOServerCnxnFactory();
+            serverFactory.configure(new InetSocketAddress(ZooKeeperDefaultPort), maxCC);
+            serverFactory.startup(zks);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            LOG.fatal("Exception while instantiating ZooKeeper", e);
+        }
 
         boolean b = waitForServerUp(HOSTPORT, CONNECTION_TIMEOUT);
         LOG.debug("ZooKeeper server up: " + b);
     }
-	
-    private void initializeZookeper(){
-	LOG.info("Instantiate ZK Client");
-	//initialize the zk client with values
-	try {
-	    zkc = new ZooKeeper("127.0.0.1", ZooKeeperDefaultPort, new emptyWatcher());
-	    zkc.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-	    zkc.create("/ledgers/available", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            // No need to create an entry for each requested bookie anymore as the 
+
+    private void initializeZookeper() {
+        LOG.info("Instantiate ZK Client");
+        //initialize the zk client with values
+        try {
+            zkc = new ZooKeeper("127.0.0.1", ZooKeeperDefaultPort, new emptyWatcher());
+            zkc.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            zkc.create("/ledgers/available", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            // No need to create an entry for each requested bookie anymore as the
             // BookieServers will register themselves with ZooKeeper on startup.
-	} catch (KeeperException e) {
-	    // TODO Auto-generated catch block
-	    LOG.fatal("Exception while creating znodes", e);
-	} catch (InterruptedException e) {
-	    // TODO Auto-generated catch block
-	    LOG.fatal("Interrupted while creating znodes", e);
-	} catch (IOException e) {
-	    // TODO Auto-generated catch block
-	    LOG.fatal("Exception while creating znodes", e);
-	}		
+        } catch (KeeperException e) {
+            // TODO Auto-generated catch block
+            LOG.fatal("Exception while creating znodes", e);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            LOG.fatal("Interrupted while creating znodes", e);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            LOG.fatal("Exception while creating znodes", e);
+        }
     }
-    private void runBookies() throws IOException{
-	LOG.info("Starting Bookie(s)");
-	// Create Bookie Servers (B1, B2, B3)
-		
-	tmpDirs = new File[numberOfBookies];		
-	bs = new BookieServer[numberOfBookies];
-		
-	for(int i = 0; i < numberOfBookies; i++){
-	    tmpDirs[i] = File.createTempFile("bookie" + Integer.toString(i), "test");
-	    tmpDirs[i].delete();
-	    tmpDirs[i].mkdir();
-			
-	    bs[i] = new BookieServer(initialPort + i, InetAddress.getLocalHost().getHostAddress() + ":"
-				     + ZooKeeperDefaultPort, tmpDirs[i], new File[]{tmpDirs[i]});
-	    bs[i].start();
-	}		
+    private void runBookies() throws IOException {
+        LOG.info("Starting Bookie(s)");
+        // Create Bookie Servers (B1, B2, B3)
+
+        tmpDirs = new File[numberOfBookies];
+        bs = new BookieServer[numberOfBookies];
+
+        for(int i = 0; i < numberOfBookies; i++) {
+            tmpDirs[i] = File.createTempFile("bookie" + Integer.toString(i), "test");
+            tmpDirs[i].delete();
+            tmpDirs[i].mkdir();
+
+            bs[i] = new BookieServer(initialPort + i, InetAddress.getLocalHost().getHostAddress() + ":"
+                                     + ZooKeeperDefaultPort, tmpDirs[i], new File[] {tmpDirs[i]});
+            bs[i].start();
+        }
     }
-	
+
     public static void main(String[] args) throws IOException, InterruptedException {
-	if(args.length < 1){
-	    usage();
-	    System.exit(-1);
-	}
-	LocalBookKeeper lb = new LocalBookKeeper(Integer.parseInt(args[0]));
-	lb.runZookeeper(1000);
-	lb.initializeZookeper();
-	lb.runBookies();
-	while (true){
-	    Thread.sleep(5000);
-	}
+        if(args.length < 1) {
+            usage();
+            System.exit(-1);
+        }
+        LocalBookKeeper lb = new LocalBookKeeper(Integer.parseInt(args[0]));
+        lb.runZookeeper(1000);
+        lb.initializeZookeper();
+        lb.runBookies();
+        while (true) {
+            Thread.sleep(5000);
+        }
     }
 
     private static void usage() {
-	System.err.println("Usage: LocalBookKeeper number-of-bookies");	
+        System.err.println("Usage: LocalBookKeeper number-of-bookies");
     }
 
     /*	User for testing purposes, void */
-    class emptyWatcher implements Watcher{
-	public void process(WatchedEvent event) {}
+    class emptyWatcher implements Watcher {
+        public void process(WatchedEvent event) {}
     }
-	
+
     public static boolean waitForServerUp(String hp, long timeout) {
         long start = System.currentTimeMillis();
         String split[] = hp.split(":");
@@ -177,7 +177,7 @@ public class LocalBookKeeper {
 
                     reader =
                         new BufferedReader(
-					   new InputStreamReader(sock.getInputStream()));
+                        new InputStreamReader(sock.getInputStream()));
                     String line = reader.readLine();
                     if (line != null && line.startsWith("Zookeeper version:")) {
                         LOG.info("Server UP");
@@ -205,5 +205,5 @@ public class LocalBookKeeper {
         }
         return false;
     }
-	
+
 }

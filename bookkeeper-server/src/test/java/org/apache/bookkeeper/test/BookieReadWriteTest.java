@@ -1,7 +1,7 @@
 package org.apache.bookkeeper.test;
 
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -9,16 +9,16 @@ package org.apache.bookkeeper.test;
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
 
 import java.io.File;
@@ -57,11 +57,11 @@ import org.junit.Test;
  * This test tests read and write, synchronous and asynchronous, strings and
  * integers for a BookKeeper client. The test deployment uses a ZooKeeper server
  * and three BookKeepers.
- * 
+ *
  */
 
-public class BookieReadWriteTest extends BaseTestCase 
-implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
+public class BookieReadWriteTest extends BaseTestCase
+    implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
 
     // Depending on the taste, select the amount of logging
     // by decommenting one of the two lines below
@@ -79,10 +79,10 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
     Random rng; // Random Number Generator
     ArrayList<byte[]> entries; // generated entries
     ArrayList<Integer> entriesSize;
-    
+
     DigestType digestType;
-    
-    public BookieReadWriteTest(DigestType digestType){
+
+    public BookieReadWriteTest(DigestType digestType) {
         super(3);
         this.digestType = digestType;
     }
@@ -114,7 +114,7 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
 
     /**
      * test the streaming api for reading and writing
-     * 
+     *
      * @throws {@link IOException}, {@link KeeperException}
      */
     @Test
@@ -259,7 +259,7 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
             ledgerId = lh.getId();
             LOG.info("Ledger ID: " + lh.getId());
             byte bytes[] = {'a','b','c','d','e','f','g','h','i'};
-            
+
             lh.asyncAddEntry(bytes, 0, bytes.length, this, sync);
             lh.asyncAddEntry(bytes, 0, 4, this, sync); // abcd
             lh.asyncAddEntry(bytes, 3, 4, this, sync); // defg
@@ -275,37 +275,37 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
             }
 
             try {
-                lh.asyncAddEntry(bytes, -1, bytes.length, this, sync); 
+                lh.asyncAddEntry(bytes, -1, bytes.length, this, sync);
                 fail("Shouldn't be able to use negative offset");
             } catch (ArrayIndexOutOfBoundsException aiob) {
                 // expected
             }
             try {
-                lh.asyncAddEntry(bytes, 0, bytes.length+1, this, sync); 
+                lh.asyncAddEntry(bytes, 0, bytes.length+1, this, sync);
                 fail("Shouldn't be able to use that much length");
             } catch (ArrayIndexOutOfBoundsException aiob) {
                 // expected
             }
             try {
-                lh.asyncAddEntry(bytes, -1, bytes.length+2, this, sync); 
+                lh.asyncAddEntry(bytes, -1, bytes.length+2, this, sync);
                 fail("Shouldn't be able to use negative offset "
                      + "with that much length");
             } catch (ArrayIndexOutOfBoundsException aiob) {
                 // expected
             }
             try {
-                lh.asyncAddEntry(bytes, 4, -3, this, sync); 
+                lh.asyncAddEntry(bytes, 4, -3, this, sync);
                 fail("Shouldn't be able to use negative length");
             } catch (ArrayIndexOutOfBoundsException aiob) {
                 // expected
             }
             try {
-                lh.asyncAddEntry(bytes, -4, -3, this, sync); 
+                lh.asyncAddEntry(bytes, -4, -3, this, sync);
                 fail("Shouldn't be able to use negative offset & length");
             } catch (ArrayIndexOutOfBoundsException aiob) {
                 // expected
             }
-            
+
 
             LOG.debug("*** WRITE COMPLETE ***");
             // close ledger
@@ -316,7 +316,7 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
             // open ledger
             lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
             LOG.debug("Number of entries written: " + (lh.getLastAddConfirmed() + 1));
-            assertTrue("Verifying number of entries written", 
+            assertTrue("Verifying number of entries written",
                        lh.getLastAddConfirmed() == (numEntries - 1));
 
             // read entries
@@ -336,26 +336,26 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
             while (ls.hasMoreElements()) {
                 byte[] expected = null;
                 byte[] entry = ls.nextElement().getEntry();
-                
+
                 switch (i) {
-                case 0: 
+                case 0:
                     expected = Arrays.copyOfRange(bytes, 0, bytes.length);
                     break;
-                case 1: 
+                case 1:
                     expected = Arrays.copyOfRange(bytes, 0, 4);
                     break;
-                case 2: 
+                case 2:
                     expected = Arrays.copyOfRange(bytes, 3, 3+4);
                     break;
-                case 3: 
+                case 3:
                     expected = Arrays.copyOfRange(bytes, 3, 3+(bytes.length-3));
                     break;
                 }
                 assertNotNull("There are more checks than writes", expected);
-                
+
                 String message = "Checking entry " + i + " for equality ["
-                    + new String(entry, "UTF-8") + "," 
-                    + new String(expected, "UTF-8") + "]";
+                                 + new String(entry, "UTF-8") + ","
+                                 + new String(expected, "UTF-8") + "]";
                 assertTrue(message, Arrays.equals(entry, expected));
 
                 i++;
@@ -377,47 +377,47 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
 
     class ThrottleTestCallback implements ReadCallback {
         int throttle;
-        
-        ThrottleTestCallback(int threshold){
+
+        ThrottleTestCallback(int threshold) {
             this.throttle = threshold;
         }
-        
-        public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx){
-            if(rc != BKException.Code.OK){
+
+        public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
+            if(rc != BKException.Code.OK) {
                 fail("Return code is not OK: " + rc);
             }
-        
+
             ls = seq;
-            synchronized(sync){
+            synchronized(sync) {
                 sync.counter += throttle;
                 sync.notify();
             }
             LOG.info("Current counter: " + sync.counter);
         }
     }
-    
+
     /**
      * Method for obtaining the available permits of a ledger handle
      * using reflection to avoid adding a new public method to the
      * class.
-     *   
+     *
      * @param lh
      * @return
      */
     @SuppressWarnings("unchecked")
     int getAvailablePermits(LedgerHandle lh) throws
-    NoSuchFieldException, IllegalAccessException
-    { 
-        Field field = LedgerHandle.class.getDeclaredField("opCounterSem"); 
-        field.setAccessible(true); 
-        return ((Semaphore)field.get(lh)).availablePermits(); 
+        NoSuchFieldException, IllegalAccessException
+    {
+        Field field = LedgerHandle.class.getDeclaredField("opCounterSem");
+        field.setAccessible(true);
+        return ((Semaphore)field.get(lh)).availablePermits();
     }
-    
+
     @Test
-    public void testReadWriteAsyncSingleClientThrottle() throws 
-    IOException, NoSuchFieldException, IllegalAccessException {
+    public void testReadWriteAsyncSingleClientThrottle() throws
+        IOException, NoSuchFieldException, IllegalAccessException {
         try {
-                       
+
             Integer throttle = 100;
             ThrottleTestCallback tcb = new ThrottleTestCallback(throttle);
             // Create a ledger
@@ -426,8 +426,8 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
             // bkc.initMessageDigest("SHA1");
             ledgerId = lh.getId();
             LOG.info("Ledger ID: " + lh.getId());
-            
-            numEntriesToWrite = 8000; 
+
+            numEntriesToWrite = 8000;
             for (int i = 0; i < (numEntriesToWrite - 2000); i++) {
                 ByteBuffer entry = ByteBuffer.allocate(4);
                 entry.putInt(rng.nextInt(maxInt));
@@ -442,7 +442,7 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
                 int testValue = getAvailablePermits(lh);
                 assertTrue("Difference is incorrect : " + i + ", " + sync.counter + ", " + testValue, testValue <= throttle);
             }
-            
+
 
             for (int i = 0; i < 2000; i++) {
                 ByteBuffer entry = ByteBuffer.allocate(4);
@@ -452,14 +452,14 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
                 entries.add(entry.array());
                 entriesSize.add(entry.array().length);
                 lh.asyncAddEntry(entry.array(), this, sync);
-                
+
                 /*
                  * Check that the difference is no larger than the throttling threshold
                  */
                 int testValue = getAvailablePermits(lh);
                 assertTrue("Difference is incorrect : " + i + ", " + sync.counter + ", " + testValue, testValue <= throttle);
             }
-            
+
             // wait for all entries to be acknowledged
             synchronized (sync) {
                 while (sync.counter < numEntriesToWrite) {
@@ -473,7 +473,7 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
             lh.close();
 
             // *** WRITING PART COMPLETE // READ PART BEGINS ***
-            
+
             // open ledger
             lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
             LOG.debug("Number of entries written: " + (lh.getLastAddConfirmed() + 1));
@@ -486,7 +486,7 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
                 int testValue = getAvailablePermits(lh);
                 assertTrue("Difference is incorrect : " + i + ", " + sync.counter + ", " + testValue, testValue <= throttle);
             }
-            
+
             synchronized (sync) {
                 while (sync.counter < numEntriesToWrite) {
                     LOG.info("Entries counter = " + sync.counter);
@@ -508,7 +508,7 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
             fail("Test failed due to interruption");
         }
     }
-    
+
     @Test
     public void testSyncReadAsyncWriteStringsSingleClient() throws IOException {
         LOG.info("TEST READ WRITE STRINGS MIXED SINGLE CLIENT");
@@ -703,9 +703,9 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
 
             LOG.debug("Number of entries written: " + lh.getLastAddConfirmed() + ", " + lh2.getLastAddConfirmed());
             assertTrue("Verifying number of entries written lh (" + lh.getLastAddConfirmed() + ")", lh
-                    .getLastAddConfirmed() == (numEntriesToWrite - 1));
+                       .getLastAddConfirmed() == (numEntriesToWrite - 1));
             assertTrue("Verifying number of entries written lh2 (" + lh2.getLastAddConfirmed() + ")", lh2
-                    .getLastAddConfirmed() == (numEntriesToWrite - 1));
+                       .getLastAddConfirmed() == (numEntriesToWrite - 1));
 
             ls = lh.readEntries(0, numEntriesToWrite - 1);
             int i = 0;
@@ -764,7 +764,7 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
             }
             long length = numEntriesToWrite * 4;
             assertTrue("Ledger length before closing: " + lh.getLength(), lh.getLength() == length);
-            
+
             LOG.debug("*** WRITE COMPLETE ***");
             // close ledger
             lh.close();
@@ -788,7 +788,7 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
             fail("Test failed due to interruption");
         }
     }
-    
+
     @Test
     public void testShutdown() throws IOException {
         try {
@@ -796,13 +796,13 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
             Long throttle = (((Double) Math.max(1.0, ((double) 10000/numLedgers))).longValue());
             System.setProperty("throttle", throttle.toString());
             LedgerHandle[] lhArray = new LedgerHandle[numLedgers];
-            for(int i = 0; i < numLedgers; i++){
+            for(int i = 0; i < numLedgers; i++) {
                 lhArray[i] = bkc.createLedger(3, 2, BookKeeper.DigestType.CRC32, new byte[] {'a', 'b'});
                 LOG.debug("Ledger handle: " + lhArray[i].getId());
             }
             LOG.info("Done creating ledgers.");
             Random r = new Random();
-            
+
             for (int i = 0; i < numEntriesToWrite; i++) {
                 ByteBuffer entry = ByteBuffer.allocate(4);
                 entry.putInt(rng.nextInt(maxInt));
@@ -810,7 +810,7 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
 
                 entries.add(entry.array());
                 entriesSize.add(entry.array().length);
-                
+
                 int nextLh = r.nextInt(numLedgers);
                 lhArray[nextLh].asyncAddEntry(entry.array(), this, sync);
             }
@@ -822,10 +822,10 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
                     sync.wait();
                 }
             }
-            
+
             LOG.debug("*** WRITE COMPLETE ***");
             // close ledger
-            for(int i = 0; i < lhArray.length; i++){
+            for(int i = 0; i < lhArray.length; i++) {
                 lhArray[i].close();
             }
         } catch (KeeperException e) {
@@ -839,7 +839,7 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
             fail("Test failed due to interruption");
         }
     }
-    
+
     public void testReadFromOpenLedger() throws IOException {
         try {
             // Create a ledger
@@ -855,7 +855,7 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
                 entries.add(entry.array());
                 entriesSize.add(entry.array().length);
                 lh.addEntry(entry.array());
-                if(i == numEntriesToWrite/2){
+                if(i == numEntriesToWrite/2) {
                     LedgerHandle lhOpen = bkc.openLedgerNoRecovery(ledgerId, digestType, ledgerPassword);
                     Enumeration<LedgerEntry> readEntry = lh.readEntries(i, i);
                     assertTrue("Enumeration of ledger entries has no element", readEntry.hasMoreElements() == true);
@@ -864,7 +864,7 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
 
             long last = lh.readLastConfirmed();
             assertTrue("Last confirmed add: " + last, last == (numEntriesToWrite - 2));
-            
+
             LOG.debug("*** WRITE COMPLETE ***");
             // close ledger
             lh.close();
@@ -885,10 +885,10 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
                 lh.addEntry(entry.array());
             }
 
-            
+
             SyncObj sync = new SyncObj();
             lh.asyncReadLastConfirmed(this, sync);
-            
+
             // Wait for for last confirmed
             synchronized (sync) {
                 while (sync.lastConfirmed == -1) {
@@ -896,13 +896,13 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
                     sync.wait();
                 }
             }
-            
+
             assertTrue("Last confirmed add: " + sync.lastConfirmed, sync.lastConfirmed == (numEntriesToWrite - 2));
-            
+
             LOG.debug("*** WRITE COMPLETE ***");
             // close ledger
             lh.close();
-            
+
 
         } catch (KeeperException e) {
             LOG.error("Test failed", e);
@@ -915,8 +915,8 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
             fail("Test failed due to interruption");
         }
     }
-    
-    
+
+
     @Test
     public void testLastConfirmedAdd() throws IOException {
         try {
@@ -937,7 +937,7 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
 
             long last = lh.readLastConfirmed();
             assertTrue("Last confirmed add: " + last, last == (numEntriesToWrite - 2));
-            
+
             LOG.debug("*** WRITE COMPLETE ***");
             // close ledger
             lh.close();
@@ -958,10 +958,10 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
                 lh.addEntry(entry.array());
             }
 
-            
+
             SyncObj sync = new SyncObj();
             lh.asyncReadLastConfirmed(this, sync);
-            
+
             // Wait for for last confirmed
             synchronized (sync) {
                 while (sync.lastConfirmed == -1) {
@@ -969,13 +969,13 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
                     sync.wait();
                 }
             }
-            
+
             assertTrue("Last confirmed add: " + sync.lastConfirmed, sync.lastConfirmed == (numEntriesToWrite - 2));
-            
+
             LOG.debug("*** WRITE COMPLETE ***");
             // close ledger
             lh.close();
-            
+
 
         } catch (KeeperException e) {
             LOG.error("Test failed", e);
@@ -988,13 +988,13 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
             fail("Test failed due to interruption");
         }
     }
-    
-    
+
+
     public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
         if(rc != BKException.Code.OK) fail("Return code is not OK: " + rc);
-        
+
         SyncObj x = (SyncObj) ctx;
-        
+
         synchronized (x) {
             x.counter++;
             x.notify();
@@ -1003,7 +1003,7 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
 
     public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
         if(rc != BKException.Code.OK) fail("Return code is not OK: " + rc);
-        
+
         ls = seq;
 
         synchronized (sync) {
@@ -1014,22 +1014,22 @@ implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
 
     public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
         SyncObj sync = (SyncObj) ctx;
-        
-        synchronized(sync){
+
+        synchronized(sync) {
             sync.lastConfirmed = lastConfirmed;
             sync.notify();
         }
     }
-    
+
     @Before
-    public void setUp() throws Exception{
+    public void setUp() throws Exception {
         super.setUp();
         rng = new Random(System.currentTimeMillis()); // Initialize the Random
-                                                      // Number Generator
+        // Number Generator
         entries = new ArrayList<byte[]>(); // initialize the entries list
         entriesSize = new ArrayList<Integer>();
         sync = new SyncObj(); // initialize the synchronization data structure
-        
+
     }
 
     /* Clean up a directory recursively */

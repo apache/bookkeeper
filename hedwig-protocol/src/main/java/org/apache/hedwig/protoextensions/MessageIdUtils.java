@@ -93,7 +93,7 @@ public class MessageIdUtils {
 
     /**
      * Compares two seq numbers represented as lists of longs.
-     * 
+     *
      * @param l1
      * @param l2
      * @return 1 if the l1 is greater, 0 if they are equal, -1 if l2 is greater
@@ -103,7 +103,7 @@ public class MessageIdUtils {
     public static int compare(List<Long> l1, List<Long> l2) throws UnexpectedConditionException {
         if (l1.size() != l2.size()) {
             throw new UnexpectedConditionException("Seq-ids being compared have different sizes: " + l1.size()
-                    + " and " + l2.size());
+                                                   + " and " + l2.size());
         }
 
         for (int i = 0; i < l1.size(); i++) {

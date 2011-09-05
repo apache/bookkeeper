@@ -44,8 +44,8 @@ public class StubTopicManager extends TrivialOwnAllTopicManager {
     }
 
     @Override
-    protected void realGetOwner(ByteString topic, boolean shouldClaim, 
-            Callback<HedwigSocketAddress> cb, Object ctx) {
+    protected void realGetOwner(ByteString topic, boolean shouldClaim,
+                                Callback<HedwigSocketAddress> cb, Object ctx) {
 
         if (shouldError) {
             cb.operationFailed(ctx, new PubSubException.ServiceDownException("Asked to fail"));

@@ -21,13 +21,13 @@ import org.apache.hedwig.exceptions.PubSubException;
 
 /**
  * This class is used for callbacks for asynchronous operations
- * 
+ *
  */
 public interface Callback<T> {
 
     /**
      * This method is called when the asynchronous operation finishes
-     * 
+     *
      * @param ctx
      * @param resultOfOperation
      */
@@ -36,7 +36,7 @@ public interface Callback<T> {
     /**
      * This method is called when the operation failed due to some reason. The
      * reason for failure is passed in.
-     * 
+     *
      * @param ctx
      *            The context for the callback
      * @param exception

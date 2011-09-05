@@ -1,7 +1,7 @@
 package org.apache.bookkeeper.tools;
 
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -9,16 +9,16 @@ package org.apache.bookkeeper.tools;
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
 
 import java.io.IOException;
@@ -54,7 +54,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
  * Provides Admin Tools to manage the BookKeeper cluster.
- * 
+ *
  */
 public class BookKeeperTools {
 
@@ -93,7 +93,7 @@ public class BookKeeperTools {
      * how to connect to ZooKeeper to retrieve information about the BookKeeper
      * cluster. We need this before we can do any type of admin operations on
      * the BookKeeper cluster.
-     * 
+     *
      * @param zkServers
      *            Comma separated list of hostname:port pairs for the ZooKeeper
      *            servers cluster.
@@ -123,7 +123,7 @@ public class BookKeeperTools {
 
     /**
      * Shutdown method to gracefully release resources that this class uses.
-     * 
+     *
      * @throws InterruptedException
      *             if there is an error shutting down the clients that this
      *             class uses.
@@ -184,7 +184,7 @@ public class BookKeeperTools {
      * placeholder function since there is no way we can get this information
      * easily. In the future, BookKeeper should store this ledger metadata
      * somewhere such that an admin tool can access it.
-     * 
+     *
      * @param ledgerId
      *            LedgerId we are retrieving the digestType for.
      * @return DigestType for the input ledger
@@ -198,7 +198,7 @@ public class BookKeeperTools {
      * placeholder function since there is no way we can get this information
      * easily. In the future, BookKeeper should store this ledger metadata
      * somewhere such that an admin tool can access it.
-     * 
+     *
      * @param ledgerId
      *            LedgerId we are retrieving the password for.
      * @return Password for the input ledger
@@ -226,7 +226,7 @@ public class BookKeeperTools {
      * active set of bookies, perhaps based on load. All ZooKeeper ledger
      * metadata will be updated to point to the new bookie(s) that contain the
      * replicated ledger fragments.
-     * 
+     *
      * @param bookieSrc
      *            Source bookie that had a failure. We want to replicate the
      *            ledger fragments that were stored there.
@@ -268,7 +268,7 @@ public class BookKeeperTools {
      * active set of bookies, perhaps based on load. All ZooKeeper ledger
      * metadata will be updated to point to the new bookie(s) that contain the
      * replicated ledger fragments.
-     * 
+     *
      * @param bookieSrc
      *            Source bookie that had a failure. We want to replicate the
      *            ledger fragments that were stored there.
@@ -282,7 +282,7 @@ public class BookKeeperTools {
      *            Context for the RecoverCallback to call.
      */
     public void asyncRecoverBookieData(final InetSocketAddress bookieSrc, final InetSocketAddress bookieDest,
-            final RecoverCallback cb, final Object context) {
+                                       final RecoverCallback cb, final Object context) {
         // Sync ZK to make sure we're reading the latest bookie/ledger data.
         zk.sync(LEDGERS_PATH, new AsyncCallback.VoidCallback() {
             @Override
@@ -303,7 +303,7 @@ public class BookKeeperTools {
      * a specific destination bookie, then just use that one. Otherwise, we'll
      * randomly pick one of the other available bookies to use for each ledger
      * fragment we are replicating.
-     * 
+     *
      * @param bookieSrc
      *            Source bookie that had a failure. We want to replicate the
      *            ledger fragments that were stored there.
@@ -317,7 +317,7 @@ public class BookKeeperTools {
      *            Context for the RecoverCallback to call.
      */
     private void getAvailableBookies(final InetSocketAddress bookieSrc, final InetSocketAddress bookieDest,
-            final RecoverCallback cb, final Object context) {
+                                     final RecoverCallback cb, final Object context) {
         final List<InetSocketAddress> availableBookies = new LinkedList<InetSocketAddress>();
         if (bookieDest != null) {
             availableBookies.add(bookieDest);
@@ -329,7 +329,7 @@ public class BookKeeperTools {
                 public void processResult(int rc, String path, Object ctx, List<String> children) {
                     if (rc != Code.OK.intValue()) {
                         LOG.error("ZK error getting bookie nodes: ", KeeperException.create(KeeperException.Code
-                                .get(rc), path));
+                                  .get(rc), path));
                         cb.recoverComplete(BKException.Code.ZKException, context);
                         return;
                     }
@@ -354,7 +354,7 @@ public class BookKeeperTools {
      * ledgers. From this, we can open each ledger and look at the metadata to
      * determine if any of the ledger fragments for it were stored at the dead
      * input bookie.
-     * 
+     *
      * @param bookieSrc
      *            Source bookie that had a failure. We want to replicate the
      *            ledger fragments that were stored there.
@@ -373,13 +373,13 @@ public class BookKeeperTools {
      *            server to replicate data to.
      */
     private void getActiveLedgers(final InetSocketAddress bookieSrc, final InetSocketAddress bookieDest,
-            final RecoverCallback cb, final Object context, final List<InetSocketAddress> availableBookies) {
+                                  final RecoverCallback cb, final Object context, final List<InetSocketAddress> availableBookies) {
         zk.getChildren(LEDGERS_PATH, null, new AsyncCallback.ChildrenCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, List<String> children) {
                 if (rc != Code.OK.intValue()) {
                     LOG.error("ZK error getting ledger nodes: ", KeeperException.create(KeeperException.Code.get(rc),
-                            path));
+                              path));
                     cb.recoverComplete(BKException.Code.ZKException, context);
                     return;
                 }
@@ -409,7 +409,7 @@ public class BookKeeperTools {
     /**
      * This method asynchronously recovers a given ledger if any of the ledger
      * entries were stored on the failed bookie.
-     * 
+     *
      * @param bookieSrc
      *            Source bookie that had a failure. We want to replicate the
      *            ledger fragments that were stored there.
@@ -426,7 +426,7 @@ public class BookKeeperTools {
      *            server to replicate data to.
      */
     private void recoverLedger(final InetSocketAddress bookieSrc, final String ledgerNode,
-            final MultiCallback ledgerMcb, final List<InetSocketAddress> availableBookies) {
+                               final MultiCallback ledgerMcb, final List<InetSocketAddress> availableBookies) {
         /*
          * The available node is also stored in this path so ignore that. That
          * node is the path for the set of available Bookie Servers.
@@ -483,7 +483,7 @@ public class BookKeeperTools {
                 Map<Long, Long> ledgerFragmentsRange = new HashMap<Long, Long>();
                 Long curEntryId = null;
                 for (Map.Entry<Long, ArrayList<InetSocketAddress>> entry : lh.getLedgerMetadata().getEnsembles()
-                        .entrySet()) {
+                .entrySet()) {
                     if (curEntryId != null)
                         ledgerFragmentsRange.put(curEntryId, entry.getKey() - 1);
                     curEntryId = entry.getKey();
@@ -529,7 +529,7 @@ public class BookKeeperTools {
                     public void processResult(int rc, String path, Object ctx) {
                         if (rc != Code.OK.intValue()) {
                             LOG.error("BK error replicating ledger fragments for ledger: " + lId, BKException
-                                    .create(rc));
+                                      .create(rc));
                             ledgerMcb.processResult(rc, null, null);
                             return;
                         }
@@ -549,11 +549,11 @@ public class BookKeeperTools {
                             public void processResult(int rc, String path, Object ctx, Stat stat) {
                                 if (rc != Code.OK.intValue()) {
                                     LOG.error("ZK error updating ledger config metadata for ledgerId: " + lh.getId(),
-                                            KeeperException.create(KeeperException.Code.get(rc), path));
+                                              KeeperException.create(KeeperException.Code.get(rc), path));
                                 } else {
                                     LOG.info("Updated ZK for ledgerId: (" + lh.getId()
-                                            + ") to point ledger fragments from old dead bookie: (" + bookieSrc
-                                            + ") to new bookie: (" + newBookie + ")");
+                                             + ") to point ledger fragments from old dead bookie: (" + bookieSrc
+                                             + ") to new bookie: (" + newBookie + ")");
                                 }
                                 /*
                                  * Pass the return code result up the chain with
@@ -588,7 +588,7 @@ public class BookKeeperTools {
      * This method asynchronously recovers a ledger fragment which is a
      * contiguous portion of a ledger that was stored in an ensemble that
      * included the failed bookie.
-     * 
+     *
      * @param bookieSrc
      *            Source bookie that had a failure. We want to replicate the
      *            ledger fragments that were stored there.
@@ -606,15 +606,15 @@ public class BookKeeperTools {
      *            entries that were stored on the failed bookie.
      */
     private void recoverLedgerFragment(final InetSocketAddress bookieSrc, final LedgerHandle lh,
-            final Long startEntryId, final Long endEntryId, final MultiCallback ledgerFragmentMcb,
-            final InetSocketAddress newBookie) throws InterruptedException {
+                                       final Long startEntryId, final Long endEntryId, final MultiCallback ledgerFragmentMcb,
+                                       final InetSocketAddress newBookie) throws InterruptedException {
         if (endEntryId == null) {
             /*
              * Ideally this should never happen if bookie failure is taken care
              * of properly. Nothing we can do though in this case.
              */
             LOG.warn("Dead bookie (" + bookieSrc + ") is still part of the current active ensemble for ledgerId: "
-                    + lh.getId());
+                     + lh.getId());
             ledgerFragmentMcb.processResult(BKException.Code.OK, null, null);
             return;
         }
@@ -655,7 +655,7 @@ public class BookKeeperTools {
      * This method asynchronously recovers a specific ledger entry by reading
      * the values via the BookKeeper Client (which would read it from the other
      * replicas) and then writing it to the chosen new bookie.
-     * 
+     *
      * @param entryId
      *            Ledger Entry ID to recover.
      * @param lh
@@ -668,7 +668,7 @@ public class BookKeeperTools {
      *            entries that were stored on the failed bookie.
      */
     private void recoverLedgerFragmentEntry(final Long entryId, final LedgerHandle lh,
-            final MultiCallback ledgerFragmentEntryMcb, final InetSocketAddress newBookie) throws InterruptedException {
+                                            final MultiCallback ledgerFragmentEntryMcb, final InetSocketAddress newBookie) throws InterruptedException {
         /*
          * Read the ledger entry using the LedgerHandle. This will allow us to
          * read the entry from one of the other replicated bookies other than
@@ -689,32 +689,32 @@ public class BookKeeperTools {
                 LedgerEntry entry = seq.nextElement();
                 byte[] data = entry.getEntry();
                 ChannelBuffer toSend = lh.getDigestManager().computeDigestAndPackageForSending(entryId,
-                        lh.getLastAddConfirmed(), entry.getLength(), data, 0, data.length);
+                                       lh.getLastAddConfirmed(), entry.getLength(), data, 0, data.length);
                 bkc.getBookieClient().addEntry(newBookie, lh.getId(), lh.getLedgerKey(), entryId, toSend,
-                        new WriteCallback() {
-                            @Override
-                            public void writeComplete(int rc, long ledgerId, long entryId, InetSocketAddress addr,
-                                    Object ctx) {
-                                if (rc != Code.OK.intValue()) {
-                                    LOG.error("BK error writing entry for ledgerId: " + ledgerId + ", entryId: "
-                                            + entryId + ", bookie: " + addr, BKException.create(rc));
-                                } else {
-                                    LOG.debug("Success writing ledger entry to a new bookie!");
-                                }
-                                /*
-                                 * Pass the return code result up the chain with
-                                 * the parent callback.
-                                 */
-                                ledgerFragmentEntryMcb.processResult(rc, null, null);
-                            }
-                        }, null);
+                new WriteCallback() {
+                    @Override
+                    public void writeComplete(int rc, long ledgerId, long entryId, InetSocketAddress addr,
+                    Object ctx) {
+                        if (rc != Code.OK.intValue()) {
+                            LOG.error("BK error writing entry for ledgerId: " + ledgerId + ", entryId: "
+                                      + entryId + ", bookie: " + addr, BKException.create(rc));
+                        } else {
+                            LOG.debug("Success writing ledger entry to a new bookie!");
+                        }
+                        /*
+                         * Pass the return code result up the chain with
+                         * the parent callback.
+                         */
+                        ledgerFragmentEntryMcb.processResult(rc, null, null);
+                    }
+                }, null);
             }
         }, null);
     }
 
     /**
      * Main method so we can invoke the bookie recovery via command line.
-     * 
+     *
      * @param args
      *            Arguments to BookKeeperTools. 2 are required and the third is
      *            optional. The first is a comma separated list of ZK server
@@ -746,7 +746,7 @@ public class BookKeeperTools {
             String bookieDestString[] = args[2].split(COLON);
             if (bookieDestString.length < 2) {
                 System.err.println("BookieDest inputted has invalid name format (host:port expected): "
-                        + bookieDestString);
+                                   + bookieDestString);
                 return;
             }
             bookieDest = new InetSocketAddress(bookieDestString[0], Integer.parseInt(bookieDestString[1]));

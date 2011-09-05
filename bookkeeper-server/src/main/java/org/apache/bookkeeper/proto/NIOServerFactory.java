@@ -45,7 +45,7 @@ public class NIOServerFactory extends Thread {
     public interface PacketProcessor {
         public void processPacket(ByteBuffer packet, Cnxn src);
     }
-    
+
     ServerStats stats = new ServerStats();
 
     Logger LOG = Logger.getLogger(NIOServerFactory.class);
@@ -93,7 +93,7 @@ public class NIOServerFactory extends Thread {
     public boolean isRunning() {
         return !ss.socket().isClosed();
     }
-    
+
     @Override
     public void run() {
         while (!ss.socket().isClosed()) {
@@ -129,7 +129,7 @@ public class NIOServerFactory extends Thread {
 
     /**
      * clear all the connections in the selector
-     * 
+     *
      */
     synchronized public void clear() {
         selector.wakeup();
@@ -339,7 +339,7 @@ public class NIOServerFactory extends Thread {
 
         /*
          * (non-Javadoc)
-         * 
+         *
          * @see org.apache.zookeeper.server.ServerCnxnIface#getSessionTimeout()
          */
         public int getSessionTimeout() {
@@ -371,7 +371,7 @@ public class NIOServerFactory extends Thread {
 
         /*
          * (non-Javadoc)
-         * 
+         *
          * @see org.apache.zookeeper.server.ServerCnxnIface#close()
          */
         public void close() {
@@ -503,9 +503,9 @@ public class NIOServerFactory extends Thread {
                 Channel channel = sk.channel();
                 if (channel instanceof SocketChannel) {
                     sb.append(" ").append(((SocketChannel) channel).socket().getRemoteSocketAddress()).append("[")
-                            .append(Integer.toHexString(sk.interestOps())).append("](queued=").append(
-                                    getOutstandingRequests()).append(",recved=").append(getPacketsReceived()).append(
-                                    ",sent=").append(getPacketsSent()).append(")\n");
+                    .append(Integer.toHexString(sk.interestOps())).append("](queued=").append(
+                        getOutstandingRequests()).append(",recved=").append(getPacketsReceived()).append(
+                            ",sent=").append(getPacketsSent()).append(")\n");
                 }
                 return sb.toString();
             }

@@ -24,15 +24,15 @@ package org.apache.bookkeeper.util;
  */
 public class MathUtils {
 
-    public static int signSafeMod(long dividend, int divisor){
+    public static int signSafeMod(long dividend, int divisor) {
         int mod = (int) (dividend % divisor);
-        
-        if (mod < 0){
+
+        if (mod < 0) {
             mod += divisor;
         }
-        
+
         return mod;
-        
+
     }
 
 }

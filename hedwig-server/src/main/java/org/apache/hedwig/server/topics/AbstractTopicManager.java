@@ -60,8 +60,8 @@ public abstract class AbstractTopicManager implements TopicManager {
     private class GetOwnerOp extends TopicOpQueuer.AsynchronousOp<HedwigSocketAddress> {
         public boolean shouldClaim;
 
-        public GetOwnerOp(final ByteString topic, boolean shouldClaim, 
-                final Callback<HedwigSocketAddress> cb, Object ctx) {
+        public GetOwnerOp(final ByteString topic, boolean shouldClaim,
+                          final Callback<HedwigSocketAddress> cb, Object ctx) {
             queuer.super(topic, cb, ctx);
             this.shouldClaim = shouldClaim;
         }
@@ -119,7 +119,7 @@ public abstract class AbstractTopicManager implements TopicManager {
                                 @Override
                                 public void operationFailed(Object ctx, PubSubException exception) {
                                     logger.error("failure that should never happen when periodically releasing topic "
-                                            + topic, exception);
+                                                 + topic, exception);
                                 }
 
                                 @Override
@@ -157,7 +157,7 @@ public abstract class AbstractTopicManager implements TopicManager {
 
     @Override
     public final void getOwner(ByteString topic, boolean shouldClaim,
-            Callback<HedwigSocketAddress> cb, Object ctx) {
+                               Callback<HedwigSocketAddress> cb, Object ctx) {
         queuer.pushAndMaybeRun(topic, new GetOwnerOp(topic, shouldClaim, cb, ctx));
     }
 
@@ -173,10 +173,10 @@ public abstract class AbstractTopicManager implements TopicManager {
      * choosing this hub as the owner, the {@code
      * AbstractTopicManager#notifyListenersAndAddToOwnedTopics(ByteString,
      * OperationCallback, Object)} method must be called.
-     * 
+     *
      */
     protected abstract void realGetOwner(ByteString topic, boolean shouldClaim,
-            Callback<HedwigSocketAddress> cb, Object ctx);
+                                         Callback<HedwigSocketAddress> cb, Object ctx);
 
     /**
      * The method should do any cleanup necessary to indicate to other hubs that

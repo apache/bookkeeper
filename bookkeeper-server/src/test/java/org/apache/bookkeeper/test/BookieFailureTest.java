@@ -1,7 +1,7 @@
 package org.apache.bookkeeper.test;
 
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -9,16 +9,16 @@ package org.apache.bookkeeper.test;
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
 
 import java.io.File;
@@ -48,7 +48,7 @@ import org.junit.Test;
  * This test tests read and write, synchronous and asynchronous, strings and
  * integers for a BookKeeper client. The test deployment uses a ZooKeeper server
  * and three BookKeepers.
- * 
+ *
  */
 
 public class BookieFailureTest extends BaseTestCase implements AddCallback, ReadCallback {
@@ -70,7 +70,7 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
     ArrayList<byte[]> entries; // generated entries
     ArrayList<Integer> entriesSize;
     DigestType digestType;
-    
+
     // Synchronization
     SyncObj sync;
     Set<Object> syncObjs;
@@ -87,12 +87,12 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
 
     public BookieFailureTest(DigestType digestType) {
         super(4);
-        this.digestType = digestType;        
+        this.digestType = digestType;
     }
-    
+
     /**
      * Tests writes and reads when a bookie fails.
-     * 
+     *
      * @throws {@link IOException}
      */
     @Test
@@ -100,7 +100,7 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
         LOG.info("#### BK1 ####");
         auxTestReadWriteAsyncSingleClient(bs.get(0));
     }
-    
+
     @Test
     public void testAsyncBK2() throws IOException {
         LOG.info("#### BK2 ####");
@@ -118,23 +118,23 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
         LOG.info("#### BK4 ####");
         auxTestReadWriteAsyncSingleClient(bs.get(3));
     }
-    
+
     @Test
-    public void testBookieRecovery() throws Exception{
+    public void testBookieRecovery() throws Exception {
         //Shutdown all but 1 bookie
         bs.get(0).shutdown();
         bs.get(1).shutdown();
         bs.get(2).shutdown();
-        
+
         byte[] passwd = "blah".getBytes();
         LedgerHandle lh = bkc.createLedger(1, 1,digestType, passwd);
-        
+
         int numEntries = 100;
-        for (int i=0; i< numEntries; i++){
+        for (int i=0; i< numEntries; i++) {
             byte[] data = (""+i).getBytes();
             lh.addEntry(data);
         }
-        
+
         bs.get(3).shutdown();
         BookieServer server = new BookieServer(initialPort + 3, HOSTPORT, tmpDirs.get(3), new File[] { tmpDirs.get(3)});
         server.start();
@@ -142,15 +142,15 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
 
         assertEquals(numEntries - 1 , lh.getLastAddConfirmed());
         Enumeration<LedgerEntry> entries = lh.readEntries(0, lh.getLastAddConfirmed());
-        
+
         int numScanned = 0;
-        while (entries.hasMoreElements()){
+        while (entries.hasMoreElements()) {
             assertEquals((""+numScanned), new String(entries.nextElement().getEntry()));
             numScanned++;
         }
         assertEquals(numEntries, numScanned);
-        
-        
+
+
     }
 
     void auxTestReadWriteAsyncSingleClient(BookieServer bs) throws IOException {
@@ -168,9 +168,9 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
                 entries.add(entry.array());
                 entriesSize.add(entry.array().length);
                 lh.asyncAddEntry(entry.array(), this, sync);
-                
+
             }
-            
+
             LOG.info("Wrote " + numEntriesToWrite + " and now going to fail bookie.");
             // Bookie fail
             bs.shutdown();
@@ -269,7 +269,7 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
         super.setUp();
 
         rng = new Random(System.currentTimeMillis()); // Initialize the Random
-                                                      // Number Generator
+        // Number Generator
         entries = new ArrayList<byte[]>(); // initialize the entries list
         entriesSize = new ArrayList<Integer>();
         sync = new SyncObj(); // initialize the synchronization data structure

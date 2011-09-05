@@ -28,15 +28,15 @@ import org.apache.hedwig.util.Callback;
 public interface SubscriptionManager {
 
     /**
-     * 
+     *
      * Register a new subscription for the given subscriber for the given topic.
      * This method should reliably persist the existence of the subscription in
      * a way that it can't be lost. If the subscription already exists,
      * depending on the create or attach flag in the subscribe request, an
      * exception may be returned.
-     * 
+     *
      * This is an asynchronous method.
-     * 
+     *
      * @param topic
      * @param subRequest
      * @param consumeSeqId
@@ -48,14 +48,14 @@ public interface SubscriptionManager {
      * @param ctx
      */
     public void serveSubscribeRequest(ByteString topic, SubscribeRequest subRequest, MessageSeqId consumeSeqId,
-            Callback<MessageSeqId> callback, Object ctx);
+                                      Callback<MessageSeqId> callback, Object ctx);
 
     /**
      * Set the consume position of a given subscriber on a given topic. Note
      * that this method need not persist the consume position immediately but
      * can be lazy and persist it later asynchronously, if that is more
      * efficient.
-     * 
+     *
      * @param topic
      * @param subscriberId
      * @param consumeSeqId
@@ -65,7 +65,7 @@ public interface SubscriptionManager {
 
     /**
      * Delete a particular subscription
-     * 
+     *
      * @param topic
      * @param subscriberId
      */
@@ -100,5 +100,5 @@ public interface SubscriptionManager {
      * or removed.
      */
     public void addListener(SubscriptionEventListener listener);
-    
+
 }

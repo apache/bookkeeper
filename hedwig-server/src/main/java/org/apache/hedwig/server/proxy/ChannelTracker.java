@@ -72,7 +72,7 @@ public class ChannelTracker implements ChannelDisconnectListener {
 
         if (topicSub2Channel.containsKey(topicSubscriber)) {
             TopicBusyException pse = new PubSubException.TopicBusyException(
-                    "subscription for this topic, subscriberId is already being served on a different channel");
+                "subscription for this topic, subscriberId is already being served on a different channel");
             throw pse;
         }
 
@@ -107,12 +107,12 @@ public class ChannelTracker implements ChannelDisconnectListener {
 
         if (subscribedChannel == null) {
             throw new PubSubException.ClientNotSubscribedException(
-                    "Can't start delivery since client is not subscribed");
+                "Can't start delivery since client is not subscribed");
         }
 
         if (subscribedChannel != channel) {
             throw new PubSubException.TopicBusyException(
-                    "Can't start delivery since client is subscribed on a different channel");
+                "Can't start delivery since client is subscribed on a different channel");
         }
 
     }

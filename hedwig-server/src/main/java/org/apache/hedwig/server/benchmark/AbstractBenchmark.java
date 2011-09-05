@@ -28,77 +28,77 @@ import org.apache.hedwig.util.ConcurrencyUtils;
 
 public abstract class AbstractBenchmark {
 
-	static final Logger logger = Logger.getLogger(AbstractBenchmark.class);
-    
-	AtomicLong totalLatency = new AtomicLong();
+    static final Logger logger = Logger.getLogger(AbstractBenchmark.class);
+
+    AtomicLong totalLatency = new AtomicLong();
     LinkedBlockingQueue<Boolean> doneSignalQueue = new LinkedBlockingQueue<Boolean>();
 
     abstract void doOps(int numOps) throws Exception;
-	abstract void tearDown() throws Exception;
-    
-	protected class AbstractCallback{
-		AtomicInteger numDone = new AtomicInteger(0);
-		Semaphore outstanding;
-		int numOps;
-		boolean logging;
-		
-		public AbstractCallback(Semaphore outstanding, int numOps) {
-			this.outstanding = outstanding;
-			this.numOps = numOps;
-			logging = Boolean.getBoolean("progress");
-		}
-    	
-		public void handle(boolean success, Object ctx){
+    abstract void tearDown() throws Exception;
+
+    protected class AbstractCallback {
+        AtomicInteger numDone = new AtomicInteger(0);
+        Semaphore outstanding;
+        int numOps;
+        boolean logging;
+
+        public AbstractCallback(Semaphore outstanding, int numOps) {
+            this.outstanding = outstanding;
+            this.numOps = numOps;
+            logging = Boolean.getBoolean("progress");
+        }
+
+        public void handle(boolean success, Object ctx) {
             outstanding.release();
-            
-            if (!success){
+
+            if (!success) {
                 ConcurrencyUtils.put(doneSignalQueue, false);
                 return;
             }
-            
+
             totalLatency.addAndGet(System.currentTimeMillis() - (Long)ctx);
             int numDoneInt = numDone.incrementAndGet();
-            
-            if (logging && numDoneInt % 10000 == 0){
+
+            if (logging && numDoneInt % 10000 == 0) {
                 logger.info("Finished " + numDoneInt + " ops");
             }
-            
-            if (numOps == numDoneInt){
+
+            if (numOps == numDoneInt) {
                 ConcurrencyUtils.put(doneSignalQueue, true);
-            }   
+            }
         }
-	}
-	
-	public void runPhase(String phase, int numOps) throws Exception{
+    }
+
+    public void runPhase(String phase, int numOps) throws Exception {
         long startTime = System.currentTimeMillis();
-        
+
         doOps(numOps);
-        
-        if (!doneSignalQueue.take()){
-        	logger.error("One or more operations failed in phase: " + phase);
-        	throw new RuntimeException();
-        }else{
+
+        if (!doneSignalQueue.take()) {
+            logger.error("One or more operations failed in phase: " + phase);
+            throw new RuntimeException();
+        } else {
             logger.info("Phase: " + phase + " Avg latency : " + totalLatency.get() / numOps + ", tput = " + (numOps * 1000/ (System.currentTimeMillis() - startTime)));
         }
-	}
-	
-	
-	
-	
+    }
 
-	public void run() throws Exception{
-        
+
+
+
+
+    public void run() throws Exception {
+
         int numWarmup = Integer.getInteger("nWarmup", 50000);
-    	runPhase("warmup", numWarmup);
-        
-    	logger.info("Sleeping for 10 seconds");
-    	Thread.sleep(10000);
+        runPhase("warmup", numWarmup);
+
+        logger.info("Sleeping for 10 seconds");
+        Thread.sleep(10000);
         //reset latency
         totalLatency.set(0);
-        
+
         int numOps = Integer.getInteger("nOps", 400000);
         runPhase("real", numOps);
 
         tearDown();
-	}
+    }
 }

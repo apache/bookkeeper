@@ -126,7 +126,7 @@ public class TestZkTopicManager extends ZooKeeperTestBase {
     @Test
     public void testGetOwnerMulti() throws Exception {
         ServerConfiguration cfg1 = new CustomServerConfiguration(cfg.getServerPort() + 1), cfg2 = new CustomServerConfiguration(
-                cfg.getServerPort() + 2);
+            cfg.getServerPort() + 2);
         // TODO change cfg1 cfg2 params
         ZkTopicManager tm1 = new ZkTopicManager(zk, cfg1, scheduler), tm2 = new ZkTopicManager(zk, cfg2, scheduler);
 
@@ -265,7 +265,7 @@ public class TestZkTopicManager extends ZooKeeperTestBase {
         Assert.assertEquals(topic, pair.first());
         Assert.assertTrue(pair.second());
         Assert.assertEquals(PubSubException.ServiceDownException.class, ((CompositeException) addrCbq.take().right())
-                .getExceptions().iterator().next().getClass());
+                            .getExceptions().iterator().next().getClass());
         Assert.assertFalse(tm.topics.contains(topic));
         Thread.sleep(100);
         assertOwnershipNodeDoesntExist();

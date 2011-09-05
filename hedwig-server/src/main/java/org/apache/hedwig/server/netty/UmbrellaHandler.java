@@ -53,7 +53,7 @@ public class UmbrellaHandler extends SimpleChannelHandler {
     private boolean isSSLEnabled = false;
 
     public UmbrellaHandler(ChannelGroup allChannels, Map<OperationType, Handler> handlers,
-            boolean isSSLEnabled) {
+                           boolean isSSLEnabled) {
         this.allChannels = allChannels;
         this.isSSLEnabled = isSSLEnabled;
         this.handlers = handlers;
@@ -148,7 +148,7 @@ public class UmbrellaHandler extends SimpleChannelHandler {
 
         if (handler == null) {
             sendErrorResponseToMalformedRequest(channel, txnId, "Request type " + request.getType().getNumber()
-                    + " unknown");
+                                                + " unknown");
             return;
         }
 

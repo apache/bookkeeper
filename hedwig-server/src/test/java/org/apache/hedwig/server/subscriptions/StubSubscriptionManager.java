@@ -41,7 +41,7 @@ public class StubSubscriptionManager extends InMemorySubscriptionManager {
 
     @Override
     public void serveSubscribeRequest(ByteString topic, SubscribeRequest subRequest, MessageSeqId consumeSeqId,
-            Callback<MessageSeqId> callback, Object ctx) {
+                                      Callback<MessageSeqId> callback, Object ctx) {
         if (fail) {
             callback.operationFailed(ctx, new PubSubException.ServiceDownException("Asked to fail"));
             return;

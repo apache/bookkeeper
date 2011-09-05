@@ -47,17 +47,17 @@ import junit.framework.TestCase;
  */
 public class LedgerCacheTest extends TestCase {
     static Logger LOG = Logger.getLogger(LedgerCacheTest.class);
-    
+
     Bookie bookie;
     File txnDir, ledgerDir;
-    
+
     class TestWriteCallback implements WriteCallback {
-        public void writeComplete(int rc, long ledgerId, long entryId, InetSocketAddress addr, Object ctx){
+        public void writeComplete(int rc, long ledgerId, long entryId, InetSocketAddress addr, Object ctx) {
             LOG.info("Added entry: " + rc + ", " + ledgerId + ", " + entryId + ", " + addr);
         }
     }
-    
-    
+
+
     @Override
     @Before
     public void setUp() throws IOException {
@@ -76,12 +76,12 @@ public class LedgerCacheTest extends TestCase {
         tmpFile = File.createTempFile("book", ".ledger", ledgerDir);
         ledgerDir = new File(tmpFile.getParent(), tmpFile.getName()+".dir");
         ledgerDir.mkdirs();
-        
-        
-        bookie = new Bookie(5000, null, txnDir, new File[] {ledgerDir});   
+
+
+        bookie = new Bookie(5000, null, txnDir, new File[] {ledgerDir});
     }
-    
-    
+
+
     @Override
     @After
     public void tearDown() {
@@ -93,10 +93,10 @@ public class LedgerCacheTest extends TestCase {
             LOG.error("Error tearing down", e);
         }
     }
-    
+
     /**
      * Recursively deletes a directory. This is a duplication of BookieClientTest.
-     * 
+     *
      * @param dir
      */
     private static void recursiveDelete(File dir) {
@@ -108,16 +108,16 @@ public class LedgerCacheTest extends TestCase {
         }
         dir.delete();
     }
-    
+
     @Test
-    public void testAddEntryException() 
-    throws GeneralSecurityException, BookieException {
+    public void testAddEntryException()
+            throws GeneralSecurityException, BookieException {
         /*
          * Populate ledger cache
          */
-        try{
+        try {
             byte[] masterKey = "blah".getBytes();
-            for( int i = 0; i < 30000; i++){
+            for( int i = 0; i < 30000; i++) {
                 MacDigestManager dm = new MacDigestManager(i, masterKey);
                 byte[] data = "0123456789".getBytes();
                 ByteBuffer entry = dm.computeDigestAndPackageForSending(0, 0, 10, data, 0, data.length).toByteBuffer();
@@ -128,5 +128,5 @@ public class LedgerCacheTest extends TestCase {
             fail("Failed to add entry.");
         }
     }
-    
+
 }

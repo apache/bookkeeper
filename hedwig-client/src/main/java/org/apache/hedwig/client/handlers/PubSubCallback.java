@@ -27,7 +27,7 @@ import org.apache.hedwig.util.Callback;
  * This class is used when we are doing synchronous type of operations. All
  * underlying client ops in Hedwig are async so this is just a way to make the
  * async calls synchronous.
- * 
+ *
  */
 public class PubSubCallback implements Callback<Void> {
 

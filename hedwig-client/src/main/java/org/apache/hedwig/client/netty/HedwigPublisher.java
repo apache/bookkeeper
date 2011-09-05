@@ -42,7 +42,7 @@ import org.apache.hedwig.util.Callback;
 
 /**
  * This is the Hedwig Netty specific implementation of the Publisher interface.
- * 
+ *
  */
 public class HedwigPublisher implements Publisher {
 
@@ -143,7 +143,7 @@ public class HedwigPublisher implements Publisher {
     /**
      * This is a helper method to write the actual publish message once the
      * client is connected to the server and a Channel is available.
-     * 
+     *
      * @param pubSubData
      *            Publish call's data wrapper object
      * @param channel
@@ -183,7 +183,7 @@ public class HedwigPublisher implements Publisher {
         // Finally, write the Publish request through the Channel.
         if (logger.isDebugEnabled())
             logger.debug("Writing a Publish request to host: " + HedwigClient.getHostFromChannel(channel)
-                    + " for pubSubData: " + pubSubData);
+                         + " for pubSubData: " + pubSubData);
         ChannelFuture future = channel.write(pubsubRequestBuilder.build());
         future.addListener(new WriteCallback(pubSubData, client));
     }

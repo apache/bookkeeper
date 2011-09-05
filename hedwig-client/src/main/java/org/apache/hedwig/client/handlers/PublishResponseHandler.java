@@ -40,7 +40,7 @@ public class PublishResponseHandler {
     public void handlePublishResponse(PubSubResponse response, PubSubData pubSubData, Channel channel) throws Exception {
         if (logger.isDebugEnabled())
             logger.debug("Handling a Publish response: " + response + ", pubSubData: " + pubSubData + ", host: "
-                    + HedwigClient.getHostFromChannel(channel));
+                         + HedwigClient.getHostFromChannel(channel));
         switch (response.getStatusCode()) {
         case SUCCESS:
             // Response was success so invoke the callback's operationFinished
@@ -51,7 +51,7 @@ public class PublishResponseHandler {
             // Response was service down failure so just invoke the callback's
             // operationFailed method.
             pubSubData.callback.operationFailed(pubSubData.context, new ServiceDownException(
-                    "Server responded with a SERVICE_DOWN status"));
+                                                    "Server responded with a SERVICE_DOWN status"));
             break;
         case NOT_RESPONSIBLE_FOR_TOPIC:
             // Redirect response so we'll need to repost the original Publish
@@ -63,7 +63,7 @@ public class PublishResponseHandler {
             // cases.
             logger.error("Unexpected error response from server for PubSubResponse: " + response);
             pubSubData.callback.operationFailed(pubSubData.context, new ServiceDownException(
-                    "Server responded with a status code of: " + response.getStatusCode()));
+                                                    "Server responded with a status code of: " + response.getStatusCode()));
             break;
         }
     }

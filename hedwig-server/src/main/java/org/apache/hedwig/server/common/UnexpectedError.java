@@ -20,7 +20,7 @@ package org.apache.hedwig.server.common;
 public class UnexpectedError extends Error {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 

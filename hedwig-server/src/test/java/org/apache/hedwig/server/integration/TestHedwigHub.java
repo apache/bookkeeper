@@ -140,7 +140,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         }
 
         public void consume(ByteString topic, ByteString subscriberId, final Message msg, Callback<Void> callback,
-                Object context) {
+                            Object context) {
             if (!consumedMessages.contains(msg.getMsgId())) {
                 // New message to consume. Add it to the Set of consumed
                 // messages.
@@ -154,7 +154,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
                         public void run() {
                             if (logger.isDebugEnabled())
                                 logger.debug("Consuming message that is out of order for msgId: "
-                                        + msg.getMsgId().getLocalComponent());
+                                             + msg.getMsgId().getLocalComponent());
                             ConcurrencyUtils.put(consumeQueue, false);
                         }
                     }).start();
@@ -241,13 +241,13 @@ public class TestHedwigHub extends HedwigHubTestBase {
     }
 
     protected void startDelivery(Subscriber subscriber, ByteString topic, ByteString subscriberId,
-            MessageHandler handler) throws Exception {
+                                 MessageHandler handler) throws Exception {
         subscriber.startDelivery(topic, subscriberId, handler);
         if (mode == Mode.PROXY) {
             WriteRecordingChannel channel = new WriteRecordingChannel();
             PubSubRequest request = PubSubRequest.newBuilder().setProtocolVersion(ProtocolVersion.VERSION_ONE)
-                    .setTopic(topic).setTxnId(0).setType(OperationType.START_DELIVERY).setStartDeliveryRequest(
-                            StartDeliveryRequest.newBuilder().setSubscriberId(subscriberId)).build();
+                                    .setTopic(topic).setTxnId(0).setType(OperationType.START_DELIVERY).setStartDeliveryRequest(
+                                        StartDeliveryRequest.newBuilder().setSubscriberId(subscriberId)).build();
             proxy.getStartDeliveryHandler().handleRequest(request, channel);
             assertEquals(StatusCode.SUCCESS, ((PubSubResponse) channel.getMessagesWritten().get(0)).getStatusCode());
         }
@@ -280,7 +280,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
             logger.debug("Subscribing to topics and starting delivery.");
         for (int i = 0; i < batchSize; i++) {
             subscriber.asyncSubscribe(getTopic(i), localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH,
-                    new TestCallback(queue), null);
+                                      new TestCallback(queue), null);
             assertTrue(queue.take());
         }
 
@@ -327,7 +327,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         ByteString myTopic = getTopic(0);
         // Subscribe to a topic and start delivery on it
         mySubscriber.asyncSubscribe(myTopic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH,
-                new TestCallback(queue), null);
+                                    new TestCallback(queue), null);
         assertTrue(queue.take());
         startDelivery(mySubscriber, myTopic, localSubscriberId, new TestMessageHandler(consumeQueue));
         // Publish some messages
@@ -342,7 +342,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
             boolean success = true;
             try {
                 mySubscriber.consume(myTopic, localSubscriberId, MessageSeqId.newBuilder().setLocalComponent(i + 1)
-                        .build());
+                                     .build());
             } catch (ClientNotSubscribedException e) {
                 success = false;
             }
@@ -364,7 +364,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
     public void testAttachToSubscriptionSuccess() throws Exception {
         ByteString topic = getTopic(0);
         subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
-                null);
+                                  null);
         assertTrue(queue.take());
         // Close the subscription asynchronously
         subscriber.asyncCloseSubscription(topic, localSubscriberId, new TestCallback(queue), null);
@@ -417,7 +417,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
     public void testUnsubscribe() throws Exception {
         ByteString topic = getTopic(0);
         subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
-                null);
+                                  null);
         assertTrue(queue.take());
         startDelivery(topic, localSubscriberId, new TestMessageHandler(consumeQueue));
         publisher.asyncPublish(topic, getMsg(0), new TestCallback(queue), null);
@@ -468,7 +468,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
     public void testCloseSubscription() throws Exception {
         ByteString topic = getTopic(0);
         subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
-                null);
+                                  null);
         assertTrue(queue.take());
         startDelivery(topic, localSubscriberId, new TestMessageHandler(consumeQueue));
         publisher.asyncPublish(topic, getMsg(0), new TestCallback(queue), null);
@@ -500,7 +500,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
     public void testStopDelivery() throws Exception {
         ByteString topic = getTopic(0);
         subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
-                null);
+                                  null);
         assertTrue(queue.take());
         startDelivery(topic, localSubscriberId, new TestMessageHandler(consumeQueue));
         publisher.asyncPublish(topic, getMsg(0), new TestCallback(queue), null);
@@ -541,7 +541,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
     public void testConsumedMessagesInOrder() throws Exception {
         ByteString topic = getTopic(0);
         subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
-                null);
+                                  null);
         assertTrue(queue.take());
         startDelivery(topic, localSubscriberId, new TestMessageHandler(consumeQueue));
         // Now publish some messages and verify that they are delivered in order
@@ -562,7 +562,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
     public void testCreateSubscriptionFailure() throws Exception {
         ByteString topic = getTopic(0);
         subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
-                null);
+                                  null);
         assertTrue(queue.take());
         // Close the subscription asynchronously
         subscriber.asyncCloseSubscription(topic, localSubscriberId, new TestCallback(queue), null);
@@ -612,7 +612,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
     @Test
     public void testAsyncSubscribeWithInvalidSubscriberId() throws Exception {
         subscriber.asyncSubscribe(getTopic(0), hubSubscriberId, CreateOrAttach.CREATE_OR_ATTACH,
-                new TestCallback(queue), null);
+                                  new TestCallback(queue), null);
         assertFalse(queue.take());
     }
 
@@ -659,7 +659,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         HedwigClient hubClient = new HedwigHubClient(new ClientConfiguration());
         HedwigSubscriber hubSubscriber = hubClient.getSubscriber();
         hubSubscriber.asyncSubscribe(getTopic(0), localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(
-                queue), null);
+                                         queue), null);
         assertFalse(queue.take());
         hubClient.stop();
     }

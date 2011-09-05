@@ -32,11 +32,11 @@ import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
  * This class encapsulated the ledger recovery operation. It first does a read
- * with entry-id of -1 (LedgerHandle.LAST_ADD_CONFIRMED) to all bookies. Then 
- * starting from the last confirmed entry (from hints in the ledger entries), 
+ * with entry-id of -1 (LedgerHandle.LAST_ADD_CONFIRMED) to all bookies. Then
+ * starting from the last confirmed entry (from hints in the ledger entries),
  * it reads forward until it is not able to find a particular entry. It closes
  * the ledger at that entry.
- * 
+ *
  */
 class LedgerRecoveryOp implements ReadEntryCallback, ReadCallback, AddCallback {
     static final Logger LOG = Logger.getLogger(LedgerRecoveryOp.class);
@@ -85,7 +85,7 @@ class LedgerRecoveryOp implements ReadEntryCallback, ReadCallback, AddCallback {
                 // Too bad, this bookie didnt give us a valid answer, we
                 // still might be able to recover though so continue
                 LOG.error("Mac mismatch while reading last entry from bookie: "
-                        + lh.metadata.currentEnsemble.get(bookieIndex));
+                          + lh.metadata.currentEnsemble.get(bookieIndex));
             }
         }
 
@@ -128,9 +128,9 @@ class LedgerRecoveryOp implements ReadEntryCallback, ReadCallback, AddCallback {
         // get back to prev value
         lh.lastAddConfirmed--;
         if (rc == BKException.Code.OK) {
-            LedgerEntry entry = seq.nextElement(); 
+            LedgerEntry entry = seq.nextElement();
             byte[] data = entry.getEntry();
-            
+
             /*
              * We will add this entry again to make sure it is written to enough
              * replicas. We subtract the length of the data itself, since it will
@@ -138,7 +138,7 @@ class LedgerRecoveryOp implements ReadEntryCallback, ReadCallback, AddCallback {
              */
             lh.length = entry.getLength() - (long) data.length;
             lh.asyncAddEntry(data, this, null);
-            
+
             return;
         }
 
@@ -156,7 +156,7 @@ class LedgerRecoveryOp implements ReadEntryCallback, ReadCallback, AddCallback {
 
         // otherwise, some other error, we can't handle
         LOG.error("Failure " + BKException.getMessage(rc) + " while reading entry: " + lh.lastAddConfirmed + 1
-                + " ledger: " + lh.ledgerId + " while recovering ledger");
+                  + " ledger: " + lh.ledgerId + " while recovering ledger");
         cb.operationComplete(rc, null);
         return;
     }
@@ -167,7 +167,7 @@ class LedgerRecoveryOp implements ReadEntryCallback, ReadCallback, AddCallback {
             // Give up, we can't recover from this error
 
             LOG.error("Failure " + BKException.getMessage(rc) + " while writing entry: " + lh.lastAddConfirmed + 1
-                    + " ledger: " + lh.ledgerId + " while recovering ledger");
+                      + " ledger: " + lh.ledgerId + " while recovering ledger");
             cb.operationComplete(rc, null);
             return;
         }

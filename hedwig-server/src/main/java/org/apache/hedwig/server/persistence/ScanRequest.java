@@ -30,7 +30,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.Message;
  * its redundant.
  * {@link ScanCallback#scanFailed(Object, org.apache.hedwig.exceptions.PubSubException)}
  * method is called in case of error.
- * 
+ *
  */
 public class ScanRequest {
     ByteString topic;

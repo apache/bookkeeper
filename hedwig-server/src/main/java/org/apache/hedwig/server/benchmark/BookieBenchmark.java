@@ -31,70 +31,70 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
-public class BookieBenchmark extends AbstractBenchmark{
-    
+public class BookieBenchmark extends AbstractBenchmark {
+
     static final Logger logger = Logger.getLogger(BookkeeperBenchmark.class);
-    
+
     BookieClient bkc;
     InetSocketAddress addr;
     ClientSocketChannelFactory channelFactory;
     OrderedSafeExecutor executor = new OrderedSafeExecutor(1);
-    
-    
-    public BookieBenchmark(String bookieHostPort)  throws Exception{
-    	channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
-    	bkc = new BookieClient(channelFactory, executor);
-    	String[] hostPort = bookieHostPort.split(":");
+
+
+    public BookieBenchmark(String bookieHostPort)  throws Exception {
+        channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
+        bkc = new BookieClient(channelFactory, executor);
+        String[] hostPort = bookieHostPort.split(":");
         addr = new InetSocketAddress(hostPort[0], Integer.parseInt(hostPort[1]));
-        
+
     }
-    
-    
+
+
     @Override
-	void doOps(final int numOps) throws Exception{
-    	int numOutstanding = Integer.getInteger("nPars",1000);
+    void doOps(final int numOps) throws Exception {
+        int numOutstanding = Integer.getInteger("nPars",1000);
         final Semaphore outstanding = new Semaphore(numOutstanding);
-        
-        
+
+
         WriteCallback callback = new WriteCallback() {
-        	AbstractCallback handler = new AbstractCallback(outstanding, numOps);
-        	
-        	@Override
+            AbstractCallback handler = new AbstractCallback(outstanding, numOps);
+
+            @Override
             public void writeComplete(int rc, long ledgerId, long entryId,
-            		InetSocketAddress addr, Object ctx) {
-                handler.handle(rc == BKException.Code.OK, ctx);   
+            InetSocketAddress addr, Object ctx) {
+                handler.handle(rc == BKException.Code.OK, ctx);
             }
         };
-        
-    	byte[] passwd = new byte[20];
-    	int size = Integer.getInteger("size", 1024);
+
+        byte[] passwd = new byte[20];
+        int size = Integer.getInteger("size", 1024);
         byte[] data = new byte[size];
-    	
-    	for (int i=0; i<numOps; i++){
-        	outstanding.acquire();
-            
-        	ByteBuffer buffer = ByteBuffer.allocate(44);
-        	long ledgerId = 1000;
-        	buffer.putLong(ledgerId);
+
+        for (int i=0; i<numOps; i++) {
+            outstanding.acquire();
+
+            ByteBuffer buffer = ByteBuffer.allocate(44);
+            long ledgerId = 1000;
+            buffer.putLong(ledgerId);
             buffer.putLong(i);
-        	buffer.putLong(0);
-        	buffer.put(passwd);
+            buffer.putLong(0);
+            buffer.put(passwd);
             buffer.rewind();
             ChannelBuffer toSend = ChannelBuffers.wrappedBuffer(ChannelBuffers.wrappedBuffer(buffer.slice()), ChannelBuffers.wrappedBuffer(data));
-            bkc.addEntry(addr, ledgerId, passwd, i, toSend, callback, System.currentTimeMillis());            
+            bkc.addEntry(addr, ledgerId, passwd, i, toSend, callback, System.currentTimeMillis());
         }
 
     }
-    
+
     @Override
-	public void tearDown(){        
+    public void tearDown() {
         bkc.close();
         channelFactory.releaseExternalResources();
         executor.shutdown();
     }
-    
-    
-    public static void main(String[] args) throws Exception{
+
+
+    public static void main(String[] args) throws Exception {
         BookieBenchmark benchmark = new BookieBenchmark(args[0]);
         benchmark.run();
     }

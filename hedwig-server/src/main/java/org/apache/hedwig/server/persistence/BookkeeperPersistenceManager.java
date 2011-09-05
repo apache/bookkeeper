@@ -60,14 +60,14 @@ import org.apache.hedwig.zookeeper.ZkUtils;
 
 /**
  * This persistence manager uses zookeeper and bookkeeper to store messages.
- * 
+ *
  * Information about topics are stored in zookeeper with a znode named after the
  * topic that contains an ASCII encoded list with records of the following form:
- * 
+ *
  * <pre>
  * startSeqId(included)\tledgerId\n
  * </pre>
- * 
+ *
  */
 
 public class BookkeeperPersistenceManager implements PersistenceManagerWithRangeScan, TopicOwnershipChangeListener {
@@ -99,7 +99,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
         /**
          * stores the last message-seq-id vector that has been pushed to BK for
          * persistence (but not necessarily acked yet by BK)
-         * 
+         *
          */
         MessageSeqId lastSeqIdPushed;
 
@@ -132,7 +132,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
 
     /**
      * Instantiates a BookKeeperPersistence manager.
-     * 
+     *
      * @param bk
      *            a reference to bookkeeper to use.
      * @param zk
@@ -143,7 +143,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
      *            created.
      */
     public BookkeeperPersistenceManager(BookKeeper bk, ZooKeeper zk, TopicManager tm, ServerConfiguration cfg,
-            ScheduledExecutorService executor) {
+                                        ScheduledExecutorService executor) {
         this.bk = bk;
         this.zk = zk;
         this.cfg = cfg;
@@ -180,21 +180,21 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
             if (imlr.handle == null) {
 
                 bk.asyncOpenLedger(imlr.range.getLedgerId(), DigestType.CRC32, passwd,
-                        new SafeAsynBKCallback.OpenCallback() {
-                            @Override
-                            public void safeOpenComplete(int rc, LedgerHandle ledgerHandle, Object ctx) {
-                                if (rc == BKException.Code.OK) {
-                                    imlr.handle = ledgerHandle;
-                                    read(imlr, startSeqId, endSeqId);
-                                    return;
-                                }
-                                BKException bke = BKException.create(rc);
-                                logger.error("Could not open ledger: " + imlr.range.getLedgerId() + " for topic: "
-                                        + topic);
-                                request.callback.scanFailed(ctx, new PubSubException.ServiceDownException(bke));
-                                return;
-                            }
-                        }, request.ctx);
+                new SafeAsynBKCallback.OpenCallback() {
+                    @Override
+                    public void safeOpenComplete(int rc, LedgerHandle ledgerHandle, Object ctx) {
+                        if (rc == BKException.Code.OK) {
+                            imlr.handle = ledgerHandle;
+                            read(imlr, startSeqId, endSeqId);
+                            return;
+                        }
+                        BKException bke = BKException.create(rc);
+                        logger.error("Could not open ledger: " + imlr.range.getLedgerId() + " for topic: "
+                                     + topic);
+                        request.callback.scanFailed(ctx, new PubSubException.ServiceDownException(bke));
+                        return;
+                    }
+                }, request.ctx);
                 return;
             }
 
@@ -203,12 +203,12 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
 
             if (logger.isDebugEnabled()) {
                 logger.debug("Issuing a bk read for ledger: " + imlr.handle.getId() + " from entry-id: "
-                        + (startSeqId - imlr.startSeqIdIncluded) + " to entry-id: "
-                        + (correctedEndSeqId - imlr.startSeqIdIncluded));
+                             + (startSeqId - imlr.startSeqIdIncluded) + " to entry-id: "
+                             + (correctedEndSeqId - imlr.startSeqIdIncluded));
             }
 
             imlr.handle.asyncReadEntries(startSeqId - imlr.startSeqIdIncluded, correctedEndSeqId
-                    - imlr.startSeqIdIncluded, new SafeAsynBKCallback.ReadCallback() {
+            - imlr.startSeqIdIncluded, new SafeAsynBKCallback.ReadCallback() {
 
                 long expectedEntryId = startSeqId - imlr.startSeqIdIncluded;
 
@@ -217,7 +217,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                     if (rc != BKException.Code.OK || !seq.hasMoreElements()) {
                         BKException bke = BKException.create(rc);
                         logger.error("Error while reading from ledger: " + imlr.range.getLedgerId() + " for topic: "
-                                + topic.toStringUtf8(), bke);
+                                     + topic.toStringUtf8(), bke);
                         request.callback.scanFailed(request.ctx, new PubSubException.ServiceDownException(bke));
                         return;
                     }
@@ -230,7 +230,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                             message = Message.parseFrom(entry.getEntryInputStream());
                         } catch (IOException e) {
                             String msg = "Unreadable message found in ledger: " + imlr.range.getLedgerId()
-                                    + " for topic: " + topic.toStringUtf8();
+                                         + " for topic: " + topic.toStringUtf8();
                             logger.error(msg, e);
                             request.callback.scanFailed(ctx, new PubSubException.UnexpectedConditionException(msg));
                             return;
@@ -238,11 +238,11 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
 
                         if (logger.isDebugEnabled()) {
                             logger.debug("Read response from ledger: " + lh.getId() + " entry-id: "
-                                    + entry.getEntryId());
+                                         + entry.getEntryId());
                         }
 
                         assert expectedEntryId == entry.getEntryId() : "expectedEntryId (" + expectedEntryId
-                                + ") != entry.getEntryId() (" + entry.getEntryId() + ")";
+                        + ") != entry.getEntryId() (" + entry.getEntryId() + ")";
                         assert (message.getMsgId().getLocalComponent() - imlr.startSeqIdIncluded) == expectedEntryId;
 
                         expectedEntryId++;
@@ -275,7 +275,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                 // None of the old ledgers have this seq-id, we must use the
                 // current ledger
                 long endSeqId = topicInfo.currentLedgerRange.startSeqIdIncluded
-                        + topicInfo.lastEntryIdAckedInCurrentLedger;
+                                + topicInfo.lastEntryIdAckedInCurrentLedger;
 
                 if (endSeqId < startSeqId) {
                     request.callback.scanFinished(request.ctx, ReasonForFinish.NO_MORE_MESSAGES);
@@ -354,7 +354,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
 
             if (topicInfo == null) {
                 request.callback.operationFailed(request.ctx,
-                        new PubSubException.ServerNotResponsibleForTopicException(""));
+                                                 new PubSubException.ServerNotResponsibleForTopicException(""));
                 return;
             }
 
@@ -371,34 +371,34 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
             Message msgToSerialize = Message.newBuilder(request.message).setMsgId(topicInfo.lastSeqIdPushed).build();
 
             topicInfo.currentLedgerRange.handle.asyncAddEntry(msgToSerialize.toByteArray(),
-                    new SafeAsynBKCallback.AddCallback() {
-                        @Override
-                        public void safeAddComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                            if (rc != BKException.Code.OK) {
-                                BKException bke = BKException.create(rc);
-                                logger.error("Error while persisting entry to ledger: " + lh.getId() + " for topic: "
-                                        + topic.toStringUtf8(), bke);
+            new SafeAsynBKCallback.AddCallback() {
+                @Override
+                public void safeAddComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+                    if (rc != BKException.Code.OK) {
+                        BKException bke = BKException.create(rc);
+                        logger.error("Error while persisting entry to ledger: " + lh.getId() + " for topic: "
+                                     + topic.toStringUtf8(), bke);
 
-                                // To preserve ordering guarantees, we
-                                // should give up the topic and not let
-                                // other operations through
-                                request.callback.operationFailed(ctx, new PubSubException.ServiceDownException(bke));
-                                return;
-                            }
+                        // To preserve ordering guarantees, we
+                        // should give up the topic and not let
+                        // other operations through
+                        request.callback.operationFailed(ctx, new PubSubException.ServiceDownException(bke));
+                        return;
+                    }
 
-                            if (entryId + topicInfo.currentLedgerRange.startSeqIdIncluded != localSeqId) {
-                                String msg = "Expected BK to assign entry-id: "
-                                        + (localSeqId - topicInfo.currentLedgerRange.startSeqIdIncluded)
-                                        + " but it instead assigned entry-id: " + entryId + " topic: "
-                                        + topic.toStringUtf8() + "ledger: " + lh.getId();
-                                logger.fatal(msg);
-                                throw new UnexpectedError(msg);
-                            }
+                    if (entryId + topicInfo.currentLedgerRange.startSeqIdIncluded != localSeqId) {
+                        String msg = "Expected BK to assign entry-id: "
+                                     + (localSeqId - topicInfo.currentLedgerRange.startSeqIdIncluded)
+                                     + " but it instead assigned entry-id: " + entryId + " topic: "
+                                     + topic.toStringUtf8() + "ledger: " + lh.getId();
+                        logger.fatal(msg);
+                        throw new UnexpectedError(msg);
+                    }
 
-                            topicInfo.lastEntryIdAckedInCurrentLedger = entryId;
-                            request.callback.operationFinished(ctx, localSeqId);
-                        }
-                    }, request.ctx);
+                    topicInfo.lastEntryIdAckedInCurrentLedger = entryId;
+                    request.callback.operationFinished(ctx, localSeqId);
+                }
+            }, request.ctx);
 
         }
     }
@@ -448,27 +448,27 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                         // create it
                         final byte[] initialData = LedgerRanges.getDefaultInstance().toByteArray();
                         ZkUtils.createFullPathOptimistic(zk, zNodePath, initialData, ZooDefs.Ids.OPEN_ACL_UNSAFE,
-                                CreateMode.PERSISTENT, new SafeAsyncZKCallback.StringCallback() {
-                                    @Override
-                                    public void safeProcessResult(int rc, String path, Object ctx, String name) {
-                                        if (rc != Code.OK.intValue()) {
-                                            KeeperException ke = ZkUtils.logErrorAndCreateZKException(
-                                                    "Could not create ledgers node for topic: " + topic.toStringUtf8(),
-                                                    path, rc);
-                                            cb.operationFailed(ctx, new PubSubException.ServiceDownException(ke));
-                                            return;
-                                        }
-                                        // initial version is version 1
-                                        // (guessing)
-                                        processTopicLedgersNodeData(initialData, 0);
-                                    }
-                                }, ctx);
+                        CreateMode.PERSISTENT, new SafeAsyncZKCallback.StringCallback() {
+                            @Override
+                            public void safeProcessResult(int rc, String path, Object ctx, String name) {
+                                if (rc != Code.OK.intValue()) {
+                                    KeeperException ke = ZkUtils.logErrorAndCreateZKException(
+                                                             "Could not create ledgers node for topic: " + topic.toStringUtf8(),
+                                                             path, rc);
+                                    cb.operationFailed(ctx, new PubSubException.ServiceDownException(ke));
+                                    return;
+                                }
+                                // initial version is version 1
+                                // (guessing)
+                                processTopicLedgersNodeData(initialData, 0);
+                            }
+                        }, ctx);
                         return;
                     }
 
                     // otherwise some other error
                     KeeperException ke = ZkUtils.logErrorAndCreateZKException("Could not read ledgers node for topic: "
-                            + topic.toStringUtf8(), path, rc);
+                                         + topic.toStringUtf8(), path, rc);
                     cb.operationFailed(ctx, new PubSubException.ServiceDownException(ke));
 
                 }
@@ -506,7 +506,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                 // If it doesn't have a valid end, it must be the last ledger
                 if (lrIterator.hasNext()) {
                     String msg = "Ledger-id: " + range.getLedgerId() + " for topic: " + topic.toStringUtf8()
-                            + " is not the last one but still does not have an end seq-id";
+                                 + " is not the last one but still does not have an end seq-id";
                     logger.fatal(msg);
                     cb.operationFailed(ctx, new PubSubException.UnexpectedConditionException(msg));
                     return;
@@ -525,7 +525,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
         /**
          * Recovers the last ledger, opens a new one, and persists the new
          * information to ZK
-         * 
+         *
          * @param ledgerId
          *            Ledger to be recovered
          */
@@ -539,7 +539,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                     if (rc != BKException.Code.OK) {
                         BKException bke = BKException.create(rc);
                         logger.error("While acquiring topic: " + topic.toStringUtf8()
-                                + ", could not open unrecovered ledger: " + ledgerId, bke);
+                                     + ", could not open unrecovered ledger: " + ledgerId, bke);
                         cb.operationFailed(ctx, new PubSubException.ServiceDownException(bke));
                         return;
                     }
@@ -559,42 +559,42 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                     // out the last seq-id
 
                     ledgerHandle.asyncReadEntries(numEntriesInLastLedger - 1, numEntriesInLastLedger - 1,
-                            new SafeAsynBKCallback.ReadCallback() {
-                                @Override
-                                public void safeReadComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq,
-                                        Object ctx) {
-                                    if (rc != BKException.Code.OK || !seq.hasMoreElements()) {
-                                        BKException bke = BKException.create(rc);
-                                        logger.error("While recovering ledger: " + ledgerId + " for topic: "
-                                                + topic.toStringUtf8() + ", could not read last entry", bke);
-                                        cb.operationFailed(ctx, new PubSubException.ServiceDownException(bke));
-                                        return;
-                                    }
+                    new SafeAsynBKCallback.ReadCallback() {
+                        @Override
+                        public void safeReadComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq,
+                        Object ctx) {
+                            if (rc != BKException.Code.OK || !seq.hasMoreElements()) {
+                                BKException bke = BKException.create(rc);
+                                logger.error("While recovering ledger: " + ledgerId + " for topic: "
+                                             + topic.toStringUtf8() + ", could not read last entry", bke);
+                                cb.operationFailed(ctx, new PubSubException.ServiceDownException(bke));
+                                return;
+                            }
 
-                                    Message lastMessage;
-                                    try {
-                                        lastMessage = Message.parseFrom(seq.nextElement().getEntry());
-                                    } catch (InvalidProtocolBufferException e) {
-                                        String msg = "While recovering ledger: " + ledgerId + " for topic: "
-                                                + topic.toStringUtf8() + ", could not deserialize last message";
-                                        logger.error(msg, e);
-                                        cb.operationFailed(ctx, new PubSubException.UnexpectedConditionException(msg));
-                                        return;
-                                    }
+                            Message lastMessage;
+                            try {
+                                lastMessage = Message.parseFrom(seq.nextElement().getEntry());
+                            } catch (InvalidProtocolBufferException e) {
+                                String msg = "While recovering ledger: " + ledgerId + " for topic: "
+                                             + topic.toStringUtf8() + ", could not deserialize last message";
+                                logger.error(msg, e);
+                                cb.operationFailed(ctx, new PubSubException.UnexpectedConditionException(msg));
+                                return;
+                            }
 
-                                    long prevLedgerEnd = topicInfo.ledgerRanges.isEmpty() ? 0 : topicInfo.ledgerRanges
-                                            .lastKey();
-                                    LedgerRange lr = LedgerRange.newBuilder().setLedgerId(ledgerId)
-                                            .setEndSeqIdIncluded(lastMessage.getMsgId()).build();
-                                    topicInfo.ledgerRanges.put(lr.getEndSeqIdIncluded().getLocalComponent(),
-                                            new InMemoryLedgerRange(lr, prevLedgerEnd + 1, lh));
+                            long prevLedgerEnd = topicInfo.ledgerRanges.isEmpty() ? 0 : topicInfo.ledgerRanges
+                                                 .lastKey();
+                            LedgerRange lr = LedgerRange.newBuilder().setLedgerId(ledgerId)
+                                             .setEndSeqIdIncluded(lastMessage.getMsgId()).build();
+                            topicInfo.ledgerRanges.put(lr.getEndSeqIdIncluded().getLocalComponent(),
+                                                       new InMemoryLedgerRange(lr, prevLedgerEnd + 1, lh));
 
-                                    logger.info("Recovered unclosed ledger: " + ledgerId + " for topic: "
-                                            + topic.toStringUtf8() + " with " + numEntriesInLastLedger + " entries");
+                            logger.info("Recovered unclosed ledger: " + ledgerId + " for topic: "
+                                        + topic.toStringUtf8() + " with " + numEntriesInLastLedger + " entries");
 
-                                    openNewTopicLedger(expectedVersionOfLedgerNode, topicInfo);
-                                }
-                            }, ctx);
+                            openNewTopicLedger(expectedVersionOfLedgerNode, topicInfo);
+                        }
+                    }, ctx);
 
                 }
 
@@ -602,54 +602,54 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
         }
 
         /**
-         * 
+         *
          * @param requiredVersionOfLedgersNode
          *            The version of the ledgers node when we read it, should be
          *            the same when we try to write
          */
         private void openNewTopicLedger(final int expectedVersionOfLedgersNode, final TopicInfo topicInfo) {
             bk.asyncCreateLedger(cfg.getBkEnsembleSize(), cfg.getBkQuorumSize(), DigestType.CRC32, passwd,
-                    new SafeAsynBKCallback.CreateCallback() {
-                        boolean processed = false;
+            new SafeAsynBKCallback.CreateCallback() {
+                boolean processed = false;
 
-                        @Override
-                        public void safeCreateComplete(int rc, LedgerHandle lh, Object ctx) {
-                            if (processed) {
-                                return;
-                            } else {
-                                processed = true;
-                            }
+                @Override
+                public void safeCreateComplete(int rc, LedgerHandle lh, Object ctx) {
+                    if (processed) {
+                        return;
+                    } else {
+                        processed = true;
+                    }
 
-                            if (rc != BKException.Code.OK) {
-                                BKException bke = BKException.create(rc);
-                                logger.error("Could not create new ledger while acquiring topic: "
-                                        + topic.toStringUtf8(), bke);
-                                cb.operationFailed(ctx, new PubSubException.ServiceDownException(bke));
-                                return;
-                            }
+                    if (rc != BKException.Code.OK) {
+                        BKException bke = BKException.create(rc);
+                        logger.error("Could not create new ledger while acquiring topic: "
+                                     + topic.toStringUtf8(), bke);
+                        cb.operationFailed(ctx, new PubSubException.ServiceDownException(bke));
+                        return;
+                    }
 
-                            topicInfo.lastSeqIdPushed = topicInfo.ledgerRanges.isEmpty() ? MessageSeqId.newBuilder()
-                                    .setLocalComponent(0).build() : topicInfo.ledgerRanges.lastEntry().getValue().range
-                                    .getEndSeqIdIncluded();
+                    topicInfo.lastSeqIdPushed = topicInfo.ledgerRanges.isEmpty() ? MessageSeqId.newBuilder()
+                                                .setLocalComponent(0).build() : topicInfo.ledgerRanges.lastEntry().getValue().range
+                                                .getEndSeqIdIncluded();
 
-                            LedgerRange lastRange = LedgerRange.newBuilder().setLedgerId(lh.getId()).build();
-                            topicInfo.currentLedgerRange = new InMemoryLedgerRange(lastRange, topicInfo.lastSeqIdPushed
-                                    .getLocalComponent() + 1, lh);
+                    LedgerRange lastRange = LedgerRange.newBuilder().setLedgerId(lh.getId()).build();
+                    topicInfo.currentLedgerRange = new InMemoryLedgerRange(lastRange, topicInfo.lastSeqIdPushed
+                            .getLocalComponent() + 1, lh);
 
-                            // Persist the fact that we started this new
-                            // ledger to ZK
+                    // Persist the fact that we started this new
+                    // ledger to ZK
 
-                            LedgerRanges.Builder builder = LedgerRanges.newBuilder();
-                            for (InMemoryLedgerRange imlr : topicInfo.ledgerRanges.values()) {
-                                builder.addRanges(imlr.range);
-                            }
-                            builder.addRanges(lastRange);
+                    LedgerRanges.Builder builder = LedgerRanges.newBuilder();
+                    for (InMemoryLedgerRange imlr : topicInfo.ledgerRanges.values()) {
+                        builder.addRanges(imlr.range);
+                    }
+                    builder.addRanges(lastRange);
 
-                            writeTopicLedgersNode(topic, builder.build().toByteArray(), expectedVersionOfLedgersNode,
-                                    topicInfo);
-                            return;
-                        }
-                    }, ctx);
+                    writeTopicLedgersNode(topic, builder.build().toByteArray(), expectedVersionOfLedgersNode,
+                                          topicInfo);
+                    return;
+                }
+            }, ctx);
         }
 
         void writeTopicLedgersNode(final ByteString topic, byte[] data, int expectedVersion, final TopicInfo topicInfo) {
@@ -660,7 +660,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                 public void safeProcessResult(int rc, String path, Object ctx, Stat stat) {
                     if (rc != KeeperException.Code.OK.intValue()) {
                         KeeperException ke = ZkUtils.logErrorAndCreateZKException(
-                                "Could not write ledgers node for topic: " + topic.toStringUtf8(), path, rc);
+                                                 "Could not write ledgers node for topic: " + topic.toStringUtf8(), path, rc);
                         cb.operationFailed(ctx, new PubSubException.ServiceDownException(ke));
                         return;
                     }
@@ -677,7 +677,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
     /**
      * acquire ownership of a topic, doing whatever is needed to be able to
      * perform reads and writes on that topic from here on
-     * 
+     *
      * @param topic
      * @param callback
      * @param ctx
@@ -725,7 +725,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
     /**
      * Release any resources for the topic that might be currently held. There
      * wont be any subsequent reads or writes on that topic coming
-     * 
+     *
      * @param topic
      */
     @Override

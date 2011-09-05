@@ -48,7 +48,7 @@ public class HedwigProxy {
 
     HedwigClient client;
     ServerSocketChannelFactory serverSocketChannelFactory;
-    ChannelGroup allChannels; 
+    ChannelGroup allChannels;
     Map<OperationType, Handler> handlers;
     ProxyConfiguration cfg;
 
@@ -69,7 +69,7 @@ public class HedwigProxy {
             @Override
             public void run() {
                 client = new HedwigClient(cfg);
-                
+
                 serverSocketChannelFactory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(),
                         Executors.newCachedThreadPool());
                 initializeHandlers();
@@ -125,7 +125,7 @@ public class HedwigProxy {
 
     // the following method only exists for unit-testing purposes, should go
     // away once we make start delivery totally server-side
-    public Handler getStartDeliveryHandler(){
+    public Handler getStartDeliveryHandler() {
         return handlers.get(OperationType.START_DELIVERY);
     }
 

@@ -38,7 +38,7 @@ public class LedgerEntryPage {
     private boolean pinned = false;
     private int useCount;
     private int version;
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

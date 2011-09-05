@@ -20,7 +20,7 @@ package org.apache.hedwig.server.persistence;
 public interface PersistenceManagerWithRangeScan extends PersistenceManager {
     /**
      * Executes the given range scan request
-     * 
+     *
      * @param request
      */
     public void scanMessages(RangeScanRequest request);

@@ -108,12 +108,12 @@ public class TestZkSubscriptionManager extends ZooKeeperTestBase {
         sm.serveSubscribeRequest(topic1, subRequest, msgId, msgIdCallback, null);
 
         Assert.assertEquals(ConcurrencyUtils.take(msgIdCallbackQueue).right().getClass(),
-                PubSubException.ServerNotResponsibleForTopicException.class);
+                            PubSubException.ServerNotResponsibleForTopicException.class);
 
         sm.unsubscribe(topic1, sub1, voidCallback, null);
 
         Assert.assertEquals(ConcurrencyUtils.take(BooleanCallbackQueue).right().getClass(),
-                PubSubException.ServerNotResponsibleForTopicException.class);
+                            PubSubException.ServerNotResponsibleForTopicException.class);
 
         //
         // Acquire topic.
@@ -127,31 +127,31 @@ public class TestZkSubscriptionManager extends ZooKeeperTestBase {
 
         sm.unsubscribe(topic1, sub1, voidCallback, null);
         Assert.assertEquals(ConcurrencyUtils.take(BooleanCallbackQueue).right().getClass(),
-                PubSubException.ClientNotSubscribedException.class);
+                            PubSubException.ClientNotSubscribedException.class);
 
         //
         // Try to attach to a subscription.
         subRequest = SubscribeRequest.newBuilder().setCreateOrAttach(CreateOrAttach.ATTACH).setSubscriberId(sub1)
-                .build();
+                     .build();
 
         sm.serveSubscribeRequest(topic1, subRequest, msgId, msgIdCallback, null);
         Assert.assertEquals(ConcurrencyUtils.take(msgIdCallbackQueue).right().getClass(),
-                PubSubException.ClientNotSubscribedException.class);
+                            PubSubException.ClientNotSubscribedException.class);
 
         // now create
         subRequest = SubscribeRequest.newBuilder().setCreateOrAttach(CreateOrAttach.CREATE).setSubscriberId(sub1)
-                .build();
+                     .build();
         sm.serveSubscribeRequest(topic1, subRequest, msgId, msgIdCallback, null);
         Assert.assertEquals(msgId.getLocalComponent(), ConcurrencyUtils.take(msgIdCallbackQueue).left().getLocalComponent());
         Assert.assertEquals(msgId.getLocalComponent(), sm.top2sub2seq.get(topic1).get(sub1).getLastConsumeSeqId()
-                .getLocalComponent());
+                            .getLocalComponent());
 
         // try to create again
         sm.serveSubscribeRequest(topic1, subRequest, msgId, msgIdCallback, null);
         Assert.assertEquals(ConcurrencyUtils.take(msgIdCallbackQueue).right().getClass(),
-                PubSubException.ClientAlreadySubscribedException.class);
+                            PubSubException.ClientAlreadySubscribedException.class);
         Assert.assertEquals(msgId.getLocalComponent(), sm.top2sub2seq.get(topic1).get(sub1).getLastConsumeSeqId()
-                .getLocalComponent());
+                            .getLocalComponent());
 
         sm.lostTopic(topic1);
         sm.acquiredTopic(topic1, voidCallback, null);
@@ -159,27 +159,27 @@ public class TestZkSubscriptionManager extends ZooKeeperTestBase {
 
         // try to attach
         subRequest = SubscribeRequest.newBuilder().setCreateOrAttach(CreateOrAttach.ATTACH).setSubscriberId(sub1)
-                .build();
+                     .build();
         MessageSeqId msgId1 = MessageSeqId.newBuilder().setLocalComponent(msgId.getLocalComponent() + 10).build();
         sm.serveSubscribeRequest(topic1, subRequest, msgId1, msgIdCallback, null);
         Assert.assertEquals(msgId.getLocalComponent(), msgIdCallbackQueue.take().left().getLocalComponent());
         Assert.assertEquals(msgId.getLocalComponent(), sm.top2sub2seq.get(topic1).get(sub1).getLastConsumeSeqId()
-                .getLocalComponent());
+                            .getLocalComponent());
 
         // now manipulate the consume ptrs
         // dont give it enough to have it persist to ZK
         MessageSeqId msgId2 = MessageSeqId.newBuilder().setLocalComponent(
-                msgId.getLocalComponent() + cfg.getConsumeInterval() - 1).build();
+                                  msgId.getLocalComponent() + cfg.getConsumeInterval() - 1).build();
         sm.setConsumeSeqIdForSubscriber(topic1, sub1, msgId2, voidCallback, null);
         Assert.assertTrue(BooleanCallbackQueue.take().left());
         Assert.assertEquals(msgId2.getLocalComponent(), sm.top2sub2seq.get(topic1).get(sub1).getLastConsumeSeqId()
-                .getLocalComponent());
+                            .getLocalComponent());
         Assert.assertEquals(msgId.getLocalComponent(), sm.top2sub2seq.get(topic1).get(sub1).getSubscriptionState().getMsgId()
-                .getLocalComponent());
+                            .getLocalComponent());
 
         // give it more so that it will write to ZK
         MessageSeqId msgId3 = MessageSeqId.newBuilder().setLocalComponent(
-                msgId.getLocalComponent() + cfg.getConsumeInterval() + 1).build();
+                                  msgId.getLocalComponent() + cfg.getConsumeInterval() + 1).build();
         sm.setConsumeSeqIdForSubscriber(topic1, sub1, msgId3, voidCallback, null);
         Assert.assertTrue(BooleanCallbackQueue.take().left());
 
@@ -188,9 +188,9 @@ public class TestZkSubscriptionManager extends ZooKeeperTestBase {
         Assert.assertTrue(BooleanCallbackQueue.take().left());
 
         Assert.assertEquals(msgId3.getLocalComponent(), sm.top2sub2seq.get(topic1).get(sub1).getLastConsumeSeqId()
-                .getLocalComponent());
+                            .getLocalComponent());
         Assert.assertEquals(msgId3.getLocalComponent(), sm.top2sub2seq.get(topic1).get(sub1).getSubscriptionState().getMsgId()
-                .getLocalComponent());
+                            .getLocalComponent());
 
         // finally unsubscribe
         sm.unsubscribe(topic1, sub1, voidCallback, null);

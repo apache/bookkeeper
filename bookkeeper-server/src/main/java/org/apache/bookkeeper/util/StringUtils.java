@@ -24,7 +24,7 @@ import java.net.InetSocketAddress;
 /**
  * Provided utilites for parsing network addresses, ledger-id from node paths
  * etc.
- * 
+ *
  */
 public class StringUtils {
 
@@ -35,7 +35,7 @@ public class StringUtils {
 
     /**
      * Parses address into IP and port.
-     * 
+     *
      * @param addr
      *            String
      */
@@ -63,7 +63,7 @@ public class StringUtils {
 
     /**
      * Formats ledger ID according to ZooKeeper rules
-     * 
+     *
      * @param id
      *            znode id
      */
@@ -73,7 +73,7 @@ public class StringUtils {
 
     /**
      * Get the path for the ledger metadata node
-     * 
+     *
      * @return
      */
     public static String getLedgerNodePath(long ledgerId) {

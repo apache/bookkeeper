@@ -28,7 +28,7 @@ import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.HedwigSocketAddress;
 
-public abstract class BaseHandler implements Handler{
+public abstract class BaseHandler implements Handler {
 
     protected TopicManager topicMgr;
     protected ServerConfiguration cfg;
@@ -41,22 +41,22 @@ public abstract class BaseHandler implements Handler{
 
     public void handleRequest(final PubSubRequest request, final Channel channel) {
         topicMgr.getOwner(request.getTopic(), request.getShouldClaim(),
-                new Callback<HedwigSocketAddress>() {
-                    @Override
-                    public void operationFailed(Object ctx, PubSubException exception) {
-                        channel.write(PubSubResponseUtils.getResponseForException(exception, request.getTxnId()));
-                    }
+        new Callback<HedwigSocketAddress>() {
+            @Override
+            public void operationFailed(Object ctx, PubSubException exception) {
+                channel.write(PubSubResponseUtils.getResponseForException(exception, request.getTxnId()));
+            }
 
-                    @Override
-                    public void operationFinished(Object ctx, HedwigSocketAddress owner) {
-                        if (!owner.equals(cfg.getServerAddr())) {
-                            channel.write(PubSubResponseUtils.getResponseForException(
-                                    new ServerNotResponsibleForTopicException(owner.toString()), request.getTxnId()));
-                            return;
-                        }
-                        handleRequestAtOwner(request, channel);
-                    }
-                }, null);
+            @Override
+            public void operationFinished(Object ctx, HedwigSocketAddress owner) {
+                if (!owner.equals(cfg.getServerAddr())) {
+                    channel.write(PubSubResponseUtils.getResponseForException(
+                                      new ServerNotResponsibleForTopicException(owner.toString()), request.getTxnId()));
+                    return;
+                }
+                handleRequestAtOwner(request, channel);
+            }
+        }, null);
     }
 
     public abstract void handleRequestAtOwner(PubSubRequest request, Channel channel);

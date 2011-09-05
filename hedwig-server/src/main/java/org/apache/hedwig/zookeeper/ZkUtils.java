@@ -50,20 +50,20 @@ public class ZkUtils {
                 // create mode is persistent since ephemeral nodes can't be
                 // parents
                 ZkUtils.createFullPathOptimistic(zk, PathUtils.parent(originalPath), new byte[0], acl,
-                        CreateMode.PERSISTENT, new SafeAsyncZKCallback.StringCallback() {
+                CreateMode.PERSISTENT, new SafeAsyncZKCallback.StringCallback() {
 
-                            @Override
-                            public void safeProcessResult(int rc, String path, Object ctx, String name) {
-                                if (rc == Code.OK.intValue() || rc == Code.NODEEXISTS.intValue()) {
-                                    // succeeded in creating the parent, now
-                                    // create the original path
-                                    ZkUtils.createFullPathOptimistic(zk, originalPath, data, acl, createMode, callback,
-                                            ctx);
-                                } else {
-                                    callback.processResult(rc, path, ctx, name);
-                                }
-                            }
-                        }, ctx);
+                    @Override
+                    public void safeProcessResult(int rc, String path, Object ctx, String name) {
+                        if (rc == Code.OK.intValue() || rc == Code.NODEEXISTS.intValue()) {
+                            // succeeded in creating the parent, now
+                            // create the original path
+                            ZkUtils.createFullPathOptimistic(zk, originalPath, data, acl, createMode, callback,
+                                                             ctx);
+                        } else {
+                            callback.processResult(rc, path, ctx, name);
+                        }
+                    }
+                }, ctx);
             }
         }, ctx);
 

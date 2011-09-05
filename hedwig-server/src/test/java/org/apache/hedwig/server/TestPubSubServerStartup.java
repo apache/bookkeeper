@@ -60,9 +60,9 @@ public class TestPubSubServerStartup {
     }
 
     private void instantiateAndDestroyPubSubServer() throws IOException, InterruptedException, ConfigurationException,
-            MalformedURLException, Exception {
+        MalformedURLException, Exception {
         String hedwigParams = "default_server_host=localhost:4080\n" + "zookeeper_connection_string=localhost:2181\n"
-                + "zk_timeout=2000\n";
+                              + "zk_timeout=2000\n";
 
         File hedwigConfigFile = new File(System.getProperty("java.io.tmpdir") + "/hedwig.cfg");
         writeStringToFile(hedwigParams, hedwigConfigFile);

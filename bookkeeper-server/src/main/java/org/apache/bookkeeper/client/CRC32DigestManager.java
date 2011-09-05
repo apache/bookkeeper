@@ -24,7 +24,7 @@ import java.util.zip.CRC32;
 
 class CRC32DigestManager extends DigestManager {
     CRC32 crc = new CRC32();
-    
+
     public CRC32DigestManager(long ledgerId) {
         super(ledgerId);
     }
@@ -33,7 +33,7 @@ class CRC32DigestManager extends DigestManager {
     int getMacCodeLength() {
         return 8;
     }
-    
+
     @Override
     byte[] getValueAndReset() {
         byte[] value = new byte[8];
@@ -42,7 +42,7 @@ class CRC32DigestManager extends DigestManager {
         crc.reset();
         return value;
     }
-    
+
     @Override
     void update(byte[] data, int offset, int length) {
         crc.update(data, offset, length);

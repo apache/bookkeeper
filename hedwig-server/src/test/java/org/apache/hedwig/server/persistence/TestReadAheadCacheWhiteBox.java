@@ -90,7 +90,7 @@ public class TestReadAheadCacheWhiteBox {
     }
 
     @Test
-    public void testPersistMessage() throws Exception{
+    public void testPersistMessage() throws Exception {
         StubCallback<Long> callback = new StubCallback<Long>();
         PersistRequest request = new PersistRequest(topic, messages.get(0), callback, null);
 
@@ -99,20 +99,20 @@ public class TestReadAheadCacheWhiteBox {
         assertNotNull(ConcurrencyUtils.take(callback.queue).right());
 
         CacheKey key = new CacheKey(topic, cacheBasedPersistenceManager.getCurrentSeqIdForTopic(topic)
-                .getLocalComponent());
+                                    .getLocalComponent());
         assertFalse(cacheBasedPersistenceManager.cache.containsKey(key));
 
         stubPersistenceManager.failure = false;
         persistMessage(messages.get(0));
     }
 
-    private void persistMessage(Message msg) throws Exception{
+    private void persistMessage(Message msg) throws Exception {
         StubCallback<Long> callback = new StubCallback<Long>();
         PersistRequest request = new PersistRequest(topic, msg, callback, null);
         cacheBasedPersistenceManager.persistMessage(request);
         assertNotNull(ConcurrencyUtils.take(callback.queue).left());
         CacheKey key = new CacheKey(topic, cacheBasedPersistenceManager.getCurrentSeqIdForTopic(topic)
-                .getLocalComponent());
+                                    .getLocalComponent());
         CacheValue cacheValue = cacheBasedPersistenceManager.cache.get(key);
         assertNotNull(cacheValue);
         assertFalse(cacheValue.isStub());
@@ -140,7 +140,7 @@ public class TestReadAheadCacheWhiteBox {
     }
 
     @Test
-    public void testDeliveredUntil() throws Exception{
+    public void testDeliveredUntil() throws Exception {
         for (Message m : messages) {
             persistMessage(m);
         }
@@ -184,7 +184,7 @@ public class TestReadAheadCacheWhiteBox {
     }
 
     @Test
-    public void testReadAheadSizeLimit() throws Exception{
+    public void testReadAheadSizeLimit() throws Exception {
         for (Message m : messages) {
             persistMessage(m);
         }
@@ -195,17 +195,17 @@ public class TestReadAheadCacheWhiteBox {
 
         assertTrue(callback.isSuccess());
         assertEquals((int) Math.ceil(myConf.readAheadSize / (MSG_SIZE + 0.0)), cacheBasedPersistenceManager.cache
-                .size());
+                     .size());
 
     }
 
     @Test
-    public void testDoReadAheadStartingFrom() throws Exception{
+    public void testDoReadAheadStartingFrom() throws Exception {
         persistMessage(messages.get(0));
         int readAheadCount = 5;
         int start = 1;
         RangeScanRequest readAheadRequest = cacheBasedPersistenceManager.doReadAheadStartingFrom(topic, start,
-                readAheadCount);
+                                            readAheadCount);
         assertNull(readAheadRequest);
 
         StubScanCallback callback = new StubScanCallback();

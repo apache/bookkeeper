@@ -35,7 +35,7 @@ public class BenchmarkPublisher extends BenchmarkWorker {
     double rate;
 
     public BenchmarkPublisher(int numTopics, int numMessages, int numRegions, int startTopicLabel, int partitionIndex,
-            int numPartitions, Publisher publisher, Subscriber subscriber, int msgSize, int nParallel, int rate) {
+                              int numPartitions, Publisher publisher, Subscriber subscriber, int msgSize, int nParallel, int rate) {
         super(numTopics, numMessages, numRegions, startTopicLabel, partitionIndex, numPartitions);
         this.publisher = publisher;
         this.msgSize = msgSize;
@@ -53,7 +53,7 @@ public class BenchmarkPublisher extends BenchmarkWorker {
         subscriber.startDelivery(topic, subId, new MessageHandler() {
             @Override
             public void consume(ByteString topic, ByteString subscriberId, Message msg, Callback<Void> callback,
-                    Object context) {
+            Object context) {
                 // noop
                 callback.operationFinished(context, null);
             }
@@ -88,7 +88,7 @@ public class BenchmarkPublisher extends BenchmarkWorker {
         // Single warmup for every topic
         int myPublishCount = 0;
         for (int i = 0; i < numTopics; i++) {
-            if (!HedwigBenchmark.amIResponsibleForTopic(startTopicLabel + i, partitionIndex, numPartitions)){
+            if (!HedwigBenchmark.amIResponsibleForTopic(startTopicLabel + i, partitionIndex, numPartitions)) {
                 continue;
             }
             ByteString topic = ByteString.copyFromUtf8(HedwigBenchmark.TOPIC_PREFIX + (startTopicLabel + i));
@@ -123,8 +123,8 @@ public class BenchmarkPublisher extends BenchmarkWorker {
         }
 
         System.out.println("Finished unacked pubs: tput = " + BenchmarkUtils.calcTp(myPublishLimit, startTime)
-                + " ops/s");
-        // Wait till the benchmark test has completed 
+                           + " ops/s");
+        // Wait till the benchmark test has completed
         agg.tpAgg.queue.take();
         System.out.println(agg.summarize(startTime));
         return null;

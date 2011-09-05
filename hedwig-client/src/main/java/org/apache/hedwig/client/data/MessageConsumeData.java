@@ -26,7 +26,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.Message;
  * server for a given TopicSubscriber. This will be used as the Context in the
  * VoidCallback for the MessageHandlers once they've completed consuming the
  * message.
- * 
+ *
  */
 public class MessageConsumeData {
 

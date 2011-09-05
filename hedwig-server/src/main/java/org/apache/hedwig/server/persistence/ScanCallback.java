@@ -30,7 +30,7 @@ public interface ScanCallback {
      * as part of a scan. The message just read is handed to this listener which
      * can then take the desired action on it. The return value from the method
      * indicates whether the scan should continue or not.
-     * 
+     *
      * @param ctx
      *            The context for the callback
      * @param message
@@ -41,8 +41,8 @@ public interface ScanCallback {
 
     /**
      * This method is called when the scan finishes
-     * 
-     * 
+     *
+     *
      * @param ctx
      * @param reason
      */
@@ -52,7 +52,7 @@ public interface ScanCallback {
     /**
      * This method is called when the operation failed due to some reason. The
      * reason for failure is passed in.
-     * 
+     *
      * @param ctx
      *            The context for the callback
      * @param exception

@@ -36,7 +36,7 @@ import org.apache.hedwig.util.Callback;
  * the topic is completed, we need to restart delivery for that topic if that
  * was the case before the original channel got disconnected. This async
  * callback will be the hook for this.
- * 
+ *
  */
 public class SubscribeReconnectCallback implements Callback<Void> {
 
@@ -83,8 +83,8 @@ public class SubscribeReconnectCallback implements Callback<Void> {
                 // This exception should never be thrown here but just in case,
                 // log an error and just keep retrying the subscribe request.
                 logger.error("Subscribe was successful but error starting delivery for topic: "
-                        + origSubData.topic.toStringUtf8() + ", subscriberId: "
-                        + origSubData.subscriberId.toStringUtf8(), e);
+                             + origSubData.topic.toStringUtf8() + ", subscriberId: "
+                             + origSubData.subscriberId.toStringUtf8(), e);
                 retrySubscribeRequest();
             }
         }
@@ -108,6 +108,6 @@ public class SubscribeReconnectCallback implements Callback<Void> {
         // Retry the subscribe request but only after waiting for a
         // preconfigured amount of time.
         client.getClientTimer().schedule(new SubscribeReconnectRetryTask(),
-                client.getConfiguration().getSubscribeReconnectRetryWaitTime());
+                                         client.getConfiguration().getSubscribeReconnectRetryWaitTime());
     }
 }

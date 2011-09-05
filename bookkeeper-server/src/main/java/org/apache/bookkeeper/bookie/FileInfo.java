@@ -105,7 +105,7 @@ class FileInfo {
     synchronized public void use() {
         useCount++;
     }
-    
+
     synchronized public void release() {
         useCount--;
         if (isClosed && useCount == 0) {
@@ -116,7 +116,7 @@ class FileInfo {
             }
         }
     }
-    
+
     /**
      * Getter to a handle on the actual ledger index file.
      * This is used when we are deleting a ledger and want to physically remove the index file.

@@ -37,5 +37,5 @@ public class SubscriptionStateUtils {
     public static boolean isHubSubscriber(ByteString subscriberId) {
         return subscriberId.toStringUtf8().startsWith(HUB_SUBSCRIBER_PREFIX);
     }
-    
+
 }

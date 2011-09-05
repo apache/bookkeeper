@@ -80,7 +80,7 @@ public class TestSubUnsubHandler extends TestCase {
 
         subRequestPrototype = SubscribeRequest.newBuilder().setSubscriberId(subscriberId).build();
         pubSubRequestPrototype = PubSubRequest.newBuilder().setProtocolVersion(ProtocolVersion.VERSION_ONE).setType(
-                OperationType.SUBSCRIBE).setTxnId(0).setTopic(topic).setSubscribeRequest(subRequestPrototype).build();
+                                     OperationType.SUBSCRIBE).setTxnId(0).setTopic(topic).setSubscribeRequest(subRequestPrototype).build();
 
         ush = new UnsubscribeHandler(tm, conf, sm, dm);
     }
@@ -88,9 +88,9 @@ public class TestSubUnsubHandler extends TestCase {
     @Test
     public void testNoSubscribeRequest() {
         sh.handleRequestAtOwner(PubSubRequest.newBuilder(pubSubRequestPrototype).clearSubscribeRequest().build(),
-                channel);
+                                channel);
         assertEquals(StatusCode.MALFORMED_REQUEST, ((PubSubResponse) channel.getMessagesWritten().get(0))
-                .getStatusCode());
+                     .getStatusCode());
     }
 
     @Test
@@ -118,11 +118,11 @@ public class TestSubUnsubHandler extends TestCase {
         // make sure subscription was registered
         StubCallback<MessageSeqId> callback1 = new StubCallback<MessageSeqId>();
         sm.serveSubscribeRequest(topic, SubscribeRequest.newBuilder(subRequestPrototype).setCreateOrAttach(
-                CreateOrAttach.CREATE).build(), MessageSeqId.newBuilder().setLocalComponent(10).build(), callback1,
-                null);
+                                     CreateOrAttach.CREATE).build(), MessageSeqId.newBuilder().setLocalComponent(10).build(), callback1,
+                                 null);
 
         assertEquals(PubSubException.ClientAlreadySubscribedException.class, ConcurrencyUtils.take(callback1.queue)
-                .right().getClass());
+                     .right().getClass());
 
         // trying to subscribe again should throw an error
         WriteRecordingChannel dupChannel = new WriteRecordingChannel();
@@ -140,10 +140,10 @@ public class TestSubUnsubHandler extends TestCase {
         channel = new WriteRecordingChannel();
         ush.handleRequestAtOwner(pubSubRequestPrototype, channel);
         assertEquals(StatusCode.MALFORMED_REQUEST, ((PubSubResponse) channel.getMessagesWritten().get(0))
-                .getStatusCode());
+                     .getStatusCode());
 
         PubSubRequest unsubRequest = PubSubRequest.newBuilder(pubSubRequestPrototype).setUnsubscribeRequest(
-                UnsubscribeRequest.newBuilder().setSubscriberId(subscriberId)).build();
+                                         UnsubscribeRequest.newBuilder().setSubscriberId(subscriberId)).build();
         channel = new WriteRecordingChannel();
         dm.lastRequest.clear();
 
@@ -156,10 +156,10 @@ public class TestSubUnsubHandler extends TestCase {
         // make sure the info is gone from the sm
         StubCallback<MessageSeqId> callback2 = new StubCallback<MessageSeqId>();
         sm.serveSubscribeRequest(topic, SubscribeRequest.newBuilder(subRequestPrototype).setCreateOrAttach(
-                CreateOrAttach.ATTACH).build(), MessageSeqId.newBuilder().setLocalComponent(10).build(), callback2,
-                null);
+                                     CreateOrAttach.ATTACH).build(), MessageSeqId.newBuilder().setLocalComponent(10).build(), callback2,
+                                 null);
         assertEquals(PubSubException.ClientNotSubscribedException.class, ConcurrencyUtils.take(callback2.queue).right()
-                .getClass());
+                     .getClass());
 
     }
 

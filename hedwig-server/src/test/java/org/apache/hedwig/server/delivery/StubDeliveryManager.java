@@ -36,7 +36,7 @@ public class StubDeliveryManager implements DeliveryManager {
         public boolean isHubSubscriber;
 
         public StartServingRequest(ByteString topic, ByteString subscriberId, MessageSeqId seqIdToStartFrom,
-                DeliveryEndPoint endPoint, MessageFilter filter, boolean isHubSubscriber) {
+                                   DeliveryEndPoint endPoint, MessageFilter filter, boolean isHubSubscriber) {
             this.topic = topic;
             this.subscriberId = subscriberId;
             this.seqIdToStartFrom = seqIdToStartFrom;
@@ -51,10 +51,10 @@ public class StubDeliveryManager implements DeliveryManager {
 
     @Override
     public void startServingSubscription(ByteString topic, ByteString subscriberId, MessageSeqId seqIdToStartFrom,
-            DeliveryEndPoint endPoint, MessageFilter filter, boolean isHubSubscriber) {
+                                         DeliveryEndPoint endPoint, MessageFilter filter, boolean isHubSubscriber) {
 
         lastRequest.add(new StartServingRequest(topic, subscriberId, seqIdToStartFrom, endPoint, filter,
-                isHubSubscriber));
+                                                isHubSubscriber));
 
     }
 

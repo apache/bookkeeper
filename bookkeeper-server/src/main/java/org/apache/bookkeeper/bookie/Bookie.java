@@ -1,5 +1,5 @@
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,16 +7,16 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
 
 package org.apache.bookkeeper.bookie;
@@ -57,7 +57,7 @@ import org.apache.zookeeper.ZooDefs.Ids;
 public class Bookie extends Thread {
     HashMap<Long, LedgerDescriptor> ledgers = new HashMap<Long, LedgerDescriptor>();
     static Logger LOG = Logger.getLogger(Bookie.class);
-    
+
     final File journalDirectory;
 
     final File ledgerDirectories[];
@@ -209,7 +209,7 @@ public class Bookie extends Thread {
         LOG.debug("I'm starting a bookie with journal directory " + journalDirectory.getName());
         start();
         syncThread.start();
-        // set running here. 
+        // set running here.
         // since bookie server use running as a flag to tell bookie server whether it is alive
         // if setting it in bookie thread, the watcher might run before bookie thread.
         running = true;
@@ -231,7 +231,7 @@ public class Bookie extends Thread {
         // Create the ZK ephemeral node for this Bookie.
         try {
             zk.create(BOOKIE_REGISTRATION_PATH + InetAddress.getLocalHost().getHostAddress() + ":" + port, new byte[0],
-                    Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+                      Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
         } catch (Exception e) {
             LOG.fatal("ZK exception registering ephemeral Znode for Bookie!", e);
             // Throw an IOException back up. This will cause the Bookie
@@ -240,10 +240,10 @@ public class Bookie extends Thread {
             throw new IOException(e);
         }
     }
-    
-    /** 
+
+    /**
      * Create a new zookeeper client to zk cluster.
-     * 
+     *
      * <p>
      * Bookie Server just used zk client when syncing ledgers for garbage collection.
      * So when zk client is expired, it means this bookie server is not available in
@@ -262,35 +262,35 @@ public class Bookie extends Thread {
      * @return zk client instance
      */
     private ZooKeeper newZookeeper(final String zkServers,
-            final int sessionTimeout) throws IOException {
+                                   final int sessionTimeout) throws IOException {
         ZooKeeper newZk = new ZooKeeper(zkServers, sessionTimeout,
-                new Watcher() {
-                    @Override
-                    public void process(WatchedEvent event) {
-                        // handle session disconnects and expires
-                        if (event.getType()
-                                .equals(Watcher.Event.EventType.None)) {
-                            if (event.getState().equals(
-                                    Watcher.Event.KeeperState.Disconnected)) {
-                                LOG.warn("ZK client has been disconnected to the ZK server!");
-                            } else if (event.getState().equals(
-                                    Watcher.Event.KeeperState.SyncConnected)) {
-                                LOG.info("ZK client has been reconnected to the ZK server!");
-                            }
-                        }
-                        // Check for expired connection.
-                        if (event.getState().equals(
-                                Watcher.Event.KeeperState.Expired)) {
-                            LOG.error("ZK client connection to the ZK server has expired!");
-                            isZkExpired = true;
-                            try {
-                                shutdown();
-                            } catch (InterruptedException ie) {
-                                System.exit(-1);
-                            }
-                        }
+        new Watcher() {
+            @Override
+            public void process(WatchedEvent event) {
+                // handle session disconnects and expires
+                if (event.getType()
+                .equals(Watcher.Event.EventType.None)) {
+                    if (event.getState().equals(
+                    Watcher.Event.KeeperState.Disconnected)) {
+                        LOG.warn("ZK client has been disconnected to the ZK server!");
+                    } else if (event.getState().equals(
+                    Watcher.Event.KeeperState.SyncConnected)) {
+                        LOG.info("ZK client has been reconnected to the ZK server!");
                     }
-                });
+                }
+                // Check for expired connection.
+                if (event.getState().equals(
+                Watcher.Event.KeeperState.Expired)) {
+                    LOG.error("ZK client connection to the ZK server has expired!");
+                    isZkExpired = true;
+                    try {
+                        shutdown();
+                    } catch (InterruptedException ie) {
+                        System.exit(-1);
+                    }
+                }
+            }
+        });
         isZkExpired = false;
         return newZk;
     }
@@ -323,12 +323,12 @@ public class Bookie extends Thread {
                 handle = createHandle(ledgerId, readonly);
                 ledgers.put(ledgerId, handle);
                 handle.setMasterKey(ByteBuffer.wrap(masterKey));
-            } 
+            }
             handle.incRef();
         }
         return handle;
     }
-    
+
     private LedgerDescriptor getHandle(long ledgerId, boolean readonly) throws IOException {
         LedgerDescriptor handle = null;
         synchronized (ledgers) {
@@ -339,20 +339,20 @@ public class Bookie extends Thread {
                 }
                 handle = createHandle(ledgerId, readonly);
                 ledgers.put(ledgerId, handle);
-            } 
+            }
             handle.incRef();
         }
         return handle;
     }
-    
+
 
     private LedgerDescriptor createHandle(long ledgerId, boolean readOnly) throws IOException {
         return new LedgerDescriptor(ledgerId, entryLogger, ledgerCache);
     }
-    
+
     static class QueueEntry {
-        QueueEntry(ByteBuffer entry, long ledgerId, long entryId, 
-                WriteCallback cb, Object ctx) {
+        QueueEntry(ByteBuffer entry, long ledgerId, long entryId,
+                   WriteCallback cb, Object ctx) {
             this.entry = entry.duplicate();
             this.cb = cb;
             this.ctx = ctx;
@@ -361,9 +361,9 @@ public class Bookie extends Thread {
         }
 
         ByteBuffer entry;
-        
+
         long ledgerId;
-        
+
         long entryId;
 
         WriteCallback cb;
@@ -374,9 +374,9 @@ public class Bookie extends Thread {
     LinkedBlockingQueue<QueueEntry> queue = new LinkedBlockingQueue<QueueEntry>();
 
     public final static long preAllocSize = 4*1024*1024;
-    
+
     public final static ByteBuffer zeros = ByteBuffer.allocate(512);
-    
+
     class LastLogMark {
         long txnLogId;
         long txnLogPosition;
@@ -433,13 +433,13 @@ public class Bookie extends Thread {
             }
         }
     }
-    
+
     private LastLogMark lastLogMark = new LastLogMark(0, 0);
-    
-    public boolean isRunning(){
+
+    public boolean isRunning() {
         return running;
     }
-    
+
     @Override
     public void run() {
         LinkedList<QueueEntry> toFlush = new LinkedList<QueueEntry>();
@@ -510,7 +510,7 @@ public class Bookie extends Thread {
 
     public synchronized void shutdown() throws InterruptedException {
         if (!running) { // avoid shutdown twice
-          return;
+            return;
         }
         // Shutdown the ZK client
         if(zk != null) zk.close();
@@ -526,13 +526,13 @@ public class Bookie extends Thread {
         // setting running to false here, so watch thread in bookie server know it only after bookie shut down
         running = false;
     }
-    
+
     public void addEntry(ByteBuffer entry, WriteCallback cb, Object ctx, byte[] masterKey)
             throws IOException, BookieException {
         long ledgerId = entry.getLong();
         LedgerDescriptor handle = getHandle(ledgerId, false, masterKey);
-        
-        if(!handle.cmpMasterKey(ByteBuffer.wrap(masterKey))){
+
+        if(!handle.cmpMasterKey(ByteBuffer.wrap(masterKey))) {
             throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
         }
         try {
@@ -588,7 +588,7 @@ public class Bookie extends Thread {
      * @throws InterruptedException
      */
     public static void main(String[] args) throws IOException,
-            InterruptedException, BookieException {
+        InterruptedException, BookieException {
         Bookie b = new Bookie(5000, null, new File("/tmp"), new File[] { new File("/tmp") });
         CounterCallback cb = new CounterCallback();
         long start = System.currentTimeMillis();

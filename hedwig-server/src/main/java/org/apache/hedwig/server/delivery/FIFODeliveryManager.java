@@ -100,7 +100,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
      * ===================================================================== Our
      * usual enqueue function, stop if error because of unbounded queue, should
      * never happen
-     * 
+     *
      */
     protected void enqueueWithoutFailure(DeliveryManagerRequest request) {
         if (!requestQueue.offer(request)) {
@@ -116,7 +116,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
     /**
      * Tells the delivery manager to start sending out messages for a particular
      * subscription
-     * 
+     *
      * @param topic
      * @param subscriberId
      * @param seqIdToStartFrom
@@ -131,7 +131,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
      *            should send only a subset of the seq-id vector
      */
     public void startServingSubscription(ByteString topic, ByteString subscriberId, MessageSeqId seqIdToStartFrom,
-            DeliveryEndPoint endPoint, MessageFilter filter, boolean isHubSubscriber) {
+                                         DeliveryEndPoint endPoint, MessageFilter filter, boolean isHubSubscriber) {
 
         ActiveSubscriberState subscriber = new ActiveSubscriberState(topic, subscriberId, seqIdToStartFrom
                 .getLocalComponent() - 1, endPoint, filter, isHubSubscriber);
@@ -150,7 +150,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
     /**
      * Due to some error or disconnection or unsusbcribe, someone asks us to
      * stop serving a particular endpoint
-     * 
+     *
      * @param endPoint
      */
     protected void stopServingSubscriber(ActiveSubscriberState subscriber) {
@@ -160,7 +160,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
     /**
      * Instructs the delivery manager to backoff on the given subscriber and
      * retry sending after some time
-     * 
+     *
      * @param subscriber
      */
 
@@ -176,7 +176,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
     /**
      * Instructs the delivery manager to move the delivery pointer for a given
      * subscriber
-     * 
+     *
      * @param subscriber
      * @param prevSeqId
      * @param newSeqId
@@ -238,7 +238,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
     }
 
     protected void removeDeliveryPtr(ActiveSubscriberState subscriber, Long seqId, boolean isAbsenceOk,
-            boolean pruneTopic) {
+                                     boolean pruneTopic) {
 
         assert seqId != null;
 
@@ -279,7 +279,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
         // If this topic doesn't exist in the per-topic delivery pointers table,
         // create an entry for it
         SortedMap<Long, Set<ActiveSubscriberState>> deliveryPtrs = MapMethods.getAfterInsertingIfAbsent(
-                perTopicDeliveryPtrs, subscriber.getTopic(), TreeMapLongToSetSubscriberFactory.instance);
+                    perTopicDeliveryPtrs, subscriber.getTopic(), TreeMapLongToSetSubscriberFactory.instance);
 
         MapMethods.addToMultiMap(deliveryPtrs, seqId, subscriber, HashMapSubscriberFactory.instance);
     }
@@ -299,7 +299,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
         final static int SEQ_ID_SLACK = 10;
 
         public ActiveSubscriberState(ByteString topic, ByteString subscriberId, long lastLocalSeqIdDelivered,
-                DeliveryEndPoint deliveryEndPoint, MessageFilter filter, boolean isHubSubscriber) {
+                                     DeliveryEndPoint deliveryEndPoint, MessageFilter filter, boolean isHubSubscriber) {
             this.topic = topic;
             this.subscriberId = subscriberId;
             this.lastLocalSeqIdDelivered = lastLocalSeqIdDelivered;
@@ -342,7 +342,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
             localSeqIdDeliveringNow = persistenceMgr.getSeqIdAfterSkipping(topic, lastLocalSeqIdDelivered, 1);
 
             ScanRequest scanRequest = new ScanRequest(topic, localSeqIdDeliveringNow,
-            /* callback= */this, /* ctx= */null);
+                    /* callback= */this, /* ctx= */null);
 
             persistenceMgr.scanSingleMessage(scanRequest);
         }
@@ -373,11 +373,11 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
              * done
              */
             PubSubResponse response = PubSubResponse.newBuilder().setProtocolVersion(ProtocolVersion.VERSION_ONE)
-                    .setStatusCode(StatusCode.SUCCESS).setTxnId(0).setMessage(message).build();
+                                      .setStatusCode(StatusCode.SUCCESS).setTxnId(0).setMessage(message).build();
 
             deliveryEndPoint.send(response, //
-                    // callback =
-                    this);
+                                  // callback =
+                                  this);
 
         }
 
@@ -404,8 +404,8 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
             }
 
             lastLocalSeqIdDelivered = localSeqIdDeliveringNow;
-            
-            if (lastLocalSeqIdDelivered > lastSeqIdCommunicatedExternally + SEQ_ID_SLACK){
+
+            if (lastLocalSeqIdDelivered > lastSeqIdCommunicatedExternally + SEQ_ID_SLACK) {
                 // Note: The order of the next 2 statements is important. We should
                 // submit a request to change our delivery pointer only *after* we
                 // have actually changed it. Otherwise, there is a race condition
@@ -417,11 +417,11 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
             }
             deliverNextMessage();
         }
-        
+
         public long getLastSeqIdCommunicatedExternally() {
             return lastSeqIdCommunicatedExternally;
         }
-            
+
 
         public void permanentErrorOnSend() {
             stopServingSubscriber(this);
@@ -446,7 +446,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
 
             lastSeqIdCommunicatedExternally = lastLocalSeqIdDelivered;
             addDeliveryPtr(this, lastLocalSeqIdDelivered);
-            
+
             deliverNextMessage();
         };
 
@@ -480,10 +480,10 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
             // subscriber first changes its delivery pointer and then submits a
             // request to move so this works.
             removeDeliveryPtr(subscriber, subscriber.getLastSeqIdCommunicatedExternally(), //
-                    // isAbsenceOk=
-                    true,
-                    // pruneTopic=
-                    true);
+                              // isAbsenceOk=
+                              true,
+                              // pruneTopic=
+                              true);
         }
 
     }
@@ -507,18 +507,18 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
 
             if (subscriber.isConnected()) {
                 removeDeliveryPtr(subscriber, oldSeqId, //
-                        // isAbsenceOk=
-                        false,
-                        // pruneTopic=
-                        false);
+                                  // isAbsenceOk=
+                                  false,
+                                  // pruneTopic=
+                                  false);
 
                 addDeliveryPtr(subscriber, newSeqId);
             } else {
                 removeDeliveryPtr(subscriber, oldSeqId, //
-                        // isAbsenceOk=
-                        true,
-                        // pruneTopic=
-                        true);
+                                  // isAbsenceOk=
+                                  true,
+                                  // pruneTopic=
+                                  true);
             }
 
             long nowMinSeqId = getMinimumSeqId(topic);
@@ -540,11 +540,11 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
 
     /**
      * ====================================================================
-     * 
+     *
      * Dumb factories for our map methods
      */
     protected static class TreeMapLongToSetSubscriberFactory implements
-            Factory<SortedMap<Long, Set<ActiveSubscriberState>>> {
+        Factory<SortedMap<Long, Set<ActiveSubscriberState>>> {
         static TreeMapLongToSetSubscriberFactory instance = new TreeMapLongToSetSubscriberFactory();
 
         @Override

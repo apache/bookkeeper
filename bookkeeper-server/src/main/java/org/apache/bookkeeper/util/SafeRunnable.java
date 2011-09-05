@@ -20,19 +20,19 @@ package org.apache.bookkeeper.util;
 
 import org.apache.log4j.Logger;
 
-public abstract class SafeRunnable implements Runnable{
+public abstract class SafeRunnable implements Runnable {
 
     static final Logger logger = Logger.getLogger(SafeRunnable.class);
-    
-@Override
+
+    @Override
     public void run() {
-        try{
+        try {
             safeRun();
-        }catch(Throwable t){
+        } catch(Throwable t) {
             logger.fatal("Unexpected throwable caught ", t);
         }
     }
-    
+
     public abstract void safeRun();
-    
+
 }

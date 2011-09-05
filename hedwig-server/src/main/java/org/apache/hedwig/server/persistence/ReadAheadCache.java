@@ -107,7 +107,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
 
     /**
      * Constructor. Starts the cache maintainer thread
-     * 
+     *
      * @param realPersistenceManager
      */
     public ReadAheadCache(PersistenceManagerWithRangeScan realPersistenceManager, ServerConfiguration cfg) {
@@ -139,10 +139,10 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
      * ========================================================================
      * Other methods of {@link PersistenceManager} that the cache needs to take
      * some action on.
-     * 
+     *
      * 1. Persist: We pass it through to the real persistence manager but insert
      * our callback on the return path
-     * 
+     *
      */
     public void persistMessage(PersistRequest request) {
         // make a new PersistRequest object so that we can insert our own
@@ -158,7 +158,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
      * The callback that we insert on the persist request return path. The
      * callback simply forms a {@link PersistResponse} object and inserts it in
      * the request queue to be handled serially by the cache maintainer thread.
-     * 
+     *
      */
     public class PersistCallback implements Callback<Long> {
 
@@ -188,7 +188,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
             // Original message that was persisted didn't have the local seq-id.
             // Lets add that in
             Message messageWithLocalSeqId = MessageIdUtils.mergeLocalSeqId(originalRequest.getMessage(),
-                    resultOfOperation);
+                                            resultOfOperation);
 
             // Now enqueue a request to add this newly persisted message to our
             // cache
@@ -204,20 +204,20 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
      * callbacks. Its just simpler to quit and restart afresh. Moreover, this
      * should not happen as the request queue for the cache maintainer is
      * unbounded.
-     * 
+     *
      * @param obj
      */
     protected void enqueueWithoutFailure(CacheRequest obj) {
         if (!requestQueue.offer(obj)) {
             throw new UnexpectedError("Could not enqueue object: " + obj.toString()
-                    + " to cache request queue. Exiting.");
+                                      + " to cache request queue. Exiting.");
 
         }
     }
 
     /**
      * Another method from {@link PersistenceManager}.
-     * 
+     *
      * 2. Scan - Since the scan needs to touch the cache, we will just enqueue
      * the scan request and let the cache maintainer thread handle it.
      */
@@ -228,7 +228,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
 
     /**
      * Another method from {@link PersistenceManager}.
-     * 
+     *
      * 3. Enqueue the request so that the cache maintainer thread can delete all
      * message-ids older than the one specified
      */
@@ -238,7 +238,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
 
     /**
      * Another method from {@link PersistenceManager}.
-     * 
+     *
      * Since this is a cache layer on top of an underlying persistence manager,
      * we can just call the consumedUntil method there. The messages older than
      * the latest one passed here won't be accessed anymore so they should just
@@ -252,7 +252,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
     /**
      * ========================================================================
      * BEGINNING OF CODE FOR THE CACHE MAINTAINER THREAD
-     * 
+     *
      * 1. The run method. It simply dequeues from the request queue, checks the
      * type of object and acts accordingly
      */
@@ -284,7 +284,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
      * outstanding. In that case, we look a little ahead (by readAheadCount/2)
      * and issue a range read of readAheadCount/2 messages. The idea is to
      * ensure that the next readAheadCount messages are always available.
-     * 
+     *
      * @return the range scan that should be issued for read ahead
      */
     protected RangeScanRequest doReadAhead(ScanRequest request) {
@@ -313,7 +313,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
     /**
      * This method just checks if the provided seq-id already exists in the
      * cache. If not, a range read of the specified amount is issued.
-     * 
+     *
      * @param topic
      * @param seqId
      * @param readAheadCount
@@ -369,7 +369,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
 
         /**
          * Constructor
-         * 
+         *
          * @param installedStubs
          *            The list of stubs that were installed for this range scan
          * @param topic
@@ -407,8 +407,8 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
             // should remove them, so that whoever is waiting on them can retry.
             // This shouldn't be happening usually
             logger.warn("Unexpected message seq-id: " + message.getMsgId().getLocalComponent() + " on topic: "
-                    + topic.toStringUtf8() + " from readahead scan, was expecting seq-id: " + expectedKey.seqId
-                    + " topic: " + expectedKey.topic.toStringUtf8() + " installedStubs: " + installedStubs);
+                        + topic.toStringUtf8() + " from readahead scan, was expecting seq-id: " + expectedKey.seqId
+                        + " topic: " + expectedKey.topic.toStringUtf8() + " installedStubs: " + installedStubs);
             enqueueDeleteOfRemainingStubs(noSuchSeqIdExceptionInstance);
 
         }
@@ -457,14 +457,14 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
      * For adding the message to the cache, we do some bookeeping such as the
      * total size of cache, order in which entries were added etc. If the size
      * of the cache has exceeded our budget, old entries are collected.
-     * 
+     *
      * @param cacheKey
      * @param message
      */
     protected void addMessageToCache(CacheKey cacheKey, Message message, long currTime) {
         if (logger.isDebugEnabled()) {
             logger.debug("Adding msg (topic: " + cacheKey.getTopic().toStringUtf8() + ", seq-id: "
-                    + message.getMsgId().getLocalComponent() + ") to readahead cache");
+                         + message.getMsgId().getLocalComponent() + ") to readahead cache");
         }
 
         CacheValue cacheValue;
@@ -482,7 +482,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
 
         // maintain the index of seq-id
         MapMethods.addToMultiMap(orderedIndexOnSeqId, cacheKey.getTopic(), cacheKey.getSeqId(),
-                TreeSetLongFactory.instance);
+                                 TreeSetLongFactory.instance);
 
         // finally add the message to the cache
         cacheValue.setMessageAndInvokeCallbacks(message, currTime);
@@ -492,7 +492,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
     }
 
     protected void removeMessageFromCache(CacheKey cacheKey, Exception exception, boolean maintainTimeIndex,
-            boolean maintainSeqIdIndex) {
+                                          boolean maintainSeqIdIndex) {
         CacheValue cacheValue = cache.remove(cacheKey);
 
         if (cacheValue == null) {
@@ -537,13 +537,13 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
 
                 if (logger.isDebugEnabled()) {
                     logger.debug("Removing topic: " + cacheKey.getTopic() + "seq-id: " + cacheKey.getSeqId()
-                            + " from cache because its the oldest");
+                                 + " from cache because its the oldest");
                 }
                 removeMessageFromCache(cacheKey, readAheadExceptionInstance, //
-                        // maintainTimeIndex=
-                        false,
-                        // maintainSeqIdIndex=
-                        true);
+                                       // maintainTimeIndex=
+                                       false,
+                                       // maintainSeqIdIndex=
+                                       true);
             }
 
             timeIndexOfAddition.remove(earliestTime);
@@ -554,7 +554,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
     /**
      * ========================================================================
      * The rest is just simple wrapper classes.
-     * 
+     *
      */
 
     protected class ExceptionOnCacheKey implements CacheRequest {
@@ -575,10 +575,10 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
          */
         public void performRequest() {
             removeMessageFromCache(cacheKey, exception,
-            // maintainTimeIndex=
-                    true,
-                    // maintainSeqIdIndex=
-                    true);
+                                   // maintainTimeIndex=
+                                   true,
+                                   // maintainSeqIdIndex=
+                                   true);
         }
 
     }
@@ -638,15 +638,15 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
 
                 if (logger.isDebugEnabled()) {
                     logger.debug("Removing seq-id: " + cacheKey.getSeqId() + " topic: "
-                            + cacheKey.getTopic().toStringUtf8()
-                            + " from cache because every subscriber has moved past");
+                                 + cacheKey.getTopic().toStringUtf8()
+                                 + " from cache because every subscriber has moved past");
                 }
 
                 removeMessageFromCache(cacheKey, readAheadExceptionInstance, //
-                        // maintainTimeIndex=
-                        true,
-                        // maintainSeqIdIndex=
-                        false);
+                                       // maintainTimeIndex=
+                                       true,
+                                       // maintainSeqIdIndex=
+                                       false);
                 iter.remove();
             }
 

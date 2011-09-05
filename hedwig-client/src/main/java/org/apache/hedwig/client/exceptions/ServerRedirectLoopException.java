@@ -19,9 +19,9 @@ package org.apache.hedwig.client.exceptions;
 
 /**
  * This is a Hedwig client side exception when the PubSubRequest is being
- * redirected to a server where the request has already been sent to previously. 
+ * redirected to a server where the request has already been sent to previously.
  * To avoid having a cyclical redirect loop, this condition is checked for
- * and this exception will be thrown to the client caller. 
+ * and this exception will be thrown to the client caller.
  */
 public class ServerRedirectLoopException extends Exception {
 

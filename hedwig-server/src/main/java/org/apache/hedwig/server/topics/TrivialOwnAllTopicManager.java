@@ -33,8 +33,8 @@ public class TrivialOwnAllTopicManager extends AbstractTopicManager {
     }
 
     @Override
-    protected void realGetOwner(ByteString topic, boolean shouldClaim, 
-            Callback<HedwigSocketAddress> cb, Object ctx) {
+    protected void realGetOwner(ByteString topic, boolean shouldClaim,
+                                Callback<HedwigSocketAddress> cb, Object ctx) {
 
         if (topics.contains(topic)) {
             cb.operationFinished(ctx, addr);

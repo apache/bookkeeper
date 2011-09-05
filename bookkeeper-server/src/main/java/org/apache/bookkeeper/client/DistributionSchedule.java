@@ -20,7 +20,7 @@ package org.apache.bookkeeper.client;
 
 /**
  * This interface determins how entries are distributed among bookies.
- * 
+ *
  * Every entry gets replicated to some number of replicas. The first replica for
  * an entry is given a replicaIndex of 0, and so on. To distribute write load,
  * not all entries go to all bookies. Given an entry-id and replica index, an
@@ -31,7 +31,7 @@ package org.apache.bookkeeper.client;
 public interface DistributionSchedule {
 
     /**
-     * 
+     *
      * @param entryId
      * @param replicaIndex
      * @return index of bookie that should get this replica
@@ -39,7 +39,7 @@ public interface DistributionSchedule {
     public int getBookieIndex(long entryId, int replicaIndex);
 
     /**
-     * 
+     *
      * @param entryId
      * @param bookieIndex
      * @return -1 if the given bookie index is not a replica for the given
@@ -53,7 +53,7 @@ public interface DistributionSchedule {
      * sequence and an implementation of this interface should accumulate
      * history about which bookie indexes we have heard from. Once this method
      * has returned true, it wont be called again on the same instance
-     * 
+     *
      * @param bookieIndexHeardFrom
      * @return true if its ok to proceed with recovery
      */

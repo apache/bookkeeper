@@ -23,7 +23,7 @@ import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
-public class SafeAsyncZKCallback extends SafeAsyncCallback{
+public class SafeAsyncZKCallback extends SafeAsyncCallback {
     public static abstract class StatCallback implements AsyncCallback.StatCallback {
         public void processResult(int rc, String path, Object ctx, Stat stat) {
             try {

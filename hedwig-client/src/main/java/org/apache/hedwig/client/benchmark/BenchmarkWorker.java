@@ -26,7 +26,7 @@ public class BenchmarkWorker {
     int numPartitions;
 
     public BenchmarkWorker(int numTopics, int numMessages, int numRegions,
-            int startTopicLabel, int partitionIndex, int numPartitions) {
+                           int startTopicLabel, int partitionIndex, int numPartitions) {
         this.numTopics = numTopics;
         this.numMessages = numMessages;
         this.numRegions = numRegions;

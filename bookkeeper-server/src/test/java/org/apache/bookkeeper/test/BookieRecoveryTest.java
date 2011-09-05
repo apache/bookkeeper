@@ -1,7 +1,7 @@
 package org.apache.bookkeeper.test;
 
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -9,16 +9,16 @@ package org.apache.bookkeeper.test;
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
 
 import java.io.File;
@@ -109,7 +109,7 @@ public class BookieRecoveryTest extends BaseTestCase {
 
     /**
      * Helper method to create a number of ledgers
-     * 
+     *
      * @param numLedgers
      *            Number of ledgers to create
      * @return List of LedgerHandles for each of the ledgers created
@@ -119,7 +119,7 @@ public class BookieRecoveryTest extends BaseTestCase {
      * @throws InterruptedException
      */
     private List<LedgerHandle> createLedgers(int numLedgers) throws BKException, KeeperException, IOException,
-            InterruptedException {
+        InterruptedException {
         List<LedgerHandle> lhs = new ArrayList<LedgerHandle>();
         for (int i = 0; i < numLedgers; i++) {
             lhs.add(bkc.createLedger(digestType, System.getProperty("passwd").getBytes()));
@@ -129,7 +129,7 @@ public class BookieRecoveryTest extends BaseTestCase {
 
     /**
      * Helper method to write dummy ledger entries to all of the ledgers passed.
-     * 
+     *
      * @param numEntries
      *            Number of ledger entries to write for each ledger
      * @param startEntryId
@@ -140,7 +140,7 @@ public class BookieRecoveryTest extends BaseTestCase {
      * @throws InterruptedException
      */
     private void writeEntriestoLedgers(int numEntries, long startEntryId, List<LedgerHandle> lhs) throws BKException,
-            InterruptedException {
+        InterruptedException {
         for (LedgerHandle lh : lhs) {
             for (int i = 0; i < numEntries; i++) {
                 lh.addEntry(("LedgerId: " + lh.getId() + ", EntryId: " + (startEntryId + i)).getBytes());
@@ -151,33 +151,33 @@ public class BookieRecoveryTest extends BaseTestCase {
     /**
      * Helper method to startup a new bookie server with the indicated port
      * number
-     * 
+     *
      * @param port
      *            Port to start the new bookie server on
      * @throws IOException
      */
     private void startNewBookie(int port)
-    throws IOException, InterruptedException, KeeperException {
+            throws IOException, InterruptedException, KeeperException {
         File f = File.createTempFile("bookie", "test");
         tmpDirs.add(f);
         f.delete();
         f.mkdir();
-        
+
         BookieServer server = new BookieServer(port, HOSTPORT, f, new File[] { f });
         server.start();
         bs.add(server);
-        
-        while(bkc.getZkHandle().exists("/ledgers/available/" + InetAddress.getLocalHost().getHostAddress() + ":" + port, false) == null){
+
+        while(bkc.getZkHandle().exists("/ledgers/available/" + InetAddress.getLocalHost().getHostAddress() + ":" + port, false) == null) {
             Thread.sleep(500);
         }
-        
+
         bkc.readBookiesBlocking();
         LOG.info("New bookie on port " + port + " has been created.");
     }
-    
+
     /**
      * Helper method to verify that we can read the recovered ledger entries.
-     * 
+     *
      * @param numLedgers
      *            Number of ledgers to verify
      * @param startEntryId
@@ -188,7 +188,7 @@ public class BookieRecoveryTest extends BaseTestCase {
      * @throws InterruptedException
      */
     private void verifyRecoveredLedgers(int numLedgers, long startEntryId, long endEntryId) throws BKException,
-            InterruptedException {
+        InterruptedException {
         // Get a set of LedgerHandles for all of the ledgers to verify
         List<LedgerHandle> lhs = new ArrayList<LedgerHandle>();
         for (int i = 0; i < numLedgers; i++) {
@@ -201,7 +201,7 @@ public class BookieRecoveryTest extends BaseTestCase {
             while (entries.hasMoreElements()) {
                 LedgerEntry entry = entries.nextElement();
                 assertTrue(new String(entry.getEntry()).equals("LedgerId: " + entry.getLedgerId() + ", EntryId: "
-                        + entry.getEntryId()));
+                           + entry.getEntryId()));
             }
         }
 
@@ -213,7 +213,7 @@ public class BookieRecoveryTest extends BaseTestCase {
      * replace it, and then recovering the ledger entries from the killed bookie
      * onto the new one. We'll verify that the entries stored on the killed
      * bookie are properly copied over and restored onto the new one.
-     * 
+     *
      * @throws Exception
      */
     @Test
@@ -243,7 +243,7 @@ public class BookieRecoveryTest extends BaseTestCase {
         InetSocketAddress bookieSrc = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), initialPort);
         InetSocketAddress bookieDest = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), newBookiePort);
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc + ") and replicate it to the new one ("
-                + bookieDest + ")");
+                 + bookieDest + ")");
         // Initiate the sync object
         sync.value = false;
         bkTools.asyncRecoverBookieData(bookieSrc, bookieDest, bookieRecoverCb, sync);
@@ -266,7 +266,7 @@ public class BookieRecoveryTest extends BaseTestCase {
      * onto random available bookie servers. We'll verify that the entries
      * stored on the killed bookie are properly copied over and restored onto
      * the other bookies.
-     * 
+     *
      * @throws Exception
      */
     @Test
@@ -283,7 +283,7 @@ public class BookieRecoveryTest extends BaseTestCase {
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
         bs.get(0).shutdown();
         bs.remove(0);
-        
+
         // Startup three new bookie servers
         for (int i = 0; i < 3; i++) {
             int newBookiePort = initialPort + numBookies + i;
@@ -298,7 +298,7 @@ public class BookieRecoveryTest extends BaseTestCase {
         InetSocketAddress bookieSrc = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), initialPort);
         InetSocketAddress bookieDest = null;
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc
-                + ") and replicate it to a random available one");
+                 + ") and replicate it to a random available one");
         // Initiate the sync object
         sync.value = false;
         bkTools.asyncRecoverBookieData(bookieSrc, bookieDest, bookieRecoverCb, sync);
@@ -320,7 +320,7 @@ public class BookieRecoveryTest extends BaseTestCase {
      * replace it, and then recovering the ledger entries from the killed bookie
      * onto the new one. We'll verify that the entries stored on the killed
      * bookie are properly copied over and restored onto the new one.
-     * 
+     *
      * @throws Exception
      */
     @Test
@@ -337,7 +337,7 @@ public class BookieRecoveryTest extends BaseTestCase {
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
         bs.get(0).shutdown();
         bs.remove(0);
-        
+
         // Startup a new bookie server
         int newBookiePort = initialPort + numBookies;
         startNewBookie(newBookiePort);
@@ -350,7 +350,7 @@ public class BookieRecoveryTest extends BaseTestCase {
         InetSocketAddress bookieSrc = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), initialPort);
         InetSocketAddress bookieDest = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), newBookiePort);
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc + ") and replicate it to the new one ("
-                + bookieDest + ")");
+                 + bookieDest + ")");
         bkTools.recoverBookieData(bookieSrc, bookieDest);
 
         // Verify the recovered ledger entries are okay.
@@ -364,7 +364,7 @@ public class BookieRecoveryTest extends BaseTestCase {
      * onto random available bookie servers. We'll verify that the entries
      * stored on the killed bookie are properly copied over and restored onto
      * the other bookies.
-     * 
+     *
      * @throws Exception
      */
     @Test
@@ -396,7 +396,7 @@ public class BookieRecoveryTest extends BaseTestCase {
         InetSocketAddress bookieSrc = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), initialPort);
         InetSocketAddress bookieDest = null;
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc
-                + ") and replicate it to a random available one");
+                 + ") and replicate it to a random available one");
         bkTools.recoverBookieData(bookieSrc, bookieDest);
 
         // Verify the recovered ledger entries are okay.

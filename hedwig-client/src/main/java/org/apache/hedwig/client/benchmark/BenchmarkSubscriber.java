@@ -34,17 +34,17 @@ import org.apache.hedwig.protocol.PubSubProtocol.RegionSpecificSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.util.Callback;
 
-public class BenchmarkSubscriber extends BenchmarkWorker implements Callable<Void>{
+public class BenchmarkSubscriber extends BenchmarkWorker implements Callable<Void> {
     static final Logger logger = Logger.getLogger(BenchmarkSubscriber.class);
     Subscriber subscriber;
     ByteString subId;
-    
+
 
     public BenchmarkSubscriber(int numTopics, int numMessages, int numRegions,
-            int startTopicLabel, int partitionIndex, int numPartitions, Subscriber subscriber, ByteString subId) {
+                               int startTopicLabel, int partitionIndex, int numPartitions, Subscriber subscriber, ByteString subId) {
         super(numTopics, numMessages, numRegions, startTopicLabel, partitionIndex, numPartitions);
         this.subscriber = subscriber;
-        this.subId = subId;        
+        this.subId = subId;
     }
 
     public void warmup(int numWarmup) throws InterruptedException {
@@ -73,10 +73,10 @@ public class BenchmarkSubscriber extends BenchmarkWorker implements Callable<Voi
 
                 @Override
                 public void consume(ByteString thisTopic, ByteString subscriberId, Message msg,
-                        Callback<Void> callback, Object context) {
+                Callback<Void> callback, Object context) {
                     if (logger.isDebugEnabled())
                         logger.debug("Got message from src-region: " + msg.getSrcRegion() + " with seq-id: "
-                                + msg.getMsgId());
+                                     + msg.getMsgId());
 
                     String mapKey = topic + msg.getSrcRegion().toStringUtf8();
                     Long lastSeqIdSeen = lastSeqIdSeenMap.get(mapKey);
@@ -86,7 +86,7 @@ public class BenchmarkSubscriber extends BenchmarkWorker implements Callable<Voi
 
                     if (getSrcSeqId(msg) <= lastSeqIdSeen) {
                         logger.info("Redelivery of message, src-region: " + msg.getSrcRegion() + "seq-id: "
-                                + msg.getMsgId());
+                                    + msg.getMsgId());
                     } else {
                         agg.ding(false);
                     }
@@ -97,7 +97,7 @@ public class BenchmarkSubscriber extends BenchmarkWorker implements Callable<Voi
         }
         System.out.println("Finished subscribing to topics and now waiting for messages to come in...");
         // Wait till the benchmark test has completed
-        agg.queue.take();            
+        agg.queue.take();
         System.out.println(agg.summarize(agg.earliest.get()));
         return null;
     }
@@ -121,11 +121,11 @@ public class BenchmarkSubscriber extends BenchmarkWorker implements Callable<Voi
         ThroughputLatencyAggregator agg = new ThroughputLatencyAggregator(label, count / numPartitions, npar);
         int end = start + count;
         for (int i = start; i < end; ++i) {
-            if (!HedwigBenchmark.amIResponsibleForTopic(i, partitionIndex, numPartitions)){
+            if (!HedwigBenchmark.amIResponsibleForTopic(i, partitionIndex, numPartitions)) {
                 continue;
             }
             subscriber.asyncSubscribe(ByteString.copyFromUtf8(topicPrefix + i), subId, CreateOrAttach.CREATE_OR_ATTACH,
-                    new BenchmarkCallback(agg), null);
+                                      new BenchmarkCallback(agg), null);
         }
         // Wait till the benchmark test has completed
         agg.tpAgg.queue.take();

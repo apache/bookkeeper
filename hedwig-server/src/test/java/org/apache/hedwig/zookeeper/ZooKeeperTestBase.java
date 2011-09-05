@@ -32,7 +32,7 @@ import org.apache.hedwig.util.Callback;
 
 /**
  * This is a base class for any tests that need a ZooKeeper client/server setup.
- * 
+ *
  */
 public abstract class ZooKeeperTestBase extends ClientBase {
 

@@ -23,7 +23,7 @@ import org.apache.hedwig.server.subscriptions.MessageFilter;
 
 public interface DeliveryManager {
     public void startServingSubscription(ByteString topic, ByteString subscriberId, MessageSeqId seqIdToStartFrom,
-            DeliveryEndPoint endPoint, MessageFilter filter, boolean isHubSubscriber);
+                                         DeliveryEndPoint endPoint, MessageFilter filter, boolean isHubSubscriber);
 
     public void stopServingSubscriber(ByteString topic, ByteString subscriberId);
 }

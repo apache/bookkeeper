@@ -24,7 +24,7 @@ import org.apache.hedwig.util.Callback;
 /**
  * Encapsulates a request to persist a given message on a given topic. The
  * request is completed asynchronously, callback and context are provided
- * 
+ *
  */
 public class PersistRequest {
     ByteString topic;

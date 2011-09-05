@@ -281,7 +281,7 @@ public class ServerConfiguration extends AbstractConfiguration {
         // Validate that the Bookkeeper ensemble size >= quorum size.
         if (getBkEnsembleSize() < getBkQuorumSize()) {
             throw new ConfigurationException("BK ensemble size (" + getBkEnsembleSize()
-                    + ") is less than the quorum size (" + getBkQuorumSize() + ")");
+                                             + ") is less than the quorum size (" + getBkQuorumSize() + ")");
         }
 
         // add other checks here

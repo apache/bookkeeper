@@ -28,7 +28,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
  * the {@link PersistenceManager} needs to understand the format of the seqId
  * and maintain it in such a way that there is a total order on the seqIds of a
  * topic.
- * 
+ *
  */
 public interface PersistenceManager {
 
@@ -44,14 +44,14 @@ public interface PersistenceManager {
      * Get the seqId of the last message that has been persisted to the given
      * topic. The returned seqId will be set as the consume position of any
      * brand new subscription on this topic.
-     * 
+     *
      * Note that the return value may quickly become invalid because a
      * {@link #persistMessage(String, PublishedMessage)} call from another
      * thread succeeds. For us, the typical use case is choosing the consume
      * position of a new subscriber. Since the subscriber need not receive all
      * messages that are published while the subscribe call is in progress, such
      * loose semantics from this method is acceptable.
-     * 
+     *
      * @param topic
      * @return the seqId of the last persisted message.
      * @throws ServerNotResponsibleForTopicException
@@ -60,7 +60,7 @@ public interface PersistenceManager {
 
     /**
      * Executes the given scan request
-     * 
+     *
      */
     public void scanSingleMessage(ScanRequest request);
 
@@ -80,7 +80,7 @@ public interface PersistenceManager {
      * subscribers to the topic and no longer need to be stored. The
      * implementation classes can decide how and if they want to garbage collect
      * and delete these older topic messages that are no longer needed.
-     * 
+     *
      * @param topic
      *            Topic
      * @param seqId

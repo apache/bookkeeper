@@ -24,13 +24,13 @@ import org.apache.hedwig.util.Callback;
 /**
  * Interface to define the client handler logic to consume messages it is
  * subscribed to.
- * 
+ *
  */
 public interface MessageHandler {
 
     /**
      * Consumes a message it is subscribed to and has been delivered to it.
-     * 
+     *
      * @param topic
      *            The topic name where the message came from.
      * @param subscriberId

@@ -37,197 +37,201 @@ public class ServerControl {
     static Logger LOG = Logger.getLogger(ServerControl.class);
 
     public class TestException extends Exception {
-	public TestException(String str) {
-	    super(str);
-	}
+        public TestException(String str) {
+            super(str);
+        }
     };
 
     public interface TestServer {
-	public String getAddress();
-	public void kill();
+        public String getAddress();
+        public void kill();
     }
 
     private class BookKeeperServer extends BookieServer implements TestServer {
-	private String address;
+        private String address;
 
-	public BookKeeperServer(int port, TestServer zkserver, String journal, String ledger) throws IOException {
-	    super(port, zkserver.getAddress(), new File(journal), new File[] { new File(ledger) });
-	    
-	    address = "localhost:"+port;
-	    start();
-	} 
+        public BookKeeperServer(int port, TestServer zkserver, String journal, String ledger) throws IOException {
+            super(port, zkserver.getAddress(), new File(journal), new File[] { new File(ledger) });
 
-	public String getAddress() {
-	    return address;
-	}
-	
-	public void kill() {
-	    try {
-		shutdown();
-	    } catch (Exception e) {
-	    }
-	}
+            address = "localhost:"+port;
+            start();
+        }
+
+        public String getAddress() {
+            return address;
+        }
+
+        public void kill() {
+            try {
+                shutdown();
+            } catch (Exception e) {
+            }
+        }
     }
 
     private class ZookeeperServer extends ZooKeeperServerMain implements TestServer {
-	public String address;
-	public Thread serverThread;
-	String path;
-	public ZookeeperServer(int port, String path) throws TestException {
-	    super(); 
+        public String address;
+        public Thread serverThread;
+        String path;
+        public ZookeeperServer(int port, String path) throws TestException {
+            super();
 
-	    this.path = path;
-	    final String[] args = { Integer.toString(port), path};
-	    address = "localhost:" + port;
-	    serverThread = new Thread() {
-		    public void run() {
-			try {
-			    initializeAndRun(args);
-			} catch (Exception e) {
-			}
-		    };
-		};
-	    serverThread.start();
-	}
+            this.path = path;
+            final String[] args = { Integer.toString(port), path};
+            address = "localhost:" + port;
+            serverThread = new Thread() {
+                public void run() {
+                    try {
+                        initializeAndRun(args);
+                    } catch (Exception e) {
+                    }
+                };
+            };
+            serverThread.start();
+        }
 
-	public String getAddress() {
-	    return address;
-	}
+        public String getAddress() {
+            return address;
+        }
 
-	public void kill() {
-	    shutdown();
-	    serverThread.interrupt();
-	}
+        public void kill() {
+            shutdown();
+            serverThread.interrupt();
+        }
     }
 
     private class HedwigServer implements TestServer {
-	private PubSubServer server;
-	private String address;
+        private PubSubServer server;
+        private String address;
 
-	public HedwigServer(int port, String region, TestServer zk) throws TestException {
-	    class MyServerConfiguration extends ServerConfiguration {
-		MyServerConfiguration(int port, TestServer zk, String region) {
-		    conf.setProperty(ServerConfiguration.SERVER_PORT, port);
-		    conf.setProperty(ServerConfiguration.ZK_HOST, zk.getAddress());
-		    conf.setProperty(ServerConfiguration.REGION, region);
-		}
-	    };
-	    
-	    address = "localhost:" + port;
-	    
-	    try {
-		server = new PubSubServer(new MyServerConfiguration(port, zk, region));
-	    } catch (Exception e) {
-		throw new TestException("Couldn't create pub sub server : " + e);
-	    }
-	}
+        public HedwigServer(int port, String region, TestServer zk) throws TestException {
+            class MyServerConfiguration extends ServerConfiguration {
+                MyServerConfiguration(int port, TestServer zk, String region) {
+                    conf.setProperty(ServerConfiguration.SERVER_PORT, port);
+                    conf.setProperty(ServerConfiguration.ZK_HOST, zk.getAddress());
+                    conf.setProperty(ServerConfiguration.REGION, region);
+                }
+            };
 
-	public String getAddress() {
-	    return address;
-	}
+            address = "localhost:" + port;
 
-	public void kill() {
-	    server.shutdown();
-	}
+            try {
+                server = new PubSubServer(new MyServerConfiguration(port, zk, region));
+            } catch (Exception e) {
+                throw new TestException("Couldn't create pub sub server : " + e);
+            }
+        }
+
+        public String getAddress() {
+            return address;
+        }
+
+        public void kill() {
+            server.shutdown();
+        }
     }
 
     private String createTempDirectory(String suffix) throws IOException {
-	String dir = System.getProperty("java.io.tmpdir") + File.separator + System.currentTimeMillis() + suffix;
-	final File dirf = new File(dir);
-	boolean good = dirf.mkdir();
-	if (!good) {
-	    throw new IOException("Unable to create directory " + dir);
-	}
-	
-	Runtime.getRuntime().addShutdownHook(new Thread() {
-		public void delete(File f) {
-		    File[] subfiles = f.listFiles();
-		    if (subfiles != null) {
-			for (File subf : subfiles) {
-			    delete(subf);
-			}
-		    }
-		    f.delete();
-		}
+        String dir = System.getProperty("java.io.tmpdir") + File.separator + System.currentTimeMillis() + suffix;
+        final File dirf = new File(dir);
+        boolean good = dirf.mkdir();
+        if (!good) {
+            throw new IOException("Unable to create directory " + dir);
+        }
 
-		public void run() {
-		    delete(dirf);
-		}
-	    });
-	return dir;
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void delete(File f) {
+                File[] subfiles = f.listFiles();
+                if (subfiles != null) {
+                    for (File subf : subfiles) {
+                        delete(subf);
+                    }
+                }
+                f.delete();
+            }
+
+            public void run() {
+                delete(dirf);
+            }
+        });
+        return dir;
     }
 
     public TestServer startZookeeperServer(int port) throws IOException, TestException {
-	String dir = createTempDirectory("-zookeeper-" + port);
-	ZookeeperServer server =  new ZookeeperServer(port, dir);
-	
-	return server;
+        String dir = createTempDirectory("-zookeeper-" + port);
+        ZookeeperServer server =  new ZookeeperServer(port, dir);
+
+        return server;
     }
-    
+
     public TestServer startBookieServer(int port, TestServer zookeeperServer) throws IOException, TestException {
-	int tries = 4;
-	while (true) {
-	    try {
-		tries--;
-		ZooKeeper zk = new ZooKeeper(zookeeperServer.getAddress(), 1000, new Watcher() { public void process(WatchedEvent event) { /* do nothing */ } });
-		if (zk.exists("/ledgers/available", false) == null) {
-		    byte[] data = new byte[1];
-		    data[0] = 0;
-		    zk.create("/ledgers", data, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-		    zk.create("/ledgers/available", data, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-		}
-		zk.close();
-		break;
-	    } catch (KeeperException.ConnectionLossException ce) {
-		if (tries > 0) {
-		    try { 
-			Thread.sleep(3);
-		    } catch (Exception e) {
-			throw new TestException("Can't even sleep. Fix your machine: " + e);
-		    }
-		    continue;
-		} else {
-		    throw new TestException("Error connecting to zookeeper: " + ce);
-		}
-	    } catch (Exception e) {
-		throw new TestException("Error initialising bookkeeper ledgers: " +  e);
-	    } 
-	}
-	String journal = createTempDirectory("-bookie-" + port + "-journal");
-	String ledger = createTempDirectory("-bookie-" + port + "-ledger");
-	BookKeeperServer bookie = new BookKeeperServer(port, zookeeperServer, journal, ledger);
-	return bookie;
+        int tries = 4;
+        while (true) {
+            try {
+                tries--;
+                ZooKeeper zk = new ZooKeeper(zookeeperServer.getAddress(), 1000, new Watcher() {
+                    public void process(WatchedEvent event) {
+                        /* do nothing */
+                    }
+                });
+                if (zk.exists("/ledgers/available", false) == null) {
+                    byte[] data = new byte[1];
+                    data[0] = 0;
+                    zk.create("/ledgers", data, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                    zk.create("/ledgers/available", data, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                }
+                zk.close();
+                break;
+            } catch (KeeperException.ConnectionLossException ce) {
+                if (tries > 0) {
+                    try {
+                        Thread.sleep(3);
+                    } catch (Exception e) {
+                        throw new TestException("Can't even sleep. Fix your machine: " + e);
+                    }
+                    continue;
+                } else {
+                    throw new TestException("Error connecting to zookeeper: " + ce);
+                }
+            } catch (Exception e) {
+                throw new TestException("Error initialising bookkeeper ledgers: " +  e);
+            }
+        }
+        String journal = createTempDirectory("-bookie-" + port + "-journal");
+        String ledger = createTempDirectory("-bookie-" + port + "-ledger");
+        BookKeeperServer bookie = new BookKeeperServer(port, zookeeperServer, journal, ledger);
+        return bookie;
     }
-    
+
     public TestServer startPubSubServer(int port, String region, TestServer zookeeperServer) throws IOException, TestException {
-	return new HedwigServer(port, region, zookeeperServer);
-    }    
+        return new HedwigServer(port, region, zookeeperServer);
+    }
 
     public ServerControl() {
     }
 
     public static void main(String[] args) throws Exception {
-	ServerControl control = new ServerControl();
+        ServerControl control = new ServerControl();
 
-	TestServer zk = control.startZookeeperServer(12345);
-	TestServer bk1 = control.startBookieServer(12346, zk);
-	TestServer bk2 = control.startBookieServer(12347, zk);
-	TestServer bk3 = control.startBookieServer(12348, zk);
+        TestServer zk = control.startZookeeperServer(12345);
+        TestServer bk1 = control.startBookieServer(12346, zk);
+        TestServer bk2 = control.startBookieServer(12347, zk);
+        TestServer bk3 = control.startBookieServer(12348, zk);
 
-	TestServer hw1 = control.startPubSubServer(12349, "foobar", zk);
-	TestServer hw2 = control.startPubSubServer(12350, "foobar", zk);
-	TestServer hw3 = control.startPubSubServer(12351, "foobar", zk);
-	TestServer hw4 = control.startPubSubServer(12352, "barfoo", zk);
-	LOG.info("Started " + zk.getAddress());
-	LOG.info("Sleeping for 10 seconds");
-	Thread.sleep(10000);
-	bk3.kill();
-	bk2.kill();
-	bk1.kill();
-	zk.kill();
-	hw1.kill();
-	hw2.kill();
-	hw3.kill();
-	hw4.kill();
+        TestServer hw1 = control.startPubSubServer(12349, "foobar", zk);
+        TestServer hw2 = control.startPubSubServer(12350, "foobar", zk);
+        TestServer hw3 = control.startPubSubServer(12351, "foobar", zk);
+        TestServer hw4 = control.startPubSubServer(12352, "barfoo", zk);
+        LOG.info("Started " + zk.getAddress());
+        LOG.info("Sleeping for 10 seconds");
+        Thread.sleep(10000);
+        bk3.kill();
+        bk2.kill();
+        bk1.kill();
+        zk.kill();
+        hw1.kill();
+        hw2.kill();
+        hw3.kill();
+        hw4.kill();
     }
 }

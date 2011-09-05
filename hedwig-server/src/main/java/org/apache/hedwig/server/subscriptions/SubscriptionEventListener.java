@@ -22,7 +22,7 @@ import org.apache.hedwig.util.Callback;
 
 /**
  * For listening to events that are issued by a SubscriptionManager.
- * 
+ *
  */
 public interface SubscriptionEventListener {
 
@@ -30,7 +30,7 @@ public interface SubscriptionEventListener {
      * Called by the subscription manager when it previously had zero local
      * subscribers for a topic and is currently accepting its first local
      * subscriber.
-     * 
+     *
      * @param topic
      *            The topic of interest.
      * @param synchronous
@@ -48,10 +48,10 @@ public interface SubscriptionEventListener {
      * Called by the SubscriptionManager when it previously had non-zero local
      * subscribers for a topic and is currently dropping its last local
      * subscriber. This is fully asynchronous so there is no callback.
-     * 
+     *
      * @param topic
      *            The topic of interest.
      */
     public void onLastLocalUnsubscribe(ByteString topic);
-    
+
 }

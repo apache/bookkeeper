@@ -38,7 +38,7 @@ import org.apache.log4j.Logger;
 /**
  * This is a base class for any tests that require a BookKeeper client/server
  * setup.
- * 
+ *
  */
 public class BookKeeperTestBase extends ZooKeeperTestBase {
     private static Logger logger = Logger.getLogger(BookKeeperTestBase.class);

@@ -30,16 +30,16 @@ import org.apache.log4j.Logger;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
- * This class encapsulated the read last confirmed operation. 
- * 
+ * This class encapsulated the read last confirmed operation.
+ *
  */
 class ReadLastConfirmedOp implements ReadEntryCallback {
     static final Logger LOG = Logger.getLogger(LedgerRecoveryOp.class);
     LedgerHandle lh;
-    Object ctx; 
+    Object ctx;
     int numResponsesPending;
     int validResponses;
-    long maxAddConfirmed; 
+    long maxAddConfirmed;
     long maxLength = 0;
     volatile boolean notComplete = true;
 
@@ -62,9 +62,9 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
     public synchronized void readEntryComplete(final int rc, final long ledgerId, final long entryId,
             final ChannelBuffer buffer, final Object ctx) {
         int bookieIndex = (Integer) ctx;
-        
+
         numResponsesPending--;
-        
+
         if (rc == BKException.Code.OK) {
             try {
                 RecoveryData recoveryData = lh.macManager.verifyDigestAndReturnLastConfirmed(buffer);
@@ -74,10 +74,10 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
                 // Too bad, this bookie didn't give us a valid answer, we
                 // still might be able to recover though so continue
                 LOG.error("Mac mismatch while reading last entry from bookie: "
-                        + lh.metadata.currentEnsemble.get(bookieIndex));
+                          + lh.metadata.currentEnsemble.get(bookieIndex));
             }
         }
-        
+
         if (rc == BKException.Code.NoSuchLedgerExistsException || rc == BKException.Code.NoSuchEntryException) {
             // this still counts as a valid response, e.g., if the client crashed without writing any entry
             validResponses++;
@@ -96,6 +96,6 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
             LOG.error("While recovering ledger: " + ledgerId + " did not hear success responses from all quorums");
             cb.readLastConfirmedComplete(BKException.Code.LedgerRecoveryException, maxAddConfirmed, ctx);
         }
-        
+
     }
 }

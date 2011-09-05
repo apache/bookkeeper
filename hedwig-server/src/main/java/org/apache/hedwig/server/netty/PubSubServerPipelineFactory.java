@@ -41,7 +41,7 @@ public class PubSubServerPipelineFactory implements ChannelPipelineFactory {
     private int maxMessageSize;
 
     /**
-     * 
+     *
      * @param uh
      * @param sslFactory
      *            may be null if ssl is disabled
@@ -59,7 +59,7 @@ public class PubSubServerPipelineFactory implements ChannelPipelineFactory {
             pipeline.addLast("ssl", new SslHandler(sslFactory.getEngine()));
         }
         pipeline.addLast("lengthbaseddecoder",
-                new LengthFieldBasedFrameDecoder(maxMessageSize, 0, 4, 0, 4));
+                         new LengthFieldBasedFrameDecoder(maxMessageSize, 0, 4, 0, 4));
         pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
 
         pipeline.addLast("protobufdecoder", new ProtobufDecoder(PubSubProtocol.PubSubRequest.getDefaultInstance()));

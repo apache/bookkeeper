@@ -50,7 +50,7 @@ public class ZkSubscriptionManager extends AbstractSubscriptionManager {
     protected final static Logger logger = Logger.getLogger(ZkSubscriptionManager.class);
 
     public ZkSubscriptionManager(ZooKeeper zk, TopicManager topicMgr, PersistenceManager pm, ServerConfiguration cfg,
-            ScheduledExecutorService scheduler) {
+                                 ScheduledExecutorService scheduler) {
         super(cfg, topicMgr, pm, scheduler);
         this.zk = zk;
     }
@@ -61,12 +61,12 @@ public class ZkSubscriptionManager extends AbstractSubscriptionManager {
 
     private String topicSubscriberPath(ByteString topic, ByteString subscriber) {
         return topicSubscribersPath(new StringBuilder(), topic).append("/").append(subscriber.toStringUtf8())
-                .toString();
+               .toString();
     }
 
     @Override
     protected void readSubscriptions(final ByteString topic,
-            final Callback<Map<ByteString, InMemorySubscriptionState>> cb, final Object ctx) {
+                                     final Callback<Map<ByteString, InMemorySubscriptionState>> cb, final Object ctx) {
 
         String topicSubscribersPath = topicSubscribersPath(new StringBuilder(), topic).toString();
         zk.getChildren(topicSubscribersPath, false, new SafeAsyncZKCallback.ChildrenCallback() {
@@ -75,7 +75,7 @@ public class ZkSubscriptionManager extends AbstractSubscriptionManager {
 
                 if (rc != Code.OK.intValue() && rc != Code.NONODE.intValue()) {
                     KeeperException e = ZkUtils.logErrorAndCreateZKException("Could not read subscribers for topic "
-                            + topic.toStringUtf8(), path, rc);
+                                        + topic.toStringUtf8(), path, rc);
                     cb.operationFailed(ctx, new PubSubException.ServiceDownException(e));
                     return;
                 }
@@ -104,8 +104,8 @@ public class ZkSubscriptionManager extends AbstractSubscriptionManager {
 
                             if (rc != Code.OK.intValue()) {
                                 KeeperException e = ZkUtils.logErrorAndCreateZKException(
-                                        "Could not read subscription data for topic: " + topic.toStringUtf8()
-                                                + ", subscriberId: " + subscriberId.toStringUtf8(), path, rc);
+                                                        "Could not read subscription data for topic: " + topic.toStringUtf8()
+                                                        + ", subscriberId: " + subscriberId.toStringUtf8(), path, rc);
                                 reportFailure(new PubSubException.ServiceDownException(e));
                                 return;
                             }
@@ -120,7 +120,7 @@ public class ZkSubscriptionManager extends AbstractSubscriptionManager {
                                 state = SubscriptionState.parseFrom(data);
                             } catch (InvalidProtocolBufferException ex) {
                                 String msg = "Failed to deserialize state for topic: " + topic.toStringUtf8()
-                                        + " subscriberId: " + subscriberId.toStringUtf8();
+                                             + " subscriberId: " + subscriberId.toStringUtf8();
                                 logger.error(msg, ex);
                                 reportFailure(new PubSubException.UnexpectedConditionException(msg));
                                 return;
@@ -128,8 +128,8 @@ public class ZkSubscriptionManager extends AbstractSubscriptionManager {
 
                             if (logger.isDebugEnabled()) {
                                 logger.debug("Found subscription while acquiring topic: " + topic.toStringUtf8()
-                                        + " subscriberId: " + child + "state: "
-                                        + SubscriptionStateUtils.toString(state));
+                                             + " subscriberId: " + child + "state: "
+                                             + SubscriptionStateUtils.toString(state));
                             }
 
                             topicSubs.put(subscriberId, new InMemorySubscriptionState(state));
@@ -151,65 +151,65 @@ public class ZkSubscriptionManager extends AbstractSubscriptionManager {
 
     @Override
     protected void createSubscriptionState(final ByteString topic, final ByteString subscriberId,
-            final SubscriptionState state, final Callback<Void> callback, final Object ctx) {
+                                           final SubscriptionState state, final Callback<Void> callback, final Object ctx) {
         ZkUtils.createFullPathOptimistic(zk, topicSubscriberPath(topic, subscriberId), state.toByteArray(),
-                Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT, new SafeAsyncZKCallback.StringCallback() {
+        Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT, new SafeAsyncZKCallback.StringCallback() {
 
-                    @Override
-                    public void safeProcessResult(int rc, String path, Object ctx, String name) {
-                        if (rc == Code.OK.intValue()) {
-                            if (logger.isDebugEnabled()) {
-                                logger.debug("Successfully recorded subscription for topic: " + topic.toStringUtf8()
-                                        + " subscriberId: " + subscriberId.toStringUtf8() + " state: "
-                                        + SubscriptionStateUtils.toString(state));
-                            }
-                            callback.operationFinished(ctx, null);
-                        } else {
-                            KeeperException ke = ZkUtils.logErrorAndCreateZKException(
-                                    "Could not record new subscription for topic: " + topic.toStringUtf8()
-                                            + " subscriberId: " + subscriberId.toStringUtf8(), path, rc);
-                            callback.operationFailed(ctx, new PubSubException.ServiceDownException(ke));
-                        }
+            @Override
+            public void safeProcessResult(int rc, String path, Object ctx, String name) {
+                if (rc == Code.OK.intValue()) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Successfully recorded subscription for topic: " + topic.toStringUtf8()
+                                     + " subscriberId: " + subscriberId.toStringUtf8() + " state: "
+                                     + SubscriptionStateUtils.toString(state));
                     }
-                }, ctx);
+                    callback.operationFinished(ctx, null);
+                } else {
+                    KeeperException ke = ZkUtils.logErrorAndCreateZKException(
+                                             "Could not record new subscription for topic: " + topic.toStringUtf8()
+                                             + " subscriberId: " + subscriberId.toStringUtf8(), path, rc);
+                    callback.operationFailed(ctx, new PubSubException.ServiceDownException(ke));
+                }
+            }
+        }, ctx);
     }
 
     @Override
     protected void updateSubscriptionState(final ByteString topic, final ByteString subscriberId,
-            final SubscriptionState state, final Callback<Void> callback, final Object ctx) {
+                                           final SubscriptionState state, final Callback<Void> callback, final Object ctx) {
         zk.setData(topicSubscriberPath(topic, subscriberId), state.toByteArray(), -1,
-                new SafeAsyncZKCallback.StatCallback() {
-                    @Override
-                    public void safeProcessResult(int rc, String path, Object ctx, Stat stat) {
-                        if (rc != Code.OK.intValue()) {
-                            KeeperException e = ZkUtils.logErrorAndCreateZKException("Topic: " + topic.toStringUtf8()
-                                    + " subscriberId: " + subscriberId.toStringUtf8()
-                                    + " could not set subscription state: " + SubscriptionStateUtils.toString(state),
-                                    path, rc);
-                            callback.operationFailed(ctx, new PubSubException.ServiceDownException(e));
-                        } else {
-                            if (logger.isDebugEnabled()) {
-                                logger.debug("Successfully updated subscription for topic: " + topic.toStringUtf8()
-                                        + " subscriberId: " + subscriberId.toStringUtf8() + " state: "
-                                        + SubscriptionStateUtils.toString(state));
-                            }
-
-                            callback.operationFinished(ctx, null);
-                        }
+        new SafeAsyncZKCallback.StatCallback() {
+            @Override
+            public void safeProcessResult(int rc, String path, Object ctx, Stat stat) {
+                if (rc != Code.OK.intValue()) {
+                    KeeperException e = ZkUtils.logErrorAndCreateZKException("Topic: " + topic.toStringUtf8()
+                                        + " subscriberId: " + subscriberId.toStringUtf8()
+                                        + " could not set subscription state: " + SubscriptionStateUtils.toString(state),
+                                        path, rc);
+                    callback.operationFailed(ctx, new PubSubException.ServiceDownException(e));
+                } else {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Successfully updated subscription for topic: " + topic.toStringUtf8()
+                                     + " subscriberId: " + subscriberId.toStringUtf8() + " state: "
+                                     + SubscriptionStateUtils.toString(state));
                     }
-                }, ctx);
+
+                    callback.operationFinished(ctx, null);
+                }
+            }
+        }, ctx);
     }
 
     @Override
     protected void deleteSubscriptionState(final ByteString topic, final ByteString subscriberId,
-            final Callback<Void> callback, final Object ctx) {
+                                           final Callback<Void> callback, final Object ctx) {
         zk.delete(topicSubscriberPath(topic, subscriberId), -1, new SafeAsyncZKCallback.VoidCallback() {
             @Override
             public void safeProcessResult(int rc, String path, Object ctx) {
                 if (rc == Code.OK.intValue()) {
                     if (logger.isDebugEnabled()) {
                         logger.debug("Successfully deleted subscription for topic: " + topic.toStringUtf8()
-                                + " subscriberId: " + subscriberId.toStringUtf8());
+                                     + " subscriberId: " + subscriberId.toStringUtf8());
                     }
 
                     callback.operationFinished(ctx, null);
@@ -217,7 +217,7 @@ public class ZkSubscriptionManager extends AbstractSubscriptionManager {
                 }
 
                 KeeperException e = ZkUtils.logErrorAndCreateZKException("Topic: " + topic.toStringUtf8()
-                        + " subscriberId: " + subscriberId.toStringUtf8() + " failed to delete subscription", path, rc);
+                                    + " subscriberId: " + subscriberId.toStringUtf8() + " failed to delete subscription", path, rc);
                 callback.operationFailed(ctx, new PubSubException.ServiceDownException(e));
             }
         }, ctx);

@@ -53,7 +53,7 @@ public class ConsumeHandler extends BaseHandler {
         ConsumeRequest consumeRequest = request.getConsumeRequest();
 
         sm.setConsumeSeqIdForSubscriber(request.getTopic(), consumeRequest.getSubscriberId(),
-                consumeRequest.getMsgId(), noopCallback, null);
+                                        consumeRequest.getMsgId(), noopCallback, null);
 
     }
 

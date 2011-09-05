@@ -101,7 +101,7 @@ public class PubSubServer {
     ScheduledExecutorService scheduler;
 
     protected PersistenceManager instantiatePersistenceManager(TopicManager topicMgr) throws IOException,
-            InterruptedException {
+        InterruptedException {
 
         PersistenceManagerWithRangeScan underlyingPM;
 
@@ -157,9 +157,9 @@ public class PubSubServer {
             // wait until connection is effective
             if (!signalZkReady.await(conf.getZkTimeout()*2, TimeUnit.MILLISECONDS)) {
                 logger.fatal("Could not establish connection with ZooKeeper after zk_timeout*2 = " +
-                        conf.getZkTimeout()*2 + " ms. (Default value for zk_timeout is 2000).");
+                             conf.getZkTimeout()*2 + " ms. (Default value for zk_timeout is 2000).");
                 throw new Exception("Could not establish connection with ZooKeeper after zk_timeout*2 = " +
-                        conf.getZkTimeout()*2 + " ms. (Default value for zk_timeout is 2000).");
+                                    conf.getZkTimeout()*2 + " ms. (Default value for zk_timeout is 2000).");
             }
         }
     }
@@ -206,7 +206,7 @@ public class PubSubServer {
 
         // Bind and start to accept incoming connections.
         allChannels.add(bootstrap.bind(isSSLEnabled ? new InetSocketAddress(conf.getSSLServerPort())
-                : new InetSocketAddress(conf.getServerPort())));
+                                       : new InetSocketAddress(conf.getServerPort())));
         logger.info("Going into receive loop");
     }
 
@@ -226,7 +226,7 @@ public class PubSubServer {
 
         // Stop the RegionManager.
         rm.stop();
-        
+
         // Stop the DeliveryManager and ReadAheadCache threads (if
         // applicable).
         // TODO: It'd be cleaner and more general to modify the interfaces to
@@ -243,7 +243,7 @@ public class PubSubServer {
         if (sm instanceof AbstractSubscriptionManager) {
             ((AbstractSubscriptionManager) sm).stop();
         }
-        
+
         // Close and release the Netty channels and resources
         allChannels.close().awaitUninterruptibly();
         serverChannelFactory.releaseExternalResources();
@@ -253,7 +253,7 @@ public class PubSubServer {
 
     /**
      * Starts the hedwig server on the given port
-     * 
+     *
      * @param port
      * @throws ConfigurationException
      *             if there is something wrong with the given configuration
@@ -334,7 +334,7 @@ public class PubSubServer {
     }
 
     /**
-     * 
+     *
      * @param msg
      * @param rc
      *            : code to exit with

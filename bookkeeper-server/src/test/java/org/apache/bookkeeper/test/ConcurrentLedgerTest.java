@@ -48,7 +48,7 @@ public class ConcurrentLedgerTest extends TestCase {
     File txnDir, ledgerDir;
     int recvTimeout = 10000;
     Semaphore throttle;
-    
+
     @Override
     @Before
     public void setUp() throws IOException {
@@ -67,10 +67,10 @@ public class ConcurrentLedgerTest extends TestCase {
         tmpFile = File.createTempFile("book", ".ledger", ledgerDir);
         ledgerDir = new File(tmpFile.getParent(), tmpFile.getName()+".dir");
         ledgerDir.mkdirs();
-        
+
         bookie = new Bookie(5000, null, txnDir, new File[] {ledgerDir});
     }
-    
+
     static void recursiveDelete(File f) {
         if (f.isFile()) {
             f.delete();
@@ -81,7 +81,7 @@ public class ConcurrentLedgerTest extends TestCase {
             f.delete();
         }
     }
-    
+
     @Override
     @After
     public void tearDown() {
@@ -153,7 +153,7 @@ public class ConcurrentLedgerTest extends TestCase {
         WriteCallback cb = new WriteCallback() {
             @Override
             public void writeComplete(int rc, long ledgerId, long entryId,
-                    InetSocketAddress addr, Object ctx) {
+            InetSocketAddress addr, Object ctx) {
                 AtomicInteger counter = (AtomicInteger)ctx;
                 counter.getAndIncrement();
                 throttle.release();

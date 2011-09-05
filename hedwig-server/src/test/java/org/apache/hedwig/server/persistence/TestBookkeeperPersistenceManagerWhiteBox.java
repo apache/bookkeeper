@@ -78,7 +78,7 @@ public class TestBookkeeperPersistenceManagerWhiteBox extends TestCase {
         // now abandon, and try another time, the prev ledger should be dirty
 
         bkpm = new BookkeeperPersistenceManager(new BookKeeper(bktb.getZkHostPort()), bktb.getZooKeeperClient(), tm,
-                conf, scheduler);
+                                                conf, scheduler);
         bkpm.acquiredTopic(topic, stubCallback, null);
         assertNull(ConcurrencyUtils.take(stubCallback.queue).right());
         assertEquals(0, bkpm.topicInfos.get(topic).ledgerRanges.size());
@@ -92,7 +92,7 @@ public class TestBookkeeperPersistenceManagerWhiteBox extends TestCase {
         int index = 0;
         int numPrevLedgers = 0;
         List<Message> messages = HelperMethods.getRandomPublishedMessages(NUM_MESSAGES_TO_TEST,
-                SIZE_OF_MESSAGES_TO_TEST);
+                                 SIZE_OF_MESSAGES_TO_TEST);
 
         while (index < messages.size()) {
 

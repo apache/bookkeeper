@@ -1,7 +1,7 @@
 package org.apache.bookkeeper.test;
 
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -9,16 +9,16 @@ package org.apache.bookkeeper.test;
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
 
 import java.io.File;
@@ -85,7 +85,7 @@ public class LedgerDeleteTest extends BaseTestCase {
      * It will then delete all of the ledgers from the client and let the
      * server's EntryLogger garbage collector thread delete the initial entry
      * log file.
-     * 
+     *
      * @throws Exception
      */
     @Test
@@ -104,7 +104,7 @@ public class LedgerDeleteTest extends BaseTestCase {
         for (File ledgerDirectory : tmpDirs) {
             for (File f : ledgerDirectory.listFiles()) {
                 assertFalse("Found the entry log file (0.log) that should have been deleted in ledgerDirectory: "
-                        + ledgerDirectory, f.isFile() && f.getName().equals("0.log"));
+                            + ledgerDirectory, f.isFile() && f.getName().equals("0.log"));
             }
         }
     }
@@ -114,7 +114,7 @@ public class LedgerDeleteTest extends BaseTestCase {
      * restart the Bookie Servers after it has written out the ledger entries.
      * On restart, there will be existing entry logs and ledger index files for
      * the EntryLogger and LedgerCache to read and store into memory.
-     * 
+     *
      * @throws Exception
      */
     @Test
@@ -155,7 +155,7 @@ public class LedgerDeleteTest extends BaseTestCase {
         for (File ledgerDirectory : tmpDirs) {
             for (File f : ledgerDirectory.listFiles()) {
                 assertFalse("Found the entry log file ([0,1].log) that should have been deleted in ledgerDirectory: "
-                        + ledgerDirectory, f.isFile() && (f.getName().equals("0.log") || f.getName().equals("1.log")));
+                            + ledgerDirectory, f.isFile() && (f.getName().equals("0.log") || f.getName().equals("1.log")));
             }
         }
     }

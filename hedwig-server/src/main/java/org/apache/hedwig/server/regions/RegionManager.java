@@ -52,7 +52,7 @@ public class RegionManager implements SubscriptionEventListener {
     private final TopicOpQueuer queue;
 
     public RegionManager(final PersistenceManager pm, final ServerConfiguration cfg, final ZooKeeper zk,
-            ScheduledExecutorService scheduler, HedwigHubClientFactory hubClientFactory) {
+                         ScheduledExecutorService scheduler, HedwigHubClientFactory hubClientFactory) {
         this.pm = pm;
         mySubId = ByteString.copyFromUtf8(SubscriptionStateUtils.HUB_SUBSCRIBER_PREFIX + cfg.getMyRegion());
         queue = new TopicOpQueuer(scheduler);
@@ -70,7 +70,7 @@ public class RegionManager implements SubscriptionEventListener {
             @Override
             public void run() {
                 Callback<Void> postCb = synchronous ? cb : CallbackUtils.logger(LOGGER, Level.DEBUG, Level.ERROR,
-                        "all cross-region subscriptions succeeded", "at least one cross-region subscription failed");
+                                        "all cross-region subscriptions succeeded", "at least one cross-region subscription failed");
                 final Callback<Void> mcb = CallbackUtils.multiCallback(clients.size(), postCb, ctx);
                 for (final HedwigHubClient client : clients) {
                     final HedwigSubscriber sub = client.getSubscriber();
@@ -83,23 +83,23 @@ public class RegionManager implements SubscriptionEventListener {
                                 sub.startDelivery(topic, mySubId, new MessageHandler() {
                                     @Override
                                     public void consume(final ByteString topic, ByteString subscriberId, Message msg,
-                                            final Callback<Void> callback, final Object context) {
+                                    final Callback<Void> callback, final Object context) {
                                         // When messages are first published
                                         // locally, the PublishHandler sets the
                                         // source region in the Message.
                                         if (msg.hasSrcRegion()) {
                                             Message.newBuilder(msg).setMsgId(
-                                                    MessageSeqId.newBuilder(msg.getMsgId()).addRemoteComponents(
-                                                            RegionSpecificSeqId.newBuilder().setRegion(
-                                                                    msg.getSrcRegion()).setSeqId(
-                                                                    msg.getMsgId().getLocalComponent())));
+                                                MessageSeqId.newBuilder(msg.getMsgId()).addRemoteComponents(
+                                                    RegionSpecificSeqId.newBuilder().setRegion(
+                                                        msg.getSrcRegion()).setSeqId(
+                                                        msg.getMsgId().getLocalComponent())));
                                         }
                                         pm.persistMessage(new PersistRequest(topic, msg, new Callback<Long>() {
                                             @Override
                                             public void operationFinished(Object ctx, Long resultOfOperation) {
                                                 if (LOGGER.isDebugEnabled())
                                                     LOGGER.debug("cross-region recv-fwd succeeded for topic "
-                                                            + topic.toStringUtf8());
+                                                                 + topic.toStringUtf8());
                                                 callback.operationFinished(context, null);
                                             }
 
@@ -107,7 +107,7 @@ public class RegionManager implements SubscriptionEventListener {
                                             public void operationFailed(Object ctx, PubSubException exception) {
                                                 if (LOGGER.isDebugEnabled())
                                                     LOGGER.error("cross-region recv-fwd failed for topic "
-                                                            + topic.toStringUtf8(), exception);
+                                                                 + topic.toStringUtf8(), exception);
                                                 callback.operationFailed(context, exception);
                                             }
                                         }, null));
@@ -115,12 +115,12 @@ public class RegionManager implements SubscriptionEventListener {
                                 });
                                 if (LOGGER.isDebugEnabled())
                                     LOGGER.debug("cross-region start-delivery succeeded for topic "
-                                            + topic.toStringUtf8());
+                                                 + topic.toStringUtf8());
                                 mcb.operationFinished(ctx, null);
                             } catch (PubSubException ex) {
                                 if (LOGGER.isDebugEnabled())
                                     LOGGER.error(
-                                            "cross-region start-delivery failed for topic " + topic.toStringUtf8(), ex);
+                                        "cross-region start-delivery failed for topic " + topic.toStringUtf8(), ex);
                                 mcb.operationFailed(ctx, ex);
                             }
                         }
@@ -129,7 +129,7 @@ public class RegionManager implements SubscriptionEventListener {
                         public void operationFailed(Object ctx, PubSubException exception) {
                             if (LOGGER.isDebugEnabled())
                                 LOGGER.error("cross-region subscribe failed for topic " + topic.toStringUtf8(),
-                                        exception);
+                                             exception);
                             mcb.operationFailed(ctx, exception);
                         }
                     }, null);

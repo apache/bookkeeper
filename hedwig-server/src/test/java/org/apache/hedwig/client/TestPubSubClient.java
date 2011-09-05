@@ -78,7 +78,7 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
     // Test implementation of subscriber's message handler.
     class TestMessageHandler implements MessageHandler {
         public void consume(ByteString topic, ByteString subscriberId, Message msg, Callback<Void> callback,
-                Object context) {
+                            Object context) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -112,7 +112,7 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
         boolean publishSuccess = true;
         try {
             publisher.publish(ByteString.copyFromUtf8("mySyncTopic"), Message.newBuilder().setBody(
-                    ByteString.copyFromUtf8("Hello Sync World!")).build());
+                                  ByteString.copyFromUtf8("Hello Sync World!")).build());
         } catch (Exception e) {
             publishSuccess = false;
         }
@@ -122,7 +122,7 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
     @Test
     public void testAsyncPublish() throws Exception {
         publisher.asyncPublish(ByteString.copyFromUtf8("myAsyncTopic"), Message.newBuilder().setBody(
-                ByteString.copyFromUtf8("Hello Async World!")).build(), new TestCallback(), null);
+                                   ByteString.copyFromUtf8("Hello Async World!")).build(), new TestCallback(), null);
         assertTrue(queue.take());
     }
 
@@ -132,13 +132,13 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
         ByteString topic2 = ByteString.copyFromUtf8("myNewTopic");
 
         publisher.asyncPublish(topic1, Message.newBuilder().setBody(ByteString.copyFromUtf8("Hello World!")).build(),
-                new TestCallback(), null);
+                               new TestCallback(), null);
         assertTrue(queue.take());
         publisher.asyncPublish(topic2, Message.newBuilder().setBody(ByteString.copyFromUtf8("Hello on new topic!"))
-                .build(), new TestCallback(), null);
+                               .build(), new TestCallback(), null);
         assertTrue(queue.take());
         publisher.asyncPublish(topic1, Message.newBuilder().setBody(
-                ByteString.copyFromUtf8("Hello Again on old topic!")).build(), new TestCallback(), null);
+                                   ByteString.copyFromUtf8("Hello Again on old topic!")).build(), new TestCallback(), null);
         assertTrue(queue.take());
     }
 
@@ -156,7 +156,7 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
     @Test
     public void testAsyncSubscribe() throws Exception {
         subscriber.asyncSubscribe(ByteString.copyFromUtf8("myAsyncSubscribeTopic"), ByteString.copyFromUtf8("1"),
-                CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(), null);
+                                  CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(), null);
         assertTrue(queue.take());
     }
 
@@ -173,23 +173,23 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
         // Now publish some messages for the topic to be consumed by the
         // subscriber.
         publisher.asyncPublish(topic, Message.newBuilder().setBody(ByteString.copyFromUtf8("Message #1")).build(),
-                new TestCallback(), null);
+                               new TestCallback(), null);
         assertTrue(queue.take());
         assertTrue(consumeQueue.take());
         publisher.asyncPublish(topic, Message.newBuilder().setBody(ByteString.copyFromUtf8("Message #2")).build(),
-                new TestCallback(), null);
+                               new TestCallback(), null);
         assertTrue(queue.take());
         assertTrue(consumeQueue.take());
         publisher.asyncPublish(topic, Message.newBuilder().setBody(ByteString.copyFromUtf8("Message #3")).build(),
-                new TestCallback(), null);
+                               new TestCallback(), null);
         assertTrue(queue.take());
         assertTrue(consumeQueue.take());
         publisher.asyncPublish(topic, Message.newBuilder().setBody(ByteString.copyFromUtf8("Message #4")).build(),
-                new TestCallback(), null);
+                               new TestCallback(), null);
         assertTrue(queue.take());
         assertTrue(consumeQueue.take());
         publisher.asyncPublish(topic, Message.newBuilder().setBody(ByteString.copyFromUtf8("Message #5")).build(),
-                new TestCallback(), null);
+                               new TestCallback(), null);
         assertTrue(queue.take());
         assertTrue(consumeQueue.take());
     }

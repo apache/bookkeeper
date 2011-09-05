@@ -39,62 +39,62 @@ import org.jboss.netty.logging.Log4JLoggerFactory;
 
 @ChannelPipelineCoverage("all")
 public class FakeBookie extends SimpleChannelHandler implements
-		ChannelPipelineFactory {
-	static final Logger logger = Logger.getLogger(FakeBookie.class);
-	ServerSocketChannelFactory serverChannelFactory = new NioServerSocketChannelFactory(
-			Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
+    ChannelPipelineFactory {
+    static final Logger logger = Logger.getLogger(FakeBookie.class);
+    ServerSocketChannelFactory serverChannelFactory = new NioServerSocketChannelFactory(
+        Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
 
-	public FakeBookie(int port) {
-		InternalLoggerFactory.setDefaultFactory(new Log4JLoggerFactory());
-		ServerBootstrap bootstrap = new ServerBootstrap(serverChannelFactory);
+    public FakeBookie(int port) {
+        InternalLoggerFactory.setDefaultFactory(new Log4JLoggerFactory());
+        ServerBootstrap bootstrap = new ServerBootstrap(serverChannelFactory);
 
-		bootstrap.setPipelineFactory(this);
-		bootstrap.setOption("child.tcpNoDelay", true);
-		bootstrap.setOption("child.keepAlive", true);
-		bootstrap.setOption("reuseAddress", true);
+        bootstrap.setPipelineFactory(this);
+        bootstrap.setOption("child.tcpNoDelay", true);
+        bootstrap.setOption("child.keepAlive", true);
+        bootstrap.setOption("reuseAddress", true);
 
-		logger.info("Going into receive loop");
-		// Bind and start to accept incoming connections.
-		bootstrap.bind(new InetSocketAddress(port));
-	}
+        logger.info("Going into receive loop");
+        // Bind and start to accept incoming connections.
+        bootstrap.bind(new InetSocketAddress(port));
+    }
 
-	@Override
-	public ChannelPipeline getPipeline() throws Exception {
-		ChannelPipeline pipeline = Channels.pipeline();
-		pipeline.addLast("lengthbaseddecoder",
-				new LengthFieldBasedFrameDecoder(1024 * 1024, 0, 4, 0, 4));
-		pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
-		pipeline.addLast("main", this);
-		return pipeline;
-	}
+    @Override
+    public ChannelPipeline getPipeline() throws Exception {
+        ChannelPipeline pipeline = Channels.pipeline();
+        pipeline.addLast("lengthbaseddecoder",
+                         new LengthFieldBasedFrameDecoder(1024 * 1024, 0, 4, 0, 4));
+        pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
+        pipeline.addLast("main", this);
+        return pipeline;
+    }
 
-	@Override
-	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
-			throws Exception {
-		if (!(e.getMessage() instanceof ChannelBuffer)) {
-			ctx.sendUpstream(e);
-			return;
-		}
+    @Override
+    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
+            throws Exception {
+        if (!(e.getMessage() instanceof ChannelBuffer)) {
+            ctx.sendUpstream(e);
+            return;
+        }
 
-		ChannelBuffer buffer = (ChannelBuffer) e.getMessage();
+        ChannelBuffer buffer = (ChannelBuffer) e.getMessage();
 
-		int type = buffer.readInt();
-		buffer.readerIndex(24);
-		long ledgerId = buffer.readLong();
-		long entryId = buffer.readLong();
+        int type = buffer.readInt();
+        buffer.readerIndex(24);
+        long ledgerId = buffer.readLong();
+        long entryId = buffer.readLong();
 
-		ChannelBuffer outBuf = ctx.getChannel().getConfig().getBufferFactory()
-				.getBuffer(24);
-		outBuf.writeInt(type);
-		outBuf.writeInt(0); // rc
-		outBuf.writeLong(ledgerId);
-		outBuf.writeLong(entryId);
-		e.getChannel().write(outBuf);
+        ChannelBuffer outBuf = ctx.getChannel().getConfig().getBufferFactory()
+                               .getBuffer(24);
+        outBuf.writeInt(type);
+        outBuf.writeInt(0); // rc
+        outBuf.writeLong(ledgerId);
+        outBuf.writeLong(entryId);
+        e.getChannel().write(outBuf);
 
-	}
+    }
 
-	
-	public static void main(String args[]){
-		new FakeBookie(Integer.parseInt(args[0]));
-	}
+
+    public static void main(String args[]) {
+        new FakeBookie(Integer.parseInt(args[0]));
+    }
 }

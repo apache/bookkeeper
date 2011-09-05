@@ -37,29 +37,29 @@ import org.jboss.netty.buffer.ChannelBuffers;
 
 public abstract class DigestManager {
     static final Logger logger = Logger.getLogger(DigestManager.class);
-    
+
     static final int METADATA_LENGTH = 32;
-    
+
     long ledgerId;
-    
+
     abstract int getMacCodeLength();
-    
-    void update(byte[] data){
+
+    void update(byte[] data) {
         update(data, 0, data.length);
     }
-    
+
     abstract void update(byte[] data, int offset, int length);
     abstract byte[] getValueAndReset();
-    
+
     final int macCodeLength;
 
     public DigestManager(long ledgerId) {
         this.ledgerId = ledgerId;
         macCodeLength = getMacCodeLength();
     }
-    
-    static DigestManager instantiate(long ledgerId, byte[] passwd, DigestType digestType) throws GeneralSecurityException{
-        switch(digestType){
+
+    static DigestManager instantiate(long ledgerId, byte[] passwd, DigestType digestType) throws GeneralSecurityException {
+        switch(digestType) {
         case MAC:
             return new MacDigestManager(ledgerId, passwd);
         case CRC32:
@@ -71,14 +71,14 @@ public abstract class DigestManager {
 
     /**
      * Computes the digest for an entry and put bytes together for sending.
-     *  
+     *
      * @param entryId
      * @param lastAddConfirmed
      * @param length
      * @param data
      * @return
      */
-    
+
     public ChannelBuffer computeDigestAndPackageForSending(long entryId, long lastAddConfirmed, long length, byte[] data, int doffset, int dlength) {
 
         byte[] bufferArray = new byte[METADATA_LENGTH + macCodeLength];
@@ -133,21 +133,21 @@ public abstract class DigestManager {
 
         if (actualLedgerId != ledgerId) {
             logger.error("Ledger-id mismatch in authenticated message, expected: " + ledgerId + " , actual: "
-                    + actualLedgerId);
+                         + actualLedgerId);
             throw new BKDigestMatchException();
         }
 
         if (!skipEntryIdCheck && actualEntryId != entryId) {
             logger.error("Entry-id mismatch in authenticated message, expected: " + entryId + " , actual: "
-                    + actualEntryId);
+                         + actualEntryId);
             throw new BKDigestMatchException();
         }
 
     }
-    
+
     /**
      * Verify that the digest matches and returns the data in the entry.
-     * 
+     *
      * @param entryId
      * @param dataReceived
      * @return

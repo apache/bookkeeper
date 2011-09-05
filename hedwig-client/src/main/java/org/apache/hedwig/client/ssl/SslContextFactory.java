@@ -43,23 +43,24 @@ public abstract class SslContextFactory {
 
     protected TrustManager[] getTrustManagers() {
         return new TrustManager[] { new X509TrustManager() {
-            // Always trust, even if invalid.
+                // Always trust, even if invalid.
 
-            @Override
-            public X509Certificate[] getAcceptedIssuers() {
-                return new X509Certificate[0];
-            }
+                @Override
+                public X509Certificate[] getAcceptedIssuers() {
+                    return new X509Certificate[0];
+                }
 
-            @Override
-            public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-                // Always trust.
-            }
+                @Override
+                public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                    // Always trust.
+                }
 
-            @Override
-            public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-                // Always trust.
+                @Override
+                public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                    // Always trust.
+                }
             }
-        } };
+        };
     }
 
 }

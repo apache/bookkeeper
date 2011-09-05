@@ -30,13 +30,13 @@ import org.apache.hedwig.util.HedwigSocketAddress;
  * claim responsibilities for the topics that were at the failed host. On
  * claiming responsibility for a topic, a host should call its
  * {@link TopicOwnershipChangeListener}.
- * 
+ *
  */
 
 public interface TopicManager {
     /**
      * Get the name of the host responsible for the given topic.
-     * 
+     *
      * @param topic
      *            The topic whose owner to get.
      * @param cb
@@ -45,8 +45,8 @@ public interface TopicManager {
      * @throws ServiceDownException
      *             If there is an error looking up the information
      */
-    public void getOwner(ByteString topic, boolean shouldClaim, 
-            Callback<HedwigSocketAddress> cb, Object ctx);
+    public void getOwner(ByteString topic, boolean shouldClaim,
+                         Callback<HedwigSocketAddress> cb, Object ctx);
 
     /**
      * Whenever the topic manager finds out that the set of topics owned by this
@@ -59,14 +59,14 @@ public interface TopicManager {
      * immediately to such notifications, and with no blocking (because multiple
      * listeners might need to be informed and they are all informed by the same
      * thread).
-     * 
+     *
      * @param listener
      */
     public void addTopicOwnershipChangeListener(TopicOwnershipChangeListener listener);
 
     /**
      * Give up ownership of a topic. If I don't own it, do nothing.
-     * 
+     *
      * @throws ServiceDownException
      *             If there is an error in claiming responsibility for the topic
      */

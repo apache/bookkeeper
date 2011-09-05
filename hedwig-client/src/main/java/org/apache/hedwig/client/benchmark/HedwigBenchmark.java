@@ -98,7 +98,7 @@ public class HedwigBenchmark implements Callable<Void> {
                     startTopicLabel, partitionIndex, numPartitions, publisher, subscriber, msgSize, nParallel, rate);
             benchmarkPub.warmup(nWarmups);
             benchmarkPub.call();
-            
+
         } else {
             throw new Exception("unknown mode: " + mode);
         }

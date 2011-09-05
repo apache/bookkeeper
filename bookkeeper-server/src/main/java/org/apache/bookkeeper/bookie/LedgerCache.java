@@ -45,7 +45,7 @@ import org.apache.log4j.Logger;
  */
 public class LedgerCache {
     private final static Logger LOG = Logger.getLogger(LedgerDescriptor.class);
-    
+
     final File ledgerDirectories[];
 
     public LedgerCache(File ledgerDirectories[]) {
@@ -57,16 +57,16 @@ public class LedgerCache {
      * the list of potentially clean ledgers
      */
     LinkedList<Long> cleanLedgers = new LinkedList<Long>();
-    
+
     /**
      * the list of potentially dirty ledgers
      */
     LinkedList<Long> dirtyLedgers = new LinkedList<Long>();
-    
+
     HashMap<Long, FileInfo> fileInfoCache = new HashMap<Long, FileInfo>();
-    
+
     LinkedList<Long> openLedgers = new LinkedList<Long>();
-    
+
     // Stores the set of active (non-deleted) ledgers.
     ConcurrentMap<Long, Boolean> activeLedgers = new ConcurrentHashMap<Long, Boolean>();
 
@@ -77,7 +77,7 @@ public class LedgerCache {
         }
         LOG.info("openFileLimit is " + OPEN_FILE_LIMIT);
     }
-    
+
     // allocate half of the memory to the page cache
     private static int pageLimit = (int)((Runtime.getRuntime().maxMemory() / 3) / LedgerEntryPage.PAGE_SIZE);
     static {
@@ -90,7 +90,7 @@ public class LedgerCache {
     // The number of pages that have actually been used
     private int pageCount = 0;
     HashMap<Long, HashMap<Long,LedgerEntryPage>> pages = new HashMap<Long, HashMap<Long,LedgerEntryPage>>();
-    
+
     private void putIntoTable(HashMap<Long, HashMap<Long,LedgerEntryPage>> table, LedgerEntryPage lep) {
         HashMap<Long, LedgerEntryPage> map = table.get(lep.getLedger());
         if (map == null) {
@@ -99,7 +99,7 @@ public class LedgerCache {
         }
         map.put(lep.getFirstEntry(), lep);
     }
-    
+
     private static LedgerEntryPage getFromTable(HashMap<Long, HashMap<Long,LedgerEntryPage>> table, Long ledger, Long firstEntry) {
         HashMap<Long, LedgerEntryPage> map = table.get(ledger);
         if (map != null) {
@@ -107,8 +107,8 @@ public class LedgerCache {
         }
         return null;
     }
-    
-   synchronized private LedgerEntryPage getLedgerEntryPage(Long ledger, Long firstEntry, boolean onlyDirty) {
+
+    synchronized private LedgerEntryPage getLedgerEntryPage(Long ledger, Long firstEntry, boolean onlyDirty) {
         LedgerEntryPage lep = getFromTable(pages, ledger, firstEntry);
         try {
             if (onlyDirty && lep.isClean()) {
@@ -122,7 +122,7 @@ public class LedgerCache {
         }
     }
 
-   public void putEntryOffset(long ledger, long entry, long offset) throws IOException {
+    public void putEntryOffset(long ledger, long entry, long offset) throws IOException {
         int offsetInPage = (int) (entry%LedgerEntryPage.ENTRIES_PER_PAGES);
         // find the id of the first entry of the page that has the entry
         // we are looking for
@@ -142,7 +142,7 @@ public class LedgerCache {
             return;
         }
     }
-    
+
     public long getEntryOffset(long ledger, long entry) throws IOException {
         int offsetInPage = (int) (entry%LedgerEntryPage.ENTRIES_PER_PAGES);
         // find the id of the first entry of the page that has the entry
@@ -156,7 +156,7 @@ public class LedgerCache {
                     putIntoTable(pages, lep);
                 }
                 updatePage(lep);
-                
+
             }
             return lep.getOffset(offsetInPage*8);
         } finally {
@@ -165,7 +165,7 @@ public class LedgerCache {
             }
         }
     }
-    
+
     static final private String getLedgerName(long ledgerId) {
         int parent = (int) (ledgerId & 0xff);
         int grandParent = (int) ((ledgerId & 0xff00) >> 8);
@@ -178,7 +178,7 @@ public class LedgerCache {
         sb.append(".idx");
         return sb.toString();
     }
-    
+
     static final private void checkParents(File f) throws IOException {
         File parent = f.getParentFile();
         if (parent.exists()) {
@@ -188,7 +188,7 @@ public class LedgerCache {
             throw new IOException("Counldn't mkdirs for " + parent);
         }
     }
-    
+
     static final private Random rand = new Random();
 
     static final private File pickDirs(File dirs[]) {
@@ -304,7 +304,8 @@ public class LedgerCache {
                         @Override
                         public int compare(LedgerEntryPage o1, LedgerEntryPage o2) {
                             return (int)(o1.getFirstEntry()-o2.getFirstEntry());
-                        }});
+                        }
+                    });
                     ArrayList<Integer> versions = new ArrayList<Integer>(entries.size());
                     fi = getFileInfo(l, true);
                     int start = 0;
@@ -354,10 +355,10 @@ public class LedgerCache {
             }
         }
     }
-    
+
     private void writeBuffers(Long ledger,
-            List<LedgerEntryPage> entries, FileInfo fi,
-            int start, int count) throws IOException {
+                              List<LedgerEntryPage> entries, FileInfo fi,
+                              int start, int count) throws IOException {
         if (LOG.isTraceEnabled()) {
             LOG.trace("Writing " + count + " buffers of " + Long.toHexString(ledger));
         }
@@ -401,7 +402,7 @@ public class LedgerCache {
                 return lep;
             }
         }
-        
+
         outerLoop:
         while(true) {
             synchronized(cleanLedgers) {
@@ -461,7 +462,7 @@ public class LedgerCache {
                 }
             }
         }
-        
+
         return lastEntry;
     }
 
@@ -484,7 +485,7 @@ public class LedgerCache {
                                 if (!index.isFile() || !index.getName().endsWith(".idx")) {
                                     continue;
                                 }
-                                // We've found a ledger index file. The file name is the 
+                                // We've found a ledger index file. The file name is the
                                 // HexString representation of the ledgerId.
                                 String ledgerIdInHex = index.getName().substring(0, index.getName().length() - 4);
                                 activeLedgers.put(Long.parseLong(ledgerIdInHex, 16), true);
@@ -498,7 +499,7 @@ public class LedgerCache {
             LOG.debug("Active ledgers found: " + activeLedgers);
         }
     }
-    
+
     /**
      * This method is called whenever a ledger is deleted by the BookKeeper Client
      * and we want to remove all relevant data for it stored in the LedgerCache.
@@ -514,8 +515,8 @@ public class LedgerCache {
         // Remove it from the activeLedgers set
         activeLedgers.remove(ledgerId);
 
-        // Now remove it from all the other lists and maps. 
-        // These data structures need to be synchronized first before removing entries. 
+        // Now remove it from all the other lists and maps.
+        // These data structures need to be synchronized first before removing entries.
         synchronized(this) {
             pages.remove(ledgerId);
         }

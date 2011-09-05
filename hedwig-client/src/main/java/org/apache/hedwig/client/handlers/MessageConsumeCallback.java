@@ -35,7 +35,7 @@ import org.apache.hedwig.util.Callback;
  * can use a singleton for the class. The object context used should be the
  * MessageConsumeData type. That will contain all of the information needed to
  * call the message consume logic in the client lib ResponseHandler.
- * 
+ *
  */
 public class MessageConsumeCallback implements Callback<Void> {
 
@@ -61,7 +61,7 @@ public class MessageConsumeCallback implements Callback<Void> {
             // Try to consume the message again
             Channel topicSubscriberChannel = client.getSubscriber().getChannelForTopic(topicSubscriber);
             HedwigClient.getResponseHandlerFromChannel(topicSubscriberChannel).getSubscribeResponseHandler()
-                    .asyncMessageConsume(messageConsumeData.msg);
+            .asyncMessageConsume(messageConsumeData.msg);
         }
     }
 
@@ -72,7 +72,7 @@ public class MessageConsumeCallback implements Callback<Void> {
         // to the ResponseHandler indicating that the message is consumed.
         Channel topicSubscriberChannel = client.getSubscriber().getChannelForTopic(topicSubscriber);
         HedwigClient.getResponseHandlerFromChannel(topicSubscriberChannel).getSubscribeResponseHandler()
-                .messageConsumed(messageConsumeData.msg);
+        .messageConsumed(messageConsumeData.msg);
     }
 
     public void operationFailed(Object ctx, PubSubException exception) {
@@ -89,7 +89,7 @@ public class MessageConsumeCallback implements Callback<Void> {
         // perhaps what the last amount of time we slept was. We could stick
         // some of this meta-data into the MessageConsumeData when we retry.
         client.getClientTimer().schedule(new MessageConsumeRetryTask(messageConsumeData, topicSubscriber),
-                client.getConfiguration().getMessageConsumeRetryWaitTime());
+                                         client.getConfiguration().getMessageConsumeRetryWaitTime());
     }
 
 }

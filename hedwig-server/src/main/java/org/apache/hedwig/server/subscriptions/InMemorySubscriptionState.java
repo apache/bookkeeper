@@ -42,7 +42,7 @@ public class InMemorySubscriptionState {
     }
 
     /**
-     * 
+     *
      * @param lastConsumeSeqId
      * @param consumeInterval
      *            The amount of laziness we want in persisting the consume

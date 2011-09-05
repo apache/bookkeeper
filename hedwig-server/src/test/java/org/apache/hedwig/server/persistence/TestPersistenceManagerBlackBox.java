@@ -163,13 +163,13 @@ public abstract class TestPersistenceManagerBlackBox extends TestCase {
                     PersistenceManagerWithRangeScan rangePersistenceManager = (PersistenceManagerWithRangeScan) persistenceManager;
 
                     rangePersistenceManager.scanMessages(new RangeScanRequest(topic, getLowestSeqId(),
-                            NUM_MESSAGES_TO_TEST + 1, Long.MAX_VALUE, listener, statusQueue));
+                                                         NUM_MESSAGES_TO_TEST + 1, Long.MAX_VALUE, listener, statusQueue));
 
                 } else {
 
                     ScanCallback listener = new PointScanVerifierListener(pubMsgs, topic);
                     persistenceManager
-                            .scanSingleMessage(new ScanRequest(topic, getLowestSeqId(), listener, statusQueue));
+                    .scanSingleMessage(new ScanRequest(topic, getLowestSeqId(), listener, statusQueue));
 
                 }
                 // now listen for it to finish
@@ -295,7 +295,7 @@ public abstract class TestPersistenceManagerBlackBox extends TestCase {
         assertEquals(null, failureException);
         for (int i = 0; i < NUM_TOPICS_TO_TEST; i++) {
             assertEquals(persistenceManager.getCurrentSeqIdForTopic(getTopicName(i)).getLocalComponent(),
-                    getExpectedSeqId(NUM_MESSAGES_TO_TEST));
+                         getExpectedSeqId(NUM_MESSAGES_TO_TEST));
         }
 
     }

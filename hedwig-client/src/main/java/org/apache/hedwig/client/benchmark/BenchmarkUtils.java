@@ -86,7 +86,7 @@ public class BenchmarkUtils {
         public String summarize(long startTime) {
             double percentile = Double.parseDouble(System.getProperty("percentile", "99.9"));
             return tpAgg.summarize(startTime) + ", avg latency = " + sum.get() / tpAgg.count + ", " + percentile
-                    + "%ile latency = " + getPercentile(percentile);
+                   + "%ile latency = " + getPercentile(percentile);
         }
     }
 
@@ -140,7 +140,7 @@ public class BenchmarkUtils {
 
         public String summarize(long startTime) {
             return "Finished " + label + ": count = " + done.get() + ", tput = " + calcTp(count, startTime)
-                    + " ops/s, numFailed = " + numFailed;
+                   + " ops/s, numFailed = " + numFailed;
         }
     }
 

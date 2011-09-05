@@ -24,81 +24,81 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 
 
-public class SafeAsynBKCallback extends SafeAsyncCallback{
+public class SafeAsynBKCallback extends SafeAsyncCallback {
 
     public static abstract class OpenCallback implements AsyncCallback.OpenCallback {
         @Override
         public void openComplete(int rc, LedgerHandle ledgerHandle, Object ctx) {
-            try{
+            try {
                 safeOpenComplete(rc, ledgerHandle, ctx);
-            }catch(Throwable t){
+            } catch(Throwable t) {
                 invokeUncaughtExceptionHandler(t);
             }
         }
-        
+
         public abstract void safeOpenComplete(int rc, LedgerHandle ledgerHandle, Object ctx);
 
     }
-    
+
     public static abstract class CloseCallback implements AsyncCallback.CloseCallback {
         @Override
-        public void closeComplete(int rc, LedgerHandle ledgerHandle, Object ctx){
-            try{
+        public void closeComplete(int rc, LedgerHandle ledgerHandle, Object ctx) {
+            try {
                 safeCloseComplete(rc, ledgerHandle, ctx);
-            }catch(Throwable t){
+            } catch(Throwable t) {
                 invokeUncaughtExceptionHandler(t);
             }
         }
-        
+
         public abstract void safeCloseComplete(int rc, LedgerHandle ledgerHandle, Object ctx) ;
     }
-    
+
     public static abstract class ReadCallback implements AsyncCallback.ReadCallback {
-        
+
         @Override
         public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
-            try{
+            try {
                 safeReadComplete(rc, lh, seq, ctx);
-            }catch(Throwable t){
+            } catch(Throwable t) {
                 invokeUncaughtExceptionHandler(t);
             }
-            
+
         }
-        
+
         public abstract void safeReadComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx);
     }
-    
+
     public static abstract class CreateCallback implements AsyncCallback.CreateCallback {
-        
+
         @Override
         public void createComplete(int rc, LedgerHandle lh, Object ctx) {
-            try{
+            try {
                 safeCreateComplete(rc, lh, ctx);
-            }catch(Throwable t){
+            } catch(Throwable t) {
                 invokeUncaughtExceptionHandler(t);
             }
-            
+
         }
-        
+
         public abstract void safeCreateComplete(int rc, LedgerHandle lh, Object ctx);
-        
-        
+
+
     }
-    
+
     public static abstract class AddCallback implements AsyncCallback.AddCallback {
-        
+
         @Override
         public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-            try{
+            try {
                 safeAddComplete(rc, lh, entryId, ctx);
-            }catch(Throwable t){
+            } catch(Throwable t) {
                 invokeUncaughtExceptionHandler(t);
             }
         }
-        
+
         public abstract void safeAddComplete(int rc, LedgerHandle lh, long entryId, Object ctx);
-        
+
     }
-    
+
 }
 

@@ -93,7 +93,7 @@ public class SubscribeResponseHandler {
 
         if (logger.isDebugEnabled())
             logger.debug("Handling a Subscribe response: " + response + ", pubSubData: " + pubSubData + ", host: "
-                    + HedwigClient.getHostFromChannel(channel));
+                         + HedwigClient.getHostFromChannel(channel));
         switch (response.getStatusCode()) {
         case SUCCESS:
             // For successful Subscribe requests, store this Channel locally
@@ -122,7 +122,7 @@ public class SubscribeResponseHandler {
             // because when that happens, things are slow already and piling
             // up on the client app side to consume messages.
             outstandingMsgSet = new HashSet<Message>(
-                    responseHandler.getConfiguration().getMaximumOutstandingMessages(), 1.0f);
+                responseHandler.getConfiguration().getMaximumOutstandingMessages(), 1.0f);
             // Response was success so invoke the callback's operationFinished
             // method.
             pubSubData.callback.operationFinished(pubSubData.context, null);
@@ -131,14 +131,14 @@ public class SubscribeResponseHandler {
             // For Subscribe requests, the server says that the client is
             // already subscribed to it.
             pubSubData.callback.operationFailed(pubSubData.context, new ClientAlreadySubscribedException(
-                    "Client is already subscribed for topic: " + pubSubData.topic.toStringUtf8() + ", subscriberId: "
-                            + pubSubData.subscriberId.toStringUtf8()));
+                                                    "Client is already subscribed for topic: " + pubSubData.topic.toStringUtf8() + ", subscriberId: "
+                                                    + pubSubData.subscriberId.toStringUtf8()));
             break;
         case SERVICE_DOWN:
             // Response was service down failure so just invoke the callback's
             // operationFailed method.
             pubSubData.callback.operationFailed(pubSubData.context, new ServiceDownException(
-                    "Server responded with a SERVICE_DOWN status"));
+                                                    "Server responded with a SERVICE_DOWN status"));
             break;
         case NOT_RESPONSIBLE_FOR_TOPIC:
             // Redirect response so we'll need to repost the original Subscribe
@@ -150,7 +150,7 @@ public class SubscribeResponseHandler {
             // cases.
             logger.error("Unexpected error response from server for PubSubResponse: " + response);
             pubSubData.callback.operationFailed(pubSubData.context, new ServiceDownException(
-                    "Server responded with a status code of: " + response.getStatusCode()));
+                                                    "Server responded with a status code of: " + response.getStatusCode()));
             break;
         }
     }
@@ -160,7 +160,7 @@ public class SubscribeResponseHandler {
     public void handleSubscribeMessage(PubSubResponse response) {
         if (logger.isDebugEnabled())
             logger.debug("Handling a Subscribe message in response: " + response + ", topic: "
-                    + origSubData.topic.toStringUtf8() + ", subscriberId: " + origSubData.subscriberId.toStringUtf8());
+                         + origSubData.topic.toStringUtf8() + ", subscriberId: " + origSubData.subscriberId.toStringUtf8());
         Message message = response.getMessage();
 
         synchronized (this) {
@@ -182,8 +182,8 @@ public class SubscribeResponseHandler {
                     subscribeMsgQueue = new LinkedList<Message>();
                 if (logger.isDebugEnabled())
                     logger
-                        .debug("Message has arrived but Subscribe channel does not have a registered MessageHandler yet so queueing up the message: "
-                                + message);
+                    .debug("Message has arrived but Subscribe channel does not have a registered MessageHandler yet so queueing up the message: "
+                           + message);
                 subscribeMsgQueue.add(message);
             }
         }
@@ -193,15 +193,15 @@ public class SubscribeResponseHandler {
      * Method called when a message arrives for a subscribe Channel and we want
      * to consume it asynchronously via the registered MessageHandler (should
      * not be null when called here).
-     * 
+     *
      * @param message
      *            Message from Subscribe Channel we want to consume.
      */
     protected void asyncMessageConsume(Message message) {
         if (logger.isDebugEnabled())
             logger.debug("Call the client app's MessageHandler asynchronously to consume the message: " + message
-                    + ", topic: " + origSubData.topic.toStringUtf8() + ", subscriberId: "
-                    + origSubData.subscriberId.toStringUtf8());
+                         + ", topic: " + origSubData.topic.toStringUtf8() + ", subscriberId: "
+                         + origSubData.subscriberId.toStringUtf8());
         // Add this "pending to be consumed" message to the outstandingMsgSet.
         outstandingMsgSet.add(message);
         // Check if we've exceeded the max size for the outstanding message set.
@@ -211,13 +211,13 @@ public class SubscribeResponseHandler {
             // Channel to not be readable.
             if (logger.isDebugEnabled())
                 logger.debug("Too many outstanding messages (" + outstandingMsgSet.size()
-                        + ") so throttling the subscribe netty Channel");
+                             + ") so throttling the subscribe netty Channel");
             subscribeChannel.setReadable(false);
         }
         MessageConsumeData messageConsumeData = new MessageConsumeData(origSubData.topic, origSubData.subscriberId,
                 message);
         messageHandler.consume(origSubData.topic, origSubData.subscriberId, message, responseHandler.getClient()
-                .getConsumeCallback(), messageConsumeData);
+                               .getConsumeCallback(), messageConsumeData);
     }
 
     /**
@@ -230,7 +230,7 @@ public class SubscribeResponseHandler {
      * same order. To make this thread safe, since multiple outstanding messages
      * could be consumed by the client app and then called back to here, make
      * this method synchronized.
-     * 
+     *
      * @param message
      *            Message sent from server for topic subscription that has been
      *            consumed by the client.
@@ -238,8 +238,8 @@ public class SubscribeResponseHandler {
     protected synchronized void messageConsumed(Message message) {
         if (logger.isDebugEnabled())
             logger.debug("Message has been successfully consumed by the client app for message: " + message
-                    + ", topic: " + origSubData.topic.toStringUtf8() + ", subscriberId: "
-                    + origSubData.subscriberId.toStringUtf8());
+                         + ", topic: " + origSubData.topic.toStringUtf8() + ", subscriberId: "
+                         + origSubData.subscriberId.toStringUtf8());
         // Update the consumed messages buffer variables
         if (responseHandler.getConfiguration().isAutoSendConsumeMessageEnabled()) {
             // Update these variables only if we are auto-sending consume
@@ -265,8 +265,8 @@ public class SubscribeResponseHandler {
             // subscribe request for the TopicSubscriber.
             if (logger.isDebugEnabled())
                 logger
-                        .debug("Consumed message buffer limit reached so send the Consume Request to the server with lastMessageSeqId: "
-                                + lastMessageSeqId);
+                .debug("Consumed message buffer limit reached so send the Consume Request to the server with lastMessageSeqId: "
+                       + lastMessageSeqId);
             responseHandler.getSubscriber().doConsume(origSubData, subscribeChannel, lastMessageSeqId);
             numConsumedMessagesInBuffer = 0;
             lastMessageSeqId = null;
@@ -279,10 +279,10 @@ public class SubscribeResponseHandler {
         if (!subscribeChannel.isReadable() && outstandingMsgSet.size() == 0) {
             if (logger.isDebugEnabled())
                 logger
-                        .debug("Message consumption has caught up so okay to turn off throttling of messages on the subscribe channel for topic: "
-                                + origSubData.topic.toStringUtf8()
-                                + ", subscriberId: "
-                                + origSubData.subscriberId.toStringUtf8());
+                .debug("Message consumption has caught up so okay to turn off throttling of messages on the subscribe channel for topic: "
+                       + origSubData.topic.toStringUtf8()
+                       + ", subscriberId: "
+                       + origSubData.subscriberId.toStringUtf8());
             subscribeChannel.setReadable(true);
         }
     }
@@ -291,14 +291,14 @@ public class SubscribeResponseHandler {
      * Setter used for Subscribe flows when delivery for the subscription is
      * started. This is used to register the MessageHandler needed to consumer
      * the subscribed messages for the topic.
-     * 
+     *
      * @param messageHandler
      *            MessageHandler to register for this ResponseHandler instance.
      */
     public void setMessageHandler(MessageHandler messageHandler) {
         if (logger.isDebugEnabled())
             logger.debug("Setting the messageHandler for topic: " + origSubData.topic.toStringUtf8()
-                    + ", subscriberId: " + origSubData.subscriberId.toStringUtf8());
+                         + ", subscriberId: " + origSubData.subscriberId.toStringUtf8());
         synchronized (this) {
             this.messageHandler = messageHandler;
             // Once the MessageHandler is registered, see if we have any queued up
@@ -309,8 +309,8 @@ public class SubscribeResponseHandler {
             if (messageHandler != null && subscribeMsgQueue != null && subscribeMsgQueue.size() > 0) {
                 if (logger.isDebugEnabled())
                     logger.debug("Consuming " + subscribeMsgQueue.size() + " queued up messages for topic: "
-                            + origSubData.topic.toStringUtf8() + ", subscriberId: "
-                            + origSubData.subscriberId.toStringUtf8());
+                                 + origSubData.topic.toStringUtf8() + ", subscriberId: "
+                                 + origSubData.subscriberId.toStringUtf8());
                 for (Message message : subscribeMsgQueue) {
                     asyncMessageConsume(message);
                 }
@@ -323,7 +323,7 @@ public class SubscribeResponseHandler {
 
     /**
      * Getter for the MessageHandler that is set for this subscribe channel.
-     * 
+     *
      * @return The MessageHandler for consuming messages
      */
     public MessageHandler getMessageHandler() {

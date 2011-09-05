@@ -33,7 +33,7 @@ import org.apache.hedwig.server.persistence.BookKeeperTestBase;
 /**
  * This is a base class for any tests that need a Hedwig Hub(s) setup with an
  * associated BookKeeper and ZooKeeper instance.
- * 
+ *
  */
 public abstract class HedwigHubTestBase extends TestCase {
 
@@ -79,7 +79,7 @@ public abstract class HedwigHubTestBase extends TestCase {
         public String getZkHost() {
             return bktb.getZkHostPort();
         }
-        
+
         @Override
         public boolean isSSLEnabled() {
             return true;

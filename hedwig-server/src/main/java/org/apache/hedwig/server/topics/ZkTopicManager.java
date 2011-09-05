@@ -47,13 +47,13 @@ import org.apache.hedwig.zookeeper.SafeAsyncZKCallback.StatCallback;
 
 /**
  * Topics are operated on in parallel as they are independent.
- * 
+ *
  */
 public class ZkTopicManager extends AbstractTopicManager implements TopicManager {
 
     static Logger logger = Logger.getLogger(ZkTopicManager.class);
     Random rand = new Random();
-    
+
     /**
      * Persistent storage for topic metadata.
      */
@@ -75,7 +75,7 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
 
     /**
      * Create a new topic manager. Pass in an active ZooKeeper client object.
-     * 
+     *
      * @param zk
      */
     public ZkTopicManager(final ZooKeeper zk, final ServerConfiguration cfg, ScheduledExecutorService scheduler)
@@ -93,18 +93,18 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
                         logger.warn("ZK client has been disconnected to the ZK server!");
                         isSuspended = true;
                     } else if (event.getState().equals(Watcher.Event.KeeperState.SyncConnected)) {
-			if (isSuspended) {
-	                    logger.info("ZK client has been reconnected to the ZK server!");
-			}
-			isSuspended = false;
+                        if (isSuspended) {
+                            logger.info("ZK client has been reconnected to the ZK server!");
+                        }
+                        isSuspended = false;
                     }
-		}
-		// Check for expired connection.
+                }
+                // Check for expired connection.
                 if (event.getState().equals(Watcher.Event.KeeperState.Expired)) {
                     logger.error("ZK client connection to the ZK server has expired!");
                     System.exit(1);
-                }             
-	    }
+                }
+            }
         });
         final SynchronousQueue<Either<Void, PubSubException>> queue = new SynchronousQueue<Either<Void, PubSubException>>();
 
@@ -132,41 +132,41 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
     void registerWithZookeeper(final Callback<Void> callback, Object ctx) {
 
         ZkUtils.createFullPathOptimistic(zk, ephemeralNodePath, getCurrentLoadData(), Ids.OPEN_ACL_UNSAFE,
-                CreateMode.EPHEMERAL, new SafeAsyncZKCallback.StringCallback() {
+        CreateMode.EPHEMERAL, new SafeAsyncZKCallback.StringCallback() {
 
+            @Override
+            public void safeProcessResult(int rc, String path, Object ctx, String name) {
+                if (rc == Code.OK.intValue()) {
+                    callback.operationFinished(ctx, null);
+                    return;
+                }
+                if (rc != Code.NODEEXISTS.intValue()) {
+                    KeeperException ke = ZkUtils.logErrorAndCreateZKException(
+                                             "Could not create ephemeral node to register hub", ephemeralNodePath, rc);
+                    callback.operationFailed(ctx, new PubSubException.ServiceDownException(ke));
+                    return;
+                }
+
+                logger.info("Found stale ephemeral node while registering hub with ZK, deleting it");
+
+                // Node exists, lets try to delete it and retry
+                zk.delete(ephemeralNodePath, -1, new SafeAsyncZKCallback.VoidCallback() {
                     @Override
-                    public void safeProcessResult(int rc, String path, Object ctx, String name) {
-                        if (rc == Code.OK.intValue()) {
-                            callback.operationFinished(ctx, null);
+                    public void safeProcessResult(int rc, String path, Object ctx) {
+                        if (rc == Code.OK.intValue() || rc == Code.NONODE.intValue()) {
+                            registerWithZookeeper(callback, ctx);
                             return;
                         }
-                        if (rc != Code.NODEEXISTS.intValue()) {
-                            KeeperException ke = ZkUtils.logErrorAndCreateZKException(
-                                    "Could not create ephemeral node to register hub", ephemeralNodePath, rc);
-                            callback.operationFailed(ctx, new PubSubException.ServiceDownException(ke));
-                            return;
-                        }
-
-                        logger.info("Found stale ephemeral node while registering hub with ZK, deleting it");
-
-                        // Node exists, lets try to delete it and retry
-                        zk.delete(ephemeralNodePath, -1, new SafeAsyncZKCallback.VoidCallback() {
-                            @Override
-                            public void safeProcessResult(int rc, String path, Object ctx) {
-                                if (rc == Code.OK.intValue() || rc == Code.NONODE.intValue()) {
-                                    registerWithZookeeper(callback, ctx);
-                                    return;
-                                }
-                                KeeperException ke = ZkUtils.logErrorAndCreateZKException(
-                                        "Could not delete stale ephemeral node to register hub", ephemeralNodePath, rc);
-                                callback.operationFailed(ctx, new PubSubException.ServiceDownException(ke));
-                                return;
-
-                            }
-                        }, ctx);
+                        KeeperException ke = ZkUtils.logErrorAndCreateZKException(
+                                                 "Could not delete stale ephemeral node to register hub", ephemeralNodePath, rc);
+                        callback.operationFailed(ctx, new PubSubException.ServiceDownException(ke));
+                        return;
 
                     }
-                }, null);
+                }, ctx);
+
+            }
+        }, null);
     }
 
     String hubPath(ByteString topic) {
@@ -175,12 +175,12 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
 
     @Override
     protected void realGetOwner(final ByteString topic, final boolean shouldClaim,
-            final Callback<HedwigSocketAddress> cb, final Object ctx) {
+                                final Callback<HedwigSocketAddress> cb, final Object ctx) {
         // If operations are suspended due to a ZK client disconnect, just error
         // out this call and return.
         if (isSuspended) {
             cb.operationFailed(ctx, new PubSubException.ServiceDownException(
-                    "ZKTopicManager service is temporarily suspended!"));
+                                   "ZKTopicManager service is temporarily suspended!"));
             return;
         }
 
@@ -217,7 +217,7 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
                 public void safeProcessResult(int rc, String path, Object ctx, List<String> children) {
                     if (rc != Code.OK.intValue()) {
                         KeeperException e = ZkUtils.logErrorAndCreateZKException(
-                                "Could not get list of available hubs", path, rc);
+                                                "Could not get list of available hubs", path, rc);
                         cb.operationFailed(ctx, new PubSubException.ServiceDownException(e));
                         return;
                     }
@@ -238,8 +238,8 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
                         if (rc == KeeperException.Code.OK.intValue()) {
                             try {
                                 int load = Integer.parseInt(new String(data));
-                                if (logger.isDebugEnabled()){
-                                	logger.debug("Found server: " + ctx + " with load: " + load);
+                                if (logger.isDebugEnabled()) {
+                                    logger.debug("Found server: " + ctx + " with load: " + load);
                                 }
                                 if (load < minLoad  || (load == minLoad && rand.nextBoolean())) {
                                     minLoad = load;
@@ -256,7 +256,7 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
                         if (numResponses == children.size()) {
                             if (leastLoaded == null) {
                                 cb.operationFailed(ZkGetOwnerOp.this.ctx, new PubSubException.ServiceDownException(
-                                        "No hub available"));
+                                                       "No hub available"));
                                 return;
                             }
                             HedwigSocketAddress owner = new HedwigSocketAddress(leastLoaded);
@@ -273,7 +273,7 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
 
             for (String child : children) {
                 zk.getData(cfg.getZkHostsPrefix(new StringBuilder()).append("/").append(child).toString(), false,
-                        dataCallback, child);
+                           dataCallback, child);
             }
         }
 
@@ -296,7 +296,7 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
 
                     if (rc != Code.OK.intValue()) {
                         KeeperException e = ZkUtils.logErrorAndCreateZKException("Could not read ownership for topic: "
-                                + topic.toStringUtf8(), path, rc);
+                                            + topic.toStringUtf8(), path, rc);
                         cb.operationFailed(ctx, new PubSubException.ServiceDownException(e));
                         return;
                     }
@@ -324,7 +324,7 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
                                 claimOrChoose();
                             } else {
                                 KeeperException e = ZkUtils.logErrorAndCreateZKException(
-                                        "Could not delete self node for topic: " + topic.toStringUtf8(), path, rc);
+                                                        "Could not delete self node for topic: " + topic.toStringUtf8(), path, rc);
                                 cb.operationFailed(ctx, new PubSubException.ServiceDownException(e));
                             }
                         }
@@ -339,26 +339,26 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
             }
 
             ZkUtils.createFullPathOptimistic(zk, hubPath, addr.toString().getBytes(), Ids.OPEN_ACL_UNSAFE,
-                    CreateMode.EPHEMERAL, new SafeAsyncZKCallback.StringCallback() {
+            CreateMode.EPHEMERAL, new SafeAsyncZKCallback.StringCallback() {
 
-                        @Override
-                        public void safeProcessResult(int rc, String path, Object ctx, String name) {
-                            if (rc == Code.OK.intValue()) {
-                                if (logger.isDebugEnabled()) {
-                                    logger.debug("claimed topic: " + topic.toStringUtf8());
-                                }
-                                notifyListenersAndAddToOwnedTopics(topic, cb, ctx);
-                                updateLoadInformation();
-                            } else if (rc == Code.NODEEXISTS.intValue()) {
-                                read();
-                            } else {
-                                KeeperException e = ZkUtils.logErrorAndCreateZKException(
-                                        "Failed to create ephemeral node to claim ownership of topic: "
-                                                + topic.toStringUtf8(), path, rc);
-                                cb.operationFailed(ctx, new PubSubException.ServiceDownException(e));
-                            }
+                @Override
+                public void safeProcessResult(int rc, String path, Object ctx, String name) {
+                    if (rc == Code.OK.intValue()) {
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("claimed topic: " + topic.toStringUtf8());
                         }
-                    }, ctx);
+                        notifyListenersAndAddToOwnedTopics(topic, cb, ctx);
+                        updateLoadInformation();
+                    } else if (rc == Code.NODEEXISTS.intValue()) {
+                        read();
+                    } else {
+                        KeeperException e = ZkUtils.logErrorAndCreateZKException(
+                                                "Failed to create ephemeral node to claim ownership of topic: "
+                                                + topic.toStringUtf8(), path, rc);
+                        cb.operationFailed(ctx, new PubSubException.ServiceDownException(e));
+                    }
+                }
+            }, ctx);
         }
 
     }
@@ -370,10 +370,10 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
     }
 
     void updateLoadInformation() {
-    	byte[] currentLoad = getCurrentLoadData();
-    	if (logger.isDebugEnabled()){
-    		logger.debug("Reporting load of " + new String(currentLoad));
-    	}
+        byte[] currentLoad = getCurrentLoadData();
+        if (logger.isDebugEnabled()) {
+            logger.debug("Reporting load of " + new String(currentLoad));
+        }
         zk.setData(ephemeralNodePath, currentLoad, -1, loadReportingStatCallback, null);
     }
 
@@ -393,7 +393,7 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
 
                 if (rc != Code.OK.intValue()) {
                     KeeperException e = ZkUtils.logErrorAndCreateZKException(
-                            "Failed to delete self-ownership node for topic: " + topic.toStringUtf8(), path, rc);
+                                            "Failed to delete self-ownership node for topic: " + topic.toStringUtf8(), path, rc);
                     cb.operationFailed(ctx, new PubSubException.ServiceDownException(e));
                     return;
                 }
@@ -401,7 +401,7 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
                 HedwigSocketAddress owner = new HedwigSocketAddress(new String(data));
                 if (!owner.equals(addr)) {
                     logger.warn("Wanted to delete self-node for topic: " + topic.toStringUtf8() + " but node for "
-                            + owner + " found, leaving untouched");
+                                + owner + " found, leaving untouched");
                     // Not our node, someone else's, leave it alone
                     cb.operationFinished(ctx, null);
                     return;
@@ -412,8 +412,8 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
                     public void safeProcessResult(int rc, String path, Object ctx) {
                         if (rc != Code.OK.intValue() && rc != Code.NONODE.intValue()) {
                             KeeperException e = ZkUtils
-                                    .logErrorAndCreateZKException("Failed to delete self-ownership node for topic: "
-                                            + topic.toStringUtf8(), path, rc);
+                                                .logErrorAndCreateZKException("Failed to delete self-ownership node for topic: "
+                                                        + topic.toStringUtf8(), path, rc);
                             cb.operationFailed(ctx, new PubSubException.ServiceDownException(e));
                             return;
                         }

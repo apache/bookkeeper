@@ -40,12 +40,12 @@ public class ClientChannelPipelineFactory implements ChannelPipelineFactory {
     public ChannelPipeline getPipeline() throws Exception {
         // Create a new ChannelPipline using the factory method from the
         // Channels helper class.
-        ChannelPipeline pipeline = Channels.pipeline();        
+        ChannelPipeline pipeline = Channels.pipeline();
         if (client.getSslFactory() != null) {
             pipeline.addLast("ssl", new SslHandler(client.getSslFactory().getEngine()));
-        }        
+        }
         pipeline.addLast("lengthbaseddecoder", new LengthFieldBasedFrameDecoder(client.getConfiguration()
-                .getMaximumMessageSize(), 0, 4, 0, 4));
+                         .getMaximumMessageSize(), 0, 4, 0, 4));
         pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
 
         pipeline.addLast("protobufdecoder", new ProtobufDecoder(PubSubProtocol.PubSubResponse.getDefaultInstance()));

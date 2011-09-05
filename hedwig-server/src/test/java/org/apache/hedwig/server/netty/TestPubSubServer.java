@@ -77,7 +77,7 @@ public class TestPubSubServer extends PubSubServerStandAloneTestBase {
     }
 
     PubSubServer startServer(final UncaughtExceptionHandler uncaughtExceptionHandler, final int port,
-            final TopicManagerInstantiator instantiator) throws Exception {
+                             final TopicManagerInstantiator instantiator) throws Exception {
         PubSubServer server = new PubSubServer(new StandAloneServerConfiguration() {
             @Override
             public int getServerPort() {
@@ -105,7 +105,7 @@ public class TestPubSubServer extends PubSubServerStandAloneTestBase {
         }).getPublisher();
 
         publisher.asyncPublish(ByteString.copyFromUtf8("blah"), Message.newBuilder().setBody(
-                ByteString.copyFromUtf8("blah")).build(), new Callback<Void>() {
+        ByteString.copyFromUtf8("blah")).build(), new Callback<Void>() {
             @Override
             public void operationFailed(Object ctx, PubSubException exception) {
                 assertTrue(false);
@@ -132,8 +132,8 @@ public class TestPubSubServer extends PubSubServerStandAloneTestBase {
             public TopicManager instantiateTopicManager() throws IOException {
                 return new AbstractTopicManager(new ServerConfiguration(), Executors.newSingleThreadScheduledExecutor()) {
                     @Override
-                    protected void realGetOwner(ByteString topic, boolean shouldClaim, 
-                            Callback<HedwigSocketAddress> cb, Object ctx) {
+                    protected void realGetOwner(ByteString topic, boolean shouldClaim,
+                    Callback<HedwigSocketAddress> cb, Object ctx) {
                         throw new RuntimeException("this exception should be uncaught");
                     }
 
@@ -164,8 +164,8 @@ public class TestPubSubServer extends PubSubServerStandAloneTestBase {
                 return new AbstractTopicManager(new ServerConfiguration(), Executors.newSingleThreadScheduledExecutor()) {
 
                     @Override
-                    protected void realGetOwner(ByteString topic, boolean shouldClaim, 
-                            Callback<HedwigSocketAddress> cb, Object ctx) {
+                    protected void realGetOwner(ByteString topic, boolean shouldClaim,
+                    Callback<HedwigSocketAddress> cb, Object ctx) {
                         ZooKeeper zookeeper;
                         try {
                             zookeeper = new ZooKeeper(hostPort, 60000, new Watcher() {
@@ -182,7 +182,7 @@ public class TestPubSubServer extends PubSubServerStandAloneTestBase {
                         zookeeper.getData("/fake", false, new SafeAsyncZKCallback.DataCallback() {
                             @Override
                             public void safeProcessResult(int rc, String path, Object ctx, byte[] data,
-                                    org.apache.zookeeper.data.Stat stat) {
+                            org.apache.zookeeper.data.Stat stat) {
                                 throw new RuntimeException("This should go to the uncaught exception handler");
                             }
 
@@ -213,8 +213,8 @@ public class TestPubSubServer extends PubSubServerStandAloneTestBase {
             @Override
             public List<String> getRegions() {
                 List<String> regionsList = new LinkedList<String>();
-                regionsList.add("regionHost1:4080:9876"); 
-                regionsList.add("regionHost2:4080"); 
+                regionsList.add("regionHost1:4080:9876");
+                regionsList.add("regionHost2:4080");
                 regionsList.add("regionHost3:4080:9876");
                 return regionsList;
             }
@@ -227,7 +227,7 @@ public class TestPubSubServer extends PubSubServerStandAloneTestBase {
             success = true;
         }
         assertTrue(success);
-    }    
+    }
 
     @Test
     public void testValidServerConfiguration() throws Exception {
@@ -241,8 +241,8 @@ public class TestPubSubServer extends PubSubServerStandAloneTestBase {
             @Override
             public List<String> getRegions() {
                 List<String> regionsList = new LinkedList<String>();
-                regionsList.add("regionHost1:4080:9876"); 
-                regionsList.add("regionHost2:4080:2938"); 
+                regionsList.add("regionHost1:4080:9876");
+                regionsList.add("regionHost2:4080:2938");
                 regionsList.add("regionHost3:4080:9876");
                 return regionsList;
             }
@@ -255,6 +255,6 @@ public class TestPubSubServer extends PubSubServerStandAloneTestBase {
             success = false;
         }
         assertTrue(success);
-    }    
+    }
 
 }

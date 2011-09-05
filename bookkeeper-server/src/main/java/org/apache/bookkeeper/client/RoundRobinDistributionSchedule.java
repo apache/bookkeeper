@@ -25,7 +25,7 @@ import org.apache.bookkeeper.util.MathUtils;
  * fashion. For ensemble size 3, and quorum size 2, Entry 0 goes to bookie 0 and
  * 1, entry 1 goes to bookie 1 and 2, and entry 2 goes to bookie 2 and 0, and so
  * on.
- * 
+ *
  */
 class RoundRobinDistributionSchedule implements DistributionSchedule {
     int quorumSize;

@@ -31,10 +31,10 @@ public class CallbackUtils {
     /**
      * A callback that waits for all of a number of events to fire. If any fail,
      * then fail the final callback with a composite exception.
-     * 
+     *
      * TODO: change this to use any Exception and make CompositeException
      * generic, not a PubSubException.
-     * 
+     *
      * @param expected
      *            Number of expected callbacks.
      * @param cb
@@ -135,7 +135,7 @@ public class CallbackUtils {
      * Logs what happened before continuing the callback chain.
      */
     public static <T> Callback<T> logger(final Logger logger, final Level successLevel, final Level failureLevel, final Object successMsg,
-            final Object failureMsg, final Callback<T> cont) {
+                                         final Object failureMsg, final Callback<T> cont) {
         return new Callback<T>() {
 
             @Override

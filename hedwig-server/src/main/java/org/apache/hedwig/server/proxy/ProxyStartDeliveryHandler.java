@@ -71,22 +71,22 @@ public class ProxyStartDeliveryHandler implements Handler {
             // }
 
             final Channel subscribedChannel = tracker.getChannel(topic, subscriberId);
-            
+
             if (subscribedChannel == null) {
                 channel.write(PubSubResponseUtils.getResponseForException(
-                        new PubSubException.ClientNotSubscribedException("no subscription to start delivery on"),
-                        request.getTxnId()));
+                                  new PubSubException.ClientNotSubscribedException("no subscription to start delivery on"),
+                                  request.getTxnId()));
                 return;
             }
-            
+
             MessageHandler handler = new MessageHandler() {
                 @Override
                 public void consume(ByteString topic, ByteString subscriberId, Message msg,
-                        final Callback<Void> callback, final Object context) {
+                final Callback<Void> callback, final Object context) {
 
                     PubSubResponse response = PubSubResponse.newBuilder().setProtocolVersion(
-                            ProtocolVersion.VERSION_ONE).setStatusCode(StatusCode.SUCCESS).setTxnId(0).setMessage(msg)
-                            .setTopic(topic).setSubscriberId(subscriberId).build();
+                                                  ProtocolVersion.VERSION_ONE).setStatusCode(StatusCode.SUCCESS).setTxnId(0).setMessage(msg)
+                                              .setTopic(topic).setSubscriberId(subscriberId).build();
 
                     ChannelFuture future = subscribedChannel.write(response);
 
@@ -119,7 +119,7 @@ public class ProxyStartDeliveryHandler implements Handler {
                 logger.fatal("Unexpected: No subscription when attempting to start delivery", e);
                 throw new RuntimeException(e);
             }
-            
+
 
 
         }

@@ -25,18 +25,18 @@ import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * This class provides 2 things over the java {@link ScheduledExecutorService}.
- * 
+ *
  * 1. It takes {@link SafeRunnable objects} instead of plain Runnable objects.
  * This means that exceptions in scheduled tasks wont go unnoticed and will be
  * logged.
- * 
+ *
  * 2. It supports submitting tasks with an ordering key, so that tasks submitted
  * with the same key will always be executed in order, but tasks across
  * different keys can be unordered. This retains parallelism while retaining the
  * basic amount of ordering we want (e.g. , per ledger handle). Ordering is
  * achieved by hashing the key objects to threads by their {@link #hashCode()}
  * method.
- * 
+ *
  */
 public class OrderedSafeExecutor {
     ExecutorService threads[];
@@ -74,7 +74,7 @@ public class OrderedSafeExecutor {
     }
 
     /**
-     * schedules a one time action to execute 
+     * schedules a one time action to execute
      */
     public void submit(SafeRunnable r) {
         chooseThread().submit(r);

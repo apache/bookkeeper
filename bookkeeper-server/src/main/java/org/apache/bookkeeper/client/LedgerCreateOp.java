@@ -1,5 +1,5 @@
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,16 +7,16 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
 
 package org.apache.bookkeeper.client;
@@ -39,7 +39,7 @@ import org.apache.zookeeper.data.Stat;
 
 /**
  * Encapsulates asynchronous ledger create operation
- * 
+ *
  */
 class LedgerCreateOp implements StringCallback, StatCallback {
 
@@ -53,24 +53,24 @@ class LedgerCreateOp implements StringCallback, StatCallback {
     BookKeeper bk;
     DigestType digestType;
 
-   /**
-    * Constructor
-    * 
-    * @param bk
-    *       BookKeeper object
-    * @param ensembleSize
-    *       ensemble size
-    * @param quorumSize
-    *       quorum size
-    * @param digestType
-    *       digest type, either MAC or CRC32
-    * @param passwd
-    *       passowrd
-    * @param cb
-    *       callback implementation
-    * @param ctx
-    *       optional control object
-    */
+    /**
+     * Constructor
+     *
+     * @param bk
+     *       BookKeeper object
+     * @param ensembleSize
+     *       ensemble size
+     * @param quorumSize
+     *       quorum size
+     * @param digestType
+     *       digest type, either MAC or CRC32
+     * @param passwd
+     *       passowrd
+     * @param cb
+     *       callback implementation
+     * @param ctx
+     *       optional control object
+     */
 
     LedgerCreateOp(BookKeeper bk, int ensembleSize, int quorumSize, DigestType digestType, byte[] passwd, CreateCallback cb, Object ctx) {
         this.bk = bk;
@@ -91,7 +91,7 @@ class LedgerCreateOp implements StringCallback, StatCallback {
          */
 
         bk.getZkHandle().create(StringUtils.prefix, new byte[0], Ids.OPEN_ACL_UNSAFE,
-                CreateMode.PERSISTENT_SEQUENTIAL, this, null);
+                                CreateMode.PERSISTENT_SEQUENTIAL, this, null);
 
         // calls the children callback method below
     }
@@ -99,7 +99,7 @@ class LedgerCreateOp implements StringCallback, StatCallback {
 
     /**
      * Implements ZooKeeper string callback.
-     * 
+     *
      * @see org.apache.zookeeper.AsyncCallback.StringCallback#processResult(int, java.lang.String, java.lang.Object, java.lang.String)
      */
     public void processResult(int rc, String path, Object ctx, String name) {
@@ -157,7 +157,7 @@ class LedgerCreateOp implements StringCallback, StatCallback {
 
     /**
      * Implements ZooKeeper stat callback.
-     * 
+     *
      * @see org.apache.zookeeper.AsyncCallback.StatCallback#processResult(int, String, Object, Stat)
      */
     public void processResult(int rc, String path, Object ctx, Stat stat) {

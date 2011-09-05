@@ -28,7 +28,7 @@ import org.apache.hedwig.server.common.UnexpectedError;
 /**
  * This class is NOT thread safe. It need not be thread-safe because our
  * read-ahead cache will operate with only 1 thread
- * 
+ *
  */
 public class CacheValue {
 

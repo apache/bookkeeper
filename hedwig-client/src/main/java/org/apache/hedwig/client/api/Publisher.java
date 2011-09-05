@@ -25,13 +25,13 @@ import org.apache.hedwig.util.Callback;
 
 /**
  * Interface to define the client Publisher API.
- * 
+ *
  */
 public interface Publisher {
 
     /**
      * Publishes a message on the given topic.
-     * 
+     *
      * @param topic
      *            Topic name to publish on
      * @param msg
@@ -45,7 +45,7 @@ public interface Publisher {
 
     /**
      * Publishes a message asynchronously on the given topic.
-     * 
+     *
      * @param topic
      *            Topic name to publish on
      * @param msg

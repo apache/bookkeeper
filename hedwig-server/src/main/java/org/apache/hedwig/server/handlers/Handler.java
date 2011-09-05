@@ -22,14 +22,14 @@ import org.jboss.netty.channel.Channel;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubRequest;
 
 public interface Handler {
-    
+
     /**
      * Handle a request synchronously or asynchronously. After handling the
      * request, the appropriate response should be written on the given channel
-     * 
+     *
      * @param request
      *            The request to handle
-     * 
+     *
      * @param channel
      *            The channel on which to write the response
      */

@@ -20,7 +20,7 @@ package org.apache.hedwig.server.handlers;
 import org.jboss.netty.channel.Channel;
 
 public interface ChannelDisconnectListener {
-    
+
     /**
      * Act on a particular channel being disconnected
      * @param channel

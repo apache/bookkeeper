@@ -22,7 +22,7 @@ package org.apache.hedwig.client.exceptions;
  * redirects during a publish/subscribe call. We only allow a certain number of
  * server redirects to find the topic master. If we have exceeded this
  * configured amount, the publish/subscribe will fail with this exception.
- * 
+ *
  */
 public class TooManyServerRedirectsException extends Exception {
 

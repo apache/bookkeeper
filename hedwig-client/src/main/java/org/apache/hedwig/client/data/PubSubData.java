@@ -32,7 +32,7 @@ import org.apache.hedwig.util.Callback;
  * request in case of a server redirect. This will be used for all sync/async
  * calls, and for all the known types of request messages to send to the server
  * hubs: Publish, Subscribe, Unsubscribe, and Consume.
- * 
+ *
  */
 public class PubSubData {
     // Static string constants
@@ -84,8 +84,8 @@ public class PubSubData {
 
     // Constructor for all types of PubSub request data to send to the server
     public PubSubData(final ByteString topic, final Message msg, final ByteString subscriberId,
-            final OperationType operationType, final CreateOrAttach createOrAttach, final Callback<Void> callback,
-            final Object context) {
+                      final OperationType operationType, final CreateOrAttach createOrAttach, final Callback<Void> callback,
+                      final Object context) {
         this.topic = topic;
         this.msg = msg;
         this.subscriberId = subscriberId;

@@ -42,7 +42,7 @@ public class UnsubscribeResponseHandler {
             throws Exception {
         if (logger.isDebugEnabled())
             logger.debug("Handling an Unsubscribe response: " + response + ", pubSubData: " + pubSubData + ", host: "
-                    + HedwigClient.getHostFromChannel(channel));
+                         + HedwigClient.getHostFromChannel(channel));
         switch (response.getStatusCode()) {
         case SUCCESS:
             // For successful Unsubscribe requests, we can now safely close the
@@ -56,14 +56,14 @@ public class UnsubscribeResponseHandler {
             // For Unsubscribe requests, the server says that the client was
             // never subscribed to the topic.
             pubSubData.callback.operationFailed(pubSubData.context, new ClientNotSubscribedException(
-                    "Client was never subscribed to topic: " + pubSubData.topic.toStringUtf8() + ", subscriberId: "
-                            + pubSubData.subscriberId.toStringUtf8()));
+                                                    "Client was never subscribed to topic: " + pubSubData.topic.toStringUtf8() + ", subscriberId: "
+                                                    + pubSubData.subscriberId.toStringUtf8()));
             break;
         case SERVICE_DOWN:
             // Response was service down failure so just invoke the callback's
             // operationFailed method.
             pubSubData.callback.operationFailed(pubSubData.context, new ServiceDownException(
-                    "Server responded with a SERVICE_DOWN status"));
+                                                    "Server responded with a SERVICE_DOWN status"));
             break;
         case NOT_RESPONSIBLE_FOR_TOPIC:
             // Redirect response so we'll need to repost the original
@@ -75,7 +75,7 @@ public class UnsubscribeResponseHandler {
             // cases.
             logger.error("Unexpected error response from server for PubSubResponse: " + response);
             pubSubData.callback.operationFailed(pubSubData.context, new ServiceDownException(
-                    "Server responded with a status code of: " + response.getStatusCode()));
+                                                    "Server responded with a status code of: " + response.getStatusCode()));
             break;
         }
     }

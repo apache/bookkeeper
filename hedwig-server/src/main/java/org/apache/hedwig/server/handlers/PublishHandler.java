@@ -47,20 +47,20 @@ public class PublishHandler extends BaseHandler {
         }
 
         Message msgToSerialize = Message.newBuilder(request.getPublishRequest().getMsg()).setSrcRegion(
-                cfg.getMyRegionByteString()).build();
+                                     cfg.getMyRegionByteString()).build();
 
         PersistRequest persistRequest = new PersistRequest(request.getTopic(), msgToSerialize,
-                new Callback<Long>() {
-                    @Override
-                    public void operationFailed(Object ctx, PubSubException exception) {
-                        channel.write(PubSubResponseUtils.getResponseForException(exception, request.getTxnId()));
-                    }
+        new Callback<Long>() {
+            @Override
+            public void operationFailed(Object ctx, PubSubException exception) {
+                channel.write(PubSubResponseUtils.getResponseForException(exception, request.getTxnId()));
+            }
 
-                    @Override
-                    public void operationFinished(Object ctx, Long resultOfOperation) {
-                        channel.write(PubSubResponseUtils.getSuccessResponse(request.getTxnId()));
-                    }
-                }, null);
+            @Override
+            public void operationFinished(Object ctx, Long resultOfOperation) {
+                channel.write(PubSubResponseUtils.getSuccessResponse(request.getTxnId()));
+            }
+        }, null);
 
         persistenceMgr.persistMessage(persistRequest);
     }

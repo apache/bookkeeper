@@ -19,18 +19,18 @@ package org.apache.hedwig.server.proxy;
 
 import org.apache.hedwig.client.conf.ClientConfiguration;
 
-public class ProxyConfiguration extends ClientConfiguration{
+public class ProxyConfiguration extends ClientConfiguration {
 
     protected static String PROXY_PORT = "proxy_port";
     protected static String MAX_MESSAGE_SIZE = "max_message_size";
-    
-    public int getProxyPort(){
+
+    public int getProxyPort() {
         return conf.getInt(PROXY_PORT, 9099);
     }
-    
+
     @Override
     public int getMaximumMessageSize() {
         return conf.getInt(MAX_MESSAGE_SIZE, 1258291); /* 1.2M */
     }
-    
+
 }

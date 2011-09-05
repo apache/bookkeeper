@@ -52,7 +52,7 @@ public class WriteCallback implements ChannelFutureListener {
         // with any callback logic here.
         if (client.hasStopped())
             return;
-        
+
         // When the write operation to the server is done, we just need to check
         // if it was successful or not.
         InetSocketAddress host = HedwigClient.getHostFromChannel(future.getChannel());
@@ -73,11 +73,11 @@ public class WriteCallback implements ChannelFutureListener {
                 // failed, so invoke the operationFailed callback.
                 logger.error("Error writing to host more than once so just invoke the operationFailed callback!");
                 pubSubData.callback.operationFailed(pubSubData.context, new ServiceDownException(
-                        "Error while writing message to server: " + hostString));
+                                                        "Error while writing message to server: " + hostString));
             } else {
                 if (logger.isDebugEnabled())
                     logger.debug("Try to send the PubSubRequest again to the default server host/VIP for pubSubData: "
-                            + pubSubData);
+                                 + pubSubData);
                 // Keep track of this current server that we failed to write to
                 // but retry the request on the default server host/VIP.
                 if (pubSubData.writeFailedServers == null)

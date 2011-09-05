@@ -115,7 +115,7 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
      * Ensures that at least the default seq-id exists in the map for the given
      * topic. Checks for race conditions (.e.g, another thread inserts the
      * default id before us), and returns the latest seq-id value in the map
-     * 
+     *
      * @param topic
      * @return
      */
@@ -140,13 +140,13 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
      * Adjust the current seq id of the topic based on the message we are about
      * to publish. The local component of the current seq-id is always
      * incremented by 1. For the other components, there are two cases:
-     * 
+     *
      * 1. If the message to be published doesn't have a seq-id (locally
      * published messages), the other components are left as is.
-     * 
+     *
      * 2. If the message to be published has a seq-id, we take the max of the
      * current one we have, and that in the message to be published.
-     * 
+     *
      * @param topic
      * @param messageToPublish
      * @return The value of the local seq-id obtained after incrementing the
@@ -250,7 +250,7 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
             Statement stmt = conn.createStatement();
             String tableName = getTableNameForTopic(topic);
             stmt.execute("CREATE TABLE " + tableName + " (" + ID_FIELD_NAME + " BIGINT NOT NULL CONSTRAINT ID_PK_"
-                    + tableName + " PRIMARY KEY," + MSG_FIELD_NAME + " BLOB(2M) NOT NULL)");
+                         + tableName + " PRIMARY KEY," + MSG_FIELD_NAME + " BLOB(2M) NOT NULL)");
         } catch (SQLException e) {
             logger.debug("Could not create table", e);
         }
@@ -262,13 +262,13 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
 
     public void scanSingleMessage(ScanRequest request) {
         scanMessagesInternal(request.getTopic(), request.getStartSeqId(), 1, Long.MAX_VALUE, request.getCallback(),
-                request.getCtx(), 1);
+                             request.getCtx(), 1);
         return;
     }
 
     public void scanMessages(RangeScanRequest request) {
         scanMessagesInternal(request.getTopic(), request.getStartSeqId(), request.getMessageLimit(), request
-                .getSizeLimit(), request.getCallback(), request.getCtx(), SCAN_CHUNK);
+                             .getSizeLimit(), request.getCallback(), request.getCtx(), SCAN_CHUNK);
         return;
     }
 
@@ -277,7 +277,7 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
     }
 
     private void scanMessagesInternal(ByteString topic, long startSeqId, int messageLimit, long sizeLimit,
-            ScanCallback callback, Object ctx, int scanChunk) {
+                                      ScanCallback callback, Object ctx, int scanChunk) {
 
         Connection conn = threadLocalConnection.get();
 
@@ -293,7 +293,7 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
         try {
             try {
                 stmt = conn.prepareStatement("SELECT * FROM " + getTableNameForTopic(topic) + " WHERE " + ID_FIELD_NAME
-                        + " >= ?  AND " + ID_FIELD_NAME + " <= ?");
+                                             + " >= ?  AND " + ID_FIELD_NAME + " <= ?");
 
             } catch (SQLException sqle) {
                 String theError = (sqle).getSQLState();
@@ -383,7 +383,7 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
         PreparedStatement stmt;
         try {
             stmt = conn.prepareStatement("DELETE FROM " + getTableNameForTopic(topic) + " WHERE " + ID_FIELD_NAME
-                    + " <= ?");
+                                         + " <= ?");
             stmt.setLong(1, seqId);
             int rowCount = stmt.executeUpdate();
             logger.debug("Deleted " + rowCount + " records for topic: " + topic.toStringUtf8() + ", seqId: " + seqId);

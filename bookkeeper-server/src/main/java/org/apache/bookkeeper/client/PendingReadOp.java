@@ -1,7 +1,7 @@
 package org.apache.bookkeeper.client;
 
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -9,16 +9,16 @@ package org.apache.bookkeeper.client;
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
 
 import java.net.InetSocketAddress;
@@ -42,7 +42,7 @@ import java.io.IOException;
  * When all the data read has come back, the application callback is called.
  * This class could be improved because we could start pushing data to the
  * application as soon as it arrives rather than waiting for the whole thing.
- * 
+ *
  */
 
 class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
@@ -73,12 +73,12 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         ArrayList<InetSocketAddress> ensemble = null;
         do {
 
-            if(LOG.isDebugEnabled()){
+            if(LOG.isDebugEnabled()) {
                 LOG.debug("Acquiring lock: " + i);
             }
-           
+
             lh.opCounterSem.acquire();
-            
+
             if (i == nextEnsembleChange) {
                 ensemble = lh.metadata.getEnsemble(i);
                 nextEnsembleChange = lh.metadata.getNextEnsembleChange(i);
@@ -108,7 +108,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         ArrayList<InetSocketAddress> ensemble = lh.metadata.getEnsemble(entry.entryId);
         int bookeIndex = lh.distributionSchedule.getBookieIndex(entry.entryId, entry.nextReplicaIndexToReadFrom - 1);
         LOG.error(errMsg + " while reading entry: " + entry.entryId + " ledgerId: " + lh.ledgerId + " from bookie: "
-                + ensemble.get(bookeIndex));
+                  + ensemble.get(bookeIndex));
         sendRead(ensemble, entry, rc);
         return;
     }
@@ -121,7 +121,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             logErrorAndReattemptRead(entry, "Error: " + BKException.getMessage(rc), rc);
             return;
         }
-        
+
         ChannelBufferInputStream is;
         try {
             is = lh.macManager.verifyDigestAndReturnData(entryId, buffer);
@@ -129,9 +129,9 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             logErrorAndReattemptRead(entry, "Mac mismatch", BKException.Code.DigestMatchException);
             return;
         }
-        
+
         entry.entryDataStream = is;
-        
+
         /*
          * The length is a long and it is the last field of the metadata of an entry.
          * Consequently, we have to subtract 8 from METADATA_LENGTH to get the length.
@@ -142,18 +142,18 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         if (numPendingReads == 0) {
             submitCallback(BKException.Code.OK);
         }
-        
-        if(LOG.isDebugEnabled()){
+
+        if(LOG.isDebugEnabled()) {
             LOG.debug("Releasing lock: " + entryId);
         }
-        
+
         lh.opCounterSem.release();
-        
+
         if(numPendingReads < 0)
             LOG.error("Read too many values");
     }
 
-    private void submitCallback(int code){
+    private void submitCallback(int code) {
         cb.readComplete(code, lh, PendingReadOp.this, PendingReadOp.this.ctx);
     }
     public boolean hasMoreElements() {

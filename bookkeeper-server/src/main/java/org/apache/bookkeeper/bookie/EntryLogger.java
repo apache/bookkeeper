@@ -85,7 +85,7 @@ public class EntryLogger {
     // This is the thread that garbage collects the entry logs that do not
     // contain any active ledgers in them.
     GarbageCollectorThread gcThread = new GarbageCollectorThread();
-    // This is how often we want to run the Garbage Collector Thread (in milliseconds). 
+    // This is how often we want to run the Garbage Collector Thread (in milliseconds).
     // This should be passed as a System property. Default it to 1000 ms (1sec).
     final static int gcWaitTime = Integer.getInteger("gcWaitTime", 1000);
 
@@ -113,7 +113,7 @@ public class EntryLogger {
         // Start the Garbage Collector thread to prune unneeded entry logs.
         gcThread.start();
     }
-    
+
     /**
      * Maps entry log files to open channels.
      */
@@ -152,10 +152,10 @@ public class EntryLogger {
                     public void processResult(int rc, String path, Object ctx) {
                         if (rc != Code.OK.intValue()) {
                             LOG.error("ZK error syncing the ledgers node when getting children: ", KeeperException
-                                    .create(KeeperException.Code.get(rc), path));
+                                      .create(KeeperException.Code.get(rc), path));
                             return;
                         }
-                        // Sync has completed successfully so now we can poll ZK 
+                        // Sync has completed successfully so now we can poll ZK
                         // and read in the latest set of active ledger nodes.
                         List<String> ledgerNodes;
                         try {
@@ -194,7 +194,7 @@ public class EntryLogger {
                         // Remove any active ledgers that don't exist in ZK.
                         for (Long ledger : curActiveLedgers.keySet()) {
                             if (!allActiveLedgers.contains(ledger)) {
-                                // Remove it from the current active ledgers set and also from all 
+                                // Remove it from the current active ledgers set and also from all
                                 // LedgerCache data references to the ledger, i.e. the physical ledger index file.
                                 LOG.info("Removing a non-active/deleted ledger: " + ledger);
                                 curActiveLedgers.remove(ledger);
@@ -223,7 +223,7 @@ public class EntryLogger {
                                     entryLogFile = findFile(entryLogId);
                                 } catch (FileNotFoundException e) {
                                     LOG.error("Trying to delete an entryLog file that could not be found: "
-                                            + entryLogId + ".log");
+                                              + entryLogId + ".log");
                                     continue;
                                 }
                                 entryLogFile.delete();
@@ -236,7 +236,7 @@ public class EntryLogger {
             }
         }
     }
-    
+
     /**
      * Creates a new log file with the given id.
      */
@@ -275,7 +275,7 @@ public class EntryLogger {
             }
         }
     }
-    
+
     /**
      * reads id from the "lastId" file in the given directory.
      */
@@ -301,11 +301,11 @@ public class EntryLogger {
             }
         }
     }
-    
+
     private void openNewChannel() throws IOException {
         createLogId(++logId);
     }
-    
+
     synchronized void flush() throws IOException {
         if (logChannel != null) {
             logChannel.flush(true);
@@ -325,7 +325,7 @@ public class EntryLogger {
         somethingWritten = true;
         return (logId << 32L) | pos;
     }
-    
+
     byte[] readEntry(long ledgerId, long entryId, long location) throws IOException {
         long entryLogId = location >> 32L;
         long pos = location & 0xffffffffL;
@@ -348,7 +348,7 @@ public class EntryLogger {
         // entrySize does not include the ledgerId
         if (entrySize > 1024*1024) {
             LOG.error("Sanity check failed for entry size of " + entrySize + " at location " + pos + " in " + entryLogId);
-            
+
         }
         byte data[] = new byte[entrySize];
         ByteBuffer buff = ByteBuffer.wrap(data);
@@ -365,10 +365,10 @@ public class EntryLogger {
         if (thisEntryId != entryId) {
             throw new IOException("problem found in " + entryLogId + "@" + entryId + " at position + " + pos + " entry is " + thisEntryId + " not " + entryId);
         }
-        
+
         return data;
     }
-    
+
     private BufferedChannel getChannelForLogId(long entryLogId) throws IOException {
         BufferedChannel fc = channels.get(entryLogId);
         if (fc != null) {
@@ -381,7 +381,7 @@ public class EntryLogger {
         newFc.position(newFc.size());
         synchronized (channels) {
             fc = channels.get(entryLogId);
-            if (fc != null){
+            if (fc != null) {
                 newFc.close();
                 return fc;
             }
@@ -400,7 +400,7 @@ public class EntryLogger {
         }
         throw new FileNotFoundException("No file for log " + Long.toHexString(logId));
     }
-    
+
     synchronized public boolean testAndClearSomethingWritten() {
         try {
             return somethingWritten;
@@ -452,14 +452,14 @@ public class EntryLogger {
                 int entrySize = sizeBuff.getInt();
                 if (entrySize > 1024 * 1024) {
                     LOG.error("Sanity check failed for entry size of " + entrySize + " at location " + pos + " in "
-                            + entryLogId);
+                              + entryLogId);
                 }
                 byte data[] = new byte[entrySize];
                 ByteBuffer buff = ByteBuffer.wrap(data);
                 int rc = bc.read(buff, pos);
                 if (rc != data.length) {
                     throw new IOException("Short read for entryLog " + entryLogId + "@" + pos + "(" + rc + "!="
-                            + data.length + ")");
+                                          + data.length + ")");
                 }
                 buff.flip();
                 long ledgerId = buff.getLong();
@@ -475,7 +475,7 @@ public class EntryLogger {
 
     /**
      * Shutdown method to gracefully stop all threads spawned in this class and exit.
-     * 
+     *
      * @throws InterruptedException if there is an exception stopping threads.
      */
     public void shutdown() throws InterruptedException {

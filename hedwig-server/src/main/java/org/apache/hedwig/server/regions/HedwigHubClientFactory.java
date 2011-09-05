@@ -38,7 +38,7 @@ public class HedwigHubClientFactory {
     /**
      * Manufacture a hub client whose default server to connect to is the input
      * HedwigSocketAddress hub.
-     * 
+     *
      * @param hub
      *            The hub in another region to connect to.
      */

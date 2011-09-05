@@ -31,13 +31,13 @@ import org.apache.hedwig.util.Callback;
 
 /**
  * Interface to define the client Subscriber API.
- * 
+ *
  */
 public interface Subscriber {
 
     /**
      * Subscribe to the given topic for the inputted subscriberId.
-     * 
+     *
      * @param topic
      *            Topic name of the subscription
      * @param subscriberId
@@ -58,12 +58,12 @@ public interface Subscriber {
      */
     public void subscribe(ByteString topic, ByteString subscriberId, CreateOrAttach mode)
             throws CouldNotConnectException, ClientAlreadySubscribedException, ServiceDownException,
-            InvalidSubscriberIdException;
+        InvalidSubscriberIdException;
 
     /**
      * Subscribe to the given topic asynchronously for the inputted subscriberId
      * disregarding if the topic has been created yet or not.
-     * 
+     *
      * @param topic
      *            Topic name of the subscription
      * @param subscriberId
@@ -80,12 +80,12 @@ public interface Subscriber {
      *            asynchronously.
      */
     public void asyncSubscribe(ByteString topic, ByteString subscriberId, CreateOrAttach mode, Callback<Void> callback,
-            Object context);
+                               Object context);
 
     /**
      * Unsubscribe from a topic that the subscriberId user has previously
      * subscribed to.
-     * 
+     *
      * @param topic
      *            Topic name of the subscription
      * @param subscriberId
@@ -102,12 +102,12 @@ public interface Subscriber {
      *             e.g. local vs. hub subscriber
      */
     public void unsubscribe(ByteString topic, ByteString subscriberId) throws CouldNotConnectException,
-            ClientNotSubscribedException, ServiceDownException, InvalidSubscriberIdException;
+        ClientNotSubscribedException, ServiceDownException, InvalidSubscriberIdException;
 
     /**
      * Unsubscribe from a topic asynchronously that the subscriberId user has
      * previously subscribed to.
-     * 
+     *
      * @param topic
      *            Topic name of the subscription
      * @param subscriberId
@@ -124,7 +124,7 @@ public interface Subscriber {
 
     /**
      * Manually send a consume message to the server for the given inputs.
-     * 
+     *
      * @param topic
      *            Topic name of the subscription
      * @param subscriberId
@@ -132,7 +132,7 @@ public interface Subscriber {
      * @param messageSeqId
      *            Message Sequence ID for the latest message that the client app
      *            has successfully consumed. All messages up to that point will
-     *            also be considered as consumed.            
+     *            also be considered as consumed.
      * @throws ClientNotSubscribedException
      *             If the client is not currently subscribed to the topic based
      *             on the client's local state.
@@ -143,7 +143,7 @@ public interface Subscriber {
     /**
      * Checks if the subscriberId client is currently subscribed to the given
      * topic.
-     * 
+     *
      * @param topic
      *            Topic name of the subscription.
      * @param subscriberId
@@ -156,12 +156,12 @@ public interface Subscriber {
      * @return Boolean indicating if the client has a subscription or not.
      */
     public boolean hasSubscription(ByteString topic, ByteString subscriberId) throws CouldNotConnectException,
-            ServiceDownException;
+        ServiceDownException;
 
     /**
      * Fills the input List with the subscriptions this subscriberId client is
      * subscribed to.
-     * 
+     *
      * @param subscriberId
      *            ID of the subscriber
      * @return List filled with subscription name (topic) strings.
@@ -171,12 +171,12 @@ public interface Subscriber {
      *             If there is an error retrieving the list of topics
      */
     public List<ByteString> getSubscriptionList(ByteString subscriberId) throws CouldNotConnectException,
-            ServiceDownException;
+        ServiceDownException;
 
     /**
      * Begin delivery of messages from the server to us for this topic and
      * subscriberId.
-     * 
+     *
      * @param topic
      *            Topic name of the subscription
      * @param subscriberId
@@ -191,7 +191,7 @@ public interface Subscriber {
 
     /**
      * Stop delivery of messages for this topic and subscriberId.
-     * 
+     *
      * @param topic
      *            Topic name of the subscription
      * @param subscriberId
@@ -205,7 +205,7 @@ public interface Subscriber {
      * Closes all of the client side cached data for this subscription without
      * actually sending an unsubscribe request to the server. This will close
      * the subscribe channel synchronously (if it exists) for the topic.
-     * 
+     *
      * @param topic
      *            Topic name of the subscription
      * @param subscriberId
@@ -220,7 +220,7 @@ public interface Subscriber {
      * Closes all of the client side cached data for this subscription without
      * actually sending an unsubscribe request to the server. This will close
      * the subscribe channel asynchronously (if it exists) for the topic.
-     * 
+     *
      * @param topic
      *            Topic name of the subscription
      * @param subscriberId
@@ -232,6 +232,6 @@ public interface Subscriber {
      *            asynchronously.
      */
     public void asyncCloseSubscription(ByteString topic, ByteString subscriberId, Callback<Void> callback,
-            Object context);
+                                       Object context);
 
 }

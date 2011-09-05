@@ -44,11 +44,11 @@ import org.apache.zookeeper.KeeperException.Code;
  * are available by reading Zookeeper (and setting watches on the bookie nodes).
  * When a bookie fails, the other parts of the code turn to this class to find a
  * replacement
- * 
+ *
  */
 class BookieWatcher implements Watcher, ChildrenCallback {
     static final Logger logger = Logger.getLogger(BookieWatcher.class);
-    
+
     public static final String BOOKIE_REGISTRATION_PATH = "/ledgers/available";
     static final Set<InetSocketAddress> EMPTY_SET = new HashSet<InetSocketAddress>();
     public static int ZK_CONNECT_BACKOFF_SEC = 1;
@@ -69,8 +69,8 @@ class BookieWatcher implements Watcher, ChildrenCallback {
         this.bk = bk;
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
     }
-    
-    public void halt(){
+
+    public void halt() {
         scheduler.shutdown();
     }
 

@@ -59,8 +59,8 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
         for (HedwigClient client : regionClientsMap.values()) {
             for (int i = 0; i < batchSize; i++) {
                 client.getSubscriber().asyncSubscribe(ByteString.copyFromUtf8("Topic" + i),
-                        ByteString.copyFromUtf8("LocalSubscriber"), CreateOrAttach.CREATE_OR_ATTACH,
-                        new TestCallback(queue), null);
+                                                      ByteString.copyFromUtf8("LocalSubscriber"), CreateOrAttach.CREATE_OR_ATTACH,
+                                                      new TestCallback(queue), null);
                 assertTrue(queue.take());
             }
         }
@@ -69,7 +69,7 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
         for (HedwigClient client : regionClientsMap.values()) {
             for (int i = 0; i < batchSize; i++) {
                 client.getSubscriber().startDelivery(ByteString.copyFromUtf8("Topic" + i),
-                        ByteString.copyFromUtf8("LocalSubscriber"), new TestMessageHandler(consumeQueue));
+                                                     ByteString.copyFromUtf8("LocalSubscriber"), new TestMessageHandler(consumeQueue));
             }
         }
 
@@ -79,7 +79,7 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
         HedwigPublisher publisher = regionClientsMap.values().iterator().next().getPublisher();
         for (int i = 0; i < batchSize; i++) {
             publisher.asyncPublish(ByteString.copyFromUtf8("Topic" + i), Message.newBuilder().setBody(
-                    ByteString.copyFromUtf8("Message" + i)).build(), new TestCallback(queue), null);
+                                       ByteString.copyFromUtf8("Message" + i)).build(), new TestCallback(queue), null);
             assertTrue(queue.take());
         }
         // Make sure each region consumes the same set of published messages.
@@ -87,7 +87,7 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
             for (int j = 0; j < batchSize; j++) {
                 assertTrue(consumeQueue.take());
             }
-        }       
+        }
     }
 
 }

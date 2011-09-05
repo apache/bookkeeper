@@ -57,7 +57,7 @@ import org.jboss.netty.handler.codec.frame.TooLongFrameException;
 /**
  * This class manages all details of connection to a particular bookie. It also
  * has reconnect logic if a connection to a bookie fails.
- * 
+ *
  */
 
 @ChannelPipelineCoverage("one")
@@ -87,7 +87,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     Channel channel = null;
 
     public PerChannelBookieClient(OrderedSafeExecutor executor, ClientSocketChannelFactory channelFactory,
-            InetSocketAddress addr, AtomicLong totalBytesOutstanding) {
+                                  InetSocketAddress addr, AtomicLong totalBytesOutstanding) {
         this.addr = addr;
         this.executor = executor;
         this.totalBytesOutstanding = totalBytesOutstanding;
@@ -192,7 +192,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     /**
      * This method should be called only after connection has been checked for
      * {@link #connectIfNeededAndDoOp(GenericCallback)}
-     * 
+     *
      * @param ledgerId
      * @param masterKey
      * @param entryId
@@ -203,10 +203,10 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
      * @param ctx
      */
     void addEntry(final long ledgerId, byte[] masterKey, final long entryId, ChannelBuffer toSend, WriteCallback cb,
-            Object ctx) {
+                  Object ctx) {
 
         final int entrySize = toSend.readableBytes();
-        
+
         // if (totalBytesOutstanding.get() > maxMemory) {
         // // TODO: how to throttle, throw an exception, or call the callback?
         // // Maybe this should be done at the layer above?
@@ -217,8 +217,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         addCompletions.put(completionKey, new AddCompletion(cb, entrySize, ctx));
 
         int totalHeaderSize = 4 // for the length of the packet
-        + 4 // for the type of request
-        + masterKey.length; // for the master key
+                              + 4 // for the type of request
+                              + masterKey.length; // for the master key
 
         ChannelBuffer header = channel.getConfig().getBufferFactory().getBuffer(totalHeaderSize);
         header.writeInt(totalHeaderSize - 4 + entrySize);
@@ -234,7 +234,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                 if (future.isSuccess()) {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Successfully wrote request for adding entry: " + entryId + " ledger-id: " + ledgerId
-                                + " bookie: " + channel.getRemoteAddress() + " entry length: " + entrySize);
+                                  + " bookie: " + channel.getRemoteAddress() + " entry length: " + entrySize);
                     }
                     // totalBytesOutstanding.addAndGet(entrySize);
                 } else {
@@ -251,9 +251,9 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         readCompletions.put(key, new ReadCompletion(cb, ctx));
 
         int totalHeaderSize = 4 // for the length of the packet
-        + 4 // for request type
-        + 8 // for ledgerId
-        + 8; // for entryId
+                              + 4 // for request type
+                              + 8 // for ledgerId
+                              + 8; // for entryId
 
         ChannelBuffer tmpEntry = channel.getConfig().getBufferFactory().getBuffer(totalHeaderSize);
         tmpEntry.writeInt(totalHeaderSize - 4);
@@ -268,7 +268,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                 if (future.isSuccess()) {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Successfully wrote request for reading entry: " + entryId + " ledger-id: "
-                                + ledgerId + " bookie: " + channel.getRemoteAddress());
+                                  + ledgerId + " bookie: " + channel.getRemoteAddress());
                     }
                 } else {
                     errorOutReadKey(key);
@@ -293,10 +293,10 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
                 if (readCompletion != null) {
                     LOG.error("Could not write  request for reading entry: " + key.entryId + " ledger-id: "
-                            + key.ledgerId + " bookie: " + channel.getRemoteAddress());
+                              + key.ledgerId + " bookie: " + channel.getRemoteAddress());
 
                     readCompletion.cb.readEntryComplete(BKException.Code.BookieHandleNotAvailableException,
-                            key.ledgerId, key.entryId, null, readCompletion.ctx);
+                                                        key.ledgerId, key.entryId, null, readCompletion.ctx);
                 }
             }
 
@@ -315,10 +315,10 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                     if(channel != null)
                         bAddress = channel.getRemoteAddress().toString();
                     LOG.error("Could not write request for adding entry: " + key.entryId + " ledger-id: "
-                            + key.ledgerId + " bookie: " + bAddress);
+                              + key.ledgerId + " bookie: " + bAddress);
 
                     addCompletion.cb.writeComplete(BKException.Code.BookieHandleNotAvailableException, key.ledgerId,
-                            key.entryId, addr, addCompletion.ctx);
+                                                   key.entryId, addr, addCompletion.ctx);
                     LOG.error("Invoked callback method: " + key.entryId);
                 }
             }
@@ -372,7 +372,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     @Override
     public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         LOG.info("Disconnected from bookie: " + addr);
-    	errorOutOutstandingEntries();
+        errorOutOutstandingEntries();
         channel.close();
 
         connected = false;
@@ -448,7 +448,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     void handleAddResponse(long ledgerId, long entryId, int rc) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Got response for add request from bookie: " + addr + " for ledger: " + ledgerId + " entry: "
-                    + entryId + " rc: " + rc);
+                      + entryId + " rc: " + rc);
         }
 
         // convert to BKException code because thats what the uppper
@@ -456,7 +456,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         // error codes.
         if (rc != BookieProtocol.EOK) {
             LOG.error("Add for ledger: " + ledgerId + ", entry: " + entryId + " failed on bookie: " + addr
-                    + " with code: " + rc);
+                      + " with code: " + rc);
             rc = BKException.Code.WriteException;
         } else {
             rc = BKException.Code.OK;
@@ -466,7 +466,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         ac = addCompletions.remove(new CompletionKey(ledgerId, entryId));
         if (ac == null) {
             LOG.error("Unexpected add response received from bookie: " + addr + " for ledger: " + ledgerId
-                    + ", entry: " + entryId + " , ignoring");
+                      + ", entry: " + entryId + " , ignoring");
             return;
         }
 
@@ -479,7 +479,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     void handleReadResponse(long ledgerId, long entryId, int rc, ChannelBuffer buffer) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Got response for read request from bookie: " + addr + " for ledger: " + ledgerId + " entry: "
-                    + entryId + " rc: " + rc + "entry length: " + buffer.readableBytes());
+                      + entryId + " rc: " + rc + "entry length: " + buffer.readableBytes());
         }
 
         // convert to BKException code because thats what the uppper
@@ -491,7 +491,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             rc = BKException.Code.NoSuchEntryException;
         } else {
             LOG.error("Read for ledger: " + ledgerId + ", entry: " + entryId + " failed on bookie: " + addr
-                    + " with code: " + rc);
+                      + " with code: " + rc);
             rc = BKException.Code.ReadException;
         }
 
@@ -509,7 +509,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
         if (readCompletion == null) {
             LOG.error("Unexpected read response recieved from bookie: " + addr + " for ledger: " + ledgerId
-                    + ", entry: " + entryId + " , ignoring");
+                      + ", entry: " + entryId + " , ignoring");
             return;
         }
 
@@ -518,7 +518,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
     /**
      * Boiler-plate wrapper classes follow
-     * 
+     *
      */
 
     private static class ReadCompletion {

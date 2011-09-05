@@ -65,10 +65,10 @@ public class CacheKey {
             return false;
         return true;
     }
-    
+
     @Override
     public String toString() {
-        return "(" + topic.toStringUtf8() + "," + seqId + ")"; 
+        return "(" + topic.toStringUtf8() + "," + seqId + ")";
     }
 
 }

@@ -25,7 +25,7 @@ import com.google.protobuf.ByteString;
  * Wrapper class object for the Topic + SubscriberId combination. Since the
  * Subscribe flows always use the Topic + SubscriberId as the logical entity,
  * we'll create a simple class to encapsulate that.
- * 
+ *
  */
 public class TopicSubscriber {
     private final ByteString topic;
@@ -62,11 +62,11 @@ public class TopicSubscriber {
             sb.append(PubSubData.COMMA).append("SubscriberId: " + subscriberId.toStringUtf8());
         return sb.toString();
     }
-    
+
     public ByteString getTopic() {
         return topic;
     }
-    
+
     public ByteString getSubscriberId() {
         return subscriberId;
     }

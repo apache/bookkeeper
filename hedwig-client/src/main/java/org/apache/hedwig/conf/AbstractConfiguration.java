@@ -34,7 +34,7 @@ public abstract class AbstractConfiguration {
     /**
      * You can load configurations in precedence order. The first one takes
      * precedence over any loaded later.
-     * 
+     *
      * @param confURL
      */
     public void loadConf(URL confURL) throws ConfigurationException {

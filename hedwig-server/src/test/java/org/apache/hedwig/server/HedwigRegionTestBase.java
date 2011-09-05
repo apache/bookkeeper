@@ -39,7 +39,7 @@ import org.apache.hedwig.util.HedwigSocketAddress;
  * This is a base class for any tests that need a Hedwig Region(s) setup with a
  * number of Hedwig hubs per region, an associated HedwigClient per region and
  * the required BookKeeper and ZooKeeper instances.
- * 
+ *
  */
 public abstract class HedwigRegionTestBase extends TestCase {
 
@@ -173,7 +173,7 @@ public abstract class HedwigRegionTestBase extends TestCase {
 
         // Create the Hedwig PubSubServer Hubs for all of the regions
         regionServersMap = new HashMap<String, List<PubSubServer>>(numRegions, 1.0f);
-        regionClientsMap = new HashMap<String, HedwigClient>(numRegions, 1.0f);        
+        regionClientsMap = new HashMap<String, HedwigClient>(numRegions, 1.0f);
         for (int i = 0; i < numRegions; i++) {
             List<PubSubServer> serversList = new LinkedList<PubSubServer>();
             // For the current region, create the necessary amount of hub
@@ -181,8 +181,8 @@ public abstract class HedwigRegionTestBase extends TestCase {
             // starting from the initial ones defined.
             for (int j = 0; j < numServersPerRegion; j++) {
                 serversList.add(new PubSubServer(getServerConfiguration(initialServerPort
-                        + (j + i * numServersPerRegion), initialSSLServerPort + (j + i * numServersPerRegion),
-                        REGION_PREFIX + i)));
+                                                 + (j + i * numServersPerRegion), initialSSLServerPort + (j + i * numServersPerRegion),
+                                                 REGION_PREFIX + i)));
             }
             // Store this list of servers created for the current region
             regionServersMap.put(REGION_PREFIX + i, serversList);

@@ -36,21 +36,21 @@ public class InMemorySubscriptionManager extends AbstractSubscriptionManager {
 
     @Override
     protected void createSubscriptionState(ByteString topic, ByteString subscriberId, SubscriptionState state,
-            Callback<Void> callback, Object ctx) {
+                                           Callback<Void> callback, Object ctx) {
         // nothing to do, in-memory info is already recorded by base class
         callback.operationFinished(ctx, null);
     }
 
     @Override
     protected void deleteSubscriptionState(ByteString topic, ByteString subscriberId, Callback<Void> callback,
-            Object ctx) {
+                                           Object ctx) {
         // nothing to do, in-memory info is already deleted by base class
         callback.operationFinished(ctx, null);
     }
 
     @Override
     protected void updateSubscriptionState(ByteString topic, ByteString subscriberId, SubscriptionState state,
-            Callback<Void> callback, Object ctx) {
+                                           Callback<Void> callback, Object ctx) {
         // nothing to do, in-memory info is already updated by base class
         callback.operationFinished(ctx, null);
     }
@@ -62,7 +62,7 @@ public class InMemorySubscriptionManager extends AbstractSubscriptionManager {
 
     @Override
     protected void readSubscriptions(ByteString topic,
-            Callback<Map<ByteString, InMemorySubscriptionState>> cb, Object ctx) {
+                                     Callback<Map<ByteString, InMemorySubscriptionState>> cb, Object ctx) {
         // Since we don't lose in-memory information on lostTopic, we can just
         // return that back
         Map<ByteString, InMemorySubscriptionState> topicSubs = top2sub2seq.get(topic);

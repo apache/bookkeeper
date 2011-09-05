@@ -29,7 +29,8 @@ public class HelperMethods {
 
     public static List<Message> getRandomPublishedMessages(int numMessages, int size) {
         ByteString[] regions = { ByteString.copyFromUtf8("sp1"), ByteString.copyFromUtf8("re1"),
-                ByteString.copyFromUtf8("sg") };
+                                 ByteString.copyFromUtf8("sg")
+                               };
         return getRandomPublishedMessages(numMessages, size, regions);
     }
 
@@ -39,7 +40,7 @@ public class HelperMethods {
             byte[] body = new byte[size];
             rand.nextBytes(body);
             msgs.add(Message.newBuilder().setBody(ByteString.copyFrom(body)).setSrcRegion(
-                    regions[rand.nextInt(regions.length)]).build());
+                         regions[rand.nextInt(regions.length)]).build());
         }
         return msgs;
     }

@@ -23,7 +23,7 @@ public interface MessageFilter {
 
     /**
      * Tests whether a particular message passes the filter or not
-     * 
+     *
      * @param message
      * @return
      */

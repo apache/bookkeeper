@@ -113,7 +113,7 @@ public class ResponseHandler extends SimpleChannelHandler {
         PubSubResponse response = (PubSubResponse) e.getMessage();
         if (logger.isDebugEnabled())
             logger.debug("Response received from host: " + HedwigClient.getHostFromChannel(ctx.getChannel())
-                    + ", response: " + response);
+                         + ", response: " + response);
 
         // Determine if this PubSubResponse is an ack response for a PubSub
         // Request or if it is a message being pushed to the client subscriber.
@@ -127,7 +127,7 @@ public class ResponseHandler extends SimpleChannelHandler {
         // Response is an ack to a prior PubSubRequest so first retrieve the
         // PubSub data for this txn.
         PubSubData pubSubData = txn2PubSubData.containsKey(response.getTxnId()) ? txn2PubSubData.get(response
-                .getTxnId()) : null;
+                                .getTxnId()) : null;
         // Validate that the PubSub data for this txn is stored. If not, just
         // log an error message and return since we don't know how to handle
         // this.
@@ -163,14 +163,14 @@ public class ResponseHandler extends SimpleChannelHandler {
             // The above are the only expected PubSubResponse messages received
             // from the server for the various client side requests made.
             logger.error("Response received from server is for an unhandled operation type, txnId: "
-                    + response.getTxnId() + ", operationType: " + pubSubData.operationType);
+                         + response.getTxnId() + ", operationType: " + pubSubData.operationType);
         }
     }
 
     /**
      * Logic to repost a PubSubRequest when the server responds with a redirect
      * indicating they are not the topic master.
-     * 
+     *
      * @param response
      *            PubSubResponse from the server for the redirect
      * @param pubSubData
@@ -185,7 +185,7 @@ public class ResponseHandler extends SimpleChannelHandler {
             throws Exception {
         if (logger.isDebugEnabled())
             logger.debug("Handling a redirect from host: " + HedwigClient.getHostFromChannel(channel) + ", response: "
-                    + response + ", pubSubData: " + pubSubData);
+                         + response + ", pubSubData: " + pubSubData);
         // In this case, the PubSub request was done to a server that is not
         // responsible for the topic. First make sure that we haven't
         // exceeded the maximum number of server redirects.
@@ -197,8 +197,8 @@ public class ResponseHandler extends SimpleChannelHandler {
             if (logger.isDebugEnabled())
                 logger.debug("Exceeded the number of server redirects (" + curNumServerRedirects + ") so error out.");
             pubSubData.callback.operationFailed(pubSubData.context, new ServiceDownException(
-                    new TooManyServerRedirectsException("Already reached max number of redirects: "
-                            + curNumServerRedirects)));
+                                                    new TooManyServerRedirectsException("Already reached max number of redirects: "
+                                                            + curNumServerRedirects)));
             return;
         }
 
@@ -206,7 +206,7 @@ public class ResponseHandler extends SimpleChannelHandler {
         // stored in the StatusMsg of the response. First store the
         // server that we sent the PubSub request to for the topic.
         ByteString triedServer = ByteString.copyFromUtf8(HedwigSocketAddress.sockAddrStr(HedwigClient
-                .getHostFromChannel(channel)));
+                                 .getHostFromChannel(channel)));
         if (pubSubData.triedServers == null)
             pubSubData.triedServers = new LinkedList<ByteString>();
         pubSubData.shouldClaim = true;
@@ -232,10 +232,10 @@ public class ResponseHandler extends SimpleChannelHandler {
         // already before in this PubSub request.
         if (pubSubData.triedServers.contains(ByteString.copyFromUtf8(HedwigSocketAddress.sockAddrStr(redirectedHost)))) {
             logger.error("We've already sent this PubSubRequest before to redirectedHost: " + redirectedHost
-                    + ", pubSubData: " + pubSubData);
+                         + ", pubSubData: " + pubSubData);
             pubSubData.callback.operationFailed(pubSubData.context, new ServiceDownException(
-                    new ServerRedirectLoopException("Already made the request before to redirected host: "
-                            + redirectedHost)));
+                                                    new ServerRedirectLoopException("Already made the request before to redirected host: "
+                                                            + redirectedHost)));
             return;
         }
 
@@ -297,7 +297,7 @@ public class ResponseHandler extends SimpleChannelHandler {
             if (pub.host2Channel.containsKey(host) && pub.host2Channel.get(host).equals(ctx.getChannel())) {
                 if (logger.isDebugEnabled())
                     logger.debug("Disconnected channel for host: " + host
-                            + " was for Publish/Unsubscribe requests so remove all references to it.");
+                                 + " was for Publish/Unsubscribe requests so remove all references to it.");
                 pub.host2Channel.remove(host);
                 client.clearAllTopicsForHost(host);
             }
@@ -333,9 +333,9 @@ public class ResponseHandler extends SimpleChannelHandler {
         for (PubSubData pubSubData : txn2PubSubData.values()) {
             if (logger.isDebugEnabled())
                 logger.debug("Channel disconnected so invoking the operationFailed callback for pubSubData: "
-                        + pubSubData);
+                             + pubSubData);
             pubSubData.callback.operationFailed(pubSubData.context, new UncertainStateException(
-                    "Server ack response never received before server connection disconnected!"));
+                                                    "Server ack response never received before server connection disconnected!"));
         }
         txn2PubSubData.clear();
     }

@@ -24,25 +24,25 @@ import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.util.ConcurrencyUtils;
 import org.apache.hedwig.util.Either;
 
-public class StubScanCallback implements ScanCallback{
+public class StubScanCallback implements ScanCallback {
 
     public static Message END_MESSAGE = Message.newBuilder().setBody(ByteString.EMPTY).build();
-    
+
     LinkedBlockingQueue<Either<Message, Exception>> queue = new LinkedBlockingQueue<Either<Message,Exception>>();
-    
+
     @Override
     public void messageScanned(Object ctx, Message message) {
-       ConcurrencyUtils.put(queue, Either.of(message, (Exception) null));
+        ConcurrencyUtils.put(queue, Either.of(message, (Exception) null));
     }
-    
+
     @Override
     public void scanFailed(Object ctx, Exception exception) {
         ConcurrencyUtils.put(queue, Either.of((Message) null, exception));
     }
-    
+
     @Override
     public void scanFinished(Object ctx, ReasonForFinish reason) {
         ConcurrencyUtils.put(queue, Either.of(END_MESSAGE, (Exception) null));
-        
+
     }
 }
