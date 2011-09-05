@@ -44,6 +44,7 @@ BUGFIXES:
   
   BOOKKEEPER-51: NullPointException at FIFODeliveryManager#deliveryPtrs (xulei via ivank)
 
+  BOOKKEEPER-63: Hedwig PubSubServer must wait for its Zookeeper client to be connected upon startup (morel via ivank)
 
  hedwig-client/
  

@@ -24,9 +24,11 @@ import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.commons.configuration.ConfigurationException;
@@ -140,13 +142,25 @@ public class PubSubServer {
         return new RegionManager(pm, conf, zk, scheduler, new HedwigHubClientFactory(conf, clientChannelFactory));
     }
 
-    protected void instantiateZookeeperClient() throws IOException {
+    protected void instantiateZookeeperClient() throws Exception {
         if (!conf.isStandalone()) {
+            final CountDownLatch signalZkReady = new CountDownLatch(1);
+
             zk = new ZooKeeper(conf.getZkHost(), conf.getZkTimeout(), new Watcher() {
                 @Override
                 public void process(WatchedEvent event) {
+                    if(Event.KeeperState.SyncConnected.equals(event.getState())) {
+                        signalZkReady.countDown();
+                    }
                 }
             });
+            // wait until connection is effective
+            if (!signalZkReady.await(conf.getZkTimeout()*2, TimeUnit.MILLISECONDS)) {
+                logger.fatal("Could not establish connection with ZooKeeper after zk_timeout*2 = " +
+                        conf.getZkTimeout()*2 + " ms. (Default value for zk_timeout is 2000).");
+                throw new Exception("Could not establish connection with ZooKeeper after zk_timeout*2 = " +
+                        conf.getZkTimeout()*2 + " ms. (Default value for zk_timeout is 2000).");
+            }
         }
     }
 
