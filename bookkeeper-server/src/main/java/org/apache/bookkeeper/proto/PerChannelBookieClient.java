@@ -69,7 +69,6 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     public static int MAX_FRAME_LENGTH = 2 * 1024 * 1024; // 2M
 
     InetSocketAddress addr;
-    boolean connected = false;
     Semaphore opCounterSem = new Semaphore(2000);
     AtomicLong totalBytesOutstanding;
     ClientSocketChannelFactory channelFactory;
@@ -83,18 +82,30 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
      * because they are always updated under a lock
      */
     Queue<GenericCallback<Void>> pendingOps = new ArrayDeque<GenericCallback<Void>>();
-    boolean connectionAttemptInProgress;
     Channel channel = null;
 
+    private enum ConnectionState {
+        DISCONNECTED, CONNECTING, CONNECTED
+            };
+
+    private ConnectionState state;
+            
     public PerChannelBookieClient(OrderedSafeExecutor executor, ClientSocketChannelFactory channelFactory,
                                   InetSocketAddress addr, AtomicLong totalBytesOutstanding) {
         this.addr = addr;
         this.executor = executor;
         this.totalBytesOutstanding = totalBytesOutstanding;
         this.channelFactory = channelFactory;
+        this.state = ConnectionState.DISCONNECTED;
     }
 
-    void connect() {
+    synchronized private void connect() {
+        if (state == ConnectionState.CONNECTING) {
+            return;
+        } 
+        // Start the connection attempt to the input server host.
+        state = ConnectionState.CONNECTING;
+
         if (LOG.isDebugEnabled())
             LOG.debug("Connecting to bookie: " + addr);
 
@@ -104,9 +115,6 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         bootstrap.setPipelineFactory(this);
         bootstrap.setOption("tcpNoDelay", true);
         bootstrap.setOption("keepAlive", true);
-
-        // Start the connection attempt to the input server host.
-        connectionAttemptInProgress = true;
 
         ChannelFuture future = bootstrap.connect(addr);
 
@@ -122,15 +130,14 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                         LOG.info("Successfully connected to bookie: " + addr);
                         rc = BKException.Code.OK;
                         channel = future.getChannel();
-                        connected = true;
+                        state = ConnectionState.CONNECTED;
                     } else {
                         LOG.error("Could not connect to bookie: " + addr);
                         rc = BKException.Code.BookieHandleNotAvailableException;
                         channel = null;
-                        connected = false;
+                        state = ConnectionState.DISCONNECTED;
                     }
 
-                    connectionAttemptInProgress = false;
                     PerChannelBookieClient.this.channel = channel;
 
                     // trick to not do operations under the lock, take the list
@@ -144,7 +151,6 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                 for (GenericCallback<Void> pendingOp : oldPendingOps) {
                     pendingOp.operationComplete(rc, null);
                 }
-
             }
         });
     }
@@ -153,13 +159,13 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         boolean doOpNow;
 
         // common case without lock first
-        if (channel != null && connected) {
+        if (channel != null && state == ConnectionState.CONNECTED) {
             doOpNow = true;
         } else {
 
             synchronized (this) {
                 // check again under lock
-                if (channel != null && connected) {
+                if (channel != null && state == ConnectionState.CONNECTED) {
                     doOpNow = true;
                 } else {
 
@@ -175,10 +181,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                     // succeeds
                     pendingOps.add(op);
 
-                    if (!connectionAttemptInProgress) {
-                        connect();
-                    }
-
+                    connect();
                 }
             }
         }
@@ -375,7 +378,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         errorOutOutstandingEntries();
         channel.close();
 
-        connected = false;
+        state = ConnectionState.DISCONNECTED;
 
         // we don't want to reconnect right away. If someone sends a request to
         // this address, we will reconnect.

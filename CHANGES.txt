@@ -38,6 +38,8 @@ BUGFIXES:
 
   BOOKKEEPER-57: NullPointException at bookie.zk@EntryLogger (xulei via ivank)
 
+  BOOKKEEPER-59: Race condition in netty code allocates and orphans resources (BK-5 revisited) (ivank via fpj)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)
