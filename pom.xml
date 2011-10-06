@@ -80,6 +80,15 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+	<artifactId>maven-assembly-plugin</artifactId>
+        <version>2.2.1</version>
+        <configuration>
+          <descriptors>
+            <descriptor>src/assemble/release.xml</descriptor>
+          </descriptors>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <reporting>

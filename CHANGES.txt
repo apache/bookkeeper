@@ -58,6 +58,8 @@ IMPROVEMENTS:
 
  BOOKKEEPER-26: Indentation is all messed up in the BookKeeper code (ivank via fpj)
 
+ BOOKKEEPER-41: Generation of packages for distribution (ivank via fpj)
+
  hedwig-client/
 
   BOOKKEEPER-44: Reuse publish channel to default server to avoid too many connect requests to default server when lots of producers came in same time (Sijie Guo via breed)
