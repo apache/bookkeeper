@@ -37,7 +37,8 @@ public class BufferedChannel
     int capacity;
     long readBufferStartPosition;
     long writeBufferStartPosition;
-    BufferedChannel(FileChannel bc, int capacity) throws IOException {
+    // make constructor to be public for unit test
+    public BufferedChannel(FileChannel bc, int capacity) throws IOException {
         this.bc = bc;
         this.capacity = capacity;
         position = bc.position();
@@ -114,7 +115,7 @@ public class BufferedChannel
             readBuffer = ByteBuffer.allocateDirect(capacity);
             readBufferStartPosition = Long.MIN_VALUE;
         }
-        int rc = buff.remaining();
+        long prevPos = pos;
         while(buff.remaining() > 0) {
             // check if it is in the write buffer
             if (writeBuffer != null && writeBufferStartPosition <= pos) {
@@ -131,6 +132,9 @@ public class BufferedChannel
                 src.limit((int) (positionInBuffer+bytesToCopy));
                 buff.put(src);
                 pos+= bytesToCopy;
+            } else if (writeBuffer == null && writeBufferStartPosition <= pos) {
+                // here we reach the end
+                break;
                 // first check if there is anything we can grab from the readBuffer
             } else if (readBufferStartPosition <= pos && pos < readBufferStartPosition+readBuffer.capacity()) {
                 long positionInBuffer = pos - readBufferStartPosition;
@@ -163,6 +167,6 @@ public class BufferedChannel
                 readBuffer.clear();
             }
         }
-        return rc;
+        return (int)(pos - prevPos);
     }
 }
