@@ -34,7 +34,7 @@ BUGFIXES:
 
   BOOKKEEPER-58: Changes introduced in BK-38 cause BookieClientTest to hang indefinitely. (ivank)
 
-  BOOKKEEPER-18: maven build is unstable (morel, ivank via ivank)
+  BOOKKEEPER-18: maven build is unstable (mmorel, ivank via ivank)
 
   BOOKKEEPER-57: NullPointException at bookie.zk@EntryLogger (xulei via ivank)
 
@@ -46,13 +46,15 @@ BUGFIXES:
   
   BOOKKEEPER-51: NullPointException at FIFODeliveryManager#deliveryPtrs (xulei via ivank)
 
-  BOOKKEEPER-63: Hedwig PubSubServer must wait for its Zookeeper client to be connected upon startup (morel via ivank)
+  BOOKKEEPER-63: Hedwig PubSubServer must wait for its Zookeeper client to be connected upon startup (mmorel via ivank)
 
  hedwig-client/
  
   BOOKKEEPER-52: Message sequence confuse due to the subscribeMsgQueue@SubscribeResponseHandler (xulei via ivank)
 
 IMPROVEMENTS:
+
+ BOOKKEEPER-65: fix dependencies on incompatible versions of netty (mmorel via ivank)
 
  BOOKKEEPER-28: Create useful startup scripts for bookkeeper and hedwig (ivank)
 
