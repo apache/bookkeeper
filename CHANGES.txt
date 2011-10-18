@@ -42,6 +42,8 @@ BUGFIXES:
   
   BOOKKEEPER-68: Conditional setData (fpj via ivank)
 
+  BOOKKEEPER-86: bookkeeper-benchmark fails to compile after BOOKKEEPER-68 (ivank via breed)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)

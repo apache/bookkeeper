@@ -113,7 +113,7 @@ public class TestClient
         return retVal;
     }
 
-    public void closeHandle() throws KeeperException, InterruptedException {
+    public void closeHandle() throws KeeperException, InterruptedException, BKException {
         lh.close();
     }
     /**
@@ -145,15 +145,9 @@ public class TestClient
                 c.writeSameEntryBatch(sb.toString().getBytes(), Integer.parseInt(args[2]));
                 //c.writeConsecutiveEntriesBatch(Integer.parseInt(args[0]));
                 c.closeHandle();
-            } catch (NumberFormatException e) {
+            } catch (Exception e) {
                 LOG.error(e);
-            } catch (InterruptedException e) {
-                LOG.error(e);
-            } catch (KeeperException e) {
-                LOG.error(e);
-            } catch (IOException e) {
-                LOG.error(e);
-            }
+            } 
             break;
         case 1:
 
