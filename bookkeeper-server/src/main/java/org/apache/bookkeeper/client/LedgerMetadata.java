@@ -26,6 +26,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.apache.bookkeeper.util.StringUtils;
+import org.apache.zookeeper.data.Stat;
 import org.apache.log4j.Logger;
 
 /**
@@ -49,7 +50,8 @@ public class LedgerMetadata {
     long close;
     private SortedMap<Long, ArrayList<InetSocketAddress>> ensembles = new TreeMap<Long, ArrayList<InetSocketAddress>>();
     ArrayList<InetSocketAddress> currentEnsemble;
-
+    volatile int znodeVersion = -1;
+    
     public LedgerMetadata(int ensembleSize, int quorumSize) {
         this.ensembleSize = ensembleSize;
         this.quorumSize = quorumSize;
@@ -155,7 +157,7 @@ public class LedgerMetadata {
      *             if the given byte[] cannot be parsed
      */
 
-    static LedgerMetadata parseConfig(byte[] bytes) throws IOException {
+    static LedgerMetadata parseConfig(byte[] bytes, int version) throws IOException {
 
         LedgerMetadata lc = new LedgerMetadata();
         String config = new String(bytes);
@@ -163,7 +165,7 @@ public class LedgerMetadata {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Parsing Config: " + config);
         }
-
+        
         String lines[] = config.split(lSplitter);
 
         if (lines.length < 2) {
@@ -171,6 +173,14 @@ public class LedgerMetadata {
         }
 
         try {
+            /*
+             * Updating the znode version
+             */
+            lc.znodeVersion = version;
+            
+            /*
+             * Updating metadata info
+             */
             lc.quorumSize = new Integer(lines[0]);
             lc.ensembleSize = new Integer(lines[1]);
             lc.length = new Long(lines[2]);
@@ -194,5 +204,23 @@ public class LedgerMetadata {
         }
         return lc;
     }
+    
 
+    /**
+     * Updates the status of this metadata in ZooKeeper.
+     * 
+     * @param stat
+     */
+    public void updateZnodeStatus(Stat stat) {
+        this.znodeVersion = stat.getVersion();
+    }
+    
+    /**
+     * Returns the last znode version.
+     * 
+     * @return int znode version
+     */
+    public int getZnodeVersion() {
+        return this.znodeVersion;
+    }
 }

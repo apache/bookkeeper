@@ -192,21 +192,30 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, R
     }
 
     public void writeLedgerConfig(StatCallback callback, Object ctx) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Writing metadata to ZooKeeper: " + this.ledgerId + ", " + metadata.getZnodeVersion());
+        }
+        
         bk.getZkHandle().setData(StringUtils.getLedgerNodePath(ledgerId),
-                                 metadata.serialize(), -1, callback, ctx);
+                                 metadata.serialize(), metadata.getZnodeVersion(), 
+                                 callback, ctx);
     }
 
     /**
      * Close this ledger synchronously.
      *
      */
-    public void close() throws InterruptedException {
+    public void close() 
+            throws InterruptedException, BKException {
         SyncCounter counter = new SyncCounter();
         counter.inc();
 
         asyncClose(this, counter);
 
         counter.block(0);
+        if (counter.getrc() != BKException.Code.OK) {
+            throw BKException.create(counter.getrc());
+        }
     }
 
     /**
@@ -254,9 +263,11 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, R
                     public void processResult(int rc, String path, Object subctx,
                     Stat stat) {
                         if (rc != KeeperException.Code.OK.intValue()) {
+                            LOG.warn("Conditional write failed: " + KeeperException.Code.get(rc));
                             cb.closeComplete(BKException.Code.ZKException, LedgerHandle.this,
                                              ctx);
                         } else {
+                            metadata.updateZnodeStatus(stat);
                             cb.closeComplete(BKException.Code.OK, LedgerHandle.this, ctx);
                         }
                     }
@@ -542,7 +553,7 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, R
 
         writeLedgerConfig(new StatCallback() {
             @Override
-            public void processResult(final int rc, String path, Object ctx, Stat stat) {
+            public void processResult(final int rc, String path, Object ctx, final Stat stat) {
 
                 bk.mainWorkerPool.submitOrdered(ledgerId, new SafeRunnable() {
                     @Override
@@ -555,6 +566,7 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, R
                             return;
                         }
 
+                        metadata.updateZnodeStatus(stat);
                         for (PendingAddOp pendingAddOp : pendingAddOps) {
                             pendingAddOp.unsetSuccessAndSendWriteRequest(bookieIndex);
                         }
@@ -581,6 +593,9 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, R
 
         @Override
         public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
+            if (rc != KeeperException.Code.OK.intValue()) {
+                LOG.warn("Close failed: " + BKException.getMessage(rc));
+            }
             // noop
         }
     }

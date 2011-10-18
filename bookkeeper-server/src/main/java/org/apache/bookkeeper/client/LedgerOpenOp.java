@@ -103,7 +103,7 @@ class LedgerOpenOp implements DataCallback {
 
         LedgerMetadata metadata;
         try {
-            metadata = LedgerMetadata.parseConfig(data);
+            metadata = LedgerMetadata.parseConfig(data, stat.getVersion());
         } catch (IOException e) {
             LOG.error("Could not parse ledger metadata for ledger: " + ledgerId, e);
             cb.openComplete(BKException.Code.ZKException, null, this.ctx);

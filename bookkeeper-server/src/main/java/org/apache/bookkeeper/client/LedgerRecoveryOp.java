@@ -21,12 +21,15 @@ package org.apache.bookkeeper.client;
 import java.util.Enumeration;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
+import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.LedgerHandle.NoopCloseCallback;
 import org.apache.bookkeeper.client.DigestManager.RecoveryData;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+
+import org.apache.zookeeper.KeeperException;
 import org.apache.log4j.Logger;
 import org.jboss.netty.buffer.ChannelBuffer;
 
@@ -143,14 +146,20 @@ class LedgerRecoveryOp implements ReadEntryCallback, ReadCallback, AddCallback {
         }
 
         if (rc == BKException.Code.NoSuchEntryException || rc == BKException.Code.NoSuchLedgerExistsException) {
-            lh.asyncClose(NoopCloseCallback.instance, null);
-            // we don't need to wait for the close to complete. Since we mark
-            // the
-            // ledger closed in memory, the application wont be able to add to
-            // it
-
-            cb.operationComplete(BKException.Code.OK, null);
-            LOG.debug("After closing length is: " + lh.getLength());
+            lh.asyncClose(new CloseCallback() {
+                @Override
+                public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
+                    if (rc != KeeperException.Code.OK.intValue()) {
+                        LOG.warn("Close failed: " + BKException.getMessage(rc));
+                        cb.operationComplete(BKException.Code.ZKException, null);
+                    } else {
+                        cb.operationComplete(BKException.Code.OK, null);
+                        LOG.debug("After closing length is: " + lh.getLength()); 
+                    }
+                } 
+                
+            }, null);
+            
             return;
         }
 

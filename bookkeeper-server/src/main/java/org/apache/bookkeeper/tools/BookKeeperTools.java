@@ -544,6 +544,7 @@ public class BookKeeperTools {
                             ensemble.remove(deadBookieIndex);
                             ensemble.add(deadBookieIndex, newBookie);
                         }
+                        
                         lh.writeLedgerConfig(new AsyncCallback.StatCallback() {
                             @Override
                             public void processResult(int rc, String path, Object ctx, Stat stat) {
@@ -551,6 +552,7 @@ public class BookKeeperTools {
                                     LOG.error("ZK error updating ledger config metadata for ledgerId: " + lh.getId(),
                                               KeeperException.create(KeeperException.Code.get(rc), path));
                                 } else {
+                                    lh.getLedgerMetadata().updateZnodeStatus(stat);
                                     LOG.info("Updated ZK for ledgerId: (" + lh.getId()
                                              + ") to point ledger fragments from old dead bookie: (" + bookieSrc
                                              + ") to new bookie: (" + newBookie + ")");

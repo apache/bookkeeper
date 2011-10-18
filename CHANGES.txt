@@ -39,6 +39,8 @@ BUGFIXES:
   BOOKKEEPER-57: NullPointException at bookie.zk@EntryLogger (xulei via ivank)
 
   BOOKKEEPER-59: Race condition in netty code allocates and orphans resources (BK-5 revisited) (ivank via fpj)
+  
+  BOOKKEEPER-68: Conditional setData (fpj via ivank)
 
  hedwig-server/
 
@@ -54,13 +56,13 @@ BUGFIXES:
 
 IMPROVEMENTS:
 
- BOOKKEEPER-65: fix dependencies on incompatible versions of netty (mmorel via ivank)
-
  BOOKKEEPER-28: Create useful startup scripts for bookkeeper and hedwig (ivank)
 
  BOOKKEEPER-26: Indentation is all messed up in the BookKeeper code (ivank via fpj)
 
  BOOKKEEPER-41: Generation of packages for distribution (ivank via fpj)
+
+ BOOKKEEPER-65: fix dependencies on incompatible versions of netty (mmorel via ivank)
 
  hedwig-client/
 

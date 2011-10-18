@@ -38,6 +38,7 @@ import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
@@ -105,7 +106,7 @@ public class AsyncLedgerOpsTest extends BaseTestCase implements AddCallback, Rea
     }
 
     @Test
-    public void testAsyncCreateClose() throws IOException {
+    public void testAsyncCreateClose() throws IOException, BKException {
         try {
 
             ControlObj ctx = new ControlObj();
