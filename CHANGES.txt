@@ -44,6 +44,8 @@ BUGFIXES:
 
   BOOKKEEPER-86: bookkeeper-benchmark fails to compile after BOOKKEEPER-68 (ivank via breed)
 
+  BOOKKEEPER-61: BufferedChannel read endless when the remaining bytes of file is less than the capacity of read buffer (Sijie Guo via breed)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)
