@@ -44,6 +44,12 @@ public class LedgerMetadata {
     // can't use -1 for NOTCLOSED because that is reserved for a closed, empty
     // ledger
     public static final int NOTCLOSED = -101;
+    public static final int LOWEST_COMPAT_METADATA_FORMAT_VERSION = 0;
+    public static final int CURRENT_METADATA_FORMAT_VERSION = 1;
+    public static final String VERSION_KEY = "BookieMetadataFormatVersion";
+
+    int metadataFormatVersion = 0;
+
     int ensembleSize;
     int quorumSize;
     long length;
@@ -62,6 +68,7 @@ public class LedgerMetadata {
          */
         this.length = 0;
         this.close = NOTCLOSED;
+        this.metadataFormatVersion = CURRENT_METADATA_FORMAT_VERSION;
     };
 
     private LedgerMetadata() {
@@ -126,6 +133,7 @@ public class LedgerMetadata {
      */
     public byte[] serialize() {
         StringBuilder s = new StringBuilder();
+        s.append(VERSION_KEY).append(tSplitter).append(metadataFormatVersion).append(lSplitter);
         s.append(quorumSize).append(lSplitter).append(ensembleSize).append(lSplitter).append(length);
 
         for (Map.Entry<Long, ArrayList<InetSocketAddress>> entry : ensembles.entrySet()) {
@@ -167,25 +175,33 @@ public class LedgerMetadata {
         }
         
         String lines[] = config.split(lSplitter);
-
-        if (lines.length < 2) {
-            throw new IOException("Quorum size or ensemble size absent from config: " + config);
-        }
-
+        
         try {
-            /*
-             * Updating the znode version
-             */
-            lc.znodeVersion = version;
+            int i = 0;
+            if (lines[0].startsWith(VERSION_KEY)) {
+                String parts[] = lines[0].split(tSplitter);
+                lc.metadataFormatVersion = new Integer(parts[1]);
+                i++;
+            } else {
+                lc.metadataFormatVersion = 0;
+            }
             
-            /*
-             * Updating metadata info
-             */
-            lc.quorumSize = new Integer(lines[0]);
-            lc.ensembleSize = new Integer(lines[1]);
-            lc.length = new Long(lines[2]);
+            if (lc.metadataFormatVersion < LOWEST_COMPAT_METADATA_FORMAT_VERSION
+                || lc.metadataFormatVersion > CURRENT_METADATA_FORMAT_VERSION) {
+                throw new IOException("Metadata version not compatible. Expected between "
+                        + LOWEST_COMPAT_METADATA_FORMAT_VERSION + " and " + CURRENT_METADATA_FORMAT_VERSION
+                        + ", but got " + lc.metadataFormatVersion);
+            }
+            if ((lines.length+i) < 2) {
+                throw new IOException("Quorum size or ensemble size absent from config: " + config);
+            }
 
-            for (int i = 3; i < lines.length; i++) {
+            lc.znodeVersion = version;
+            lc.quorumSize = new Integer(lines[i++]);
+            lc.ensembleSize = new Integer(lines[i++]);
+            lc.length = new Long(lines[i++]);
+
+            for (; i < lines.length; i++) {
                 String parts[] = lines[i].split(tSplitter);
 
                 if (parts[1].equals(closed)) {
