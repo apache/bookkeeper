@@ -34,7 +34,7 @@ import org.apache.hedwig.client.netty.HedwigSubscriber;
 public class HedwigBenchmark implements Callable<Void> {
     protected static final Logger logger = Logger.getLogger(HedwigBenchmark.class);
 
-    static final String TOPIC_PREFIX = "topic-";
+    static final String TOPIC_PREFIX = "topic";
 
     private final HedwigClient client;
     private final HedwigPublisher publisher;
