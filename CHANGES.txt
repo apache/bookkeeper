@@ -48,6 +48,8 @@ BUGFIXES:
 
   BOOKKEEPER-84: Add versioning for ZK metadata (ivank via breed)
 
+  BOOKKEEPER-92: using wrong context object in readLastConfirmedComplete callback (Sijie Guo via ivank)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)
@@ -59,8 +61,6 @@ BUGFIXES:
  hedwig-client/
  
   BOOKKEEPER-52: Message sequence confuse due to the subscribeMsgQueue@SubscribeResponseHandler (xulei via ivank)
-
- hedwig-benchmark/
 
   BOOKKEEPER-88: derby doesn't like - in the topic names (breed via ivank)
 

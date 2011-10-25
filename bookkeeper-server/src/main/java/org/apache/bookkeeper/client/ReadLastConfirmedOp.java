@@ -93,8 +93,8 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
 
         if (numResponsesPending == 0) {
             // Have got all responses back but was still not enough, just fail the operation
-            LOG.error("While recovering ledger: " + ledgerId + " did not hear success responses from all quorums");
-            cb.readLastConfirmedComplete(BKException.Code.LedgerRecoveryException, maxAddConfirmed, ctx);
+            LOG.error("While readLastConfirmed ledger: " + ledgerId + " did not hear success responses from all quorums");
+            cb.readLastConfirmedComplete(BKException.Code.LedgerRecoveryException, maxAddConfirmed, this.ctx);
         }
 
     }
