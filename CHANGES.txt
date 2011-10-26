@@ -49,6 +49,8 @@ BUGFIXES:
   BOOKKEEPER-84: Add versioning for ZK metadata (ivank via breed)
 
   BOOKKEEPER-92: using wrong context object in readLastConfirmedComplete callback (Sijie Guo via ivank)
+ 
+  BOOKKEEPER-94: Double callbacks in readLastConfirmedOp which fails readLastConfirmed operation even received enough valid responses. (Sijie Guo via ivank)
 
  hedwig-server/
 

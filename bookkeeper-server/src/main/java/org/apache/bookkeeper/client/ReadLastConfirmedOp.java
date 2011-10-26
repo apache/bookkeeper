@@ -16,16 +16,10 @@ package org.apache.bookkeeper.client;
  * limitations under the License.
  */
 
-import java.util.Enumeration;
-
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
-import org.apache.bookkeeper.client.LedgerHandle.NoopCloseCallback;
 import org.apache.bookkeeper.client.DigestManager.RecoveryData;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.log4j.Logger;
 import org.jboss.netty.buffer.ChannelBuffer;
 
@@ -41,7 +35,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
     int validResponses;
     long maxAddConfirmed;
     long maxLength = 0;
-    volatile boolean notComplete = true;
+    volatile boolean completed = false;
 
     ReadLastConfirmedCallback cb;
 
@@ -85,13 +79,17 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
 
         // other return codes dont count as valid responses
         if ((validResponses >= lh.metadata.quorumSize) &&
-                notComplete) {
-            notComplete = false;
+                !completed) {
+            completed = true;
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Read Complete with enough validResponses");
+            }
             cb.readLastConfirmedComplete(BKException.Code.OK, maxAddConfirmed, this.ctx);
             return;
         }
 
-        if (numResponsesPending == 0) {
+        if (numResponsesPending == 0 && !completed) {
+            completed = true;
             // Have got all responses back but was still not enough, just fail the operation
             LOG.error("While readLastConfirmed ledger: " + ledgerId + " did not hear success responses from all quorums");
             cb.readLastConfirmedComplete(BKException.Code.LedgerRecoveryException, maxAddConfirmed, this.ctx);
