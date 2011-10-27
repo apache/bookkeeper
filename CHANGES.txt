@@ -66,6 +66,8 @@ BUGFIXES:
 
   BOOKKEEPER-63: Hedwig PubSubServer must wait for its Zookeeper client to be connected upon startup (mmorel via ivank)
 
+  BOOKKEEPER-100: Some hedwig tests have build errors (dferro via ivank)
+
  hedwig-client/
  
   BOOKKEEPER-52: Message sequence confuse due to the subscribeMsgQueue@SubscribeResponseHandler (xulei via ivank)

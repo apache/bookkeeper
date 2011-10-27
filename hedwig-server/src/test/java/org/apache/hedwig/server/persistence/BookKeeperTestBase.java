@@ -41,7 +41,7 @@ import org.apache.log4j.Logger;
  *
  */
 public class BookKeeperTestBase extends ZooKeeperTestBase {
-    private static Logger logger = Logger.getLogger(BookKeeperTestBase.class);
+    private static Logger LOG = Logger.getLogger(BookKeeperTestBase.class);
 
     // BookKeeper Server variables
     private List<BookieServer> bookiesList;

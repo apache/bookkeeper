@@ -36,8 +36,11 @@ import org.apache.hedwig.util.Either;
 import org.apache.hedwig.util.HedwigSocketAddress;
 import org.apache.hedwig.util.Pair;
 import org.apache.hedwig.zookeeper.ZooKeeperTestBase;
+import org.apache.log4j.Logger;
 
 public class TestZkTopicManager extends ZooKeeperTestBase {
+
+    static Logger LOG = Logger.getLogger(TestZkTopicManager.class);
 
     protected ZkTopicManager tm;
 
