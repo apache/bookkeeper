@@ -56,6 +56,8 @@ BUGFIXES:
 
   BOOKKEEPER-89: Bookkeeper API changes for initial Bookkeeper release (ivank)
 
+  BOOKKEEPER-93: bookkeeper doesn't work correctly on OpenLedgerNoRecovery (Sijie Guo via ivank)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)

@@ -140,7 +140,7 @@ class LedgerCreateOp implements StringCallback, StatCallback {
          */
         metadata.addEnsemble(new Long(0), ensemble);
         try {
-            lh = new LedgerHandle(bk, ledgerId, metadata, digestType, passwd);
+            lh = new LedgerHandle(bk, ledgerId, metadata, digestType, passwd, false);
         } catch (GeneralSecurityException e) {
             LOG.error("Security exception while creating ledger: " + ledgerId, e);
             cb.createComplete(BKException.Code.DigestNotInitializedException, null, this.ctx);

@@ -50,6 +50,7 @@ import org.apache.log4j.Logger;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -812,7 +813,8 @@ public class BookieReadWriteTest extends BaseTestCase
             fail("Test failed due to interruption");
         }
     }
-
+    
+    @Test
     public void testReadFromOpenLedger() throws IOException {
         try {
             // Create a ledger
@@ -830,8 +832,26 @@ public class BookieReadWriteTest extends BaseTestCase
                 lh.addEntry(entry.array());
                 if(i == numEntriesToWrite/2) {
                     LedgerHandle lhOpen = bkc.openLedgerNoRecovery(ledgerId, digestType, ledgerPassword);
-                    Enumeration<LedgerEntry> readEntry = lh.readEntries(i, i);
+                    // no recovery opened ledger 's last confirmed entry id is less than written
+                    // and it just can read until (i-1)
+                    int toRead = i - 1;
+                    Enumeration<LedgerEntry> readEntry = lhOpen.readEntries(toRead, toRead);
                     assertTrue("Enumeration of ledger entries has no element", readEntry.hasMoreElements() == true);
+                    LedgerEntry e = readEntry.nextElement();
+                    assertEquals(toRead, e.getEntryId());
+                    Assert.assertArrayEquals(entries.get(toRead), e.getEntry());
+                    // should not written to a read only ledger
+                    try {
+                        lhOpen.addEntry(entry.array());
+                        fail("Should have thrown an exception here");
+                    } catch (BKException.BKIllegalOpException bkioe) {
+                        // this is the correct response
+                    } catch (Exception ex) {
+                        LOG.error("Unexpected exception", ex);
+                        fail("Unexpected exception");
+                    }
+                    // close read only ledger should not change metadata
+                    lhOpen.close();
                 }
             }
 

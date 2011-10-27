@@ -65,6 +65,7 @@ public class LedgerHandle {
     long length;
     final DigestManager macManager;
     final DistributionSchedule distributionSchedule;
+    final boolean readOnly;
 
     final Semaphore opCounterSem;
     private Integer throttling = 5000;
@@ -72,10 +73,11 @@ public class LedgerHandle {
     final Queue<PendingAddOp> pendingAddOps = new ArrayDeque<PendingAddOp>();
 
     LedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
-                 DigestType digestType, byte[] password)
+                 DigestType digestType, byte[] password, boolean readOnly)
             throws GeneralSecurityException, NumberFormatException {
         this.bk = bk;
         this.metadata = metadata;
+        this.readOnly = readOnly;
         if (metadata.isClosed()) {
             lastAddConfirmed = lastAddPushed = metadata.close;
             length = metadata.length;
@@ -241,6 +243,11 @@ public class LedgerHandle {
      * @param rc
      */
     private void asyncClose(final CloseCallback cb, final Object ctx, final int rc) {
+        // in unsafe read mode, we should not close ledger, just callback
+        if (readOnly) {
+            cb.closeComplete(BKException.Code.OK, this, ctx);
+            return;
+        }
 
         bk.mainWorkerPool.submitOrdered(ledgerId, new SafeRunnable() {
 
@@ -397,6 +404,11 @@ public class LedgerHandle {
      */
     public void asyncAddEntry(final byte[] data, final int offset, final int length,
                               final AddCallback cb, final Object ctx) {
+        if (readOnly) {
+            LOG.error("Tries to add entry on a Read-Only ledger handle");
+            cb.addComplete(BKException.Code.IllegalOpException, this, -1, ctx);
+            return;
+        }
         if (offset < 0 || length < 0
                 || (offset + length) > data.length) {
             throw new ArrayIndexOutOfBoundsException(

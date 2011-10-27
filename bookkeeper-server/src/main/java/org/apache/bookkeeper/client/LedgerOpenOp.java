@@ -24,6 +24,7 @@ package org.apache.bookkeeper.client;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
+import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.log4j.Logger;
@@ -111,7 +112,7 @@ class LedgerOpenOp implements DataCallback {
         }
 
         try {
-            lh = new LedgerHandle(bk, ledgerId, metadata, digestType, passwd);
+            lh = new LedgerHandle(bk, ledgerId, metadata, digestType, passwd, unsafe);
         } catch (GeneralSecurityException e) {
             LOG.error("Security exception while opening ledger: " + ledgerId, e);
             cb.openComplete(BKException.Code.DigestNotInitializedException, null, this.ctx);
@@ -128,16 +129,33 @@ class LedgerOpenOp implements DataCallback {
             return;
         }
 
-        if(!unsafe)
+        if(!unsafe) {
             lh.recover(new GenericCallback<Void>() {
-            @Override
-            public void operationComplete(int rc, Void result) {
-                if (rc != BKException.Code.OK) {
-                    cb.openComplete(BKException.Code.LedgerRecoveryException, null, LedgerOpenOp.this.ctx);
-                } else {
-                    cb.openComplete(BKException.Code.OK, lh, LedgerOpenOp.this.ctx);
+                @Override
+                public void operationComplete(int rc, Void result) {
+                    if (rc != BKException.Code.OK) {
+                        cb.openComplete(BKException.Code.LedgerRecoveryException, null, LedgerOpenOp.this.ctx);
+                    } else {
+                        cb.openComplete(BKException.Code.OK, lh, LedgerOpenOp.this.ctx);
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            lh.asyncReadLastConfirmed(new ReadLastConfirmedCallback() {
+
+                @Override
+                public void readLastConfirmedComplete(int rc,
+                        long lastConfirmed, Object ctx) {
+                    if (rc != BKException.Code.OK) {
+                        cb.openComplete(BKException.Code.ReadException, null, LedgerOpenOp.this.ctx);
+                    } else {
+                        lh.lastAddConfirmed = lh.lastAddPushed = lastConfirmed;
+                        cb.openComplete(BKException.Code.OK, lh, LedgerOpenOp.this.ctx);
+                    }
+                }
+                
+            }, null);
+            
+        }
     }
 }
