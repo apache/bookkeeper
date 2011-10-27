@@ -48,6 +48,10 @@ public class BookKeeperTestClient extends BookKeeper {
         super(servers);
     }
 
+    public ZooKeeper getZkHandle() {
+        return super.getZkHandle();
+    }
+
     /**
      * Force a read to zookeeper to get list of bookies.
      *

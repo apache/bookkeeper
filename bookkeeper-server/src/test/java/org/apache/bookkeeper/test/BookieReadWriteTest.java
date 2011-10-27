@@ -233,9 +233,6 @@ public class BookieReadWriteTest extends BaseTestCase
             assertTrue("Checking number of read entries", i == numEntriesToWrite);
 
             lh.close();
-        } catch (KeeperException e) {
-            LOG.error("Test failed", e);
-            fail("Test failed due to ZooKeeper exception");
         } catch (BKException e) {
             LOG.error("Test failed", e);
             fail("Test failed due to BookKeeper exception");
@@ -363,9 +360,6 @@ public class BookieReadWriteTest extends BaseTestCase
             assertTrue("Checking number of read entries", i == numEntries);
 
             lh.close();
-        } catch (KeeperException e) {
-            LOG.error("Test failed", e);
-            fail("Test failed due to ZooKeeper exception");
         } catch (BKException e) {
             LOG.error("Test failed", e);
             fail("Test failed due to BookKeeper exception");
@@ -497,9 +491,6 @@ public class BookieReadWriteTest extends BaseTestCase
             LOG.debug("*** READ COMPLETE ***");
 
             lh.close();
-        } catch (KeeperException e) {
-            LOG.error("Test failed", e);
-            fail("Test failed due to ZooKeeper exception");
         } catch (BKException e) {
             LOG.error("Test failed", e);
             fail("Test failed due to BookKeeper exception");
@@ -572,9 +563,6 @@ public class BookieReadWriteTest extends BaseTestCase
             assertTrue("Checking number of read entries", i == numEntriesToWrite);
 
             lh.close();
-        } catch (KeeperException e) {
-            LOG.error("Test failed", e);
-            fail("Test failed due to ZooKeeper exception");
         } catch (BKException e) {
             LOG.error("Test failed", e);
             fail("Test failed due to BookKeeper exception");
@@ -619,9 +607,6 @@ public class BookieReadWriteTest extends BaseTestCase
                 assertTrue("Checking entry " + i + " for equality", origEntry.equals(retrEntry));
             }
             lh.close();
-        } catch (KeeperException e) {
-            LOG.error("Test failed", e);
-            fail("Test failed due to ZooKeeper exception");
         } catch (BKException e) {
             LOG.error("Test failed", e);
             fail("Test failed due to BookKeeper exception");
@@ -666,9 +651,6 @@ public class BookieReadWriteTest extends BaseTestCase
                 assertTrue("Checking if entry " + i + " has zero bytes", result.capacity() == 0);
             }
             lh.close();
-        } catch (KeeperException e) {
-            LOG.error("Test failed", e);
-            fail("Test failed due to ZooKeeper exception");
         } catch (BKException e) {
             LOG.error("Test failed", e);
             fail("Test failed due to BookKeeper exception");
@@ -725,9 +707,6 @@ public class BookieReadWriteTest extends BaseTestCase
                 assertTrue("Checking if entry " + i + " has zero bytes", result.capacity() == 0);
             }
             lh2.close();
-        } catch (KeeperException e) {
-            LOG.error("Test failed", e);
-            fail("Test failed due to ZooKeeper exception");
         } catch (BKException e) {
             LOG.error("Test failed", e);
             fail("Test failed due to BookKeeper exception");
@@ -777,9 +756,6 @@ public class BookieReadWriteTest extends BaseTestCase
 
 
             lh.close();
-        } catch (KeeperException e) {
-            LOG.error("Test failed", e);
-            fail("Test failed due to ZooKeeper exception");
         } catch (BKException e) {
             LOG.error("Test failed", e);
             fail("Test failed due to BookKeeper exception");
@@ -828,9 +804,6 @@ public class BookieReadWriteTest extends BaseTestCase
             for(int i = 0; i < lhArray.length; i++) {
                 lhArray[i].close();
             }
-        } catch (KeeperException e) {
-            LOG.error("Test failed", e);
-            fail("Test failed due to ZooKeeper exception");
         } catch (BKException e) {
             LOG.error("Test failed", e);
             fail("Test failed due to BookKeeper exception");
@@ -902,11 +875,6 @@ public class BookieReadWriteTest extends BaseTestCase
             LOG.debug("*** WRITE COMPLETE ***");
             // close ledger
             lh.close();
-
-
-        } catch (KeeperException e) {
-            LOG.error("Test failed", e);
-            fail("Test failed due to ZooKeeper exception");
         } catch (BKException e) {
             LOG.error("Test failed", e);
             fail("Test failed due to BookKeeper exception");
@@ -975,11 +943,6 @@ public class BookieReadWriteTest extends BaseTestCase
             LOG.debug("*** WRITE COMPLETE ***");
             // close ledger
             lh.close();
-
-
-        } catch (KeeperException e) {
-            LOG.error("Test failed", e);
-            fail("Test failed due to ZooKeeper exception");
         } catch (BKException e) {
             LOG.error("Test failed", e);
             fail("Test failed due to BookKeeper exception");

@@ -52,7 +52,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
  * Ledger handle contains ledger metadata and is used to access the read and
  * write operations to a ledger.
  */
-public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, ReadLastConfirmedCallback {
+public class LedgerHandle {
     final static Logger LOG = Logger.getLogger(LedgerHandle.class);
     final static long LAST_ADD_CONFIRMED = -1;
 
@@ -140,7 +140,7 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, R
      *
      * @return LedgerMetadata for the LedgerHandle
      */
-    public LedgerMetadata getLedgerMetadata() {
+    LedgerMetadata getLedgerMetadata() {
         return metadata;
     }
 
@@ -149,7 +149,7 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, R
      *
      * @return DigestManager for the LedgerHandle
      */
-    public DigestManager getDigestManager() {
+    DigestManager getDigestManager() {
         return macManager;
     }
 
@@ -187,11 +187,11 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, R
      *
      * @return DistributionSchedule for the LedgerHandle
      */
-    public DistributionSchedule getDistributionSchedule() {
+    DistributionSchedule getDistributionSchedule() {
         return distributionSchedule;
     }
 
-    public void writeLedgerConfig(StatCallback callback, Object ctx) {
+    void writeLedgerConfig(StatCallback callback, Object ctx) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Writing metadata to ZooKeeper: " + this.ledgerId + ", " + metadata.getZnodeVersion());
         }
@@ -210,7 +210,7 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, R
         SyncCounter counter = new SyncCounter();
         counter.inc();
 
-        asyncClose(this, counter);
+        asyncClose(new SyncCloseCallback(), counter);
 
         counter.block(0);
         if (counter.getrc() != BKException.Code.OK) {
@@ -291,7 +291,7 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, R
         SyncCounter counter = new SyncCounter();
         counter.inc();
 
-        asyncReadEntries(firstEntry, lastEntry, this, counter);
+        asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
 
         counter.block(0);
         if (counter.getrc() != BKException.Code.OK) {
@@ -336,8 +336,8 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, R
      * @param data
      *         array of bytes to be written to the ledger
      */
-    public long addEntry(byte[] data) throws InterruptedException, BKException {
-        return addEntry(data, 0, data.length);
+    public void addEntry(byte[] data) throws InterruptedException, BKException {
+        addEntry(data, 0, data.length);
     }
 
     /**
@@ -350,16 +350,18 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, R
      * @param length
      *          number of bytes to take from data
      */
-    public long addEntry(byte[] data, int offset, int length)
+    public void addEntry(byte[] data, int offset, int length)
             throws InterruptedException, BKException {
         LOG.debug("Adding entry " + data);
         SyncCounter counter = new SyncCounter();
         counter.inc();
 
-        asyncAddEntry(data, offset, length, this, counter);
+        asyncAddEntry(data, offset, length, new SyncAddCallback(), counter);
         counter.block(0);
 
-        return counter.getrc();
+        if(counter.getrc() != BKException.Code.OK) {
+            throw BKException.create(counter.getrc());
+        }
     }
 
     /**
@@ -482,7 +484,7 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, R
     public long readLastConfirmed()
             throws InterruptedException, BKException {
         LastConfirmedCtx ctx = new LastConfirmedCtx();
-        asyncReadLastConfirmed(this, ctx);
+        asyncReadLastConfirmed(new SyncReadLastConfirmedCallback(), ctx);
         synchronized(ctx) {
             while(!ctx.ready()) {
                 ctx.wait();
@@ -599,80 +601,84 @@ public class LedgerHandle implements ReadCallback, AddCallback, CloseCallback, R
             // noop
         }
     }
+    
+    private static class SyncReadCallback implements ReadCallback {
+        /**
+         * Implementation of callback interface for synchronous read method.
+         *
+         * @param rc
+         *          return code
+         * @param leder
+         *          ledger identifier
+         * @param seq
+         *          sequence of entries
+         * @param ctx
+         *          control object
+         */
+        public void readComplete(int rc, LedgerHandle lh,
+                                 Enumeration<LedgerEntry> seq, Object ctx) {
+            
+            SyncCounter counter = (SyncCounter) ctx;
+            synchronized (counter) {
+                counter.setSequence(seq);
+                counter.setrc(rc);
+                counter.dec();
+                counter.notify();
+            }
+        }
+    }
 
-    /**
-     * Implementation of callback interface for synchronous read method.
-     *
-     * @param rc
-     *          return code
-     * @param leder
-     *          ledger identifier
-     * @param seq
-     *          sequence of entries
-     * @param ctx
-     *          control object
-     */
-    public void readComplete(int rc, LedgerHandle lh,
-                             Enumeration<LedgerEntry> seq, Object ctx) {
-
-        SyncCounter counter = (SyncCounter) ctx;
-        synchronized (counter) {
-            counter.setSequence(seq);
+    private static class SyncAddCallback implements AddCallback {
+        /**
+         * Implementation of callback interface for synchronous read method.
+         *
+         * @param rc
+         *          return code
+         * @param leder
+         *          ledger identifier
+         * @param entry
+         *          entry identifier
+         * @param ctx
+         *          control object
+         */
+        public void addComplete(int rc, LedgerHandle lh, long entry, Object ctx) {
+            SyncCounter counter = (SyncCounter) ctx;
+            
             counter.setrc(rc);
             counter.dec();
-            counter.notify();
         }
     }
 
-    /**
-     * Implementation of callback interface for synchronous read method.
-     *
-     * @param rc
-     *          return code
-     * @param leder
-     *          ledger identifier
-     * @param entry
-     *          entry identifier
-     * @param ctx
-     *          control object
-     */
-    public void addComplete(int rc, LedgerHandle lh, long entry, Object ctx) {
-        SyncCounter counter = (SyncCounter) ctx;
-
-        counter.setrc(rc);
-        counter.dec();
-    }
-
-
-
-    /**
-     * Implementation of  callback interface for synchronous read last confirmed method.
-     */
-    public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
-        LastConfirmedCtx lcCtx = (LastConfirmedCtx) ctx;
-
-        synchronized(lcCtx) {
-            lcCtx.setRC(rc);
-            lcCtx.setLastConfirmed(lastConfirmed);
-            lcCtx.notify();
+    private static class SyncReadLastConfirmedCallback implements ReadLastConfirmedCallback {
+        /**
+         * Implementation of  callback interface for synchronous read last confirmed method.
+         */
+        public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
+            LastConfirmedCtx lcCtx = (LastConfirmedCtx) ctx;
+            
+            synchronized(lcCtx) {
+                lcCtx.setRC(rc);
+                lcCtx.setLastConfirmed(lastConfirmed);
+                lcCtx.notify();
+            }
         }
     }
 
-    /**
-     * Close callback method
-     *
-     * @param rc
-     * @param lh
-     * @param ctx
-     */
-    public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
-
-        SyncCounter counter = (SyncCounter) ctx;
-        counter.setrc(rc);
-        synchronized (counter) {
-            counter.dec();
-            counter.notify();
+    private static class SyncCloseCallback implements CloseCallback {
+        /**
+         * Close callback method
+         *
+         * @param rc
+         * @param lh
+         * @param ctx
+         */
+        public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
+            SyncCounter counter = (SyncCounter) ctx;
+            counter.setrc(rc);
+            synchronized (counter) {
+                counter.dec();
+                counter.notify();
+            }
         }
-
     }
 }

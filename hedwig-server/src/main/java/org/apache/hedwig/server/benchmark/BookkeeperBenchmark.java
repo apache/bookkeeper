@@ -80,7 +80,7 @@ public class BookkeeperBenchmark extends AbstractBenchmark {
 
     @Override
     public void tearDown() throws Exception {
-        bk.halt();
+        bk.close();
     }
 
 

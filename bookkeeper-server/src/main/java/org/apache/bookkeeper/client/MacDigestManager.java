@@ -25,7 +25,7 @@ import java.security.NoSuchAlgorithmException;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-public class MacDigestManager extends DigestManager {
+class MacDigestManager extends DigestManager {
     public static String DIGEST_ALGORITHM = "SHA-1";
     public static String KEY_ALGORITHM = "HmacSHA1";
     Mac mac;

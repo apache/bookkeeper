@@ -19,7 +19,7 @@
  *
  */
 
-package org.apache.bookkeeper.test;
+package org.apache.bookkeeper.client;
 
 import java.io.File;
 import java.io.IOException;

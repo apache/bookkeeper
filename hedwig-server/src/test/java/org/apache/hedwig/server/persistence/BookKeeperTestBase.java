@@ -121,7 +121,7 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
             LOG.error("Error tearing down", e);
         }
         // Close the BookKeeper client
-        bk.halt();
+        bk.close();
         super.tearDown();
     }
 

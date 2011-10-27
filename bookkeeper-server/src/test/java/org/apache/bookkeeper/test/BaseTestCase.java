@@ -130,7 +130,7 @@ public abstract class BaseTestCase extends TestCase {
         LOG.info("TearDown");
 
         if (bkc != null) {
-            bkc.halt();;
+            bkc.close();;
         }
 
         for (BookieServer server : bs) {

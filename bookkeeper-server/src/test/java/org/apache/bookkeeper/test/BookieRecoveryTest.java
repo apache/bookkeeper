@@ -35,7 +35,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.tools.BookKeeperTools;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
@@ -79,7 +79,7 @@ public class BookieRecoveryTest extends BaseTestCase {
     DigestType digestType;
     SyncObject sync;
     BookieRecoverCallback bookieRecoverCb;
-    BookKeeperTools bkTools;
+    BookKeeperAdmin bkAdmin;
 
     // Constructor
     public BookieRecoveryTest(DigestType digestType) {
@@ -96,14 +96,14 @@ public class BookieRecoveryTest extends BaseTestCase {
         System.setProperty("passwd", "");
         sync = new SyncObject();
         bookieRecoverCb = new BookieRecoverCallback();
-        bkTools = new BookKeeperTools(HOSTPORT);
+        bkAdmin = new BookKeeperAdmin(HOSTPORT);
     }
 
     @After
     @Override
     public void tearDown() throws Exception {
         // Release any resources used by the BookKeeperTools instance.
-        bkTools.shutdown();
+        bkAdmin.close();
         super.tearDown();
     }
 
@@ -246,7 +246,7 @@ public class BookieRecoveryTest extends BaseTestCase {
                  + bookieDest + ")");
         // Initiate the sync object
         sync.value = false;
-        bkTools.asyncRecoverBookieData(bookieSrc, bookieDest, bookieRecoverCb, sync);
+        bkAdmin.asyncRecoverBookieData(bookieSrc, bookieDest, bookieRecoverCb, sync);
 
         // Wait for the async method to complete.
         synchronized (sync) {
@@ -301,7 +301,7 @@ public class BookieRecoveryTest extends BaseTestCase {
                  + ") and replicate it to a random available one");
         // Initiate the sync object
         sync.value = false;
-        bkTools.asyncRecoverBookieData(bookieSrc, bookieDest, bookieRecoverCb, sync);
+        bkAdmin.asyncRecoverBookieData(bookieSrc, bookieDest, bookieRecoverCb, sync);
 
         // Wait for the async method to complete.
         synchronized (sync) {
@@ -351,7 +351,7 @@ public class BookieRecoveryTest extends BaseTestCase {
         InetSocketAddress bookieDest = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), newBookiePort);
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc + ") and replicate it to the new one ("
                  + bookieDest + ")");
-        bkTools.recoverBookieData(bookieSrc, bookieDest);
+        bkAdmin.recoverBookieData(bookieSrc, bookieDest);
 
         // Verify the recovered ledger entries are okay.
         verifyRecoveredLedgers(numLedgers, 0, 2 * numMsgs - 1);
@@ -397,7 +397,7 @@ public class BookieRecoveryTest extends BaseTestCase {
         InetSocketAddress bookieDest = null;
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc
                  + ") and replicate it to a random available one");
-        bkTools.recoverBookieData(bookieSrc, bookieDest);
+        bkAdmin.recoverBookieData(bookieSrc, bookieDest);
 
         // Verify the recovered ledger entries are okay.
         verifyRecoveredLedgers(numLedgers, 0, 2 * numMsgs - 1);

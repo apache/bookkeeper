@@ -190,7 +190,7 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
             // *** WRITING PART COMPLETE // READ PART BEGINS ***
 
             // open ledger
-            bkc.halt();
+            bkc.close();
             bkc = new BookKeeperTestClient("127.0.0.1");
             lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
             LOG.debug("Number of entries written: " + (lh.getLastAddConfirmed() + 1));

@@ -31,6 +31,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.KeeperException;
@@ -219,9 +220,11 @@ public class PubSubServer {
             if (zk != null)
                 zk.close();
             if (bk != null)
-                bk.halt();
+                bk.close();
         } catch (InterruptedException e) {
             logger.error("Error while closing ZooKeeper client!");
+        } catch (BKException bke) {
+            logger.error("Error while closing BookKeeper client");
         }
 
         // Stop the RegionManager.
