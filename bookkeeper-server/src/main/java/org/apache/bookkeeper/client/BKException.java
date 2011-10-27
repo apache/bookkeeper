@@ -74,6 +74,8 @@ public abstract class BKException extends Exception {
             return new BKIncorrectParameterException();
         case Code.InterruptedException:
             return new BKInterruptedException();
+        case Code.ProtocolVersionException:
+            return new BKProtocolVersionException();
         default:
             return new BKIllegalOpException();
         }
@@ -100,7 +102,7 @@ public abstract class BKException extends Exception {
         int NoSuchEntryException = -13;
         int IncorrectParameterException = -14;
         int InterruptedException = -15;
-
+        int ProtocolVersionException = -16;
         int IllegalOpException = -100;
     }
 
@@ -146,6 +148,8 @@ public abstract class BKException extends Exception {
             return "Incorrect parameter input";
         case Code.InterruptedException:
             return "Interrupted while waiting for permit";
+        case Code.ProtocolVersionException:
+            return "Bookie protocol version on server is incompatible with client";
         default:
             return "Invalid operation";
         }
@@ -202,6 +206,12 @@ public abstract class BKException extends Exception {
     public static class BKWriteException extends BKException {
         public BKWriteException() {
             super(Code.WriteException);
+        }
+    }
+
+    public static class BKProtocolVersionException extends BKException {
+        public BKProtocolVersionException() {
+            super(Code.ProtocolVersionException);
         }
     }
 

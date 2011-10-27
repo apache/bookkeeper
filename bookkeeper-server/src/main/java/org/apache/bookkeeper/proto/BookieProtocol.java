@@ -28,13 +28,78 @@ package org.apache.bookkeeper.proto;
  *
  */
 public interface BookieProtocol {
+
+    /**
+     * Lowest protocol version which will work with the bookie.
+     */
+    public static final byte LOWEST_COMPAT_PROTOCOL_VERSION = 0;
+
+    /**
+     * Current version of the protocol, which client will use. 
+     */
+    public static final byte CURRENT_PROTOCOL_VERSION = 1;
+
+    /** 
+     * The first int of a packet is the header.
+     * It contains the version, opCode and flags.
+     * The initial versions of BK didn't have this structure
+     * and just had an int representing the opCode as the 
+     * first int. This handles that case also. 
+     */
+    static class PacketHeader {
+        final byte version;
+        final byte opCode;
+        final short flags;
+
+        public PacketHeader(byte version, byte opCode, short flags) {
+            this.version = version;
+            this.opCode = opCode;
+            this.flags = flags;
+        }
+        
+        int toInt() {
+            if (version == 0) {
+                return (int)opCode;
+            } else {
+                return ((version & 0xFF) << 24) 
+                    | ((opCode & 0xFF) << 16)
+                    | (flags & 0xFFFF);
+            }
+        }
+
+        static PacketHeader fromInt(int i) {
+            byte version = (byte)(i >> 24); 
+            byte opCode = 0;
+            short flags = 0;
+            if (version == 0) {
+                opCode = (byte)i;
+            } else {
+                opCode = (byte)((i >> 16) & 0xFF);
+                flags = (short)(i & 0xFFFF);
+            }
+            return new PacketHeader(version, opCode, flags);
+        }
+
+        byte getVersion() {
+            return version;
+        }
+
+        byte getOpCode() {
+            return opCode;
+        }
+
+        short getFlags() {
+            return flags;
+        }
+    }
+
     /**
      * The Add entry request payload will be a ledger entry exactly as it should
      * be logged. The response payload will be a 4-byte integer that has the
      * error code followed by the 8-byte ledger number and 8-byte entry number
      * of the entry written.
      */
-    public static final int ADDENTRY = 1;
+    public static final byte ADDENTRY = 1;
     /**
      * The Read entry request payload will be the ledger number and entry number
      * to read. (The ledger number is an 8-byte integer and the entry number is
@@ -44,7 +109,7 @@ public interface BookieProtocol {
      * requested. (Note that the first sixteen bytes of the entry happen to be
      * the ledger number and entry number as well.)
      */
-    public static final int READENTRY = 2;
+    public static final byte READENTRY = 2;
 
     /**
      * The error code that indicates success
@@ -71,5 +136,8 @@ public interface BookieProtocol {
      * Unauthorized access to ledger
      */
     public static final int EUA = 102;
-
+    /**
+     * The server version is incompatible with the client
+     */
+    public static final int EBADVERSION = 103;
 }

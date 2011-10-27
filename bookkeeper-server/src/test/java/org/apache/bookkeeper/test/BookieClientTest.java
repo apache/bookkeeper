@@ -46,12 +46,12 @@ public class BookieClientTest extends TestCase {
     static Logger LOG = Logger.getLogger(BookieClientTest.class);
     BookieServer bs;
     File tmpDir;
-    int port = 13645;
-    ClientSocketChannelFactory channelFactory;
-    OrderedSafeExecutor executor;
+    public int port = 13645;
+    public ClientSocketChannelFactory channelFactory;
+    public OrderedSafeExecutor executor;
 
     @Override
-    protected void setUp() throws Exception {
+    public void setUp() throws Exception {
         tmpDir = File.createTempFile("bookie", "test");
         tmpDir.delete();
         tmpDir.mkdir();
@@ -66,7 +66,7 @@ public class BookieClientTest extends TestCase {
     }
 
     @Override
-    protected void tearDown() throws Exception {
+    public void tearDown() throws Exception {
         bs.shutdown();
         recursiveDelete(tmpDir);
         channelFactory.releaseExternalResources();

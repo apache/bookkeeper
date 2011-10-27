@@ -30,6 +30,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import static org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.log4j.Logger;
@@ -229,7 +230,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
         ChannelBuffer header = channel.getConfig().getBufferFactory().getBuffer(totalHeaderSize);
         header.writeInt(totalHeaderSize - 4 + entrySize);
-        header.writeInt(BookieProtocol.ADDENTRY);
+        header.writeInt(new PacketHeader(BookieProtocol.CURRENT_PROTOCOL_VERSION, 
+                                         BookieProtocol.ADDENTRY, (short)0).toInt());
         header.writeBytes(masterKey);
 
         ChannelBuffer wrappedBuffer = ChannelBuffers.wrappedBuffer(header, toSend);
@@ -264,7 +266,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
         ChannelBuffer tmpEntry = channel.getConfig().getBufferFactory().getBuffer(totalHeaderSize);
         tmpEntry.writeInt(totalHeaderSize - 4);
-        tmpEntry.writeInt(BookieProtocol.READENTRY);
+        tmpEntry.writeInt(new PacketHeader(BookieProtocol.CURRENT_PROTOCOL_VERSION, 
+                                           BookieProtocol.READENTRY, (short)0).toInt());
         tmpEntry.writeLong(ledgerId);
         tmpEntry.writeLong(entryId);
 
@@ -396,7 +399,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
         Throwable t = e.getCause();
         if (t instanceof CorruptedFrameException || t instanceof TooLongFrameException) {
-            LOG.error("Corrupted fram recieved from bookie: " + e.getChannel().getRemoteAddress());
+            LOG.error("Corrupted fram received from bookie: "
+                      + e.getChannel().getRemoteAddress());
             return;
         }
         if (t instanceof IOException) {
@@ -423,9 +427,10 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         final ChannelBuffer buffer = (ChannelBuffer) e.getMessage();
         final int type, rc;
         final long ledgerId, entryId;
+        final PacketHeader header;
 
         try {
-            type = buffer.readInt();
+            header = PacketHeader.fromInt(buffer.readInt());
             rc = buffer.readInt();
             ledgerId = buffer.readLong();
             entryId = buffer.readLong();
@@ -437,7 +442,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         executor.submitOrdered(ledgerId, new SafeRunnable() {
             @Override
             public void safeRun() {
-                switch (type) {
+                switch (header.getOpCode()) {
                 case BookieProtocol.ADDENTRY:
                     handleAddResponse(ledgerId, entryId, rc);
                     break;
@@ -445,10 +450,10 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                     handleReadResponse(ledgerId, entryId, rc, buffer);
                     break;
                 default:
-                    LOG.error("Unexpected response, type: " + type + " recieved from bookie: " + addr + " , ignoring");
+                    LOG.error("Unexpected response, type: " + header.getOpCode() 
+                              + " received from bookie: " + addr + " , ignoring");
                 }
             }
-
         });
     }
 
@@ -465,6 +470,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             LOG.error("Add for ledger: " + ledgerId + ", entry: " + entryId + " failed on bookie: " + addr
                       + " with code: " + rc);
             rc = BKException.Code.WriteException;
+        } else if (rc == BookieProtocol.EBADVERSION) {
+            rc = BKException.Code.ProtocolVersionException;
         } else {
             rc = BKException.Code.OK;
         }
@@ -496,6 +503,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             rc = BKException.Code.OK;
         } else if (rc == BookieProtocol.ENOENTRY || rc == BookieProtocol.ENOLEDGER) {
             rc = BKException.Code.NoSuchEntryException;
+        } else if (rc == BookieProtocol.EBADVERSION) {
+            rc = BKException.Code.ProtocolVersionException;
         } else {
             LOG.error("Read for ledger: " + ledgerId + ", entry: " + entryId + " failed on bookie: " + addr
                       + " with code: " + rc);
@@ -515,7 +524,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         }
 
         if (readCompletion == null) {
-            LOG.error("Unexpected read response recieved from bookie: " + addr + " for ledger: " + ledgerId
+            LOG.error("Unexpected read response received from bookie: " + addr + " for ledger: " + ledgerId
                       + ", entry: " + entryId + " , ignoring");
             return;
         }
@@ -527,8 +536,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
      * Boiler-plate wrapper classes follow
      *
      */
-
-    private static class ReadCompletion {
+    // visible for testing
+    static class ReadCompletion {
         final ReadEntryCallback cb;
         final Object ctx;
 
@@ -538,7 +547,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         }
     }
 
-    private static class AddCompletion {
+    // visible for testing
+    static class AddCompletion {
         final WriteCallback cb;
         //final long size;
         final Object ctx;
@@ -549,8 +559,9 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             this.ctx = ctx;
         }
     }
-
-    private static class CompletionKey {
+    
+    // visable for testing
+    static class CompletionKey {
         long ledgerId;
         long entryId;
 

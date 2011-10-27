@@ -52,6 +52,8 @@ BUGFIXES:
  
   BOOKKEEPER-94: Double callbacks in readLastConfirmedOp which fails readLastConfirmed operation even received enough valid responses. (Sijie Guo via ivank)
 
+  BOOKKEEPER-83: Added versioning and flags to the bookie protocol (ivank)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)

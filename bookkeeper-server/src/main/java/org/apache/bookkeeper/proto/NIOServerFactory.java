@@ -461,7 +461,7 @@ public class NIOServerFactory extends Thread {
             makeWritable(sk);
         }
 
-        synchronized public void sendResponse(ByteBuffer bb[]) {
+        synchronized public void sendResponse(ByteBuffer... bb) {
             if (closed) {
                 return;
             }

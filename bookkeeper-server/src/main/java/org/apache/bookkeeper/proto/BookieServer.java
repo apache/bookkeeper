@@ -29,6 +29,7 @@ import java.nio.ByteBuffer;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.proto.NIOServerFactory.Cnxn;
+import static org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
 import org.apache.log4j.Logger;
 
 /**
@@ -147,8 +148,24 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     }
 
     public void processPacket(ByteBuffer packet, Cnxn src) {
-        int type = packet.getInt();
-        switch (type) {
+        PacketHeader h = PacketHeader.fromInt(packet.getInt());
+
+        ByteBuffer bb = packet.duplicate();
+        long ledgerId = bb.getLong();
+        long entryId = bb.getLong();
+        
+        if (h.getVersion() < BookieProtocol.LOWEST_COMPAT_PROTOCOL_VERSION
+            || h.getVersion() > BookieProtocol.CURRENT_PROTOCOL_VERSION) {
+            LOG.error("Invalid protocol version, expected something between "
+                      + BookieProtocol.LOWEST_COMPAT_PROTOCOL_VERSION 
+                      + " & " + BookieProtocol.CURRENT_PROTOCOL_VERSION
+                    + ". got " + h.getVersion());
+            src.sendResponse(buildResponse(BookieProtocol.EBADVERSION, 
+                                           h.getVersion(), h.getOpCode(), ledgerId, entryId));
+            return;
+        }
+        
+        switch (h.getOpCode()) {
         case BookieProtocol.ADDENTRY:
             try {
                 byte[] masterKey = new byte[20];
@@ -156,70 +173,41 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
                 // LOG.debug("Master key: " + new String(masterKey));
                 bookie.addEntry(packet.slice(), this, src, masterKey);
             } catch (IOException e) {
-                ByteBuffer bb = packet.duplicate();
-
-                long ledgerId = bb.getLong();
-                long entryId = bb.getLong();
                 LOG.error("Error writing " + entryId + "@" + ledgerId, e);
-                ByteBuffer eio = ByteBuffer.allocate(8 + 16);
-                eio.putInt(type);
-                eio.putInt(BookieProtocol.EIO);
-                eio.putLong(ledgerId);
-                eio.putLong(entryId);
-                eio.flip();
-                src.sendResponse(new ByteBuffer[] { eio });
+                src.sendResponse(buildResponse(BookieProtocol.EIO, h.getVersion(), h.getOpCode(), ledgerId, entryId));
             } catch (BookieException e) {
-                ByteBuffer bb = packet.duplicate();
-                long ledgerId = bb.getLong();
-                long entryId = bb.getLong();
-
                 LOG.error("Unauthorized access to ledger " + ledgerId);
-
-                ByteBuffer eio = ByteBuffer.allocate(8 + 16);
-                eio.putInt(type);
-                eio.putInt(BookieProtocol.EUA);
-                eio.putLong(ledgerId);
-                eio.putLong(entryId);
-                eio.flip();
-                src.sendResponse(new ByteBuffer[] { eio });
+                src.sendResponse(buildResponse(BookieProtocol.EUA, h.getVersion(), h.getOpCode(), ledgerId, entryId));
             }
             break;
         case BookieProtocol.READENTRY:
             ByteBuffer[] rsp = new ByteBuffer[2];
-            ByteBuffer rc = ByteBuffer.allocate(8 + 8 + 8);
-            rsp[0] = rc;
-            rc.putInt(type);
-
-            long ledgerId = packet.getLong();
-            long entryId = packet.getLong();
             LOG.debug("Received new read request: " + ledgerId + ", " + entryId);
+            int errorCode = BookieProtocol.EIO;
             try {
                 rsp[1] = bookie.readEntry(ledgerId, entryId);
                 LOG.debug("##### Read entry ##### " + rsp[1].remaining());
-                rc.putInt(BookieProtocol.EOK);
+                errorCode = BookieProtocol.EOK;
             } catch (Bookie.NoLedgerException e) {
                 if (LOG.isTraceEnabled()) {
                     LOG.error("Error reading " + entryId + "@" + ledgerId, e);
                 }
-                rc.putInt(BookieProtocol.ENOLEDGER);
+                errorCode = BookieProtocol.ENOLEDGER;
             } catch (Bookie.NoEntryException e) {
                 if (LOG.isTraceEnabled()) {
                     LOG.error("Error reading " + entryId + "@" + ledgerId, e);
                 }
-                rc.putInt(BookieProtocol.ENOENTRY);
+                errorCode = BookieProtocol.ENOENTRY;
             } catch (IOException e) {
                 if (LOG.isTraceEnabled()) {
                     LOG.error("Error reading " + entryId + "@" + ledgerId, e);
                 }
-                rc.putInt(BookieProtocol.EIO);
+                errorCode = BookieProtocol.EIO;
             }
-            rc.putLong(ledgerId);
-            rc.putLong(entryId);
-            rc.flip();
+            rsp[0] = buildResponse(errorCode, h.getVersion(), h.getOpCode(), ledgerId, entryId);
+
             if (LOG.isTraceEnabled()) {
-                int rcCode = rc.getInt();
-                rc.rewind();
-                LOG.trace("Read entry rc = " + rcCode + " for " + entryId + "@" + ledgerId);
+                LOG.trace("Read entry rc = " + errorCode + " for " + entryId + "@" + ledgerId);
             }
             if (rsp[1] == null) {
                 // We haven't filled in entry data, so we have to send back
@@ -232,19 +220,28 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
             LOG.debug("Sending response for: " + entryId + ", " + new String(rsp[1].array()));
             src.sendResponse(rsp);
             break;
-        default:
-            ByteBuffer badType = ByteBuffer.allocate(8);
-            badType.putInt(type);
-            badType.putInt(BookieProtocol.EBADREQ);
-            badType.flip();
-            src.sendResponse(new ByteBuffer[] { packet });
+        default: 
+            src.sendResponse(buildResponse(BookieProtocol.EBADREQ, h.getVersion(), h.getOpCode(), ledgerId, entryId));
         }
+    }
+    
+    private ByteBuffer buildResponse(int errorCode, byte version, byte opCode, long ledgerId, long entryId) {
+        ByteBuffer rsp = ByteBuffer.allocate(24);
+        rsp.putInt(new PacketHeader(version, 
+                                    opCode, (short)0).toInt());
+        rsp.putInt(errorCode);
+        rsp.putLong(ledgerId);
+        rsp.putLong(entryId);
+
+        rsp.flip();
+        return rsp;
     }
 
     public void writeComplete(int rc, long ledgerId, long entryId, InetSocketAddress addr, Object ctx) {
         Cnxn src = (Cnxn) ctx;
         ByteBuffer bb = ByteBuffer.allocate(24);
-        bb.putInt(BookieProtocol.ADDENTRY);
+        bb.putInt(new PacketHeader(BookieProtocol.CURRENT_PROTOCOL_VERSION, 
+                                   BookieProtocol.ADDENTRY, (short)0).toInt());
         bb.putInt(rc);
         bb.putLong(ledgerId);
         bb.putLong(entryId);
