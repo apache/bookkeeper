@@ -95,7 +95,7 @@ private:
 
 class TestServerConfiguration : public Hedwig::Configuration {
 public:
-  TestServerConfiguration(HedwigTest::TestServerPtr& server) : server(server), address(server->getAddress()) {}
+  TestServerConfiguration() : address("localhost:4081") {}
   
   virtual int getInt(const std::string& /*key*/, int defaultVal) const {
     return defaultVal;
@@ -114,7 +114,6 @@ public:
   }
   
 private:
-  HedwigTest::TestServerPtr server;
   const std::string address;
 };
 

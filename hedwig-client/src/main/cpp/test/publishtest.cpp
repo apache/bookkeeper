@@ -15,6 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <cppunit/Test.h>
 #include <cppunit/TestSuite.h>
 #include <cppunit/extensions/HelperMacros.h>
@@ -27,7 +31,6 @@
 
 #include <log4cxx/logger.h>
 
-#include "servercontrol.h"
 #include "util.h"
 
 static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("hedwig."__FILE__));
@@ -36,14 +39,6 @@ using namespace CppUnit;
 
 class PublishTestSuite : public CppUnit::TestFixture {
 private:
-  HedwigTest::ServerControl* control;
-  HedwigTest::TestServerPtr zk;
-  HedwigTest::TestServerPtr bk1;
-  HedwigTest::TestServerPtr bk2;
-  HedwigTest::TestServerPtr bk3;
-  HedwigTest::TestServerPtr hw1;
-  HedwigTest::TestServerPtr hw2;
-
   CPPUNIT_TEST_SUITE( PublishTestSuite );
   CPPUNIT_TEST(testSyncPublish);
   CPPUNIT_TEST(testAsyncPublish);
@@ -54,7 +49,7 @@ private:
   CPPUNIT_TEST_SUITE_END();
 
 public:
-  PublishTestSuite() : control(NULL) {
+  PublishTestSuite() {
   }
 
   ~PublishTestSuite() {
@@ -62,46 +57,14 @@ public:
 
   void setUp()
   {
-    control = new HedwigTest::ServerControl(HedwigTest::DEFAULT_CONTROLSERVER_PORT);
-    zk = control->startZookeeperServer(12345);
-    bk1 = control->startBookieServer(12346, zk);
-    bk2 = control->startBookieServer(12347, zk);
-    bk3 = control->startBookieServer(12348, zk);
-    
-    std::string region("testRegion");
-    hw1 = control->startPubSubServer(12349, region, zk);
-    hw2 = control->startPubSubServer(12350, region, zk);
   }
   
   void tearDown() 
   {
-    if (hw2.get()) {
-      hw2->kill();
-    }
-    if (hw1.get()) {
-      hw1->kill();
-    }
-    
-    if (bk1.get()) {
-      bk1->kill();
-    }
-    if (bk2.get()) {
-      bk2->kill();
-    }
-    if (bk3.get()) {
-      bk3->kill();
-    }
-    
-    if (zk.get()) {
-      zk->kill();
-    }
-    if (control) {
-      delete control;
-    }
   }
 
   void testSyncPublish() {
-    Hedwig::Configuration* conf = new TestServerConfiguration(hw1);
+    Hedwig::Configuration* conf = new TestServerConfiguration();
     
     Hedwig::Client* client = new Hedwig::Client(*conf);
     Hedwig::Publisher& pub = client->getPublisher();
@@ -115,7 +78,7 @@ public:
   void testAsyncPublish() {
     SimpleWaitCondition* cond = new SimpleWaitCondition();
 
-    Hedwig::Configuration* conf = new TestServerConfiguration(hw1);
+    Hedwig::Configuration* conf = new TestServerConfiguration();
     Hedwig::Client* client = new Hedwig::Client(*conf);
     Hedwig::Publisher& pub = client->getPublisher();
     
@@ -136,7 +99,7 @@ public:
     SimpleWaitCondition* cond2 = new SimpleWaitCondition();
     SimpleWaitCondition* cond3 = new SimpleWaitCondition();
 
-    Hedwig::Configuration* conf = new TestServerConfiguration(hw1);
+    Hedwig::Configuration* conf = new TestServerConfiguration();
     Hedwig::Client* client = new Hedwig::Client(*conf);
     Hedwig::Publisher& pub = client->getPublisher();
    

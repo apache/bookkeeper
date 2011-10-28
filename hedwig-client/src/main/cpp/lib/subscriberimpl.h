@@ -22,7 +22,13 @@
 #include <hedwig/callback.h>
 #include "clientimpl.h"
 #include <utility>
+
+#ifdef USE_BOOST_TR1
+#include <boost/tr1/memory.hpp>
+#else
 #include <tr1/memory>
+#endif
+
 #include <deque>
 
 #include <boost/shared_ptr.hpp>

@@ -25,8 +25,13 @@
 #include "data.h"
 #include "eventdispatcher.h"
 
+#ifdef USE_BOOST_TR1
+#include <boost/tr1/memory.hpp>
+#include <boost/tr1/unordered_map.hpp>
+#else
 #include <tr1/memory>
 #include <tr1/unordered_map>
+#endif
 
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 

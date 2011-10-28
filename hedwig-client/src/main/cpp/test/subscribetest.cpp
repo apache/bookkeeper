@@ -15,6 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <cppunit/Test.h>
 #include <cppunit/TestSuite.h>
 #include <cppunit/extensions/HelperMacros.h>
@@ -27,22 +31,12 @@
 
 #include <log4cxx/logger.h>
 
-#include "servercontrol.h"
 #include "util.h"
 
 static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("hedwig."__FILE__));
 
 class SubscribeTestSuite : public CppUnit::TestFixture {
 private:
-  HedwigTest::ServerControl* control;
-  HedwigTest::TestServerPtr zk;
-  HedwigTest::TestServerPtr bk1;
-  HedwigTest::TestServerPtr bk2;
-  HedwigTest::TestServerPtr bk3;
-  HedwigTest::TestServerPtr hw1;
-  HedwigTest::TestServerPtr hw2;
-
-			       
   CPPUNIT_TEST_SUITE( SubscribeTestSuite );
   CPPUNIT_TEST(testSyncSubscribe);
   CPPUNIT_TEST(testSyncSubscribeAttach);
@@ -55,7 +49,7 @@ private:
   CPPUNIT_TEST_SUITE_END();
 
 public:
-  SubscribeTestSuite() : control(NULL) {
+  SubscribeTestSuite() {
     
   }
 
@@ -64,47 +58,14 @@ public:
 
   void setUp()
   {
-    control = new HedwigTest::ServerControl(HedwigTest::DEFAULT_CONTROLSERVER_PORT);
-    zk = control->startZookeeperServer(12345);
-    bk1 = control->startBookieServer(12346, zk);
-    bk2 = control->startBookieServer(12347, zk);
-    bk3 = control->startBookieServer(12348, zk);
-    
-    std::string region("testRegion");
-    hw1 = control->startPubSubServer(12349, region, zk);
-    hw2 = control->startPubSubServer(12350, region, zk);
   }
   
   void tearDown() 
   {
-    try {
-      if (hw1.get()) {
-	hw1->kill();
-      }
-    
-      if (bk1.get()) {
-	bk1->kill();
-      }
-      if (bk2.get()) {
-	bk2->kill();
-      }
-      if (bk3.get()) {
-	bk3->kill();
-      }
-      
-      if (zk.get()) {
-	zk->kill();
-      }
-    } catch (std::exception& e) {
-      // don't allow an exception to break everything, we're going deleting the control no matter what
-    }
-    if (control) {
-      delete control;
-    }
   }
 
   void testSyncSubscribe() {
-    Hedwig::Configuration* conf = new TestServerConfiguration(hw1);
+    Hedwig::Configuration* conf = new TestServerConfiguration();
     std::auto_ptr<Hedwig::Configuration> confptr(conf);
     
     Hedwig::Client* client = new Hedwig::Client(*conf);
@@ -116,7 +77,7 @@ public:
   }
 
   void testSyncSubscribeAttach() {
-    Hedwig::Configuration* conf = new TestServerConfiguration(hw1);
+    Hedwig::Configuration* conf = new TestServerConfiguration();
     std::auto_ptr<Hedwig::Configuration> confptr(conf);
 
     Hedwig::Client* client = new Hedwig::Client(*conf);
@@ -131,7 +92,7 @@ public:
     SimpleWaitCondition* cond1 = new SimpleWaitCondition();
     std::auto_ptr<SimpleWaitCondition> cond1ptr(cond1);
 
-    Hedwig::Configuration* conf = new TestServerConfiguration(hw1);
+    Hedwig::Configuration* conf = new TestServerConfiguration();
     std::auto_ptr<Hedwig::Configuration> confptr(conf);
 
     Hedwig::Client* client = new Hedwig::Client(*conf);
@@ -153,7 +114,7 @@ public:
     SimpleWaitCondition* cond2 = new SimpleWaitCondition();
     std::auto_ptr<SimpleWaitCondition> cond2ptr(cond2);
 
-    Hedwig::Configuration* conf = new TestServerConfiguration(hw1);
+    Hedwig::Configuration* conf = new TestServerConfiguration();
     std::auto_ptr<Hedwig::Configuration> confptr(conf);
 
     Hedwig::Client* client = new Hedwig::Client(*conf);
@@ -177,7 +138,7 @@ public:
     SimpleWaitCondition* cond1 = new SimpleWaitCondition();
     std::auto_ptr<SimpleWaitCondition> cond1ptr(cond1);
 
-    Hedwig::Configuration* conf = new TestServerConfiguration(hw1);
+    Hedwig::Configuration* conf = new TestServerConfiguration();
     std::auto_ptr<Hedwig::Configuration> confptr(conf);
 
     Hedwig::Client* client = new Hedwig::Client(*conf);
@@ -195,7 +156,7 @@ public:
   }
 
   void testAsyncSubcribeCloseSubscriptionAndThenResubscribe() {
-    Hedwig::Configuration* conf = new TestServerConfiguration(hw1);
+    Hedwig::Configuration* conf = new TestServerConfiguration();
     std::auto_ptr<Hedwig::Configuration> confptr(conf);
 
     Hedwig::Client* client = new Hedwig::Client(*conf);
@@ -210,7 +171,7 @@ public:
   }
 
   void testUnsubscribeWithoutSubscribe() {
-    Hedwig::Configuration* conf = new TestServerConfiguration(hw1);
+    Hedwig::Configuration* conf = new TestServerConfiguration();
     std::auto_ptr<Hedwig::Configuration> confptr(conf);
     
     Hedwig::Client* client = new Hedwig::Client(*conf);
@@ -222,7 +183,7 @@ public:
   }
 
   void testSubscribeTwice() {
-    Hedwig::Configuration* conf = new TestServerConfiguration(hw1);
+    Hedwig::Configuration* conf = new TestServerConfiguration();
     std::auto_ptr<Hedwig::Configuration> confptr(conf);
     
     Hedwig::Client* client = new Hedwig::Client(*conf);

@@ -26,7 +26,13 @@
 #include <list>
 #include <iostream>
 #include <utility>
+
+#ifdef USE_BOOST_TR1
+#include <boost/tr1/functional.hpp>
+#else
 #include <tr1/functional>
+#endif
+
 #include <semaphore.h>
 #include <pthread.h>
 

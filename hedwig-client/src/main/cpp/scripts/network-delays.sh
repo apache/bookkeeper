@@ -25,18 +25,22 @@ setup_delays() {
     case "$UNAME" in
 	Darwin|FreeBSD)
 	    sudo ipfw pipe 1 config delay ${1}ms
-	    sudo ipfw add pipe 1 dst-port 12349 
-	    sudo ipfw add pipe 1 dst-port 12350
-	    sudo ipfw add pipe 1 src-port 12349 
-	    sudo ipfw add pipe 1 src-port 12350 
+	    sudo ipfw add pipe 1 dst-port 4081
+	    sudo ipfw add pipe 1 dst-port 4081
+	    sudo ipfw add pipe 1 src-port 4082 
+	    sudo ipfw add pipe 1 src-port 4082 
+	    sudo ipfw add pipe 1 src-port 4083 
+	    sudo ipfw add pipe 1 src-port 4083 
             ;;
 	Linux)
 	    sudo tc qdisc add dev lo root handle 1: prio
 	    sudo tc qdisc add dev lo parent 1:3 handle 30: netem delay ${1}ms 
-	    sudo tc filter add dev lo protocol ip parent 1:0 prio 3 u32 match ip dport 12349 0xffff flowid 1:3
-	    sudo tc filter add dev lo protocol ip parent 1:0 prio 3 u32 match ip dport 12350 0xffff flowid 1:3
-	    sudo tc filter add dev lo protocol ip parent 1:0 prio 3 u32 match ip sport 12349 0xffff flowid 1:3
-	    sudo tc filter add dev lo protocol ip parent 1:0 prio 3 u32 match ip sport 12350 0xffff flowid 1:3
+	    sudo tc filter add dev lo protocol ip parent 1:0 prio 3 u32 match ip dport 4081 0xffff flowid 1:3
+	    sudo tc filter add dev lo protocol ip parent 1:0 prio 3 u32 match ip dport 4081 0xffff flowid 1:3
+	    sudo tc filter add dev lo protocol ip parent 1:0 prio 3 u32 match ip sport 4082 0xffff flowid 1:3
+	    sudo tc filter add dev lo protocol ip parent 1:0 prio 3 u32 match ip sport 4082 0xffff flowid 1:3
+	    sudo tc filter add dev lo protocol ip parent 1:0 prio 3 u32 match ip sport 4083 0xffff flowid 1:3
+	    sudo tc filter add dev lo protocol ip parent 1:0 prio 3 u32 match ip sport 4083 0xffff flowid 1:3
 	    ;;
 	*)
 	    echo "Unknown system type, $UNAME, only Linux, Darwin & FreeBSD supported"

@@ -27,11 +27,12 @@ all() {
 	setup_delays $HEDWIG_NETWORK_DELAY
     fi
 
-    start_control_server;
+    stop_cluster;
+    start_cluster;
 
     ../test/hedwigtest 
     RESULT=$?
-    stop_control_server;
+    stop_cluster;
 
     if [ "z$HEDWIG_NETWORK_DELAY" != "z" ]; then
 	clear_delays
@@ -57,11 +58,11 @@ EOF
 }
 
 case "$1" in
-    start-control-server)
-	start_control_server
+    start-cluster)
+	start_cluster
 	;;
-    stop-control-server)
-	stop_control_server
+    stop-cluster)
+	stop_cluster 
 	;;
     setup-delays)
 	setup_delays $2
@@ -79,11 +80,11 @@ Usage: tester.sh [command]
 tester.sh all
    Run through the tests, setting up and cleaning up all prerequisites.
 
-tester.sh start-control-server
-   Starts the deamon which the tests use to start and stop hedwig/zookeeper/bookeeper servers
+tester.sh start-cluster
+   Start a hedwig cluster
 
-tester.sh stop-control-server
-   Stops the aforementioned daemon
+tester.sh stop-cluster
+   Stops a hedwig cluster
 
 tester.sh setup-delays <delay>
    Set the millisecond delay for accessing the hedwig servers for the tests.

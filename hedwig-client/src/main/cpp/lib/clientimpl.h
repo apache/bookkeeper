@@ -28,7 +28,12 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
 
+#ifdef USE_BOOST_TR1
+#include <boost/tr1/unordered_map.hpp>
+#else
 #include <tr1/unordered_map>
+#endif
+
 #include <list>
 
 #include "util.h"

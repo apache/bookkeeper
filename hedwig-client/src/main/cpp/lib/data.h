@@ -23,7 +23,13 @@
 #include <hedwig/callback.h>
 
 #include <pthread.h>
+
+#ifdef USE_BOOST_TR1
+#include <boost/tr1/unordered_set.hpp>
+#else
 #include <tr1/unordered_set>
+#endif
+
 #include "util.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>

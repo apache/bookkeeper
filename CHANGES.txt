@@ -74,6 +74,8 @@ BUGFIXES:
 
   BOOKKEEPER-88: derby doesn't like - in the topic names (breed via ivank)
 
+  BOOKKEEPER-71: hedwig c++ client does not build . (ivank)
+
 IMPROVEMENTS:
 
  BOOKKEEPER-28: Create useful startup scripts for bookkeeper and hedwig (ivank)

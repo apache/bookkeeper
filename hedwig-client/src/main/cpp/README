@@ -1,0 +1,10 @@
+To build:
+   $ libtoolize
+   $ autoreconf -fi
+   $ ./configure
+   $ make
+
+The devel packages for protobuf, cppunit, log4cxx & boost are required.
+
+To test:
+   $ make check

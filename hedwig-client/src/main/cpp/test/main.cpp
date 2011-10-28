@@ -15,6 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include "../lib/channel.h"
 #include "../lib/util.h"
 #include <hedwig/protocol.h>
@@ -26,7 +30,6 @@
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/helpers/exception.h>
 
-#include "servercontrol.h"
 #include "util.h"
 
 #include <cppunit/extensions/TestFactoryRegistry.h>

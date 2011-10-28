@@ -21,7 +21,12 @@
 #include <string>
 #include <hedwig/exceptions.h>
 #include <hedwig/protocol.h>
+
+#ifdef USE_BOOST_TR1
+#include <boost/tr1/memory.hpp>
+#else 
 #include <tr1/memory>
+#endif
 
 namespace Hedwig {
   class OperationCallback {

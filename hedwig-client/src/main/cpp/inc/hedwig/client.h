@@ -19,7 +19,12 @@
 #define HEDWIG_CLIENT_H
 
 #include <string>
+
+#ifdef USE_BOOST_TR1
+#include <boost/tr1/memory.hpp>
+#else 
 #include <tr1/memory>
+#endif
 
 #include <hedwig/subscribe.h>
 #include <hedwig/publish.h>

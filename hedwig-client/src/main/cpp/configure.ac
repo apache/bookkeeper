@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-AC_INIT([Hedwig C++ Client], [0.1], [zookeeper-dev@hadoop.apache.org], [hedwig-cpp], [http://hadoop.apache.org/zookeeper//])
+AC_INIT([Hedwig C++ Client], [0.1], [bookkeeper-dev@zookeeper.apache.org], [hedwig-cpp], [http://zookeeper.apache.org/bookkeeper/])
 
 AC_PREREQ([2.59])
 AM_INIT_AUTOMAKE([1.9 no-define foreign])
@@ -27,9 +27,16 @@ AC_CONFIG_FILES([Makefile lib/Makefile test/Makefile hedwig-0.1.pc])
 AC_PROG_LIBTOOL
 AC_CONFIG_MACRO_DIR([m4])
 PKG_CHECK_MODULES([DEPS], [liblog4cxx protobuf cppunit])
+PKG_CHECK_MODULES([TESTDEPS], [cppunit])
+
 AX_BOOST_BASE
 AX_BOOST_ASIO	  
 AX_BOOST_THREAD
+
+AC_CHECK_HEADER(tr1/memory, [AC_MSG_RESULT([Found builtin TR1 library])],[
+			     AC_CHECK_HEADER(boost/tr1/memory.hpp, 
+			     [AC_DEFINE(USE_BOOST_TR1, [], [Found Boost TR1 library])],
+			     [AC_MSG_ERROR([TR1 not found, builtin TR1 or boost TR1 is required])])])
 
 DX_HTML_FEATURE(ON)
 DX_INIT_DOXYGEN(hedwig-c++, c-doc.Doxyfile, doc)
