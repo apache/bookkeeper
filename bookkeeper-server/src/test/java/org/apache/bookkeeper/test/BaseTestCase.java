@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.test;
 
+import java.io.IOException;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -121,6 +122,29 @@ public abstract class BaseTestCase extends TestCase {
         } catch(Exception e) {
             LOG.error("Error setting up", e);
             throw e;
+        }
+    }
+
+    /**
+     * Restart bookie servers
+     *
+     * @throws InterruptedException
+     * @throws IOException
+     */
+    protected void restartBookies() throws InterruptedException, IOException {
+        // shut down bookie server
+        for (BookieServer server : bs) {
+            server.shutdown();
+        }
+        bs.clear();
+        Thread.sleep(1000);
+        // restart them to ensure we can't 
+        int j = 0;
+        for (File f : tmpDirs) {
+            BookieServer server = new BookieServer(initialPort + j, HOSTPORT, f, new File[] { f });
+            server.start();
+            bs.add(server);
+            j++;
         }
     }
 

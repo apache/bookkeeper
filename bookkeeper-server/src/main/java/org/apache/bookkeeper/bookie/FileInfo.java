@@ -32,9 +32,24 @@ import org.apache.log4j.Logger;
 /**
  * This is the file handle for a ledger's index file that maps entry ids to location.
  * It is used by LedgerCache.
+ *
+ * <p>
+ * Ledger index file is made of a header and several fixed-length index pages, which records the offsets of data stored in entry loggers
+ * <pre>&lt;header&gt;&lt;index pages&gt;</pre>
+ * <b>Header</b> is formated as below:
+ * <pre>&lt;magic bytes&gt;&lt;len of master key&gt;&lt;master key&gt;</pre>
+ * <ul>
+ * <li>magic bytes: 8 bytes, 'BKLE\0\0\0\0'
+ * <li>len of master key: indicates length of master key. -1 means no master key stored in header.
+ * <li>master key: master key
+ * </ul>
+ * <b>Index page</b> is a fixed-length page, which contains serveral entries which point to the offsets of data stored in entry loggers.
+ * </p>
  */
 class FileInfo {
     static Logger LOG = Logger.getLogger(FileInfo.class);
+
+    static final int NO_MASTER_KEY = -1;
 
     private FileChannel fc;
     private final File lf;
@@ -52,7 +67,61 @@ class FileInfo {
         size = fc.size();
         if (size == 0) {
             fc.write(ByteBuffer.wrap(header));
+            // write NO_MASTER_KEY, which means there is no master key
+            ByteBuffer buf = ByteBuffer.allocate(4);
+            buf.putInt(NO_MASTER_KEY);
+            buf.flip();
+            fc.write(buf);
         }
+    }
+
+    /**
+     * Write master key to index file header
+     *
+     * @param masterKey master key to store
+     * @return void
+     * @throws IOException
+     */
+    synchronized public void writeMasterKey(byte[] masterKey) throws IOException {
+        // write master key
+        if (masterKey == null ||
+            masterKey.length + 4 + header.length > START_OF_DATA) {
+            throw new IOException("master key is more than " + (START_OF_DATA - 4 - header.length));
+        }
+
+        int len = masterKey.length;
+        ByteBuffer lenBuf = ByteBuffer.allocate(4);
+        lenBuf.putInt(len);
+        lenBuf.flip();
+        fc.position(header.length);
+        fc.write(lenBuf);
+        fc.write(ByteBuffer.wrap(masterKey));
+    }
+
+    /**
+     * Read master key
+     *
+     * @return master key. null means no master key stored in index header
+     * @throws IOException
+     */
+    synchronized public byte[] readMasterKey() throws IOException {
+        ByteBuffer lenBuf = ByteBuffer.allocate(4);
+        int total = readAbsolute(lenBuf, header.length);
+        if (total != 4) {
+            throw new IOException("Short read during reading master key length");
+        }
+        lenBuf.rewind();
+        int len = lenBuf.getInt();
+        if (len == NO_MASTER_KEY) {
+            return null;
+        }
+
+        byte[] masterKey = new byte[len];
+        total = readAbsolute(ByteBuffer.wrap(masterKey), header.length + 4);
+        if (total != len) {
+            throw new IOException("Short read during reading master key");
+        }
+        return masterKey;
     }
 
     synchronized public long size() {
@@ -64,13 +133,19 @@ class FileInfo {
     }
 
     synchronized public int read(ByteBuffer bb, long position) throws IOException {
+        return readAbsolute(bb, position + START_OF_DATA);
+    }
+
+    private int readAbsolute(ByteBuffer bb, long start) throws IOException {
         int total = 0;
         while(bb.remaining() > 0) {
-            int rc = fc.read(bb, position+START_OF_DATA);
+            int rc = fc.read(bb, start);
             if (rc <= 0) {
                 throw new IOException("Short read");
             }
             total += rc;
+            // should move read position
+            start += rc;
         }
         return total;
     }

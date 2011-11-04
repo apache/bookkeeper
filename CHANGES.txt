@@ -60,6 +60,8 @@ BUGFIXES:
 
   BOOKKEEPER-103: ledgerId and entryId is parsed wrong when addEntry (Sijie Guo via ivank)
 
+  BOOKKEEPER-50: NullPointException at LedgerDescriptor#cmpMasterKey (Sijie Guo via ivank)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)

@@ -193,7 +193,6 @@ public class Bookie extends Thread {
                     }
                     recBuff.flip();
                     long ledgerId = recBuff.getLong();
-                    // XXX we net to make sure we set the master keys appropriately!
                     LedgerDescriptor handle = getHandle(ledgerId, false);
                     try {
                         recBuff.rewind();
@@ -317,12 +316,29 @@ public class Bookie extends Thread {
         synchronized (ledgers) {
             handle = ledgers.get(ledgerId);
             if (handle == null) {
-                if (readonly) {
-                    throw new NoLedgerException(ledgerId);
+                FileInfo fi = null;
+                try {
+                    // get file info will throw NoLedgerException
+                    fi = ledgerCache.getFileInfo(ledgerId, !readonly);
+
+                    // if an existed ledger index file, we can get its master key
+                    // if an new created ledger index file, we will get a null master key
+                    byte[] existingMasterKey = fi.readMasterKey();
+                    ByteBuffer masterKeyToSet = ByteBuffer.wrap(masterKey);
+                    if (existingMasterKey == null) {
+                        // no master key set before
+                        fi.writeMasterKey(masterKey);
+                    } else if (!masterKeyToSet.equals(ByteBuffer.wrap(existingMasterKey))) {
+                        throw new IOException("Wrong master key for ledger " + ledgerId);
+                    }
+                    handle = createHandle(ledgerId, readonly);
+                    ledgers.put(ledgerId, handle);
+                    handle.setMasterKey(masterKeyToSet);
+                } finally {
+                    if (fi != null) {
+                        fi.release();
+                    }
                 }
-                handle = createHandle(ledgerId, readonly);
-                ledgers.put(ledgerId, handle);
-                handle.setMasterKey(ByteBuffer.wrap(masterKey));
             }
             handle.incRef();
         }
@@ -334,11 +350,26 @@ public class Bookie extends Thread {
         synchronized (ledgers) {
             handle = ledgers.get(ledgerId);
             if (handle == null) {
-                if (readonly) {
-                    throw new NoLedgerException(ledgerId);
+                FileInfo fi = null;
+                try {
+                    // get file info will throw NoLedgerException
+                    fi = ledgerCache.getFileInfo(ledgerId, !readonly);
+
+                    // if an existed ledger index file, we can get its master key
+                    // if an new created ledger index file, we will get a null master key
+                    byte[] existingMasterKey = fi.readMasterKey();
+                    if (existingMasterKey == null) {
+                        throw new IOException("Weird! No master key found in ledger " + ledgerId);
+                    }
+
+                    handle = createHandle(ledgerId, readonly);
+                    ledgers.put(ledgerId, handle);
+                    handle.setMasterKey(ByteBuffer.wrap(existingMasterKey));
+                } finally {
+                    if (fi != null) {
+                        fi.release();
+                    }
                 }
-                handle = createHandle(ledgerId, readonly);
-                ledgers.put(ledgerId, handle);
             }
             handle.incRef();
         }
