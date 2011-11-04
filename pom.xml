@@ -19,9 +19,14 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                       http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <groupId>org.apache</groupId>
+    <artifactId>apache</artifactId>
+    <version>9</version>
+  </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper</groupId>
-  <version>3.4.0-SNAPSHOT</version>
+  <version>4.0.0-SNAPSHOT</version>
   <artifactId>bookkeeper</artifactId>
   <packaging>pom</packaging>
   <name>bookkeeper</name>
@@ -37,6 +42,14 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
   </properties>
   <repositories>
+    <repository>
+      <id>ivank.waitingforzk.repo</id>
+      <name>Temporary repo waiting for ZK 3.4.0 official release</name>
+      <url>http://people.apache.org/~ivank/repo</url>
+      <snapshots>
+         <enabled>true</enabled>
+       </snapshots>
+    </repository>
   </repositories>
   <url>http://zookeeper.apache.org/bookkeeper</url>
   <build>

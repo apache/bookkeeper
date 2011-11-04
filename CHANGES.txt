@@ -88,6 +88,8 @@ IMPROVEMENTS:
 
  BOOKKEEPER-65: fix dependencies on incompatible versions of netty (mmorel via ivank)
 
+ BOOKKEEPER-102: Make bookkeeper use ZK from temporary repo (ivank)
+
  hedwig-client/
 
   BOOKKEEPER-44: Reuse publish channel to default server to avoid too many connect requests to default server when lots of producers came in same time (Sijie Guo via breed)
