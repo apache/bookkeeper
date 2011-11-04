@@ -150,10 +150,23 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     public void processPacket(ByteBuffer packet, Cnxn src) {
         PacketHeader h = PacketHeader.fromInt(packet.getInt());
 
-        ByteBuffer bb = packet.duplicate();
-        long ledgerId = bb.getLong();
-        long entryId = bb.getLong();
-        
+        // packet format is different between ADDENTRY and READENTRY
+        long ledgerId = -1;
+        long entryId = -1;
+        byte[] masterKey = null;
+        switch (h.getOpCode()) {
+        case BookieProtocol.ADDENTRY:
+            // first read master key
+            masterKey = new byte[20];
+            packet.get(masterKey, 0, 20);
+            // !! fall thru to read ledger id and entry id
+        case BookieProtocol.READENTRY:
+            ByteBuffer bb = packet.duplicate();
+            ledgerId = bb.getLong();
+            entryId = bb.getLong();
+            break;
+        }
+
         if (h.getVersion() < BookieProtocol.LOWEST_COMPAT_PROTOCOL_VERSION
             || h.getVersion() > BookieProtocol.CURRENT_PROTOCOL_VERSION) {
             LOG.error("Invalid protocol version, expected something between "
@@ -164,12 +177,10 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
                                            h.getVersion(), h.getOpCode(), ledgerId, entryId));
             return;
         }
-        
+
         switch (h.getOpCode()) {
         case BookieProtocol.ADDENTRY:
             try {
-                byte[] masterKey = new byte[20];
-                packet.get(masterKey, 0, 20);
                 // LOG.debug("Master key: " + new String(masterKey));
                 bookie.addEntry(packet.slice(), this, src, masterKey);
             } catch (IOException e) {

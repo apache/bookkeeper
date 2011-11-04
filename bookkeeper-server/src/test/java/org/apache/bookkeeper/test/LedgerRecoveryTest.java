@@ -23,6 +23,7 @@ package org.apache.bookkeeper.test;
 
 import org.junit.*;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.log4j.Logger;
 
@@ -83,6 +84,30 @@ public class LedgerRecoveryTest extends BaseTestCase {
     @Test
     public void testEmptyLedgerRecovery() throws Exception {
         testInternal(0);
+    }
+
+    @Test
+    public void testLedgerRecoveryWithWrongPassword() throws Exception {
+        // Create a ledger
+        byte[] ledgerPassword = "aaaa".getBytes();
+        LedgerHandle lh = bkc.createLedger(digestType, ledgerPassword);
+        // bkc.initMessageDigest("SHA1");
+        long ledgerId = lh.getId();
+        LOG.info("Ledger ID: " + lh.getId());
+        String tmp = "BookKeeper is cool!";
+        int numEntries = 30;
+        for (int i = 0; i < numEntries; i++) {
+            lh.addEntry(tmp.getBytes());
+        }
+
+        // Using wrong password
+        ledgerPassword = "bbbb".getBytes();
+        try {
+            lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
+            fail("Opening ledger with wrong password should fail");
+        } catch (BKException e) {
+            // should failed
+        }
     }
 
 }
