@@ -81,6 +81,8 @@ BUGFIXES:
   BOOKKEEPER-71: hedwig c++ client does not build . (ivank)
 
   BOOKKEEPER-107: memory leak in HostAddress of hedwig c++ client (Sijie Guo via ivank)
+ 
+  BOOKKEEPER-80: subscription msg queue race condition in hedwig c++ client (Sijie Guo via ivank)
 
 IMPROVEMENTS:
 

@@ -95,9 +95,14 @@ private:
 
 class TestServerConfiguration : public Hedwig::Configuration {
 public:
-  TestServerConfiguration() : address("localhost:4081") {}
+  TestServerConfiguration() : address("localhost:4081"), syncTimeout(10000) {}
+
+  TestServerConfiguration(int syncTimeout) : address("localhost:4081"), syncTimeout(syncTimeout) {}
   
-  virtual int getInt(const std::string& /*key*/, int defaultVal) const {
+  virtual int getInt(const std::string& key, int defaultVal) const {
+    if (key == Configuration::SYNC_REQUEST_TIMEOUT) {
+      return syncTimeout;
+    }
     return defaultVal;
   }
 
@@ -115,6 +120,7 @@ public:
   
 private:
   const std::string address;
+  const int syncTimeout;
 };
 
 

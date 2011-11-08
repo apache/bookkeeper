@@ -19,6 +19,8 @@
 #include <config.h>
 #endif
 
+#include <sstream>
+
 #include <cppunit/Test.h>
 #include <cppunit/TestSuite.h>
 #include <cppunit/extensions/HelperMacros.h>
@@ -39,6 +41,7 @@ static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("hedwig."__FILE__));
 class PubSubTestSuite : public CppUnit::TestFixture {
 private:
   CPPUNIT_TEST_SUITE( PubSubTestSuite );
+  CPPUNIT_TEST(testPubSubOrderChecking);
   CPPUNIT_TEST(testPubSubContinuousOverClose);
   //  CPPUNIT_TEST(testPubSubContinuousOverServerDown);
   CPPUNIT_TEST(testMultiTopic);
@@ -96,7 +99,140 @@ public:
     std::string topic;
     std::string subscriberId;
   };
- 
+
+  // order checking callback
+  class MyOrderCheckingMessageHandlerCallback : public Hedwig::MessageHandlerCallback {
+  public:
+    MyOrderCheckingMessageHandlerCallback(const std::string& topic, const std::string& subscriberId, const int startMsgId, const int sleepTimeInConsume)
+      : messagesReceived(0), topic(topic), subscriberId(subscriberId), startMsgId(startMsgId), 
+        isInOrder(true), sleepTimeInConsume(sleepTimeInConsume) {
+    }
+
+    virtual void consume(const std::string& topic, const std::string& subscriberId,
+                         const Hedwig::Message& msg, Hedwig::OperationCallbackPtr& callback) {
+      if (topic == this->topic && subscriberId == this->subscriberId) {
+        boost::lock_guard<boost::mutex> lock(mutex);
+            
+        messagesReceived++;
+
+        int newMsgId = atoi(msg.body().c_str());
+        // checking msgId
+        LOG4CXX_DEBUG(logger, "received message " << newMsgId);
+        if (isInOrder) {
+          if (newMsgId != startMsgId + 1) {
+            LOG4CXX_ERROR(logger, "received out-of-order message : expected " << (startMsgId + 1) << ", actual " << newMsgId);
+            isInOrder = false;
+          } else {
+            startMsgId = newMsgId;
+          }
+        }
+        callback->operationComplete();
+        sleep(sleepTimeInConsume);
+      }
+    }
+    
+    int numMessagesReceived() {
+      boost::lock_guard<boost::mutex> lock(mutex);
+      int i = messagesReceived;
+      return i;
+    }    
+
+    bool inOrder() {
+      boost::lock_guard<boost::mutex> lock(mutex);
+      return isInOrder;
+    }
+    
+  protected:
+    boost::mutex mutex;
+    int messagesReceived;
+    std::string topic;
+    std::string subscriberId;
+    int startMsgId;
+    bool isInOrder;
+    int sleepTimeInConsume;
+  };
+
+  class PubForOrderChecking {
+  public:
+    PubForOrderChecking(std::string &topic, int startMsgId, int numMsgs, int sleepTime, Hedwig::Publisher &pub)
+      : topic(topic), startMsgId(startMsgId), numMsgs(numMsgs), sleepTime(sleepTime), pub(pub) {
+    }
+
+    void operator()() {
+      for (int i=0; i<numMsgs; i++) {
+        int msg = startMsgId + i;
+        std::stringstream ss;
+        ss << msg;
+        pub.publish(topic, ss.str());
+        sleep(sleepTime);
+      }
+    }
+
+
+  private:
+    std::string topic;
+    int startMsgId;
+    int numMsgs;
+    int sleepTime;
+    Hedwig::Publisher& pub;
+  };
+
+  // check message ordering
+  void testPubSubOrderChecking() {
+    std::string topic = "orderCheckingTopic";
+    std::string sid = "mysub-0";
+
+    int numMessages = 5;
+    int sleepTimeInConsume = 1;
+    // sync timeout
+    int syncTimeout = 10000;
+
+    // in order to guarantee message order, message queue should be locked
+    // so message received in io thread would be blocked, which also block
+    // sent operations (publish). because we have only one io thread now
+    // so increase sync timeout to 10s, which is more than numMessages * sleepTimeInConsume
+    Hedwig::Configuration* conf = new TestServerConfiguration(syncTimeout);
+    std::auto_ptr<Hedwig::Configuration> confptr(conf);
+
+    Hedwig::Client* client = new Hedwig::Client(*conf);
+    std::auto_ptr<Hedwig::Client> clientptr(client);
+
+    Hedwig::Subscriber& sub = client->getSubscriber();
+    Hedwig::Publisher& pub = client->getPublisher();
+
+    sub.subscribe(topic, sid, Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
+    
+    // we don't start delivery first, so the message will be queued
+    // publish ${numMessages} messages, so the messages will be queued
+    for (int i=0; i<numMessages; i++) {
+      std::stringstream ss;
+      ss << i;
+      pub.publish(topic, ss.str()); 
+    }
+
+    MyOrderCheckingMessageHandlerCallback* cb = new MyOrderCheckingMessageHandlerCallback(topic, sid, -1, sleepTimeInConsume);
+    Hedwig::MessageHandlerCallbackPtr handler(cb);
+
+    // create a thread to publish another ${numMessages} messages
+    boost::thread pubThread(PubForOrderChecking(topic, numMessages, numMessages, sleepTimeInConsume, pub));
+
+    // start delivery will consumed the queued messages
+    // new message will recevied and the queued message should be consumed
+    // hedwig should ensure the message are received in order
+    sub.startDelivery(topic, sid, handler);
+
+    // wait until message are all published
+    pubThread.join();
+
+    for (int i = 0; i < 10; i++) {
+      sleep(3);
+      if (cb->numMessagesReceived() == 2 * numMessages) {
+        break;
+      }
+    }
+    CPPUNIT_ASSERT(cb->inOrder());
+  }
+
   void testPubSubContinuousOverClose() {
     std::string topic = "pubSubTopic";
     std::string sid = "MySubscriberid-1";

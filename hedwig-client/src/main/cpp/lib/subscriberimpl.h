@@ -128,8 +128,9 @@ namespace Hedwig {
   private:
 
     SubscriberImpl& subscriber;
+    boost::shared_mutex queue_lock;
     std::deque<PubSubResponsePtr> queue;
-    
+
     MessageHandlerCallbackPtr handler;
     PubSubDataPtr origData;
     DuplexChannelPtr channel;

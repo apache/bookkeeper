@@ -155,6 +155,7 @@ SubscriberClientChannelHandler::~SubscriberClientChannelHandler() {
 
 void SubscriberClientChannelHandler::messageReceived(const DuplexChannelPtr& channel, const PubSubResponsePtr& m) {
   if (m->has_message()) {
+    boost::lock_guard<boost::shared_mutex> lock(queue_lock);
     LOG4CXX_DEBUG(logger, "Message received (topic:" << origData->getTopic() << ", subscriberId:" << origData->getSubscriberId() << ")");
 
     if (this->handler.get()) {
@@ -234,8 +235,16 @@ void SubscriberClientChannelHandler::channelDisconnected(const DuplexChannelPtr&
 }
 
 void SubscriberClientChannelHandler::startDelivery(const MessageHandlerCallbackPtr& handler) {
+  boost::lock_guard<boost::shared_mutex> lock(queue_lock);
+
   this->handler = handler;
-  
+
+  if (!(this->handler.get())) {
+    // no message handler callback
+    LOG4CXX_WARN(logger, "Handler " << this << " try to start an empty message handler");
+    return;
+  }
+
   while (!queue.empty()) {    
     PubSubResponsePtr m = queue.front();
     queue.pop_front();
@@ -250,6 +259,7 @@ void SubscriberClientChannelHandler::startDelivery(const MessageHandlerCallbackP
 void SubscriberClientChannelHandler::stopDelivery() {
   channel->stopReceiving();
 
+  boost::lock_guard<boost::shared_mutex> lock(queue_lock);
   this->handler = MessageHandlerCallbackPtr();
 }
 
