@@ -216,6 +216,7 @@ void ClientImpl::Destroy() {
 ClientImpl::ClientImpl(const Configuration& conf) 
   : conf(conf), publisher(NULL), subscriber(NULL), counterobj(), shuttingDownFlag(false)
 {
+  defaultHost = HostAddress::fromString(conf.get(Configuration::DEFAULT_SERVER, DEFAULT_SERVER_DEFAULT_VAL));
 }
 
 Subscriber& ClientImpl::getSubscriber() {
@@ -294,9 +295,13 @@ ClientImpl::~ClientImpl() {
 DuplexChannelPtr ClientImpl::createChannel(const std::string& topic, const ChannelHandlerPtr& handler) {
   // get the host address
   // create a channel to the host
-  HostAddress addr = topic2host[topic];
+  HostAddress addr;
+  {
+    boost::lock_guard<boost::shared_mutex> lock(topic2host_lock);
+    addr = topic2host[topic];
+  }
   if (addr.isNullHost()) {
-    addr = HostAddress::fromString(conf.get(Configuration::DEFAULT_SERVER, DEFAULT_SERVER_DEFAULT_VAL));
+    addr = defaultHost;
     setHostForTopic(topic, addr);
   }
 
@@ -316,9 +321,13 @@ DuplexChannelPtr ClientImpl::createChannel(const std::string& topic, const Chann
 }
 
 DuplexChannelPtr ClientImpl::getChannel(const std::string& topic) {
-  HostAddress addr = topic2host[topic];
+  HostAddress addr;
+  {
+    boost::lock_guard<boost::shared_mutex> lock(topic2host_lock);
+    addr = topic2host[topic];
+  }
   if (addr.isNullHost()) {
-    addr = HostAddress::fromString(conf.get(Configuration::DEFAULT_SERVER, DEFAULT_SERVER_DEFAULT_VAL));
+    addr = defaultHost;
     setHostForTopic(topic, addr);
   }  
   DuplexChannelPtr channel = host2channel[addr];

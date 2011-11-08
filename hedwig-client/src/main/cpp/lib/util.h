@@ -53,7 +53,6 @@ namespace Hedwig {
     const std::string& getAddressString() const;
     uint32_t ip() const;
     uint16_t port() const;
-    const sockaddr_in& socketAddress() const;
 
     static HostAddress fromString(std::string host);
 
@@ -63,7 +62,8 @@ namespace Hedwig {
     
     bool initialised;
     std::string address_str;
-    struct sockaddr_in socket_addr;
+    uint32_t host_ip;
+    uint16_t host_port;
   };
 
   /**

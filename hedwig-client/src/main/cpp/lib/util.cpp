@@ -40,7 +40,6 @@ const int DEFAULT_PORT = 4080;
 const int DEFAULT_SSL_PORT = 9876;
 
 HostAddress::HostAddress() : initialised(false), address_str() {
-  memset(&socket_addr, 0, sizeof(struct sockaddr_in));
 }
 
 HostAddress::~HostAddress() {
@@ -63,17 +62,12 @@ const std::string& HostAddress::getAddressString() const {
 }
    
 uint32_t HostAddress::ip() const {
-  return ntohl(socket_addr.sin_addr.s_addr);;
+  return host_ip;
 }
 
 uint16_t HostAddress::port() const {
-  return ntohs(socket_addr.sin_port);
+  return host_port;
 }
-
-const struct sockaddr_in& HostAddress::socketAddress() const {
-  return socket_addr;
-}
-
 
 void HostAddress::parse_string() {
   char* url = strdup(address_str.c_str());
@@ -127,12 +121,18 @@ void HostAddress::parse_string() {
   }
 
   sockaddr_in* sa_ptr = (sockaddr_in*)addr->ai_addr;
+
+  struct sockaddr_in socket_addr;
+  memset(&socket_addr, 0, sizeof(struct sockaddr_in));
   socket_addr = *sa_ptr;
   socket_addr.sin_port = htons(port); 
   //socket_addr.sin_family = AF_INET;
 
+  host_ip = ntohl(socket_addr.sin_addr.s_addr);
+  host_port = ntohs(socket_addr.sin_port);
+
+  freeaddrinfo(addr);
   free((void*)url);
-  free((void*)addr);
 }
 
 HostAddress HostAddress::fromString(std::string str) {

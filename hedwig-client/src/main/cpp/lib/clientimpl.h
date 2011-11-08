@@ -139,6 +139,7 @@ namespace Hedwig {
     typedef std::tr1::unordered_multimap<HostAddress, std::string, HostAddressHash > Host2TopicsMap;
     Host2TopicsMap host2topics;
     boost::shared_mutex host2topics_lock;
+    HostAddress defaultHost;
 
     std::tr1::unordered_map<HostAddress, DuplexChannelPtr, HostAddressHash > host2channel;
     boost::shared_mutex host2channel_lock;

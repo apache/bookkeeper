@@ -80,6 +80,8 @@ BUGFIXES:
 
   BOOKKEEPER-71: hedwig c++ client does not build . (ivank)
 
+  BOOKKEEPER-107: memory leak in HostAddress of hedwig c++ client (Sijie Guo via ivank)
+
 IMPROVEMENTS:
 
  BOOKKEEPER-28: Create useful startup scripts for bookkeeper and hedwig (ivank)
