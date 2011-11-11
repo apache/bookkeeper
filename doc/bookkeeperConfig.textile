@@ -41,6 +41,35 @@ p. The configuration parameters, which can be set in bookkeeper-server/conf/bken
 
 p. Ideally, @/path_to_log_device/@ and @/path_to_ledger_device/@ are each in a different device. 
 
+h1. Bookie Configuration
+
+p. Bookie server stores its data in multiple ledger directories and its journal files in a journal directory. Ideally, storing journal files in a separate directory than data files would increase throughput and decrease latency.
+
+h2. Journal Configuration
+
+p. Journal directory has one kind of files in it:
+
+* {timestamp}.txn - holds transactions executed in the bookie server.
+
+p. Before persisting ledger index and data to disk, a bookie ensures that the transaction that represents the update is written to a journal in non-volatile storage. A new journal file is created using current timestamp when a bookie starts or an old journal file reaches its maximum size.
+
+p. A bookie supports journal rolling to remove old journal files. In order to remove old journal files safely, bookie server records LastLogMark in Ledger Device, which indicates all updates (including index and data) before LastLogMark has been persisted to the Ledger Device.
+
+p. LastLogMark contains two parts:
+
+* LastLogId - indicates which journal file the transaction persisted.
+* LastLogPos - indicates the position the transaction persisted in LastLogId journal file.
+
+p. You may use following settings to further fine tune the behavior of your Bookie servers. Currently these configuration settings are set using Java system properties.
+
+* journal_max_size_mb
+** journal file size limitation. when a journal reaches this limitation, it will be closed and new journal file be created.
+
+* journal_max_backups
+** how many old journal files whose id is less than LastLogMark 's journal id.
+
+bq. NOTE: keeping number of old journal files would be useful for manually recovery in special case.
+
 h1. ZooKeeper Metadata
 
 p. For BookKeeper, we require a ZooKeeper installation to store metadata, and to pass the list of ZooKeeper servers as parameter to the constructor of the BookKeeper class ( @org.apache.bookkeeper.client,BookKeeper@ ). To setup ZooKeeper, please check the "ZooKeeper documentation":index.html. 

@@ -62,6 +62,8 @@ BUGFIXES:
 
   BOOKKEEPER-50: NullPointException at LedgerDescriptor#cmpMasterKey (Sijie Guo via ivank)
 
+  BOOKKEEPER-82: support journal rolling (Sijie Guo via fpj)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)

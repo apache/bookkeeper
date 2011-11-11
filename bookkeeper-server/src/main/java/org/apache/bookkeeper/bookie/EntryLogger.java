@@ -482,6 +482,13 @@ public class EntryLogger {
         gcThread.running = false;
         gcThread.interrupt();
         gcThread.join();
+        // since logChannel is buffered channel, do flush when shutting down
+        try {
+            flush();
+        } catch (IOException ie) {
+            // we have no idea how to avoid io exception during shutting down, so just ignore it
+            LOG.fatal("Error flush entry log during shutting down, which may cause entry log corrupted.", ie);
+        }
     }
 
 }
