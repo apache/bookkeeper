@@ -86,6 +86,8 @@ BUGFIXES:
  
   BOOKKEEPER-80: subscription msg queue race condition in hedwig c++ client (Sijie Guo via ivank)
 
+  BOOKKEEPER-106:	recoveryBookieData can select a recovery bookie which is already in the ledgers ensemble (ivank via fpj)
+
 IMPROVEMENTS:
 
  BOOKKEEPER-28: Create useful startup scripts for bookkeeper and hedwig (ivank)
