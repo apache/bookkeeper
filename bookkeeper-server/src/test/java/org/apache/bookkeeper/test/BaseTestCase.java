@@ -53,19 +53,19 @@ import junit.framework.TestCase;
 public abstract class BaseTestCase extends TestCase {
     static final Logger LOG = Logger.getLogger(BaseTestCase.class);
     // ZooKeeper related variables
-    static final String HOSTPORT = "127.0.0.1:2181";
-    static Integer ZooKeeperDefaultPort = 2181;
-    ZooKeeperServer zks;
-    ZooKeeper zkc; // zookeeper client
-    NIOServerCnxnFactory serverFactory;
-    File ZkTmpDir;
+    protected static final String HOSTPORT = "127.0.0.1:2181";
+    protected static Integer ZooKeeperDefaultPort = 2181;
+    protected ZooKeeperServer zks;
+    protected ZooKeeper zkc; // zookeeper client
+    protected NIOServerCnxnFactory serverFactory;
+    protected File ZkTmpDir;
 
     // BookKeeper
-    List<File> tmpDirs = new ArrayList<File>();
-    List<BookieServer> bs = new ArrayList<BookieServer>();
-    Integer initialPort = 5000;
-    int numBookies;
-    BookKeeperTestClient bkc;
+    protected List<File> tmpDirs = new ArrayList<File>();
+    protected List<BookieServer> bs = new ArrayList<BookieServer>();
+    protected Integer initialPort = 5000;
+    protected int numBookies;
+    protected BookKeeperTestClient bkc;
 
     public BaseTestCase(int numBookies) {
         this.numBookies = numBookies;

@@ -23,7 +23,9 @@ package org.apache.bookkeeper.proto;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
 import org.apache.bookkeeper.bookie.Bookie;
@@ -54,6 +56,14 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         running = true;
         deathWatcher = new DeathWatcher();
         deathWatcher.start();
+    }
+
+    public InetSocketAddress getLocalAddress() {
+        try {
+            return new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), port);
+        } catch (UnknownHostException uhe) {
+            return nioServerFactory.getLocalAddress();
+        }
     }
 
     public synchronized void shutdown() throws InterruptedException {

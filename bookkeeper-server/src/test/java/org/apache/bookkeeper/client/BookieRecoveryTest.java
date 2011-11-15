@@ -1,4 +1,4 @@
-package org.apache.bookkeeper.test;
+package org.apache.bookkeeper.client;
 
 /*
  *
@@ -28,15 +28,28 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Collections;
+import java.util.Random;
 
+import org.jboss.netty.buffer.ChannelBuffer;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.util.StringUtils;
+import org.apache.bookkeeper.test.BaseTestCase;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.log4j.Logger;
+import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.WatchedEvent;
@@ -113,16 +126,28 @@ public class BookieRecoveryTest extends BaseTestCase {
      * @param numLedgers
      *            Number of ledgers to create
      * @return List of LedgerHandles for each of the ledgers created
-     * @throws BKException
-     * @throws KeeperException
-     * @throws IOException
-     * @throws InterruptedException
      */
-    private List<LedgerHandle> createLedgers(int numLedgers) throws BKException, KeeperException, IOException,
+    private List<LedgerHandle> createLedgers(int numLedgers) 
+            throws BKException, KeeperException, IOException, InterruptedException 
+    {
+        return createLedgers(numLedgers, 3, 2);
+    }
+
+    /**
+     * Helper method to create a number of ledgers
+     *
+     * @param numLedgers
+     *            Number of ledgers to create
+     * @param ensemble Ensemble size for ledgers
+     * @param quorum Quorum size for ledgers
+     * @return List of LedgerHandles for each of the ledgers created
+     */
+    private List<LedgerHandle> createLedgers(int numLedgers, int ensemble, int quorum) 
+            throws BKException, KeeperException, IOException,
         InterruptedException {
         List<LedgerHandle> lhs = new ArrayList<LedgerHandle>();
         for (int i = 0; i < numLedgers; i++) {
-            lhs.add(bkc.createLedger(digestType, System.getProperty("passwd").getBytes()));
+            lhs.add(bkc.createLedger(ensemble, quorum, digestType, System.getProperty("passwd").getBytes()));
         }
         return lhs;
     }
@@ -403,4 +428,180 @@ public class BookieRecoveryTest extends BaseTestCase {
         verifyRecoveredLedgers(numLedgers, 0, 2 * numMsgs - 1);
     }
 
+    private static class ReplicationVerificationCallback implements ReadEntryCallback {
+        final CountDownLatch latch;
+        final AtomicLong numSuccess;
+
+        ReplicationVerificationCallback(int numRequests) {
+            latch = new CountDownLatch(numRequests);
+            numSuccess = new AtomicLong(0);
+        }
+
+        public void readEntryComplete(int rc, long ledgerId, long entryId, ChannelBuffer buffer, Object ctx) {
+            if (LOG.isDebugEnabled()) {
+                InetSocketAddress addr = (InetSocketAddress)ctx;
+                LOG.debug("Got " + rc + " for ledger " + ledgerId + " entry " + entryId + " from " + ctx);
+            }
+            if (rc == BKException.Code.OK) {
+                numSuccess.incrementAndGet();
+            }
+            latch.countDown();
+        }
+
+        long await() throws InterruptedException {
+            if (latch.await(60, TimeUnit.SECONDS) == false) {
+                LOG.warn("Didn't get all responses in verification");
+                return 0;
+            } else {
+                return numSuccess.get();
+            }
+        }
+    }
+
+    private boolean verifyFullyReplicated(LedgerHandle lh, long untilEntry) throws Exception {
+        String znodepath = StringUtils.getLedgerNodePath(lh.getId());
+        Stat stat = bkc.getZkHandle().exists(znodepath, false);
+        assertNotNull(stat);
+        byte[] mdbytes = bkc.getZkHandle().getData(znodepath, false, stat); 
+        LedgerMetadata md = LedgerMetadata.parseConfig(mdbytes, stat.getVersion()); 
+
+        Map<Long, ArrayList<InetSocketAddress>> ensembles = md.getEnsembles();
+
+        HashMap<Long, Long> ranges = new HashMap<Long, Long>();
+        ArrayList<Long> keyList = Collections.list(
+                Collections.enumeration(ensembles.keySet()));
+        Collections.sort(keyList);
+        for (int i = 0; i < keyList.size() - 1; i++) {
+            ranges.put(keyList.get(i), keyList.get(i+1));
+        }
+        ranges.put(keyList.get(keyList.size()-1), untilEntry);
+        
+        for (Map.Entry<Long, ArrayList<InetSocketAddress>> e : ensembles.entrySet()) {
+            int quorum = md.quorumSize;
+            long startEntryId = e.getKey();
+            long endEntryId = ranges.get(startEntryId);
+            long expectedSuccess = quorum*(endEntryId-startEntryId);
+            int numRequests = e.getValue().size()*((int)(endEntryId-startEntryId));
+
+            ReplicationVerificationCallback cb = new ReplicationVerificationCallback(numRequests);
+            for (long i = startEntryId; i < endEntryId; i++) {
+                for (InetSocketAddress addr : e.getValue()) {
+                    bkc.bookieClient.readEntry(addr, lh.getId(), i, cb, addr);
+                }
+            }
+
+            long numSuccess = cb.await();
+            if (numSuccess < expectedSuccess) {
+                LOG.warn("Fragment not fully replicated ledgerId = " + lh.getId()
+                         + " startEntryId = " + startEntryId
+                         + " endEntryId = " + endEntryId 
+                         + " expectedSuccess = " + expectedSuccess
+                         + " gotSuccess = " + numSuccess);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean findDupesInEnsembles(List<LedgerHandle> lhs) throws Exception {
+        long numDupes = 0;
+        for (LedgerHandle lh : lhs) {
+            String znodepath = StringUtils.getLedgerNodePath(lh.getId());
+            Stat stat = bkc.getZkHandle().exists(znodepath, false);
+            assertNotNull(stat);
+            byte[] mdbytes = bkc.getZkHandle().getData(znodepath, false, stat); 
+            LedgerMetadata md = LedgerMetadata.parseConfig(mdbytes, stat.getVersion()); 
+            
+            for (Map.Entry<Long, ArrayList<InetSocketAddress>> e : md.getEnsembles().entrySet()) {
+                HashSet<InetSocketAddress> set = new HashSet<InetSocketAddress>();
+                long fragment = e.getKey();
+                
+                for (InetSocketAddress addr : e.getValue()) {
+                    if (set.contains(addr)) {
+                        LOG.error("Dupe " + addr + " found in ensemble for fragment " + fragment
+                                + " of ledger " + lh.getId());
+                        numDupes++;
+                    }
+                    set.add(addr);
+                }
+            }
+        }
+        return numDupes > 0;
+    }
+
+    @Test
+    public void testAsyncBookieRecoveryToRandomBookiesNotEnoughBookies() throws Exception {
+        // Create the ledgers
+        int numLedgers = 3;
+        List<LedgerHandle> lhs = createLedgers(numLedgers, numBookies, 2);
+
+        // Write the entries for the ledgers with dummy values.
+        int numMsgs = 10;
+        writeEntriestoLedgers(numMsgs, 0, lhs);
+
+        // Shutdown the first bookie server
+        LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
+        bs.get(0).shutdown();
+        bs.remove(0);
+
+        // Call the async recover bookie method.
+        InetSocketAddress bookieSrc = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), initialPort);
+        InetSocketAddress bookieDest = null;
+        LOG.info("Now recover the data on the killed bookie (" + bookieSrc
+                 + ") and replicate it to a random available one");
+        // Initiate the sync object
+        sync.value = false;
+        try {
+            bkAdmin.recoverBookieData(bookieSrc, null);
+            fail("Should have thrown exception");
+        } catch (BKException.BKLedgerRecoveryException bke) {
+            // correct behaviour
+        }
+    }
+
+    @Test
+    public void testSyncBookieRecoveryToRandomBookiesCheckForDupes() throws Exception {
+        Random r = new Random();
+        for (int i = 0; i < 10; i++) {
+            // Create the ledgers
+            int numLedgers = 3;
+            List<LedgerHandle> lhs = createLedgers(numLedgers, numBookies, 2);
+            
+            // Write the entries for the ledgers with dummy values.
+            int numMsgs = 100;
+            writeEntriestoLedgers(numMsgs, 0, lhs);
+            
+            // Shutdown the first bookie server
+            LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
+            int removeIndex = r.nextInt(bs.size());
+            InetSocketAddress bookieSrc = bs.get(removeIndex).getLocalAddress();
+            bs.get(removeIndex).shutdown();
+            bs.remove(removeIndex);
+            
+            // Startup three new bookie servers
+            int newBookiePort = initialPort + numBookies + i;
+            startNewBookie(newBookiePort);
+            
+            // Write some more entries for the ledgers so a new ensemble will be
+            // created for them.
+            writeEntriestoLedgers(numMsgs, numMsgs, lhs);
+            
+            // Call the async recover bookie method.
+            LOG.info("Now recover the data on the killed bookie (" + bookieSrc
+                     + ") and replicate it to a random available one");
+            // Initiate the sync object
+            sync.value = false;
+            bkAdmin.recoverBookieData(bookieSrc, null);
+            assertFalse("Dupes exist in ensembles", findDupesInEnsembles(lhs));
+
+            // Write some more entries to ensure fencing hasn't broken stuff
+            writeEntriestoLedgers(numMsgs, numMsgs*2, lhs);
+            for (LedgerHandle lh : lhs) {
+                assertTrue("Not fully replicated", verifyFullyReplicated(lh, numMsgs*3));
+                // TODO (BOOKKEEPER-112) this throws an exception at the moment 
+                // because recovering a ledger updates the ledger znode
+                //lh.close();
+            }
+        }
+    }
 }
