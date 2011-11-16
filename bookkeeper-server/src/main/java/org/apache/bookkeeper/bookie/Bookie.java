@@ -21,6 +21,10 @@
 
 package org.apache.bookkeeper.bookie;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -68,6 +72,15 @@ public class Bookie extends Thread {
     final File journalDirectory;
 
     final File ledgerDirectories[];
+
+    /**
+     * Current directory layout version. Increment this 
+     * when you make a change to the format of any of the files in 
+     * this directory or to the general layout of the directory.
+     */
+    static final int CURRENT_DIRECTORY_LAYOUT_VERSION = 1;
+    static final String VERSION_FILENAME = "VERSION";
+    
 
     // ZK registration path for this bookie
     static final String BOOKIE_REGISTRATION_PATH = "/ledgers/available/";
@@ -222,6 +235,11 @@ public class Bookie extends Thread {
     SyncThread syncThread = new SyncThread();
 
     public Bookie(int port, String zkServers, File journalDirectory, File ledgerDirectories[]) throws IOException {
+        checkDirectoryLayoutVersion(journalDirectory);
+        for (File dir : ledgerDirectories) {
+            checkDirectoryLayoutVersion(dir);
+        }
+
         this.journalDirectory = journalDirectory;
         this.ledgerDirectories = ledgerDirectories;
         entryLogger = new EntryLogger(ledgerDirectories, this);
@@ -421,6 +439,78 @@ public class Bookie extends Thread {
         });
         isZkExpired = false;
         return newZk;
+    }
+
+    /**
+     * Check the layout version of a directory. If it is outside of the 
+     * range which this version of the software can handle, throw an
+     * exception.
+     *
+     * @param dir Directory to check
+     * @throws IOException if layout version if is outside usable range
+     *               or if there is a problem reading the version file
+     */
+    private void checkDirectoryLayoutVersion(File dir) 
+            throws IOException {
+        if (!dir.isDirectory()) {
+            throw new IOException("Directory("+dir+") isn't a directory");
+        }
+        File versionFile = new File(dir, VERSION_FILENAME);
+        
+        FileInputStream fis;
+        try {
+            fis = new FileInputStream(versionFile);
+        } catch (FileNotFoundException e) {
+            /* 
+             * If the version file is not found, this must
+             * either be the first time we've used this directory,
+             * or it must date from before layout versions were introduced.
+             * In both cases, we just create the version file
+             */
+            LOG.info("No version file found, creating");
+            createDirectoryLayoutVersionFile(dir);
+            return;
+        }
+        
+        BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+        try {
+            String layoutVersionStr = br.readLine();
+            int layoutVersion = Integer.parseInt(layoutVersionStr);
+            if (layoutVersion != CURRENT_DIRECTORY_LAYOUT_VERSION) {
+                String errmsg = "Directory has an invalid version, expected " 
+                    + CURRENT_DIRECTORY_LAYOUT_VERSION + ", found " + layoutVersion;
+                LOG.error(errmsg);
+                throw new IOException(errmsg);
+            }
+        } catch(NumberFormatException e) {
+            throw new IOException("Version file has invalid content", e);
+        } finally {
+            try {
+                fis.close();
+            } catch (IOException e) {
+                LOG.warn("Error closing version file", e);
+            }
+        }
+    }
+    
+    /**
+     * Create the directory layout version file with the current
+     * directory layout version
+     */
+    private void createDirectoryLayoutVersionFile(File dir) throws IOException {
+        File versionFile = new File(dir, VERSION_FILENAME);
+
+        FileOutputStream fos = new FileOutputStream(versionFile);
+        BufferedWriter bw = null;
+        try {
+            bw = new BufferedWriter(new OutputStreamWriter(fos));
+            bw.write(String.valueOf(CURRENT_DIRECTORY_LAYOUT_VERSION));
+        } finally {
+            if (bw != null) {
+                bw.close();
+            }
+            fos.close();
+        }
     }
 
     private static int fullRead(FileChannel fc, ByteBuffer bb) throws IOException {

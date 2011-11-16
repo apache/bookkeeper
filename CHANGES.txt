@@ -68,6 +68,8 @@ BUGFIXES:
 
   BOOKKEEPER-101: Add Fencing to Bookkeeper (ivank)
 
+  BOOKKEEPER-104: Add versioning between bookie and its filesystem layout (ivank)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)
