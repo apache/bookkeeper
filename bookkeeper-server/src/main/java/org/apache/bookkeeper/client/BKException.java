@@ -76,6 +76,8 @@ public abstract class BKException extends Exception {
             return new BKInterruptedException();
         case Code.ProtocolVersionException:
             return new BKProtocolVersionException();
+        case Code.LedgerFencedException:
+            return new BKLedgerFencedException();
         default:
             return new BKIllegalOpException();
         }
@@ -103,7 +105,9 @@ public abstract class BKException extends Exception {
         int IncorrectParameterException = -14;
         int InterruptedException = -15;
         int ProtocolVersionException = -16;
+
         int IllegalOpException = -100;
+        int LedgerFencedException = -101;
     }
 
     public void setCode(int code) {
@@ -150,6 +154,8 @@ public abstract class BKException extends Exception {
             return "Interrupted while waiting for permit";
         case Code.ProtocolVersionException:
             return "Bookie protocol version on server is incompatible with client";
+        case Code.LedgerFencedException:
+            return "Ledger has been fenced off. Some other client must have opened it to read";
         default:
             return "Invalid operation";
         }
@@ -254,6 +260,12 @@ public abstract class BKException extends Exception {
     public static class BKInterruptedException extends BKException {
         public BKInterruptedException() {
             super(Code.InterruptedException);
+        }
+    }
+
+    public static class BKLedgerFencedException extends BKException {
+        public BKLedgerFencedException() {
+            super(Code.LedgerFencedException);
         }
     }
 }

@@ -21,6 +21,7 @@ package org.apache.bookkeeper.client;
 import java.net.InetSocketAddress;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.log4j.Logger;
 import org.jboss.netty.buffer.ChannelBuffer;
 
@@ -43,19 +44,36 @@ class PendingAddOp implements WriteCallback {
     boolean[] successesSoFar;
     int numResponsesPending;
     LedgerHandle lh;
+    boolean isRecoveryAdd = false;
 
-    PendingAddOp(LedgerHandle lh, AddCallback cb, Object ctx, long entryId) {
+    PendingAddOp(LedgerHandle lh, AddCallback cb, Object ctx) {
         this.lh = lh;
         this.cb = cb;
         this.ctx = ctx;
-        this.entryId = entryId;
+        this.entryId = -1;
+        
         successesSoFar = new boolean[lh.metadata.quorumSize];
         numResponsesPending = successesSoFar.length;
     }
 
+    /** 
+     * Enable the recovery add flag for this operation.
+     * @see LedgerHandle#asyncRecoveryAddEntry
+     */
+    PendingAddOp enableRecoveryAdd() {
+        isRecoveryAdd = true;
+        return this;
+    }
+
+    void setEntryId(long entryId) {
+        this.entryId = entryId;
+    }
+
     void sendWriteRequest(int bookieIndex, int arrayIndex) {
+        int flags = isRecoveryAdd ? BookieProtocol.FLAG_RECOVERY_ADD : BookieProtocol.FLAG_NONE;
+
         lh.bk.bookieClient.addEntry(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey, entryId, toSend,
-                                    this, arrayIndex);
+                this, arrayIndex, flags);
     }
 
     void unsetSuccessAndSendWriteRequest(int bookieIndex) {
@@ -111,7 +129,15 @@ class PendingAddOp implements WriteCallback {
             return;
         }
 
-        if (rc != BKException.Code.OK) {
+        switch (rc) {
+        case BKException.Code.OK:
+            // continue
+            break;
+        case BKException.Code.LedgerFencedException:
+            LOG.warn("Fencing exception on write: " + ledgerId + ", " + entryId);
+            lh.handleUnrecoverableErrorDuringAdd(rc);
+            return;
+        default:
             LOG.warn("Write did not succeed: " + ledgerId + ", " + entryId);
             lh.handleBookieFailure(addr, bookieIndex);
             return;

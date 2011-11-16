@@ -752,24 +752,90 @@ public class Bookie extends Thread {
         running = false;
     }
 
-    public void addEntry(ByteBuffer entry, WriteCallback cb, Object ctx, byte[] masterKey)
+    /** 
+     * Retrieve the ledger descriptor for the ledger which entry should be added to.
+     * The LedgerDescriptor returned from this method should be eventually freed with 
+     * #putHandle().
+     *
+     * @throws BookieException if masterKey does not match the master key of the ledger
+     */
+    private LedgerDescriptor getLedgerForEntry(ByteBuffer entry, byte[] masterKey) 
             throws IOException, BookieException {
         long ledgerId = entry.getLong();
         LedgerDescriptor handle = getHandle(ledgerId, false, masterKey);
 
         if(!handle.cmpMasterKey(ByteBuffer.wrap(masterKey))) {
+            putHandle(handle);
             throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
         }
-        try {
-            entry.rewind();
-            long entryId = handle.addEntry(entry);
-            entry.rewind();
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Adding " + entryId + "@" + ledgerId);
+        return handle;
+    }
+
+    /**
+     * Add an entry to a ledger as specified by handle. 
+     */
+    private void addEntryInternal(LedgerDescriptor handle, ByteBuffer entry, WriteCallback cb, Object ctx)
+            throws IOException, BookieException {
+        long ledgerId = handle.getLedgerId();
+        entry.rewind();
+        long entryId = handle.addEntry(entry);
+
+        entry.rewind();
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Adding " + entryId + "@" + ledgerId);
+        }
+        queue.add(new QueueEntry(entry, ledgerId, entryId, cb, ctx));
+    }
+
+    /**
+     * Add entry to a ledger, even if the ledger has previous been fenced. This should only
+     * happen in bookie recovery or ledger recovery cases, where entries are being replicates 
+     * so that they exist on a quorum of bookies. The corresponding client side call for this
+     * is not exposed to users.
+     */
+    public void recoveryAddEntry(ByteBuffer entry, WriteCallback cb, Object ctx, byte[] masterKey) 
+            throws IOException, BookieException {
+        LedgerDescriptor handle = getLedgerForEntry(entry, masterKey);
+        synchronized (handle) {
+            try {
+                addEntryInternal(handle, entry, cb, ctx);
+            } finally {
+                putHandle(handle);
             }
-            queue.add(new QueueEntry(entry, ledgerId, entryId, cb, ctx));
-        } finally {
-            putHandle(handle);
+        }
+    }
+    
+    /** 
+     * Add entry to a ledger.
+     * @throws BookieException.LedgerFencedException if the ledger is fenced
+     */
+    public void addEntry(ByteBuffer entry, WriteCallback cb, Object ctx, byte[] masterKey)
+            throws IOException, BookieException {
+        LedgerDescriptor handle = getLedgerForEntry(entry, masterKey);
+        synchronized (handle) {
+            try {
+                if (handle.isFenced()) {
+                    throw BookieException.create(BookieException.Code.LedgerFencedException);
+                }
+                
+                addEntryInternal(handle, entry, cb, ctx);
+            } finally {
+                putHandle(handle);
+            }
+        }
+    }
+
+    /**
+     * Fences a ledger. From this point on, clients will be unable to 
+     * write to this ledger. Only recoveryAddEntry will be
+     * able to add entries to the ledger.
+     * This method is idempotent. Once a ledger is fenced, it can
+     * never be unfenced. Fencing a fenced ledger has no effect.
+     */
+    public void fenceLedger(long ledgerId) throws IOException {
+        LedgerDescriptor handle = getHandle(ledgerId, true);
+        synchronized (handle) {
+            handle.setFenced();
         }
     }
 

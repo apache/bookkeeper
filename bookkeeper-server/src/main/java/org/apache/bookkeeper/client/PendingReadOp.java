@@ -30,6 +30,7 @@ import java.util.NoSuchElementException;
 import java.util.Queue;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.log4j.Logger;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -101,7 +102,8 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
         int bookieIndex = lh.distributionSchedule.getBookieIndex(entry.entryId, entry.nextReplicaIndexToReadFrom);
         entry.nextReplicaIndexToReadFrom++;
-        lh.bk.bookieClient.readEntry(ensemble.get(bookieIndex), lh.ledgerId, entry.entryId, this, entry);
+        lh.bk.bookieClient.readEntry(ensemble.get(bookieIndex), lh.ledgerId, entry.entryId, 
+                                     this, entry, BookieProtocol.FLAG_NONE);
     }
 
     void logErrorAndReattemptRead(LedgerEntry entry, String errMsg, int rc) {

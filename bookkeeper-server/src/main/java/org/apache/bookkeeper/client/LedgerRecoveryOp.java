@@ -26,6 +26,7 @@ import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.LedgerHandle.NoopCloseCallback;
 import org.apache.bookkeeper.client.DigestManager.RecoveryData;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 
@@ -59,8 +60,15 @@ class LedgerRecoveryOp implements ReadEntryCallback, ReadCallback, AddCallback {
     }
 
     public void initiate() {
+        /** 
+         * Enable fencing on this op. When the read request reaches the bookies
+         * server it will fence off the ledger, stopping any subsequent operation
+         * from writing to it.
+         */
+        int flags = BookieProtocol.FLAG_DO_FENCING;
         for (int i = 0; i < lh.metadata.currentEnsemble.size(); i++) {
-            lh.bk.bookieClient.readEntry(lh.metadata.currentEnsemble.get(i), lh.ledgerId, LedgerHandle.LAST_ADD_CONFIRMED, this, i);
+            lh.bk.bookieClient.readEntry(lh.metadata.currentEnsemble.get(i), lh.ledgerId, 
+                                         LedgerHandle.LAST_ADD_CONFIRMED, this, i, flags);
         }
     }
 
@@ -140,13 +148,13 @@ class LedgerRecoveryOp implements ReadEntryCallback, ReadCallback, AddCallback {
              * be added again when processing the call to add it.
              */
             lh.length = entry.getLength() - (long) data.length;
-            lh.asyncAddEntry(data, this, null);
+            lh.asyncRecoveryAddEntry(data, 0, data.length, this, null);
 
             return;
         }
 
         if (rc == BKException.Code.NoSuchEntryException || rc == BKException.Code.NoSuchLedgerExistsException) {
-            lh.asyncClose(new CloseCallback() {
+            lh.asyncCloseInternal(new CloseCallback() {
                 @Override
                 public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
                     if (rc != KeeperException.Code.OK.intValue()) {
@@ -158,8 +166,7 @@ class LedgerRecoveryOp implements ReadEntryCallback, ReadCallback, AddCallback {
                     }
                 } 
                 
-            }, null);
-            
+                }, null, BKException.Code.LedgerClosedException);
             return;
         }
 

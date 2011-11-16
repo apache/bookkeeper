@@ -81,7 +81,7 @@ public class BookieBenchmark extends AbstractBenchmark {
             buffer.put(passwd);
             buffer.rewind();
             ChannelBuffer toSend = ChannelBuffers.wrappedBuffer(ChannelBuffers.wrappedBuffer(buffer.slice()), ChannelBuffers.wrappedBuffer(data));
-            bkc.addEntry(addr, ledgerId, passwd, i, toSend, callback, System.currentTimeMillis());
+            bkc.addEntry(addr, ledgerId, passwd, i, toSend, callback, System.currentTimeMillis(), 0);
         }
 
     }

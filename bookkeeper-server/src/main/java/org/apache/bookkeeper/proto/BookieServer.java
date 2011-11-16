@@ -187,17 +187,24 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
                                            h.getVersion(), h.getOpCode(), ledgerId, entryId));
             return;
         }
-
+        short flags = h.getFlags();
         switch (h.getOpCode()) {
         case BookieProtocol.ADDENTRY:
             try {
                 // LOG.debug("Master key: " + new String(masterKey));
-                bookie.addEntry(packet.slice(), this, src, masterKey);
+                if ((flags & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD) {
+                    bookie.recoveryAddEntry(packet.slice(), this, src, masterKey);
+                } else {
+                    bookie.addEntry(packet.slice(), this, src, masterKey);
+                }
             } catch (IOException e) {
                 LOG.error("Error writing " + entryId + "@" + ledgerId, e);
                 src.sendResponse(buildResponse(BookieProtocol.EIO, h.getVersion(), h.getOpCode(), ledgerId, entryId));
+            } catch (BookieException.LedgerFencedException lfe) {
+                LOG.error("Attempt to write to fenced ledger", lfe);
+                src.sendResponse(buildResponse(BookieProtocol.EFENCED, h.getVersion(), h.getOpCode(), ledgerId, entryId));
             } catch (BookieException e) {
-                LOG.error("Unauthorized access to ledger " + ledgerId);
+                LOG.error("Unauthorized access to ledger " + ledgerId, e);
                 src.sendResponse(buildResponse(BookieProtocol.EUA, h.getVersion(), h.getOpCode(), ledgerId, entryId));
             }
             break;
@@ -206,6 +213,10 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
             LOG.debug("Received new read request: " + ledgerId + ", " + entryId);
             int errorCode = BookieProtocol.EIO;
             try {
+                if ((flags & BookieProtocol.FLAG_DO_FENCING) == BookieProtocol.FLAG_DO_FENCING) {
+                    LOG.warn("Ledger " + ledgerId + " fenced by " + src.getPeerName());
+                    bookie.fenceLedger(ledgerId);
+                }
                 rsp[1] = bookie.readEntry(ledgerId, entryId);
                 LOG.debug("##### Read entry ##### " + rsp[1].remaining());
                 errorCode = BookieProtocol.EOK;

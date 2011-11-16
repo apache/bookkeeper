@@ -211,8 +211,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
      * @param ctx
      */
     void addEntry(final long ledgerId, byte[] masterKey, final long entryId, ChannelBuffer toSend, WriteCallback cb,
-                  Object ctx) {
-
+                  Object ctx, final int options) {
         final int entrySize = toSend.readableBytes();
 
         // if (totalBytesOutstanding.get() > maxMemory) {
@@ -231,7 +230,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         ChannelBuffer header = channel.getConfig().getBufferFactory().getBuffer(totalHeaderSize);
         header.writeInt(totalHeaderSize - 4 + entrySize);
         header.writeInt(new PacketHeader(BookieProtocol.CURRENT_PROTOCOL_VERSION, 
-                                         BookieProtocol.ADDENTRY, (short)0).toInt());
+                                         BookieProtocol.ADDENTRY, (short)options).toInt());
         header.writeBytes(masterKey);
 
         ChannelBuffer wrappedBuffer = ChannelBuffers.wrappedBuffer(header, toSend);
@@ -254,8 +253,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
     }
 
-    public void readEntry(final long ledgerId, final long entryId, ReadEntryCallback cb, Object ctx) {
-
+    public void readEntry(final long ledgerId, final long entryId, ReadEntryCallback cb, Object ctx, final int options) {
         final CompletionKey key = new CompletionKey(ledgerId, entryId);
         readCompletions.put(key, new ReadCompletion(cb, ctx));
 
@@ -266,8 +264,9 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
         ChannelBuffer tmpEntry = channel.getConfig().getBufferFactory().getBuffer(totalHeaderSize);
         tmpEntry.writeInt(totalHeaderSize - 4);
+
         tmpEntry.writeInt(new PacketHeader(BookieProtocol.CURRENT_PROTOCOL_VERSION, 
-                                           BookieProtocol.READENTRY, (short)0).toInt());
+                                           BookieProtocol.READENTRY, (short)options).toInt());
         tmpEntry.writeLong(ledgerId);
         tmpEntry.writeLong(entryId);
 
@@ -466,14 +465,21 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         // convert to BKException code because thats what the uppper
         // layers expect. This is UGLY, there should just be one set of
         // error codes.
-        if (rc != BookieProtocol.EOK) {
+        switch (rc) {
+        case BookieProtocol.EOK:
+            rc = BKException.Code.OK;
+            break;
+        case BookieProtocol.EBADVERSION:
+            rc = BKException.Code.ProtocolVersionException;
+            break;
+        case BookieProtocol.EFENCED:
+            rc = BKException.Code.LedgerFencedException;
+            break;
+        default: 
             LOG.error("Add for ledger: " + ledgerId + ", entry: " + entryId + " failed on bookie: " + addr
                       + " with code: " + rc);
             rc = BKException.Code.WriteException;
-        } else if (rc == BookieProtocol.EBADVERSION) {
-            rc = BKException.Code.ProtocolVersionException;
-        } else {
-            rc = BKException.Code.OK;
+            break;
         }
 
         AddCompletion ac;
@@ -584,6 +590,9 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             return ((int) ledgerId << 16) ^ ((int) entryId);
         }
 
+        public String toString() {
+            return String.format("LedgerEntry(%d, %d)", ledgerId, entryId);
+        }
     }
 
 }

@@ -346,7 +346,7 @@ public class NIOServerFactory extends Thread {
             return sessionTimeout;
         }
 
-        String peerName;
+        String peerName = null;
 
         public Cnxn(SocketChannel sock, SelectionKey sk) throws IOException {
             this.sock = sock;
@@ -369,6 +369,13 @@ public class NIOServerFactory extends Thread {
         @Override
         public String toString() {
             return "NIOServerCnxn object with sock = " + sock + " and sk = " + sk;
+        }
+
+        public String getPeerName() {
+            if (peerName == null) {
+                peerName = sock.socket().toString();
+            }
+            return peerName;
         }
 
         boolean closed;

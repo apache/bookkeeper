@@ -23,12 +23,15 @@ package org.apache.bookkeeper.client;
 
 import java.io.IOException;
 import java.util.concurrent.Executors;
+import java.util.EnumSet;
+import java.util.Set;
 
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.KeeperException;
@@ -252,6 +255,20 @@ public class BookKeeper {
 
     /**
      * Open existing ledger asynchronously for reading.
+     * 
+     * Opening a ledger with this method invokes fencing and recovery on the ledger 
+     * if the ledger has not been closed. Fencing will block all other clients from 
+     * writing to the ledger. Recovery will make sure that the ledger is closed 
+     * before reading from it. 
+     *
+     * Recovery also makes sure that any entries which reached one bookie, but not a 
+     * quorum, will be replicated to a quorum of bookies. This occurs in cases were
+     * the writer of a ledger crashes after sending a write request to one bookie but
+     * before being able to send it to the rest of the bookies in the quorum. 
+     *
+     * If the ledger is already closed, neither fencing nor recovery will be applied.
+     * 
+     * @see LedgerHandle#asyncClose
      *
      * @param lId
      *          ledger identifier
@@ -264,18 +281,26 @@ public class BookKeeper {
      */
     public void asyncOpenLedger(long lId, DigestType digestType, byte passwd[],
                                 OpenCallback cb, Object ctx) {
-
-        new LedgerOpenOp(this, lId, digestType, passwd, false, cb, ctx).initiate();
-
+        new LedgerOpenOp(this, lId, digestType, passwd, cb, ctx).initiate();
     }
 
     /**
      * Open existing ledger asynchronously for reading, but it does not try to
      * recover the ledger if it is not yet closed. The application needs to use
-     * it carefully, since the writer might have crash and ledger will remain
+     * it carefully, since the writer might have crashed and ledger will remain
      * unsealed forever if there is no external mechanism to detect the failure
      * of the writer and the ledger is not open in a safe manner, invoking the
      * recovery procedure.
+     * 
+     * Opening a ledger without recovery does not fence the ledger. As such, other
+     * clients can continue to write to the ledger. 
+     *
+     * This method returns a read only ledger handle. It will not be possible 
+     * to add entries to the ledger. Any attempt to add entries will throw an 
+     * exception.
+     * 
+     * Reads from the returned ledger will only be able to read entries up until
+     * the lastConfirmedEntry at the point in time at which the ledger was opened.
      *
      * @param lId
      *          ledger identifier
@@ -286,18 +311,16 @@ public class BookKeeper {
      * @param ctx
      *          optional control object
      */
-
     public void asyncOpenLedgerNoRecovery(long lId, DigestType digestType, byte passwd[],
                                           OpenCallback cb, Object ctx) {
-
-        new LedgerOpenOp(this, lId, digestType, passwd, true, cb, ctx).initiate();
-
+        new LedgerOpenOp(this, lId, digestType, passwd, cb, ctx).initiateWithoutRecovery();
     }
 
 
     /**
      * Synchronous open ledger call
      *
+     * @see #asyncOpenLedger
      * @param lId
      *          ledger identifier
      * @param digestType
@@ -332,6 +355,7 @@ public class BookKeeper {
     /**
      * Synchronous, unsafe open ledger call
      *
+     * @see #asyncOpenLedgerNoRecovery
      * @param lId
      *          ledger identifier
      * @param digestType

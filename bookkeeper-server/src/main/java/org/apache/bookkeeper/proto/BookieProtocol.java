@@ -136,8 +136,19 @@ public interface BookieProtocol {
      * Unauthorized access to ledger
      */
     public static final int EUA = 102;
+
     /**
      * The server version is incompatible with the client
      */
     public static final int EBADVERSION = 103;
+
+    /**
+     * Attempt to write to fenced ledger
+     */
+    public static final int EFENCED = 104;
+
+
+    public static final short FLAG_NONE = 0x0;
+    public static final short FLAG_DO_FENCING = 0x0001;
+    public static final short FLAG_RECOVERY_ADD = 0x0002;
 }

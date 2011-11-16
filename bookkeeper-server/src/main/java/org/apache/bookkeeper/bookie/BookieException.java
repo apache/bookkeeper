@@ -36,6 +36,8 @@ public abstract class BookieException extends Exception {
         switch(code) {
         case Code.UnauthorizedAccessException:
             return new BookieUnauthorizedAccessException();
+        case Code.LedgerFencedException:
+            return new LedgerFencedException();
         default:
             return new BookieIllegalOpException();
         }
@@ -46,6 +48,7 @@ public abstract class BookieException extends Exception {
         int UnauthorizedAccessException = -1;
 
         int IllegalOpException = -100;
+        int LedgerFencedException = -101;
     }
 
     public void setCode(int code) {
@@ -62,6 +65,8 @@ public abstract class BookieException extends Exception {
             return "No problem";
         case Code.UnauthorizedAccessException:
             return "Error while reading ledger";
+        case Code.LedgerFencedException:
+            return "Ledger has been fenced; No more entries can be added";
         default:
             return "Invalid operation";
         }
@@ -76,6 +81,12 @@ public abstract class BookieException extends Exception {
     public static class BookieIllegalOpException extends BookieException {
         public BookieIllegalOpException() {
             super(Code.UnauthorizedAccessException);
+        }
+    }
+
+    public static class LedgerFencedException extends BookieException {
+        public LedgerFencedException() {
+            super(Code.LedgerFencedException);
         }
     }
 }

@@ -20,7 +20,7 @@ package org.apache.bookkeeper.client;
  * under the License.
  *
  */
-
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
 import java.util.ArrayDeque;
@@ -45,6 +45,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
+import org.apache.zookeeper.AsyncCallback.DataCallback;
 import org.apache.zookeeper.data.Stat;
 import org.jboss.netty.buffer.ChannelBuffer;
 
@@ -57,7 +58,7 @@ public class LedgerHandle {
     final static long LAST_ADD_CONFIRMED = -1;
 
     final byte[] ledgerKey;
-    final LedgerMetadata metadata;
+    LedgerMetadata metadata;
     final BookKeeper bk;
     final long ledgerId;
     long lastAddPushed;
@@ -65,7 +66,6 @@ public class LedgerHandle {
     long length;
     final DigestManager macManager;
     final DistributionSchedule distributionSchedule;
-    final boolean readOnly;
 
     final Semaphore opCounterSem;
     private Integer throttling = 5000;
@@ -73,11 +73,11 @@ public class LedgerHandle {
     final Queue<PendingAddOp> pendingAddOps = new ArrayDeque<PendingAddOp>();
 
     LedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
-                 DigestType digestType, byte[] password, boolean readOnly)
+                 DigestType digestType, byte[] password)
             throws GeneralSecurityException, NumberFormatException {
         this.bk = bk;
         this.metadata = metadata;
-        this.readOnly = readOnly;
+
         if (metadata.isClosed()) {
             lastAddConfirmed = lastAddPushed = metadata.close;
             length = metadata.length;
@@ -205,7 +205,7 @@ public class LedgerHandle {
 
     /**
      * Close this ledger synchronously.
-     *
+     * @see #asyncClose
      */
     public void close() 
             throws InterruptedException, BKException {
@@ -221,8 +221,12 @@ public class LedgerHandle {
     }
 
     /**
-     * Asynchronous close, any adds in flight will return errors
-     *
+     * Asynchronous close, any adds in flight will return errors.
+     * 
+     * Closing a ledger will ensure that all clients agree on what the last entry 
+     * of the ledger is. This ensures that, once the ledger has been closed, all 
+     * reads from the ledger will return the same set of entries. 
+     * 
      * @param cb
      *          callback implementation
      * @param ctx
@@ -230,11 +234,11 @@ public class LedgerHandle {
      * @throws InterruptedException
      */
     public void asyncClose(CloseCallback cb, Object ctx) {
-        asyncClose(cb, ctx, BKException.Code.LedgerClosedException);
+        asyncCloseInternal(cb, ctx, BKException.Code.LedgerClosedException);
     }
 
     /**
-     * Same as public version of asynClose except that this one takes an
+     * Same as public version of asyncClose except that this one takes an
      * additional parameter which is the return code to hand to all the pending
      * add ops
      *
@@ -242,13 +246,8 @@ public class LedgerHandle {
      * @param ctx
      * @param rc
      */
-    private void asyncClose(final CloseCallback cb, final Object ctx, final int rc) {
-        // in unsafe read mode, we should not close ledger, just callback
-        if (readOnly) {
-            cb.closeComplete(BKException.Code.OK, this, ctx);
-            return;
-        }
-
+    void asyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
+ 
         bk.mainWorkerPool.submitOrdered(ledgerId, new SafeRunnable() {
 
             @Override
@@ -256,6 +255,7 @@ public class LedgerHandle {
                 metadata.length = length;
                 // Close operation is idempotent, so no need to check if we are
                 // already closed
+
                 metadata.close(lastAddConfirmed);
                 errorOutPendingAdds(rc);
                 lastAddPushed = lastAddConfirmed;
@@ -268,7 +268,7 @@ public class LedgerHandle {
                 writeLedgerConfig(new StatCallback() {
                     @Override
                     public void processResult(int rc, String path, Object subctx,
-                    Stat stat) {
+                                              Stat stat) {
                         if (rc != KeeperException.Code.OK.intValue()) {
                             LOG.warn("Conditional write failed: " + KeeperException.Code.get(rc));
                             cb.closeComplete(BKException.Code.ZKException, LedgerHandle.this,
@@ -331,7 +331,6 @@ public class LedgerHandle {
 
         try {
             new PendingReadOp(this, firstEntry, lastEntry, cb, ctx).initiate();
-
         } catch (InterruptedException e) {
             cb.readComplete(BKException.Code.InterruptedException, this, null, ctx);
         }
@@ -365,6 +364,10 @@ public class LedgerHandle {
 
         asyncAddEntry(data, offset, length, new SyncAddCallback(), counter);
         counter.block(0);
+        
+        if (counter.getrc() != BKException.Code.OK) {
+            throw BKException.create(counter.getrc());
+        }
 
         if(counter.getrc() != BKException.Code.OK) {
             throw BKException.create(counter.getrc());
@@ -404,11 +407,27 @@ public class LedgerHandle {
      */
     public void asyncAddEntry(final byte[] data, final int offset, final int length,
                               final AddCallback cb, final Object ctx) {
-        if (readOnly) {
-            LOG.error("Tries to add entry on a Read-Only ledger handle");
-            cb.addComplete(BKException.Code.IllegalOpException, this, -1, ctx);
-            return;
-        }
+        PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx);
+        doAsyncAddEntry(op, data, offset, length, cb, ctx);
+    }
+
+    /**
+     * Make a recovery add entry request. Recovery adds can add to a ledger even if
+     * it has been fenced.
+     *
+     * This is only valid for bookie and ledger recovery, which may need to replicate
+     * entries to a quorum of bookies to ensure data safety.
+     *
+     * Normal client should never call this method.
+     */
+    void asyncRecoveryAddEntry(final byte[] data, final int offset, final int length,
+                               final AddCallback cb, final Object ctx) {
+        PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx).enableRecoveryAdd();
+        doAsyncAddEntry(op, data, offset, length, cb, ctx);
+    }
+
+    private void doAsyncAddEntry(final PendingAddOp op, final byte[] data, final int offset, final int length,
+                                 final AddCallback cb, final Object ctx) {
         if (offset < 0 || length < 0
                 || (offset + length) > data.length) {
             throw new ArrayIndexOutOfBoundsException(
@@ -436,7 +455,7 @@ public class LedgerHandle {
 
                     long entryId = ++lastAddPushed;
                     long currentLength = addToLength(length);
-                    PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx, entryId);
+                    op.setEntryId(entryId);
                     pendingAddOps.add(op);
                     ChannelBuffer toSend = macManager.computeDigestAndPackageForSending(
                                                entryId, lastAddConfirmed, currentLength, data, offset, length);
@@ -509,7 +528,7 @@ public class LedgerHandle {
 
     // close the ledger and send fails to all the adds in the pipeline
     void handleUnrecoverableErrorDuringAdd(int rc) {
-        asyncClose(NoopCloseCallback.instance, null, rc);
+        asyncCloseInternal(NoopCloseCallback.instance, null, rc);
     }
 
     void errorOutPendingAdds(int rc) {
@@ -591,15 +610,65 @@ public class LedgerHandle {
         }, null);
 
     }
+    
+    void rereadMetadata(final GenericCallback<Void> cb) {
+        bk.getZkHandle().getData(StringUtils.getLedgerNodePath(ledgerId), false, 
+                new DataCallback() {
+                    public void processResult(int rc, String path, 
+                                              Object ctx, byte[] data, Stat stat) {
+                        if (rc != KeeperException.Code.OK.intValue()) {
+                            LOG.error("Error reading metadata from ledger, code =" + rc);
+                            cb.operationComplete(BKException.Code.ZKException, null);
+                            return;
+                        }
+                        
+                        try {
+                            metadata = LedgerMetadata.parseConfig(data, stat.getVersion());
+                        } catch (IOException e) {
+                            LOG.error("Error parsing ledger metadata for ledger", e);
+                            cb.operationComplete(BKException.Code.ZKException, null);
+                        }
+                        cb.operationComplete(BKException.Code.OK, null);
+                    }
+                }, null);
+    }
 
-    void recover(GenericCallback<Void> cb) {
+    void recover(final GenericCallback<Void> cb) {
         if (metadata.isClosed()) {
+            lastAddConfirmed = lastAddPushed = metadata.close;
+            length = metadata.length;
+
             // We are already closed, nothing to do
             cb.operationComplete(BKException.Code.OK, null);
             return;
         }
 
-        new LedgerRecoveryOp(this, cb).initiate();
+        metadata.markLedgerInRecovery();
+
+        writeLedgerConfig(new StatCallback() {
+            @Override
+            public void processResult(final int rc, String path, Object ctx, Stat stat) {
+                if (rc == KeeperException.Code.BadVersion) {
+                    rereadMetadata(new GenericCallback<Void>() {
+                            @Override
+                            public void operationComplete(int rc, Void result) {
+                                if (rc != BKException.Code.OK) {
+                                    cb.operationComplete(rc, null);
+                                } else {
+                                    recover(cb);
+                                }
+                            }
+                        });
+                } else if (rc == KeeperException.Code.OK.intValue()) {
+                    metadata.znodeVersion = stat.getVersion();
+                    new LedgerRecoveryOp(LedgerHandle.this, cb).initiate();
+                } else {
+                    LOG.error("Error writing ledger config " +  rc 
+                              + " path = " + path);
+                    cb.operationComplete(BKException.Code.ZKException, null);
+                }
+            }
+        }, null);
     }
 
     static class NoopCloseCallback implements CloseCallback {

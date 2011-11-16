@@ -43,6 +43,7 @@ import org.apache.bookkeeper.test.BaseTestCase;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -76,10 +77,11 @@ public class BookieRecoveryTest extends BaseTestCase {
     // Object used for implementing the Bookie RecoverCallback for this jUnit
     // test. This verifies that the operation completed successfully.
     class BookieRecoverCallback implements RecoverCallback {
+        boolean success = false;
         @Override
         public void recoverComplete(int rc, Object ctx) {
             LOG.info("Recovered bookie operation completed with rc: " + rc);
-            assertTrue(rc == Code.OK.intValue());
+            success = rc == Code.OK.intValue();
             SyncObject sync = (SyncObject) ctx;
             synchronized (sync) {
                 sync.value = true;
@@ -278,6 +280,7 @@ public class BookieRecoveryTest extends BaseTestCase {
             while (sync.value == false) {
                 sync.wait();
             }
+            assertTrue(bookieRecoverCb.success);
         }
 
         // Verify the recovered ledger entries are okay.
@@ -333,6 +336,7 @@ public class BookieRecoveryTest extends BaseTestCase {
             while (sync.value == false) {
                 sync.wait();
             }
+            assertTrue(bookieRecoverCb.success);
         }
 
         // Verify the recovered ledger entries are okay.
@@ -486,7 +490,7 @@ public class BookieRecoveryTest extends BaseTestCase {
             ReplicationVerificationCallback cb = new ReplicationVerificationCallback(numRequests);
             for (long i = startEntryId; i < endEntryId; i++) {
                 for (InetSocketAddress addr : e.getValue()) {
-                    bkc.bookieClient.readEntry(addr, lh.getId(), i, cb, addr);
+                    bkc.bookieClient.readEntry(addr, lh.getId(), i, cb, addr, BookieProtocol.FLAG_NONE);
                 }
             }
 

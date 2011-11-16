@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.concurrent.Executors;
 
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.log4j.Logger;
@@ -76,7 +77,7 @@ class LoopbackClient implements WriteCallback {
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
 
-        client.addEntry(addr, ledgerId, passwd, entry, ChannelBuffers.wrappedBuffer(data), cb, ctx);
+        client.addEntry(addr, ledgerId, passwd, entry, ChannelBuffers.wrappedBuffer(data), cb, ctx, BookieProtocol.FLAG_NONE);
     }
 
     public void writeComplete(int rc, long ledgerId, long entryId, InetSocketAddress addr, Object ctx) {

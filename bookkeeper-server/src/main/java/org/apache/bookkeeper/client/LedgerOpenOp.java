@@ -47,7 +47,7 @@ class LedgerOpenOp implements DataCallback {
     LedgerHandle lh;
     final byte[] passwd;
     final DigestType digestType;
-    final boolean unsafe;
+    boolean doRecovery;
 
     /**
      * Constructor.
@@ -59,15 +59,16 @@ class LedgerOpenOp implements DataCallback {
      * @param cb
      * @param ctx
      */
-
-    public LedgerOpenOp(BookKeeper bk, long ledgerId, DigestType digestType, byte[] passwd, boolean unsafe, OpenCallback cb, Object ctx) {
+    public LedgerOpenOp(BookKeeper bk, long ledgerId, DigestType digestType, byte[] passwd, 
+                        OpenCallback cb, Object ctx) {
         this.bk = bk;
         this.ledgerId = ledgerId;
         this.passwd = passwd;
         this.cb = cb;
         this.ctx = ctx;
         this.digestType = digestType;
-        this.unsafe = unsafe;
+
+        this.doRecovery = true;
     }
 
     /**
@@ -79,7 +80,14 @@ class LedgerOpenOp implements DataCallback {
          */
 
         bk.getZkHandle().getData(StringUtils.getLedgerNodePath(ledgerId), false, this, ctx);
+    }
 
+    /**
+     * Inititates the ledger open operation without recovery
+     */
+    public void initiateWithoutRecovery() {
+        this.doRecovery = false;
+        initiate();
     }
 
     /**
@@ -112,7 +120,7 @@ class LedgerOpenOp implements DataCallback {
         }
 
         try {
-            lh = new LedgerHandle(bk, ledgerId, metadata, digestType, passwd, unsafe);
+            lh = new ReadOnlyLedgerHandle(bk, ledgerId, metadata, digestType, passwd);
         } catch (GeneralSecurityException e) {
             LOG.error("Security exception while opening ledger: " + ledgerId, e);
             cb.openComplete(BKException.Code.DigestNotInitializedException, null, this.ctx);
@@ -123,23 +131,23 @@ class LedgerOpenOp implements DataCallback {
             return;
         }
 
-        if (metadata.close != LedgerMetadata.NOTCLOSED) {
+        if (metadata.isClosed()) {
             // Ledger was closed properly
             cb.openComplete(BKException.Code.OK, lh, this.ctx);
             return;
         }
 
-        if(!unsafe) {
+        if (doRecovery) {
             lh.recover(new GenericCallback<Void>() {
-                @Override
-                public void operationComplete(int rc, Void result) {
-                    if (rc != BKException.Code.OK) {
-                        cb.openComplete(BKException.Code.LedgerRecoveryException, null, LedgerOpenOp.this.ctx);
-                    } else {
-                        cb.openComplete(BKException.Code.OK, lh, LedgerOpenOp.this.ctx);
+                    @Override
+                    public void operationComplete(int rc, Void result) {
+                        if (rc != BKException.Code.OK) {
+                            cb.openComplete(BKException.Code.LedgerRecoveryException, null, LedgerOpenOp.this.ctx);
+                        } else {
+                            cb.openComplete(BKException.Code.OK, lh, LedgerOpenOp.this.ctx);
+                        }
                     }
-                }
-            });
+                });
         } else {
             lh.asyncReadLastConfirmed(new ReadLastConfirmedCallback() {
 

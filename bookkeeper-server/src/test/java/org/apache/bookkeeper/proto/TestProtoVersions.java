@@ -72,7 +72,7 @@ public class TestProtoVersions {
         connectLatch.await(5, TimeUnit.SECONDS);
         
         assertEquals("client not connected", BKException.Code.OK, outerrc.get());
-        outerrc.set(-1);
+        outerrc.set(-1000);
         final CountDownLatch readLatch = new CountDownLatch(1);
         ReadEntryCallback cb = new ReadEntryCallback() {
                 public void readEntryComplete(int rc, long ledgerId, long entryId, ChannelBuffer buffer, Object ctx) {

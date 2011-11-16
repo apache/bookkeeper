@@ -64,6 +64,10 @@ BUGFIXES:
 
   BOOKKEEPER-82: support journal rolling (Sijie Guo via fpj)
 
+  BOOKKEEPER-106: recoveryBookieData can select a recovery bookie which is already in the ledgers ensemble (ivank via fpj)
+
+  BOOKKEEPER-101: Add Fencing to Bookkeeper (ivank)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)
@@ -86,7 +90,7 @@ BUGFIXES:
  
   BOOKKEEPER-80: subscription msg queue race condition in hedwig c++ client (Sijie Guo via ivank)
 
-  BOOKKEEPER-106:	recoveryBookieData can select a recovery bookie which is already in the ledgers ensemble (ivank via fpj)
+  
 
 IMPROVEMENTS:
 

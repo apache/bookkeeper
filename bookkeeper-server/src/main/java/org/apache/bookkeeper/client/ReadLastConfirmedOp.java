@@ -16,10 +16,12 @@ package org.apache.bookkeeper.client;
  * limitations under the License.
  */
 
+import java.util.EnumSet;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.DigestManager.RecoveryData;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.log4j.Logger;
 import org.jboss.netty.buffer.ChannelBuffer;
 
@@ -49,7 +51,8 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
 
     public void initiate() {
         for (int i = 0; i < lh.metadata.currentEnsemble.size(); i++) {
-            lh.bk.bookieClient.readEntry(lh.metadata.currentEnsemble.get(i), lh.ledgerId, LedgerHandle.LAST_ADD_CONFIRMED, this, i);
+            lh.bk.bookieClient.readEntry(lh.metadata.currentEnsemble.get(i), lh.ledgerId, LedgerHandle.LAST_ADD_CONFIRMED, 
+                                         this, i, BookieProtocol.FLAG_NONE);
         }
     }
 

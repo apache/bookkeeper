@@ -71,8 +71,7 @@ public class BookieClient {
     }
 
     public void addEntry(final InetSocketAddress addr, final long ledgerId, final byte[] masterKey, final long entryId,
-                         final ChannelBuffer toSend, final WriteCallback cb, final Object ctx) {
-
+            final ChannelBuffer toSend, final WriteCallback cb, final Object ctx, final int options) {
         final PerChannelBookieClient client = lookupClient(addr);
 
         client.connectIfNeededAndDoOp(new GenericCallback<Void>() {
@@ -82,14 +81,13 @@ public class BookieClient {
                     cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
                     return;
                 }
-                client.addEntry(ledgerId, masterKey, entryId, toSend, cb, ctx);
+                client.addEntry(ledgerId, masterKey, entryId, toSend, cb, ctx, options);
             }
         });
     }
 
     public void readEntry(final InetSocketAddress addr, final long ledgerId, final long entryId,
-                          final ReadEntryCallback cb, final Object ctx) {
-
+                          final ReadEntryCallback cb, final Object ctx, final int options) {
         final PerChannelBookieClient client = lookupClient(addr);
 
         client.connectIfNeededAndDoOp(new GenericCallback<Void>() {
@@ -100,7 +98,7 @@ public class BookieClient {
                     cb.readEntryComplete(rc, ledgerId, entryId, null, ctx);
                     return;
                 }
-                client.readEntry(ledgerId, entryId, cb, ctx);
+                client.readEntry(ledgerId, entryId, cb, ctx, options);
             }
         });
     }
@@ -168,7 +166,7 @@ public class BookieClient {
 
         for (int i = 0; i < 100000; i++) {
             counter.inc();
-            bc.addEntry(addr, ledger, new byte[0], i, ChannelBuffers.wrappedBuffer(hello), cb, counter);
+            bc.addEntry(addr, ledger, new byte[0], i, ChannelBuffers.wrappedBuffer(hello), cb, counter, 0);
         }
         counter.wait(0);
         System.out.println("Total = " + counter.total());

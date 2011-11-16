@@ -40,6 +40,7 @@ import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
@@ -477,7 +478,7 @@ public class BookKeeperAdmin {
          */
         DigestType digestType = getLedgerDigestType(lId);
         byte[] passwd = getLedgerPasswd(lId);
-        bkc.asyncOpenLedger(lId, digestType, passwd, new OpenCallback() {
+        bkc.asyncOpenLedgerNoRecovery(lId, digestType, passwd, new OpenCallback() {
             @Override
             public void openComplete(int rc, final LedgerHandle lh, Object ctx) {
                 if (rc != Code.OK.intValue()) {
@@ -502,7 +503,7 @@ public class BookKeeperAdmin {
                 Map<Long, Long> ledgerFragmentsRange = new HashMap<Long, Long>();
                 Long curEntryId = null;
                 for (Map.Entry<Long, ArrayList<InetSocketAddress>> entry : lh.getLedgerMetadata().getEnsembles()
-                .entrySet()) {
+                         .entrySet()) {
                     if (curEntryId != null)
                         ledgerFragmentsRange.put(curEntryId, entry.getKey() - 1);
                     curEntryId = entry.getKey();
@@ -528,7 +529,8 @@ public class BookKeeperAdmin {
                  * Multicallback for ledger. Once all fragments for the ledger have been recovered
                  * trigger the ledgerMcb 
                  */
-                MultiCallback ledgerFragmentsMcb = new MultiCallback(ledgerFragmentsToRecover.size(), ledgerMcb, null);
+                MultiCallback ledgerFragmentsMcb 
+                    = new MultiCallback(ledgerFragmentsToRecover.size(), ledgerMcb, null);
 
                 /*
                  * Now recover all of the necessary ledger fragments
@@ -541,7 +543,8 @@ public class BookKeeperAdmin {
                         newBookie = getNewBookie(lh.getLedgerMetadata().getEnsembles().get(startEntryId),
                                                  availableBookies);
                     } catch (BKException.BKNotEnoughBookiesException bke) {
-                        ledgerFragmentsMcb.processResult(BKException.Code.NotEnoughBookiesException, null, null);
+                        ledgerFragmentsMcb.processResult(BKException.Code.NotEnoughBookiesException, 
+                                                         null, null);
                         continue;
                     }
                     
@@ -552,8 +555,8 @@ public class BookKeeperAdmin {
                     }
 
                     try {
-                        SingleFragmentCallback cb = new SingleFragmentCallback(ledgerFragmentsMcb, lh, startEntryId, 
-                                                                               bookieSrc, newBookie);
+                        SingleFragmentCallback cb = new SingleFragmentCallback(
+                                                                               ledgerFragmentsMcb, lh, startEntryId, bookieSrc, newBookie);
                         recoverLedgerFragment(bookieSrc, lh, startEntryId, endEntryId, cb, newBookie);
                     } catch(InterruptedException e) {
                         Thread.currentThread().interrupt();
@@ -561,7 +564,7 @@ public class BookKeeperAdmin {
                     }
                 }
             }
-        }, null);
+            }, null);
     }
 
     /**
@@ -691,7 +694,7 @@ public class BookKeeperAdmin {
                          */
                         ledgerFragmentEntryMcb.processResult(rc, null, null);
                     }
-                }, null);
+                }, null, BookieProtocol.FLAG_RECOVERY_ADD);
             }
         }, null);
     }

@@ -44,6 +44,8 @@ public class LedgerMetadata {
     // can't use -1 for NOTCLOSED because that is reserved for a closed, empty
     // ledger
     public static final int NOTCLOSED = -101;
+    public static final int IN_RECOVERY = -102;
+
     public static final int LOWEST_COMPAT_METADATA_FORMAT_VERSION = 0;
     public static final int CURRENT_METADATA_FORMAT_VERSION = 1;
     public static final String VERSION_KEY = "BookieMetadataFormatVersion";
@@ -87,7 +89,12 @@ public class LedgerMetadata {
     }
 
     boolean isClosed() {
-        return close != NOTCLOSED;
+        return close != NOTCLOSED 
+            && close != IN_RECOVERY;
+    }
+    
+    void markLedgerInRecovery() {
+        close = IN_RECOVERY;
     }
 
     void close(long entryId) {

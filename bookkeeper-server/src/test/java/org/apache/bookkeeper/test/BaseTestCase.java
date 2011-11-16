@@ -125,6 +125,19 @@ public abstract class BaseTestCase extends TestCase {
         }
     }
 
+    public void killBookie(InetSocketAddress addr) throws InterruptedException {
+        BookieServer toRemove = null;
+        for (BookieServer server : bs) {
+            if (server.getLocalAddress().equals(addr)) {
+                server.shutdown();
+                toRemove = server;
+            }
+        }
+        if (toRemove != null) {
+            bs.remove(toRemove);
+        }
+    }
+
     /**
      * Restart bookie servers
      *
