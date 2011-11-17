@@ -17,7 +17,8 @@
  */
 package org.apache.hedwig.server.proxy;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 
 import org.apache.hedwig.client.api.Subscriber;
@@ -29,7 +30,7 @@ import org.apache.hedwig.server.netty.UmbrellaHandler;
 
 public class ProxyConsumeHandler implements Handler {
 
-    static final Logger logger = Logger.getLogger(ProxyConsumeHandler.class);
+    static final Logger logger = LoggerFactory.getLogger(ProxyConsumeHandler.class);
 
     Subscriber subscriber;
 

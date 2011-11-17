@@ -33,7 +33,8 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback
 import static org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -64,7 +65,7 @@ import org.jboss.netty.handler.codec.frame.TooLongFrameException;
 @ChannelPipelineCoverage("one")
 public class PerChannelBookieClient extends SimpleChannelHandler implements ChannelPipelineFactory {
 
-    static final Logger LOG = Logger.getLogger(PerChannelBookieClient.class);
+    static final Logger LOG = LoggerFactory.getLogger(PerChannelBookieClient.class);
 
     static final long maxMemory = Runtime.getRuntime().maxMemory() / 5;
     public static int MAX_FRAME_LENGTH = 2 * 1024 * 1024; // 2M
@@ -409,7 +410,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             return;
         }
 
-        LOG.fatal("Unexpected exception caught by bookie client channel handler", t);
+        LOG.error("Unexpected exception caught by bookie client channel handler", t);
         // Since we are a library, cant terminate App here, can we?
     }
 

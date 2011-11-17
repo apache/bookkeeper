@@ -21,7 +21,8 @@ import java.io.File;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.logging.InternalLoggerFactory;
 import org.jboss.netty.logging.Log4JLoggerFactory;
 
@@ -32,7 +33,7 @@ import org.apache.hedwig.client.netty.HedwigPublisher;
 import org.apache.hedwig.client.netty.HedwigSubscriber;
 
 public class HedwigBenchmark implements Callable<Void> {
-    protected static final Logger logger = Logger.getLogger(HedwigBenchmark.class);
+    protected static final Logger logger = LoggerFactory.getLogger(HedwigBenchmark.class);
 
     static final String TOPIC_PREFIX = "topic";
 

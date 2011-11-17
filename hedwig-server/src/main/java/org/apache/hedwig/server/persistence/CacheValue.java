@@ -20,7 +20,8 @@ package org.apache.hedwig.server.persistence;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.server.common.UnexpectedError;
@@ -32,7 +33,7 @@ import org.apache.hedwig.server.common.UnexpectedError;
  */
 public class CacheValue {
 
-    static Logger logger = Logger.getLogger(ReadAheadCache.class);
+    static Logger logger = LoggerFactory.getLogger(ReadAheadCache.class);
 
     Queue<ScanCallbackWithContext> callbacks = new LinkedList<ScanCallbackWithContext>();
     Message message;

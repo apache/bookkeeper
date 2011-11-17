@@ -40,7 +40,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
@@ -53,7 +54,7 @@ import org.apache.zookeeper.KeeperException.Code;
  * identified by a long.
  */
 public class EntryLogger {
-    private static final Logger LOG = Logger.getLogger(EntryLogger.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EntryLogger.class);
     private File dirs[];
     // This is a handle to the Bookie parent instance. We need this to get
     // access to the LedgerCache as well as the ZooKeeper client handle.
@@ -179,7 +180,7 @@ public class EntryLogger {
                                 String parts[] = ledgerNode.split(LEDGER_NODE_PREFIX);
                                 allActiveLedgers.add(Long.parseLong(parts[parts.length - 1]));
                             } catch (NumberFormatException e) {
-                                LOG.fatal("Error extracting ledgerId from ZK ledger node: " + ledgerNode);
+                                LOG.error("Error extracting ledgerId from ZK ledger node: " + ledgerNode);
                                 // This is a pretty bad error as it indicates a ledger node in ZK
                                 // has an incorrect format. For now just continue and consider
                                 // this as a non-existent ledger.
@@ -495,7 +496,7 @@ public class EntryLogger {
             flush();
         } catch (IOException ie) {
             // we have no idea how to avoid io exception during shutting down, so just ignore it
-            LOG.fatal("Error flush entry log during shutting down, which may cause entry log corrupted.", ie);
+            LOG.error("Error flush entry log during shutting down, which may cause entry log corrupted.", ie);
         }
     }
 

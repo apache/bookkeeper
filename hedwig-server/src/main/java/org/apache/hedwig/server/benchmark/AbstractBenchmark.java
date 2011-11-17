@@ -22,13 +22,14 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.hedwig.util.ConcurrencyUtils;
 
 public abstract class AbstractBenchmark {
 
-    static final Logger logger = Logger.getLogger(AbstractBenchmark.class);
+    static final Logger logger = LoggerFactory.getLogger(AbstractBenchmark.class);
 
     AtomicLong totalLatency = new AtomicLong();
     LinkedBlockingQueue<Boolean> doneSignalQueue = new LinkedBlockingQueue<Boolean>();

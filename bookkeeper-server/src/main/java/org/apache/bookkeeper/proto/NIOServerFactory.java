@@ -34,7 +34,8 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class handles communication with clients using NIO. There is one Cnxn
@@ -48,7 +49,7 @@ public class NIOServerFactory extends Thread {
 
     ServerStats stats = new ServerStats();
 
-    Logger LOG = Logger.getLogger(NIOServerFactory.class);
+    Logger LOG = LoggerFactory.getLogger(NIOServerFactory.class);
 
     ServerSocketChannel ss;
 

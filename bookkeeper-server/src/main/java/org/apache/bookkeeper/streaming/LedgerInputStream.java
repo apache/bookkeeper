@@ -28,10 +28,11 @@ import java.util.Enumeration;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LedgerInputStream extends InputStream {
-    Logger LOG = Logger.getLogger(LedgerInputStream.class);
+    Logger LOG = LoggerFactory.getLogger(LedgerInputStream.class);
     private LedgerHandle lh;
     private ByteBuffer bytebuff;
     byte[] bbytes;

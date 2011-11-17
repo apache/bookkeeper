@@ -17,7 +17,8 @@
  */
 package org.apache.hedwig.server.proxy;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 
 import com.google.protobuf.ByteString;
@@ -30,7 +31,7 @@ import org.apache.hedwig.server.netty.UmbrellaHandler;
 
 public class ProxyStopDeliveryHandler implements Handler {
 
-    static final Logger logger = Logger.getLogger(ProxyStopDeliveryHandler.class);
+    static final Logger logger = LoggerFactory.getLogger(ProxyStopDeliveryHandler.class);
 
     Subscriber subscriber;
     ChannelTracker tracker;

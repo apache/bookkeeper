@@ -17,14 +17,15 @@
  */
 package org.apache.hedwig.server.common;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TerminateJVMExceptionHandler implements Thread.UncaughtExceptionHandler {
-    static Logger logger = Logger.getLogger(TerminateJVMExceptionHandler.class);
+    static Logger logger = LoggerFactory.getLogger(TerminateJVMExceptionHandler.class);
 
     @Override
     public void uncaughtException(Thread t, Throwable e) {
-        logger.fatal("Uncaught exception in thread " + t.getName(), e);
+        logger.error("Uncaught exception in thread " + t.getName(), e);
         System.exit(1);
     }
 

@@ -22,7 +22,8 @@ import java.net.InetSocketAddress;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
@@ -35,7 +36,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
  *
  */
 class PendingAddOp implements WriteCallback {
-    final static Logger LOG = Logger.getLogger(PendingAddOp.class);
+    final static Logger LOG = LoggerFactory.getLogger(PendingAddOp.class);
 
     ChannelBuffer toSend;
     AddCallback cb;

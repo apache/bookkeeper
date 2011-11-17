@@ -49,8 +49,9 @@ import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.data.Stat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.WatchedEvent;
@@ -63,7 +64,7 @@ import org.junit.Test;
  * This class tests the bookie recovery admin functionality.
  */
 public class BookieRecoveryTest extends BaseTestCase {
-    static Logger LOG = Logger.getLogger(BookieRecoveryTest.class);
+    static Logger LOG = LoggerFactory.getLogger(BookieRecoveryTest.class);
 
     // Object used for synchronizing async method calls
     class SyncObject {

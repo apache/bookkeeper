@@ -20,13 +20,14 @@ package org.apache.hedwig.client.conf;
 import java.net.InetSocketAddress;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.hedwig.conf.AbstractConfiguration;
 import org.apache.hedwig.util.HedwigSocketAddress;
 
 public class ClientConfiguration extends AbstractConfiguration {
-    Logger logger = Logger.getLogger(ClientConfiguration.class);
+    Logger logger = LoggerFactory.getLogger(ClientConfiguration.class);
 
     // Protected member variables for configuration parameter names
     protected static final String DEFAULT_SERVER_HOST = "default_server_host";

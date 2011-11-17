@@ -37,7 +37,8 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -56,7 +57,7 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
     // Depending on the taste, select the amount of logging
     // by decommenting one of the two lines below
     // static Logger LOG = Logger.getRootLogger();
-    static Logger LOG = Logger.getLogger(BookieFailureTest.class);
+    static Logger LOG = LoggerFactory.getLogger(BookieFailureTest.class);
 
     byte[] ledgerPassword = "aaa".getBytes();
     LedgerHandle lh, lh2;

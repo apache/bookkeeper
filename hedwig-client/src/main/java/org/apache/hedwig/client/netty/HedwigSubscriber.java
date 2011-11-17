@@ -22,7 +22,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -57,7 +58,7 @@ import org.apache.hedwig.util.Callback;
  */
 public class HedwigSubscriber implements Subscriber {
 
-    private static Logger logger = Logger.getLogger(HedwigSubscriber.class);
+    private static Logger logger = LoggerFactory.getLogger(HedwigSubscriber.class);
 
     // Concurrent Map to store the cached Channel connections on the client side
     // to a server host for a given Topic + SubscriberId combination. For each

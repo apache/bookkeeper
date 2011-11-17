@@ -18,18 +18,19 @@ package org.apache.bookkeeper.util;
  * limitations under the License.
  */
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class SafeRunnable implements Runnable {
 
-    static final Logger logger = Logger.getLogger(SafeRunnable.class);
+    static final Logger logger = LoggerFactory.getLogger(SafeRunnable.class);
 
     @Override
     public void run() {
         try {
             safeRun();
         } catch(Throwable t) {
-            logger.fatal("Unexpected throwable caught ", t);
+            logger.error("Unexpected throwable caught ", t);
         }
     }
 

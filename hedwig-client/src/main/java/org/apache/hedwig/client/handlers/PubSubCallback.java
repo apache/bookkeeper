@@ -17,7 +17,8 @@
  */
 package org.apache.hedwig.client.handlers;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.hedwig.client.data.PubSubData;
 import org.apache.hedwig.exceptions.PubSubException;
@@ -31,7 +32,7 @@ import org.apache.hedwig.util.Callback;
  */
 public class PubSubCallback implements Callback<Void> {
 
-    private static Logger logger = Logger.getLogger(PubSubCallback.class);
+    private static Logger logger = LoggerFactory.getLogger(PubSubCallback.class);
 
     // Private member variables
     private PubSubData pubSubData;

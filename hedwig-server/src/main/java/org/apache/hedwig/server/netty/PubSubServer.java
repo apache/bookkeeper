@@ -33,7 +33,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -80,7 +81,7 @@ import org.apache.hedwig.zookeeper.SafeAsyncCallback;
 
 public class PubSubServer {
 
-    static Logger logger = Logger.getLogger(PubSubServer.class);
+    static Logger logger = LoggerFactory.getLogger(PubSubServer.class);
 
     // Netty related variables
     ServerSocketChannelFactory serverChannelFactory;
@@ -157,7 +158,7 @@ public class PubSubServer {
             });
             // wait until connection is effective
             if (!signalZkReady.await(conf.getZkTimeout()*2, TimeUnit.MILLISECONDS)) {
-                logger.fatal("Could not establish connection with ZooKeeper after zk_timeout*2 = " +
+                logger.error("Could not establish connection with ZooKeeper after zk_timeout*2 = " +
                              conf.getZkTimeout()*2 + " ms. (Default value for zk_timeout is 2000).");
                 throw new Exception("Could not establish connection with ZooKeeper after zk_timeout*2 = " +
                                     conf.getZkTimeout()*2 + " ms. (Default value for zk_timeout is 2000).");
@@ -343,7 +344,7 @@ public class PubSubServer {
      *            : code to exit with
      */
     public static void errorMsgAndExit(String msg, Throwable t, int rc) {
-        logger.fatal(msg, t);
+        logger.error(msg, t);
         System.err.println(msg);
         System.exit(rc);
     }

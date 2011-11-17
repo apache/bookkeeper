@@ -24,7 +24,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
@@ -47,7 +48,7 @@ public class ZkSubscriptionManager extends AbstractSubscriptionManager {
 
     ZooKeeper zk;
 
-    protected final static Logger logger = Logger.getLogger(ZkSubscriptionManager.class);
+    protected final static Logger logger = LoggerFactory.getLogger(ZkSubscriptionManager.class);
 
     public ZkSubscriptionManager(ZooKeeper zk, TopicManager topicMgr, PersistenceManager pm, ServerConfiguration cfg,
                                  ScheduledExecutorService scheduler) {

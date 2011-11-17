@@ -20,8 +20,10 @@ package org.apache.hedwig.server.regions;
 import java.util.ArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.ZooKeeper;
 
 import com.google.protobuf.ByteString;
@@ -44,7 +46,7 @@ import org.apache.hedwig.util.HedwigSocketAddress;
 
 public class RegionManager implements SubscriptionEventListener {
 
-    protected static final Logger LOGGER = Logger.getLogger(RegionManager.class);
+    protected static final Logger LOGGER = LoggerFactory.getLogger(RegionManager.class);
 
     private final ByteString mySubId;
     private final PersistenceManager pm;
@@ -69,8 +71,9 @@ public class RegionManager implements SubscriptionEventListener {
         queue.pushAndMaybeRun(topic, queue.new AsynchronousOp<Void>(topic, cb, null) {
             @Override
             public void run() {
-                Callback<Void> postCb = synchronous ? cb : CallbackUtils.logger(LOGGER, Level.DEBUG, Level.ERROR,
-                                        "all cross-region subscriptions succeeded", "at least one cross-region subscription failed");
+                Callback<Void> postCb = synchronous ? cb : CallbackUtils.logger(LOGGER, 
+                        "all cross-region subscriptions succeeded", 
+                        "at least one cross-region subscription failed");
                 final Callback<Void> mcb = CallbackUtils.multiCallback(clients.size(), postCb, ctx);
                 for (final HedwigHubClient client : clients) {
                     final HedwigSubscriber sub = client.getSubscriber();

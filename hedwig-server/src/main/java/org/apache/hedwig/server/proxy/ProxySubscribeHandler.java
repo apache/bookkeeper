@@ -17,7 +17,8 @@
  */
 package org.apache.hedwig.server.proxy;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.client.data.TopicSubscriber;
@@ -33,7 +34,7 @@ import org.apache.hedwig.util.Callback;
 
 public class ProxySubscribeHandler implements Handler, ChannelDisconnectListener {
 
-    static final Logger logger = Logger.getLogger(ProxySubscribeHandler.class);
+    static final Logger logger = LoggerFactory.getLogger(ProxySubscribeHandler.class);
 
     Subscriber subscriber;
     ChannelTracker tracker;

@@ -27,7 +27,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
@@ -48,7 +49,7 @@ import org.apache.hedwig.exceptions.PubSubException.UncertainStateException;
  */
 public class HedwigClient {
 
-    private static final Logger logger = Logger.getLogger(HedwigClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(HedwigClient.class);
 
     // Global counter used for generating unique transaction ID's for
     // publish and subscribe requests

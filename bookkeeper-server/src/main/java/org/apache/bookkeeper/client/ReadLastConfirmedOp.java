@@ -22,7 +22,8 @@ import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.DigestManager.RecoveryData;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
@@ -30,7 +31,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
  *
  */
 class ReadLastConfirmedOp implements ReadEntryCallback {
-    static final Logger LOG = Logger.getLogger(LedgerRecoveryOp.class);
+    static final Logger LOG = LoggerFactory.getLogger(LedgerRecoveryOp.class);
     LedgerHandle lh;
     Object ctx;
     int numResponsesPending;

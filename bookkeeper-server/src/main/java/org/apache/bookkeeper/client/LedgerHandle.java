@@ -41,7 +41,8 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.util.StringUtils;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
@@ -54,7 +55,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
  * write operations to a ledger.
  */
 public class LedgerHandle {
-    final static Logger LOG = Logger.getLogger(LedgerHandle.class);
+    final static Logger LOG = LoggerFactory.getLogger(LedgerHandle.class);
     final static long LAST_ADD_CONFIRMED = -1;
 
     final byte[] ledgerKey;

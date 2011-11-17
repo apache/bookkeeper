@@ -25,7 +25,8 @@ import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.exceptions.PubSubException;
@@ -55,7 +56,7 @@ public abstract class AbstractTopicManager implements TopicManager {
     protected ServerConfiguration cfg;
     protected ScheduledExecutorService scheduler;
 
-    private static final Logger logger = Logger.getLogger(AbstractTopicManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractTopicManager.class);
 
     private class GetOwnerOp extends TopicOpQueuer.AsynchronousOp<HedwigSocketAddress> {
         public boolean shouldClaim;

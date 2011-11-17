@@ -36,13 +36,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import junit.framework.TestCase;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Tests writing to concurrent ledgers
  */
 public class ConcurrentLedgerTest extends TestCase {
-    static Logger LOG = Logger.getLogger(ConcurrentLedgerTest.class);
+    static Logger LOG = LoggerFactory.getLogger(ConcurrentLedgerTest.class);
 
     Bookie bookie;
     File txnDir, ledgerDir;

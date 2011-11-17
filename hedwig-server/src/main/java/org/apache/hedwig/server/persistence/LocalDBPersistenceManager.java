@@ -30,7 +30,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import javax.sql.rowset.serial.SerialBlob;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.exceptions.PubSubException.ServiceDownException;
@@ -43,7 +44,7 @@ import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.FileUtils;
 
 public class LocalDBPersistenceManager implements PersistenceManagerWithRangeScan {
-    static Logger logger = Logger.getLogger(LocalDBPersistenceManager.class);
+    static Logger logger = LoggerFactory.getLogger(LocalDBPersistenceManager.class);
 
     static String connectionURL;
 

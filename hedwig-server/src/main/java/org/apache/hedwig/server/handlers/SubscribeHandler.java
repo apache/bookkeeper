@@ -19,7 +19,8 @@ package org.apache.hedwig.server.handlers;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFutureListener;
 
@@ -43,7 +44,7 @@ import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.util.Callback;
 
 public class SubscribeHandler extends BaseHandler implements ChannelDisconnectListener {
-    static Logger logger = Logger.getLogger(SubscribeHandler.class);
+    static Logger logger = LoggerFactory.getLogger(SubscribeHandler.class);
 
     private DeliveryManager deliveryMgr;
     private PersistenceManager persistenceMgr;

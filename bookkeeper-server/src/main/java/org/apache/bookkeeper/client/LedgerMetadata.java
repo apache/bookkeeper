@@ -27,7 +27,8 @@ import java.util.TreeMap;
 
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.zookeeper.data.Stat;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class encapsulates all the ledger metadata that is persistently stored
@@ -35,7 +36,7 @@ import org.apache.log4j.Logger;
  *
  */
 public class LedgerMetadata {
-    static final Logger LOG = Logger.getLogger(LedgerMetadata.class);
+    static final Logger LOG = LoggerFactory.getLogger(LedgerMetadata.class);
 
     private static final String closed = "CLOSED";
     private static final String lSplitter = "\n";

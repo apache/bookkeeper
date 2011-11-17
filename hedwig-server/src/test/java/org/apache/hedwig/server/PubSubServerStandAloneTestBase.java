@@ -19,7 +19,8 @@ package org.apache.hedwig.server;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.junit.After;
 import org.junit.Before;
 
@@ -31,7 +32,7 @@ import org.apache.hedwig.server.netty.PubSubServer;
  */
 public abstract class PubSubServerStandAloneTestBase extends TestCase {
 
-    protected static Logger logger = Logger.getLogger(PubSubServerStandAloneTestBase.class);
+    protected static Logger logger = LoggerFactory.getLogger(PubSubServerStandAloneTestBase.class);
 
     protected class StandAloneServerConfiguration extends ServerConfiguration {
         @Override

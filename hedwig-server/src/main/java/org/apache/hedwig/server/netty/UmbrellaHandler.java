@@ -20,7 +20,8 @@ package org.apache.hedwig.server.netty;
 import java.io.IOException;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -45,7 +46,7 @@ import org.apache.hedwig.server.handlers.Handler;
 
 @ChannelPipelineCoverage("all")
 public class UmbrellaHandler extends SimpleChannelHandler {
-    static Logger logger = Logger.getLogger(UmbrellaHandler.class);
+    static Logger logger = LoggerFactory.getLogger(UmbrellaHandler.class);
 
     private Map<OperationType, Handler> handlers;
     private ChannelGroup allChannels;

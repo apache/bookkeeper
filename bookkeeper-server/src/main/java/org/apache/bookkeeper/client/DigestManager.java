@@ -23,7 +23,8 @@ import java.security.GeneralSecurityException;
 
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -36,7 +37,7 @@ import org.jboss.netty.buffer.ChannelBuffers;
  */
 
 abstract class DigestManager {
-    static final Logger logger = Logger.getLogger(DigestManager.class);
+    static final Logger logger = LoggerFactory.getLogger(DigestManager.class);
 
     static final int METADATA_LENGTH = 32;
 

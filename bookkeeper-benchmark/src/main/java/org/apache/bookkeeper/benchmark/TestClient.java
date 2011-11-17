@@ -34,7 +34,8 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.zookeeper.KeeperException;
 
@@ -46,7 +47,7 @@ import org.apache.zookeeper.KeeperException;
 
 public class TestClient
     implements AddCallback, ReadCallback {
-    private static final Logger LOG = Logger.getLogger(TestClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestClient.class);
 
     BookKeeper x;
     LedgerHandle lh;
@@ -146,7 +147,7 @@ public class TestClient
                 //c.writeConsecutiveEntriesBatch(Integer.parseInt(args[0]));
                 c.closeHandle();
             } catch (Exception e) {
-                LOG.error(e);
+                LOG.error("Exception occurred", e);
             } 
             break;
         case 1:
@@ -155,7 +156,7 @@ public class TestClient
                 TestClient c = new TestClient(new FileOutputStream(args[2]));
                 c.writeSameEntryBatchFS(sb.toString().getBytes(), Integer.parseInt(args[3]));
             } catch(FileNotFoundException e) {
-                LOG.error(e);
+                LOG.error("File not found", e);
             }
             break;
         case 2:
@@ -219,7 +220,7 @@ public class TestClient
             fStream.close();
             System.out.println("Finished processing writes (ms): " + (System.currentTimeMillis() - start));
         } catch(IOException e) {
-            LOG.error(e);
+            LOG.error("IOException occurred", e);
         }
     }
 

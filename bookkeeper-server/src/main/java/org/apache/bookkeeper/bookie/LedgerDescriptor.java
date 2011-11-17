@@ -24,7 +24,8 @@ package org.apache.bookkeeper.bookie;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 
@@ -34,7 +35,7 @@ import org.apache.log4j.Logger;
  *
  */
 public class LedgerDescriptor {
-    final static Logger LOG = Logger.getLogger(LedgerDescriptor.class);
+    final static Logger LOG = LoggerFactory.getLogger(LedgerDescriptor.class);
     LedgerCache ledgerCache;
     LedgerDescriptor(long ledgerId, EntryLogger entryLogger, LedgerCache ledgerCache) {
         this.ledgerId = ledgerId;

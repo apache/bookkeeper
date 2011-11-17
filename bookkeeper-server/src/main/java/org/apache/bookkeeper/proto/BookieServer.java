@@ -32,7 +32,8 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.proto.NIOServerFactory.Cnxn;
 import static org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implements the server-side part of the BookKeeper protocol.
@@ -44,7 +45,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     private volatile boolean running = false;
     Bookie bookie;
     DeathWatcher deathWatcher;
-    static Logger LOG = Logger.getLogger(BookieServer.class);
+    static Logger LOG = LoggerFactory.getLogger(BookieServer.class);
 
     public BookieServer(int port, String zkServers, File journalDirectory, File ledgerDirectories[]) throws IOException {
         this.port = port;

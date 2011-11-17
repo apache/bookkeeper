@@ -21,7 +21,8 @@ package org.apache.bookkeeper.client;
  *
  */
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -41,7 +42,8 @@ import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -55,7 +57,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
  * Admin client for BookKeeper clusters
  */
 public class BookKeeperAdmin {
-    private static Logger LOG = Logger.getLogger(BookKeeperAdmin.class);
+    private static Logger LOG = LoggerFactory.getLogger(BookKeeperAdmin.class);
 
     static final String COLON = ":";
 

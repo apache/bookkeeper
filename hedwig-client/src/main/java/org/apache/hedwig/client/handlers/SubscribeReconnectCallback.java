@@ -19,7 +19,8 @@ package org.apache.hedwig.client.handlers;
 
 import java.util.TimerTask;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.hedwig.client.api.MessageHandler;
 import org.apache.hedwig.client.conf.ClientConfiguration;
@@ -40,7 +41,7 @@ import org.apache.hedwig.util.Callback;
  */
 public class SubscribeReconnectCallback implements Callback<Void> {
 
-    private static Logger logger = Logger.getLogger(SubscribeReconnectCallback.class);
+    private static Logger logger = LoggerFactory.getLogger(SubscribeReconnectCallback.class);
 
     // Private member variables
     private final PubSubData origSubData;

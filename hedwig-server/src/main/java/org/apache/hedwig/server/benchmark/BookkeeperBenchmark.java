@@ -24,11 +24,12 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BookkeeperBenchmark extends AbstractBenchmark {
 
-    static final Logger logger = Logger.getLogger(BookkeeperBenchmark.class);
+    static final Logger logger = LoggerFactory.getLogger(BookkeeperBenchmark.class);
 
     BookKeeper bk;
     LedgerHandle[] lh;

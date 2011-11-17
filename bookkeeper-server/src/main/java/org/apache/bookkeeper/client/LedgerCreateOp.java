@@ -29,7 +29,8 @@ import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.util.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
@@ -43,7 +44,7 @@ import org.apache.zookeeper.data.Stat;
  */
 class LedgerCreateOp implements StringCallback, StatCallback {
 
-    static final Logger LOG = Logger.getLogger(LedgerCreateOp.class);
+    static final Logger LOG = LoggerFactory.getLogger(LedgerCreateOp.class);
 
     CreateCallback cb;
     LedgerMetadata metadata;

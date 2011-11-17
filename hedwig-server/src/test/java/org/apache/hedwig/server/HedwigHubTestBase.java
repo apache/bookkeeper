@@ -22,7 +22,8 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.junit.After;
 import org.junit.Before;
 
@@ -37,7 +38,7 @@ import org.apache.hedwig.server.persistence.BookKeeperTestBase;
  */
 public abstract class HedwigHubTestBase extends TestCase {
 
-    protected static Logger logger = Logger.getLogger(HedwigHubTestBase.class);
+    protected static Logger logger = LoggerFactory.getLogger(HedwigHubTestBase.class);
 
     // BookKeeper variables
     // Default number of bookie servers to setup. Extending classes can

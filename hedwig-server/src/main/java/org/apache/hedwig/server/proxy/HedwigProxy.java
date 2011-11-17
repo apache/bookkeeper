@@ -26,7 +26,8 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
@@ -44,7 +45,7 @@ import org.apache.hedwig.server.netty.PubSubServerPipelineFactory;
 import org.apache.hedwig.server.netty.UmbrellaHandler;
 
 public class HedwigProxy {
-    static final Logger logger = Logger.getLogger(HedwigProxy.class);
+    static final Logger logger = LoggerFactory.getLogger(HedwigProxy.class);
 
     HedwigClient client;
     ServerSocketChannelFactory serverSocketChannelFactory;

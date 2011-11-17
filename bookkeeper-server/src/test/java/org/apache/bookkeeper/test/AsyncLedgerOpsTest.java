@@ -39,7 +39,8 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runners.Parameterized.Parameters;
@@ -52,7 +53,7 @@ import org.junit.runners.Parameterized.Parameters;
  */
 public class AsyncLedgerOpsTest extends BaseTestCase implements AddCallback, ReadCallback, CreateCallback,
     CloseCallback, OpenCallback {
-    static Logger LOG = Logger.getLogger(BookieClientTest.class);
+    static Logger LOG = LoggerFactory.getLogger(BookieClientTest.class);
 
     DigestType digestType;
 
@@ -190,7 +191,7 @@ public class AsyncLedgerOpsTest extends BaseTestCase implements AddCallback, Rea
             assertTrue("Checking number of read entries", i == numEntriesToWrite);
             lh.close();
         } catch (InterruptedException e) {
-            LOG.error(e);
+            LOG.error("Interrupted", e);
             fail("InterruptedException");
         } // catch (NoSuchAlgorithmException e) {
         // e.printStackTrace();

@@ -22,13 +22,14 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.util.Callback;
 
 public class BenchmarkUtils {
-    static final Logger logger = Logger.getLogger(BenchmarkUtils.class);
+    static final Logger logger = LoggerFactory.getLogger(BenchmarkUtils.class);
 
     public static double calcTp(final int count, long startTime) {
         return 1000. * count / (System.currentTimeMillis() - startTime);

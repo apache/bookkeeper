@@ -33,7 +33,8 @@ import org.junit.Test;
 
 import org.apache.hedwig.util.FileUtils;
 import org.apache.hedwig.zookeeper.ZooKeeperTestBase;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is a base class for any tests that require a BookKeeper client/server
@@ -41,7 +42,7 @@ import org.apache.log4j.Logger;
  *
  */
 public class BookKeeperTestBase extends ZooKeeperTestBase {
-    private static Logger LOG = Logger.getLogger(BookKeeperTestBase.class);
+    private static Logger LOG = LoggerFactory.getLogger(BookKeeperTestBase.class);
 
     // BookKeeper Server variables
     private List<BookieServer> bookiesList;

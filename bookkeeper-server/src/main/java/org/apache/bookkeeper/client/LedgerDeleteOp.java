@@ -23,7 +23,8 @@ package org.apache.bookkeeper.client;
 
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.util.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
 
 /**
@@ -32,7 +33,7 @@ import org.apache.zookeeper.AsyncCallback.VoidCallback;
  */
 class LedgerDeleteOp implements VoidCallback {
 
-    static final Logger LOG = Logger.getLogger(LedgerDeleteOp.class);
+    static final Logger LOG = LoggerFactory.getLogger(LedgerDeleteOp.class);
 
     BookKeeper bk;
     long ledgerId;

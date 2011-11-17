@@ -22,7 +22,8 @@ import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipelineCoverage;
@@ -51,7 +52,7 @@ import org.apache.hedwig.util.HedwigSocketAddress;
 @ChannelPipelineCoverage("all")
 public class ResponseHandler extends SimpleChannelHandler {
 
-    private static Logger logger = Logger.getLogger(ResponseHandler.class);
+    private static Logger logger = LoggerFactory.getLogger(ResponseHandler.class);
 
     // Concurrent Map to store for each async PubSub request, the txn ID
     // and the corresponding PubSub call's data which stores the VoidCallback to

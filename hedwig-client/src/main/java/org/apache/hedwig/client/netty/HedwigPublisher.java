@@ -21,7 +21,8 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 
@@ -46,7 +47,7 @@ import org.apache.hedwig.util.Callback;
  */
 public class HedwigPublisher implements Publisher {
 
-    private static Logger logger = Logger.getLogger(HedwigPublisher.class);
+    private static Logger logger = LoggerFactory.getLogger(HedwigPublisher.class);
 
     // Concurrent Map to store the mappings for a given Host (Hostname:Port) to
     // the Channel that has been established for it previously. This channel

@@ -26,7 +26,8 @@ import java.io.File;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,7 +36,7 @@ import org.junit.Test;
  * client and the server side.
  */
 public class LedgerDeleteTest extends BaseTestCase {
-    static Logger LOG = Logger.getLogger(LedgerDeleteTest.class);
+    static Logger LOG = LoggerFactory.getLogger(LedgerDeleteTest.class);
     DigestType digestType;
 
     public LedgerDeleteTest(DigestType digestType) {

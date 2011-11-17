@@ -19,7 +19,8 @@ package org.apache.hedwig.zookeeper;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -31,7 +32,7 @@ import org.apache.hedwig.util.PathUtils;
 
 public class ZkUtils {
 
-    static Logger logger = Logger.getLogger(ZkUtils.class);
+    static Logger logger = LoggerFactory.getLogger(ZkUtils.class);
 
     public static void createFullPathOptimistic(final ZooKeeper zk, final String originalPath, final byte[] data,
             final List<ACL> acl, final CreateMode createMode, final AsyncCallback.StringCallback callback,

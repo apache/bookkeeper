@@ -21,7 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.api.MessageHandler;
@@ -35,7 +36,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach
 import org.apache.hedwig.util.Callback;
 
 public class BenchmarkSubscriber extends BenchmarkWorker implements Callable<Void> {
-    static final Logger logger = Logger.getLogger(BenchmarkSubscriber.class);
+    static final Logger logger = LoggerFactory.getLogger(BenchmarkSubscriber.class);
     Subscriber subscriber;
     ByteString subId;
 

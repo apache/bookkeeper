@@ -33,7 +33,8 @@ import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -56,7 +57,7 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
 public class BookKeeper {
 
-    static final Logger LOG = Logger.getLogger(BookKeeper.class);
+    static final Logger LOG = LoggerFactory.getLogger(BookKeeper.class);
 
     ZooKeeper zk = null;
     // whether the zk handle is one we created, or is owned by whoever

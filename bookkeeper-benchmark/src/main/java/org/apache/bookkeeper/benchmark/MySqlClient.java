@@ -27,13 +27,14 @@ import java.util.HashMap;
 
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 import org.apache.zookeeper.KeeperException;
 
 public class MySqlClient {
-    static Logger LOG = Logger.getLogger(MySqlClient.class);
+    static Logger LOG = LoggerFactory.getLogger(MySqlClient.class);
 
     BookKeeper x;
     LedgerHandle lh;

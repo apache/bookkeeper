@@ -22,7 +22,8 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 
 import org.apache.hedwig.client.api.MessageHandler;
@@ -40,7 +41,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
 
 public class SubscribeResponseHandler {
 
-    private static Logger logger = Logger.getLogger(SubscribeResponseHandler.class);
+    private static Logger logger = LoggerFactory.getLogger(SubscribeResponseHandler.class);
 
     private final ResponseHandler responseHandler;
 

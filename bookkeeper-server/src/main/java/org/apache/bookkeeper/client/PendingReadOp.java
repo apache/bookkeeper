@@ -32,7 +32,8 @@ import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 
@@ -47,7 +48,7 @@ import java.io.IOException;
  */
 
 class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
-    Logger LOG = Logger.getLogger(PendingReadOp.class);
+    Logger LOG = LoggerFactory.getLogger(PendingReadOp.class);
 
     Queue<LedgerEntry> seq;
     ReadCallback cb;

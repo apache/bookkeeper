@@ -17,7 +17,8 @@
  */
 package org.apache.hedwig.server.proxy;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -39,7 +40,7 @@ import org.apache.hedwig.util.Callback;
 
 public class ProxyStartDeliveryHandler implements Handler {
 
-    static final Logger logger = Logger.getLogger(ProxyStartDeliveryHandler.class);
+    static final Logger logger = LoggerFactory.getLogger(ProxyStartDeliveryHandler.class);
 
     Subscriber subscriber;
     ChannelTracker tracker;
@@ -116,7 +117,7 @@ public class ProxyStartDeliveryHandler implements Handler {
             } catch (ClientNotSubscribedException e) {
                 // This should not happen, since we already checked the correct
                 // channel and so on
-                logger.fatal("Unexpected: No subscription when attempting to start delivery", e);
+                logger.error("Unexpected: No subscription when attempting to start delivery", e);
                 throw new RuntimeException(e);
             }
 

@@ -36,7 +36,8 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class maps a ledger entry number into a location (entrylogid, offset) in
@@ -44,7 +45,7 @@ import org.apache.log4j.Logger;
  * head scheduling.
  */
 public class LedgerCache {
-    private final static Logger LOG = Logger.getLogger(LedgerDescriptor.class);
+    private final static Logger LOG = LoggerFactory.getLogger(LedgerDescriptor.class);
 
     final File ledgerDirectories[];
 

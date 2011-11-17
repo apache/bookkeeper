@@ -24,7 +24,8 @@ package org.apache.bookkeeper.test;
 import org.junit.*;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This unit test tests closing ledgers sequentially. It creates 4 ledgers, then
@@ -33,7 +34,7 @@ import org.apache.log4j.Logger;
  */
 
 public class CloseTest extends BaseTestCase {
-    static Logger LOG = Logger.getLogger(CloseTest.class);
+    static Logger LOG = LoggerFactory.getLogger(CloseTest.class);
     DigestType digestType;
 
     public CloseTest(DigestType digestType) {

@@ -22,12 +22,13 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FileUtils {
 
     static DirDeleterThred dirDeleterThread;
-    static Logger log = Logger.getLogger(FileUtils.class);
+    static Logger log = LoggerFactory.getLogger(FileUtils.class);
 
     static {
         dirDeleterThread = new DirDeleterThred();

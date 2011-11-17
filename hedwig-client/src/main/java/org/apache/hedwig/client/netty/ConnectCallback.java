@@ -20,7 +20,8 @@ package org.apache.hedwig.client.netty;
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 
@@ -33,7 +34,7 @@ import org.apache.hedwig.util.HedwigSocketAddress;
 
 public class ConnectCallback implements ChannelFutureListener {
 
-    private static Logger logger = Logger.getLogger(ConnectCallback.class);
+    private static Logger logger = LoggerFactory.getLogger(ConnectCallback.class);
 
     // Private member variables
     private PubSubData pubSubData;

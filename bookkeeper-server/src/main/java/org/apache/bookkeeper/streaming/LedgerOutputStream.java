@@ -26,7 +26,8 @@ import java.nio.ByteBuffer;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * this class provides a streaming api to get an output stream from a ledger
@@ -35,7 +36,7 @@ import org.apache.log4j.Logger;
  * out the entry to the ledger.
  */
 public class LedgerOutputStream extends OutputStream {
-    Logger LOG = Logger.getLogger(LedgerOutputStream.class);
+    Logger LOG = LoggerFactory.getLogger(LedgerOutputStream.class);
     private LedgerHandle lh;
     private ByteBuffer bytebuff;
     byte[] bbytes;

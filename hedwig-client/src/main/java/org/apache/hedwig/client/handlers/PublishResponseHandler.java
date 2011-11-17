@@ -17,7 +17,8 @@
  */
 package org.apache.hedwig.client.handlers;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 
 import org.apache.hedwig.client.data.PubSubData;
@@ -28,7 +29,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
 
 public class PublishResponseHandler {
 
-    private static Logger logger = Logger.getLogger(PublishResponseHandler.class);
+    private static Logger logger = LoggerFactory.getLogger(PublishResponseHandler.class);
 
     private final ResponseHandler responseHandler;
 

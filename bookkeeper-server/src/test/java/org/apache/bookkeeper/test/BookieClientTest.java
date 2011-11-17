@@ -39,12 +39,13 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import junit.framework.TestCase;
 
 public class BookieClientTest extends TestCase {
-    static Logger LOG = Logger.getLogger(BookieClientTest.class);
+    static Logger LOG = LoggerFactory.getLogger(BookieClientTest.class);
     BookieServer bs;
     File tmpDir;
     public int port = 13645;

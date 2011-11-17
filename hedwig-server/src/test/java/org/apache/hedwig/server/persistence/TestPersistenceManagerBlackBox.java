@@ -25,7 +25,8 @@ import java.util.concurrent.TimeUnit;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.junit.Test;
 
 import com.google.protobuf.ByteString;
@@ -39,7 +40,7 @@ public abstract class TestPersistenceManagerBlackBox extends TestCase {
     protected PersistenceManager persistenceManager;
     protected int NUM_MESSAGES_TO_TEST = 5;
     protected int NUM_TOPICS_TO_TEST = 5;
-    static Logger logger = Logger.getLogger(TestPersistenceManagerBlackBox.class);
+    static Logger logger = LoggerFactory.getLogger(TestPersistenceManagerBlackBox.class);
     TestCallback testCallback = new TestCallback();
 
     RuntimeException failureException;

@@ -43,13 +43,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import junit.framework.TestCase;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Tests conditional set of the ledger metadata znode.
  */
 public class ConditionalSetTest extends BaseTestCase {
-    static Logger LOG = Logger.getLogger(ConditionalSetTest.class);
+    static Logger LOG = LoggerFactory.getLogger(ConditionalSetTest.class);
 
     byte[] entry;
     DigestType digestType;

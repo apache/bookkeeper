@@ -23,7 +23,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookieClient;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -33,7 +34,7 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
 public class BookieBenchmark extends AbstractBenchmark {
 
-    static final Logger logger = Logger.getLogger(BookkeeperBenchmark.class);
+    static final Logger logger = LoggerFactory.getLogger(BookkeeperBenchmark.class);
 
     BookieClient bkc;
     InetSocketAddress addr;

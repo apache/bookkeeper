@@ -28,7 +28,8 @@ import junit.framework.Assert;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.netty.PubSubServer;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
@@ -39,7 +40,7 @@ import org.junit.Test;
 
 public class TestPubSubServerStartup {
 
-    private static Logger logger = Logger.getLogger(TestPubSubServerStartup.class);
+    private static Logger logger = LoggerFactory.getLogger(TestPubSubServerStartup.class);
 
     /**
      * Start-up zookeeper + pubsubserver reading from a config URL. Then stop

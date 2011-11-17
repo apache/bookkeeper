@@ -28,10 +28,14 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -42,16 +46,12 @@ import org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.apache.zookeeper.server.ZooKeeperServer;
 
 public class LocalBookKeeper {
-    protected static final Logger LOG = Logger.getLogger(LocalBookKeeper.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(LocalBookKeeper.class);
     public static final int CONNECTION_TIMEOUT = 30000;
 
-    ConsoleAppender ca;
     int numberOfBookies;
 
     public LocalBookKeeper() {
-        ca = new ConsoleAppender(new PatternLayout());
-        LOG.addAppender(ca);
-        LOG.setLevel(Level.INFO);
         numberOfBookies = 3;
     }
 
@@ -93,7 +93,7 @@ public class LocalBookKeeper {
             serverFactory.startup(zks);
         } catch (Exception e) {
             // TODO Auto-generated catch block
-            LOG.fatal("Exception while instantiating ZooKeeper", e);
+            LOG.error("Exception while instantiating ZooKeeper", e);
         }
 
         boolean b = waitForServerUp(HOSTPORT, CONNECTION_TIMEOUT);
@@ -111,13 +111,13 @@ public class LocalBookKeeper {
             // BookieServers will register themselves with ZooKeeper on startup.
         } catch (KeeperException e) {
             // TODO Auto-generated catch block
-            LOG.fatal("Exception while creating znodes", e);
+            LOG.error("Exception while creating znodes", e);
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
-            LOG.fatal("Interrupted while creating znodes", e);
+            LOG.error("Interrupted while creating znodes", e);
         } catch (IOException e) {
             // TODO Auto-generated catch block
-            LOG.fatal("Exception while creating znodes", e);
+            LOG.error("Exception while creating znodes", e);
         }
     }
     private void runBookies() throws IOException {

@@ -28,14 +28,15 @@ import java.net.InetSocketAddress;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.BKException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provides Admin Tools to manage the BookKeeper cluster.
  *
  */
 public class BookKeeperTools {
-    private static Logger LOG = Logger.getLogger(BookKeeperTools.class);
+    private static Logger LOG = LoggerFactory.getLogger(BookKeeperTools.class);
 
     /**
      * Main method so we can invoke the bookie recovery via command line.

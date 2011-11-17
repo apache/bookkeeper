@@ -24,7 +24,8 @@ package org.apache.bookkeeper.client;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 
 /**
@@ -34,7 +35,7 @@ import org.jboss.netty.buffer.ChannelBufferInputStream;
  */
 
 public class LedgerEntry {
-    Logger LOG = Logger.getLogger(LedgerEntry.class);
+    Logger LOG = LoggerFactory.getLogger(LedgerEntry.class);
 
     long ledgerId;
     long entryId;
@@ -72,7 +73,7 @@ public class LedgerEntry {
             // The channelbufferinput stream doesnt really throw the
             // ioexceptions, it just has to be in the signature because
             // InputStream says so. Hence this code, should never be reached.
-            LOG.fatal("Unexpected IOException while reading from channel buffer", e);
+            LOG.error("Unexpected IOException while reading from channel buffer", e);
             return new byte[0];
         }
     }

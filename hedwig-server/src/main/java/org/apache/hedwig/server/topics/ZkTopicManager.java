@@ -23,7 +23,8 @@ import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -51,7 +52,7 @@ import org.apache.hedwig.zookeeper.SafeAsyncZKCallback.StatCallback;
  */
 public class ZkTopicManager extends AbstractTopicManager implements TopicManager {
 
-    static Logger logger = Logger.getLogger(ZkTopicManager.class);
+    static Logger logger = LoggerFactory.getLogger(ZkTopicManager.class);
     Random rand = new Random();
 
     /**

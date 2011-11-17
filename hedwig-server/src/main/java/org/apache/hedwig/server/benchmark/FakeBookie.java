@@ -20,7 +20,8 @@ package org.apache.hedwig.server.benchmark;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -40,7 +41,7 @@ import org.jboss.netty.logging.Log4JLoggerFactory;
 @ChannelPipelineCoverage("all")
 public class FakeBookie extends SimpleChannelHandler implements
     ChannelPipelineFactory {
-    static final Logger logger = Logger.getLogger(FakeBookie.class);
+    static final Logger logger = LoggerFactory.getLogger(FakeBookie.class);
     ServerSocketChannelFactory serverChannelFactory = new NioServerSocketChannelFactory(
         Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
 

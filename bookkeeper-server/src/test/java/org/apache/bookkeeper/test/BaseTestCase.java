@@ -32,7 +32,8 @@ import java.util.List;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -51,7 +52,7 @@ import junit.framework.TestCase;
 
 @RunWith(Parameterized.class)
 public abstract class BaseTestCase extends TestCase {
-    static final Logger LOG = Logger.getLogger(BaseTestCase.class);
+    static final Logger LOG = LoggerFactory.getLogger(BaseTestCase.class);
     // ZooKeeper related variables
     protected static final String HOSTPORT = "127.0.0.1:2181";
     protected static Integer ZooKeeperDefaultPort = 2181;

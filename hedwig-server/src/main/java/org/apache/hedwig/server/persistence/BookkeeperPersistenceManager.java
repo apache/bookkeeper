@@ -30,7 +30,8 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
@@ -71,7 +72,7 @@ import org.apache.hedwig.zookeeper.ZkUtils;
  */
 
 public class BookkeeperPersistenceManager implements PersistenceManagerWithRangeScan, TopicOwnershipChangeListener {
-    static Logger logger = Logger.getLogger(BookkeeperPersistenceManager.class);
+    static Logger logger = LoggerFactory.getLogger(BookkeeperPersistenceManager.class);
     static byte[] passwd = "sillysecret".getBytes();
     private BookKeeper bk;
     private ZooKeeper zk;
@@ -391,7 +392,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                                      + (localSeqId - topicInfo.currentLedgerRange.startSeqIdIncluded)
                                      + " but it instead assigned entry-id: " + entryId + " topic: "
                                      + topic.toStringUtf8() + "ledger: " + lh.getId();
-                        logger.fatal(msg);
+                        logger.error(msg);
                         throw new UnexpectedError(msg);
                     }
 
@@ -482,7 +483,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                 ranges = LedgerRanges.parseFrom(data);
             } catch (InvalidProtocolBufferException e) {
                 String msg = "Ledger ranges for topic:" + topic.toStringUtf8() + " could not be deserialized";
-                logger.fatal(msg, e);
+                logger.error(msg, e);
                 cb.operationFailed(ctx, new PubSubException.UnexpectedConditionException(msg));
                 return;
             }
@@ -507,7 +508,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                 if (lrIterator.hasNext()) {
                     String msg = "Ledger-id: " + range.getLedgerId() + " for topic: " + topic.toStringUtf8()
                                  + " is not the last one but still does not have an end seq-id";
-                    logger.fatal(msg);
+                    logger.error(msg);
                     cb.operationFailed(ctx, new PubSubException.UnexpectedConditionException(msg));
                     return;
                 }

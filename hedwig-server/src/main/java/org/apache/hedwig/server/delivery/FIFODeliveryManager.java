@@ -29,7 +29,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.data.TopicSubscriber;
@@ -49,7 +50,7 @@ import org.apache.hedwig.server.subscriptions.MessageFilter;
 
 public class FIFODeliveryManager implements Runnable, DeliveryManager {
 
-    protected static final Logger logger = Logger.getLogger(FIFODeliveryManager.class);
+    protected static final Logger logger = LoggerFactory.getLogger(FIFODeliveryManager.class);
 
     protected interface DeliveryManagerRequest {
         public void performRequest();

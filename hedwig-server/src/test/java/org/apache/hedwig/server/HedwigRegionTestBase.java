@@ -24,7 +24,8 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.junit.After;
 import org.junit.Before;
 
@@ -43,7 +44,7 @@ import org.apache.hedwig.util.HedwigSocketAddress;
  */
 public abstract class HedwigRegionTestBase extends TestCase {
 
-    protected static Logger logger = Logger.getLogger(HedwigRegionTestBase.class);
+    protected static Logger logger = LoggerFactory.getLogger(HedwigRegionTestBase.class);
 
     // BookKeeper variables
     // Default number of bookie servers to setup. Extending classes

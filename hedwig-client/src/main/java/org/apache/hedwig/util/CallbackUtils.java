@@ -20,8 +20,8 @@ package org.apache.hedwig.util;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.exceptions.PubSubException.CompositeException;
@@ -42,8 +42,6 @@ public class CallbackUtils {
      * @param ctx
      * @param logger
      *            May be null.
-     * @param level
-     *            Required iff logger != null.
      * @param successMsg
      *            If not null, then this is logged on success.
      * @param failureMsg
@@ -56,7 +54,7 @@ public class CallbackUtils {
      * @return
      */
     public static Callback<Void> multiCallback(final int expected, final Callback<Void> cb, final Object ctx,
-            final Logger logger, final Level level, final Object successMsg, final Object failureMsg,
+            final Logger logger, final String successMsg, final String failureMsg,
             Runnable eagerErrorHandler) {
         if (expected == 0) {
             cb.operationFinished(ctx, null);
@@ -80,7 +78,7 @@ public class CallbackUtils {
                 @Override
                 public void operationFailed(Object ctx, PubSubException exception) {
                     if (logger != null && failureMsg != null)
-                        logger.log(level, failureMsg, exception);
+                        logger.error(failureMsg, exception);
                     exceptions.add(exception);
                     tick();
                 }
@@ -88,7 +86,7 @@ public class CallbackUtils {
                 @Override
                 public void operationFinished(Object ctx, Void resultOfOperation) {
                     if (logger != null && successMsg != null)
-                        logger.log(level, successMsg);
+                        logger.info(successMsg);
                     tick();
                 }
 
@@ -101,15 +99,15 @@ public class CallbackUtils {
      * then fail the final callback with a composite exception.
      */
     public static Callback<Void> multiCallback(int expected, Callback<Void> cb, Object ctx) {
-        return multiCallback(expected, cb, ctx, null, null, null, null, null);
+        return multiCallback(expected, cb, ctx, null, null, null, null);
     }
 
     /**
      * A callback that waits for all of a number of events to fire. If any fail,
      * then fail the final callback with a composite exception.
      */
-    public static Callback<Void> multiCallback(int expected, Callback<Void> cb, Object ctx, Runnable eagerErrorHandler) {
-        return multiCallback(expected, cb, ctx, null, null, null, null, eagerErrorHandler);
+    public static Callback<Void> multinCallback(int expected, Callback<Void> cb, Object ctx, Runnable eagerErrorHandler) {
+        return multiCallback(expected, cb, ctx, null, null, null, eagerErrorHandler);
     }
 
     private static Callback<Void> nop = new Callback<Void>() {
@@ -134,20 +132,20 @@ public class CallbackUtils {
     /**
      * Logs what happened before continuing the callback chain.
      */
-    public static <T> Callback<T> logger(final Logger logger, final Level successLevel, final Level failureLevel, final Object successMsg,
-                                         final Object failureMsg, final Callback<T> cont) {
+    public static <T> Callback<T> logger(final Logger logger, final String successMsg,
+                                         final String failureMsg, final Callback<T> cont) {
         return new Callback<T>() {
 
             @Override
             public void operationFailed(Object ctx, PubSubException exception) {
-                logger.log(failureLevel, failureMsg, exception);
+                logger.error(failureMsg, exception);
                 if (cont != null)
                     cont.operationFailed(ctx, exception);
             }
 
             @Override
             public void operationFinished(Object ctx, T resultOfOperation) {
-                logger.log(successLevel, successMsg);
+                logger.info(successMsg);
                 if (cont != null)
                     cont.operationFinished(ctx, resultOfOperation);
             }
@@ -158,8 +156,8 @@ public class CallbackUtils {
     /**
      * Logs what happened (no continuation).
      */
-    public static Callback<Void> logger(Logger logger, Level successLevel, Level failureLevel, Object successMsg, Object failureMsg) {
-        return logger(logger, successLevel, failureLevel, successMsg, failureMsg, nop());
+    public static Callback<Void> logger(Logger logger, String successMsg, String failureMsg) {
+        return logger(logger, successMsg, failureMsg, nop());
     }
 
     /**

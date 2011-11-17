@@ -25,7 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.exceptions.PubSubException;
@@ -47,7 +48,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
 
     ServerConfiguration cfg;
     ConcurrentHashMap<ByteString, Map<ByteString, InMemorySubscriptionState>> top2sub2seq = new ConcurrentHashMap<ByteString, Map<ByteString, InMemorySubscriptionState>>();
-    static Logger logger = Logger.getLogger(AbstractSubscriptionManager.class);
+    static Logger logger = LoggerFactory.getLogger(AbstractSubscriptionManager.class);
 
     TopicOpQueuer queuer;
     private final ArrayList<SubscriptionEventListener> listeners = new ArrayList<SubscriptionEventListener>();

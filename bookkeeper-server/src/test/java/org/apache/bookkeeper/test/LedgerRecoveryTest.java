@@ -25,7 +25,8 @@ import org.junit.*;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This unit test tests ledger recovery.
@@ -33,7 +34,7 @@ import org.apache.log4j.Logger;
  */
 
 public class LedgerRecoveryTest extends BaseTestCase {
-    static Logger LOG = Logger.getLogger(LedgerRecoveryTest.class);
+    static Logger LOG = LoggerFactory.getLogger(LedgerRecoveryTest.class);
 
     DigestType digestType;
 

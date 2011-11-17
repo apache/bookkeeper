@@ -46,7 +46,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -62,7 +63,7 @@ import org.apache.zookeeper.ZooDefs.Ids;
 
 public class Bookie extends Thread {
     HashMap<Long, LedgerDescriptor> ledgers = new HashMap<Long, LedgerDescriptor>();
-    static Logger LOG = Logger.getLogger(Bookie.class);
+    static Logger LOG = LoggerFactory.getLogger(Bookie.class);
     final static long MB = 1024 * 1024L;
     // max journal file size
     final static long MAX_JOURNAL_SIZE = Long.getLong("journal_max_size_mb", 2 * 1024) * MB;
@@ -379,7 +380,7 @@ public class Bookie extends Thread {
             zk.create(BOOKIE_REGISTRATION_PATH + InetAddress.getLocalHost().getHostAddress() + ":" + port, new byte[0],
                       Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
         } catch (Exception e) {
-            LOG.fatal("ZK exception registering ephemeral Znode for Bookie!", e);
+            LOG.error("ZK exception registering ephemeral Znode for Bookie!", e);
             // Throw an IOException back up. This will cause the Bookie
             // constructor to error out. Alternatively, we could do a System
             // exit here as this is a fatal error.
@@ -804,7 +805,7 @@ public class Bookie extends Thread {
                 qe = null;
             }
         } catch (Exception e) {
-            LOG.fatal("Bookie thread exiting", e);
+            LOG.error("Bookie thread exiting", e);
         }
     }
 
@@ -819,7 +820,7 @@ public class Bookie extends Thread {
         try {
             logFile.position(position);
         } catch (IOException e) {
-            LOG.fatal("Bookie journal file can seek to position :", e);
+            LOG.error("Bookie journal file can seek to position :", e);
         }
         return logFile;
     }

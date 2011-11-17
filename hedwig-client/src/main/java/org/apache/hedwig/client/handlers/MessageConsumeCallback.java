@@ -19,7 +19,8 @@ package org.apache.hedwig.client.handlers;
 
 import java.util.TimerTask;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 
 import org.apache.hedwig.client.data.MessageConsumeData;
@@ -39,7 +40,7 @@ import org.apache.hedwig.util.Callback;
  */
 public class MessageConsumeCallback implements Callback<Void> {
 
-    private static Logger logger = Logger.getLogger(MessageConsumeCallback.class);
+    private static Logger logger = LoggerFactory.getLogger(MessageConsumeCallback.class);
 
     private final HedwigClient client;
 

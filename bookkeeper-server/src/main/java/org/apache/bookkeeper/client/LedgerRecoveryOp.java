@@ -31,7 +31,8 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 
 import org.apache.zookeeper.KeeperException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
@@ -43,7 +44,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
  *
  */
 class LedgerRecoveryOp implements ReadEntryCallback, ReadCallback, AddCallback {
-    static final Logger LOG = Logger.getLogger(LedgerRecoveryOp.class);
+    static final Logger LOG = LoggerFactory.getLogger(LedgerRecoveryOp.class);
     LedgerHandle lh;
     int numResponsesPending;
     boolean proceedingWithRecovery = false;

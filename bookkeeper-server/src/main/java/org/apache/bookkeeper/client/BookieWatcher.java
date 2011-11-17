@@ -32,7 +32,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.util.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -47,7 +48,7 @@ import org.apache.zookeeper.KeeperException.Code;
  *
  */
 class BookieWatcher implements Watcher, ChildrenCallback {
-    static final Logger logger = Logger.getLogger(BookieWatcher.class);
+    static final Logger logger = LoggerFactory.getLogger(BookieWatcher.class);
 
     public static final String BOOKIE_REGISTRATION_PATH = "/ledgers/available";
     static final Set<InetSocketAddress> EMPTY_SET = new HashSet<InetSocketAddress>();

@@ -31,7 +31,8 @@ import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.exceptions.PubSubException;
@@ -45,7 +46,7 @@ import org.apache.hedwig.util.Callback;
 
 public class ReadAheadCache implements PersistenceManager, Runnable {
 
-    static Logger logger = Logger.getLogger(ReadAheadCache.class);
+    static Logger logger = LoggerFactory.getLogger(ReadAheadCache.class);
 
     protected interface CacheRequest {
         public void performRequest();

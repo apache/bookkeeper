@@ -31,7 +31,8 @@ import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
@@ -44,7 +45,7 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
  */
 
 class LoopbackClient implements WriteCallback {
-    Logger LOG = Logger.getLogger(LoopbackClient.class);
+    Logger LOG = LoggerFactory.getLogger(LoopbackClient.class);
     BookieClient client;
     static int recvTimeout = 2000;
     long begin = 0;

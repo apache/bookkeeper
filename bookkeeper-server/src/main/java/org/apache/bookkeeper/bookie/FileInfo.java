@@ -27,7 +27,8 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is the file handle for a ledger's index file that maps entry ids to location.
@@ -47,7 +48,7 @@ import org.apache.log4j.Logger;
  * </p>
  */
 class FileInfo {
-    static Logger LOG = Logger.getLogger(FileInfo.class);
+    static Logger LOG = LoggerFactory.getLogger(FileInfo.class);
 
     static final int NO_MASTER_KEY = -1;
 
