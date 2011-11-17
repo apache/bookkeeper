@@ -19,7 +19,7 @@ package org.apache.hedwig.server.regions;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.exceptions.InvalidSubscriberIdException;
-import org.apache.hedwig.client.netty.HedwigClient;
+import org.apache.hedwig.client.netty.HedwigClientImpl;
 import org.apache.hedwig.client.netty.HedwigSubscriber;
 import org.apache.hedwig.exceptions.PubSubException.ClientAlreadySubscribedException;
 import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException;
@@ -38,7 +38,7 @@ import org.apache.hedwig.util.Callback;
  */
 public class HedwigHubSubscriber extends HedwigSubscriber {
 
-    public HedwigHubSubscriber(HedwigClient client) {
+    public HedwigHubSubscriber(HedwigClientImpl client) {
         super(client);
     }
 

@@ -35,9 +35,10 @@ import org.apache.hedwig.client.api.MessageHandler;
 import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.exceptions.InvalidSubscriberIdException;
-import org.apache.hedwig.client.netty.HedwigClient;
-import org.apache.hedwig.client.netty.HedwigPublisher;
-import org.apache.hedwig.client.netty.HedwigSubscriber;
+import org.apache.hedwig.client.HedwigClient;
+import org.apache.hedwig.client.api.Client;
+import org.apache.hedwig.client.api.Publisher;
+import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
@@ -63,8 +64,8 @@ public class TestHedwigHub extends HedwigHubTestBase {
 
     // Client side variables
     protected HedwigClient client;
-    protected HedwigPublisher publisher;
-    protected HedwigSubscriber subscriber;
+    protected Publisher publisher;
+    protected Subscriber subscriber;
 
     // Common ByteStrings used in tests.
     private final ByteString localSubscriberId = ByteString.copyFromUtf8("LocalSubscriber");
@@ -139,7 +140,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
             this.consumeQueue = consumeQueue;
         }
 
-        public void consume(ByteString topic, ByteString subscriberId, final Message msg, Callback<Void> callback,
+        public void deliver(ByteString topic, ByteString subscriberId, final Message msg, Callback<Void> callback,
                             Object context) {
             if (!consumedMessages.contains(msg.getMsgId())) {
                 // New message to consume. Add it to the Set of consumed
@@ -218,7 +219,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
     @Override
     @After
     public void tearDown() throws Exception {
-        client.stop();
+        client.close();
         if (mode == Mode.PROXY) {
             proxy.shutdown();
         }
@@ -322,8 +323,8 @@ public class TestHedwigHub extends HedwigHubTestBase {
             }
 
         });
-        HedwigSubscriber mySubscriber = myClient.getSubscriber();
-        HedwigPublisher myPublisher = myClient.getPublisher();
+        Subscriber mySubscriber = myClient.getSubscriber();
+        Publisher myPublisher = myClient.getPublisher();
         ByteString myTopic = getTopic(0);
         // Subscribe to a topic and start delivery on it
         mySubscriber.asyncSubscribe(myTopic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH,
@@ -357,7 +358,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         } catch (InterruptedException e) {
             logger.error("Thread was interrupted while waiting to stop client for manual consume test!!", e);
         }
-        myClient.stop();
+        myClient.close();
     }
 
     @Test
@@ -640,8 +641,8 @@ public class TestHedwigHub extends HedwigHubTestBase {
     // subscriberId to be in the "hub" specific format.
     @Test
     public void testSyncHubSubscribeWithInvalidSubscriberId() throws Exception {
-        HedwigClient hubClient = new HedwigHubClient(new ClientConfiguration());
-        HedwigSubscriber hubSubscriber = hubClient.getSubscriber();
+        Client hubClient = new HedwigHubClient(new ClientConfiguration());
+        Subscriber hubSubscriber = hubClient.getSubscriber();
         boolean subscribeSuccess = false;
         try {
             hubSubscriber.subscribe(getTopic(0), localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH);
@@ -651,23 +652,23 @@ public class TestHedwigHub extends HedwigHubTestBase {
             subscribeSuccess = false;
         }
         assertTrue(subscribeSuccess);
-        hubClient.stop();
+        hubClient.close();
     }
 
     @Test
     public void testAsyncHubSubscribeWithInvalidSubscriberId() throws Exception {
-        HedwigClient hubClient = new HedwigHubClient(new ClientConfiguration());
-        HedwigSubscriber hubSubscriber = hubClient.getSubscriber();
+        Client hubClient = new HedwigHubClient(new ClientConfiguration());
+        Subscriber hubSubscriber = hubClient.getSubscriber();
         hubSubscriber.asyncSubscribe(getTopic(0), localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(
                                          queue), null);
         assertFalse(queue.take());
-        hubClient.stop();
+        hubClient.close();
     }
 
     @Test
     public void testSyncHubUnsubscribeWithInvalidSubscriberId() throws Exception {
-        HedwigClient hubClient = new HedwigHubClient(new ClientConfiguration());
-        HedwigSubscriber hubSubscriber = hubClient.getSubscriber();
+        Client hubClient = new HedwigHubClient(new ClientConfiguration());
+        Subscriber hubSubscriber = hubClient.getSubscriber();
         boolean unsubscribeSuccess = false;
         try {
             hubSubscriber.unsubscribe(getTopic(0), localSubscriberId);
@@ -677,16 +678,16 @@ public class TestHedwigHub extends HedwigHubTestBase {
             unsubscribeSuccess = false;
         }
         assertTrue(unsubscribeSuccess);
-        hubClient.stop();
+        hubClient.close();
     }
 
     @Test
     public void testAsyncHubUnsubscribeWithInvalidSubscriberId() throws Exception {
-        HedwigClient hubClient = new HedwigHubClient(new ClientConfiguration());
-        HedwigSubscriber hubSubscriber = hubClient.getSubscriber();
+        Client hubClient = new HedwigHubClient(new ClientConfiguration());
+        Subscriber hubSubscriber = hubClient.getSubscriber();
         hubSubscriber.asyncUnsubscribe(getTopic(0), localSubscriberId, new TestCallback(queue), null);
         assertFalse(queue.take());
-        hubClient.stop();
+        hubClient.close();
     }
 
 }

@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 
 import org.apache.hedwig.client.data.PubSubData;
-import org.apache.hedwig.client.netty.HedwigClient;
+import org.apache.hedwig.client.netty.HedwigClientImpl;
 import org.apache.hedwig.client.netty.ResponseHandler;
 import org.apache.hedwig.exceptions.PubSubException.ServiceDownException;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
@@ -41,7 +41,7 @@ public class PublishResponseHandler {
     public void handlePublishResponse(PubSubResponse response, PubSubData pubSubData, Channel channel) throws Exception {
         if (logger.isDebugEnabled())
             logger.debug("Handling a Publish response: " + response + ", pubSubData: " + pubSubData + ", host: "
-                         + HedwigClient.getHostFromChannel(channel));
+                         + HedwigClientImpl.getHostFromChannel(channel));
         switch (response.getStatusCode()) {
         case SUCCESS:
             // Response was success so invoke the callback's operationFinished

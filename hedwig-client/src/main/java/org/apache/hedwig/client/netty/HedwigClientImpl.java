@@ -36,6 +36,7 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
 import com.google.protobuf.ByteString;
+import org.apache.hedwig.client.api.Client;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.data.PubSubData;
 import org.apache.hedwig.client.handlers.MessageConsumeCallback;
@@ -47,9 +48,9 @@ import org.apache.hedwig.exceptions.PubSubException.UncertainStateException;
  * functionality needed for both Publish and Subscribe operations.
  *
  */
-public class HedwigClient {
+public class HedwigClientImpl implements Client {
 
-    private static final Logger logger = LoggerFactory.getLogger(HedwigClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(HedwigClientImpl.class);
 
     // Global counter used for generating unique transaction ID's for
     // publish and subscribe requests
@@ -90,16 +91,24 @@ public class HedwigClient {
     private final MessageConsumeCallback consumeCb;
     private SslClientContextFactory sslFactory = null;
 
+    public static Client create(ClientConfiguration cfg) {
+        return new HedwigClientImpl(cfg);
+    }
+
+    public static Client create(ClientConfiguration cfg, ChannelFactory socketFactory) {
+        return new HedwigClientImpl(cfg, socketFactory);
+    }
+
     // Base constructor that takes in a Configuration object.
     // This will create its own client socket channel factory.
-    public HedwigClient(ClientConfiguration cfg) {
+    protected HedwigClientImpl(ClientConfiguration cfg) {
         this(cfg, new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
         ownChannelFactory = true;
     }
 
     // Constructor that takes in a Configuration object and a ChannelFactory
     // that has already been instantiated by the caller.
-    public HedwigClient(ClientConfiguration cfg, ChannelFactory socketFactory) {
+    protected HedwigClientImpl(ClientConfiguration cfg, ChannelFactory socketFactory) {
         this.cfg = cfg;
         this.socketFactory = socketFactory;
         pub = new HedwigPublisher(this);
@@ -199,7 +208,7 @@ public class HedwigClient {
     // When we are done with the client, this is a clean way to gracefully close
     // all channels/sockets created by the client and to also release all
     // resources used by netty.
-    public void stop() {
+    public void close() {
         logger.info("Stopping the client!");
         // Set the client boolean flag to indicate the client has stopped.
         isStopped = true;

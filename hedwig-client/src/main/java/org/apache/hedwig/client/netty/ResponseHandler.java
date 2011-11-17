@@ -66,7 +66,7 @@ public class ResponseHandler extends SimpleChannelHandler {
     // channel disconnected logic here.
     public boolean channelClosedExplicitly = false;
 
-    private final HedwigClient client;
+    private final HedwigClientImpl client;
     private final HedwigPublisher pub;
     private final HedwigSubscriber sub;
     private final ClientConfiguration cfg;
@@ -75,7 +75,7 @@ public class ResponseHandler extends SimpleChannelHandler {
     private final SubscribeResponseHandler subHandler;
     private final UnsubscribeResponseHandler unsubHandler;
 
-    public ResponseHandler(HedwigClient client) {
+    public ResponseHandler(HedwigClientImpl client) {
         this.client = client;
         this.sub = client.getSubscriber();
         this.pub = client.getPublisher();
@@ -86,7 +86,7 @@ public class ResponseHandler extends SimpleChannelHandler {
     }
 
     // Public getters needed for the private members
-    public HedwigClient getClient() {
+    public HedwigClientImpl getClient() {
         return client;
     }
 
@@ -113,7 +113,7 @@ public class ResponseHandler extends SimpleChannelHandler {
         // server.
         PubSubResponse response = (PubSubResponse) e.getMessage();
         if (logger.isDebugEnabled())
-            logger.debug("Response received from host: " + HedwigClient.getHostFromChannel(ctx.getChannel())
+            logger.debug("Response received from host: " + HedwigClientImpl.getHostFromChannel(ctx.getChannel())
                          + ", response: " + response);
 
         // Determine if this PubSubResponse is an ack response for a PubSub
@@ -185,7 +185,7 @@ public class ResponseHandler extends SimpleChannelHandler {
     public void handleRedirectResponse(PubSubResponse response, PubSubData pubSubData, Channel channel)
             throws Exception {
         if (logger.isDebugEnabled())
-            logger.debug("Handling a redirect from host: " + HedwigClient.getHostFromChannel(channel) + ", response: "
+            logger.debug("Handling a redirect from host: " + HedwigClientImpl.getHostFromChannel(channel) + ", response: "
                          + response + ", pubSubData: " + pubSubData);
         // In this case, the PubSub request was done to a server that is not
         // responsible for the topic. First make sure that we haven't
@@ -206,7 +206,7 @@ public class ResponseHandler extends SimpleChannelHandler {
         // We will redirect and try to connect to the correct server
         // stored in the StatusMsg of the response. First store the
         // server that we sent the PubSub request to for the topic.
-        ByteString triedServer = ByteString.copyFromUtf8(HedwigSocketAddress.sockAddrStr(HedwigClient
+        ByteString triedServer = ByteString.copyFromUtf8(HedwigSocketAddress.sockAddrStr(HedwigClientImpl
                                  .getHostFromChannel(channel)));
         if (pubSubData.triedServers == null)
             pubSubData.triedServers = new LinkedList<ByteString>();
@@ -277,7 +277,7 @@ public class ResponseHandler extends SimpleChannelHandler {
         // Make sure the host retrieved is not null as there could be some weird
         // channel disconnect events happening during a client shutdown.
         // If it is, just return as there shouldn't be anything we need to do.
-        InetSocketAddress host = HedwigClient.getHostFromChannel(ctx.getChannel());
+        InetSocketAddress host = HedwigClientImpl.getHostFromChannel(ctx.getChannel());
         logger.warn("Channel was disconnected to host: " + host);
         if (host == null)
             return;

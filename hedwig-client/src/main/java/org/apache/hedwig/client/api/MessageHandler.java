@@ -22,27 +22,27 @@ import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.util.Callback;
 
 /**
- * Interface to define the client handler logic to consume messages it is
+ * Interface to define the client handler logic to deliver messages it is
  * subscribed to.
  *
  */
 public interface MessageHandler {
 
     /**
-     * Consumes a message it is subscribed to and has been delivered to it.
+     * Delivers a message which has been published for topic. 
      *
      * @param topic
      *            The topic name where the message came from.
      * @param subscriberId
      *            ID of the subscriber.
      * @param msg
-     *            The message object to consume.
+     *            The message object to deliver.
      * @param callback
-     *            Callback to invoke when the message consumption has been done.
+     *            Callback to invoke when the message delivery has been done.
      * @param context
      *            Calling context that the Callback needs since this is done
      *            asynchronously.
      */
-    public void consume(ByteString topic, ByteString subscriberId, Message msg, Callback<Void> callback, Object context);
+    public void deliver(ByteString topic, ByteString subscriberId, Message msg, Callback<Void> callback, Object context);
 
 }

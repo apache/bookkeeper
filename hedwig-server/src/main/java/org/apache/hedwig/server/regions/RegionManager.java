@@ -85,7 +85,7 @@ public class RegionManager implements SubscriptionEventListener {
                             try {
                                 sub.startDelivery(topic, mySubId, new MessageHandler() {
                                     @Override
-                                    public void consume(final ByteString topic, ByteString subscriberId, Message msg,
+                                    public void deliver(final ByteString topic, ByteString subscriberId, Message msg,
                                     final Callback<Void> callback, final Object context) {
                                         // When messages are first published
                                         // locally, the PublishHandler sets the
@@ -176,7 +176,7 @@ public class RegionManager implements SubscriptionEventListener {
     // Method to shutdown and stop all of the cross-region Hedwig clients.
     public void stop() {
         for (HedwigHubClient client : clients) {
-            client.stop();
+            client.close();
         }
     }
 

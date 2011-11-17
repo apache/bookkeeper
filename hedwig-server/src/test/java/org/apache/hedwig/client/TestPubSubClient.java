@@ -26,9 +26,9 @@ import org.junit.Test;
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.api.MessageHandler;
 import org.apache.hedwig.client.conf.ClientConfiguration;
-import org.apache.hedwig.client.netty.HedwigClient;
-import org.apache.hedwig.client.netty.HedwigPublisher;
-import org.apache.hedwig.client.netty.HedwigSubscriber;
+import org.apache.hedwig.client.HedwigClient;
+import org.apache.hedwig.client.api.Publisher;
+import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
@@ -41,8 +41,8 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
 
     // Client side variables
     protected HedwigClient client;
-    protected HedwigPublisher publisher;
-    protected HedwigSubscriber subscriber;
+    protected Publisher publisher;
+    protected Subscriber subscriber;
 
     // SynchronousQueues to verify async calls
     private final SynchronousQueue<Boolean> queue = new SynchronousQueue<Boolean>();
@@ -77,7 +77,7 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
 
     // Test implementation of subscriber's message handler.
     class TestMessageHandler implements MessageHandler {
-        public void consume(ByteString topic, ByteString subscriberId, Message msg, Callback<Void> callback,
+        public void deliver(ByteString topic, ByteString subscriberId, Message msg, Callback<Void> callback,
                             Object context) {
             new Thread(new Runnable() {
                 @Override
@@ -103,7 +103,7 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
     @Override
     @After
     public void tearDown() throws Exception {
-        client.stop();
+        client.close();
         super.tearDown();
     }
 

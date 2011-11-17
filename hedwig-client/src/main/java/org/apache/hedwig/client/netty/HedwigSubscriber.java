@@ -67,10 +67,10 @@ public class HedwigSubscriber implements Subscriber {
     // Channel Pipeline.
     protected final ConcurrentMap<TopicSubscriber, Channel> topicSubscriber2Channel = new ConcurrentHashMap<TopicSubscriber, Channel>();
 
-    protected final HedwigClient client;
+    protected final HedwigClientImpl client;
     protected final ClientConfiguration cfg;
 
-    public HedwigSubscriber(HedwigClient client) {
+    public HedwigSubscriber(HedwigClientImpl client) {
         this.client = client;
         this.cfg = client.getConfiguration();
     }
@@ -356,11 +356,11 @@ public class HedwigSubscriber implements Subscriber {
         // Before we do the write, store this information into the
         // ResponseHandler so when the server responds, we know what
         // appropriate Callback Data to invoke for the given txn ID.
-        HedwigClient.getResponseHandlerFromChannel(channel).txn2PubSubData.put(txnId, pubSubData);
+        HedwigClientImpl.getResponseHandlerFromChannel(channel).txn2PubSubData.put(txnId, pubSubData);
 
         // Finally, write the Subscribe request through the Channel.
         if (logger.isDebugEnabled())
-            logger.debug("Writing a SubUnsub request to host: " + HedwigClient.getHostFromChannel(channel)
+            logger.debug("Writing a SubUnsub request to host: " + HedwigClientImpl.getHostFromChannel(channel)
                          + " for pubSubData: " + pubSubData);
         ChannelFuture future = channel.write(pubsubRequestBuilder.build());
         future.addListener(new WriteCallback(pubSubData, client));
@@ -405,14 +405,14 @@ public class HedwigSubscriber implements Subscriber {
         // action. Instead, just have a future listener that will log an error
         // message if there was a problem writing the consume request.
         if (logger.isDebugEnabled())
-            logger.debug("Writing a Consume request to host: " + HedwigClient.getHostFromChannel(channel)
+            logger.debug("Writing a Consume request to host: " + HedwigClientImpl.getHostFromChannel(channel)
                          + " with messageSeqId: " + messageSeqId + " for pubSubData: " + pubSubData);
         ChannelFuture future = channel.write(pubsubRequestBuilder.build());
         future.addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
                 if (!future.isSuccess()) {
-                    logger.error("Error writing a Consume request to host: " + HedwigClient.getHostFromChannel(channel)
+                    logger.error("Error writing a Consume request to host: " + HedwigClientImpl.getHostFromChannel(channel)
                                  + " with messageSeqId: " + messageSeqId + " for pubSubData: " + pubSubData);
                 }
             }
@@ -460,7 +460,7 @@ public class HedwigSubscriber implements Subscriber {
         // Register the MessageHandler with the subscribe Channel's
         // Response Handler.
         Channel topicSubscriberChannel = topicSubscriber2Channel.get(topicSubscriber);
-        HedwigClient.getResponseHandlerFromChannel(topicSubscriberChannel).getSubscribeResponseHandler()
+        HedwigClientImpl.getResponseHandlerFromChannel(topicSubscriberChannel).getSubscribeResponseHandler()
         .setMessageHandler(messageHandler);
         // Now make the TopicSubscriber Channel readable (it is set to not be
         // readable when the initial subscription is done). Note that this is an
@@ -497,7 +497,7 @@ public class HedwigSubscriber implements Subscriber {
         // Unregister the MessageHandler for the subscribe Channel's
         // Response Handler.
         Channel topicSubscriberChannel = topicSubscriber2Channel.get(topicSubscriber);
-        HedwigClient.getResponseHandlerFromChannel(topicSubscriberChannel).getSubscribeResponseHandler()
+        HedwigClientImpl.getResponseHandlerFromChannel(topicSubscriberChannel).getSubscribeResponseHandler()
         .setMessageHandler(null);
         // Now make the TopicSubscriber channel not-readable. This will buffer
         // up messages if any are sent from the server. Note that this is an
@@ -545,7 +545,7 @@ public class HedwigSubscriber implements Subscriber {
             Channel channel = topicSubscriber2Channel.get(topicSubscriber);
             topicSubscriber2Channel.remove(topicSubscriber);
             // Close the subscribe channel asynchronously.
-            HedwigClient.getResponseHandlerFromChannel(channel).channelClosedExplicitly = true;
+            HedwigClientImpl.getResponseHandlerFromChannel(channel).channelClosedExplicitly = true;
             ChannelFuture future = channel.close();
             future.addListener(new ChannelFutureListener() {
                 @Override

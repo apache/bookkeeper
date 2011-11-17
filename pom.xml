@@ -72,7 +72,8 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>2.8</version>
 	<configuration>
-	  <subpackages>org.apache.bookkeeper.client</subpackages>
+	  <additionalparam>-exclude org.apache.hedwig.client.netty:org.apache.hedwig.client.benchmark:org.apache.hedwig.client.data:org.apache.hedwig.client.exceptions:org.apache.hedwig.client.handlers:org.apache.hedwig.client.ssl</additionalparam>
+	  <subpackages>org.apache.bookkeeper.client:org.apache.hedwig.client:org.apache.hedwig.util:org.apache.hedwig.protocol:org.apache.hedwig.exceptions</subpackages>
           <groups>
 	    <group>
               <title>Bookkeeper</title>

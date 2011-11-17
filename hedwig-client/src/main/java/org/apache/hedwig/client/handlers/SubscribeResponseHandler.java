@@ -30,7 +30,7 @@ import org.apache.hedwig.client.api.MessageHandler;
 import org.apache.hedwig.client.data.MessageConsumeData;
 import org.apache.hedwig.client.data.PubSubData;
 import org.apache.hedwig.client.data.TopicSubscriber;
-import org.apache.hedwig.client.netty.HedwigClient;
+import org.apache.hedwig.client.netty.HedwigClientImpl;
 import org.apache.hedwig.client.netty.ResponseHandler;
 import org.apache.hedwig.exceptions.PubSubException.ClientAlreadySubscribedException;
 import org.apache.hedwig.exceptions.PubSubException.ServiceDownException;
@@ -88,13 +88,13 @@ public class SubscribeResponseHandler {
         // If this was not a successful response to the Subscribe request, we
         // won't be using the Netty Channel created so just close it.
         if (!response.getStatusCode().equals(StatusCode.SUCCESS)) {
-            HedwigClient.getResponseHandlerFromChannel(channel).channelClosedExplicitly = true;
+            HedwigClientImpl.getResponseHandlerFromChannel(channel).channelClosedExplicitly = true;
             channel.close();
         }
 
         if (logger.isDebugEnabled())
             logger.debug("Handling a Subscribe response: " + response + ", pubSubData: " + pubSubData + ", host: "
-                         + HedwigClient.getHostFromChannel(channel));
+                         + HedwigClientImpl.getHostFromChannel(channel));
         switch (response.getStatusCode()) {
         case SUCCESS:
             // For successful Subscribe requests, store this Channel locally
@@ -217,8 +217,8 @@ public class SubscribeResponseHandler {
         }
         MessageConsumeData messageConsumeData = new MessageConsumeData(origSubData.topic, origSubData.subscriberId,
                 message);
-        messageHandler.consume(origSubData.topic, origSubData.subscriberId, message, responseHandler.getClient()
-                               .getConsumeCallback(), messageConsumeData);
+        messageHandler.deliver(origSubData.topic, origSubData.subscriberId, message, responseHandler.getClient()
+                .getConsumeCallback(), messageConsumeData);
     }
 
     /**

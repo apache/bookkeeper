@@ -20,7 +20,7 @@ package org.apache.hedwig.server.regions;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 
 import org.apache.hedwig.client.conf.ClientConfiguration;
-import org.apache.hedwig.client.netty.HedwigClient;
+import org.apache.hedwig.client.netty.HedwigClientImpl;
 
 /**
  * This is a hub specific implementation of the HedwigClient. All this does
@@ -28,7 +28,7 @@ import org.apache.hedwig.client.netty.HedwigClient;
  * Creating this class so we can call the protected method in the parent to set
  * the subscriber since we don't want to expose that API to the public.
  */
-public class HedwigHubClient extends HedwigClient {
+public class HedwigHubClient extends HedwigClientImpl {
 
     // Constructor when we already have a ChannelFactory instantiated.
     public HedwigHubClient(ClientConfiguration cfg, ClientSocketChannelFactory channelFactory) {

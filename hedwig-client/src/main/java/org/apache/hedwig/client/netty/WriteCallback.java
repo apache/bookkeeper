@@ -37,11 +37,11 @@ public class WriteCallback implements ChannelFutureListener {
 
     // Private member variables
     private PubSubData pubSubData;
-    private final HedwigClient client;
+    private final HedwigClientImpl client;
     private final ClientConfiguration cfg;
 
     // Constructor
-    public WriteCallback(PubSubData pubSubData, HedwigClient client) {
+    public WriteCallback(PubSubData pubSubData, HedwigClientImpl client) {
         super();
         this.pubSubData = pubSubData;
         this.client = client;
@@ -56,14 +56,14 @@ public class WriteCallback implements ChannelFutureListener {
 
         // When the write operation to the server is done, we just need to check
         // if it was successful or not.
-        InetSocketAddress host = HedwigClient.getHostFromChannel(future.getChannel());
+        InetSocketAddress host = HedwigClientImpl.getHostFromChannel(future.getChannel());
         if (!future.isSuccess()) {
             logger.error("Error writing on channel to host: " + host);
             // On a write failure for a PubSubRequest, we also want to remove
             // the saved txnId to PubSubData in the ResponseHandler. These
             // requests will not receive an ack response from the server
             // so there is no point storing that information there anymore.
-            HedwigClient.getResponseHandlerFromChannel(future.getChannel()).txn2PubSubData.remove(pubSubData.txnId);
+            HedwigClientImpl.getResponseHandlerFromChannel(future.getChannel()).txn2PubSubData.remove(pubSubData.txnId);
 
             // If we were not able to write on the channel to the server host,
             // the host could have died or something is wrong with the channel

@@ -52,7 +52,7 @@ public class BenchmarkPublisher extends BenchmarkWorker {
 
         subscriber.startDelivery(topic, subId, new MessageHandler() {
             @Override
-            public void consume(ByteString topic, ByteString subscriberId, Message msg, Callback<Void> callback,
+            public void deliver(ByteString topic, ByteString subscriberId, Message msg, Callback<Void> callback,
             Object context) {
                 // noop
                 callback.operationFinished(context, null);

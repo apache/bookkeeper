@@ -24,8 +24,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.protobuf.ByteString;
-import org.apache.hedwig.client.netty.HedwigClient;
-import org.apache.hedwig.client.netty.HedwigPublisher;
+import org.apache.hedwig.client.HedwigClient;
+import org.apache.hedwig.client.api.Publisher;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.server.HedwigRegionTestBase;
@@ -76,7 +76,7 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
         // Now start publishing messages for the subscribed topics in one of the
         // regions and verify that it gets delivered and consumed in all of the
         // other ones.
-        HedwigPublisher publisher = regionClientsMap.values().iterator().next().getPublisher();
+        Publisher publisher = regionClientsMap.values().iterator().next().getPublisher();
         for (int i = 0; i < batchSize; i++) {
             publisher.asyncPublish(ByteString.copyFromUtf8("Topic" + i), Message.newBuilder().setBody(
                                        ByteString.copyFromUtf8("Message" + i)).build(), new TestCallback(queue), null);

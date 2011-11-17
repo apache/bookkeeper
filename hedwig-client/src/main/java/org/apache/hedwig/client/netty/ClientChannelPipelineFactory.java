@@ -30,9 +30,9 @@ import org.apache.hedwig.protocol.PubSubProtocol;
 
 public class ClientChannelPipelineFactory implements ChannelPipelineFactory {
 
-    private HedwigClient client;
+    private HedwigClientImpl client;
 
-    public ClientChannelPipelineFactory(HedwigClient client) {
+    public ClientChannelPipelineFactory(HedwigClientImpl client) {
         this.client = client;
     }
 

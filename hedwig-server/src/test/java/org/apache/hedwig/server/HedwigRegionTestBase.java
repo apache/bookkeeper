@@ -30,7 +30,7 @@ import org.junit.After;
 import org.junit.Before;
 
 import org.apache.hedwig.client.conf.ClientConfiguration;
-import org.apache.hedwig.client.netty.HedwigClient;
+import org.apache.hedwig.client.HedwigClient;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.netty.PubSubServer;
 import org.apache.hedwig.server.persistence.BookKeeperTestBase;
@@ -203,7 +203,7 @@ public abstract class HedwigRegionTestBase extends TestCase {
         logger.info("tearDown starting");
         // Stop all of the HedwigClients for all regions
         for (HedwigClient client : regionClientsMap.values()) {
-            client.stop();
+            client.close();
         }
         regionClientsMap.clear();
         // Shutdown all of the PubSubServers in all regions

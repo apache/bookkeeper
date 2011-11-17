@@ -25,7 +25,7 @@ import org.jboss.netty.channel.Channel;
 
 import org.apache.hedwig.client.data.MessageConsumeData;
 import org.apache.hedwig.client.data.TopicSubscriber;
-import org.apache.hedwig.client.netty.HedwigClient;
+import org.apache.hedwig.client.netty.HedwigClientImpl;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.util.Callback;
 
@@ -42,9 +42,9 @@ public class MessageConsumeCallback implements Callback<Void> {
 
     private static Logger logger = LoggerFactory.getLogger(MessageConsumeCallback.class);
 
-    private final HedwigClient client;
+    private final HedwigClientImpl client;
 
-    public MessageConsumeCallback(HedwigClient client) {
+    public MessageConsumeCallback(HedwigClientImpl client) {
         this.client = client;
     }
 
@@ -61,7 +61,7 @@ public class MessageConsumeCallback implements Callback<Void> {
         public void run() {
             // Try to consume the message again
             Channel topicSubscriberChannel = client.getSubscriber().getChannelForTopic(topicSubscriber);
-            HedwigClient.getResponseHandlerFromChannel(topicSubscriberChannel).getSubscribeResponseHandler()
+            HedwigClientImpl.getResponseHandlerFromChannel(topicSubscriberChannel).getSubscribeResponseHandler()
             .asyncMessageConsume(messageConsumeData.msg);
         }
     }
@@ -72,7 +72,7 @@ public class MessageConsumeCallback implements Callback<Void> {
         // Message has been successfully consumed by the client app so callback
         // to the ResponseHandler indicating that the message is consumed.
         Channel topicSubscriberChannel = client.getSubscriber().getChannelForTopic(topicSubscriber);
-        HedwigClient.getResponseHandlerFromChannel(topicSubscriberChannel).getSubscribeResponseHandler()
+        HedwigClientImpl.getResponseHandlerFromChannel(topicSubscriberChannel).getSubscribeResponseHandler()
         .messageConsumed(messageConsumeData.msg);
     }
 

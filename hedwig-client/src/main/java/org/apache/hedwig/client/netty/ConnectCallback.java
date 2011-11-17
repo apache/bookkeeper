@@ -39,13 +39,13 @@ public class ConnectCallback implements ChannelFutureListener {
     // Private member variables
     private PubSubData pubSubData;
     private InetSocketAddress host;
-    private final HedwigClient client;
+    private final HedwigClientImpl client;
     private final HedwigPublisher pub;
     private final HedwigSubscriber sub;
     private final ClientConfiguration cfg;
 
     // Constructor
-    public ConnectCallback(PubSubData pubSubData, InetSocketAddress host, HedwigClient client) {
+    public ConnectCallback(PubSubData pubSubData, InetSocketAddress host, HedwigClientImpl client) {
         super();
         this.pubSubData = pubSubData;
         this.host = host;
@@ -101,14 +101,14 @@ public class ConnectCallback implements ChannelFutureListener {
             // this channel will be closed but we'll always publish on the
             // cached channel in the HedwigPublisher.host2Channel map.
             pub.storeHost2ChannelMapping(future.getChannel());
-            pub.doPublish(pubSubData, pub.host2Channel.get(HedwigClient.getHostFromChannel(future.getChannel())));
+            pub.doPublish(pubSubData, pub.host2Channel.get(HedwigClientImpl.getHostFromChannel(future.getChannel())));
         } else if (pubSubData.operationType.equals(OperationType.UNSUBSCRIBE)) {
             // Unsubscribe Request so store this Channel connection in the
             // HedwigPublisher Map (if it doesn't exist yet) and then do the
             // unsubscribe. Unsubscribe requests will share and reuse
             // the netty Channel connections that Publish requests use.
             pub.storeHost2ChannelMapping(future.getChannel());
-            sub.doSubUnsub(pubSubData, pub.host2Channel.get(HedwigClient.getHostFromChannel(future.getChannel())));
+            sub.doSubUnsub(pubSubData, pub.host2Channel.get(HedwigClientImpl.getHostFromChannel(future.getChannel())));
         } else {
             // Subscribe Request. We do not store the Channel connection yet for
             // Subscribes here. This will be done only when we've found the

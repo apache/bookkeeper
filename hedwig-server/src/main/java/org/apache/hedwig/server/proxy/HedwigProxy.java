@@ -36,7 +36,7 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.logging.InternalLoggerFactory;
 import org.jboss.netty.logging.Log4JLoggerFactory;
 
-import org.apache.hedwig.client.netty.HedwigClient;
+import org.apache.hedwig.client.HedwigClient;
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
 import org.apache.hedwig.server.common.TerminateJVMExceptionHandler;
 import org.apache.hedwig.server.handlers.Handler;
@@ -120,7 +120,7 @@ public class HedwigProxy {
 
     public void shutdown() {
         allChannels.close().awaitUninterruptibly();
-        client.stop();
+        client.close();
         serverSocketChannelFactory.releaseExternalResources();
     }
 

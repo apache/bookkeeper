@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 
 import org.apache.hedwig.client.data.PubSubData;
-import org.apache.hedwig.client.netty.HedwigClient;
+import org.apache.hedwig.client.netty.HedwigClientImpl;
 import org.apache.hedwig.client.netty.ResponseHandler;
 import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException;
 import org.apache.hedwig.exceptions.PubSubException.ServiceDownException;
@@ -43,7 +43,7 @@ public class UnsubscribeResponseHandler {
             throws Exception {
         if (logger.isDebugEnabled())
             logger.debug("Handling an Unsubscribe response: " + response + ", pubSubData: " + pubSubData + ", host: "
-                         + HedwigClient.getHostFromChannel(channel));
+                         + HedwigClientImpl.getHostFromChannel(channel));
         switch (response.getStatusCode()) {
         case SUCCESS:
             // For successful Unsubscribe requests, we can now safely close the

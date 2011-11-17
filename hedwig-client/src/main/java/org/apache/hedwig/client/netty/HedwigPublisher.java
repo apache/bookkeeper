@@ -56,10 +56,10 @@ public class HedwigPublisher implements Publisher {
     // unsubscribe requests.
     protected final ConcurrentMap<InetSocketAddress, Channel> host2Channel = new ConcurrentHashMap<InetSocketAddress, Channel>();
 
-    private final HedwigClient client;
+    private final HedwigClientImpl client;
     private final ClientConfiguration cfg;
 
-    protected HedwigPublisher(HedwigClient client) {
+    protected HedwigPublisher(HedwigClientImpl client) {
         this.client = client;
         this.cfg = client.getConfiguration();
     }
@@ -179,11 +179,11 @@ public class HedwigPublisher implements Publisher {
         // Before we do the write, store this information into the
         // ResponseHandler so when the server responds, we know what
         // appropriate Callback Data to invoke for the given txn ID.
-        HedwigClient.getResponseHandlerFromChannel(channel).txn2PubSubData.put(txnId, pubSubData);
+        HedwigClientImpl.getResponseHandlerFromChannel(channel).txn2PubSubData.put(txnId, pubSubData);
 
         // Finally, write the Publish request through the Channel.
         if (logger.isDebugEnabled())
-            logger.debug("Writing a Publish request to host: " + HedwigClient.getHostFromChannel(channel)
+            logger.debug("Writing a Publish request to host: " + HedwigClientImpl.getHostFromChannel(channel)
                          + " for pubSubData: " + pubSubData);
         ChannelFuture future = channel.write(pubsubRequestBuilder.build());
         future.addListener(new WriteCallback(pubSubData, client));
@@ -193,7 +193,7 @@ public class HedwigPublisher implements Publisher {
     // exist yet). Retrieve the hostname info from the Channel created via the
     // RemoteAddress tied to it.
     protected synchronized void storeHost2ChannelMapping(Channel channel) {
-        InetSocketAddress host = HedwigClient.getHostFromChannel(channel);
+        InetSocketAddress host = HedwigClientImpl.getHostFromChannel(channel);
         if (!host2Channel.containsKey(host)) {
             if (logger.isDebugEnabled())
                 logger.debug("Storing a new Channel mapping for host: " + host);
@@ -216,7 +216,7 @@ public class HedwigPublisher implements Publisher {
             // topic. Close these redundant channels as they won't be used.
             if (logger.isDebugEnabled())
                 logger.debug("Channel mapping to host: " + host + " already exists so no need to store it.");
-            HedwigClient.getResponseHandlerFromChannel(channel).channelClosedExplicitly = true;
+            HedwigClientImpl.getResponseHandlerFromChannel(channel).channelClosedExplicitly = true;
             channel.close();
         }
     }

@@ -33,8 +33,8 @@ import org.junit.Test;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.conf.ClientConfiguration;
-import org.apache.hedwig.client.netty.HedwigClient;
-import org.apache.hedwig.client.netty.HedwigPublisher;
+import org.apache.hedwig.client.HedwigClient;
+import org.apache.hedwig.client.api.Publisher;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.server.PubSubServerStandAloneTestBase;
@@ -97,7 +97,7 @@ public class TestPubSubServer extends PubSubServerStandAloneTestBase {
     }
 
     public void runPublishRequest(final int port) throws Exception {
-        HedwigPublisher publisher = new HedwigClient(new ClientConfiguration() {
+        Publisher publisher = new HedwigClient(new ClientConfiguration() {
             @Override
             public InetSocketAddress getDefaultServerHost() {
                 return new InetSocketAddress("localhost", port);

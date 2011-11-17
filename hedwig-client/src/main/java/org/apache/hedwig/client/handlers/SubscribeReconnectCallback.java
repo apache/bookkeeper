@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.hedwig.client.api.MessageHandler;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.data.PubSubData;
-import org.apache.hedwig.client.netty.HedwigClient;
+import org.apache.hedwig.client.netty.HedwigClientImpl;
 import org.apache.hedwig.client.netty.HedwigSubscriber;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException;
@@ -45,13 +45,13 @@ public class SubscribeReconnectCallback implements Callback<Void> {
 
     // Private member variables
     private final PubSubData origSubData;
-    private final HedwigClient client;
+    private final HedwigClientImpl client;
     private final HedwigSubscriber sub;
     private final ClientConfiguration cfg;
     private final MessageHandler messageHandler;
 
     // Constructor
-    public SubscribeReconnectCallback(PubSubData origSubData, HedwigClient client, MessageHandler messageHandler) {
+    public SubscribeReconnectCallback(PubSubData origSubData, HedwigClientImpl client, MessageHandler messageHandler) {
         this.origSubData = origSubData;
         this.client = client;
         this.sub = client.getSubscriber();

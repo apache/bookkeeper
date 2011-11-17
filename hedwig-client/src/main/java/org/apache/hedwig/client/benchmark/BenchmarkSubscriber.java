@@ -73,7 +73,7 @@ public class BenchmarkSubscriber extends BenchmarkWorker implements Callable<Voi
             subscriber.startDelivery(ByteString.copyFromUtf8(topic), subId, new MessageHandler() {
 
                 @Override
-                public void consume(ByteString thisTopic, ByteString subscriberId, Message msg,
+                public void deliver(ByteString thisTopic, ByteString subscriberId, Message msg,
                 Callback<Void> callback, Object context) {
                     if (logger.isDebugEnabled())
                         logger.debug("Got message from src-region: " + msg.getSrcRegion() + " with seq-id: "

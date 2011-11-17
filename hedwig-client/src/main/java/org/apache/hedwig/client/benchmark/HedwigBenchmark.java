@@ -28,9 +28,9 @@ import org.jboss.netty.logging.Log4JLoggerFactory;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.conf.ClientConfiguration;
-import org.apache.hedwig.client.netty.HedwigClient;
-import org.apache.hedwig.client.netty.HedwigPublisher;
-import org.apache.hedwig.client.netty.HedwigSubscriber;
+import org.apache.hedwig.client.HedwigClient;
+import org.apache.hedwig.client.api.Publisher;
+import org.apache.hedwig.client.api.Subscriber;
 
 public class HedwigBenchmark implements Callable<Void> {
     protected static final Logger logger = LoggerFactory.getLogger(HedwigBenchmark.class);
@@ -38,8 +38,8 @@ public class HedwigBenchmark implements Callable<Void> {
     static final String TOPIC_PREFIX = "topic";
 
     private final HedwigClient client;
-    private final HedwigPublisher publisher;
-    private final HedwigSubscriber subscriber;
+    private final Publisher publisher;
+    private final Subscriber subscriber;
 
     public HedwigBenchmark(ClientConfiguration cfg) {
         client = new HedwigClient(cfg);

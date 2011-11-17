@@ -82,7 +82,7 @@ public class ProxyStartDeliveryHandler implements Handler {
 
             MessageHandler handler = new MessageHandler() {
                 @Override
-                public void consume(ByteString topic, ByteString subscriberId, Message msg,
+                public void deliver(ByteString topic, ByteString subscriberId, Message msg,
                 final Callback<Void> callback, final Object context) {
 
                     PubSubResponse response = PubSubResponse.newBuilder().setProtocolVersion(
