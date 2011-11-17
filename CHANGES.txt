@@ -96,7 +96,7 @@ BUGFIXES:
  
   BOOKKEEPER-80: subscription msg queue race condition in hedwig c++ client (Sijie Guo via ivank)
 
-  
+  BOOKKEEPER-87: TestHedwigHub exhausts direct buffer memory with netty 3.2.4.Final (ivank via fpj)  
 
 IMPROVEMENTS:
 
