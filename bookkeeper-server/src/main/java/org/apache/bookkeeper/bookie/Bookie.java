@@ -128,19 +128,19 @@ public class Bookie extends Thread {
      * <p>
      * Before flushing, SyncThread first records a log marker {journalId, journalPos} in memory,
      * which indicates entries before this log marker would be persisted to ledger files.
-     * Then sync thread begans flush ledger index pages to ledger index files, flush entry
+     * Then sync thread begins flushing ledger index pages to ledger index files, flush entry
      * logger to ensure all entries persisted to entry loggers for future reads.
      * </p>
      * <p>
      * After all data has been persisted to ledger index files and entry loggers, it is safe
      * to persist the log marker to disk. If bookie failed after persist log mark,
-     * bookie is able to relay journal entries started from last log mark without lossing
+     * bookie is able to relay journal entries started from last log mark without losing
      * any entries.
      * </p>
      * <p>
      * Those journal files whose id are less than the log id in last log mark, could be
      * removed safely after persisting last log mark. We provide a setting to let user keeping
-     * number of old journal files which may be used for munually recovery in critical disaster.
+     * number of old journal files which may be used for manual recovery in critical disaster.
      * </p>
      */
     class SyncThread extends Thread {
@@ -190,7 +190,7 @@ public class Bookie extends Thread {
                 }
                 lastLogMark.rollLog();
 
-                // list the journals whose has been marked
+                // list the journals that have been marked
                 List<Long> logs = listJournalIds(journalDirectory, new JournalIdFilter() {
                     @Override
                     public boolean accept(long journalId) {
@@ -769,7 +769,7 @@ public class Bookie extends Thread {
                             }
                             toFlush.clear();
 
-                            // check wether journal file is over file limit
+                            // check whether journal file is over file limit
                             if (bc.position() > MAX_JOURNAL_SIZE) {
                                 logFile.close();
                                 logFile = null;

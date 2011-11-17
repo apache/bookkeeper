@@ -109,3 +109,5 @@ IMPROVEMENTS:
  hedwig-client/
 
   BOOKKEEPER-44: Reuse publish channel to default server to avoid too many connect requests to default server when lots of producers came in same time (Sijie Guo via breed)
+
+  BOOKKEEPER-109: Add documentation to describe how bookies flushes data (Sijie Guo via fpj)
