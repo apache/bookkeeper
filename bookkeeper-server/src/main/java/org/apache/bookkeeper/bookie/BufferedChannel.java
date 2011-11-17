@@ -44,6 +44,14 @@ public class BufferedChannel
         position = bc.position();
         writeBufferStartPosition = position;
     }
+
+    /**
+     * @return file channel
+     */
+    FileChannel getFileChannel() {
+        return this.bc;
+    }
+
     /*    public void close() throws IOException {
             bc.close();
         }

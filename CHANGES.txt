@@ -70,6 +70,8 @@ BUGFIXES:
 
   BOOKKEEPER-104: Add versioning between bookie and its filesystem layout (ivank)
 
+  BOOKKEEPER-81: disk space of garbage collected entry logger files isn't reclaimed util process quit (Sijie Guo via fpj)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)

@@ -218,6 +218,15 @@ public class EntryLogger {
                                 // This means the entry log is not associated with any active ledgers anymore.
                                 // We can remove this entry log file now.
                                 LOG.info("Deleting entryLogId " + entryLogId + " as it has no active ledgers!");
+                                BufferedChannel bc = channels.remove(entryLogId);
+                                if (null != bc) {
+                                    // close its underlying file channel, so it could be deleted really
+                                    try {
+                                        bc.getFileChannel().close();
+                                    } catch (IOException ie) {
+                                        LOG.warn("Exception while closing garbage colected entryLog file : ", ie);
+                                    }
+                                }
                                 File entryLogFile;
                                 try {
                                     entryLogFile = findFile(entryLogId);
@@ -227,7 +236,6 @@ public class EntryLogger {
                                     continue;
                                 }
                                 entryLogFile.delete();
-                                channels.remove(entryLogId);
                                 entryLogs2LedgersMap.remove(entryLogId);
                             }
                         }
