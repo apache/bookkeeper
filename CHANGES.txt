@@ -78,6 +78,8 @@ BUGFIXES:
 
   BOOKKEEPER-115: LocalBookKeeper fails after BOOKKEEPER-108 (ivank)
 
+  BOOKKEEPER-114: add a shutdown hook to shut down bookie server safely. (Sijie via ivank)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)

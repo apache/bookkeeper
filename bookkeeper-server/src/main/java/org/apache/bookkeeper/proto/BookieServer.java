@@ -243,8 +243,20 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
                            conf.getBookiePort(), conf.getZkServers(),
                            conf.getJournalDirName(), sb);
         LOG.info(hello);
-        BookieServer bs = new BookieServer(conf);
+        final BookieServer bs = new BookieServer(conf);
         bs.start();
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                try {
+                    bs.shutdown();
+                    LOG.info("Shut down bookie server successfully");
+                } catch (InterruptedException ie) {
+                    LOG.warn("Exception when shutting down bookie server : ", ie);
+                }
+            }
+        });
+        LOG.info("Register shutdown hook successfully");
         bs.join();
     }
 
