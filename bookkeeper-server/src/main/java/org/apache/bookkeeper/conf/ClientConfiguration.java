@@ -80,7 +80,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      * @return client configuration
      */
     public ClientConfiguration setThrottleValue(int throttle) {
-        this.addProperty(THROTTLE, Integer.toString(throttle));
+        this.setProperty(THROTTLE, Integer.toString(throttle));
         return this;
     }
 
@@ -109,7 +109,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      * @return client configuration
      */
     public ClientConfiguration setBookieRecoveryDigestType(DigestType digestType) {
-        this.addProperty(DIGEST_TYPE, digestType.toString());
+        this.setProperty(DIGEST_TYPE, digestType.toString());
         return this;
     }
 
@@ -138,7 +138,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      * @return client configuration
      */
     public ClientConfiguration setBookieRecoveryPasswd(byte[] passwd) {
-        addProperty(PASSWD, new String(passwd));
+        setProperty(PASSWD, new String(passwd));
         return this;
     }
 
@@ -168,7 +168,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      * @return client configuration
      */
     public ClientConfiguration setClientTcpNoDelay(boolean noDelay) {
-        addProperty(CLIENT_TCP_NODELAY, Boolean.toString(noDelay));
+        setProperty(CLIENT_TCP_NODELAY, Boolean.toString(noDelay));
         return this;
     }
 
@@ -188,7 +188,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      *          ZooKeeper servers to connect
      */
     public ClientConfiguration setZkServers(String zkServers) {
-        addProperty(ZK_SERVERS, zkServers);
+        setProperty(ZK_SERVERS, zkServers);
         return this;
     }
 
@@ -209,7 +209,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      * @return client configuration
      */
     public ClientConfiguration setZkTimeout(int zkTimeout) {
-        addProperty(ZK_SERVERS, Integer.toString(zkTimeout));
+        setProperty(ZK_SERVERS, Integer.toString(zkTimeout));
         return this;
     }
 

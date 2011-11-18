@@ -88,7 +88,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      *          new log size limitation
      */
     public ServerConfiguration setEntryLogSizeLimit(long logSizeLimit) {
-        this.addProperty(ENTRY_LOG_SIZE_LIMIT, Long.toString(logSizeLimit));
+        this.setProperty(ENTRY_LOG_SIZE_LIMIT, Long.toString(logSizeLimit));
         return this;
     }
 
@@ -109,7 +109,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * @return server configuration
      */
     public ServerConfiguration setGcWaitTime(long gcWaitTime) {
-        this.addProperty(GC_WAIT_TIME, Long.toString(gcWaitTime));
+        this.setProperty(GC_WAIT_TIME, Long.toString(gcWaitTime));
         return this;
     }
 
@@ -130,7 +130,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * @return server configuration
      */
     public ServerConfiguration setFlushInterval(int flushInterval) {
-        this.addProperty(FLUSH_INTERVAL, Integer.toString(flushInterval));
+        this.setProperty(FLUSH_INTERVAL, Integer.toString(flushInterval));
         return this;
     }
 
@@ -187,7 +187,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * @return server configuration
      */
     public ServerConfiguration setMaxJournalSize(long maxJournalSize) {
-        this.addProperty(MAX_JOURNAL_SIZE, Long.toString(maxJournalSize));
+        this.setProperty(MAX_JOURNAL_SIZE, Long.toString(maxJournalSize));
         return this;
     }
 
@@ -208,7 +208,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * @return server configuration
      */
     public ServerConfiguration setMaxBackupJournals(int maxBackupJournals) {
-        this.addProperty(MAX_BACKUP_JOURNALS, Integer.toString(maxBackupJournals));
+        this.setProperty(MAX_BACKUP_JOURNALS, Integer.toString(maxBackupJournals));
         return this;
     }
 
@@ -229,7 +229,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * @return server configuration
      */
     public ServerConfiguration setBookiePort(int port) {
-        this.addProperty(BOOKIE_PORT, Integer.toString(port));
+        this.setProperty(BOOKIE_PORT, Integer.toString(port));
         return this;
     }
 
@@ -250,7 +250,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * @return server configuration
      */
     public ServerConfiguration setJournalDirName(String journalDir) {
-        this.addProperty(JOURNAL_DIR, journalDir);
+        this.setProperty(JOURNAL_DIR, journalDir);
         return this;
     }
 
@@ -291,7 +291,7 @@ public class ServerConfiguration extends AbstractConfiguration {
         if (null == ledgerDirs) {
             return this;
         }
-        this.addProperty(LEDGER_DIRS, StringUtils.join(ledgerDirs, SEP));
+        this.setProperty(LEDGER_DIRS, StringUtils.join(ledgerDirs, SEP));
         return this;
     }
 
@@ -329,7 +329,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * @return server configuration
      */
     public ServerConfiguration setServerTcpNoDelay(boolean noDelay) {
-        addProperty(SERVER_TCP_NODELAY, Boolean.toString(noDelay));
+        setProperty(SERVER_TCP_NODELAY, Boolean.toString(noDelay));
         return this;
     }
 
@@ -349,7 +349,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      *          ZooKeeper servers to connect
      */
     public ServerConfiguration setZkServers(String zkServers) {
-        addProperty(ZK_SERVERS, zkServers);
+        setProperty(ZK_SERVERS, zkServers);
         return this;
     }
 
@@ -370,7 +370,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * @return server configuration
      */
     public ServerConfiguration setZkTimeout(int zkTimeout) {
-        addProperty(ZK_SERVERS, Integer.toString(zkTimeout));
+        setProperty(ZK_SERVERS, Integer.toString(zkTimeout));
         return this;
     }
 
