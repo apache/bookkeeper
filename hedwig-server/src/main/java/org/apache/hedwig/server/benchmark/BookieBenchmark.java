@@ -21,6 +21,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.slf4j.Logger;
@@ -44,7 +45,7 @@ public class BookieBenchmark extends AbstractBenchmark {
 
     public BookieBenchmark(String bookieHostPort)  throws Exception {
         channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
-        bkc = new BookieClient(channelFactory, executor);
+        bkc = new BookieClient(new ClientConfiguration(), channelFactory, executor);
         String[] hostPort = bookieHostPort.split(":");
         addr = new InetSocketAddress(hostPort[0], Integer.parseInt(hostPort[1]));
 

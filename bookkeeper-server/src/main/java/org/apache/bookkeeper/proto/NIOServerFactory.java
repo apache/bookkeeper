@@ -34,6 +34,8 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.bookkeeper.conf.ServerConfiguration;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,12 +72,15 @@ public class NIOServerFactory extends Thread {
 
     long minLatency = 99999999;
 
-    public NIOServerFactory(int port, PacketProcessor processor) throws IOException {
+    ServerConfiguration conf;
+
+    public NIOServerFactory(ServerConfiguration conf, PacketProcessor processor) throws IOException {
         super("NIOServerFactory");
         setDaemon(true);
         this.processor = processor;
+        this.conf = conf;
         this.ss = ServerSocketChannel.open();
-        ss.socket().bind(new InetSocketAddress(port));
+        ss.socket().bind(new InetSocketAddress(conf.getBookiePort()));
         ss.configureBlocking(false);
         ss.register(selector, SelectionKey.OP_ACCEPT);
         start();
@@ -352,11 +357,7 @@ public class NIOServerFactory extends Thread {
         public Cnxn(SocketChannel sock, SelectionKey sk) throws IOException {
             this.sock = sock;
             this.sk = sk;
-            if (System.getProperty("server.tcpnodelay", "true").equals("true")) {
-                sock.socket().setTcpNoDelay(true);
-            } else {
-                sock.socket().setTcpNoDelay(false);
-            }
+            sock.socket().setTcpNoDelay(conf.getServerTcpNoDelay());
             sock.socket().setSoLinger(true, 2);
             sk.interestOps(SelectionKey.OP_READ);
             if (LOG.isTraceEnabled()) {

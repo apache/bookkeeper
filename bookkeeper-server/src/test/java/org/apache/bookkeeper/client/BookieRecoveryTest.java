@@ -40,6 +40,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.test.BaseTestCase;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -106,13 +108,16 @@ public class BookieRecoveryTest extends BaseTestCase {
     @Before
     @Override
     public void setUp() throws Exception {
-        super.setUp();
         // Set up the configuration properties needed.
-        System.setProperty("digestType", digestType.toString());
-        System.setProperty("passwd", "");
+        baseClientConf.setBookieRecoveryDigestType(digestType);
+        baseClientConf.setBookieRecoveryPasswd("".getBytes());
+        super.setUp();
+
         sync = new SyncObject();
         bookieRecoverCb = new BookieRecoverCallback();
-        bkAdmin = new BookKeeperAdmin(HOSTPORT);
+        ClientConfiguration adminConf = new ClientConfiguration(baseClientConf);
+        adminConf.setZkServers(HOSTPORT);
+        bkAdmin = new BookKeeperAdmin(adminConf);
     }
 
     @After
@@ -150,7 +155,8 @@ public class BookieRecoveryTest extends BaseTestCase {
         InterruptedException {
         List<LedgerHandle> lhs = new ArrayList<LedgerHandle>();
         for (int i = 0; i < numLedgers; i++) {
-            lhs.add(bkc.createLedger(ensemble, quorum, digestType, System.getProperty("passwd").getBytes()));
+            lhs.add(bkc.createLedger(ensemble, quorum, 
+                                     digestType, baseClientConf.getBookieRecoveryPasswd()));
         }
         return lhs;
     }
@@ -191,7 +197,9 @@ public class BookieRecoveryTest extends BaseTestCase {
         f.delete();
         f.mkdir();
 
-        BookieServer server = new BookieServer(port, HOSTPORT, f, new File[] { f });
+        ServerConfiguration conf = newServerConfiguration(port, HOSTPORT, f, new File[] { f });
+
+        BookieServer server = new BookieServer(conf);
         server.start();
         bs.add(server);
 
@@ -220,7 +228,7 @@ public class BookieRecoveryTest extends BaseTestCase {
         // Get a set of LedgerHandles for all of the ledgers to verify
         List<LedgerHandle> lhs = new ArrayList<LedgerHandle>();
         for (int i = 0; i < numLedgers; i++) {
-            lhs.add(bkc.openLedger(i + 1, digestType, System.getProperty("passwd").getBytes()));
+            lhs.add(bkc.openLedger(i + 1, digestType, baseClientConf.getBookieRecoveryPasswd()));
         }
         // Read the ledger entries to verify that they are all present and
         // correct in the new bookie.

@@ -417,7 +417,7 @@ public class BookieReadWriteTest extends BaseTestCase
             Integer throttle = 100;
             ThrottleTestCallback tcb = new ThrottleTestCallback(throttle);
             // Create a ledger
-            System.setProperty("throttle", throttle.toString());
+            bkc.getConf().setThrottleValue(throttle);
             lh = bkc.createLedger(digestType, ledgerPassword);
             // bkc.initMessageDigest("SHA1");
             ledgerId = lh.getId();
@@ -771,8 +771,8 @@ public class BookieReadWriteTest extends BaseTestCase
     public void testShutdown() throws IOException {
         try {
             int numLedgers = 10000;
-            Long throttle = (((Double) Math.max(1.0, ((double) 10000/numLedgers))).longValue());
-            System.setProperty("throttle", throttle.toString());
+            int throttle = (((Double) Math.max(1.0, ((double) 10000/numLedgers))).intValue());
+            bkc.getConf().setThrottleValue(throttle);
             LedgerHandle[] lhArray = new LedgerHandle[numLedgers];
             for(int i = 0; i < numLedgers; i++) {
                 lhArray[i] = bkc.createLedger(3, 2, BookKeeper.DigestType.CRC32, new byte[] {'a', 'b'});

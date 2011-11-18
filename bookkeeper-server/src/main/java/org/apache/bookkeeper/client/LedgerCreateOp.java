@@ -147,7 +147,7 @@ class LedgerCreateOp implements StringCallback, StatCallback {
             cb.createComplete(BKException.Code.DigestNotInitializedException, null, this.ctx);
             return;
         } catch (NumberFormatException e) {
-            LOG.error("Incorrectly entered parameter throttle: " + System.getProperty("throttle"), e);
+            LOG.error("Incorrectly entered parameter throttle: " + bk.getConf().getThrottleValue(), e);
             cb.createComplete(BKException.Code.IncorrectParameterException, null, this.ctx);
             return;
         }

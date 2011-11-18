@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.junit.After;
 import org.junit.Before;
@@ -49,6 +50,7 @@ public class ConcurrentLedgerTest extends TestCase {
     File txnDir, ledgerDir;
     int recvTimeout = 10000;
     Semaphore throttle;
+    ServerConfiguration conf = new ServerConfiguration();
 
     @Override
     @Before
@@ -69,7 +71,11 @@ public class ConcurrentLedgerTest extends TestCase {
         ledgerDir = new File(tmpFile.getParent(), tmpFile.getName()+".dir");
         ledgerDir.mkdirs();
 
-        bookie = new Bookie(5000, null, txnDir, new File[] {ledgerDir});
+        conf.setBookiePort(5000);
+        conf.setZkServers(null);
+        conf.setJournalDirName(txnDir.getPath());
+        conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
+        bookie = new Bookie(conf);
     }
 
     static void recursiveDelete(File f) {

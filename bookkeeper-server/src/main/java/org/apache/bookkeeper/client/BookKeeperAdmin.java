@@ -36,6 +36,7 @@ import java.util.Random;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
@@ -85,9 +86,10 @@ public class BookKeeperAdmin {
      * can open it. These values will come from System properties, though hard
      * coded defaults are defined here.
      */
-    private DigestType DIGEST_TYPE = DigestType.valueOf(System.getProperty("digestType", DigestType.CRC32.toString()));
-    private byte[] PASSWD = System.getProperty("passwd", "").getBytes();
+    private DigestType DIGEST_TYPE;
+    private byte[] PASSWD;
 
+    
     /**
      * Constructor that takes in a ZooKeeper servers connect string so we know
      * how to connect to ZooKeeper to retrieve information about the BookKeeper
@@ -108,8 +110,30 @@ public class BookKeeperAdmin {
      *             BookKeeper client.
      */
     public BookKeeperAdmin(String zkServers) throws IOException, InterruptedException, KeeperException {
+        this(new ClientConfiguration().setZkServers(zkServers));
+    }
+
+    /**
+     * Constructor that takes in a configuration object so we know
+     * how to connect to ZooKeeper to retrieve information about the BookKeeper
+     * cluster. We need this before we can do any type of admin operations on
+     * the BookKeeper cluster.
+     *
+     * @param conf
+     *           Client Configuration Object
+     * @throws IOException
+     *             throws this exception if there is an error instantiating the
+     *             ZooKeeper client.
+     * @throws InterruptedException
+     *             Throws this exception if there is an error instantiating the
+     *             BookKeeper client.
+     * @throws KeeperException
+     *             Throws this exception if there is an error instantiating the
+     *             BookKeeper client.
+     */
+    public BookKeeperAdmin(ClientConfiguration conf) throws IOException, InterruptedException, KeeperException {
         // Create the ZooKeeper client instance
-        zk = new ZooKeeper(zkServers, 10000, new Watcher() {
+        zk = new ZooKeeper(conf.getZkServers(), conf.getZkTimeout(), new Watcher() {
             @Override
             public void process(WatchedEvent event) {
                 if (LOG.isDebugEnabled()) {
@@ -117,8 +141,11 @@ public class BookKeeperAdmin {
                 }
             }
         });
+
         // Create the BookKeeper client instance
-        bkc = new BookKeeper(zk);
+        bkc = new BookKeeper(conf);
+        DIGEST_TYPE = conf.getBookieRecoveryDigestType();
+        PASSWD = conf.getBookieRecoveryPasswd();
     }
 
     /**

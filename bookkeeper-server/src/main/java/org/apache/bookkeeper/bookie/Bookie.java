@@ -44,6 +44,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.slf4j.Logger;
@@ -66,13 +67,17 @@ public class Bookie extends Thread {
     static Logger LOG = LoggerFactory.getLogger(Bookie.class);
     final static long MB = 1024 * 1024L;
     // max journal file size
-    final static long MAX_JOURNAL_SIZE = Long.getLong("journal_max_size_mb", 2 * 1024) * MB;
+    final long maxJournalSize;
     // number journal files kept before marked journal
-    final static int MAX_BACKUP_JOURNALS = Integer.getInteger("journal_max_backups", 5);
+    final int maxBackupJournals;
 
     final File journalDirectory;
 
     final File ledgerDirectories[];
+
+    final ServerConfiguration conf;
+
+    final SyncThread syncThread;
 
     /**
      * Current directory layout version. Increment this 
@@ -82,7 +87,6 @@ public class Bookie extends Thread {
     static final int CURRENT_DIRECTORY_LAYOUT_VERSION = 1;
     static final String VERSION_FILENAME = "VERSION";
     
-
     // ZK registration path for this bookie
     static final String BOOKIE_REGISTRATION_PATH = "/ledgers/available/";
 
@@ -149,9 +153,13 @@ public class Bookie extends Thread {
         // flag to ensure sync thread will not be interrupted during flush
         final AtomicBoolean flushing = new AtomicBoolean(false);
         // make flush interval as a parameter
-        final int flushInterval = Integer.getInteger("flush_interval", 100);
-        public SyncThread() {
+        final int flushInterval;
+        public SyncThread(ServerConfiguration conf) {
             super("SyncThread");
+            flushInterval = conf.getFlushInterval();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Flush Interval : " + flushInterval);
+            }
         }
         @Override
         public void run() {
@@ -204,8 +212,8 @@ public class Bookie extends Thread {
                 });
 
                 // keep MAX_BACKUP_JOURNALS journal files before marked journal
-                if (logs.size() >= MAX_BACKUP_JOURNALS) {
-                    int maxIdx = logs.size() - MAX_BACKUP_JOURNALS;
+                if (logs.size() >= maxBackupJournals) {
+                    int maxIdx = logs.size() - maxBackupJournals;
                     for (int i=0; i<maxIdx; i++) {
                         long id = logs.get(i);
                         // make sure the journal id is smaller than marked journal id
@@ -233,18 +241,24 @@ public class Bookie extends Thread {
             this.join();
         }
     }
-    SyncThread syncThread = new SyncThread();
 
-    public Bookie(int port, String zkServers, File journalDirectory, File ledgerDirectories[]) throws IOException {
+    public Bookie(ServerConfiguration conf) throws IOException {
+        this.journalDirectory = conf.getJournalDir();
+        this.ledgerDirectories = conf.getLedgerDirs();
+        this.conf = conf;
+
         checkDirectoryLayoutVersion(journalDirectory);
         for (File dir : ledgerDirectories) {
             checkDirectoryLayoutVersion(dir);
         }
 
-        this.journalDirectory = journalDirectory;
-        this.ledgerDirectories = ledgerDirectories;
-        entryLogger = new EntryLogger(ledgerDirectories, this);
-        ledgerCache = new LedgerCache(ledgerDirectories);
+        this.maxJournalSize = conf.getMaxJournalSize() * MB;
+        this.maxBackupJournals = conf.getMaxBackupJournals();
+
+        syncThread = new SyncThread(conf);
+        entryLogger = new EntryLogger(conf, this);
+        ledgerCache = new LedgerCache(conf);
+    
         lastLogMark.readLog();
         if (LOG.isDebugEnabled()) {
             LOG.debug("Last Log Mark : " + lastLogMark);
@@ -318,7 +332,7 @@ public class Bookie extends Thread {
                 }
             }
         }
-        instantiateZookeeperClient(port, zkServers);
+        instantiateZookeeperClient(conf.getBookiePort(), conf.getZkServers());
         setDaemon(true);
         LOG.debug("I'm starting a bookie with journal directory " + journalDirectory.getName());
         start();
@@ -372,7 +386,7 @@ public class Bookie extends Thread {
             isZkExpired = false;
             return;
         }
-        int zkTimeout = Integer.getInteger("zkTimeout", 10000);
+        int zkTimeout = conf.getZkTimeout();
         // Create the ZooKeeper client instance
         zk = newZookeeper(zkServers, zkTimeout);
         // Create the ZK ephemeral node for this Bookie.
@@ -771,7 +785,7 @@ public class Bookie extends Thread {
                             toFlush.clear();
 
                             // check whether journal file is over file limit
-                            if (bc.position() > MAX_JOURNAL_SIZE) {
+                            if (bc.position() > maxJournalSize) {
                                 logFile.close();
                                 logFile = null;
                                 continue;
@@ -971,7 +985,7 @@ public class Bookie extends Thread {
      */
     public static void main(String[] args) throws IOException,
         InterruptedException, BookieException {
-        Bookie b = new Bookie(5000, null, new File("/tmp"), new File[] { new File("/tmp") });
+        Bookie b = new Bookie(new ServerConfiguration());
         CounterCallback cb = new CounterCallback();
         long start = System.currentTimeMillis();
         for (int i = 0; i < 100000; i++) {

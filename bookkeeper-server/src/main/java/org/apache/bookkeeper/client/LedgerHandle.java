@@ -29,6 +29,7 @@ import java.util.Enumeration;
 import java.util.Queue;
 import java.util.concurrent.Semaphore;
 
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -69,7 +70,7 @@ public class LedgerHandle {
     final DistributionSchedule distributionSchedule;
 
     final Semaphore opCounterSem;
-    private Integer throttling = 5000;
+    private final Integer throttling;
 
     final Queue<PendingAddOp> pendingAddOps = new ArrayDeque<PendingAddOp>();
 
@@ -89,10 +90,7 @@ public class LedgerHandle {
 
         this.ledgerId = ledgerId;
 
-        String throttleValue = System.getProperty("throttle");
-        if(throttleValue != null) {
-            this.throttling = new Integer(throttleValue);
-        }
+        this.throttling = bk.getConf().getThrottleValue();
         this.opCounterSem = new Semaphore(throttling);
 
         macManager = DigestManager.instantiate(ledgerId, password, digestType);

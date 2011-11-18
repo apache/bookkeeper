@@ -23,10 +23,7 @@
 BINDIR=`dirname "$0"`
 BK_HOME=`cd $BINDIR/..;pwd`
 
-DEFAULT_ZOOKEEPER=localhost:2181
-DEFAULT_PORT=3181
-DEFAULT_TXN_DIR=/tmp/bk-txn
-DEFAULT_DATA_DIR=/tmp/bk-data
+DEFAULT_CONF=$BK_HOME/conf/bk_server.conf
 
 source $BK_HOME/conf/bkenv.sh
 
@@ -55,11 +52,8 @@ where command is one of:
 or command is the full name of a class with a defined main() method.
 
 Environment variables:
-   BOOKIE_ZOOKEEPER       Zookeeper ensemble (default: $DEFAULT_ZOOKEEPER)
-   BOOKIE_PORT            Port to listen on (default: $DEFAULT_PORT)
-   BOOKIE_TXN_LOGDIR      Directory for transaction logs (default: $DEFAULT_TXN_DIR)
-   BOOKIE_DATA_DIR        Directory for data (default: $DEFAULT_DATA_DIR)
    BOOKIE_LOG_CONF        Log4j configuration file
+   BOOKIE_CONF            Configuration file (default: conf/bk_server.conf)
    BOOKIE_EXTRA_OPTS      Extra options to be passed to the jvm
 
 These variable can also be set in conf/bkenv.sh
@@ -101,20 +95,8 @@ fi
 COMMAND=$1
 shift
 
-if [ "$BOOKIE_ZOOKEEPER" == "" ]; then
-    BOOKIE_ZOOKEEPER=$DEFAULT_ZOOKEEPER
-fi
-
-if [ "$BOOKIE_PORT" == "" ]; then
-    BOOKIE_PORT=$DEFAULT_PORT
-fi
-
-if [ "$BOOKIE_TXN_LOGDIR" == "" ]; then
-    BOOKIE_TXN_LOGDIR=$DEFAULT_TXN_DIR
-fi
-
-if [ "$BOOKIE_DATA_DIR" == "" ]; then
-    BOOKIE_DATA_DIR=$DEFAULT_DATA_DIR
+if [ "$BOOKIE_CONF" == "" ]; then
+    BOOKIE_CONF=$DEFAULT_CONF
 fi
 
 BOOKIE_CLASSPATH="$BOOKIE_JAR:$BOOKIE_CLASSPATH"
@@ -127,11 +109,11 @@ OPTS="-cp $BOOKIE_CLASSPATH $OPTS $BOOKIE_EXTRA_OPTS"
 OPTS="$OPTS $BOOKIE_EXTRA_OPTS"
 
 if [ $COMMAND == "bookie" ]; then
-    exec java $OPTS org.apache.bookkeeper.proto.BookieServer $BOOKIE_PORT $BOOKIE_ZOOKEEPER $BOOKIE_TXN_LOGDIR $BOOKIE_DATA_DIR $@
+    exec java $OPTS org.apache.bookkeeper.proto.BookieServer --conf $BOOKIE_CONF $@
 elif [ $COMMAND == "localbookie" ]; then
     NUMBER=$1
     shift
-    exec java $OPTS org.apache.bookkeeper.util.LocalBookKeeper $NUMBER $@
+    exec java $OPTS org.apache.bookkeeper.util.LocalBookKeeper $NUMBER $BOOKIE_CONF $@
 elif [ $COMMAND == "help" ]; then
     bookkeeper_help;
 else

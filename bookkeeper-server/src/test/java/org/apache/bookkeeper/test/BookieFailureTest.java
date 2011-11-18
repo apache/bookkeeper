@@ -29,6 +29,7 @@ import java.util.Enumeration;
 import java.util.Random;
 import java.util.Set;
 
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
@@ -137,7 +138,7 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
         }
 
         bs.get(3).shutdown();
-        BookieServer server = new BookieServer(initialPort + 3, HOSTPORT, tmpDirs.get(3), new File[] { tmpDirs.get(3)});
+        BookieServer server = new BookieServer(bsConfs.get(3));
         server.start();
         bs.set(3, server);
 
@@ -192,7 +193,7 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
 
             // open ledger
             bkc.close();
-            bkc = new BookKeeperTestClient("127.0.0.1");
+            bkc = new BookKeeperTestClient(baseClientConf);
             lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
             LOG.debug("Number of entries written: " + (lh.getLastAddConfirmed() + 1));
             assertTrue("Verifying number of entries written", lh.getLastAddConfirmed() == (numEntriesToWrite - 1));

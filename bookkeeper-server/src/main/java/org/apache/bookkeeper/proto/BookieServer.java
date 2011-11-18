@@ -25,13 +25,22 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.NIOServerFactory.Cnxn;
 import static org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.ParseException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,28 +49,28 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class BookieServer implements NIOServerFactory.PacketProcessor, BookkeeperInternalCallbacks.WriteCallback {
-    int port;
+    final ServerConfiguration conf;
     NIOServerFactory nioServerFactory;
     private volatile boolean running = false;
     Bookie bookie;
     DeathWatcher deathWatcher;
     static Logger LOG = LoggerFactory.getLogger(BookieServer.class);
 
-    public BookieServer(int port, String zkServers, File journalDirectory, File ledgerDirectories[]) throws IOException {
-        this.port = port;
-        this.bookie = new Bookie(port, zkServers, journalDirectory, ledgerDirectories);
+    public BookieServer(ServerConfiguration conf) throws IOException {
+        this.conf = conf;
+        this.bookie = new Bookie(conf);
     }
 
     public void start() throws IOException {
-        nioServerFactory = new NIOServerFactory(port, this);
+        nioServerFactory = new NIOServerFactory(conf, this);
         running = true;
-        deathWatcher = new DeathWatcher();
+        deathWatcher = new DeathWatcher(conf);
         deathWatcher.start();
     }
 
     public InetSocketAddress getLocalAddress() {
         try {
-            return new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), port);
+            return new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), conf.getBookiePort());
         } catch (UnknownHostException uhe) {
             return nioServerFactory.getLocalAddress();
         }
@@ -106,9 +115,15 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
      * A thread to watch whether bookie & nioserver is still alive
      */
     class DeathWatcher extends Thread {
+
+        final int watchInterval;
+
+        DeathWatcher(ServerConfiguration conf) {
+            watchInterval = conf.getDeathWatchInterval();
+        }
+
         @Override
         public void run() {
-            int watchInterval = Integer.getInteger("bookie_death_watch_interval", 1000);
             while(true) {
                 try {
                     Thread.sleep(watchInterval);
@@ -127,33 +142,108 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         }
     }
 
+    static final Options bkOpts = new Options();
+    static {
+        bkOpts.addOption("c", "conf", true, "Configuration for Bookie Server");
+        bkOpts.addOption("h", "help", false, "Print help message");
+    }
+
+    /**
+     * Print usage
+     */
+    private static void printUsage() {
+        HelpFormatter hf = new HelpFormatter();
+        hf.printHelp("BookieServer [options]\n\tor\n"
+                   + "BookieServer <bookie_port> <zk_servers> <journal_dir> <ledger_dir [ledger_dir]>", bkOpts);
+    }
+
+    private static void loadConfFile(ServerConfiguration conf, String confFile)
+        throws IllegalArgumentException {
+        try {
+            conf.loadConf(new File(confFile).toURI().toURL());
+        } catch (MalformedURLException e) {
+            LOG.error("Could not open configuration file: " + confFile, e);
+            throw new IllegalArgumentException();
+        } catch (ConfigurationException e) {
+            LOG.error("Malformed configuration file: " + confFile, e);
+            throw new IllegalArgumentException();
+        }
+        LOG.info("Using configuration file " + confFile);
+    }
+
+    private static ServerConfiguration parseArgs(String[] args)
+        throws IllegalArgumentException {
+        try {
+            BasicParser parser = new BasicParser();
+            CommandLine cmdLine = parser.parse(bkOpts, args);
+
+            if (cmdLine.hasOption('h')) {
+                throw new IllegalArgumentException();
+            }
+
+            ServerConfiguration conf = new ServerConfiguration();
+            String[] leftArgs = cmdLine.getArgs();
+
+            if (cmdLine.hasOption('c')) {
+                if (null != leftArgs && leftArgs.length > 0) {
+                    throw new IllegalArgumentException();
+                }
+                String confFile = cmdLine.getOptionValue("c");
+                loadConfFile(conf, confFile);
+                return conf;
+            }
+
+            if (leftArgs.length < 4) {
+                throw new IllegalArgumentException();
+            }
+
+            // command line arguments overwrite settings in configuration file
+            conf.setBookiePort(Integer.parseInt(leftArgs[0]));
+            conf.setZkServers(leftArgs[1]);
+            conf.setJournalDirName(leftArgs[2]);
+            String[] ledgerDirNames = new String[leftArgs.length - 3];
+            System.arraycopy(leftArgs, 3, ledgerDirNames, 0, ledgerDirNames.length);
+            conf.setLedgerDirNames(ledgerDirNames);
+
+            return conf;
+        } catch (ParseException e) {
+            LOG.error("Error parsing command line arguments : ", e);
+            throw new IllegalArgumentException(e);
+        }
+    }
+
     /**
      * @param args
      * @throws IOException
      * @throws InterruptedException
      */
-    public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 4) {
-            System.err.println("USAGE: BookieServer port zkServers journalDirectory ledgerDirectory [ledgerDirectory]*");
-            return;
+    public static void main(String[] args) throws IOException, InterruptedException,
+                                                  IllegalArgumentException {
+        ServerConfiguration conf = null;
+        try {
+            conf = parseArgs(args);
+        } catch (IllegalArgumentException iae) {
+            LOG.error("Error parsing command line arguments : ", iae);
+            System.err.println(iae.getMessage());
+            printUsage();
+            throw iae;
         }
-        int port = Integer.parseInt(args[0]);
-        String zkServers = args[1];
-        File journalDirectory = new File(args[2]);
-        File ledgerDirectory[] = new File[args.length - 3];
+
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < ledgerDirectory.length; i++) {
-            ledgerDirectory[i] = new File(args[i + 3]);
+        String[] ledgerDirNames = conf.getLedgerDirNames();
+        for (int i = 0; i < ledgerDirNames.length; i++) {
             if (i != 0) {
                 sb.append(',');
             }
-            sb.append(ledgerDirectory[i]);
+            sb.append(ledgerDirNames[i]);
         }
+
         String hello = String.format(
                            "Hello, I'm your bookie, listening on port %1$s. ZKServers are on %2$s. Journals are in %3$s. Ledgers are stored in %4$s.",
-                           port, zkServers, journalDirectory, sb);
+                           conf.getBookiePort(), conf.getZkServers(),
+                           conf.getJournalDirName(), sb);
         LOG.info(hello);
-        BookieServer bs = new BookieServer(port, zkServers, journalDirectory, ledgerDirectory);
+        BookieServer bs = new BookieServer(conf);
         bs.start();
         bs.join();
     }

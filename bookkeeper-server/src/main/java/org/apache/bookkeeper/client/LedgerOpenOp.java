@@ -127,7 +127,7 @@ class LedgerOpenOp implements DataCallback {
             cb.openComplete(BKException.Code.DigestNotInitializedException, null, this.ctx);
             return;
         } catch (NumberFormatException e) {
-            LOG.error("Incorrectly entered parameter throttle: " + System.getProperty("throttle"), e);
+            LOG.error("Incorrectly entered parameter throttle: " + bk.getConf().getThrottleValue(), e);
             cb.openComplete(BKException.Code.IncorrectParameterException, null, this.ctx);
             return;
         }

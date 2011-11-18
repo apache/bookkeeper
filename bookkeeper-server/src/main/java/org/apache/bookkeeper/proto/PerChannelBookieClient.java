@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
@@ -91,9 +92,16 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             };
 
     private ConnectionState state;
-            
+    private final ClientConfiguration conf;
+
     public PerChannelBookieClient(OrderedSafeExecutor executor, ClientSocketChannelFactory channelFactory,
                                   InetSocketAddress addr, AtomicLong totalBytesOutstanding) {
+        this(new ClientConfiguration(), executor, channelFactory, addr, totalBytesOutstanding);
+    }
+            
+    public PerChannelBookieClient(ClientConfiguration conf, OrderedSafeExecutor executor, ClientSocketChannelFactory channelFactory,
+                                  InetSocketAddress addr, AtomicLong totalBytesOutstanding) {
+        this.conf = conf;
         this.addr = addr;
         this.executor = executor;
         this.totalBytesOutstanding = totalBytesOutstanding;
@@ -115,11 +123,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         // to the bookie.
         ClientBootstrap bootstrap = new ClientBootstrap(channelFactory);
         bootstrap.setPipelineFactory(this);
-        if (System.getProperty("server.tcpnodelay", "true").equals("true")) {
-            bootstrap.setOption("tcpNoDelay", true);
-        } else {
-            bootstrap.setOption("tcpNoDelay", false);
-        }
+        bootstrap.setOption("tcpNoDelay", conf.getClientTcpNoDelay());
         bootstrap.setOption("keepAlive", true);
 
         ChannelFuture future = bootstrap.connect(addr);

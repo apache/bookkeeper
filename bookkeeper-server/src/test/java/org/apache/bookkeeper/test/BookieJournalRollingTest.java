@@ -24,6 +24,7 @@ import java.io.File;
 import java.util.Enumeration;
 import java.util.List;
 
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.Bookie.JournalIdFilter;
 import org.apache.bookkeeper.client.LedgerEntry;
@@ -53,20 +54,15 @@ public class BookieJournalRollingTest extends BaseTestCase {
     @Override
     public void setUp() throws Exception {
         // Set up the configuration properties needed.
-        System.setProperty("journal_max_size_mb", "1");
-        System.setProperty("journal_max_backups", "1");
+        baseConf.setMaxJournalSize(1);
+        baseConf.setMaxBackupJournals(1);
         super.setUp();
     }
 
     @After
     @Override
     public void tearDown() throws Exception {
-        try {
-            super.tearDown();
-        } finally {
-            System.setProperty("journal_max_size_mb", "2048");
-            System.setProperty("journal_max_backups", "5");
-        }
+        super.tearDown();
     }
 
     /**
@@ -196,27 +192,25 @@ public class BookieJournalRollingTest extends BaseTestCase {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Testing Journal Rolling without sync up");
         }
+
         // set flush interval to a large value
-        System.setProperty("flush_interval", "999999999");
-        try {
-            // restart bookies
-            restartBookies();
+        ServerConfiguration newConf = new ServerConfiguration();
+        newConf.setFlushInterval(999999999);
+        // restart bookies
+        restartBookies(newConf);
 
-            // Write enough ledger entries so that we roll over journals
-            LedgerHandle[] lhs = writeLedgerEntries(4, 1024, 1024);
-            long[] ledgerIds = new long[lhs.length];
-            for (int i=0; i<lhs.length; i++) {
-                ledgerIds[i] = lhs[i].getId();
-            }
-
-            // ledger indexes are not flushed
-            // and after bookies restarted, journals will be relayed
-            // ensure that we can still read the entries
-            restartBookies();
-            validLedgerEntries(ledgerIds, 1024, 1024);
-        } finally {
-            System.setProperty("flush_interval", "100");
+        // Write enough ledger entries so that we roll over journals
+        LedgerHandle[] lhs = writeLedgerEntries(4, 1024, 1024);
+        long[] ledgerIds = new long[lhs.length];
+        for (int i=0; i<lhs.length; i++) {
+            ledgerIds[i] = lhs[i].getId();
         }
+
+        // ledger indexes are not flushed
+        // and after bookies restarted, journals will be relayed
+        // ensure that we can still read the entries
+        restartBookies(newConf);
+        validLedgerEntries(ledgerIds, 1024, 1024);
     }
 
 }

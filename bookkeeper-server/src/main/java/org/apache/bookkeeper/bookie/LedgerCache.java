@@ -36,6 +36,8 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.apache.bookkeeper.conf.ServerConfiguration;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,8 +51,20 @@ public class LedgerCache {
 
     final File ledgerDirectories[];
 
-    public LedgerCache(File ledgerDirectories[]) {
-        this.ledgerDirectories = ledgerDirectories;
+    public LedgerCache(ServerConfiguration conf) {
+        this.ledgerDirectories = conf.getLedgerDirs();
+        this.openFileLimit = conf.getOpenFileLimit();
+        this.pageSize = conf.getPageSize();
+        this.entriesPerPage = pageSize / 8;
+        
+        if (conf.getPageLimit() <= 0) {
+            // allocate half of the memory to the page cache
+            this.pageLimit = (int)((Runtime.getRuntime().maxMemory() / 3) / this.pageSize);
+        } else {
+            this.pageLimit = conf.getPageLimit();
+        }
+        LOG.info("maxMemory = " + Runtime.getRuntime().maxMemory());
+        LOG.info("openFileLimit is " + openFileLimit + ", pageSize is " + pageSize + ", pageLimit is " + pageLimit);
         // Retrieve all of the active ledgers.
         getActiveLedgers();
     }
@@ -71,23 +85,25 @@ public class LedgerCache {
     // Stores the set of active (non-deleted) ledgers.
     ConcurrentMap<Long, Boolean> activeLedgers = new ConcurrentHashMap<Long, Boolean>();
 
-    static int OPEN_FILE_LIMIT = 900;
-    static {
-        if (System.getProperty("openFileLimit") != null) {
-            OPEN_FILE_LIMIT = Integer.parseInt(System.getProperty("openFileLimit"));
-        }
-        LOG.info("openFileLimit is " + OPEN_FILE_LIMIT);
+    final int openFileLimit;
+    final int pageSize;
+    final int pageLimit;
+    final int entriesPerPage;
+
+    /**
+     * @return page size used in ledger cache
+     */
+    public int getPageSize() {
+        return pageSize;
     }
 
-    // allocate half of the memory to the page cache
-    private static int pageLimit = (int)((Runtime.getRuntime().maxMemory() / 3) / LedgerEntryPage.PAGE_SIZE);
-    static {
-        LOG.info("maxMemory = " + Runtime.getRuntime().maxMemory());
-        if (System.getProperty("pageLimit") != null) {
-            pageLimit = Integer.parseInt(System.getProperty("pageLimit"));
-        }
-        LOG.info("pageLimit is " + pageLimit);
+    /**
+     * @return entries per page used in ledger cache
+     */
+    public int getEntriesPerPage() {
+        return entriesPerPage;
     }
+
     // The number of pages that have actually been used
     private int pageCount = 0;
     HashMap<Long, HashMap<Long,LedgerEntryPage>> pages = new HashMap<Long, HashMap<Long,LedgerEntryPage>>();
@@ -124,7 +140,7 @@ public class LedgerCache {
     }
 
     public void putEntryOffset(long ledger, long entry, long offset) throws IOException {
-        int offsetInPage = (int) (entry%LedgerEntryPage.ENTRIES_PER_PAGES);
+        int offsetInPage = (int) (entry % entriesPerPage);
         // find the id of the first entry of the page that has the entry
         // we are looking for
         long pageEntry = entry-offsetInPage;
@@ -145,7 +161,7 @@ public class LedgerCache {
     }
 
     public long getEntryOffset(long ledger, long entry) throws IOException {
-        int offsetInPage = (int) (entry%LedgerEntryPage.ENTRIES_PER_PAGES);
+        int offsetInPage = (int) (entry%entriesPerPage);
         // find the id of the first entry of the page that has the entry
         // we are looking for
         long pageEntry = entry-offsetInPage;
@@ -223,7 +239,7 @@ public class LedgerCache {
                     }
                     activeLedgers.put(ledger, true);
                 }
-                if (openLedgers.size() > OPEN_FILE_LIMIT) {
+                if (openLedgers.size() > openFileLimit) {
                     fileInfoCache.remove(openLedgers.removeFirst()).close();
                 }
                 fi = new FileInfo(lf);
@@ -313,7 +329,7 @@ public class LedgerCache {
                     long lastOffset = -1;
                     for(int i = 0; i < entries.size(); i++) {
                         versions.add(i, entries.get(i).getVersion());
-                        if (lastOffset != -1 && (entries.get(i).getFirstEntry() - lastOffset) != LedgerEntryPage.ENTRIES_PER_PAGES) {
+                        if (lastOffset != -1 && (entries.get(i).getFirstEntry() - lastOffset) != entriesPerPage) {
                             // send up a sequential list
                             int count = i - start;
                             if (count == 0) {
@@ -383,18 +399,18 @@ public class LedgerCache {
             //System.out.println("Wrote " + rc + " to " + ledger);
             totalWritten += rc;
         }
-        if (totalWritten != count*LedgerEntryPage.PAGE_SIZE) {
-            throw new IOException("Short write to ledger " + ledger + " wrote " + totalWritten + " expected " + count*LedgerEntryPage.PAGE_SIZE);
+        if (totalWritten != count * pageSize) {
+            throw new IOException("Short write to ledger " + ledger + " wrote " + totalWritten + " expected " + count * pageSize);
         }
     }
     private LedgerEntryPage grabCleanPage(long ledger, long entry) throws IOException {
-        if (entry % LedgerEntryPage.ENTRIES_PER_PAGES != 0) {
-            throw new IllegalArgumentException(entry + " is not a multiple of " + LedgerEntryPage.ENTRIES_PER_PAGES);
+        if (entry % entriesPerPage != 0) {
+            throw new IllegalArgumentException(entry + " is not a multiple of " + entriesPerPage);
         }
         synchronized(this) {
             if (pageCount  < pageLimit) {
                 // let's see if we can allocate something
-                LedgerEntryPage lep = new LedgerEntryPage();
+                LedgerEntryPage lep = new LedgerEntryPage(pageSize, entriesPerPage);
                 lep.setLedger(ledger);
                 lep.setFirstEntry(entry);
                 // note, this will not block since it is a new page
@@ -451,7 +467,7 @@ public class LedgerCache {
             Map<Long, LedgerEntryPage> map = pages.get(ledgerId);
             if (map != null) {
                 for(LedgerEntryPage lep: map.values()) {
-                    if (lep.getFirstEntry() + LedgerEntryPage.ENTRIES_PER_PAGES < lastEntry) {
+                    if (lep.getFirstEntry() + entriesPerPage < lastEntry) {
                         continue;
                     }
                     lep.usePage();

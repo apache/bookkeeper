@@ -30,6 +30,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.commons.configuration.ConfigurationException;
@@ -113,7 +114,9 @@ public class PubSubServer {
 
         } else {
             try {
-                bk = new BookKeeper(zk, clientChannelFactory);
+                ClientConfiguration bkConf = new ClientConfiguration();
+                bkConf.addConfiguration(conf.getConf());
+                bk = new BookKeeper(bkConf, zk, clientChannelFactory);
             } catch (KeeperException e) {
                 logger.error("Could not instantiate bookkeeper client", e);
                 throw new IOException(e);

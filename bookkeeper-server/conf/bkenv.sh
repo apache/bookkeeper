@@ -22,14 +22,5 @@
 
 # default settings for starting bookkeeper
 
-# Zookeeper ensemble for bookkeeper to use
-#BOOKIE_ZOOKEEPER=
-
-# Port for bookie to listen on
-#BOOKIE_PORT=
-
-# Directory Bookkeeper outputs its write ahead log
-#BOOKIE_TXN_LOGDIR=
-
-# Directory Bookkeeper outputs ledger snapshots
-#BOOKIE_DATA_DIR=
+# Configuration file of settings used in bookie server
+# BOOKIE_CONF=

@@ -29,15 +29,21 @@ import java.nio.ByteBuffer;
  * (entrylogfile, offset) for entry ids.
  */
 public class LedgerEntryPage {
-    public static final int PAGE_SIZE = 8192;
-    public static final int ENTRIES_PER_PAGES = PAGE_SIZE/8;
+    private final int pageSize;
+    private final int entriesPerPage;
     private long ledger = -1;
     private long firstEntry = -1;
-    private ByteBuffer page = ByteBuffer.allocateDirect(PAGE_SIZE);
+    private final ByteBuffer page;
     private boolean clean = true;
     private boolean pinned = false;
     private int useCount;
     private int version;
+
+    public LedgerEntryPage(int pageSize, int entriesPerPage) {
+        this.pageSize = pageSize;
+        this.entriesPerPage = entriesPerPage;
+        page = ByteBuffer.allocateDirect(pageSize);
+    }
 
     @Override
     public String toString() {
@@ -129,8 +135,8 @@ public class LedgerEntryPage {
         return version;
     }
     void setFirstEntry(long firstEntry) {
-        if (firstEntry % ENTRIES_PER_PAGES != 0) {
-            throw new IllegalArgumentException(firstEntry + " is not a multiple of " + ENTRIES_PER_PAGES);
+        if (firstEntry % entriesPerPage != 0) {
+            throw new IllegalArgumentException(firstEntry + " is not a multiple of " + entriesPerPage);
         }
         this.firstEntry = firstEntry;
     }
@@ -141,7 +147,7 @@ public class LedgerEntryPage {
         return useCount > 0;
     }
     public long getLastEntry() {
-        for(int i = ENTRIES_PER_PAGES - 1; i >= 0; i--) {
+        for(int i = entriesPerPage - 1; i >= 0; i--) {
             if (getOffset(i*8) > 0) {
                 return i + firstEntry;
             }

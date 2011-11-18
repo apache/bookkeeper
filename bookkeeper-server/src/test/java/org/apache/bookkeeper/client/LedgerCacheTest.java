@@ -32,6 +32,7 @@ import java.security.GeneralSecurityException;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.LedgerEntryPage;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.client.MacDigestManager;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.junit.After;
@@ -50,6 +51,7 @@ public class LedgerCacheTest extends TestCase {
     static Logger LOG = LoggerFactory.getLogger(LedgerCacheTest.class);
 
     Bookie bookie;
+    ServerConfiguration conf;
     File txnDir, ledgerDir;
 
     class TestWriteCallback implements WriteCallback {
@@ -78,8 +80,12 @@ public class LedgerCacheTest extends TestCase {
         ledgerDir = new File(tmpFile.getParent(), tmpFile.getName()+".dir");
         ledgerDir.mkdirs();
 
-
-        bookie = new Bookie(5000, null, txnDir, new File[] {ledgerDir});
+        conf = new ServerConfiguration();
+        conf.setBookiePort(5000);
+        conf.setZkServers(null);
+        conf.setJournalDirName(txnDir.getPath());
+        conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
+        bookie = new Bookie(conf);
     }
 
 

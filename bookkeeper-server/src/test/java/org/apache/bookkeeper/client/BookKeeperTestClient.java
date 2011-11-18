@@ -24,6 +24,7 @@ package org.apache.bookkeeper.client;
 import java.io.IOException;
 import java.util.concurrent.Executors;
 
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
@@ -44,13 +45,17 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
  * wish to expose in the public API.
  */
 public class BookKeeperTestClient extends BookKeeper {
-    public BookKeeperTestClient(String servers)
+    public BookKeeperTestClient(ClientConfiguration conf)
             throws IOException, InterruptedException, KeeperException {
-        super(servers);
+        super(conf);
     }
 
     public ZooKeeper getZkHandle() {
         return super.getZkHandle();
+    }
+
+    public ClientConfiguration getConf() {
+        return super.getConf();
     }
 
     /**

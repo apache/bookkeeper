@@ -21,6 +21,8 @@ import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.zookeeper.CreateMode;
@@ -46,6 +48,7 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
 
     // BookKeeper Server variables
     private List<BookieServer> bookiesList;
+    private List<ServerConfiguration> bookieConfsList;
     private int initialPort = 5000;
 
     // String constants used for creating the bookie server files.
@@ -56,6 +59,9 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
     private final int numBookies;
     // BookKeeper client instance
     protected BookKeeper bk;
+
+    protected ServerConfiguration baseConf = new ServerConfiguration();
+    protected ClientConfiguration baseClientConf = new ClientConfiguration();
 
     // Constructor
     public BookKeeperTestBase(int numBookies) {
@@ -94,10 +100,14 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
 
         // Create Bookie Servers
         bookiesList = new LinkedList<BookieServer>();
+        bookieConfsList = new LinkedList<ServerConfiguration>();
 
         for (int i = 0; i < numBookies; i++) {
             File tmpDir = FileUtils.createTempDirectory(PREFIX + i, SUFFIX);
-            BookieServer bs = new BookieServer(initialPort + i, hostPort, tmpDir, new File[] { tmpDir });
+            ServerConfiguration conf = newServerConfiguration(
+                initialPort + i, hostPort, tmpDir, new File[] { tmpDir });
+            bookieConfsList.add(conf);
+            BookieServer bs = new BookieServer(conf);
             bs.start();
             bookiesList.add(bs);
         }
@@ -124,6 +134,19 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
         // Close the BookKeeper client
         bk.close();
         super.tearDown();
+    }
+
+    protected ServerConfiguration newServerConfiguration(int port, String zkServers, File journalDir, File[] ledgerDirs) {
+        ServerConfiguration conf = new ServerConfiguration(baseConf);
+        conf.setBookiePort(port);
+        conf.setZkServers(zkServers);
+        conf.setJournalDirName(journalDir.getPath());
+        String[] ledgerDirNames = new String[ledgerDirs.length];
+        for (int i=0; i<ledgerDirs.length; i++) {
+            ledgerDirNames[i] = ledgerDirs[i].getPath();
+        }
+        conf.setLedgerDirNames(ledgerDirNames);
+        return conf;
     }
 
 }

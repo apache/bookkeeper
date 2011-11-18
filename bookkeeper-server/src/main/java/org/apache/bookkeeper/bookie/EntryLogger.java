@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
@@ -64,7 +65,7 @@ public class EntryLogger {
     /**
      * The maximum size of a entry logger file.
      */
-    final static long LOG_SIZE_LIMIT = Long.getLong("logSizeLimit", 2 * 1024 * 1024 * 1024L);
+    final long logSizeLimit;
     private volatile BufferedChannel logChannel;
     /**
      * The 1K block at the head of the entry logger file
@@ -87,16 +88,18 @@ public class EntryLogger {
     // contain any active ledgers in them.
     GarbageCollectorThread gcThread = new GarbageCollectorThread();
     // This is how often we want to run the Garbage Collector Thread (in milliseconds).
-    // This should be passed as a System property. Default it to 1000 ms (1sec).
-    final static int gcWaitTime = Integer.getInteger("gcWaitTime", 1000);
+    final long gcWaitTime;
 
     /**
      * Create an EntryLogger that stores it's log files in the given
      * directories
      */
-    public EntryLogger(File dirs[], Bookie bookie) throws IOException {
-        this.dirs = dirs;
+    public EntryLogger(ServerConfiguration conf, Bookie bookie) throws IOException {
+        this.dirs = conf.getLedgerDirs();
         this.bookie = bookie;
+        // log size limit
+        this.logSizeLimit = conf.getEntryLogSizeLimit();
+        this.gcWaitTime = conf.getGcWaitTime();
         // Initialize the entry log header buffer. This cannot be a static object
         // since in our unit tests, we run multiple Bookies and thus EntryLoggers
         // within the same JVM. All of these Bookie instances access this header
@@ -321,7 +324,7 @@ public class EntryLogger {
         }
     }
     synchronized long addEntry(long ledger, ByteBuffer entry) throws IOException {
-        if (logChannel.position() + entry.remaining() + 4 > LOG_SIZE_LIMIT) {
+        if (logChannel.position() + entry.remaining() + 4 > logSizeLimit) {
             openNewChannel();
         }
         ByteBuffer buff = ByteBuffer.allocate(4);

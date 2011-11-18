@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hedwig.conf;
+package org.apache.bookkeeper.conf;
 
 import java.net.URL;
 
@@ -23,21 +23,17 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.SystemConfiguration;
 
-public abstract class AbstractConfiguration {
-    protected CompositeConfiguration conf;
+/**
+ * Abstract configuration
+ */
+public abstract class AbstractConfiguration extends CompositeConfiguration { 
 
     protected AbstractConfiguration() {
-        conf = new CompositeConfiguration();
-    }
-
-    /**
-     * Return real configuration object
-     *
-     * @return configuration
-     */
-    public Configuration getConf() {
-        return conf;
+        super();
+        // add configuration for system properties
+        addConfiguration(new SystemConfiguration());
     }
 
     /**
@@ -45,10 +41,21 @@ public abstract class AbstractConfiguration {
      * precedence over any loaded later.
      *
      * @param confURL
+     *          Configuration URL
      */
     public void loadConf(URL confURL) throws ConfigurationException {
         Configuration loadedConf = new PropertiesConfiguration(confURL);
-        conf.addConfiguration(loadedConf);
-
+        addConfiguration(loadedConf);
     }
+
+    /**
+     * You can load configuration from other configuration
+     *
+     * @param baseConf
+     *          Other Configuration
+     */
+    public void loadConf(AbstractConfiguration baseConf) {
+        addConfiguration(baseConf); 
+    }
+
 }

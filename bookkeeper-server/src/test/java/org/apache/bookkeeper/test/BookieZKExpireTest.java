@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.After;
 import static org.junit.Assert.*;
 
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import java.util.HashSet;
 import junit.framework.TestCase;
@@ -57,7 +58,8 @@ public class BookieZKExpireTest extends BaseTestCase {
                 }
             }
 
-            server = new BookieServer(initialPort + 1, HOSTPORT, f, new File[] { f });
+            ServerConfiguration conf = newServerConfiguration(initialPort + 1, HOSTPORT, f, new File[] { f });
+            server = new BookieServer(conf);
             server.start();
 
             Thread.sleep(10);

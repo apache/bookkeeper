@@ -26,6 +26,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -52,7 +53,10 @@ public class BookieClient {
     ClientSocketChannelFactory channelFactory;
     ConcurrentHashMap<InetSocketAddress, PerChannelBookieClient> channels = new ConcurrentHashMap<InetSocketAddress, PerChannelBookieClient>();
 
-    public BookieClient(ClientSocketChannelFactory channelFactory, OrderedSafeExecutor executor) {
+    private final ClientConfiguration conf;
+
+    public BookieClient(ClientConfiguration conf, ClientSocketChannelFactory channelFactory, OrderedSafeExecutor executor) {
+        this.conf = conf;
         this.channelFactory = channelFactory;
         this.executor = executor;
     }
@@ -162,7 +166,7 @@ public class BookieClient {
         ClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors
                 .newCachedThreadPool());
         OrderedSafeExecutor executor = new OrderedSafeExecutor(1);
-        BookieClient bc = new BookieClient(channelFactory, executor);
+        BookieClient bc = new BookieClient(new ClientConfiguration(), channelFactory, executor);
         InetSocketAddress addr = new InetSocketAddress(args[0], Integer.parseInt(args[1]));
 
         for (int i = 0; i < 100000; i++) {

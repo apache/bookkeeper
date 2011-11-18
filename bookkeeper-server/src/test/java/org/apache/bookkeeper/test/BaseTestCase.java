@@ -31,6 +31,8 @@ import java.util.List;
 
 import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,9 +66,13 @@ public abstract class BaseTestCase extends TestCase {
     // BookKeeper
     protected List<File> tmpDirs = new ArrayList<File>();
     protected List<BookieServer> bs = new ArrayList<BookieServer>();
+    protected List<ServerConfiguration> bsConfs = new ArrayList<ServerConfiguration>();
     protected Integer initialPort = 5000;
     protected int numBookies;
     protected BookKeeperTestClient bkc;
+
+    protected ServerConfiguration baseConf = new ServerConfiguration();
+    protected ClientConfiguration baseClientConf = new ClientConfiguration();
 
     public BaseTestCase(int numBookies) {
         this.numBookies = numBookies;
@@ -77,6 +83,18 @@ public abstract class BaseTestCase extends TestCase {
         return Arrays.asList(new Object[][] { {DigestType.MAC }, {DigestType.CRC32}});
     }
 
+    protected ServerConfiguration newServerConfiguration(int port, String zkServers, File journalDir, File[] ledgerDirs) {
+        ServerConfiguration conf = new ServerConfiguration(baseConf);
+        conf.setBookiePort(port);
+        conf.setZkServers(zkServers);
+        conf.setJournalDirName(journalDir.getPath());
+        String[] ledgerDirNames = new String[ledgerDirs.length];
+        for (int i=0; i<ledgerDirs.length; i++) {
+            ledgerDirNames[i] = ledgerDirs[i].getPath();
+        }
+        conf.setLedgerDirNames(ledgerDirNames);
+        return conf;
+    }
 
     @Before
     @Override
@@ -114,12 +132,17 @@ public abstract class BaseTestCase extends TestCase {
                 f.delete();
                 f.mkdir();
 
-                BookieServer server = new BookieServer(initialPort + i, HOSTPORT, f, new File[] { f });
+                ServerConfiguration conf = newServerConfiguration(
+                    initialPort + i, HOSTPORT, f, new File[] { f });
+                bsConfs.add(conf);
+
+                BookieServer server = new BookieServer(conf);
                 server.start();
                 bs.add(server);
             }
             zkc.close();
-            bkc = new BookKeeperTestClient("127.0.0.1");
+            baseClientConf.setZkServers("127.0.0.1");
+            bkc = new BookKeeperTestClient(baseClientConf);
         } catch(Exception e) {
             LOG.error("Error setting up", e);
             throw e;
@@ -146,6 +169,13 @@ public abstract class BaseTestCase extends TestCase {
      * @throws IOException
      */
     protected void restartBookies() throws InterruptedException, IOException {
+        restartBookies(null);
+    }
+
+    /**
+     * Restart bookie servers add new configuration settings
+     */
+    protected void restartBookies(ServerConfiguration newConf) throws InterruptedException, IOException {
         // shut down bookie server
         for (BookieServer server : bs) {
             server.shutdown();
@@ -155,7 +185,11 @@ public abstract class BaseTestCase extends TestCase {
         // restart them to ensure we can't 
         int j = 0;
         for (File f : tmpDirs) {
-            BookieServer server = new BookieServer(initialPort + j, HOSTPORT, f, new File[] { f });
+            ServerConfiguration conf = bsConfs.get(j);
+            if (null != newConf) {
+                conf.loadConf(newConf);
+            }
+            BookieServer server = new BookieServer(conf);
             server.start();
             bs.add(server);
             j++;

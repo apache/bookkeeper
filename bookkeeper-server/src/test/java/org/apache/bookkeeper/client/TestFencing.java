@@ -26,6 +26,7 @@ import java.net.InetSocketAddress;
 import java.util.Enumeration;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.CountDownLatch;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -115,7 +116,7 @@ public class TestFencing extends BaseTestCase {
                 barrier.await();
                 while(true) {
                     try {
-                        bk = new BookKeeper(bkc.getZkHandle());
+                        bk = new BookKeeper(new ClientConfiguration(baseClientConf), bkc.getZkHandle());
                         
                         lh = bk.openLedger(ledgerId, 
                                            digestType, "".getBytes());

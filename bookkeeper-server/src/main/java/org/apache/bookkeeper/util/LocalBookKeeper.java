@@ -27,6 +27,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +72,7 @@ public class LocalBookKeeper {
     //BookKeeper variables
     File tmpDirs[];
     BookieServer bs[];
+    ServerConfiguration bsConfs[];
     Integer initialPort = 5000;
 
     /**
@@ -120,20 +122,28 @@ public class LocalBookKeeper {
             LOG.error("Exception while creating znodes", e);
         }
     }
-    private void runBookies() throws IOException {
+    private void runBookies(ServerConfiguration baseConf) throws IOException {
         LOG.info("Starting Bookie(s)");
         // Create Bookie Servers (B1, B2, B3)
 
         tmpDirs = new File[numberOfBookies];
         bs = new BookieServer[numberOfBookies];
+        bsConfs = new ServerConfiguration[numberOfBookies];
 
         for(int i = 0; i < numberOfBookies; i++) {
             tmpDirs[i] = File.createTempFile("bookie" + Integer.toString(i), "test");
             tmpDirs[i].delete();
             tmpDirs[i].mkdir();
 
-            bs[i] = new BookieServer(initialPort + i, InetAddress.getLocalHost().getHostAddress() + ":"
-                                     + ZooKeeperDefaultPort, tmpDirs[i], new File[] {tmpDirs[i]});
+            bsConfs[i] = new ServerConfiguration(baseConf);
+            // override settings
+            bsConfs[i].setBookiePort(initialPort + i);
+            bsConfs[i].setZkServers(InetAddress.getLocalHost().getHostAddress() + ":"
+                                  + ZooKeeperDefaultPort);
+            bsConfs[i].setJournalDirName(tmpDirs[i].getPath());
+            bsConfs[i].setLedgerDirNames(new String[] { tmpDirs[i].getPath() });
+
+            bs[i] = new BookieServer(bsConfs[i]);
             bs[i].start();
         }
     }
@@ -144,9 +154,22 @@ public class LocalBookKeeper {
             System.exit(-1);
         }
         LocalBookKeeper lb = new LocalBookKeeper(Integer.parseInt(args[0]));
+
+        ServerConfiguration conf = new ServerConfiguration();
+        if (args.length >= 2) {
+            String confFile = args[1];
+            try {
+                conf.loadConf(new File(confFile).toURI().toURL());
+                LOG.info("Using configuration file " + confFile);
+            } catch (Exception e) {
+                // load conf failed
+                LOG.warn("Error loading configuration file " + confFile, e);
+            }
+        }
+
         lb.runZookeeper(1000);
         lb.initializeZookeper();
-        lb.runBookies();
+        lb.runBookies(conf);
         while (true) {
             Thread.sleep(5000);
         }

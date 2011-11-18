@@ -30,6 +30,7 @@ import java.util.Random;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.client.BKException;
@@ -66,7 +67,7 @@ public class ConditionalSetTest extends BaseTestCase {
     public void setUp() throws IOException, Exception {
         super.setUp();
         entry = new byte[10]; // initialize the entries list
-        this.bkcReader = new BookKeeperTestClient("127.0.0.1");
+        this.bkcReader = new BookKeeperTestClient(baseClientConf);
     }
 
     /**

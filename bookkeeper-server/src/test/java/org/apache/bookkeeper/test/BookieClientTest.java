@@ -32,6 +32,8 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.junit.Test;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -51,16 +53,22 @@ public class BookieClientTest extends TestCase {
     public int port = 13645;
     public ClientSocketChannelFactory channelFactory;
     public OrderedSafeExecutor executor;
+    ServerConfiguration conf = new ServerConfiguration();
 
     @Override
     public void setUp() throws Exception {
         tmpDir = File.createTempFile("bookie", "test");
         tmpDir.delete();
         tmpDir.mkdir();
+
         // Since this test does not rely on the BookKeeper client needing to
         // know via ZooKeeper which Bookies are available, okay, so pass in null
         // for the zkServers input parameter when constructing the BookieServer.
-        bs = new BookieServer(port, null, tmpDir, new File[] { tmpDir });
+        ServerConfiguration conf = new ServerConfiguration();
+        conf.setZkServers(null).setBookiePort(port)
+            .setJournalDirName(tmpDir.getPath())
+            .setLedgerDirNames(new String[] { tmpDir.getPath() });
+        bs = new BookieServer(conf);
         bs.start();
         channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors
                 .newCachedThreadPool());
@@ -124,7 +132,7 @@ public class BookieClientTest extends TestCase {
         InetSocketAddress addr = new InetSocketAddress("127.0.0.1", port);
         ResultStruct arc = new ResultStruct();
 
-        BookieClient bc = new BookieClient(channelFactory, executor);
+        BookieClient bc = new BookieClient(new ClientConfiguration(), channelFactory, executor);
         ChannelBuffer bb;
         bb = createByteBuffer(1, 1, 1);
         bc.addEntry(addr, 1, passwd, 1, bb, wrcb, null, BookieProtocol.FLAG_NONE);
@@ -224,7 +232,7 @@ public class BookieClientTest extends TestCase {
     public void testNoLedger() throws Exception {
         ResultStruct arc = new ResultStruct();
         InetSocketAddress addr = new InetSocketAddress("127.0.0.1", port);
-        BookieClient bc = new BookieClient(channelFactory, executor);
+        BookieClient bc = new BookieClient(new ClientConfiguration(), channelFactory, executor);
         synchronized (arc) {
             bc.readEntry(addr, 2, 13, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);

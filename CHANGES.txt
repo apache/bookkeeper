@@ -74,6 +74,8 @@ BUGFIXES:
 
   BOOKKEEPER-91: Bookkeeper and hedwig clients should not use log4j directly (ivank via fpj)
 
+  BOOKKEEPER-108: add configuration support for BK (Sijie via ivank)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)

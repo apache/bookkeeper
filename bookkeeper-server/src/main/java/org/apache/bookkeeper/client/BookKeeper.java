@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.EnumSet;
 import java.util.Set;
 
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
@@ -77,6 +78,9 @@ public class BookKeeper {
     OrderedSafeExecutor mainWorkerPool = new OrderedSafeExecutor(Runtime
             .getRuntime().availableProcessors());
 
+    ClientConfiguration conf;
+
+    
     /**
      * Create a bookkeeper client. A zookeeper client and a client socket factory
      * will be instantiated as part of this constructor.
@@ -92,7 +96,23 @@ public class BookKeeper {
      */
     public BookKeeper(String servers) throws IOException, InterruptedException,
         KeeperException {
-        this(new ZooKeeper(servers, 10000, new Watcher() {
+        this(new ClientConfiguration().setZkServers(servers));
+    }
+
+    /**
+     * Create a bookkeeper client using a configuration object.
+     * A zookeeper client and a client socket factory will be 
+     * instantiated as part of this constructor.
+     *
+     * @param conf
+     *          Client Configuration object
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws KeeperException
+     */
+    public BookKeeper(ClientConfiguration conf) throws IOException, InterruptedException,
+        KeeperException {
+        this(conf, new ZooKeeper(conf.getZkServers(), conf.getZkTimeout(), new Watcher() {
             @Override
             public void process(WatchedEvent event) {
                 // TODO: handle session disconnects and expires
@@ -105,20 +125,23 @@ public class BookKeeper {
 
         ownZKHandle = true;
         ownChannelFactory = true;
-    }
+     }
 
     /**
      * Create a bookkeeper client but use the passed in zookeeper client instead
      * of instantiating one.
      *
+     * @param conf
+     *          Client Configuration object
+     *          {@link ClientConfiguration}
      * @param zk
      *          Zookeeper client instance connected to the zookeeper with which
      *          the bookies have registered
      * @throws InterruptedException
      * @throws KeeperException
      */
-    public BookKeeper(ZooKeeper zk) throws InterruptedException, KeeperException {
-        this(zk, new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
+    public BookKeeper(ClientConfiguration conf, ZooKeeper zk) throws InterruptedException, KeeperException {
+        this(conf, zk, new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                 Executors.newCachedThreadPool()));
         ownChannelFactory = true;
     }
@@ -127,6 +150,9 @@ public class BookKeeper {
      * Create a bookkeeper client but use the passed in zookeeper client and
      * client socket channel factory instead of instantiating those.
      *
+     * @param conf
+     *          Client Configuration Object
+     *          {@link ClientConfiguration}
      * @param zk
      *          Zookeeper client instance connected to the zookeeper with which
      *          the bookies have registered
@@ -135,16 +161,17 @@ public class BookKeeper {
      * @throws InterruptedException
      * @throws KeeperException
      */
-    public BookKeeper(ZooKeeper zk, ClientSocketChannelFactory channelFactory)
+    public BookKeeper(ClientConfiguration conf, ZooKeeper zk, ClientSocketChannelFactory channelFactory)
             throws InterruptedException, KeeperException {
         if (zk == null || channelFactory == null) {
             throw new NullPointerException();
         }
+        this.conf = conf;
         this.zk = zk;
         this.channelFactory = channelFactory;
         bookieWatcher = new BookieWatcher(this);
         bookieWatcher.readBookiesBlocking();
-        bookieClient = new BookieClient(channelFactory, mainWorkerPool);
+        bookieClient = new BookieClient(conf, channelFactory, mainWorkerPool);
     }
 
     /**
@@ -160,6 +187,10 @@ public class BookKeeper {
 
     ZooKeeper getZkHandle() {
         return zk;
+    }
+
+    protected ClientConfiguration getConf() {
+        return conf;
     }
 
     /**

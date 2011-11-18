@@ -113,15 +113,15 @@ public class LedgerDescriptor {
                 long size = fi.size();
                 // we may not have the last entry in the cache
                 if (size > lastEntry*8) {
-                    ByteBuffer bb = ByteBuffer.allocate(LedgerEntryPage.PAGE_SIZE);
-                    long position = size-LedgerEntryPage.PAGE_SIZE;
+                    ByteBuffer bb = ByteBuffer.allocate(ledgerCache.getPageSize());
+                    long position = size - ledgerCache.getPageSize();
                     if (position < 0) {
                         position = 0;
                     }
                     fi.read(bb, position);
                     bb.flip();
                     long startingEntryId = position/8;
-                    for(int i = LedgerEntryPage.ENTRIES_PER_PAGES-1; i >= 0; i--) {
+                    for(int i = ledgerCache.getEntriesPerPage()-1; i >= 0; i--) {
                         if (bb.getLong(i*8) != 0) {
                             if (lastEntry < startingEntryId+i) {
                                 lastEntry = startingEntryId+i;

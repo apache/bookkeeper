@@ -27,6 +27,7 @@ import java.lang.InterruptedException;
 import java.util.Arrays;
 import java.util.concurrent.Executors;
 
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
@@ -68,7 +69,7 @@ class LoopbackClient implements WriteCallback {
     }
 
     LoopbackClient(ClientSocketChannelFactory channelFactory, OrderedSafeExecutor executor, long begin, int limit) throws IOException {
-        this.client = new BookieClient(channelFactory, executor);
+        this.client = new BookieClient(new ClientConfiguration(), channelFactory, executor);
         this.begin = begin;
     }
 

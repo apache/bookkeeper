@@ -48,8 +48,8 @@ public class LedgerDeleteTest extends BaseTestCase {
     @Override
     public void setUp() throws Exception {
         // Set up the configuration properties needed.
-        System.setProperty("logSizeLimit", Long.toString(2 * 1024 * 1024L));
-        System.setProperty("gcWaitTime", "1000");
+        baseConf.setEntryLogSizeLimit(2 * 1024 * 1024L);
+        baseConf.setGcWaitTime(1000);
         super.setUp();
     }
 
@@ -128,17 +128,7 @@ public class LedgerDeleteTest extends BaseTestCase {
          * directories. This will test the reading of pre-existing ledger index
          * files in the LedgerCache during startup of a Bookie Server.
          */
-        for (BookieServer server : bs) {
-            server.shutdown();
-        }
-        bs.clear();
-        int j = 0;
-        for (File f : tmpDirs) {
-            BookieServer server = new BookieServer(initialPort + j, HOSTPORT, f, new File[] { f });
-            server.start();
-            bs.add(server);
-            j++;
-        }
+        restartBookies();
 
         // Delete all of these ledgers from the BookKeeper client
         for (LedgerHandle lh : lhs) {
