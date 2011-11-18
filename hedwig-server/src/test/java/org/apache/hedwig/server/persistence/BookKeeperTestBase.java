@@ -20,6 +20,7 @@ package org.apache.hedwig.server.persistence;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -48,8 +49,8 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
 
     // BookKeeper Server variables
     private List<BookieServer> bookiesList;
-    private List<ServerConfiguration> bookieConfsList;
     private int initialPort = 5000;
+    private int nextPort = initialPort;
 
     // String constants used for creating the bookie server files.
     private static final String PREFIX = "bookie";
@@ -100,16 +101,9 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
 
         // Create Bookie Servers
         bookiesList = new LinkedList<BookieServer>();
-        bookieConfsList = new LinkedList<ServerConfiguration>();
 
         for (int i = 0; i < numBookies; i++) {
-            File tmpDir = FileUtils.createTempDirectory(PREFIX + i, SUFFIX);
-            ServerConfiguration conf = newServerConfiguration(
-                initialPort + i, hostPort, tmpDir, new File[] { tmpDir });
-            bookieConfsList.add(conf);
-            BookieServer bs = new BookieServer(conf);
-            bs.start();
-            bookiesList.add(bs);
+            startUpNewBookieServer();
         }
 
         // Create the BookKeeper client
@@ -134,6 +128,28 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
         // Close the BookKeeper client
         bk.close();
         super.tearDown();
+    }
+    
+    public void tearDownOneBookieServer() throws Exception {
+        Random r = new Random();
+        int bi = r.nextInt(bookiesList.size());
+        BookieServer bs = bookiesList.get(bi);
+        try {
+            bs.shutdown();
+        } catch (InterruptedException e) {
+            LOG.error("Error tearing down", e);
+        }
+        bookiesList.remove(bi);
+    }
+    
+    public void startUpNewBookieServer() throws Exception {
+        File tmpDir = FileUtils.createTempDirectory(
+                PREFIX + (nextPort - initialPort), SUFFIX);
+        ServerConfiguration conf = newServerConfiguration(
+                nextPort++, hostPort, tmpDir, new File[] { tmpDir });
+        BookieServer bs = new BookieServer(conf);
+        bs.start();
+        bookiesList.add(bs);
     }
 
     protected ServerConfiguration newServerConfiguration(int port, String zkServers, File journalDir, File[] ledgerDirs) {

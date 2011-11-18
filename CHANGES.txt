@@ -86,6 +86,8 @@ BUGFIXES:
 
   BOOKKEEPER-100: Some hedwig tests have build errors (dferro via ivank)
 
+  BOOKKEEPER-69: ServerRedirectLoopException when a machine (hosts bookie server & hub server) reboot, which is caused by race condition of topic manager (Sijie, ivank via ivank)
+
  hedwig-client/
  
   BOOKKEEPER-52: Message sequence confuse due to the subscribeMsgQueue@SubscribeResponseHandler (xulei via ivank)

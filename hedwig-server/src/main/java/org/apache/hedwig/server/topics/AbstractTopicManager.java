@@ -136,10 +136,19 @@ public abstract class AbstractTopicManager implements TopicManager {
             }
 
             @Override
-            public void operationFailed(Object ctx, PubSubException exception) {
+            public void operationFailed(final Object ctx, final PubSubException exception) {
                 // TODO: optimization: we can release this as soon as we experience the first error.
-                realReleaseTopic(topic, CallbackUtils.curry(originalCallback, addr), originalContext);
-                originalCallback.operationFailed(ctx, exception);
+                Callback<Void> cb = new Callback<Void>() {
+                    public void operationFinished(Object _ctx, Void _resultOfOperation) {
+                        originalCallback.operationFailed(ctx, exception);
+                    }
+                    public void operationFailed(Object _ctx, PubSubException _exception) {
+                        logger.error("Exception releasing topic", _exception);
+                        originalCallback.operationFailed(ctx, exception);
+                    }
+                };
+                
+                realReleaseTopic(topic, cb, originalContext);
             }
         };
 
