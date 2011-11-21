@@ -106,6 +106,8 @@ BUGFIXES:
 
   BOOKKEEPER-87: TestHedwigHub exhausts direct buffer memory with netty 3.2.4.Final (ivank via fpj)  
 
+  BOOKKEEPER-79: randomly startDelivery/stopDelivery will core dump in c++ hedwig client (Sijie Guo via ivank)
+
 IMPROVEMENTS:
 
  BOOKKEEPER-28: Create useful startup scripts for bookkeeper and hedwig (ivank)

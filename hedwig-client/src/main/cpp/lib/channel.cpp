@@ -52,7 +52,7 @@ DuplexChannel::DuplexChannel(EventDispatcher& dispatcher, const HostAddress& add
 			     const Configuration& cfg, const ChannelHandlerPtr& handler)
   : dispatcher(dispatcher), address(addr), handler(handler), 
     socket(dispatcher.getService()), instream(&in_buf), copy_buf(NULL), copy_buf_length(0),
-    state(UNINITIALISED), receiving(false), sending(false)
+    state(UNINITIALISED), receiving(false), reading(false), sending(false)
 {
   LOG4CXX_DEBUG(logger, "Creating DuplexChannel(" << this << ")");
 }
@@ -140,6 +140,21 @@ void DuplexChannel::connect() {
       h = channel->handler;
     }
   }
+
+  // channel did stopReceiving, we should not call #messageReceived
+  // store this response in outstanding_response variable and did stop receiving
+  // when we startReceiving again, we can process this last response.
+  {
+    boost::lock_guard<boost::mutex> lock(channel->receiving_lock);
+    if (!channel->isReceiving()) {
+      // queue the response
+      channel->outstanding_response = response;
+      channel->reading = false;
+      return;
+    }
+  }
+
+  // channel is still in receiving status
   if (h.get()) {
     h->messageReceived(channel, response);
   }
@@ -188,10 +203,6 @@ void DuplexChannel::connect() {
 }
 
 /*static*/ void DuplexChannel::readSize(DuplexChannelPtr channel) {
-  if (!channel->isReceiving()) {
-    return;
-  }
-
   int toread = sizeof(uint32_t) - channel->in_buf.size();
   LOG4CXX_DEBUG(logger, " size of incoming message " << sizeof(uint32_t) 
 		<< ", currently in buffer " << channel->in_buf.size() 
@@ -212,14 +223,56 @@ void DuplexChannel::connect() {
 
 void DuplexChannel::startReceiving() {
   LOG4CXX_DEBUG(logger, "DuplexChannel::startReceiving channel(" << this << ") currently receiving = " << receiving);
-  
-  boost::lock_guard<boost::mutex> lock(receiving_lock);
-  if (receiving) {
-    return;
-  } 
-  receiving = true;
-  
-  DuplexChannel::readSize(shared_from_this());
+
+  PubSubResponsePtr response;
+  bool inReadingState;
+  {
+    boost::lock_guard<boost::mutex> lock(receiving_lock);
+    // receiving before just return
+    if (receiving) {
+      return;
+    } 
+    receiving = true;
+
+    // if we have last response collected in previous startReceiving
+    // we need to process it, but we should process it under receiving_lock
+    // otherwise we enter dead lock
+    // subscriber#startDelivery(subscriber#queue_lock) =>
+    // channel#startReceiving(channel#receiving_lock) =>
+    // sbuscriber#messageReceived(subscriber#queue_lock)
+    if (outstanding_response.get()) {
+      response = outstanding_response;
+      outstanding_response = PubSubResponsePtr();
+    }
+
+    // if channel is in reading status wait data from remote server
+    // we don't need to insert another readSize op
+    inReadingState = reading;
+    if (!reading) {
+      reading = true;
+    }
+  }
+
+  // consume message buffered in receiving queue
+  // there is at most one message buffered when we
+  // stopReceiving between #readSize and #readMsgBody
+  if (response.get()) {
+    ChannelHandlerPtr h;
+    {
+      boost::shared_lock<boost::shared_mutex> lock(this->destruction_lock);
+      if (this->handler.get()) {
+        h = this->handler;
+      }
+    }
+    if (h.get()) {
+      h->messageReceived(shared_from_this(), response);
+    }
+  }
+
+  // if channel is not in reading state, #readSize
+  if (!inReadingState) {
+    DuplexChannel::readSize(shared_from_this());
+  }
 }
 
 bool DuplexChannel::isReceiving() {
@@ -320,9 +373,19 @@ void DuplexChannel::kill() {
   if (connected) {
     setState(DEAD);
     
-    socket.cancel();
-    socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
-    socket.close();
+    boost::system::error_code ec;
+    socket.cancel(ec);
+    if (ec) {
+      LOG4CXX_WARN(logger, "Channel " << this << " canceling io error : " << ec.message().c_str());
+    }
+    socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+    if (ec) {
+      LOG4CXX_WARN(logger, "Channel " << this << " shutdown error : " << ec.message().c_str());
+    }
+    socket.close(ec);
+    if (ec) {
+      LOG4CXX_WARN(logger, "Channel " << this << " close error : " << ec.message().c_str());
+    }
   }
   handler = ChannelHandlerPtr(); // clear the handler in case it ever referenced the channel*/
 }

@@ -139,6 +139,8 @@ namespace Hedwig {
     boost::shared_mutex state_lock;
 
     bool receiving;
+    bool reading;
+    PubSubResponsePtr outstanding_response;
     boost::mutex receiving_lock;
     
     bool sending;

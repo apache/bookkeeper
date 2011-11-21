@@ -95,6 +95,25 @@ start_hw_server () {
     COUNT=$2
     PORT=$((4080+$COUNT))
 
+    export HEDWIG_LOG_CONF=/tmp/hw-log4j-$COUNT.properties
+    cat > $HEDWIG_LOG_CONF <<EOF
+log4j.rootLogger=INFO, ROLLINGFILE
+#
+# Add ROLLINGFILE to rootLogger to get log file output
+#    Log DEBUG level and above messages to a log file
+log4j.appender.ROLLINGFILE=org.apache.log4j.DailyRollingFileAppender
+log4j.appender.ROLLINGFILE.Threshold=DEBUG
+log4j.appender.ROLLINGFILE.File=/tmp/hedwig-server-$COUNT.log
+log4j.appender.ROLLINGFILE.layout=org.apache.log4j.PatternLayout
+log4j.appender.ROLLINGFILE.layout.ConversionPattern=%d{ISO8601} - %-5p - [%t:%C{1}@%L] - %m%n
+# Max log file size of 10MB
+log4j.appender.ROLLINGFILE.MaxFileSize=10MB
+# uncomment the next line to limit number of backup files
+#log4j.appender.ROLLINGFILE.MaxBackupIndex=10
+log4j.appender.ROLLINGFILE.layout=org.apache.log4j.PatternLayout
+log4j.appender.ROLLINGFILE.layout.ConversionPattern=%d{ISO8601} - %-5p [%t:%C{1}@%L] - %m%n
+EOF
+
     export HEDWIG_SERVER_CONF=/tmp/hw-server-$COUNT.conf
     cat > $HEDWIG_SERVER_CONF <<EOF
 zk_host=localhost:2181

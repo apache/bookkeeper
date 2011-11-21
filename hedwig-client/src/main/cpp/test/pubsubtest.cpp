@@ -42,6 +42,7 @@ class PubSubTestSuite : public CppUnit::TestFixture {
 private:
   CPPUNIT_TEST_SUITE( PubSubTestSuite );
   CPPUNIT_TEST(testPubSubOrderChecking);
+  CPPUNIT_TEST(testRandomDelivery);
   CPPUNIT_TEST(testPubSubContinuousOverClose);
   //  CPPUNIT_TEST(testPubSubContinuousOverServerDown);
   CPPUNIT_TEST(testMultiTopic);
@@ -118,13 +119,17 @@ public:
         int newMsgId = atoi(msg.body().c_str());
         // checking msgId
         LOG4CXX_DEBUG(logger, "received message " << newMsgId);
-        if (isInOrder) {
-          if (newMsgId != startMsgId + 1) {
-            LOG4CXX_ERROR(logger, "received out-of-order message : expected " << (startMsgId + 1) << ", actual " << newMsgId);
-            isInOrder = false;
-          } else {
-            startMsgId = newMsgId;
+        if (startMsgId >= 0) { // need to check ordering if start msg id is larger than 0
+          if (isInOrder) {
+            if (newMsgId != startMsgId + 1) {
+              LOG4CXX_ERROR(logger, "received out-of-order message : expected " << (startMsgId + 1) << ", actual " << newMsgId);
+              isInOrder = false;
+            } else {
+              startMsgId = newMsgId;
+            }
           }
+        } else { // we set first msg id as startMsgId when startMsgId is -1
+          startMsgId = newMsgId;
         }
         callback->operationComplete();
         sleep(sleepTimeInConsume);
@@ -152,22 +157,48 @@ public:
     int sleepTimeInConsume;
   };
 
-  class PubForOrderChecking {
+  // Publisher integer until finished
+  class IntegerPublisher {
   public:
-    PubForOrderChecking(std::string &topic, int startMsgId, int numMsgs, int sleepTime, Hedwig::Publisher &pub)
-      : topic(topic), startMsgId(startMsgId), numMsgs(numMsgs), sleepTime(sleepTime), pub(pub) {
+    IntegerPublisher(std::string &topic, int startMsgId, int numMsgs, int sleepTime, Hedwig::Publisher &pub, long runTime)
+      : topic(topic), startMsgId(startMsgId), numMsgs(numMsgs), sleepTime(sleepTime), pub(pub), running(true), runTime(runTime) {
     }
 
     void operator()() {
-      for (int i=0; i<numMsgs; i++) {
-        int msg = startMsgId + i;
-        std::stringstream ss;
-        ss << msg;
-        pub.publish(topic, ss.str());
-        sleep(sleepTime);
-      }
+      int i = 1;
+      long beginTime = curTime();
+      long elapsedTime = 0;
+
+      while (running) {
+        try {
+          int msg = startMsgId + i;
+          std::stringstream ss;
+          ss << msg;
+          pub.publish(topic, ss.str());
+          sleep(sleepTime);
+          if (numMsgs > 0 && i >= numMsgs) {
+            running = false;
+          } else {
+            if (i % 100 == 0 &&
+                (elapsedTime = (curTime() - beginTime)) >= runTime) {
+              LOG4CXX_DEBUG(logger, "Elapsed time : " << elapsedTime);
+              running = false;
+            }
+          }
+          ++i;
+        } catch (std::exception &e) {
+          LOG4CXX_WARN(logger, "Exception when publishing messages : " << e.what());
+        }
+      } 
     }
 
+    long curTime() {
+      struct timeval tv;
+      long mtime;
+      gettimeofday(&tv, NULL);
+      mtime = tv.tv_sec * 1000 + tv.tv_usec / 1000.0 + 0.5;
+      return mtime;
+    }
 
   private:
     std::string topic;
@@ -175,7 +206,51 @@ public:
     int numMsgs;
     int sleepTime;
     Hedwig::Publisher& pub;
+    bool running;
+    long runTime;
   };
+
+  // test startDelivery / stopDelivery randomly
+  void testRandomDelivery() {
+    std::string topic = "randomDeliveryTopic";
+    std::string subscriber = "mysub-randomDelivery";
+
+    int nLoops = 300;
+    int sleepTimePerLoop = 1;
+    int syncTimeout = 10000;
+
+    Hedwig::Configuration* conf = new TestServerConfiguration(syncTimeout);
+    std::auto_ptr<Hedwig::Configuration> confptr(conf);
+
+    Hedwig::Client* client = new Hedwig::Client(*conf);
+    std::auto_ptr<Hedwig::Client> clientptr(client);
+
+    Hedwig::Subscriber& sub = client->getSubscriber();
+    Hedwig::Publisher& pub = client->getPublisher();
+
+    // subscribe topic
+    sub.subscribe(topic, subscriber, Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
+
+    // start thread to publish message
+    IntegerPublisher intPublisher = IntegerPublisher(topic, 0, 0, 0, pub, nLoops * sleepTimePerLoop * 1000);
+    boost::thread pubThread(intPublisher);
+
+    // start random delivery
+    MyOrderCheckingMessageHandlerCallback* cb =
+      new MyOrderCheckingMessageHandlerCallback(topic, subscriber, 0, 0);
+    Hedwig::MessageHandlerCallbackPtr handler(cb);
+
+    for (int i = 0; i < nLoops; i++) {
+      LOG4CXX_DEBUG(logger, "Randomly Delivery : " << i);
+      sub.startDelivery(topic, subscriber, handler);
+      // sleep random time
+      sleep(sleepTimePerLoop);
+      sub.stopDelivery(topic, subscriber);
+      CPPUNIT_ASSERT(cb->inOrder());
+    }
+    
+    pubThread.join();
+  }
 
   // check message ordering
   void testPubSubOrderChecking() {
@@ -204,17 +279,17 @@ public:
     
     // we don't start delivery first, so the message will be queued
     // publish ${numMessages} messages, so the messages will be queued
-    for (int i=0; i<numMessages; i++) {
+    for (int i=1; i<=numMessages; i++) {
       std::stringstream ss;
       ss << i;
       pub.publish(topic, ss.str()); 
     }
 
-    MyOrderCheckingMessageHandlerCallback* cb = new MyOrderCheckingMessageHandlerCallback(topic, sid, -1, sleepTimeInConsume);
+    MyOrderCheckingMessageHandlerCallback* cb = new MyOrderCheckingMessageHandlerCallback(topic, sid, 0, sleepTimeInConsume);
     Hedwig::MessageHandlerCallbackPtr handler(cb);
 
     // create a thread to publish another ${numMessages} messages
-    boost::thread pubThread(PubForOrderChecking(topic, numMessages, numMessages, sleepTimeInConsume, pub));
+    boost::thread pubThread(IntegerPublisher(topic, numMessages, numMessages, sleepTimeInConsume, pub, 0));
 
     // start delivery will consumed the queued messages
     // new message will recevied and the queued message should be consumed

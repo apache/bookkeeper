@@ -235,24 +235,31 @@ void SubscriberClientChannelHandler::channelDisconnected(const DuplexChannelPtr&
 }
 
 void SubscriberClientChannelHandler::startDelivery(const MessageHandlerCallbackPtr& handler) {
-  boost::lock_guard<boost::shared_mutex> lock(queue_lock);
+  {
+    boost::lock_guard<boost::shared_mutex> lock(queue_lock);
 
-  this->handler = handler;
+    this->handler = handler;
 
-  if (!(this->handler.get())) {
-    // no message handler callback
-    LOG4CXX_WARN(logger, "Handler " << this << " try to start an empty message handler");
-    return;
+    if (!(this->handler.get())) {
+      // no message handler callback
+      LOG4CXX_WARN(logger, "Handler " << this << " try to start an empty message handler");
+      return;
+    }
+
+    while (!queue.empty()) {    
+      PubSubResponsePtr m = queue.front();
+      queue.pop_front();
+
+      OperationCallbackPtr callback(new SubscriberConsumeCallback(client, shared_from_this(), origData, m));
+
+      this->handler->consume(origData->getTopic(), origData->getSubscriberId(), m->message(), callback);
+    }
   }
 
-  while (!queue.empty()) {    
-    PubSubResponsePtr m = queue.front();
-    queue.pop_front();
-
-    OperationCallbackPtr callback(new SubscriberConsumeCallback(client, shared_from_this(), origData, m));
-
-    this->handler->consume(origData->getTopic(), origData->getSubscriberId(), m->message(), callback);
-  }
+  // put channel#startReceiving out of lock of subscriber#queue_lock
+  // otherwise we enter dead lock
+  // subscriber#startDelivery(subscriber#queue_lock) =>
+  // channel#startReceiving(channel#receiving_lock) =>
   channel->startReceiving();
 }
 
