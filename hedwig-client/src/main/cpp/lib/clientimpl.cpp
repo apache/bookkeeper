@@ -271,6 +271,13 @@ void ClientImpl::redirectRequest(const DuplexChannelPtr& channel, PubSubDataPtr&
   DuplexChannelPtr newchannel;
   try {
     if (data->getType() == SUBSCRIBE) {
+      // a redirect for subscription, kill old channel and remove old channel from all channels list
+      // otherwise old channel will not be destroyed, caused lost of CLOSE_WAIT connections
+      channel->kill();
+      {
+        boost::lock_guard<boost::shared_mutex> aclock(allchannels_lock);
+        allchannels.erase(channel); // channel should be deleted here
+      }
       SubscriberClientChannelHandlerPtr handler(new SubscriberClientChannelHandler(shared_from_this(), 
 										   this->getSubscriberImpl(), data));
       newchannel = createChannel(data->getTopic(), handler);
