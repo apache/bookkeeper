@@ -62,10 +62,10 @@ p. LastLogMark contains two parts:
 
 p. You may use following settings to further fine tune the behavior of your Bookie servers. Currently these configuration settings are set using Java system properties.
 
-* journal_max_size_mb
+* journalMaxSizeMB
 ** journal file size limitation. when a journal reaches this limitation, it will be closed and new journal file be created.
 
-* journal_max_backups
+* journalMaxBackups
 ** how many old journal files whose id is less than LastLogMark 's journal id.
 
 bq. NOTE: keeping number of old journal files would be useful for manually recovery in special case.

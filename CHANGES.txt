@@ -131,3 +131,6 @@ IMPROVEMENTS:
   BOOKKEEPER-109: Add documentation to describe how bookies flushes data (Sijie Guo via fpj)
 
   BOOKKEEPER-90: Hedwig API changes for initial Bookkeeper release (ivank via fpj)
+
+  BOOKKEEPER-119: Keys in configuration have inconsistent style (ivank via fpj)
+

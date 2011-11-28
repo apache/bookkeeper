@@ -31,22 +31,22 @@ public class ServerConfiguration extends AbstractConfiguration {
     // Gc Parameters
     protected final static String GC_WAIT_TIME = "gcWaitTime";
     // Sync Parameters
-    protected final static String FLUSH_INTERVAL = "flush_interval";
+    protected final static String FLUSH_INTERVAL = "flushInterval";
     // Bookie death watch interval
-    protected final static String DEATH_WATCH_INTERVAL = "bookie_death_watch_interval";
+    protected final static String DEATH_WATCH_INTERVAL = "bookieDeathWatchInterval";
     // Ledger Cache Parameters
     protected final static String OPEN_FILE_LIMIT = "openFileLimit";
     protected final static String PAGE_LIMIT = "pageLimit";
     protected final static String PAGE_SIZE = "pageSize";
     // Journal Parameters
-    protected final static String MAX_JOURNAL_SIZE = "journal_max_size_mb";
-    protected final static String MAX_BACKUP_JOURNALS = "journal_max_backups";
+    protected final static String MAX_JOURNAL_SIZE = "journalMaxSizeMB";
+    protected final static String MAX_BACKUP_JOURNALS = "journalMaxBackups";
     // Bookie Parameters
-    protected final static String BOOKIE_PORT = "bookie_port";
-    protected final static String JOURNAL_DIR = "journal_dir";
-    protected final static String LEDGER_DIRS = "ledger_dirs";
+    protected final static String BOOKIE_PORT = "bookiePort";
+    protected final static String JOURNAL_DIR = "journalDirectory";
+    protected final static String LEDGER_DIRS = "ledgerDirectories";
     // NIO Parameters
-    protected final static String SERVER_TCP_NODELAY = "server.tcpnodelay";
+    protected final static String SERVER_TCP_NODELAY = "serverTcpNoDelay";
     // Zookeeper Parameters
     protected final static String ZK_TIMEOUT = "zkTimeout";
     protected final static String ZK_SERVERS = "zkServers";

@@ -37,7 +37,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String PASSWD = "passwd";
 
     // NIO Parameters
-    protected final static String CLIENT_TCP_NODELAY = "client.tcpnodelay";
+    protected final static String CLIENT_TCP_NODELAY = "clientTcpNoDelay";
 
     /**
      * Construct a default client-side configuration
