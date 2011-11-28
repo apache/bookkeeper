@@ -114,6 +114,8 @@ BUGFIXES:
 
   BOOKKEEPER-117: Support multi threads in hedwig cpp client to leverage multi-core hardware (Sijie Guo via ivank)
 
+  BOOKKEEPER-53: race condition of outstandingMsgSet@SubscribeResponseHandler (fpj via breed)
+
 IMPROVEMENTS:
 
  BOOKKEEPER-28: Create useful startup scripts for bookkeeper and hedwig (ivank)

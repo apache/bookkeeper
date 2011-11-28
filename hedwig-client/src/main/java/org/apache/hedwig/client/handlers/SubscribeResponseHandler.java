@@ -17,7 +17,8 @@
  */
 package org.apache.hedwig.client.handlers;
 
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
@@ -112,18 +113,20 @@ public class SubscribeResponseHandler {
             // this only on a successful ack response from the server.
             TopicSubscriber topicSubscriber = new TopicSubscriber(pubSubData.topic, pubSubData.subscriberId);
             responseHandler.getSubscriber().setChannelForTopic(topicSubscriber, channel);
-            // Lazily create the Set to keep track of outstanding Messages
-            // to be consumed by the client app. At this stage, delivery for
-            // that topic hasn't started yet so creation of this Set should
-            // be thread safe. We'll create the Set with an initial capacity
-            // equal to the configured parameter for the maximum number of
+            // Lazily create the Set (from a concurrent hashmap) to keep track
+            // of outstanding Messages to be consumed by the client app. At this
+            // stage, delivery for that topic hasn't started yet so creation of 
+            // this Set should be thread safe. We'll create the Set with an initial
+            // capacity equal to the configured parameter for the maximum number of
             // outstanding messages to allow. The load factor will be set to
             // 1.0f which means we'll only rehash and allocate more space if
             // we ever exceed the initial capacity. That should be okay
             // because when that happens, things are slow already and piling
             // up on the client app side to consume messages.
-            outstandingMsgSet = new HashSet<Message>(
-                responseHandler.getConfiguration().getMaximumOutstandingMessages(), 1.0f);
+            
+            outstandingMsgSet = Collections.newSetFromMap(new ConcurrentHashMap<Message,Boolean>(
+                responseHandler.getConfiguration().getMaximumOutstandingMessages(), 1.0f));
+            
             // Response was success so invoke the callback's operationFinished
             // method.
             pubSubData.callback.operationFinished(pubSubData.context, null);
