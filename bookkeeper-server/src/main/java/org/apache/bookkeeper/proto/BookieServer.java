@@ -29,6 +29,8 @@ import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
+import org.apache.zookeeper.KeeperException;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -56,7 +58,8 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     DeathWatcher deathWatcher;
     static Logger LOG = LoggerFactory.getLogger(BookieServer.class);
 
-    public BookieServer(ServerConfiguration conf) throws IOException {
+    public BookieServer(ServerConfiguration conf) 
+            throws IOException, KeeperException, InterruptedException {
         this.conf = conf;
         this.bookie = new Bookie(conf);
     }
@@ -217,8 +220,8 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
      * @throws IOException
      * @throws InterruptedException
      */
-    public static void main(String[] args) throws IOException, InterruptedException,
-                                                  IllegalArgumentException {
+    public static void main(String[] args) 
+            throws IOException, KeeperException, InterruptedException {
         ServerConfiguration conf = null;
         try {
             conf = parseArgs(args);

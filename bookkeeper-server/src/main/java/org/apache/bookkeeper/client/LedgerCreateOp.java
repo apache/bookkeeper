@@ -28,21 +28,18 @@ import java.util.ArrayList;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.util.StringUtils;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
-import org.apache.zookeeper.AsyncCallback.StringCallback;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.data.Stat;
 
 /**
  * Encapsulates asynchronous ledger create operation
  *
  */
-class LedgerCreateOp implements StringCallback, StatCallback {
+class LedgerCreateOp implements GenericCallback<String>, StatCallback {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerCreateOp.class);
 
@@ -86,27 +83,18 @@ class LedgerCreateOp implements StringCallback, StatCallback {
      * Initiates the operation
      */
     public void initiate() {
-        /*
-         * Create ledger node on ZK. We get the id from the sequence number on
-         * the node.
-         */
-
-        bk.getZkHandle().create(StringUtils.prefix, new byte[0], Ids.OPEN_ACL_UNSAFE,
-                                CreateMode.PERSISTENT_SEQUENTIAL, this, null);
-
-        // calls the children callback method below
+        bk.getLedgerManager().newLedgerPath(this);
     }
 
-
     /**
-     * Implements ZooKeeper string callback.
-     *
-     * @see org.apache.zookeeper.AsyncCallback.StringCallback#processResult(int, java.lang.String, java.lang.Object, java.lang.String)
+     * Callback when created ledger path.
      */
-    public void processResult(int rc, String path, Object ctx, String name) {
+    @Override
+    public void operationComplete(int rc, String ledgerPath) {
 
         if (rc != KeeperException.Code.OK.intValue()) {
-            LOG.error("Could not create node for ledger", KeeperException.create(KeeperException.Code.get(rc), path));
+            LOG.error("Could not create node for ledger",
+                      KeeperException.create(KeeperException.Code.get(rc), ledgerPath));
             cb.createComplete(BKException.Code.ZKException, null, this.ctx);
             return;
         }
@@ -116,9 +104,9 @@ class LedgerCreateOp implements StringCallback, StatCallback {
          */
         long ledgerId;
         try {
-            ledgerId = StringUtils.getLedgerId(name);
+            ledgerId = bk.getLedgerManager().getLedgerId(ledgerPath);
         } catch (IOException e) {
-            LOG.error("Could not extract ledger-id from path:" + path, e);
+            LOG.error("Could not extract ledger-id from path:" + ledgerPath, e);
             cb.createComplete(BKException.Code.ZKException, null, this.ctx);
             return;
         }

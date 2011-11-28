@@ -23,16 +23,15 @@ package org.apache.bookkeeper.client;
 
 import java.io.IOException;
 import java.util.concurrent.Executors;
-import java.util.EnumSet;
-import java.util.Set;
 
+import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.proto.BookieClient;
-import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,9 +77,11 @@ public class BookKeeper {
     OrderedSafeExecutor mainWorkerPool = new OrderedSafeExecutor(Runtime
             .getRuntime().availableProcessors());
 
+    // Ledger manager responsible for how to store ledger meta data
+    final LedgerManager ledgerManager;
+
     ClientConfiguration conf;
 
-    
     /**
      * Create a bookkeeper client. A zookeeper client and a client socket factory
      * will be instantiated as part of this constructor.
@@ -137,10 +138,12 @@ public class BookKeeper {
      * @param zk
      *          Zookeeper client instance connected to the zookeeper with which
      *          the bookies have registered
+     * @throws IOException
      * @throws InterruptedException
      * @throws KeeperException
      */
-    public BookKeeper(ClientConfiguration conf, ZooKeeper zk) throws InterruptedException, KeeperException {
+    public BookKeeper(ClientConfiguration conf, ZooKeeper zk)
+        throws IOException, InterruptedException, KeeperException {
         this(conf, zk, new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                 Executors.newCachedThreadPool()));
         ownChannelFactory = true;
@@ -158,11 +161,12 @@ public class BookKeeper {
      *          the bookies have registered
      * @param channelFactory
      *          A factory that will be used to create connections to the bookies
+     * @throws IOException
      * @throws InterruptedException
      * @throws KeeperException
      */
     public BookKeeper(ClientConfiguration conf, ZooKeeper zk, ClientSocketChannelFactory channelFactory)
-            throws InterruptedException, KeeperException {
+            throws IOException, InterruptedException, KeeperException {
         if (zk == null || channelFactory == null) {
             throw new NullPointerException();
         }
@@ -172,6 +176,12 @@ public class BookKeeper {
         bookieWatcher = new BookieWatcher(this);
         bookieWatcher.readBookiesBlocking();
         bookieClient = new BookieClient(conf, channelFactory, mainWorkerPool);
+        // intialize ledger meta manager
+        ledgerManager = LedgerManagerFactory.newLedgerManager(conf, zk);
+    }
+
+    LedgerManager getLedgerManager() {
+        return ledgerManager;
     }
 
     /**
@@ -463,6 +473,7 @@ public class BookKeeper {
      */
     public void close() throws InterruptedException, BKException {
         bookieClient.close();
+        ledgerManager.close();
         bookieWatcher.halt();
         if (ownChannelFactory) {
             channelFactory.releaseExternalResources();

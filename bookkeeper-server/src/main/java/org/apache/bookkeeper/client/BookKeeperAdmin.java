@@ -21,9 +21,6 @@ package org.apache.bookkeeper.client;
  *
  */
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -33,14 +30,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.slf4j.Logger;
@@ -65,10 +62,7 @@ public class BookKeeperAdmin {
     // ZK client instance
     private ZooKeeper zk;
     // ZK ledgers related String constants
-    static final String LEDGERS_PATH = "/ledgers";
-    static final String LEDGER_NODE_PREFIX = "L";
-    static final String AVAILABLE_NODE = "available";
-    static final String BOOKIES_PATH = LEDGERS_PATH + "/" + AVAILABLE_NODE;
+    static final String BOOKIES_PATH = BookieWatcher.BOOKIE_REGISTRATION_PATH;
 
     // BookKeeper client instance
     private BookKeeper bkc;
@@ -158,52 +152,6 @@ public class BookKeeperAdmin {
     public void close() throws InterruptedException, BKException {
         bkc.close();
         zk.close();
-    }
-
-    /**
-     * This is a multi callback object for bookie recovery that waits for all of
-     * the multiple async operations to complete. If any fail, then we invoke
-     * the final callback with a BK LedgerRecoveryException.
-     */
-    class MultiCallback implements AsyncCallback.VoidCallback {
-        // Number of expected callbacks
-        final int expected;
-        // Final callback and the corresponding context to invoke
-        final AsyncCallback.VoidCallback cb;
-        final Object context;
-        // This keeps track of how many operations have completed
-        final AtomicInteger done = new AtomicInteger();
-        // List of the exceptions from operations that completed unsuccessfully
-        final LinkedBlockingQueue<Integer> exceptions = new LinkedBlockingQueue<Integer>();
-
-        MultiCallback(int expected, AsyncCallback.VoidCallback cb, Object context) {
-            this.expected = expected;
-            this.cb = cb;
-            this.context = context;
-            if (expected == 0) {
-                cb.processResult(Code.OK.intValue(), null, context);
-            }
-        }
-
-        private void tick() {
-            if (done.incrementAndGet() == expected) {
-                if (exceptions.isEmpty()) {
-                    cb.processResult(Code.OK.intValue(), null, context);
-                } else {
-                    cb.processResult(BKException.Code.LedgerRecoveryException, null, context);
-                }
-            }
-        }
-
-        @Override
-        public void processResult(int rc, String path, Object ctx) {
-            if (rc != Code.OK.intValue()) {
-                LOG.error("BK error recovering ledger data", BKException.create(rc));
-                exceptions.add(rc);
-            }
-            tick();
-        }
-
     }
 
     /**
@@ -316,8 +264,8 @@ public class BookKeeperAdmin {
      */
     public void asyncRecoverBookieData(final InetSocketAddress bookieSrc, final InetSocketAddress bookieDest,
                                        final RecoverCallback cb, final Object context) {
-        // Sync ZK to make sure we're reading the latest bookie/ledger data.
-        zk.sync(LEDGERS_PATH, new AsyncCallback.VoidCallback() {
+        // Sync ZK to make sure we're reading the latest bookie data.
+        zk.sync(BOOKIES_PATH, new AsyncCallback.VoidCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx) {
                 if (rc != Code.OK.intValue()) {
@@ -407,36 +355,30 @@ public class BookKeeperAdmin {
      */
     private void getActiveLedgers(final InetSocketAddress bookieSrc, final InetSocketAddress bookieDest,
                                   final RecoverCallback cb, final Object context, final List<InetSocketAddress> availableBookies) {
-        zk.getChildren(LEDGERS_PATH, null, new AsyncCallback.ChildrenCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx, List<String> children) {
-                if (rc != Code.OK.intValue()) {
-                    LOG.error("ZK error getting ledger nodes: ", KeeperException.create(KeeperException.Code.get(rc),
-                              path));
-                    cb.recoverComplete(BKException.Code.ZKException, context);
-                    return;
-                }
-                // Wrapper class around the RecoverCallback so it can be used
-                // as the final VoidCallback to invoke within the MultiCallback.
-                class RecoverCallbackWrapper implements AsyncCallback.VoidCallback {
-                    final RecoverCallback cb;
+        // Wrapper class around the RecoverCallback so it can be used
+        // as the final VoidCallback to process ledgers
+        class RecoverCallbackWrapper implements AsyncCallback.VoidCallback {
+            final RecoverCallback cb;
 
-                    RecoverCallbackWrapper(RecoverCallback cb) {
-                        this.cb = cb;
-                    }
-
-                    @Override
-                    public void processResult(int rc, String path, Object ctx) {
-                        cb.recoverComplete(rc, ctx);
-                    }
-                }
-                // Recover each of the ledgers asynchronously
-                MultiCallback ledgerMcb = new MultiCallback(children.size(), new RecoverCallbackWrapper(cb), context);
-                for (final String ledgerNode : children) {
-                    recoverLedger(bookieSrc, ledgerNode, ledgerMcb, availableBookies);
-                }
+            RecoverCallbackWrapper(RecoverCallback cb) {
+                this.cb = cb;
             }
-        }, null);
+
+            @Override
+            public void processResult(int rc, String path, Object ctx) {
+                cb.recoverComplete(rc, ctx);
+            }
+        }
+
+        Processor<Long> ledgerProcessor = new Processor<Long>() {
+            @Override
+            public void process(Long ledgerId, AsyncCallback.VoidCallback iterCallback) {
+                recoverLedger(bookieSrc, ledgerId, iterCallback, availableBookies);
+            }
+        };
+        bkc.getLedgerManager().asyncProcessLedgers(
+            ledgerProcessor, new RecoverCallbackWrapper(cb),
+            context, BKException.Code.OK, BKException.Code.LedgerRecoveryException);
     }
 
     /**
@@ -462,11 +404,10 @@ public class BookKeeperAdmin {
      * @param bookieSrc
      *            Source bookie that had a failure. We want to replicate the
      *            ledger fragments that were stored there.
-     * @param ledgerNode
-     *            Ledger Node name as retrieved from ZooKeeper we want to
-     *            recover.
-     * @param ledgerMcb
-     *            MultiCallback to invoke once we've recovered the current
+     * @param lId
+     *            Ledger id we want to recover.
+     * @param ledgerIterCb
+     *            IterationCallback to invoke once we've recovered the current
      *            ledger.
      * @param availableBookies
      *            List of Bookie Servers that are available to use for
@@ -474,30 +415,10 @@ public class BookKeeperAdmin {
      *            single bookie server if the user explicitly chose a bookie
      *            server to replicate data to.
      */
-    private void recoverLedger(final InetSocketAddress bookieSrc, final String ledgerNode,
-                               final MultiCallback ledgerMcb, final List<InetSocketAddress> availableBookies) {
-        /*
-         * The available node is also stored in this path so ignore that. That
-         * node is the path for the set of available Bookie Servers.
-         */
-        if (ledgerNode.equals(AVAILABLE_NODE)) {
-            ledgerMcb.processResult(BKException.Code.OK, null, null);
-            return;
-        }
-        // Parse out the ledgerId from the ZK ledger node.
-        String parts[] = ledgerNode.split(LEDGER_NODE_PREFIX);
-        if (parts.length < 2) {
-            LOG.error("Ledger Node retrieved from ZK has invalid name format: " + ledgerNode);
-            ledgerMcb.processResult(BKException.Code.ZKException, null, null);
-            return;
-        }
-        final long lId;
-        try {
-            lId = Long.parseLong(parts[parts.length - 1]);
-        } catch (NumberFormatException e) {
-            LOG.error("Error retrieving ledgerId from ledgerNode: " + ledgerNode, e);
-            ledgerMcb.processResult(BKException.Code.ZKException, null, null);
-            return;
+    private void recoverLedger(final InetSocketAddress bookieSrc, final long lId,
+                               final AsyncCallback.VoidCallback ledgerIterCb, final List<InetSocketAddress> availableBookies) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Recovering ledger : " + lId);
         }
         /*
          * For the current ledger, open it to retrieve the LedgerHandle. This
@@ -512,7 +433,7 @@ public class BookKeeperAdmin {
             public void openComplete(int rc, final LedgerHandle lh, Object ctx) {
                 if (rc != Code.OK.intValue()) {
                     LOG.error("BK error opening ledger: " + lId, BKException.create(rc));
-                    ledgerMcb.processResult(rc, null, null);
+                    ledgerIterCb.processResult(rc, null, null);
                     return;
                 }
                 /*
@@ -550,17 +471,17 @@ public class BookKeeperAdmin {
                  * multiCallback and return.
                  */
                 if (ledgerFragmentsToRecover.size() == 0) {
-                    ledgerMcb.processResult(BKException.Code.OK, null, null);
+                    ledgerIterCb.processResult(BKException.Code.OK, null, null);
                     return;
                 }
 
                 /*
                  * Multicallback for ledger. Once all fragments for the ledger have been recovered
-                 * trigger the ledgerMcb 
+                 * trigger the ledgerIterCb
                  */
-                MultiCallback ledgerFragmentsMcb 
-                    = new MultiCallback(ledgerFragmentsToRecover.size(), ledgerMcb, null);
-
+                MultiCallback ledgerFragmentsMcb
+                    = new MultiCallback(ledgerFragmentsToRecover.size(), ledgerIterCb, null,
+                                        BKException.Code.OK, BKException.Code.LedgerRecoveryException);
                 /*
                  * Now recover all of the necessary ledger fragments
                  * asynchronously using a MultiCallback for every fragment.
@@ -657,7 +578,9 @@ public class BookKeeperAdmin {
          * Now asynchronously replicate all of the entries for the ledger
          * fragment that were on the dead bookie.
          */
-        MultiCallback ledgerFragmentEntryMcb = new MultiCallback(entriesToReplicate.size(), cb, null);
+        MultiCallback ledgerFragmentEntryMcb =
+            new MultiCallback(entriesToReplicate.size(), cb, null,
+                              BKException.Code.OK, BKException.Code.LedgerRecoveryException);
         for (final Long entryId : entriesToReplicate) {
             recoverLedgerFragmentEntry(entryId, lh, ledgerFragmentEntryMcb, newBookie);
         }

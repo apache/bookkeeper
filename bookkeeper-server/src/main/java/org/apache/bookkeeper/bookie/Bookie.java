@@ -43,19 +43,19 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
-
-
 
 /**
  * Implements a bookie.
@@ -78,6 +78,7 @@ public class Bookie extends Thread {
     final ServerConfiguration conf;
 
     final SyncThread syncThread;
+    final LedgerManager ledgerManager;
 
     /**
      * Current directory layout version. Increment this 
@@ -242,23 +243,28 @@ public class Bookie extends Thread {
         }
     }
 
-    public Bookie(ServerConfiguration conf) throws IOException {
+    public Bookie(ServerConfiguration conf) 
+            throws IOException, KeeperException, InterruptedException {
+        this.conf = conf;
         this.journalDirectory = conf.getJournalDir();
         this.ledgerDirectories = conf.getLedgerDirs();
-        this.conf = conf;
+        this.maxJournalSize = conf.getMaxJournalSize() * MB;
+        this.maxBackupJournals = conf.getMaxBackupJournals();
 
+        // check directory layouts
         checkDirectoryLayoutVersion(journalDirectory);
         for (File dir : ledgerDirectories) {
             checkDirectoryLayoutVersion(dir);
         }
 
-        this.maxJournalSize = conf.getMaxJournalSize() * MB;
-        this.maxBackupJournals = conf.getMaxBackupJournals();
+        // instantiate zookeeper client to initialize ledger manager
+        ZooKeeper newZk = instantiateZookeeperClient(conf.getZkServers());
+        ledgerManager = LedgerManagerFactory.newLedgerManager(conf, newZk);
 
         syncThread = new SyncThread(conf);
         entryLogger = new EntryLogger(conf, this);
-        ledgerCache = new LedgerCache(conf);
-    
+        ledgerCache = new LedgerCache(conf, ledgerManager);
+
         lastLogMark.readLog();
         if (LOG.isDebugEnabled()) {
             LOG.debug("Last Log Mark : " + lastLogMark);
@@ -332,7 +338,12 @@ public class Bookie extends Thread {
                 }
             }
         }
-        instantiateZookeeperClient(conf.getBookiePort(), conf.getZkServers());
+        // pass zookeeper instance here
+        // since GarbageCollector thread should only start after journal
+        // finished replay
+        this.zk = newZk;
+        // make the bookie available
+        registerBookie(conf.getBookiePort());
         setDaemon(true);
         LOG.debug("I'm starting a bookie with journal directory " + journalDirectory.getName());
         start();
@@ -375,20 +386,29 @@ public class Bookie extends Thread {
         Collections.sort(logs);
         return logs;
     }
-    
+
     /**
      * Instantiate the ZooKeeper client for the Bookie.
      */
-    private void instantiateZookeeperClient(int port, String zkServers) throws IOException {
+    private ZooKeeper instantiateZookeeperClient(String zkServers) throws IOException {
         if (zkServers == null) {
             LOG.warn("No ZK servers passed to Bookie constructor so BookKeeper clients won't know about this server!");
-            zk = null;
             isZkExpired = false;
-            return;
+            return null;
         }
         int zkTimeout = conf.getZkTimeout();
         // Create the ZooKeeper client instance
-        zk = newZookeeper(zkServers, zkTimeout);
+        return newZookeeper(zkServers, zkTimeout);
+    }
+
+    /**
+     * Register as an available bookie
+     */
+    private void registerBookie(int port) throws IOException {
+        if (null == zk) {
+            // zookeeper instance is null, means not register itself to zk
+            return;
+        }
         // Create the ZK ephemeral node for this Bookie.
         try {
             zk.create(BOOKIE_REGISTRATION_PATH + InetAddress.getLocalHost().getHostAddress() + ":" + port, new byte[0],
@@ -853,6 +873,8 @@ public class Bookie extends Thread {
         }
         // Shutdown the EntryLogger which has the GarbageCollector Thread running
         entryLogger.shutdown();
+        // close Ledger Manager
+        ledgerManager.close();
         // setting running to false here, so watch thread in bookie server know it only after bookie shut down
         running = false;
     }
@@ -983,8 +1005,8 @@ public class Bookie extends Thread {
      * @throws IOException
      * @throws InterruptedException
      */
-    public static void main(String[] args) throws IOException,
-        InterruptedException, BookieException {
+    public static void main(String[] args) 
+            throws IOException, InterruptedException, BookieException, KeeperException {
         Bookie b = new Bookie(new ServerConfiguration());
         CounterCallback cb = new CounterCallback();
         long start = System.currentTimeMillis();

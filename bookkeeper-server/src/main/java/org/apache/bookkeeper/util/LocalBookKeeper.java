@@ -122,7 +122,8 @@ public class LocalBookKeeper {
             LOG.error("Exception while creating znodes", e);
         }
     }
-    private void runBookies(ServerConfiguration baseConf) throws IOException {
+    private void runBookies(ServerConfiguration baseConf) 
+            throws IOException, KeeperException, InterruptedException {
         LOG.info("Starting Bookie(s)");
         // Create Bookie Servers (B1, B2, B3)
 
@@ -148,7 +149,8 @@ public class LocalBookKeeper {
         }
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args)
+            throws IOException, KeeperException, InterruptedException {
         if(args.length < 1) {
             usage();
             System.exit(-1);

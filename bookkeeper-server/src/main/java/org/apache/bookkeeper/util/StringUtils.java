@@ -28,11 +28,6 @@ import java.net.InetSocketAddress;
  */
 public class StringUtils {
 
-    /*
-     * Path to ledger metadata. ZooKeeper appends a sequence number to L.
-     */
-    static public final String prefix = "/ledgers/L";
-
     /**
      * Parses address into IP and port.
      *
@@ -69,26 +64,6 @@ public class StringUtils {
      */
     public static String getZKStringId(long id) {
         return String.format("%010d", id);
-    }
-
-    /**
-     * Get the path for the ledger metadata node
-     *
-     * @return
-     */
-    public static String getLedgerNodePath(long ledgerId) {
-        return prefix + StringUtils.getZKStringId(ledgerId);
-    }
-
-    public static long getLedgerId(String nodeName) throws IOException {
-        long ledgerId;
-        try {
-            String parts[] = nodeName.split(prefix);
-            ledgerId = Long.parseLong(parts[parts.length - 1]);
-        } catch (NumberFormatException e) {
-            throw new IOException(e);
-        }
-        return ledgerId;
     }
 
 }

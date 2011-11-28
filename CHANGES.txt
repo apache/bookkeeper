@@ -80,6 +80,8 @@ BUGFIXES:
 
   BOOKKEEPER-114: add a shutdown hook to shut down bookie server safely. (Sijie via ivank)
 
+  BOOKKEEPER-39: Bookie server failed to restart because of too many ledgers (more than ~50,000 ledgers) (Sijie via ivank)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)

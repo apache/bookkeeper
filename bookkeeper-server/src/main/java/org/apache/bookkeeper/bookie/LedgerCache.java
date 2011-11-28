@@ -33,11 +33,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
+import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +49,7 @@ public class LedgerCache {
 
     final File ledgerDirectories[];
 
-    public LedgerCache(ServerConfiguration conf) {
+    public LedgerCache(ServerConfiguration conf, LedgerManager alm) {
         this.ledgerDirectories = conf.getLedgerDirs();
         this.openFileLimit = conf.getOpenFileLimit();
         this.pageSize = conf.getPageSize();
@@ -65,6 +63,7 @@ public class LedgerCache {
         }
         LOG.info("maxMemory = " + Runtime.getRuntime().maxMemory());
         LOG.info("openFileLimit is " + openFileLimit + ", pageSize is " + pageSize + ", pageLimit is " + pageLimit);
+        activeLedgerManager = alm;
         // Retrieve all of the active ledgers.
         getActiveLedgers();
     }
@@ -82,8 +81,9 @@ public class LedgerCache {
 
     LinkedList<Long> openLedgers = new LinkedList<Long>();
 
-    // Stores the set of active (non-deleted) ledgers.
-    ConcurrentMap<Long, Boolean> activeLedgers = new ConcurrentHashMap<Long, Boolean>();
+    // Manage all active ledgers in LedgerManager
+    // so LedgerManager has knowledge to garbage collect inactive/deleted ledgers
+    final LedgerManager activeLedgerManager;
 
     final int openFileLimit;
     final int pageSize;
@@ -237,7 +237,7 @@ public class LedgerCache {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("New ledger index file created for ledgerId: " + ledger);
                     }
-                    activeLedgers.put(ledger, true);
+                    activeLedgerManager.addActiveLedger(ledger, true);
                 }
                 if (openLedgers.size() > openFileLimit) {
                     fileInfoCache.remove(openLedgers.removeFirst()).close();
@@ -505,15 +505,12 @@ public class LedgerCache {
                                 // We've found a ledger index file. The file name is the
                                 // HexString representation of the ledgerId.
                                 String ledgerIdInHex = index.getName().substring(0, index.getName().length() - 4);
-                                activeLedgers.put(Long.parseLong(ledgerIdInHex, 16), true);
+                                activeLedgerManager.addActiveLedger(Long.parseLong(ledgerIdInHex, 16), true);
                             }
                         }
                     }
                 }
             }
-        }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Active ledgers found: " + activeLedgers);
         }
     }
 
@@ -529,8 +526,8 @@ public class LedgerCache {
         fi.getFile().delete();
         fi.close();
 
-        // Remove it from the activeLedgers set
-        activeLedgers.remove(ledgerId);
+        // Remove it from the active ledger manager
+        activeLedgerManager.removeActiveLedger(ledgerId);
 
         // Now remove it from all the other lists and maps.
         // These data structures need to be synchronized first before removing entries.

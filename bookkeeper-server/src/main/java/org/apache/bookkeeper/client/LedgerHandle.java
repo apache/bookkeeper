@@ -29,7 +29,6 @@ import java.util.Enumeration;
 import java.util.Queue;
 import java.util.concurrent.Semaphore;
 
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -40,7 +39,6 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.util.SafeRunnable;
-import org.apache.bookkeeper.util.StringUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -196,9 +194,9 @@ public class LedgerHandle {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Writing metadata to ZooKeeper: " + this.ledgerId + ", " + metadata.getZnodeVersion());
         }
-        
-        bk.getZkHandle().setData(StringUtils.getLedgerNodePath(ledgerId),
-                                 metadata.serialize(), metadata.getZnodeVersion(), 
+
+        bk.getZkHandle().setData(bk.getLedgerManager().getLedgerPath(ledgerId),
+                                 metadata.serialize(), metadata.getZnodeVersion(),
                                  callback, ctx);
     }
 
@@ -609,11 +607,11 @@ public class LedgerHandle {
         }, null);
 
     }
-    
+
     void rereadMetadata(final GenericCallback<Void> cb) {
-        bk.getZkHandle().getData(StringUtils.getLedgerNodePath(ledgerId), false, 
+        bk.getZkHandle().getData(bk.getLedgerManager().getLedgerPath(ledgerId), false,
                 new DataCallback() {
-                    public void processResult(int rc, String path, 
+                    public void processResult(int rc, String path,
                                               Object ctx, byte[] data, Stat stat) {
                         if (rc != KeeperException.Code.OK.intValue()) {
                             LOG.error("Error reading metadata from ledger, code =" + rc);

@@ -38,7 +38,6 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.test.BaseTestCase;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -56,8 +55,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -214,8 +211,8 @@ public class BookieRecoveryTest extends BaseTestCase {
     /**
      * Helper method to verify that we can read the recovered ledger entries.
      *
-     * @param numLedgers
-     *            Number of ledgers to verify
+     * @param oldLhs
+     *            Old Ledger Handles
      * @param startEntryId
      *            Start Entry Id to read
      * @param endEntryId
@@ -223,12 +220,12 @@ public class BookieRecoveryTest extends BaseTestCase {
      * @throws BKException
      * @throws InterruptedException
      */
-    private void verifyRecoveredLedgers(int numLedgers, long startEntryId, long endEntryId) throws BKException,
+    private void verifyRecoveredLedgers(List<LedgerHandle> oldLhs, long startEntryId, long endEntryId) throws BKException,
         InterruptedException {
         // Get a set of LedgerHandles for all of the ledgers to verify
         List<LedgerHandle> lhs = new ArrayList<LedgerHandle>();
-        for (int i = 0; i < numLedgers; i++) {
-            lhs.add(bkc.openLedger(i + 1, digestType, baseClientConf.getBookieRecoveryPasswd()));
+        for (int i = 0; i < oldLhs.size(); i++) {
+            lhs.add(bkc.openLedger(oldLhs.get(i).getId(), digestType, baseClientConf.getBookieRecoveryPasswd()));
         }
         // Read the ledger entries to verify that they are all present and
         // correct in the new bookie.
@@ -293,7 +290,7 @@ public class BookieRecoveryTest extends BaseTestCase {
         }
 
         // Verify the recovered ledger entries are okay.
-        verifyRecoveredLedgers(numLedgers, 0, 2 * numMsgs - 1);
+        verifyRecoveredLedgers(lhs, 0, 2 * numMsgs - 1);
     }
 
     /**
@@ -349,7 +346,7 @@ public class BookieRecoveryTest extends BaseTestCase {
         }
 
         // Verify the recovered ledger entries are okay.
-        verifyRecoveredLedgers(numLedgers, 0, 2 * numMsgs - 1);
+        verifyRecoveredLedgers(lhs, 0, 2 * numMsgs - 1);
     }
 
     /**
@@ -392,7 +389,7 @@ public class BookieRecoveryTest extends BaseTestCase {
         bkAdmin.recoverBookieData(bookieSrc, bookieDest);
 
         // Verify the recovered ledger entries are okay.
-        verifyRecoveredLedgers(numLedgers, 0, 2 * numMsgs - 1);
+        verifyRecoveredLedgers(lhs, 0, 2 * numMsgs - 1);
     }
 
     /**
@@ -438,7 +435,7 @@ public class BookieRecoveryTest extends BaseTestCase {
         bkAdmin.recoverBookieData(bookieSrc, bookieDest);
 
         // Verify the recovered ledger entries are okay.
-        verifyRecoveredLedgers(numLedgers, 0, 2 * numMsgs - 1);
+        verifyRecoveredLedgers(lhs, 0, 2 * numMsgs - 1);
     }
 
     private static class ReplicationVerificationCallback implements ReadEntryCallback {
@@ -472,7 +469,7 @@ public class BookieRecoveryTest extends BaseTestCase {
     }
 
     private boolean verifyFullyReplicated(LedgerHandle lh, long untilEntry) throws Exception {
-        String znodepath = StringUtils.getLedgerNodePath(lh.getId());
+        String znodepath = bkc.getLedgerManager().getLedgerPath(lh.getId());
         Stat stat = bkc.getZkHandle().exists(znodepath, false);
         assertNotNull(stat);
         byte[] mdbytes = bkc.getZkHandle().getData(znodepath, false, stat); 
@@ -519,7 +516,7 @@ public class BookieRecoveryTest extends BaseTestCase {
     private boolean findDupesInEnsembles(List<LedgerHandle> lhs) throws Exception {
         long numDupes = 0;
         for (LedgerHandle lh : lhs) {
-            String znodepath = StringUtils.getLedgerNodePath(lh.getId());
+            String znodepath = bkc.getLedgerManager().getLedgerPath(lh.getId());
             Stat stat = bkc.getZkHandle().exists(znodepath, false);
             assertNotNull(stat);
             byte[] mdbytes = bkc.getZkHandle().getData(znodepath, false, stat); 

@@ -36,6 +36,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -140,9 +141,11 @@ public abstract class BaseTestCase extends TestCase {
                 server.start();
                 bs.add(server);
             }
-            zkc.close();
+
             baseClientConf.setZkServers("127.0.0.1");
-            bkc = new BookKeeperTestClient(baseClientConf);
+            if (numBookies > 0) {
+                bkc = new BookKeeperTestClient(baseClientConf);
+            }
         } catch(Exception e) {
             LOG.error("Error setting up", e);
             throw e;
@@ -168,14 +171,16 @@ public abstract class BaseTestCase extends TestCase {
      * @throws InterruptedException
      * @throws IOException
      */
-    protected void restartBookies() throws InterruptedException, IOException {
+    protected void restartBookies() 
+            throws InterruptedException, IOException, KeeperException {
         restartBookies(null);
     }
 
     /**
      * Restart bookie servers add new configuration settings
      */
-    protected void restartBookies(ServerConfiguration newConf) throws InterruptedException, IOException {
+    protected void restartBookies(ServerConfiguration newConf)
+            throws InterruptedException, IOException, KeeperException {
         // shut down bookie server
         for (BookieServer server : bs) {
             server.shutdown();
@@ -207,6 +212,10 @@ public abstract class BaseTestCase extends TestCase {
 
         for (BookieServer server : bs) {
             server.shutdown();
+        }
+
+        if (zkc != null) {
+            zkc.close();
         }
 
         for (File f : tmpDirs) {

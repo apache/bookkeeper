@@ -37,7 +37,7 @@ public class Main {
      * @throws InterruptedException
      * @throws IOException
      */
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws Exception {
         if (args.length < 1 || !(args[0].equals("client") || args[0].equals("bookie"))) {
             usage();
             return;

@@ -63,7 +63,7 @@ public class LedgerCacheTest extends TestCase {
 
     @Override
     @Before
-    public void setUp() throws IOException {
+    public void setUp() throws Exception {
         String txnDirName = System.getProperty("txnDir");
         if (txnDirName != null) {
             txnDir = new File(txnDirName);

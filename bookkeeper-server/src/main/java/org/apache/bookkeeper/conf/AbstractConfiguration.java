@@ -25,10 +25,16 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
 
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
+
 /**
  * Abstract configuration
  */
-public abstract class AbstractConfiguration extends CompositeConfiguration { 
+public abstract class AbstractConfiguration extends CompositeConfiguration {
+
+    // Ledger Manager
+    protected final static String LEDGER_MANAGER_TYPE = "ledgerManagerType";
+    protected final static String ZK_LEDGERS_ROOT_PATH = "zkLedgersRootPath";
 
     protected AbstractConfiguration() {
         super();
@@ -58,4 +64,42 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
         addConfiguration(baseConf); 
     }
 
+    /**
+     * Set Ledger Manager Type.
+     *
+     * @param lmType
+     *          Ledger Manager Type
+     * @return void
+     */
+    public void setLedgerManagerType(String lmType) {
+        setProperty(LEDGER_MANAGER_TYPE, lmType); 
+    }
+
+    /**
+     * Get Ledger Manager Type.
+     *
+     * @return ledger manager type
+     * @throws ConfigurationException
+     */
+    public String getLedgerManagerType() {
+        return getString(LEDGER_MANAGER_TYPE);
+    }
+
+    /**
+     * Set Zk Ledgers Root Path.
+     *
+     * @param zkLedgersPath zk ledgers root path
+     */
+    public void setZkLedgersRootPath(String zkLedgersPath) {
+        setProperty(ZK_LEDGERS_ROOT_PATH, zkLedgersPath);
+    }
+
+    /**
+     * Get Zk Ledgers Root Path.
+     *
+     * @return zk ledgers root path
+     */
+    public String getZkLedgersRootPath() {
+        return getString(ZK_LEDGERS_ROOT_PATH, "/ledgers");
+    }
 }
