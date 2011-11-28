@@ -50,8 +50,8 @@ using namespace Hedwig;
 
 DuplexChannel::DuplexChannel(EventDispatcher& dispatcher, const HostAddress& addr, 
 			     const Configuration& cfg, const ChannelHandlerPtr& handler)
-  : dispatcher(dispatcher), address(addr), handler(handler), 
-    socket(dispatcher.getService()), instream(&in_buf), copy_buf(NULL), copy_buf_length(0),
+  : dispatcher(dispatcher), address(addr), handler(handler), service(dispatcher.getService()),
+    socket(service), instream(&in_buf), copy_buf(NULL), copy_buf_length(0),
     state(UNINITIALISED), receiving(false), reading(false), sending(false)
 {
   LOG4CXX_DEBUG(logger, "Creating DuplexChannel(" << this << ")");

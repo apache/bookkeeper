@@ -134,7 +134,8 @@ namespace Hedwig {
 
     ClientTxnCounter counterobj;
 
-    EventDispatcher dispatcher;
+    typedef boost::shared_ptr<EventDispatcher> EventDispatcherPtr;
+    EventDispatcherPtr dispatcher;
     
     typedef std::tr1::unordered_multimap<HostAddress, std::string, HostAddressHash > Host2TopicsMap;
     Host2TopicsMap host2topics;

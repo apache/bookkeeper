@@ -30,6 +30,7 @@ static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("hedwig."__FILE__));
 using namespace Hedwig;
 
 const std::string DEFAULT_SERVER_DEFAULT_VAL = "";
+const int DEFAULT_NUM_DISPATCH_THREADS = 1;
 
 void SyncOperationCallback::wait() {
   boost::unique_lock<boost::mutex> lock(mut);
@@ -182,7 +183,7 @@ ClientImplPtr ClientImpl::Create(const Configuration& conf) {
   ClientImplPtr impl(new ClientImpl(conf));
   LOG4CXX_DEBUG(logger, "Creating Clientimpl " << impl);
 
-  impl->dispatcher.start();
+  impl->dispatcher->start();
 
   return impl;
 }
@@ -190,7 +191,7 @@ ClientImplPtr ClientImpl::Create(const Configuration& conf) {
 void ClientImpl::Destroy() {
   LOG4CXX_DEBUG(logger, "destroying Clientimpl " << this);
 
-  dispatcher.stop();
+  dispatcher->stop();
   {
     boost::lock_guard<boost::shared_mutex> lock(allchannels_lock);
     
@@ -217,6 +218,7 @@ ClientImpl::ClientImpl(const Configuration& conf)
   : conf(conf), publisher(NULL), subscriber(NULL), counterobj(), shuttingDownFlag(false)
 {
   defaultHost = HostAddress::fromString(conf.get(Configuration::DEFAULT_SERVER, DEFAULT_SERVER_DEFAULT_VAL));
+  dispatcher = EventDispatcherPtr(new EventDispatcher(conf.getInt(Configuration::NUM_DISPATCH_THREADS, DEFAULT_NUM_DISPATCH_THREADS)));
 }
 
 Subscriber& ClientImpl::getSubscriber() {
@@ -312,7 +314,7 @@ DuplexChannelPtr ClientImpl::createChannel(const std::string& topic, const Chann
     setHostForTopic(topic, addr);
   }
 
-  DuplexChannelPtr channel(new DuplexChannel(dispatcher, addr, conf, handler));
+  DuplexChannelPtr channel(new DuplexChannel(*dispatcher, addr, conf, handler));
 
   boost::lock_guard<boost::shared_mutex> lock(allchannels_lock);
   if (shuttingDownFlag) {
@@ -392,5 +394,5 @@ const Configuration& ClientImpl::getConfiguration() {
 }
 
 boost::asio::io_service& ClientImpl::getService() {
-  return dispatcher.getService();
+  return dispatcher->getService();
 }

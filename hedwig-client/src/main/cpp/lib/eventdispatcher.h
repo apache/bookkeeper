@@ -18,13 +18,21 @@
 #ifndef EVENTDISPATCHER_H
 #define EVENTDISPATCHER_H
 
+#include <vector>
+
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace Hedwig {
+  typedef boost::shared_ptr<boost::asio::io_service> io_service_ptr;
+  typedef boost::shared_ptr<boost::asio::io_service::work> work_ptr;
+  typedef boost::shared_ptr<boost::thread> thread_ptr;
+
   class EventDispatcher {
   public:  
-    EventDispatcher();
+    EventDispatcher(int numThreads = 1);
     ~EventDispatcher();
     
     void start();
@@ -33,11 +41,21 @@ namespace Hedwig {
     boost::asio::io_service& getService();
     
   private:
-    void run_forever();
+    void run_forever(io_service_ptr service, size_t idx);
 
-    boost::asio::io_service service;
-    boost::asio::io_service::work* dummy_work;
-    boost::thread* t;
+    // number of threads
+    size_t num_threads;
+    // running flag
+    bool running;
+    // pool of io_services.
+    std::vector<io_service_ptr> services;
+    // pool of works
+    std::vector<work_ptr> works;
+    // threads
+    std::vector<thread_ptr> threads;
+    // next io_service used for a connection
+    boost::mutex next_lock;
+    std::size_t next_io_service;
   };
 }
 

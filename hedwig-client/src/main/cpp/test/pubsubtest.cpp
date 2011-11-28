@@ -48,6 +48,7 @@ private:
   CPPUNIT_TEST(testMultiTopic);
   CPPUNIT_TEST(testBigMessage);
   CPPUNIT_TEST(testMultiTopicMultiSubscriber);
+  CPPUNIT_TEST(testPubSubInMultiDispatchThreads);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -160,7 +161,7 @@ public:
   // Publisher integer until finished
   class IntegerPublisher {
   public:
-    IntegerPublisher(std::string &topic, int startMsgId, int numMsgs, int sleepTime, Hedwig::Publisher &pub, long runTime)
+    IntegerPublisher(const std::string &topic, int startMsgId, int numMsgs, int sleepTime, Hedwig::Publisher &pub, long runTime)
       : topic(topic), startMsgId(startMsgId), numMsgs(numMsgs), sleepTime(sleepTime), pub(pub), running(true), runTime(runTime) {
     }
 
@@ -307,6 +308,68 @@ public:
     }
     CPPUNIT_ASSERT(cb->inOrder());
   }
+
+  // check message ordering
+  void testPubSubInMultiDispatchThreads() {
+    std::string topic = "PubSubInMultiDispatchThreadsTopic-";
+    std::string sid = "mysub-0";
+
+    int syncTimeout = 10000;
+    int numDispatchThreads = 4;
+    int numMessages = 100;
+    int numTopics = 20;
+
+    Hedwig::Configuration* conf = new TestServerConfiguration(syncTimeout, numDispatchThreads);
+    std::auto_ptr<Hedwig::Configuration> confptr(conf);
+
+    Hedwig::Client* client = new Hedwig::Client(*conf);
+    std::auto_ptr<Hedwig::Client> clientptr(client);
+
+    Hedwig::Subscriber& sub = client->getSubscriber();
+    Hedwig::Publisher& pub = client->getPublisher();
+
+    std::vector<Hedwig::MessageHandlerCallbackPtr> callbacks;
+
+    for (int i=0; i<numTopics; i++) {
+      std::stringstream ss;
+      ss << topic << i;
+      sub.subscribe(ss.str(), sid, Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
+
+      MyOrderCheckingMessageHandlerCallback* cb = new MyOrderCheckingMessageHandlerCallback(ss.str(), sid, 0, 0);
+      Hedwig::MessageHandlerCallbackPtr handler(cb);
+      sub.startDelivery(ss.str(), sid, handler);
+      callbacks.push_back(handler);
+    }
+
+    std::vector<boost::shared_ptr<boost::thread> > threads;
+
+    for (int i=0; i<numTopics; i++) {
+      std::stringstream ss;
+      ss << topic << i;
+      boost::shared_ptr<boost::thread> t = boost::shared_ptr<boost::thread>(
+        new boost::thread(IntegerPublisher(ss.str(), 0, numMessages, 0, pub, 0)));
+      threads.push_back(t);
+    }
+
+    for (int i=0; i<numTopics; i++) {
+      threads[i]->join();
+    }
+    threads.clear();
+
+    for (int j=0; j<numTopics; j++) {
+      MyOrderCheckingMessageHandlerCallback *cb =
+        (MyOrderCheckingMessageHandlerCallback *)(callbacks[j].get());
+      for (int i = 0; i < 10; i++) {
+        if (cb->numMessagesReceived() == numMessages) {
+          break;
+        }
+        sleep(3);
+      }
+      CPPUNIT_ASSERT(cb->inOrder());
+    }
+    callbacks.clear();
+  }
+
 
   void testPubSubContinuousOverClose() {
     std::string topic = "pubSubTopic";

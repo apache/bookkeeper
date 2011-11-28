@@ -95,13 +95,15 @@ private:
 
 class TestServerConfiguration : public Hedwig::Configuration {
 public:
-  TestServerConfiguration() : address("localhost:4081"), syncTimeout(10000) {}
+  TestServerConfiguration() : address("localhost:4081"), syncTimeout(10000), numThreads(2) {}
 
-  TestServerConfiguration(int syncTimeout) : address("localhost:4081"), syncTimeout(syncTimeout) {}
+  TestServerConfiguration(int syncTimeout, int numThreads = 2) : address("localhost:4081"), syncTimeout(syncTimeout), numThreads(numThreads) {}
   
   virtual int getInt(const std::string& key, int defaultVal) const {
     if (key == Configuration::SYNC_REQUEST_TIMEOUT) {
       return syncTimeout;
+    } else if (key == Configuration::NUM_DISPATCH_THREADS) {
+      return numThreads;
     }
     return defaultVal;
   }
@@ -121,6 +123,7 @@ public:
 private:
   const std::string address;
   const int syncTimeout;
+  const int numThreads;
 };
 
 

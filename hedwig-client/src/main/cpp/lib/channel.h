@@ -38,6 +38,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
+#include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/shared_mutex.hpp>
@@ -110,6 +111,10 @@ namespace Hedwig {
     void channelDisconnected(const std::exception& e);
     virtual void kill();
 
+    inline boost::asio::io_service & getService() {
+      return service;
+    }
+
     virtual ~DuplexChannel();
   private:
     enum State { UNINITIALISED, CONNECTING, CONNECTED, DEAD };
@@ -121,6 +126,7 @@ namespace Hedwig {
     HostAddress address;
     ChannelHandlerPtr handler;
 
+    boost::asio::io_service &service;
     boost::asio::ip::tcp::socket socket;
     boost::asio::streambuf in_buf;
     std::istream instream;

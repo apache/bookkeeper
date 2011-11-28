@@ -127,7 +127,7 @@ void SubscriberConsumeCallback::operationFailed(const std::exception& exception)
   LOG4CXX_ERROR(logger, "Error passing message to client transaction: " << data->getTxnId() << " error: " << exception.what() 
 		<< " retrying in " << retrywait << " Microseconds");
 
-  boost::asio::deadline_timer t(client->getService(), boost::posix_time::milliseconds(retrywait));
+  boost::asio::deadline_timer t(handler->getChannel()->getService(), boost::posix_time::milliseconds(retrywait));
 
   t.async_wait(boost::bind(&SubscriberConsumeCallback::timerComplete, handler, m, boost::asio::placeholders::error));  
 }
@@ -207,7 +207,7 @@ void SubscriberClientChannelHandler::channelDisconnected(const DuplexChannelPtr&
     int retrywait = client->getConfiguration().getInt(Configuration::RECONNECT_SUBSCRIBE_RETRY_WAIT_TIME,
 						      DEFAULT_RECONNECT_SUBSCRIBE_RETRY_WAIT_TIME);
     
-    boost::asio::deadline_timer t(client->getService(), boost::posix_time::milliseconds(retrywait));
+    boost::asio::deadline_timer t(channel->getService(), boost::posix_time::milliseconds(retrywait));
     t.async_wait(boost::bind(&SubscriberClientChannelHandler::reconnectTimerComplete, shared_from_this(), 
 			     channel, e, boost::asio::placeholders::error));  
     return;

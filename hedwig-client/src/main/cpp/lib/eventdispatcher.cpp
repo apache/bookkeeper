@@ -27,49 +27,76 @@ static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("hedwig."__FILE__));
 
 using namespace Hedwig;
 
-EventDispatcher::EventDispatcher() : service(), dummy_work(NULL), t(NULL) {
+EventDispatcher::EventDispatcher(int numThreads)
+  : num_threads(numThreads), running(false), next_io_service(0) {
+  if (0 == num_threads) {
+    throw std::runtime_error("number of threads in dispatcher is zero");
+  }
+  for (size_t i = 0; i < num_threads; i++) {
+    io_service_ptr service(new boost::asio::io_service);
+    services.push_back(service);
+  }
 }
 
-void EventDispatcher::run_forever() {
-  LOG4CXX_DEBUG(logger, "Starting event dispatcher");
+void EventDispatcher::run_forever(io_service_ptr service, size_t idx) {
+  LOG4CXX_DEBUG(logger, "Starting event dispatcher " << idx);
 
   while (true) {
     try {
-      service.run();
+      service->run();
       break;
     } catch (std::exception &e) {
-    LOG4CXX_ERROR(logger, "Exception in dispatch handler. " << e.what());
+    LOG4CXX_ERROR(logger, "Exception in dispatch handler " << idx << " : " << e.what());
     }
   }
-  LOG4CXX_DEBUG(logger, "Event dispatcher done");
+  LOG4CXX_DEBUG(logger, "Event dispatcher " << idx << " done");
 }
 
 void EventDispatcher::start() {
-  if (t) {
+  if (running) {
     return;
   }
-  dummy_work = new boost::asio::io_service::work(service);
-  t = new boost::thread(boost::bind(&EventDispatcher::run_forever, this));
+  for (size_t i = 0; i < num_threads; i++) {
+    io_service_ptr service = services[i];
+    work_ptr work(new boost::asio::io_service::work(*service));
+    works.push_back(work);
+    // new thread
+    thread_ptr t(new boost::thread(boost::bind(&EventDispatcher::run_forever, this, service, i)));
+    threads.push_back(t);
+  }
+  running = true;
 }
 
 void EventDispatcher::stop() {
-  if (!t) {
+  if (!running) {
     return;
   }
-  delete dummy_work;
-  dummy_work = NULL;
-  
-  service.stop();
-  
-  t->join();
-  delete t;
-  t = NULL;
+
+  works.clear();
+
+  for (size_t i = 0; i < num_threads; i++) {
+    services[i]->stop();
+  }
+
+  for (size_t i = 0; i < num_threads; i++) {
+    threads[i]->join();
+  }
+  threads.clear();
+
+  running = false;
 }
 
 EventDispatcher::~EventDispatcher() {
-  delete dummy_work;
+  services.clear();
 }
 
 boost::asio::io_service& EventDispatcher::getService() {
+  size_t next = 0;
+  {
+    boost::lock_guard<boost::mutex> lock(next_lock);
+    next = next_io_service;
+    next_io_service = (next_io_service + 1) % num_threads;
+  }
+  boost::asio::io_service& service = *services[next];
   return service;
 }
