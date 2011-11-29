@@ -22,6 +22,9 @@ h1. Apache BookKeeper documentation
 * "Getting started":./bookkeeperStarted.html
 * "Programmer's Guide":./bookkeeperProgrammer.html
 * "Admin Guide":./bookkeeperConfig.html
+* "Bookie Server Configuration Parameters":./bookkeeperConfigParams.html
+* "BookKeeper Internals":./bookkeeperInternals.html
+* "Bookie Recovery":./bookieRecovery.html
 * "Using BookKeeper stream library":./bookkeeperStream.html
 
 h1. Apache Hedwig documentation

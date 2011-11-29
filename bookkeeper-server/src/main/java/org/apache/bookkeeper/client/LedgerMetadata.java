@@ -133,11 +133,9 @@ public class LedgerMetadata {
     }
 
     /**
-     * Generates a byte array based on a LedgerConfig object received.
+     * Generates a byte array of this object
      *
-     * @param config
-     *            LedgerConfig object
-     * @return byte[]
+     * @return the metadata serialized into a byte array
      */
     public byte[] serialize() {
         StringBuilder s = new StringBuilder();

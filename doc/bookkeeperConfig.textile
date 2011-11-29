@@ -16,102 +16,42 @@ h1. Abstract
 
 This document contains information about deploying, administering and mantaining BookKeeper. It also discusses best practices and common problems. 
 
-As BookKeeper is still a prototype, this article is likely to change significantly over time. 
+h1. Running a BookKeeper instance
 
-h1. System requirements
+h2. System requirements
 
-p. A typical BookKeeper installation comprises a set of bookies and a set of ZooKeeper replicas. The exact number of bookies depends on the quorum mode, desired throughput, and number of clients using this installation simultaneously. The minimum number of bookies is three for self-verifying (stores a message authentication code along with each entry) and four for generic (does not store a message authentication codewith each entry), and there is no upper limit on the number of bookies. Increasing the number of bookies, in fact, enables higher throughput. 
+p. A typical BookKeeper installation comprises a set of bookies and a set of ZooKeeper replicas. The exact number of bookies depends on the quorum mode, desired throughput, and number of clients using this installation simultaneously. The minimum number of bookies is three for self-verifying (stores a message authentication code along with each entry) and four for generic (does not store a message authentication code with each entry), and there is no upper limit on the number of bookies. Increasing the number of bookies will, in fact, enable higher throughput. 
 
-p. For performance, we require each server to have at least two disks. It is possible to run a bookie with a single disk, but performance will be significantly lower in this case. Of course, it works with one disk, but performance is significantly lower. 
+p. For performance, we require each server to have at least two disks. It is possible to run a bookie with a single disk, but performance will be significantly lower in this case.
 
-p. For ZooKeeper, there is no constraint with respect to the number of replicas. Having a single machine running ZooKeeper in standalone mode is sufficient for BookKeeper. For resilience purposes, it might be a good idea to run ZooKeeper in quorum mode with multiple servers. Please refer to the ZooKeeper documentation for detail on how to configure ZooKeeper with multiple replicas 
+p. For ZooKeeper, there is no constraint with respect to the number of replicas. Having a single machine running ZooKeeper in standalone mode is sufficient for BookKeeper. For resilience purposes, it might be a good idea to run ZooKeeper in quorum mode with multiple servers. Please refer to the ZooKeeper documentation for detail on how to configure ZooKeeper with multiple replicas. 
 
-h1. Running bookies
+h2. Running bookies
 
 p. To run a bookie, we execute the following command: 
 
- @ bookkeeper-server/bin/bookkeeper bookie
+@bookkeeper-server/bin/bookkeeper bookie@
 
-p. The configuration parameters, which can be set in bookkeeper-server/conf/bkenv.sh
+p. The configuration parameters can be set in bookkeeper-server/conf/bk_server.conf. 
 
-* BOOKIE_PORT: Port number that the bookie listens on; 
-* BOOKIE_ZOOKEEPER: Comma separated list of ZooKeeper servers with a hostname:port format; 
-* BOOKIE_TXN_LOGDIR: Path for Log Device (stores bookie write-ahead log); 
-* BOOKIE_DATA_DIR: Path for Ledger Device (stores ledger entries); 
+The important parameters are:
+ * @bookiePort@, Port number that the bookie listens on; 
+ * @zkServers@, Comma separated list of ZooKeeper servers with a hostname:port format; 
+ * @journalDir@, Path for Log Device (stores bookie write-ahead log); 
+ * @ledgerDir@, Path for Ledger Device (stores ledger entries); 
 
-p. Ideally, @/path_to_log_device/@ and @/path_to_ledger_device/@ are each in a different device. 
+p. Ideally, @journalDir@ and @ledgerDir@ are each in a different device. See "BookKeeper Configuration Parameters":./bookkeeperConfigParams.html for a full list of configuration parameters.
 
-h1. Bookie Configuration
 
-p. Bookie server stores its data in multiple ledger directories and its journal files in a journal directory. Ideally, storing journal files in a separate directory than data files would increase throughput and decrease latency.
+h3. Logging
 
-h2. Journal Configuration
+BookKeeper uses "slf4j":http://www.slf4j.org for logging, with the log4j bindings enabled by default. To enable logging from a bookie, create a log4j.properties file and point the environment variable BOOKIE_LOG_CONF to the configuration file. The path to the log4j.properties file must be absolute.
 
-p. Journal directory has one kind of files in it:
+@export BOOKIE_LOG_CONF=/tmp/log4j.properties@
+@bookkeeper-server/bin/bookkeeper bookie@
 
-* {timestamp}.txn - holds transactions executed in the bookie server.
+h2. Setting up a test ensemble
 
-p. Before persisting ledger index and data to disk, a bookie ensures that the transaction that represents the update is written to a journal in non-volatile storage. A new journal file is created using current timestamp when a bookie starts or an old journal file reaches its maximum size.
+Sometimes it is useful to run a ensemble of bookies on your local machine for testing. We provide a utility for doing this. It will set up N bookies, and a zookeeper instance locally. The data on these bookies and of the zookeeper instance are not persisted over restarts, so obviously this should never be used in a production environment. To run a test ensemble of 10 bookies, do the following.
 
-p. A bookie supports journal rolling to remove old journal files. In order to remove old journal files safely, bookie server records LastLogMark in Ledger Device, which indicates all updates (including index and data) before LastLogMark has been persisted to the Ledger Device.
-
-p. LastLogMark contains two parts:
-
-* LastLogId - indicates which journal file the transaction persisted.
-* LastLogPos - indicates the position the transaction persisted in LastLogId journal file.
-
-p. You may use following settings to further fine tune the behavior of your Bookie servers. Currently these configuration settings are set using Java system properties.
-
-* journalMaxSizeMB
-** journal file size limitation. when a journal reaches this limitation, it will be closed and new journal file be created.
-
-* journalMaxBackups
-** how many old journal files whose id is less than LastLogMark 's journal id.
-
-bq. NOTE: keeping number of old journal files would be useful for manually recovery in special case.
-
-h1. ZooKeeper Metadata
-
-p. For BookKeeper, we require a ZooKeeper installation to store metadata, and to pass the list of ZooKeeper servers as parameter to the constructor of the BookKeeper class ( @org.apache.bookkeeper.client,BookKeeper@ ). To setup ZooKeeper, please check the "ZooKeeper documentation":index.html. 
-
-p. BookKeeper provides two mechnaisms to organize its metadata in ZooKeeper.
-
-* FlatLedgerManager : All ledger metadata are placed as children in a single zookeeper path.
-* HierarchicalLedgerManager : All ledger metadata are partitioned into 2-level znodes.
-
-h2. Flat Ledger Manager
-
-p. All ledgers' metadata are put in a single zookeeper path, created using zookeeper sequential node, which can ensure uniqueness of ledger id. Each ledger node is prefixed with 'L'.
-
-p. Bookie server manages its owned active ledgers in a hash map. So it is easy for bookie server to find what ledgers are deleted from zookeeper and garbage collect them. And its garbage collection flow is described as below:
-
-* Fetch all existing ledgers from zookeeper (*zkActiveLedgers*).
-* Fetch all ledgers currently active within the Bookie (*bkActiveLedgers*).
-* Loop over *bkActiveLedgers* to find those ledgers which do not exist in *zkActiveLedgers* and garbage collect them.
-
-h2. Hierarchical Ledger Manager
-
-p. Hierarchical Ledger Manager first obtains a global unique id from ZooKeeper using a EPHEMERAL_SEQUENTIAL znode.
-
-p. Since ZooKeeper sequential counter has a format of %10d -- that is 10 digits with 0 (zero) padding, i.e. "&lt;path&gt;0000000001", HierarchicalLedgerManager splits the generated id into 3 parts :
-
- @ {level1 (2 digits)}{level2 (4 digits)}{level3 (4 digits)}
-
-p. These 3 parts are used to form the actual ledger node path used to store ledger metadata:
-
- @ {ledgers_root_path}/{level1}/{level2}/L{level3}
-
-p. E.g. Ledger 0000000001 is split into 3 parts 00, 0000, 00001, which is stored in znode /{ledgers_root_path}/00/0000/L0001. So each znode could have at most 10000 ledgers, which avoids the problem of the child list being larger than the maximum ZooKeeper packet size.
-
-p. Bookie server manages its active ledgers in a sorted map, which simplifies access to active ledgers in a particular (level1, level2) partition.
-
-p. Garbage collection in bookie server is processed node by node as follows:
-
-* Fetching all level1 nodes, by calling zk#getChildren(ledgerRootPath).
-** For each level1 nodes, fetching their level2 nodes :
-** For each partition (level1, level2) :
-*** Fetch all existed ledgers from zookeeper belonging to partition (level1, level2) (*zkActiveLedgers*).
-*** Fetch all ledgers currently active in the bookie which belong to partition (level1, level2) (*bkActiveLedgers*).
-*** Loop over *bkActiveLedgers* to find those ledgers which do not exist in *zkActiveLedgers*, and garbage collect them.
-
-bq. NOTE: Hierarchical Ledger Manager is more suitable to manage large number of ledgers existed in BookKeeper.
+@bookkeeper-server/bin/bookkeeper localbookie 10@

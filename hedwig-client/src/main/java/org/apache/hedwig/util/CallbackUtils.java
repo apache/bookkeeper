@@ -51,7 +51,7 @@ public class CallbackUtils {
      *            failure (but before the final failure callback). Useful for
      *            releasing resources, etc. as soon as we know the composite
      *            operation is doomed.
-     * @return
+     * @return the generated callback
      */
     public static Callback<Void> multiCallback(final int expected, final Callback<Void> cb, final Object ctx,
             final Logger logger, final String successMsg, final String failureMsg,

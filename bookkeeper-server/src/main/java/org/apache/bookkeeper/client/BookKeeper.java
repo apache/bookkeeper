@@ -251,7 +251,7 @@ public class BookKeeper {
      *          digest type, either MAC or CRC32
      * @param passwd
      *          password
-     * @return
+     * @return a handle to the newly created ledger
      * @throws InterruptedException
      * @throws BKException
      */
@@ -262,13 +262,14 @@ public class BookKeeper {
 
     /**
      * Synchronous call to create ledger. Parameters match those of
-     * {@link #asyncCreateLedger(int, int, DigestType, byte[], CreateCallback, Object)}
+     * {@link #asyncCreateLedger(int, int, DigestType, byte[], 
+     *                           AsyncCallback.CreateCallback, Object)}
      *
      * @param ensSize
      * @param qSize
      * @param digestType
      * @param passwd
-     * @return
+     * @return a handle to the newly created ledger
      * @throws InterruptedException
      * @throws BKException
      */
@@ -369,7 +370,7 @@ public class BookKeeper {
      *          digest type, either MAC or CRC32
      * @param passwd
      *          password
-     * @return
+     * @return a handle to the open ledger
      * @throws InterruptedException
      * @throws BKException
      */
@@ -404,7 +405,7 @@ public class BookKeeper {
      *          digest type, either MAC or CRC32
      * @param passwd
      *          password
-     * @return
+     * @return a handle to the open ledger
      * @throws InterruptedException
      * @throws BKException
      */
@@ -447,7 +448,7 @@ public class BookKeeper {
 
     /**
      * Synchronous call to delete a ledger. Parameters match those of
-     * {@link #asyncDeleteLedger(long, DeleteCallback, Object)}
+     * {@link #asyncDeleteLedger(long, AsyncCallback.DeleteCallback, Object)}
      *
      * @param lId
      *            ledgerId

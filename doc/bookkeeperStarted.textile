@@ -32,7 +32,7 @@ p. BookKeeper provides a utility program to start a standalone ZooKeeper ensembl
 
 p. To start a local bookkeeper ensemble with 5 bookies:
 
-@ bookkeeper-server/bin/bookkeeper localbookie 5
+ @bookkeeper-server/bin/bookkeeper localbookie 5@
 
 h1. Setting up bookies
 
@@ -40,13 +40,13 @@ p. If you're bold and you want more than just running things locally, then you'l
 
 p. For each bookie, we need to execute a command like the following: 
 
- @ bookkeeper-server/bin/bookkeeper bookie
+ @bookkeeper-server/bin/bookkeeper bookie@
 
-p. This command will use the default directories for storing ledgers and the write ahead log, and will look for a zookeeper server on localhost:2181. To modify this you must edit bookkeeper-server/conf/bkenv.sh. BOOKIE_TXN_LOGDIR and BOOKIE_DATA_DIR should be configured to used different physical devices for best performance. BOOKIE_ZOOKEEPER should be a comma separated list of zookeeper servers.
+p. This command will use the default directories for storing ledgers and the write ahead log, and will look for a zookeeper server on localhost:2181. See the "Admin Guide":./bookkeeperConfig.html for more details.
 
 p. To see the default values of these configuration variables, run:
 
- @ bookkeeper-server/bin/bookkeeper help
+ @bookkeeper-server/bin/bookkeeper help@
 
 h1. Setting up ZooKeeper
 
@@ -60,14 +60,17 @@ h1. Example
 
 p. In the following excerpt of code, we: 
 
+# Open a bookkeeper client;
 # Create a ledger; 
 # Write to the ledger; 
 # Close the ledger; 
 # Open the same ledger for reading; 
 # Read from the ledger; 
 # Close the ledger again; 
+# Close the bookkeeper client.
 
-bc.. 
+<pre><code>
+BookKeeper bkc = new BookKeeper("localhost:2181");
 LedgerHandle lh = bkc.createLedger(ledgerPassword);
 ledgerId = lh.getId();
 ByteBuffer entry = ByteBuffer.allocate(4);
@@ -93,4 +96,5 @@ while(ls.hasMoreElements()){
 	Integer retrEntry = result.getInt();
 }
 lh.close();
-	    
+bkc.close();
+</code></pre>

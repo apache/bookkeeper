@@ -18,7 +18,7 @@ h1. BookKeeper introduction
 
 p. BookKeeper is a replicated service to reliably log streams of records. In BookKeeper, servers are "bookies", log streams are "ledgers", and each unit of a log (aka record) is a "ledger entry". BookKeeper is designed to be reliable; bookies, the servers that store ledgers, can crash, corrupt data, discard data, but as long as there are enough bookies behaving correctly the service as a whole behaves correctly. 
 
-p. The initial motivation for BookKeeper comes from the namenode of HDFS. Namenodes have to log operations in a reliable fashion so that recovery is possible in the case of crashes. We have found the applications for BookKeeper extend far beyond HDFS, however. Essentially, any application that requires an append storage can replace their implementations with BookKeeper. BookKeeper has the advantage of scaling throughput with the number of servers. 
+p. The initial motivation for BookKeeper comes from the namenode of HDFS. Namenodes have to log operations in a reliable fashion so that recovery is possible in the case of crashes. We have found the applications for BookKeeper extend far beyond HDFS, however. Essentially, any application that requires an append storage can replace their implementations with BookKeeper. BookKeeper has the advantage of writing efficiently, replicating for fault tolerance, and scaling throughput with the number of servers through striping. 
 
 p. At a high level, a bookkeeper client receives entries from a client application and stores it to sets of bookies, and there are a few advantages in having such a service: 
 
@@ -100,7 +100,7 @@ p. We maintain this information in ZooKeeper. Bookies use ephemeral nodes to ind
 
 h1. Closing out ledgers
 
-p. The process of closing out the ledger and finding the last ledger is difficult due to the durability guarantees of BookKeeper: 
+p. The process of closing out the ledger and finding the last entry is difficult due to the durability guarantees of BookKeeper: 
 
 * If an entry has been successfully recorded, it must be readable. 
 * If an entry is read once, it must always be available to be read. 
@@ -116,14 +116,16 @@ p. The trick to making everything work is to have a correct idea of a last entry
 # Find the highest consecutively recorded entry, _LR_ ; 
 # Make sure that all entries between _LC_ and _LR_ are on a quorum of bookies; 
 
-h1. Data Management in Bookie Server
+h1. Data Management in Bookies
+
+p. This section gives an overview of how a bookie manages its ledger fragments. 
 
 h2. Basic
 
-p. Bookie servers manage data in a log-structured way, which is implemented using three kind of files:
+p. Bookies manage data in a log-structured way, which is implemented using three kind of files:
 
-* _Journal_ : A journal file contains the BookKeeper transaction logs. Before any update takes place, a Bookie server ensures that a transaction describing the update is written to non-volatile storage. A new journal file is created once the Bookie server starts or the older journal file reaches the journal file size threshold.
-* _Entry Log_ : An entry log file manages the written entries received from BookKeeper clients. Entries from different ledgers are aggregated and written sequentially, while their offsets are kept as pointers in _LedgerCache_ for fast lookup. A new entry log file is created once the Bookie server starts or the older entry log file reaches the entry log size threshold. Old entry log files are removed by the _Garbage Collector Thread_ once they are not associated with any active ledger.
+* _Journal_ : A journal file contains the BookKeeper transaction logs. Before any update takes place, a bookie ensures that a transaction describing the update is written to non-volatile storage. A new journal file is created once the bookie starts or the older journal file reaches the journal file size threshold.
+* _Entry Log_ : An entry log file manages the written entries received from BookKeeper clients. Entries from different ledgers are aggregated and written sequentially, while their offsets are kept as pointers in _LedgerCache_ for fast lookup. A new entry log file is created once the bookie starts or the older entry log file reaches the entry log size threshold. Old entry log files are removed by the _Garbage Collector Thread_ once they are not associated with any active ledger.
 * _Index File_ : An index file is created for each ledger, which comprises a header and several fixed-length index pages, recording the offsets of data stored in entry log files. 
 
 p. Since updating index files would introduce random disk I/O, for performance consideration, index files are updated lazily by a _Sync Thread_ running in the background. Before index pages are persisted to disk, they are gathered in _LedgerCache_ for lookup.
@@ -132,11 +134,11 @@ p. Since updating index files would introduce random disk I/O, for performance c
 
 h2. Add Entry
 
-p. When a Bookie server receives entries from clients to be written, these entries will go through the following steps to be persisted to disk:
+p. When a bookie receives entries from clients to be written, these entries will go through the following steps to be persisted to disk:
 
 # Append the entry in _Entry Log_, return its position { logId , offset } ;
 # Update the index of this entry in _Ledger Cache_ ;
-# Append a transaction of update of this entry in _Journal_ ;
+# Append a transaction corresponding to this entry update in _Journal_ ;
 # Respond to BookKeeper client ;
 
 * For performance reasons, _Entry Log_ buffers entries in memory and commit them in batches, while _Ledger Cache_ holds index pages in memory and flushes them lazily. We will discuss data flush and how to ensure data integrity in the following section 'Data Flush'.
@@ -154,11 +156,11 @@ p. The data flush flow in _Sync Thread_ is as follows:
 
 # Records a _LastLogMark_ in memory. The _LastLogMark_ contains two parts: first one is _txnLogId_ (file id of a journal) and the second one is _txnLogPos_ (offset in a journal). The _LastLogMark_ indicates that those entries before it have been persisted to both index and entry log files.
 # Flushes dirty index pages from _LedgerCache_ to index file, and flushes entry log files to ensure all buffered entries in entry log files are persisted to disk.
-#* Ideally, a Bookie server just needs to flush index pages and entry log files that contains entries before _LastLogMark_. There is no such information in _LedgerCache_ and _Entry Log_ mapping to journal files, though. Consequently, the thread flushes _LedgerCache_ and _Entry Log_ entirely here, and may flush entries after the _LastLogMark_. Flushing more is not a problem, though, just redundant.
+#* Ideally, a bookie just needs to flush index pages and entry log files that contains entries before _LastLogMark_. There is no such information in _LedgerCache_ and _Entry Log_ mapping to journal files, though. Consequently, the thread flushes _LedgerCache_ and _Entry Log_ entirely here, and may flush entries after the _LastLogMark_. Flushing more is not a problem, though, just redundant.
 # Persists _LastLogMark_ to disk, which means entries added before _LastLogMark_ whose entry data and index page were also persisted to disk. It is the time to safely remove journal files created earlier than _txnLogId_.
-#* If a Bookie server has crashed before persisting _LastLogMark_ to disk, it still has journal files containing entries for which index pages may not have been persisted. Consequently, when this Bookie server restarts, it inspects journal files to restore those entries; data isn't lost.
+#* If the bookie has crashed before persisting _LastLogMark_ to disk, it still has journal files containing entries for which index pages may not have been persisted. Consequently, when this bookie restarts, it inspects journal files to restore those entries; data isn't lost.
 
-p. Using the above data flush mechanism, it is safe for the _Sync Thread_ to skip data flushing when the Bookie server shuts down. However, in _Entry Logger_, it uses _BufferedChannel_ to write entries in batches and there might be data buffered in _BufferedChannel_ upon a shut down. Bookie server needs to ensure _Entry Logger_ flushes its buffered data during shutting down. Otherwise, _Entry Log_ files become corrupted with partial entries.
+p. Using the above data flush mechanism, it is safe for the _Sync Thread_ to skip data flushing when the bookie shuts down. However, in _Entry Logger_, it uses _BufferedChannel_ to write entries in batches and there might be data buffered in _BufferedChannel_ upon a shut down. The bookie needs to ensure _Entry Logger_ flushes its buffered data during shutting down. Otherwise, _Entry Log_ files become corrupted with partial entries.
 
 p. As described above, _EntryLogger#flush_ is invoked in the following two cases:
 * in _Sync Thread_ : used to ensure entries added before _LastLogMark_ are persisted to disk.

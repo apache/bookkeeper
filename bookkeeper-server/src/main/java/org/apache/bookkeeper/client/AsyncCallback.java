@@ -26,8 +26,8 @@ public interface AsyncCallback {
          *
          * @param rc
          *          return code
-         * @param ledgerId
-         *          ledger identifier
+         * @param lh
+         *          ledger handle
          * @param entryId
          *          entry identifier
          * @param ctx
@@ -42,8 +42,8 @@ public interface AsyncCallback {
          *
          * @param rc
          *          return code
-         * @param ledgerId
-         *          ledger identifier
+         * @param lh
+         *          ledger handle
          * @param ctx
          *          control object
          */
@@ -87,8 +87,8 @@ public interface AsyncCallback {
          *
          * @param rc
          *          return code
-         * @param ledgerId
-         *          ledger identifier
+         * @param lh
+         *          ledger handle
          * @param seq
          *          sequence of entries
          * @param ctx

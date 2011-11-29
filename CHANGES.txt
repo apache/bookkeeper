@@ -15,6 +15,8 @@ BUGFIXES:
  BOOKKEEPER-127: Make poms use official zookeeper 3.4.0 (ivank)
 
  BOOKKEEPER-120: Review BookKeeper client documentation (ivank)
+ 
+ BOOKKEEPER-122: Review BookKeeper server documentation (fpj & ivank)
 
  bookkeeper-server/
 

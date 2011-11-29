@@ -63,7 +63,7 @@
         <version>2.8</version>
 	<configuration>
 	  <additionalparam>-exclude org.apache.hedwig.client.netty:org.apache.hedwig.client.benchmark:org.apache.hedwig.client.data:org.apache.hedwig.client.exceptions:org.apache.hedwig.client.handlers:org.apache.hedwig.client.ssl</additionalparam>
-	  <subpackages>org.apache.bookkeeper.client:org.apache.hedwig.client:org.apache.hedwig.util:org.apache.hedwig.protocol:org.apache.hedwig.exceptions</subpackages>
+	  <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.conf:org.apache.hedwig.client:org.apache.hedwig.util:org.apache.hedwig.protocol:org.apache.hedwig.exceptions</subpackages>
           <groups>
 	    <group>
               <title>Bookkeeper</title>

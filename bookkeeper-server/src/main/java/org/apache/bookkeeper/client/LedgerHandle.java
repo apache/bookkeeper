@@ -100,7 +100,7 @@ public class LedgerHandle {
     /**
      * Get the id of the current ledger
      *
-     * @return
+     * @return the id of the ledger
      */
     public long getId() {
         return ledgerId;
@@ -109,7 +109,7 @@ public class LedgerHandle {
     /**
      * Get the last confirmed entry id on this ledger
      *
-     * @return
+     * @return the last confirmed entry id
      */
     public long getLastAddConfirmed() {
         return lastAddConfirmed;
@@ -119,7 +119,7 @@ public class LedgerHandle {
      * Get the entry id of the last entry that has been enqueued for addition (but
      * may not have possibly been persited to the ledger)
      *
-     * @return
+     * @return the id of the last entry pushed
      */
     public long getLastAddPushed() {
         return lastAddPushed;
@@ -175,7 +175,7 @@ public class LedgerHandle {
     /**
      * Returns the length of the ledger in bytes.
      *
-     * @return
+     * @return the length of the ledger in bytes
      */
     public long getLength() {
         return this.length;
