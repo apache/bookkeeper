@@ -14,6 +14,8 @@ BUGFIXES:
  
  BOOKKEEPER-127: Make poms use official zookeeper 3.4.0 (ivank)
 
+ BOOKKEEPER-120: Review BookKeeper client documentation (ivank)
+
  bookkeeper-server/
 
   BOOKKEEPER-1: Static variable makes tests fail (fpj via ivank)
