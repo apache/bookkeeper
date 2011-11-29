@@ -36,9 +36,13 @@ h1. Pseudocode
 
 This summarizes the control flow through the system.
 
-publishhandler topicmgr.getowner (maybe) claim the topic, calling back into persmgr.acquiredtopic read /hedwig/standalone/topics/TOPIC (which should initially be empty) for each line, parse as &quot;STARTSEQ&quot; # TODO how is this written? ledger = bk.openledger(ledgerid) lastid = ledger.getlast if lastid &gt; 0, lrs[startseq] = persmgr.ledger2lr[ledgerid] = new LedgerRange(ledger, ledgerid, startseq, startseq + lastid # TODO what are ledger ranges? create new ledger for topic # TODO read lr = new LedgerRange(ledger, ledgerid, lastid, -1) lrs[lastid] = lr persmgr.topic2ranges[topic] = lrs add region info to pub req and send that to persmgr.persistmessage entryid = persmgr.topic2ranges[topic].last.ledger.addentry(the pub'd data) update persmgr.topic2lastseq[topic]: .local = persmgr.ledger2lr[ledger id].startseq + entryid .regions = maxes of orig seq and incoming pub seq
+h2. publish
 
-subscribehandler topicmgr.getowner... delivmgr.startservingsubscription(topic, endpoint, ishubsubscriber) delivmgr.endpoint2sub[endpoint] = new subscriber(lastseq = persmgr.getcurrentseqidfortopic(topic).local) delivmgr.topic2ptr2subs[topic][ptr].add(sub) sub.delivernextmessage sub.curseq = persmgr.getseqidafterskipping(topic, sub.lastseq, skip = 1) msg = persmgr.scansinglemessage(topic, seq = sub.curseq) if persmgr.topic2lastseq[topic].local &gt;= seq lr = persmgr.topic2ranges[topic].floor(seq) return lr.ledger.read(first = last = seq - lr.startseq) if failed, then retry in 1 s endpoint.send(msg) movedeliveryptr delivmgr.topic2ptr2subs[topic][sub.lastseq].remove(sub) delivmgr.topic2ptr2subs[topic][sub.curseq].add(sub) previd = sub.lastseq, sub.lastseq = sub.curseq sub.delivernextmessage...
+Need to document
+
+h2. subscribe
+
+Need to document
 
 h1. ReadAhead Cache
 

@@ -43,7 +43,7 @@ Hedwig requires BookKeeper to run. For BookKeeper setup instructions see "BookKe
 
 To start a Hedwig hub server:
 
- @ hedwig-server/bin/hedwig server
+@hedwig-server/bin/hedwig server@
 
 Hedwig takes its configuration from hedwig-server/conf/hw_server.conf by default. To change location of the conf file, modify the HEDWIG_SERVER_CONF environment variable.
 
@@ -51,12 +51,13 @@ h1. Debugging
 
 You can attach an Eclipse debugger (or any debugger) to a Java process running on a remote host, as long as it has been started with the appropriate JVM flags. (See the Building Hedwig document to set up your Eclipse environment.) To launch something using @bin/hedwig@ with debugger attachment enabled, prefix the command with @HEDWIG_EXTRA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,address=5000@, e.g.:
 
-@ HEDWIG_EXTRA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,address=5000 hedwig-server/bin/hedwig server
+@HEDWIG_EXTRA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,address=5000 hedwig-server/bin/hedwig server@
 
 h1. Logging
 
-To control the logging in Hedwig server, set HEDWIG_LOG_CONF to the location of a log4j.properties file.
+Hedwig uses "slf4j":http://www.slf4j.org for logging, with the log4j bindings enabled by default. To enable logging from hedwig, create a log4j.properties file and point the environment variable HEDWIG_LOG_CONF to the file. The path to the log4j.properties file must be absolute.
 
-@ HEDWIG_LOG_CONF=../hw_testing/log4j.properties hedwig-server/bin/hedwig server
+@export HEDWIG_LOG_CONF=/tmp/log4j.properties@
+@hedwig-server/bin/hedwig server@
 
 

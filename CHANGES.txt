@@ -10,6 +10,8 @@ BUGFIXES:
 
  BOOKKEEPER-124: build has RAT failures (ivank)
 
+ BOOKKEEPER-121: Review Hedwig client documentation (breed via ivank)
+
  bookkeeper-server/
 
   BOOKKEEPER-1: Static variable makes tests fail (fpj via ivank)

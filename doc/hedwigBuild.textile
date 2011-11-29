@@ -15,8 +15,6 @@ For the core itself:
 
 * JDK 6: "http://java.sun.com/":http://java.sun.com/. Ensure @$JAVA_HOME@ is correctly set.
 * Maven 2: "http://maven.apache.org/":http://maven.apache.org/.
-* Protocol Buffers 2.3.0: "http://protobuf.googlecode.com/":http://protobuf.googlecode.com/.
-* Zookeeper 3.4.0: "http://zookeeper.apache.org/":http://zookeeper.apache.org/.
 
 Hedwig has been tested on Windows XP, Linux 2.6, and OS X.
 
@@ -35,8 +33,6 @@ To check out, build, and develop using Eclipse:
 # Go to Preferences &gt; Team &gt; SVN. For the SVN interface, choose &quot;Pure Java&quot;.
 # Choose File &gt; New &gt; Project... &gt; Maven &gt; Checkout Maven Projects from SCM.
 # For the SCM URL type, choose SVN. For the URL, enter SVN URL. Maven will automatically create a top-level Eclipse project for each of the 4 Maven modules (recommended). If you want fewer top-level projects, uncheck the option of having a project for each module (under Advanced).
-# Right-click on the @protocol@ project and choose Run As &gt; Maven generate-sources. This will generate the Java and C++ code for Protocol Buffers.
-# Refresh the workspace to pick up the generated code and add @hedwig/protocol/target/generated-sources/java@ as a source folder. (6 &amp; 7 should really be doable automatically, but I haven't figured out how.)
 
 You are now ready to run and debug the client and server code. See the User's Guide for instructions on running and usage.
 
