@@ -1,0 +1,84 @@
+Title:        BookKeeper Internals
+Notice: Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License. You may
+        obtain a copy of the License at "http://www.apache.org/licenses/LICENSE-2.0":http://www.apache.org/licenses/LICENSE-2.0.
+        .        
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+        implied. See the License for the specific language governing permissions
+        and limitations under the License.
+        .
+
+h2. Bookie Internals
+
+p. Bookie server stores its data in multiple ledger directories and its journal files in a journal directory. Ideally, storing journal files in a separate directory than data files would increase throughput and decrease latency
+
+h3. The Bookie Journal
+
+p. Journal directory has one kind of file in it:
+
+* @{timestamp}.txn@ - holds transactions executed in the bookie server.
+
+p. Before persisting ledger index and data to disk, a bookie ensures that the transaction that represents the update is written to a journal in non-volatile storage. A new journal file is created using current timestamp when a bookie starts or an old journal file reaches its maximum size.
+
+p. A bookie supports journal rolling to remove old journal files. In order to remove old journal files safely, bookie server records LastLogMark in Ledger Device, which indicates all updates (including index and data) before LastLogMark has been persisted to the Ledger Device.
+
+p. LastLogMark contains two parts:
+
+* @LastLogId@ - indicates which journal file the transaction persisted.
+* @LastLogPos@ - indicates the position the transaction persisted in LastLogId journal file.
+
+p. You may use following settings to further fine tune the behavior of journalling on bookies:
+
+| @journalMaxSizeMB@ | journal file size limitation. when a journal reaches this limitation, it will be closed and new journal file be created. |
+| @journalMaxBackups@ | how many old journal files whose id is less than LastLogMark 's journal id. |
+
+bq. NOTE: keeping number of old journal files would be useful for manually recovery in special case.
+
+h1. ZooKeeper Metadata
+
+p. For BookKeeper, we require a ZooKeeper installation to store metadata, and to pass the list of ZooKeeper servers as parameter to the constructor of the BookKeeper class (@org.apache.bookkeeper.client.BookKeeper@). To setup ZooKeeper, please check the "ZooKeeper documentation":http://zookeeper.apache.org/doc/trunk/index.html. 
+
+p. BookKeeper provides two mechanisms to organize its metadata in ZooKeeper. By default, the @FlatLedgerManager@ is used, and 99% of users should never need to look at anything else. However, in cases where there are a lot of active ledgers concurrently, (> 50,000), @HierarchicalLedgerManager@ should be used. For so many ledgers, a hierarchical approach is needed due to a limit ZooKeeper places on packet sizes "JIRA Issue":https://issues.apache.org/jira/browse/BOOKKEEPER-39.
+
+| @FlatLedgerManager@ | All ledger metadata are placed as children in a single zookeeper path. |
+| @HierarchicalLedgerManager@ | All ledger metadata are partitioned into 2-level znodes. |
+
+h2. Flat Ledger Manager
+
+p. All ledgers' metadata are put in a single zookeeper path, created using zookeeper sequential node, which can ensure uniqueness of ledger id. Each ledger node is prefixed with 'L'.
+
+p. Bookie server manages its owned active ledgers in a hash map. So it is easy for bookie server to find what ledgers are deleted from zookeeper and garbage collect them. And its garbage collection flow is described as below:
+
+* Fetch all existing ledgers from zookeeper (@zkActiveLedgers@).
+* Fetch all ledgers currently active within the Bookie (@bkActiveLedgers@).
+* Loop over @bkActiveLedgers@ to find those ledgers which do not exist in @zkActiveLedgers@ and garbage collect them.
+
+h2. Hierarchical Ledger Manager
+
+p. @HierarchicalLedgerManager@ first obtains a global unique id from ZooKeeper using a EPHEMERAL_SEQUENTIAL znode.
+
+p. Since ZooKeeper sequential counter has a format of %10d -- that is 10 digits with 0 (zero) padding, i.e. "&lt;path&gt;0000000001", @HierarchicalLedgerManager@ splits the generated id into 3 parts :
+
+@{level1 (2 digits)}{level2 (4 digits)}{level3 (4 digits)}@
+
+p. These 3 parts are used to form the actual ledger node path used to store ledger metadata:
+
+@{ledgers_root_path}/{level1}/{level2}/L{level3}@
+
+p. E.g. Ledger 0000000001 is split into 3 parts 00, 0000, 00001, which is stored in znode /{ledgers_root_path}/00/0000/L0001. So each znode could have at most 10000 ledgers, which avoids the problem of the child list being larger than the maximum ZooKeeper packet size.
+
+p. Bookie server manages its active ledgers in a sorted map, which simplifies access to active ledgers in a particular (level1, level2) partition.
+
+p. Garbage collection in bookie server is processed node by node as follows:
+
+* Fetching all level1 nodes, by calling zk#getChildren(ledgerRootPath).
+** For each level1 nodes, fetching their level2 nodes :
+** For each partition (level1, level2) :
+*** Fetch all existed ledgers from zookeeper belonging to partition (level1, level2) (@zkActiveLedgers@).
+*** Fetch all ledgers currently active in the bookie which belong to partition (level1, level2) (@bkActiveLedgers@).
+*** Loop over @bkActiveLedgers@ to find those ledgers which do not exist in @zkActiveLedgers@, and garbage collect them.
+
+bq. NOTE: Hierarchical Ledger Manager is more suitable to manage large number of ledgers existed in BookKeeper.
+
