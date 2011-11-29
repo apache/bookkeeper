@@ -8,6 +8,8 @@ Backward compatible changes:
 
 BUGFIXES:
 
+ BOOKKEEPER-124: build has RAT failures (ivank)
+
  bookkeeper-server/
 
   BOOKKEEPER-1: Static variable makes tests fail (fpj via ivank)

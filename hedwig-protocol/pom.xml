@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <!--
    Licensed to the Apache Software Foundation (ASF) under one or more
    contributor license agreements.  See the NOTICE file distributed with
@@ -46,6 +47,17 @@
   <build>
     <defaultGoal>install</defaultGoal>
     <plugins>
+      <plugin>
+	<groupId>org.apache.rat</groupId>
+	<artifactId>apache-rat-plugin</artifactId>
+	<version>0.7</version>
+	<configuration>
+	  <excludes>
+	    <!-- exclude generated file //-->
+	    <exclude>**/PubSubProtocol.java</exclude>
+	  </excludes>
+	</configuration>
+      </plugin>
       <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
         <executions>

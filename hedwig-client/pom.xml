@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <!--
    Licensed to the Apache Software Foundation (ASF) under one or more
    contributor license agreements.  See the NOTICE file distributed with
@@ -110,4 +111,20 @@
       </exclusions>
     </dependency>
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+	<groupId>org.apache.rat</groupId>
+	<artifactId>apache-rat-plugin</artifactId>
+	<version>0.7</version>
+	<configuration>
+	  <excludes>
+	    <exclude>**/m4/*.m4</exclude>
+	    <exclude>**/aminclude.am</exclude>
+	  </excludes>
+	</configuration>
+      </plugin>
+    </plugins>
+  </build>
+
 </project>

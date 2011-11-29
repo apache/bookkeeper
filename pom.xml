@@ -104,10 +104,24 @@
           </descriptors>
         </configuration>
       </plugin>
+      <plugin>
+	<groupId>org.apache.rat</groupId>
+	<artifactId>apache-rat-plugin</artifactId>
+	<version>0.7</version>
+	<configuration>
+	  <excludes>
+	    <exclude>.git/**/*</exclude>
+	    <exclude>**/.svn/**/*</exclude>
+	    <exclude>CHANGES.txt</exclude>
+	  </excludes>
+	</configuration>
+      </plugin>
     </plugins>
   </build>
   <reporting>
     <plugins>
+
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jxr-plugin</artifactId>
