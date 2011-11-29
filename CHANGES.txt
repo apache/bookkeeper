@@ -96,6 +96,8 @@ BUGFIXES:
 
   BOOKKEEPER-62: Bookie can not start when encountering corrupted records (breed via ivank)
 
+  BOOKKEEPER-111: Document bookie recovery feature (ivank)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)

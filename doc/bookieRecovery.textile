@@ -1,0 +1,41 @@
+Title:     BookKeeper Bookie Recovery
+Notice:    Licensed to the Apache Software Foundation (ASF) under one
+           or more contributor license agreements.  See the NOTICE file
+           distributed with this work for additional information
+           regarding copyright ownership.  The ASF licenses this file
+           to you under the Apache License, Version 2.0 (the
+           "License"); you may not use this file except in compliance
+           with the License.  You may obtain a copy of the License at
+           .
+             http://www.apache.org/licenses/LICENSE-2.0
+           .
+           Unless required by applicable law or agreed to in writing,
+           software distributed under the License is distributed on an
+           "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+           KIND, either express or implied.  See the License for the
+           specific language governing permissions and limitations
+           under the License.
+
+h1. Bookie Recovery
+
+p. When a bookie crashes, any ledgers with entries on the bookie potentially become underreplicated. For this reason, we provide a recovery tool which will ensure that all ledgers which had entries on the bookie are fully replicated. At the moment, this is not an automatic process. The administrator must run this tool manually when he sees that the bookie has died. 
+
+To run recovery, with zk1.example.com as the zookeeper ensemble, and bk3.example.com as the failed bookie, do the following:
+
+@bookkeeper-server/bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools zk1.example.com:2181 bk3.example.com:3181@
+
+It is necessary to specify the host and port portion of failed bookie, as this is how it identifies itself to zookeeper. It is possible to specify a third argument, which is the bookie to replicate to. If this is omitted, as in our example, a random bookie is chosen for each ledger fragment. A ledger fragment is a continous sequence of entries in a bookie, which share the same ensemble. 
+
+The recovery process is as follows.
+
+# The client reads the metadata of active ledgers from zookeeper;
+# From this, the ledgers which contain fragments using the failed bookie in their ensemble are selected;
+# A recovery process is initiated for each ledger in this list;
+## The client goes through all ledger fragments in the ledger, selecting those which contain the failed bookie;
+## A recovery process is initiated for each ledger fragment in this list;
+### The client selects a bookie to which all entries in the ledger fragment will be replicated;
+### the client reads entries that belong to the ledger fragment from other bookies in the ensemble and writes them to the selected bookie;
+### Once all entries have been replicated, the zookeeper metadata for the fragment is updated to reflect the new ensemble;
+### The fragment is marked as fully replicated in the recovery tool;
+## Once all ledger fragements are marked as fully replicated, the ledger is marked as fully replicated;
+# Once all ledgers are marked as fully replicated, bookie recovery is finished.
