@@ -11,6 +11,8 @@ BUGFIXES:
  BOOKKEEPER-124: build has RAT failures (ivank)
 
  BOOKKEEPER-121: Review Hedwig client documentation (breed via ivank)
+ 
+ BOOKKEEPER-127: Make poms use official zookeeper 3.4.0 (ivank)
 
  bookkeeper-server/
 

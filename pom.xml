@@ -41,16 +41,6 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
   </properties>
-  <repositories>
-    <repository>
-      <id>ivank.waitingforzk.repo</id>
-      <name>Temporary repo waiting for ZK 3.4.0 official release</name>
-      <url>http://people.apache.org/~ivank/repo</url>
-      <snapshots>
-         <enabled>true</enabled>
-       </snapshots>
-    </repository>
-  </repositories>
   <url>http://zookeeper.apache.org/bookkeeper</url>
   <build>
     <plugins>
