@@ -411,34 +411,39 @@ public class EntryLogger {
             long pos = LOGFILE_HEADER_SIZE;
             ConcurrentHashMap<Long, Boolean> entryLogLedgers = new ConcurrentHashMap<Long, Boolean>();
             // Read through the entry log file and extract the ledger ID's.
-            while (true) {
-                // Check if we've finished reading the entry log file.
-                if (pos >= bc.size()) {
-                    break;
+            try {
+                while (true) {
+                    // Check if we've finished reading the entry log file.
+                    if (pos >= bc.size()) {
+                        break;
+                    }
+                    if (bc.read(sizeBuff, pos) != sizeBuff.capacity()) {
+                        throw new IOException("Short read from entrylog " + entryLogId);
+                    }
+                    pos += 4;
+                    sizeBuff.flip();
+                    int entrySize = sizeBuff.getInt();
+                    if (entrySize > 1024 * 1024) {
+                        LOG.error("Sanity check failed for entry size of " + entrySize + " at location " + pos + " in "
+                                + entryLogId);
+                    }
+                    byte data[] = new byte[entrySize];
+                    ByteBuffer buff = ByteBuffer.wrap(data);
+                    int rc = bc.read(buff, pos);
+                    if (rc != data.length) {
+                        throw new IOException("Short read for entryLog " + entryLogId + "@" + pos + "(" + rc + "!="
+                                + data.length + ")");
+                    }
+                    buff.flip();
+                    long ledgerId = buff.getLong();
+                    entryLogLedgers.put(ledgerId, true);
+                    // Advance position to the next entry and clear sizeBuff.
+                    pos += entrySize;
+                    sizeBuff.clear();
                 }
-                if (bc.read(sizeBuff, pos) != sizeBuff.capacity()) {
-                    throw new IOException("Short read from entrylog " + entryLogId);
-                }
-                pos += 4;
-                sizeBuff.flip();
-                int entrySize = sizeBuff.getInt();
-                if (entrySize > 1024 * 1024) {
-                    LOG.error("Sanity check failed for entry size of " + entrySize + " at location " + pos + " in "
-                              + entryLogId);
-                }
-                byte data[] = new byte[entrySize];
-                ByteBuffer buff = ByteBuffer.wrap(data);
-                int rc = bc.read(buff, pos);
-                if (rc != data.length) {
-                    throw new IOException("Short read for entryLog " + entryLogId + "@" + pos + "(" + rc + "!="
-                                          + data.length + ")");
-                }
-                buff.flip();
-                long ledgerId = buff.getLong();
-                entryLogLedgers.put(ledgerId, true);
-                // Advance position to the next entry and clear sizeBuff.
-                pos += entrySize;
-                sizeBuff.clear();
+            } catch(IOException e) {
+              LOG.info("Premature exception when processing " + entryLogId + 
+                       "recovery will take care of the problem", e);
             }
             LOG.info("Retrieved all ledgers that comprise entryLogId: " + entryLogId + ", values: " + entryLogLedgers);
             entryLogs2LedgersMap.put(entryLogId, entryLogLedgers);

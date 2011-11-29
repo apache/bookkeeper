@@ -86,6 +86,8 @@ BUGFIXES:
 
   BOOKKEEPER-125: log4j still used in some places (ivank)
 
+  BOOKKEEPER-62: Bookie can not start when encountering corrupted records (breed via ivank)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)
