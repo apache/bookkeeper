@@ -84,6 +84,8 @@ BUGFIXES:
 
   BOOKKEEPER-39: Bookie server failed to restart because of too many ledgers (more than ~50,000 ledgers) (Sijie via ivank)
 
+  BOOKKEEPER-125: log4j still used in some places (ivank)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)

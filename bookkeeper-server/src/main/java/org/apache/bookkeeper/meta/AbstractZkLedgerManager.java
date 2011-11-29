@@ -27,7 +27,9 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
@@ -38,7 +40,7 @@ import org.apache.zookeeper.ZooKeeper;
  */
 abstract class AbstractZkLedgerManager implements LedgerManager {
 
-    static Logger LOG = Logger.getLogger(AbstractZkLedgerManager.class);
+    static Logger LOG = LoggerFactory.getLogger(AbstractZkLedgerManager.class);
 
     // Ledger Node Prefix
     static public final String LEDGER_NODE_PREFIX = "L";

@@ -31,7 +31,10 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.junit.Assert;
 import org.junit.After;
 import org.junit.Before;
@@ -41,7 +44,7 @@ import org.junit.Test;
  * This class tests that bookie rolling journals
  */
 public class BookieJournalRollingTest extends BaseTestCase {
-    static Logger LOG = Logger.getLogger(BookieJournalRollingTest.class);
+    static Logger LOG = LoggerFactory.getLogger(BookieJournalRollingTest.class);
 
     DigestType digestType;
 

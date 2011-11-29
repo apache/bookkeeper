@@ -30,13 +30,14 @@ import java.io.OutputStreamWriter;
 import org.junit.*;
 import static org.junit.Assert.*;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 
 import org.apache.bookkeeper.test.BaseTestCase;
 
 public class BookieLayoutVersionTest extends BaseTestCase {
-    static Logger LOG = Logger.getLogger(BookieLayoutVersionTest.class);
+    static Logger LOG = LoggerFactory.getLogger(BookieLayoutVersionTest.class);
     
     final int BOOKIE_PORT = 3181;
 

@@ -35,14 +35,15 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.test.BaseTestCase;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This unit test tests ledger fencing;
  *
  */
 public class TestFencing extends BaseTestCase {
-    static Logger LOG = Logger.getLogger(TestFencing.class);
+    static Logger LOG = LoggerFactory.getLogger(TestFencing.class);
 
     DigestType digestType;
 
