@@ -31,11 +31,11 @@
   <packaging>pom</packaging>
   <name>bookkeeper</name>
   <modules>
-  	<module>hedwig-client</module>
-  	<module>hedwig-server</module>
-  	<module>hedwig-protocol</module>
-  	<module>bookkeeper-server</module>
-  	<module>bookkeeper-benchmark</module>
+    <module>hedwig-client</module>
+    <module>hedwig-server</module>
+    <module>hedwig-protocol</module>
+    <module>bookkeeper-server</module>
+    <module>bookkeeper-benchmark</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -46,35 +46,35 @@
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-	<version>2.3.2</version>
+        <version>2.3.2</version>
         <configuration>
           <source>1.6</source>
           <target>1.6</target>
         </configuration>
       </plugin>
       <plugin>
-      	<groupId>org.apache.maven.plugins</groupId>
-	<artifactId>maven-surefire-plugin</artifactId>
-	<version>2.9</version>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.9</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>2.8</version>
-	<configuration>
-	  <additionalparam>-exclude org.apache.hedwig.client.netty:org.apache.hedwig.client.benchmark:org.apache.hedwig.client.data:org.apache.hedwig.client.exceptions:org.apache.hedwig.client.handlers:org.apache.hedwig.client.ssl</additionalparam>
-	  <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.conf:org.apache.hedwig.client:org.apache.hedwig.util:org.apache.hedwig.protocol:org.apache.hedwig.exceptions</subpackages>
+        <configuration>
+          <additionalparam>-exclude org.apache.hedwig.client.netty:org.apache.hedwig.client.benchmark:org.apache.hedwig.client.data:org.apache.hedwig.client.exceptions:org.apache.hedwig.client.handlers:org.apache.hedwig.client.ssl</additionalparam>
+          <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.conf:org.apache.hedwig.client:org.apache.hedwig.util:org.apache.hedwig.protocol:org.apache.hedwig.exceptions</subpackages>
           <groups>
-	    <group>
+            <group>
               <title>Bookkeeper</title>
-	      <packages>org.apache.bookkeeper*</packages>
+              <packages>org.apache.bookkeeper*</packages>
             </group>
             <group>
               <title>Hedwig</title>
-	      <packages>org.apache.hedwig*</packages>
+              <packages>org.apache.hedwig*</packages>
             </group>
-	  </groups>
-	</configuration>
+          </groups>
+        </configuration>
         <executions>
           <execution>
             <id>aggregate</id>
@@ -86,25 +86,28 @@
         </executions>
       </plugin>
       <plugin>
-	<artifactId>maven-assembly-plugin</artifactId>
+        <artifactId>maven-assembly-plugin</artifactId>
         <version>2.2.1</version>
         <configuration>
           <descriptors>
-            <descriptor>src/assemble/release.xml</descriptor>
+            <descriptor>src/assemble/bin.xml</descriptor>
+            <descriptor>src/assemble/src.xml</descriptor>
           </descriptors>
         </configuration>
       </plugin>
       <plugin>
-	<groupId>org.apache.rat</groupId>
-	<artifactId>apache-rat-plugin</artifactId>
-	<version>0.7</version>
-	<configuration>
-	  <excludes>
-	    <exclude>.git/**/*</exclude>
-	    <exclude>**/.svn/**/*</exclude>
-	    <exclude>CHANGES.txt</exclude>
-	  </excludes>
-	</configuration>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <version>0.7</version>
+        <configuration>
+          <excludes>
+            <exclude>.git/**/*</exclude>
+            <exclude>**/.svn/**/*</exclude>
+            <exclude>CHANGES.txt</exclude>
+            <exclude>**/README</exclude>
+            <exclude>**/apidocs/*</exclude>
+          </excludes>
+        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -115,7 +118,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jxr-plugin</artifactId>
-	<version>2.1</version>
+        <version>2.1</version>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>

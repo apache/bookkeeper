@@ -144,6 +144,8 @@ IMPROVEMENTS:
 
  BOOKKEEPER-102: Make bookkeeper use ZK from temporary repo (ivank)
 
+ BOOKKEEPER-128: pom and script modifications required for generating release packages (ivank)
+
  hedwig-client/
 
   BOOKKEEPER-44: Reuse publish channel to default server to avoid too many connect requests to default server when lots of producers came in same time (Sijie Guo via breed)
