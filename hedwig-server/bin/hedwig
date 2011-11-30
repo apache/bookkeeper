@@ -20,6 +20,15 @@
 # * limitations under the License.
 # */
 
+# check if net.ipv6.bindv6only is set to 1
+bindv6only=$(/sbin/sysctl -n net.ipv6.bindv6only 2> /dev/null)
+if [ -n "$bindv6only" ] && [ "$bindv6only" -eq "1" ]
+then
+  echo "Error: \"net.ipv6.bindv6only\" is set to 1 - Java networking could be broken"
+  echo "For more info (the following page also applies to hedwig): http://wiki.apache.org/hadoop/HadoopIPv6"
+  exit 1
+fi
+
 BINDIR=`dirname "$0"`
 HW_HOME=`cd $BINDIR/..;pwd`
 
@@ -103,6 +112,9 @@ if [ "$HEDWIG_LOG_CONF" != "" ]; then
     OPTS="$OPTS -Dlog4j.configuration=`basename $HEDWIG_LOG_CONF`"
 fi
 OPTS="-cp $HEDWIG_CLASSPATH $OPTS $HEDWIG_EXTRA_OPTS"
+
+# Disable ipv6 as it can cause issues
+OPTS="$OPTS -Djava.net.preferIPv4Stack=true"
 
 if [ $COMMAND == "server" ]; then
     exec java $OPTS org.apache.hedwig.server.netty.PubSubServer $HEDWIG_SERVER_CONF $@
