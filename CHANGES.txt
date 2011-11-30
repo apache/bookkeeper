@@ -98,6 +98,8 @@ BUGFIXES:
 
   BOOKKEEPER-111: Document bookie recovery feature (ivank)
 
+  BOOKKEEPER-129: ZK_TIMEOUT typo in client/server configuration (Sijie via ivank)
+
  hedwig-server/
 
   BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)

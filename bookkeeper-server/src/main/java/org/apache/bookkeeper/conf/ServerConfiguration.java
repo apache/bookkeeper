@@ -370,7 +370,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * @return server configuration
      */
     public ServerConfiguration setZkTimeout(int zkTimeout) {
-        setProperty(ZK_SERVERS, Integer.toString(zkTimeout));
+        setProperty(ZK_TIMEOUT, Integer.toString(zkTimeout));
         return this;
     }
 

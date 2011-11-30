@@ -209,7 +209,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      * @return client configuration
      */
     public ClientConfiguration setZkTimeout(int zkTimeout) {
-        setProperty(ZK_SERVERS, Integer.toString(zkTimeout));
+        setProperty(ZK_TIMEOUT, Integer.toString(zkTimeout));
         return this;
     }
 
