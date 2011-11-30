@@ -4,6 +4,12 @@ Non-backward compatible changes:
 
 BUGFIXES:
 
+ BOOKKEEPER-89: Bookkeeper API changes for initial Bookkeeper release (ivank)
+
+ BOOKKEEPER-108: add configuration support for BK (Sijie via ivank)
+
+ BOOKKEEPER-90: Hedwig API changes for initial Bookkeeper release (ivank via fpj)
+
 Backward compatible changes:
 
 BUGFIXES:
@@ -66,8 +72,6 @@ BUGFIXES:
 
   BOOKKEEPER-83: Added versioning and flags to the bookie protocol (ivank)
 
-  BOOKKEEPER-89: Bookkeeper API changes for initial Bookkeeper release (ivank)
-
   BOOKKEEPER-93: bookkeeper doesn't work correctly on OpenLedgerNoRecovery (Sijie Guo via ivank)
 
   BOOKKEEPER-103: ledgerId and entryId is parsed wrong when addEntry (Sijie Guo via ivank)
@@ -86,8 +90,6 @@ BUGFIXES:
 
   BOOKKEEPER-91: Bookkeeper and hedwig clients should not use log4j directly (ivank via fpj)
 
-  BOOKKEEPER-108: add configuration support for BK (Sijie via ivank)
-
   BOOKKEEPER-115: LocalBookKeeper fails after BOOKKEEPER-108 (ivank)
 
   BOOKKEEPER-114: add a shutdown hook to shut down bookie server safely. (Sijie via ivank)
@@ -101,6 +103,10 @@ BUGFIXES:
   BOOKKEEPER-111: Document bookie recovery feature (ivank)
 
   BOOKKEEPER-129: ZK_TIMEOUT typo in client/server configuration (Sijie via ivank)
+
+  BOOKKEEPER-22: Exception in LedgerCache causes addEntry request to fail (fpj via fpj)
+
+  BOOKKEEPER-5: Issue with Netty in BookKeeper (fpj and ivank via fpj)
 
  hedwig-server/
 
@@ -155,8 +161,6 @@ IMPROVEMENTS:
   BOOKKEEPER-44: Reuse publish channel to default server to avoid too many connect requests to default server when lots of producers came in same time (Sijie Guo via breed)
 
   BOOKKEEPER-109: Add documentation to describe how bookies flushes data (Sijie Guo via fpj)
-
-  BOOKKEEPER-90: Hedwig API changes for initial Bookkeeper release (ivank via fpj)
 
   BOOKKEEPER-119: Keys in configuration have inconsistent style (ivank via fpj)
 
