@@ -28,6 +28,7 @@
       <useDefaultExcludes>true</useDefaultExcludes>
       <includes>
         <include>**/README</include>
+        <include>**/KEYS</include>
         <include>**/pom.xml</include>
         <include>**/src/**</include>
         <include>**/conf/**</include>
