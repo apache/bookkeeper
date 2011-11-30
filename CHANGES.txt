@@ -26,6 +26,8 @@ BUGFIXES:
  
  BOOKKEEPER-130: Add developer KEYS file to svn (ivank)
 
+ BOOKKEEPER-66: use IPv4 for builds (mmorel via ivank)
+
  bookkeeper-server/
 
   BOOKKEEPER-1: Static variable makes tests fail (fpj via ivank)
