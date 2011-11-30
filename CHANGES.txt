@@ -1,166 +1,180 @@
+Trunk (unreleased changes)
+
+  Non-backward compatible changes:
+
+    BUGFIXES:
+
+    IMPROVEMENTS:
+
+  Backward compatible changes:
+
+    BUGFIXES:
+
+    IMPROVEMENTS:
+
 Release 4.0.0 - 2011-11-30
 
-Non-backward compatible changes:
+  Non-backward compatible changes:
 
-BUGFIXES:
+    BUGFIXES:
 
- BOOKKEEPER-89: Bookkeeper API changes for initial Bookkeeper release (ivank)
+      BOOKKEEPER-89: Bookkeeper API changes for initial Bookkeeper release (ivank)
 
- BOOKKEEPER-108: add configuration support for BK (Sijie via ivank)
+      BOOKKEEPER-108: add configuration support for BK (Sijie via ivank)
 
- BOOKKEEPER-90: Hedwig API changes for initial Bookkeeper release (ivank via fpj)
+      BOOKKEEPER-90: Hedwig API changes for initial Bookkeeper release (ivank via fpj)
 
-Backward compatible changes:
+  Backward compatible changes:
 
-BUGFIXES:
+    BUGFIXES:
 
- BOOKKEEPER-124: build has RAT failures (ivank)
+      BOOKKEEPER-124: build has RAT failures (ivank)
 
- BOOKKEEPER-121: Review Hedwig client documentation (breed via ivank)
+      BOOKKEEPER-121: Review Hedwig client documentation (breed via ivank)
+
+      BOOKKEEPER-127: Make poms use official zookeeper 3.4.0 (ivank)
+
+      BOOKKEEPER-120: Review BookKeeper client documentation (ivank)
  
- BOOKKEEPER-127: Make poms use official zookeeper 3.4.0 (ivank)
-
- BOOKKEEPER-120: Review BookKeeper client documentation (ivank)
+      BOOKKEEPER-122: Review BookKeeper server documentation (fpj & ivank)
  
- BOOKKEEPER-122: Review BookKeeper server documentation (fpj & ivank)
- 
- BOOKKEEPER-130: Add developer KEYS file to svn (ivank)
+      BOOKKEEPER-130: Add developer KEYS file to svn (ivank)
 
- bookkeeper-server/
+      bookkeeper-server/
 
-  BOOKKEEPER-1: Static variable makes tests fail (fpj via ivank)
+        BOOKKEEPER-1: Static variable makes tests fail (fpj via ivank)
 
-  BOOKKEEPER-19: BookKeeper doesn't support more than 2Gig of memory (ivan via fpj)
+        BOOKKEEPER-19: BookKeeper doesn't support more than 2Gig of memory (ivan via fpj)
 
-  BOOKEEPER-22: Exception in LedgerCache causes addEntry request to fail (fpj via fpj)
+        BOOKEEPER-22: Exception in LedgerCache causes addEntry request to fail (fpj via fpj)
 
-  BOOKEEPER-5: Issue with Netty in BookKeeper (fpj and ivank via fpj)
+        BOOKEEPER-5: Issue with Netty in BookKeeper (fpj and ivank via fpj)
 
-  BOOKKEEPER-30: Test are too noisy (ivank via fpj)
+        BOOKKEEPER-30: Test are too noisy (ivank via fpj)
 
-  BOOKKEEPER-11: Read from open ledger (fpj via ivank)
+        BOOKKEEPER-11: Read from open ledger (fpj via ivank)
 
-  BOOKKEEPER-27: mvn site failed with unresolved dependencies (ivank via fpj)
+        BOOKKEEPER-27: mvn site failed with unresolved dependencies (ivank via fpj)
   
-  BOOKKEEPER-29: BookieRecoveryTest fails intermittently (fpj via ivank)
+        BOOKKEEPER-29: BookieRecoveryTest fails intermittently (fpj via ivank)
 
-  BOOKKEEPER-33: Add length and offset parameter to addEntry (ivank via fpj)
+        BOOKKEEPER-33: Add length and offset parameter to addEntry (ivank via fpj)
 
-  BOOKKEEPER-29: BookieRecoveryTest fails intermittently (ivank, fpj via fpj)
+        BOOKKEEPER-29: BookieRecoveryTest fails intermittently (ivank, fpj via fpj)
 
-  BOOKKEEPER-38: Bookie Server doesn't exit when its zookeeper session is expired. So the process is hang there. (Sijie Guo via breed)
+        BOOKKEEPER-38: Bookie Server doesn't exit when its zookeeper session is expired. So the process is hang there. (Sijie Guo via breed)
 
-  BOOKKEEPER-58: Changes introduced in BK-38 cause BookieClientTest to hang indefinitely. (ivank)
+        BOOKKEEPER-58: Changes introduced in BK-38 cause BookieClientTest to hang indefinitely. (ivank)
 
-  BOOKKEEPER-18: maven build is unstable (mmorel, ivank via ivank)
+        BOOKKEEPER-18: maven build is unstable (mmorel, ivank via ivank)
 
-  BOOKKEEPER-57: NullPointException at bookie.zk@EntryLogger (xulei via ivank)
+        BOOKKEEPER-57: NullPointException at bookie.zk@EntryLogger (xulei via ivank)
 
-  BOOKKEEPER-59: Race condition in netty code allocates and orphans resources (BK-5 revisited) (ivank via fpj)
+        BOOKKEEPER-59: Race condition in netty code allocates and orphans resources (BK-5 revisited) (ivank via fpj)
   
-  BOOKKEEPER-68: Conditional setData (fpj via ivank)
+        BOOKKEEPER-68: Conditional setData (fpj via ivank)
 
-  BOOKKEEPER-86: bookkeeper-benchmark fails to compile after BOOKKEEPER-68 (ivank via breed)
+        BOOKKEEPER-86: bookkeeper-benchmark fails to compile after BOOKKEEPER-68 (ivank via breed)
 
-  BOOKKEEPER-61: BufferedChannel read endless when the remaining bytes of file is less than the capacity of read buffer (Sijie Guo via breed)
+        BOOKKEEPER-61: BufferedChannel read endless when the remaining bytes of file is less than the capacity of read buffer (Sijie Guo via breed)
 
-  BOOKKEEPER-84: Add versioning for ZK metadata (ivank via breed)
+        BOOKKEEPER-84: Add versioning for ZK metadata (ivank via breed)
 
-  BOOKKEEPER-92: using wrong context object in readLastConfirmedComplete callback (Sijie Guo via ivank)
+        BOOKKEEPER-92: using wrong context object in readLastConfirmedComplete callback (Sijie Guo via ivank)
  
-  BOOKKEEPER-94: Double callbacks in readLastConfirmedOp which fails readLastConfirmed operation even received enough valid responses. (Sijie Guo via ivank)
+        BOOKKEEPER-94: Double callbacks in readLastConfirmedOp which fails readLastConfirmed operation even received enough valid responses. (Sijie Guo via ivank)
 
-  BOOKKEEPER-83: Added versioning and flags to the bookie protocol (ivank)
+        BOOKKEEPER-83: Added versioning and flags to the bookie protocol (ivank)
 
-  BOOKKEEPER-93: bookkeeper doesn't work correctly on OpenLedgerNoRecovery (Sijie Guo via ivank)
+        BOOKKEEPER-93: bookkeeper doesn't work correctly on OpenLedgerNoRecovery (Sijie Guo via ivank)
 
-  BOOKKEEPER-103: ledgerId and entryId is parsed wrong when addEntry (Sijie Guo via ivank)
+        BOOKKEEPER-103: ledgerId and entryId is parsed wrong when addEntry (Sijie Guo via ivank)
 
-  BOOKKEEPER-50: NullPointException at LedgerDescriptor#cmpMasterKey (Sijie Guo via ivank)
+        BOOKKEEPER-50: NullPointException at LedgerDescriptor#cmpMasterKey (Sijie Guo via ivank)
 
-  BOOKKEEPER-82: support journal rolling (Sijie Guo via fpj)
+        BOOKKEEPER-82: support journal rolling (Sijie Guo via fpj)
 
-  BOOKKEEPER-106: recoveryBookieData can select a recovery bookie which is already in the ledgers ensemble (ivank via fpj)
+        BOOKKEEPER-106: recoveryBookieData can select a recovery bookie which is already in the ledgers ensemble (ivank via fpj)
 
-  BOOKKEEPER-101: Add Fencing to Bookkeeper (ivank)
+        BOOKKEEPER-101: Add Fencing to Bookkeeper (ivank)
 
-  BOOKKEEPER-104: Add versioning between bookie and its filesystem layout (ivank)
+        BOOKKEEPER-104: Add versioning between bookie and its filesystem layout (ivank)
 
-  BOOKKEEPER-81: disk space of garbage collected entry logger files isn't reclaimed util process quit (Sijie Guo via fpj)
+        BOOKKEEPER-81: disk space of garbage collected entry logger files isn't reclaimed util process quit (Sijie Guo via fpj)
 
-  BOOKKEEPER-91: Bookkeeper and hedwig clients should not use log4j directly (ivank via fpj)
+        BOOKKEEPER-91: Bookkeeper and hedwig clients should not use log4j directly (ivank via fpj)
 
-  BOOKKEEPER-115: LocalBookKeeper fails after BOOKKEEPER-108 (ivank)
+        BOOKKEEPER-115: LocalBookKeeper fails after BOOKKEEPER-108 (ivank)
 
-  BOOKKEEPER-114: add a shutdown hook to shut down bookie server safely. (Sijie via ivank)
+        BOOKKEEPER-114: add a shutdown hook to shut down bookie server safely. (Sijie via ivank)
 
-  BOOKKEEPER-39: Bookie server failed to restart because of too many ledgers (more than ~50,000 ledgers) (Sijie via ivank)
+        BOOKKEEPER-39: Bookie server failed to restart because of too many ledgers (more than ~50,000 ledgers) (Sijie via ivank)
 
-  BOOKKEEPER-125: log4j still used in some places (ivank)
+        BOOKKEEPER-125: log4j still used in some places (ivank)
 
-  BOOKKEEPER-62: Bookie can not start when encountering corrupted records (breed via ivank)
+        BOOKKEEPER-62: Bookie can not start when encountering corrupted records (breed via ivank)
 
-  BOOKKEEPER-111: Document bookie recovery feature (ivank)
+        BOOKKEEPER-111: Document bookie recovery feature (ivank)
 
-  BOOKKEEPER-129: ZK_TIMEOUT typo in client/server configuration (Sijie via ivank)
+        BOOKKEEPER-129: ZK_TIMEOUT typo in client/server configuration (Sijie via ivank)
 
-  BOOKKEEPER-22: Exception in LedgerCache causes addEntry request to fail (fpj via fpj)
+        BOOKKEEPER-22: Exception in LedgerCache causes addEntry request to fail (fpj via fpj)
 
-  BOOKKEEPER-5: Issue with Netty in BookKeeper (fpj and ivank via fpj)
+        BOOKKEEPER-5: Issue with Netty in BookKeeper (fpj and ivank via fpj)
 
- hedwig-server/
+      hedwig-server/
 
-  BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)
+        BOOKKEEPER-43: NullPointException when releasing topic (Sijie Guo via breed)
   
-  BOOKKEEPER-51: NullPointException at FIFODeliveryManager#deliveryPtrs (xulei via ivank)
+        BOOKKEEPER-51: NullPointException at FIFODeliveryManager#deliveryPtrs (xulei via ivank)
 
-  BOOKKEEPER-63: Hedwig PubSubServer must wait for its Zookeeper client to be connected upon startup (mmorel via ivank)
+        BOOKKEEPER-63: Hedwig PubSubServer must wait for its Zookeeper client to be connected upon startup (mmorel via ivank)
 
-  BOOKKEEPER-100: Some hedwig tests have build errors (dferro via ivank)
+        BOOKKEEPER-100: Some hedwig tests have build errors (dferro via ivank)
 
-  BOOKKEEPER-69: ServerRedirectLoopException when a machine (hosts bookie server & hub server) reboot, which is caused by race condition of topic manager (Sijie, ivank via ivank)
+        BOOKKEEPER-69: ServerRedirectLoopException when a machine (hosts bookie server & hub server) reboot, which is caused by race condition of topic manager (Sijie, ivank via ivank)
 
- hedwig-client/
+      hedwig-client/
  
-  BOOKKEEPER-52: Message sequence confuse due to the subscribeMsgQueue@SubscribeResponseHandler (xulei via ivank)
+        BOOKKEEPER-52: Message sequence confuse due to the subscribeMsgQueue@SubscribeResponseHandler (xulei via ivank)
 
-  BOOKKEEPER-88: derby doesn't like - in the topic names (breed via ivank)
+        BOOKKEEPER-88: derby doesn't like - in the topic names (breed via ivank)
 
-  BOOKKEEPER-71: hedwig c++ client does not build . (ivank)
+        BOOKKEEPER-71: hedwig c++ client does not build . (ivank)
 
-  BOOKKEEPER-107: memory leak in HostAddress of hedwig c++ client (Sijie Guo via ivank)
+        BOOKKEEPER-107: memory leak in HostAddress of hedwig c++ client (Sijie Guo via ivank)
  
-  BOOKKEEPER-80: subscription msg queue race condition in hedwig c++ client (Sijie Guo via ivank)
+        BOOKKEEPER-80: subscription msg queue race condition in hedwig c++ client (Sijie Guo via ivank)
 
-  BOOKKEEPER-87: TestHedwigHub exhausts direct buffer memory with netty 3.2.4.Final (ivank via fpj)  
+        BOOKKEEPER-87: TestHedwigHub exhausts direct buffer memory with netty 3.2.4.Final (ivank via fpj)  
 
-  BOOKKEEPER-79: randomly startDelivery/stopDelivery will core dump in c++ hedwig client (Sijie Guo via ivank)
+        BOOKKEEPER-79: randomly startDelivery/stopDelivery will core dump in c++ hedwig client (Sijie Guo via ivank)
 
-  BOOKKEEPER-118: Hedwig client doesn't kill and remove old subscription channel after redirection. (Sijie Guo via ivank)
+        BOOKKEEPER-118: Hedwig client doesn't kill and remove old subscription channel after redirection. (Sijie Guo via ivank)
 
-  BOOKKEEPER-117: Support multi threads in hedwig cpp client to leverage multi-core hardware (Sijie Guo via ivank)
+        BOOKKEEPER-117: Support multi threads in hedwig cpp client to leverage multi-core hardware (Sijie Guo via ivank)
 
-  BOOKKEEPER-53: race condition of outstandingMsgSet@SubscribeResponseHandler (fpj via breed)
+        BOOKKEEPER-53: race condition of outstandingMsgSet@SubscribeResponseHandler (fpj via breed)
 
-IMPROVEMENTS:
+    IMPROVEMENTS:
 
- BOOKKEEPER-28: Create useful startup scripts for bookkeeper and hedwig (ivank)
+      BOOKKEEPER-28: Create useful startup scripts for bookkeeper and hedwig (ivank)
 
- BOOKKEEPER-26: Indentation is all messed up in the BookKeeper code (ivank via fpj)
+      BOOKKEEPER-26: Indentation is all messed up in the BookKeeper code (ivank via fpj)
 
- BOOKKEEPER-41: Generation of packages for distribution (ivank via fpj)
+      BOOKKEEPER-41: Generation of packages for distribution (ivank via fpj)
 
- BOOKKEEPER-65: fix dependencies on incompatible versions of netty (mmorel via ivank)
+      BOOKKEEPER-65: fix dependencies on incompatible versions of netty (mmorel via ivank)
 
- BOOKKEEPER-102: Make bookkeeper use ZK from temporary repo (ivank)
+      BOOKKEEPER-102: Make bookkeeper use ZK from temporary repo (ivank)
 
- BOOKKEEPER-128: pom and script modifications required for generating release packages (ivank)
+      BOOKKEEPER-128: pom and script modifications required for generating release packages (ivank)
 
- hedwig-client/
+      hedwig-client/
 
-  BOOKKEEPER-44: Reuse publish channel to default server to avoid too many connect requests to default server when lots of producers came in same time (Sijie Guo via breed)
+        BOOKKEEPER-44: Reuse publish channel to default server to avoid too many connect requests to default server when lots of producers came in same time (Sijie Guo via breed)
 
-  BOOKKEEPER-109: Add documentation to describe how bookies flushes data (Sijie Guo via fpj)
+        BOOKKEEPER-109: Add documentation to describe how bookies flushes data (Sijie Guo via fpj)
 
-  BOOKKEEPER-119: Keys in configuration have inconsistent style (ivank via fpj)
+        BOOKKEEPER-119: Keys in configuration have inconsistent style (ivank via fpj)
 
