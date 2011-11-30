@@ -116,8 +116,6 @@
   </build>
   <reporting>
     <plugins>
-
-
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jxr-plugin</artifactId>
@@ -139,4 +137,40 @@
       </plugin>
     </plugins>
   </reporting>
+  <profiles>
+    <profile>
+      <!-- Used only when cutting a full release.  Configures the deploy plugin to mark
+          each artifact as a release (especially important for the archetype). Signs each
+          file deployed (it actually signs way too many files and we have to clean up a bit
+          once deployed). -->
+      <id>deploy</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <configuration>
+              <useAgent>true</useAgent>
+            </configuration>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      <properties>
+        <update-release-info>true</update-release-info>
+        <!--  Don't re-run tests as part of the deploy build.
+              Note we use skipTests, not maven.test.skip, since the latter skips
+              compilation too and we want to deploy tests. -->
+        <skipTests>true</skipTests>
+      </properties>
+    </profile>
+  </profiles>
 </project>

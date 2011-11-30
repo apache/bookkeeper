@@ -42,6 +42,8 @@ Release 4.0.0 - 2011-11-30
       
       BOOKKEEPER-66: use IPv4 for builds (mmorel via ivank)
 
+      BOOKKEEPER-132: Sign artifacts before deploying to maven (ivank)
+
       bookkeeper-server/
 
         BOOKKEEPER-1: Static variable makes tests fail (fpj via ivank)
