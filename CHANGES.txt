@@ -46,6 +46,8 @@ Release 4.0.0 - 2011-11-30
 
       BOOKKEEPER-131: Fix zookeeper test dependency (ivank)
 
+      BOOKKEEPER-134: Delete superfluous lib directories (ivank)
+
       bookkeeper-server/
 
         BOOKKEEPER-1: Static variable makes tests fail (fpj via ivank)
