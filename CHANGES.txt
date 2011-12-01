@@ -30,6 +30,8 @@ BUGFIXES:
 
  BOOKKEEPER-132: Sign artifacts before deploying to maven (ivank)
 
+ BOOKKEEPER-131: Fix zookeeper test dependency (ivank)
+
  bookkeeper-server/
 
   BOOKKEEPER-1: Static variable makes tests fail (fpj via ivank)
