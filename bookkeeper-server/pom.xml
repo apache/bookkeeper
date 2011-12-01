@@ -55,9 +55,10 @@
     </dependency>
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
-      <artifactId>zookeeper-test</artifactId>
+      <artifactId>zookeeper</artifactId>
       <version>3.4.0</version>
-      <scope>compile</scope>
+      <type>test-jar</type>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.netty</groupId>
