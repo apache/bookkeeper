@@ -38,8 +38,6 @@ Release 4.0.0 - 2011-11-30
  
       BOOKKEEPER-122: Review BookKeeper server documentation (fpj & ivank)
  
-      BOOKKEEPER-130: Add developer KEYS file to svn (ivank)
-      
       BOOKKEEPER-66: use IPv4 for builds (mmorel via ivank)
 
       BOOKKEEPER-132: Sign artifacts before deploying to maven (ivank)
