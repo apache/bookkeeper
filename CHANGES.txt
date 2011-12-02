@@ -34,6 +34,8 @@ BUGFIXES:
 
  BOOKKEEPER-138: NOTICE.txt is invalid (ivank)
 
+ BOOKKEEPER-139: Binary packages do not carry NOTICE.txt (ivank)
+
  bookkeeper-server/
 
   BOOKKEEPER-1: Static variable makes tests fail (fpj via ivank)
