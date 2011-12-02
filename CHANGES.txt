@@ -46,6 +46,8 @@ Release 4.0.0 - 2011-11-30
 
       BOOKKEEPER-134: Delete superfluous lib directories (ivank)
 
+      BOOKKEEPER-138: NOTICE.txt is invalid (ivank)
+
       bookkeeper-server/
 
         BOOKKEEPER-1: Static variable makes tests fail (fpj via ivank)
