@@ -47,6 +47,7 @@
       <includes>
         <include>LICENSE.txt</include>
         <include>CHANGES.txt</include>
+        <include>NOTICE.txt</include>
         <include>README</include>
       </includes>
     </fileSet>
