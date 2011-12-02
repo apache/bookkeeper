@@ -23,8 +23,6 @@ BUGFIXES:
  BOOKKEEPER-120: Review BookKeeper client documentation (ivank)
  
  BOOKKEEPER-122: Review BookKeeper server documentation (fpj & ivank)
- 
- BOOKKEEPER-130: Add developer KEYS file to svn (ivank)
 
  BOOKKEEPER-66: use IPv4 for builds (mmorel via ivank)
 

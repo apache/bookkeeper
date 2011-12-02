@@ -48,7 +48,6 @@
         <include>LICENSE.txt</include>
         <include>CHANGES.txt</include>
         <include>README</include>
-        <include>KEYS</include>
       </includes>
     </fileSet>
   </fileSets>
