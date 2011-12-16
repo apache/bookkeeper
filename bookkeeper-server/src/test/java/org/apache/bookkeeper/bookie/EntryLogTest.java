@@ -45,11 +45,13 @@ public class EntryLogTest extends TestCase {
     }
 
     @Test
-    public void testCorruptEntryLog() throws IOException, SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    public void testCorruptEntryLog() throws Exception {
         File tmpDir = File.createTempFile("bkTest", ".dir");
         tmpDir.delete();
         tmpDir.mkdir();
+        int gcWaitTime = 1000;
         ServerConfiguration conf = new ServerConfiguration();
+        conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
         // create some entries
         EntryLogger logger = new EntryLogger(conf, null);
@@ -64,6 +66,7 @@ public class EntryLogTest extends TestCase {
         raf.close();
         // now see which ledgers are in the log
         logger = new EntryLogger(conf, null);
+        Thread.sleep(2 * gcWaitTime);
         Field entryLogs2LedgersMapField = logger.getClass().getDeclaredField("entryLogs2LedgersMap");
         entryLogs2LedgersMapField.setAccessible(true);
         @SuppressWarnings("unchecked")

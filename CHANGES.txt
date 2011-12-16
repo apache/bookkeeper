@@ -14,6 +14,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-142: Parsing last log id is wrong, which may make entry log files overwritten (Sijie Gou via ivank)
 
+        BOOKKEEPER-141: Run extracting ledger id from entry log files in GC thread to speed up bookie restart (Sijie Gou via ivank)
+
     IMPROVEMENTS:
 
 Release 4.0.0 - 2011-11-30

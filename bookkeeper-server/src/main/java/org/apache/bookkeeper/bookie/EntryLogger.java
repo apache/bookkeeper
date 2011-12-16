@@ -137,9 +137,17 @@ public class EntryLogger {
                         continue;
                     }
                 }
+                // Extract all of the ledger ID's that comprise all of the entry logs
+                // (except for the current new one which is still being written to).
+                try {
+                    extractLedgersFromEntryLogs();
+                } catch (IOException ie) {
+                    LOG.warn("Exception when extracting ledgers from entry logs : ", ie);
+                }
+
                 // Initialization check. No need to run any logic if we are still starting up.
-                if (bookie.zk == null || entryLogs2LedgersMap.isEmpty() ||
-                    bookie.ledgerCache == null) {
+                if (bookie == null ||
+                    bookie.zk == null || bookie.ledgerCache == null) {
                     continue;
                 }
 
@@ -225,9 +233,6 @@ public class EntryLogger {
         for(File f: dirs) {
             setLastLogId(f, logId);
         }
-        // Extract all of the ledger ID's that comprise all of the entry logs
-        // (except for the current new one which is still being written to).
-        extractLedgersFromEntryLogs();
     }
 
     /**
@@ -391,7 +396,8 @@ public class EntryLogger {
         // by 1 when the log fills up and we roll to a new one.
         ByteBuffer sizeBuff = ByteBuffer.allocate(4);
         BufferedChannel bc;
-        for (long entryLogId = 0; entryLogId < logId; entryLogId++) {
+        long curLogId = logId;
+        for (long entryLogId = 0; entryLogId < curLogId; entryLogId++) {
             // Comb the current entry log file if it has not already been extracted.
             if (entryLogs2LedgersMap.containsKey(entryLogId)) {
                 continue;
