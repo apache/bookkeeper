@@ -261,7 +261,7 @@ public class EntryLogger {
         BufferedReader br = new BufferedReader(new InputStreamReader(fis));
         try {
             String lastIdString = br.readLine();
-            return Long.parseLong(lastIdString);
+            return Long.parseLong(lastIdString, 16);
         } catch (IOException e) {
             return -1;
         } catch(NumberFormatException e) {
