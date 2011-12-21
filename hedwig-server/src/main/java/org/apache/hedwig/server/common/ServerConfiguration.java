@@ -58,6 +58,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String MESSAGES_CONSUMED_THREAD_RUN_INTERVAL = "messages_consumed_thread_run_interval";
     protected final static String BK_ENSEMBLE_SIZE = "bk_ensemble_size";
     protected final static String BK_QUORUM_SIZE = "bk_quorum_size";
+    protected final static String RETRY_REMOTE_SUBSCRIBE_THREAD_RUN_INTERVAL = "retry_remote_subscribe_thread_run_interval";
 
     // these are the derived attributes
     protected ByteString myRegionByteString = null;
@@ -244,6 +245,13 @@ public class ServerConfiguration extends AbstractConfiguration {
     // milliseconds).
     public int getMessagesConsumedThreadRunInterval() {
         return conf.getInt(MESSAGES_CONSUMED_THREAD_RUN_INTERVAL, 60000);
+    }
+
+    // This parameter is used to determine how often we run a thread
+    // to retry those failed remote subscriptions in asynchronous mode
+    // (in milliseconds).
+    public int getRetryRemoteSubscribeThreadRunInterval() {
+        return conf.getInt(RETRY_REMOTE_SUBSCRIBE_THREAD_RUN_INTERVAL, 120000);
     }
 
     // This parameter is used when Bookkeeper is the persistence store

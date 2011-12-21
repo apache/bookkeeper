@@ -176,23 +176,7 @@ public abstract class HedwigRegionTestBase extends TestCase {
         regionServersMap = new HashMap<String, List<PubSubServer>>(numRegions, 1.0f);
         regionClientsMap = new HashMap<String, HedwigClient>(numRegions, 1.0f);
         for (int i = 0; i < numRegions; i++) {
-            List<PubSubServer> serversList = new LinkedList<PubSubServer>();
-            // For the current region, create the necessary amount of hub
-            // servers. We will basically increment through the port numbers
-            // starting from the initial ones defined.
-            for (int j = 0; j < numServersPerRegion; j++) {
-                serversList.add(new PubSubServer(getServerConfiguration(initialServerPort
-                                                 + (j + i * numServersPerRegion), initialSSLServerPort + (j + i * numServersPerRegion),
-                                                 REGION_PREFIX + i)));
-            }
-            // Store this list of servers created for the current region
-            regionServersMap.put(REGION_PREFIX + i, serversList);
-
-            // Create a Hedwig Client that points to the first Hub server
-            // created in the loop above for the current region.
-            HedwigClient regionClient = new HedwigClient(getClientConfiguration(initialServerPort
-                    + (i * numServersPerRegion), initialSSLServerPort + (i * numServersPerRegion)));
-            regionClientsMap.put(REGION_PREFIX + i, regionClient);
+            startRegion(i);
         }
         logger.info("HedwigRegion test setup finished");
     }
@@ -219,4 +203,45 @@ public abstract class HedwigRegionTestBase extends TestCase {
         logger.info("FINISHED " + getName());
     }
 
+    protected void stopRegion(int regionIdx) throws Exception {
+        String regionName = REGION_PREFIX + regionIdx;
+        if (logger.isDebugEnabled()) {
+            logger.debug("Stop region : " + regionName);
+        }
+        HedwigClient regionClient = regionClientsMap.remove(regionName);
+        if (null != regionClient) {
+            regionClient.close();
+        }
+        List<PubSubServer> serversList = regionServersMap.remove(regionName);
+        if (null == serversList) {
+            return;
+        }
+        for (PubSubServer server : serversList) {
+            server.shutdown();
+        }
+        logger.info("Finished shutting down all of the hub servers in region " + regionName);
+    }
+
+    protected void startRegion(int i) throws Exception {
+        String regionName = REGION_PREFIX + i;
+        if (logger.isDebugEnabled()) {
+            logger.debug("Start region : " + regionName);
+        }
+        List<PubSubServer> serversList = new LinkedList<PubSubServer>();
+        // For the current region, create the necessary amount of hub
+        // servers. We will basically increment through the port numbers
+        // starting from the initial ones defined.
+        for (int j = 0; j < numServersPerRegion; j++) {
+            serversList.add(new PubSubServer(getServerConfiguration(initialServerPort
+                                             + (j + i * numServersPerRegion), initialSSLServerPort + (j + i * numServersPerRegion),
+                                             regionName)));
+        }
+        // Store this list of servers created for the current region
+        regionServersMap.put(regionName, serversList);
+        // Create a Hedwig Client that points to the first Hub server
+        // created in the loop above for the current region.
+        HedwigClient regionClient = new HedwigClient(getClientConfiguration(initialServerPort
+                + (i * numServersPerRegion), initialSSLServerPort + (i * numServersPerRegion)));
+        regionClientsMap.put(regionName, regionClient);
+    }
 }

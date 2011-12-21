@@ -218,10 +218,11 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
     @Override
     public void lostTopic(ByteString topic) {
         top2sub2seq.remove(topic);
-        AtomicInteger count = topic2LocalCounts.remove(topic);
-        // Notify listeners if necessary.
-        if (null != count && count.get() > 0)
-            notifyUnsubcribe(topic);
+        topic2LocalCounts.remove(topic);
+        // Since we decrement local count when some of remote subscriptions failed,
+        // while we don't unsubscribe those succeed subscriptions. so we can't depends
+        // on local count, just try to notify unsubscribe.
+        notifyUnsubcribe(topic);
     }
 
     private void notifyUnsubcribe(ByteString topic) {
@@ -300,10 +301,35 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                     Callback<Void> cb2 = new Callback<Void>() {
 
                         @Override
-                        public void operationFailed(Object ctx, PubSubException exception) {
+                        public void operationFailed(final Object ctx, final PubSubException exception) {
                             logger.error("subscription for subscriber " + subscriberId.toStringUtf8() + " to topic "
                                          + topic.toStringUtf8() + " failed due to failed listener callback", exception);
-                            cb.operationFailed(ctx, exception);
+                            // should remove subscription when synchronized cross-region subscription failed
+                            deleteSubscriptionState(topic, subscriberId, new Callback<Void>() {
+                                @Override
+                                public void operationFinished(Object context,
+                                        Void resultOfOperation) {
+                                    finish();
+                                }
+                                @Override
+                                public void operationFailed(Object context,
+                                        PubSubException ex) {
+                                    logger.error("Remove subscription for subscriber " + subscriberId.toStringUtf8() + " to topic "
+                                                 + topic.toStringUtf8() + " failed : ", ex);
+                                    finish();
+                                }
+                                private void finish() {
+                                    // we should decrement local count when remote subscription failed
+                                    if (!SubscriptionStateUtils.isHubSubscriber(subRequest.getSubscriberId())) {
+                                        // since the subscribe op is executed one by one in queue order,
+                                        // so the following codes only happened when remote subscription failed.
+                                        // it is safe to decrement the local count so next subscribe op
+                                        // could have the chance to subscribe remote.
+                                        topic2LocalCounts.get(topic).decrementAndGet();
+                                    }
+                                    cb.operationFailed(ctx, exception);
+                                }
+                            }, ctx);
                         }
 
                         @Override
