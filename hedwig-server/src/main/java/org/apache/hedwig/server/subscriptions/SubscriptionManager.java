@@ -101,4 +101,8 @@ public interface SubscriptionManager {
      */
     public void addListener(SubscriptionEventListener listener);
 
+    /**
+     * Stop Subscription Manager
+     */
+    public void stop();
 }

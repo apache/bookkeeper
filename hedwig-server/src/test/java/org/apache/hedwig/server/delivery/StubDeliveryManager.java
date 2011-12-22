@@ -62,4 +62,9 @@ public class StubDeliveryManager implements DeliveryManager {
     public void stopServingSubscriber(ByteString topic, ByteString subscriberId) {
         lastRequest.add(new TopicSubscriber(topic, subscriberId));
     }
+
+    @Override
+    public void stop() {
+        // do nothing now
+    }
 }

@@ -72,4 +72,9 @@ public interface TopicManager {
      */
     public void releaseTopic(ByteString topic, Callback<Void> cb, Object ctx);
 
+    /**
+     * Stop topic manager
+     */
+    public void stop();
+
 }

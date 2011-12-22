@@ -69,7 +69,6 @@ import org.apache.hedwig.server.persistence.ReadAheadCache;
 import org.apache.hedwig.server.regions.HedwigHubClientFactory;
 import org.apache.hedwig.server.regions.RegionManager;
 import org.apache.hedwig.server.ssl.SslServerContextFactory;
-import org.apache.hedwig.server.subscriptions.AbstractSubscriptionManager;
 import org.apache.hedwig.server.subscriptions.InMemorySubscriptionManager;
 import org.apache.hedwig.server.subscriptions.SubscriptionManager;
 import org.apache.hedwig.server.subscriptions.ZkSubscriptionManager;
@@ -218,37 +217,30 @@ public class PubSubServer {
     public void shutdown() {
         // TODO: tell bk to close logs
 
-        // Shutdown the ZooKeeper and BookKeeper clients only if we are
-        // not in stand-alone mode.
-        try {
-            if (zk != null)
-                zk.close();
-            if (bk != null)
-                bk.close();
-        } catch (InterruptedException e) {
-            logger.error("Error while closing ZooKeeper client!");
-        } catch (BKException bke) {
-            logger.error("Error while closing BookKeeper client");
-        }
+        // Stop topic manager first since it is core of Hub server
+        tm.stop();
 
         // Stop the RegionManager.
         rm.stop();
 
         // Stop the DeliveryManager and ReadAheadCache threads (if
         // applicable).
-        // TODO: It'd be cleaner and more general to modify the interfaces to
-        // include a stop method. If the specific implementation starts threads,
-        // then the stop method should take care of that clean up.
-        if (pm instanceof ReadAheadCache) {
-            ((ReadAheadCache) pm).stop();
-        }
-        if (dm instanceof FIFODeliveryManager) {
-            ((FIFODeliveryManager) dm).stop();
-        }
+        dm.stop();
 
         // Stop the SubscriptionManager if needed.
-        if (sm instanceof AbstractSubscriptionManager) {
-            ((AbstractSubscriptionManager) sm).stop();
+        sm.stop();
+
+        // Shutdown the ZooKeeper and BookKeeper clients only if we are
+        // not in stand-alone mode.
+        try {
+            if (bk != null)
+                bk.close();
+            if (zk != null)
+                zk.close();
+        } catch (InterruptedException e) {
+            logger.error("Error while closing ZooKeeper client!");
+        } catch (BKException bke) {
+            logger.error("Error while closing BookKeeper client");
         }
 
         // Close and release the Netty channels and resources

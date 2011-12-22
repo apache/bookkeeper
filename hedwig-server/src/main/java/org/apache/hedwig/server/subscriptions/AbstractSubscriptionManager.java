@@ -19,9 +19,11 @@ package org.apache.hedwig.server.subscriptions;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -43,6 +45,7 @@ import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.server.topics.TopicOwnershipChangeListener;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.CallbackUtils;
+import org.apache.hedwig.util.ConcurrencyUtils;
 
 public abstract class AbstractSubscriptionManager implements SubscriptionManager, TopicOwnershipChangeListener {
 
@@ -65,6 +68,18 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
     // In memory mapping of topics to the minimum consumed message sequence ID
     // for all subscribers to the topic.
     private final ConcurrentHashMap<ByteString, Long> topic2MinConsumedMessagesMap = new ConcurrentHashMap<ByteString, Long>();
+
+    Callback<Void> noopCallback = new NoopCallback<Void>();
+
+    class NoopCallback<T> implements Callback<T> {
+        @Override
+        public void operationFailed(Object ctx, PubSubException exception) {
+            logger.warn("Exception found in AbstractSubscriptionManager : ", exception);
+        }
+
+        public void operationFinished(Object ctx, T resultOfOperation) {
+        };
+    }
 
     public AbstractSubscriptionManager(ServerConfiguration cfg, TopicManager tm, PersistenceManager pm,
                                        ScheduledExecutorService scheduler) {
@@ -212,17 +227,73 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
         queuer.pushAndMaybeRun(topic, new AcquireOp(topic, callback, ctx));
     }
 
+    class ReleaseOp extends TopicOpQueuer.AsynchronousOp<Void> {
+
+        public ReleaseOp(final ByteString topic, final Callback<Void> cb, Object ctx) {
+            queuer.super(topic, cb, ctx);
+        }
+
+        @Override
+        public void run() {
+            Callback<Void> finalCb = new Callback<Void>() {
+                @Override
+                public void operationFinished(Object ctx, Void resultOfOperation) {
+                    finish();
+                }
+
+                @Override
+                public void operationFailed(Object ctx,
+                        PubSubException exception) {
+                    logger.warn("Error when releasing topic : " + topic.toStringUtf8(), exception);
+                    finish();
+                }
+
+                private void finish() {
+                    topic2LocalCounts.remove(topic);
+                    // Since we decrement local count when some of remote subscriptions failed,
+                    // while we don't unsubscribe those succeed subscriptions. so we can't depends
+                    // on local count, just try to notify unsubscribe.
+                    notifyUnsubcribe(topic);
+                    cb.operationFinished(ctx, null);
+                }
+            };
+            if (logger.isDebugEnabled()) {
+                logger.debug("Try to update subscription states when losing topic " + topic.toStringUtf8());
+            }
+            updateSubscriptionStates(topic, finalCb, ctx, true);
+        }
+    }
+
+    void updateSubscriptionStates(ByteString topic, Callback<Void> finalCb, Object ctx, boolean removeTopic) {
+        // Try to update subscription states of a specified topic
+        Map<ByteString, InMemorySubscriptionState> states;
+        if (removeTopic) {
+            states = top2sub2seq.remove(topic);
+        } else {
+            states = top2sub2seq.get(topic);
+        }
+        if (null == states) {
+            finalCb.operationFinished(ctx, null);
+        } else {
+            Callback<Void> mcb = CallbackUtils.multiCallback(states.size(), finalCb, ctx);
+            for (Entry<ByteString, InMemorySubscriptionState> entry : states.entrySet()) {
+                InMemorySubscriptionState memState = entry.getValue();
+                if (memState.setLastConsumeSeqIdImmediately()) {
+                    updateSubscriptionState(topic, entry.getKey(), memState.getSubscriptionState(),
+                                            mcb, ctx);
+                } else {
+                    mcb.operationFinished(ctx, null);
+                }
+            }
+        }
+    }
+
     /**
      * Remove the local mapping.
      */
     @Override
     public void lostTopic(ByteString topic) {
-        top2sub2seq.remove(topic);
-        topic2LocalCounts.remove(topic);
-        // Since we decrement local count when some of remote subscriptions failed,
-        // while we don't unsubscribe those succeed subscriptions. so we can't depends
-        // on local count, just try to notify unsubscribe.
-        notifyUnsubcribe(topic);
+        queuer.pushAndMaybeRun(topic, new ReleaseOp(topic, noopCallback, null));
     }
 
     private void notifyUnsubcribe(ByteString topic) {
@@ -464,6 +535,27 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
      */
     public void stop() {
         timer.cancel();
+        try {
+            final LinkedBlockingQueue<Boolean> queue = new LinkedBlockingQueue<Boolean>();
+            // update dirty subscriptions
+            for (ByteString topic : top2sub2seq.keySet()) {
+                Callback<Void> finalCb = new Callback<Void>() {
+                    @Override
+                    public void operationFinished(Object ctx, Void resultOfOperation) {
+                        ConcurrencyUtils.put(queue, true);
+                    }
+                    @Override
+                    public void operationFailed(Object ctx,
+                            PubSubException exception) {
+                        ConcurrencyUtils.put(queue, false);
+                    }
+                };
+                updateSubscriptionStates(topic, finalCb, null, false);
+                queue.take();
+            }
+        } catch (InterruptedException ie) {
+            logger.warn("Error during updating subscription states : ", ie);
+        }
     }
 
     protected abstract void createSubscriptionState(final ByteString topic, ByteString subscriberId,

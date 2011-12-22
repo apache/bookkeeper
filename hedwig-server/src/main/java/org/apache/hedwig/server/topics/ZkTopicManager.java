@@ -170,6 +170,10 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
         }, null);
     }
 
+    void unregisterWithZookeeper() throws InterruptedException, KeeperException {
+        zk.delete(ephemeralNodePath, -1);
+    }
+
     String hubPath(ByteString topic) {
         return cfg.getZkTopicPath(new StringBuilder(), topic).append("/hub").toString();
     }
@@ -424,6 +428,19 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
                 }, ctx);
             }
         }, ctx);
+    }
+
+    @Override
+    public void stop() {
+        // we just unregister it with zookeeper to make it unavailable from hub servers list
+        try {
+            unregisterWithZookeeper();
+        } catch (InterruptedException e) {
+            logger.error("Error unregistering hub server :", e);
+        } catch (KeeperException e) {
+            logger.error("Error unregistering hub server :", e);
+        }
+        super.stop();
     }
 
 }

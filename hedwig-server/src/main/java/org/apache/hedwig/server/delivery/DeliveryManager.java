@@ -26,4 +26,9 @@ public interface DeliveryManager {
                                          DeliveryEndPoint endPoint, MessageFilter filter, boolean isHubSubscriber);
 
     public void stopServingSubscriber(ByteString topic, ByteString subscriberId);
+
+    /**
+     * Stop delivery manager
+     */
+    public void stop();
 }

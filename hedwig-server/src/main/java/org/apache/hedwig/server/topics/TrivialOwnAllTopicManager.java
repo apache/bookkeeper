@@ -49,4 +49,9 @@ public class TrivialOwnAllTopicManager extends AbstractTopicManager {
         // No cleanup to do
         cb.operationFinished(ctx, null);
     }
+
+    @Override
+    public void stop() {
+        // do nothing
+    }
 }

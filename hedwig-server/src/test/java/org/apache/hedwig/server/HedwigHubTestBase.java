@@ -54,6 +54,14 @@ public abstract class HedwigHubTestBase extends TestCase {
     protected int initialSSLServerPort = 9876;
     protected List<PubSubServer> serversList;
 
+    public HedwigHubTestBase() {
+        this(1);
+    }
+
+    protected HedwigHubTestBase(int numServers) {
+        this.numServers = numServers;
+    }
+
     // Default child class of the ServerConfiguration to be used here.
     // Extending classes can define their own (possibly extending from this) and
     // override the getServerConfiguration method below to return their own
@@ -105,17 +113,28 @@ public abstract class HedwigHubTestBase extends TestCase {
         return new HubServerConfiguration(serverPort, sslServerPort);
     }
 
+    protected void startHubServers() throws Exception {
+        // Now create the PubSubServer Hubs
+        serversList = new LinkedList<PubSubServer>();
+        for (int i = 0; i < numServers; i++) {
+            serversList.add(new PubSubServer(getServerConfiguration(initialServerPort + i, initialSSLServerPort + i)));
+        }
+    }
+    protected void stopHubServers() throws Exception {
+        // Shutdown all of the PubSubServers
+        for (PubSubServer server : serversList) {
+            server.shutdown();
+        }
+        serversList.clear();
+    }
+
     @Override
     @Before
     public void setUp() throws Exception {
         logger.info("STARTING " + getName());
         bktb = new BookKeeperTestBase(numBookies);
         bktb.setUp();
-        // Now create the PubSubServer Hubs
-        serversList = new LinkedList<PubSubServer>();
-        for (int i = 0; i < numServers; i++) {
-            serversList.add(new PubSubServer(getServerConfiguration(initialServerPort + i, initialSSLServerPort + i)));
-        }
+        startHubServers();
         logger.info("HedwigHub test setup finished");
     }
 
@@ -123,10 +142,7 @@ public abstract class HedwigHubTestBase extends TestCase {
     @After
     public void tearDown() throws Exception {
         logger.info("tearDown starting");
-        // Shutdown all of the PubSubServers
-        for (PubSubServer server : serversList) {
-            server.shutdown();
-        }
+        stopHubServers();
         bktb.tearDown();
         logger.info("FINISHED " + getName());
     }

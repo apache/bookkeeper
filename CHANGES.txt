@@ -20,6 +20,8 @@ Trunk (unreleased changes)
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)
 
+        BOOKKEEPER-133: Hub server should update subscription state to zookeeper when losing topic or shutting down (Sijie Gou via ivank)
+
     IMPROVEMENTS:
 
 Release 4.0.0 - 2011-11-30

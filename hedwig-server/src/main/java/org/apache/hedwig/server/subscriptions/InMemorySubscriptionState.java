@@ -51,12 +51,33 @@ public class InMemorySubscriptionState {
      *         otherwise
      */
     public boolean setLastConsumeSeqId(MessageSeqId lastConsumeSeqId, int consumeInterval) {
-        this.lastConsumeSeqId = lastConsumeSeqId;
-
-        if (lastConsumeSeqId.getLocalComponent() - subscriptionState.getMsgId().getLocalComponent() < consumeInterval) {
+        long interval = lastConsumeSeqId.getLocalComponent() - subscriptionState.getMsgId().getLocalComponent();
+        if (interval <= 0) {
             return false;
         }
 
+        // set consume seq id when it is larger
+        this.lastConsumeSeqId = lastConsumeSeqId;
+        if (interval < consumeInterval) {
+            return false;
+        }
+
+        // subscription state will be updated, marked it as clean
+        subscriptionState = SubscriptionState.newBuilder(subscriptionState).setMsgId(lastConsumeSeqId).build();
+        return true;
+    }
+
+    /**
+     * Set lastConsumeSeqId Immediately
+     *
+     * @return true if the resulting structure needs to be persisted, false otherwise
+     */
+    public boolean setLastConsumeSeqIdImmediately() {
+        long interval = lastConsumeSeqId.getLocalComponent() - subscriptionState.getMsgId().getLocalComponent();
+        // no need to set
+        if (interval <= 0) {
+            return false;
+        }
         subscriptionState = SubscriptionState.newBuilder(subscriptionState).setMsgId(lastConsumeSeqId).build();
         return true;
     }

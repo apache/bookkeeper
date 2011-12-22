@@ -194,4 +194,8 @@ public abstract class AbstractTopicManager implements TopicManager {
      */
     protected abstract void postReleaseCleanup(ByteString topic, Callback<Void> cb, Object ctx);
 
+    @Override
+    public void stop() {
+        // do nothing now
+    }
 }
