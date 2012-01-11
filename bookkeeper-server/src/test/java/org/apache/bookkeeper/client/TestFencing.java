@@ -162,8 +162,10 @@ public class TestFencing extends BaseTestCase {
          */
         final LedgerHandle writelh = bkc.createLedger(digestType, "".getBytes());
 
+        final int numRecovery = 10;
+
         final String tmp = "BookKeeper is cool!";
-        final CountDownLatch latch = new CountDownLatch(100);
+        final CountDownLatch latch = new CountDownLatch(numRecovery);
         Thread writethread = new Thread() {
                 public void run() {
                     try {
@@ -178,7 +180,7 @@ public class TestFencing extends BaseTestCase {
             };
         writethread.start();
 
-        final int numRecovery = 100;
+
         CyclicBarrier barrier = new CyclicBarrier(numRecovery+1);
         LedgerOpenThread threads[] = new LedgerOpenThread[numRecovery];
         for (int i = 0; i < numRecovery; i++) {
