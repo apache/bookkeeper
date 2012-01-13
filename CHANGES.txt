@@ -16,7 +16,9 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-141: Run extracting ledger id from entry log files in GC thread to speed up bookie restart (Sijie Gou via ivank)
 
-	BOOKKEEPER-148: Jenkins build is failing (ivank via fpj)
+        BOOKKEEPER-148: Jenkins build is failing (ivank via fpj)
+
+        BOOKKEEPER-40: BookieClientTest fails intermittantly (fpj via ivank)
 
       hedwig-server/
       

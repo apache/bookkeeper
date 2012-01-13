@@ -135,8 +135,9 @@ public class BookieClientTest extends TestCase {
         BookieClient bc = new BookieClient(new ClientConfiguration(), channelFactory, executor);
         ChannelBuffer bb;
         bb = createByteBuffer(1, 1, 1);
-        bc.addEntry(addr, 1, passwd, 1, bb, wrcb, null, BookieProtocol.FLAG_NONE);
+        bc.addEntry(addr, 1, passwd, 1, bb, wrcb, arc, BookieProtocol.FLAG_NONE);
         synchronized (arc) {
+            arc.wait(1000);
             bc.readEntry(addr, 1, 1, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(0, arc.rc);
