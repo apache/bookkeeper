@@ -111,4 +111,43 @@ public class LedgerRecoveryTest extends BaseTestCase {
         }
     }
 
+    @Test
+    public void testLedgerRecoveryWithNotEnoughBookies() throws Exception {
+        int numEntries = 3;
+
+        // Create a ledger
+        LedgerHandle beforelh = null;
+        beforelh = bkc.createLedger(3, 3, digestType, "".getBytes());
+
+        String tmp = "BookKeeper is cool!";
+        for (int i = 0; i < numEntries; i++) {
+            beforelh.addEntry(tmp.getBytes());
+        }
+
+        // shutdown first bookie server
+        bs.get(0).shutdown();
+        bs.remove(0);
+
+        /*
+         * Try to open ledger.
+         */
+        try {
+            bkc.openLedger(beforelh.getId(), digestType, "".getBytes());
+            fail("should not reach here!");
+        } catch (Exception e) {
+            // should thrown recovery exception
+        }
+
+        // start a new bookie server
+        int newBookiePort = initialPort + numBookies;
+        startNewBookie(newBookiePort);
+
+        LedgerHandle afterlh = bkc.openLedger(beforelh.getId(), digestType, "".getBytes());
+
+        /*
+         * Check if has recovered properly.
+         */
+        assertEquals(numEntries - 1, afterlh.getLastAddConfirmed());
+    }
+
 }

@@ -180,35 +180,6 @@ public class BookieRecoveryTest extends BaseTestCase {
     }
 
     /**
-     * Helper method to startup a new bookie server with the indicated port
-     * number
-     *
-     * @param port
-     *            Port to start the new bookie server on
-     * @throws IOException
-     */
-    private void startNewBookie(int port)
-            throws IOException, InterruptedException, KeeperException {
-        File f = File.createTempFile("bookie", "test");
-        tmpDirs.add(f);
-        f.delete();
-        f.mkdir();
-
-        ServerConfiguration conf = newServerConfiguration(port, HOSTPORT, f, new File[] { f });
-
-        BookieServer server = new BookieServer(conf);
-        server.start();
-        bs.add(server);
-
-        while(bkc.getZkHandle().exists("/ledgers/available/" + InetAddress.getLocalHost().getHostAddress() + ":" + port, false) == null) {
-            Thread.sleep(500);
-        }
-
-        bkc.readBookiesBlocking();
-        LOG.info("New bookie on port " + port + " has been created.");
-    }
-
-    /**
      * Helper method to verify that we can read the recovered ledger entries.
      *
      * @param oldLhs

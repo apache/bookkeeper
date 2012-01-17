@@ -20,6 +20,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-40: BookieClientTest fails intermittantly (fpj via ivank)
 
+	BOOKKEEPER-150: Entry is lost when recovering a ledger with not enough bookies. (Sijie Guo via ivank)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)

@@ -525,6 +525,12 @@ public class LedgerHandle {
 
     // close the ledger and send fails to all the adds in the pipeline
     void handleUnrecoverableErrorDuringAdd(int rc) {
+        if (metadata.isInRecovery()) {
+            // we should not close ledger if ledger is recovery mode
+            // otherwise we may lose entry.
+            errorOutPendingAdds(rc);
+            return;
+        }
         asyncCloseInternal(NoopCloseCallback.instance, null, rc);
     }
 

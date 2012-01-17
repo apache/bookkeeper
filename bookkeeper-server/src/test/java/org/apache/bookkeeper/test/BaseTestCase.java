@@ -23,6 +23,7 @@ package org.apache.bookkeeper.test;
 
 import java.io.IOException;
 import java.io.File;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -199,6 +200,35 @@ public abstract class BaseTestCase extends TestCase {
             bs.add(server);
             j++;
         }
+    }
+
+    /**
+     * Helper method to startup a new bookie server with the indicated port
+     * number
+     *
+     * @param port
+     *            Port to start the new bookie server on
+     * @throws IOException
+     */
+    protected void startNewBookie(int port)
+            throws IOException, InterruptedException, KeeperException {
+        File f = File.createTempFile("bookie", "test");
+        tmpDirs.add(f);
+        f.delete();
+        f.mkdir();
+
+        ServerConfiguration conf = newServerConfiguration(port, HOSTPORT, f, new File[] { f });
+
+        BookieServer server = new BookieServer(conf);
+        server.start();
+        bs.add(server);
+
+        while(bkc.getZkHandle().exists("/ledgers/available/" + InetAddress.getLocalHost().getHostAddress() + ":" + port, false) == null) {
+            Thread.sleep(500);
+        }
+
+        bkc.readBookiesBlocking();
+        LOG.info("New bookie on port " + port + " has been created.");
     }
 
     @After

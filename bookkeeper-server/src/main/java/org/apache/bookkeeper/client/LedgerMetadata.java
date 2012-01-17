@@ -93,6 +93,10 @@ public class LedgerMetadata {
         return close != NOTCLOSED 
             && close != IN_RECOVERY;
     }
+
+    boolean isInRecovery() {
+        return IN_RECOVERY == close;
+    }
     
     void markLedgerInRecovery() {
         close = IN_RECOVERY;
