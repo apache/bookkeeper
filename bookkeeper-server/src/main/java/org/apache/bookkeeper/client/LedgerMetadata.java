@@ -240,7 +240,17 @@ public class LedgerMetadata {
     public void updateZnodeStatus(Stat stat) {
         this.znodeVersion = stat.getVersion();
     }
-    
+
+    /**
+     * Update the znode version of this metadata
+     *
+     * @param znodeVersion
+     *        Znode version of this metadata
+     */
+    public void updateZnodeStatus(int znodeVersion) {
+        this.znodeVersion = znodeVersion;
+    }
+
     /**
      * Returns the last znode version.
      * 

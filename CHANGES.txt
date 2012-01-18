@@ -24,6 +24,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-95: extends zookeeper JMX to monitor and manage bookie server (Sijie Guo via ivank)
 
+        BOOKKEEPER-153: Ledger can't be opened or closed due to zero-length metadata (Sijie Guo via ivank)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)

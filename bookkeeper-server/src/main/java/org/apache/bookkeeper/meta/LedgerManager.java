@@ -21,6 +21,7 @@ package org.apache.bookkeeper.meta;
 import java.io.IOException;
 
 import org.apache.zookeeper.AsyncCallback;
+import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 
@@ -55,12 +56,14 @@ public interface LedgerManager {
     public long getLedgerId(String ledgerPath) throws IOException;
 
     /**
-     * Create a new zk ledger path.
+     * Create a new zk ledger path with provided metadata
      *
      * @param cb
      *        Callback when getting new zk ledger path to create.
+     * @param metadata
+     *        Metadata provided when creating a new ledger
      */
-    public abstract void newLedgerPath(GenericCallback<String> cb);
+    public abstract void newLedgerPath(GenericCallback<String> cb, LedgerMetadata metadata);
 
     /**
      * Loop to process all ledgers.

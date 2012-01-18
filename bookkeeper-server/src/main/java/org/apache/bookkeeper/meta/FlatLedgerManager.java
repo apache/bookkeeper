@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashSet;
 
+import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
@@ -94,7 +95,7 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
     }
 
     @Override
-    public void newLedgerPath(final GenericCallback<String> cb) {
+    public void newLedgerPath(final GenericCallback<String> cb, final LedgerMetadata metadata) {
         StringCallback scb = new StringCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx,
@@ -102,11 +103,13 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
                 if (Code.OK.intValue() != rc) {
                     cb.operationComplete(rc, null);
                 } else {
+                    // update znode status
+                    metadata.updateZnodeStatus(0);
                     cb.operationComplete(rc, name);
                 }
             }
         };
-        ZkUtils.createFullPathOptimistic(zk, ledgerPrefix, new byte[0],
+        ZkUtils.createFullPathOptimistic(zk, ledgerPrefix, metadata.serialize(),
             Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL, scb, null);
     }
 

@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.HashSet;
 import java.util.List;
 
+import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
@@ -135,7 +136,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
     }
 
     @Override
-    public void newLedgerPath(final GenericCallback<String> ledgerCb) {
+    public void newLedgerPath(final GenericCallback<String> ledgerCb, final LedgerMetadata metadata) {
         ZkUtils.createFullPathOptimistic(zk, idGenPath, new byte[0], Ids.OPEN_ACL_UNSAFE,
             CreateMode.EPHEMERAL_SEQUENTIAL, new StringCallback() {
             @Override
@@ -164,12 +165,14 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
                         if (rc != KeeperException.Code.OK.intValue()) {
                             ledgerCb.operationComplete(rc, null);
                         } else {
+                            // update znode status
+                            metadata.updateZnodeStatus(0);
                             ledgerCb.operationComplete(rc, name);
                         }
                     }
                 };
                 String ledgerPath = getLedgerPath(ledgerId);
-                ZkUtils.createFullPathOptimistic(zk, ledgerPath, new byte[0],
+                ZkUtils.createFullPathOptimistic(zk, ledgerPath, metadata.serialize(),
                     Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT, scb, null);
                 // delete the znode for id generation
                 scheduler.submit(new Runnable() {

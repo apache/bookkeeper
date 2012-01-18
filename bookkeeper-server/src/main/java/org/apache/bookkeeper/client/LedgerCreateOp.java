@@ -32,14 +32,13 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.AsyncCallback.StatCallback;
 import org.apache.zookeeper.data.Stat;
 
 /**
  * Encapsulates asynchronous ledger create operation
  *
  */
-class LedgerCreateOp implements GenericCallback<String>, StatCallback {
+class LedgerCreateOp implements GenericCallback<String> {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerCreateOp.class);
 
@@ -83,7 +82,28 @@ class LedgerCreateOp implements GenericCallback<String>, StatCallback {
      * Initiates the operation
      */
     public void initiate() {
-        bk.getLedgerManager().newLedgerPath(this);
+        // allocate ensemble first
+
+        /*
+         * Adding bookies to ledger handle
+         */
+
+        ArrayList<InetSocketAddress> ensemble;
+        try {
+            ensemble = bk.bookieWatcher.getNewBookies(metadata.ensembleSize);
+        } catch (BKNotEnoughBookiesException e) {
+            LOG.error("Not enough bookies to create ledger");
+            cb.createComplete(e.getCode(), null, this.ctx);
+            return;
+        }
+
+        /*
+         * Add ensemble to the configuration
+         */
+        metadata.addEnsemble(new Long(0), ensemble);
+
+        // create a ledger path with metadata
+        bk.getLedgerManager().newLedgerPath(this, metadata);
     }
 
     /**
@@ -111,23 +131,6 @@ class LedgerCreateOp implements GenericCallback<String>, StatCallback {
             return;
         }
 
-        /*
-         * Adding bookies to ledger handle
-         */
-
-        ArrayList<InetSocketAddress> ensemble;
-        try {
-            ensemble = bk.bookieWatcher.getNewBookies(metadata.ensembleSize);
-        } catch (BKNotEnoughBookiesException e) {
-            LOG.error("Not enough bookies to create ledger" + ledgerId);
-            cb.createComplete(e.getCode(), null, this.ctx);
-            return;
-        }
-
-        /*
-         * Add ensemble to the configuration
-         */
-        metadata.addEnsemble(new Long(0), ensemble);
         try {
             lh = new LedgerHandle(bk, ledgerId, metadata, digestType, passwd);
         } catch (GeneralSecurityException e) {
@@ -140,18 +143,8 @@ class LedgerCreateOp implements GenericCallback<String>, StatCallback {
             return;
         }
 
-        lh.writeLedgerConfig(this, null);
-
-    }
-
-    /**
-     * Implements ZooKeeper stat callback.
-     *
-     * @see org.apache.zookeeper.AsyncCallback.StatCallback#processResult(int, String, Object, Stat)
-     */
-    public void processResult(int rc, String path, Object ctx, Stat stat) {
-        metadata.znodeVersion = stat.getVersion();
-        cb.createComplete(rc, lh, this.ctx);
+        // return the ledger handle back
+        cb.createComplete(BKException.Code.OK, lh, this.ctx);
     }
 
 }
