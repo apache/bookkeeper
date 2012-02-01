@@ -36,6 +36,8 @@ import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.jboss.netty.util.Timer;
+import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -56,6 +58,8 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.CorruptedFrameException;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.TooLongFrameException;
+import org.jboss.netty.handler.timeout.ReadTimeoutHandler;
+import org.jboss.netty.handler.timeout.ReadTimeoutException;
 
 /**
  * This class manages all details of connection to a particular bookie. It also
@@ -76,6 +80,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     AtomicLong totalBytesOutstanding;
     ClientSocketChannelFactory channelFactory;
     OrderedSafeExecutor executor;
+    private Timer readTimeoutTimer;
 
     ConcurrentHashMap<CompletionKey, AddCompletion> addCompletions = new ConcurrentHashMap<CompletionKey, AddCompletion>();
     ConcurrentHashMap<CompletionKey, ReadCompletion> readCompletions = new ConcurrentHashMap<CompletionKey, ReadCompletion>();
@@ -107,6 +112,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         this.totalBytesOutstanding = totalBytesOutstanding;
         this.channelFactory = channelFactory;
         this.state = ConnectionState.DISCONNECTED;
+        this.readTimeoutTimer = new HashedWheelTimer();
     }
 
     synchronized private void connect() {
@@ -375,6 +381,9 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     @Override
     public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = Channels.pipeline();
+
+        pipeline.addLast("readTimeout", new ReadTimeoutHandler(readTimeoutTimer, 
+                                                               conf.getReadTimeout()));
         pipeline.addLast("lengthbasedframedecoder", new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 0, 4, 0, 4));
         pipeline.addLast("mainhandler", this);
         return pipeline;
@@ -388,6 +397,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         LOG.info("Disconnected from bookie: " + addr);
         errorOutOutstandingEntries();
         channel.close();
+        readTimeoutTimer.stop();
 
         state = ConnectionState.DISCONNECTED;
 
@@ -407,6 +417,11 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                       + e.getChannel().getRemoteAddress());
             return;
         }
+        if (t instanceof ReadTimeoutException) {
+            ctx.getChannel().disconnect();
+            return;
+        }
+ 
         if (t instanceof IOException) {
             // these are thrown when a bookie fails, logging them just pollutes
             // the logs (the failure is logged from the listeners on the write

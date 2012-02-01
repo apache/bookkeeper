@@ -75,7 +75,7 @@ public class NIOServerFactory extends Thread {
     ServerConfiguration conf;
 
     public NIOServerFactory(ServerConfiguration conf, PacketProcessor processor) throws IOException {
-        super("NIOServerFactory");
+        super("NIOServerFactory-" + conf.getBookiePort());
         setDaemon(true);
         this.processor = processor;
         this.conf = conf;

@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -164,6 +165,33 @@ public abstract class BaseTestCase extends TestCase {
         if (toRemove != null) {
             bs.remove(toRemove);
         }
+    }
+
+    public void sleepBookie(InetSocketAddress addr, final int seconds,
+                            final CountDownLatch l)
+            throws InterruptedException, IOException {
+        final String name = "Bookie-" + addr.getPort();
+        Thread[] allthreads = new Thread[Thread.activeCount()];
+        Thread.enumerate(allthreads);
+        for (final Thread t : allthreads) {
+            if (t.getName().equals(name)) {
+                Thread sleeper = new Thread() {
+                    public void run() {
+                        try {
+                            t.suspend();
+                            l.countDown();
+                            Thread.sleep(seconds*1000);
+                            t.resume();
+                        } catch (Exception e) {
+                            LOG.error("Error suspending thread", e);
+                        }
+                    }
+                };
+                sleeper.start();
+                return;
+            }
+        }
+        throw new IOException("Bookie thread not found");
     }
 
     /**

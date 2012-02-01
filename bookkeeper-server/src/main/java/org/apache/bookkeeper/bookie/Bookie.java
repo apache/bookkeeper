@@ -245,6 +245,7 @@ public class Bookie extends Thread {
 
     public Bookie(ServerConfiguration conf) 
             throws IOException, KeeperException, InterruptedException {
+        super("Bookie-" + conf.getBookiePort());
         this.conf = conf;
         this.journalDirectory = conf.getJournalDir();
         this.ledgerDirectories = conf.getLedgerDirs();

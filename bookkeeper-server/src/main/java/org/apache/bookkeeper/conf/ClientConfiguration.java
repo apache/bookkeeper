@@ -38,6 +38,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     // NIO Parameters
     protected final static String CLIENT_TCP_NODELAY = "clientTcpNoDelay";
+    protected final static String READ_TIMEOUT = "readTimeout";
 
     /**
      * Construct a default client-side configuration
@@ -213,4 +214,25 @@ public class ClientConfiguration extends AbstractConfiguration {
         return this;
     }
 
+    /**
+     * Get the socket read timeout. This is the number of
+     * seconds we wait without hearing a response from a bookie
+     * before we consider it failed.
+     *
+     * @return the current read timeout in seconds
+     */
+    public int getReadTimeout() {
+        return getInt(READ_TIMEOUT, 5);
+    }
+
+    /**
+     * Set the socket read timeout.
+     * @see #getReadTimeout()
+     * @param timeout The new read timeout in seconds
+     * @return client configuration
+     */
+    public ClientConfiguration setReadTimeout(int timeout) {
+        setProperty(READ_TIMEOUT, Integer.toString(timeout));
+        return this;
+    }
 }
