@@ -40,6 +40,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-98: collect add/read statistics on bookie server (Sijie Guo via ivank)
 
+	BOOKKEEPER-157:	For small packets, increasing number of bookies actually degrades performance. (ivank via fpj)
+
 
 Release 4.0.0 - 2011-11-30
 

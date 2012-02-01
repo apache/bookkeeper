@@ -23,7 +23,12 @@ import java.nio.ByteBuffer;
 import java.util.zip.CRC32;
 
 class CRC32DigestManager extends DigestManager {
-    CRC32 crc = new CRC32();
+    private final ThreadLocal<CRC32> crc = new ThreadLocal<CRC32>() {
+        @Override
+        protected CRC32 initialValue() {
+            return new CRC32();
+        }
+    };
 
     public CRC32DigestManager(long ledgerId) {
         super(ledgerId);
@@ -38,13 +43,13 @@ class CRC32DigestManager extends DigestManager {
     byte[] getValueAndReset() {
         byte[] value = new byte[8];
         ByteBuffer buf = ByteBuffer.wrap(value);
-        buf.putLong(crc.getValue());
-        crc.reset();
+        buf.putLong(crc.get().getValue());
+        crc.get().reset();
         return value;
     }
 
     @Override
     void update(byte[] data, int offset, int length) {
-        crc.update(data, offset, length);
+        crc.get().update(data, offset, length);
     }
 }

@@ -244,18 +244,22 @@ public class LedgerHandle {
      * @param rc
      */
     void asyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
- 
         bk.mainWorkerPool.submitOrdered(ledgerId, new SafeRunnable() {
-
             @Override
             public void safeRun() {
-                metadata.length = length;
-                // Close operation is idempotent, so no need to check if we are
-                // already closed
+                synchronized(LedgerHandle.this) {
+                    // synchronized on LedgerHandle.this to ensure that 
+                    // lastAddPushed can not be updated after the metadata 
+                    // is closed. 
+                    metadata.length = length;
 
-                metadata.close(lastAddConfirmed);
-                errorOutPendingAdds(rc);
-                lastAddPushed = lastAddConfirmed;
+                    // Close operation is idempotent, so no need to check if we are
+                    // already closed
+
+                    metadata.close(lastAddConfirmed);
+                    errorOutPendingAdds(rc);
+                    lastAddPushed = lastAddConfirmed;
+                }
 
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Closing ledger: " + ledgerId + " at entryId: "
@@ -438,22 +442,30 @@ public class LedgerHandle {
                            LedgerHandle.this, -1, ctx);
         }
 
+        final long entryId;
+        final long currentLength;
+        synchronized(this) {
+            // synchronized on this to ensure that
+            // the ledger isn't closed between checking and 
+            // updating lastAddPushed
+            if (metadata.isClosed()) {
+                LOG.warn("Attempt to add to closed ledger: " + ledgerId);
+                LedgerHandle.this.opCounterSem.release();
+                cb.addComplete(BKException.Code.LedgerClosedException,
+                               LedgerHandle.this, -1, ctx);
+                return;
+            }
+
+            entryId = ++lastAddPushed;
+            currentLength = addToLength(length);
+            op.setEntryId(entryId);
+            pendingAddOps.add(op);
+        }
+
         try {
-            bk.mainWorkerPool.submitOrdered(ledgerId, new SafeRunnable() {
+            bk.mainWorkerPool.submit(new SafeRunnable() {
                 @Override
                 public void safeRun() {
-                    if (metadata.isClosed()) {
-                        LOG.warn("Attempt to add to closed ledger: " + ledgerId);
-                        LedgerHandle.this.opCounterSem.release();
-                        cb.addComplete(BKException.Code.LedgerClosedException,
-                                       LedgerHandle.this, -1, ctx);
-                        return;
-                    }
-
-                    long entryId = ++lastAddPushed;
-                    long currentLength = addToLength(length);
-                    op.setEntryId(entryId);
-                    pendingAddOps.add(op);
                     ChannelBuffer toSend = macManager.computeDigestAndPackageForSending(
                                                entryId, lastAddConfirmed, currentLength, data, offset, length);
                     op.initiate(toSend);

@@ -25,19 +25,36 @@ import java.security.NoSuchAlgorithmException;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 class MacDigestManager extends DigestManager {
+    final static Logger LOG = LoggerFactory.getLogger(MacDigestManager.class);
+
     public static String DIGEST_ALGORITHM = "SHA-1";
     public static String KEY_ALGORITHM = "HmacSHA1";
-    Mac mac;
+
+    final byte[] passwd;
+
+    private final ThreadLocal<Mac> mac = new ThreadLocal<Mac>() {
+        @Override
+        protected Mac initialValue() {
+            try {
+                byte[] macKey = genDigest("mac", passwd);
+                SecretKeySpec keySpec = new SecretKeySpec(macKey, KEY_ALGORITHM);
+                Mac mac = Mac.getInstance(KEY_ALGORITHM);
+                mac.init(keySpec);
+                return mac;
+            } catch (GeneralSecurityException gse) {
+                LOG.error("Couldn't not get mac instance", gse);
+                return null;
+            }
+        }
+    };
 
     public MacDigestManager(long ledgerId, byte[] passwd) throws GeneralSecurityException {
         super(ledgerId);
-        byte[] macKey = genDigest("mac", passwd);
-        SecretKeySpec keySpec = new SecretKeySpec(macKey, KEY_ALGORITHM);
-        mac = Mac.getInstance(KEY_ALGORITHM);
-        mac.init(keySpec);
-
-
+        this.passwd = passwd;
     }
 
     static byte[] genDigest(String pad, byte[] passwd) throws NoSuchAlgorithmException {
@@ -55,12 +72,12 @@ class MacDigestManager extends DigestManager {
 
     @Override
     byte[] getValueAndReset() {
-        return mac.doFinal();
+        return mac.get().doFinal();
     }
 
     @Override
     void update(byte[] data, int offset, int length) {
-        mac.update(data, offset, length);
+        mac.get().update(data, offset, length);
     }
 
 
