@@ -208,7 +208,7 @@ public class NIOServerFactory extends Thread {
                             readLength(k);
                         } else {
                             cnxnStats.packetsReceived++;
-                            stats.incrementPacketsReceived();
+                            ServerStats.getInstance().incrementPacketsReceived();
                             try {
                                 readRequest();
                             } finally {

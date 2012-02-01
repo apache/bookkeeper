@@ -104,9 +104,23 @@ public class LedgerCache {
         return entriesPerPage;
     }
 
+    /**
+     * @return page limitation in ledger cache
+     */
+    public int getPageLimit() {
+        return pageLimit;
+    }
+
     // The number of pages that have actually been used
     private int pageCount = 0;
     HashMap<Long, HashMap<Long,LedgerEntryPage>> pages = new HashMap<Long, HashMap<Long,LedgerEntryPage>>();
+
+    /**
+     * @return number of page used in ledger cache
+     */
+    public int getNumUsedPages() {
+        return pageCount;
+    }
 
     private void putIntoTable(HashMap<Long, HashMap<Long,LedgerEntryPage>> table, LedgerEntryPage lep) {
         HashMap<Long, LedgerEntryPage> map = table.get(lep.getLedger());

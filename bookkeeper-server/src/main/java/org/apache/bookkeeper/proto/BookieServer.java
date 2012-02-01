@@ -29,11 +29,14 @@ import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
+import javax.management.JMException;
+
 import org.apache.zookeeper.KeeperException;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.jmx.BKMBeanRegistry;
 import org.apache.bookkeeper.proto.NIOServerFactory.Cnxn;
 import static org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
 import org.apache.commons.configuration.ConfigurationException;
@@ -58,10 +61,17 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     DeathWatcher deathWatcher;
     static Logger LOG = LoggerFactory.getLogger(BookieServer.class);
 
+    // operation stats
+    final BKStats bkStats = BKStats.getInstance();
+    final boolean isStatsEnabled;
+    protected BookieServerBean jmxBkServerBean;
+
     public BookieServer(ServerConfiguration conf) 
             throws IOException, KeeperException, InterruptedException {
         this.conf = conf;
         this.bookie = new Bookie(conf);
+
+        isStatsEnabled = conf.isStatisticsEnabled();
     }
 
     public void start() throws IOException {
@@ -69,6 +79,9 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         running = true;
         deathWatcher = new DeathWatcher(conf);
         deathWatcher.start();
+
+        // register jmx
+        registerJMX();
     }
 
     public InetSocketAddress getLocalAddress() {
@@ -86,6 +99,33 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         nioServerFactory.shutdown();
         bookie.shutdown();
         running = false;
+
+        // unregister JMX
+        unregisterJMX();
+    }
+
+    protected void registerJMX() {
+        try {
+            jmxBkServerBean = new BookieServerBean(conf, this);
+            BKMBeanRegistry.getInstance().register(jmxBkServerBean, null);
+
+            bookie.registerJMX(jmxBkServerBean);
+        } catch (Exception e) {
+            LOG.warn("Failed to register with JMX", e);
+            jmxBkServerBean = null;
+        }
+    }
+
+    protected void unregisterJMX() {
+        try {
+            bookie.unregisterJMX();
+            if (jmxBkServerBean != null) {
+                BKMBeanRegistry.getInstance().unregister(jmxBkServerBean);
+            }
+        } catch (Exception e) {
+            LOG.warn("Failed to unregister with JMX", e);
+        }
+        jmxBkServerBean = null;
     }
 
     public boolean isRunning() {
@@ -266,6 +306,13 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     public void processPacket(ByteBuffer packet, Cnxn src) {
         PacketHeader h = PacketHeader.fromInt(packet.getInt());
 
+        boolean success = false;
+        int statType = BKStats.STATS_UNKNOWN;
+        long startTime = 0;
+        if (isStatsEnabled) {
+            startTime = System.currentTimeMillis();
+        }
+
         // packet format is different between ADDENTRY and READENTRY
         long ledgerId = -1;
         long entryId = -1;
@@ -296,6 +343,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         short flags = h.getFlags();
         switch (h.getOpCode()) {
         case BookieProtocol.ADDENTRY:
+            statType = BKStats.STATS_ADD;
             try {
                 // LOG.debug("Master key: " + new String(masterKey));
                 if ((flags & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD) {
@@ -303,6 +351,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
                 } else {
                     bookie.addEntry(packet.slice(), this, src, masterKey);
                 }
+                success = true;
             } catch (IOException e) {
                 LOG.error("Error writing " + entryId + "@" + ledgerId, e);
                 src.sendResponse(buildResponse(BookieProtocol.EIO, h.getVersion(), h.getOpCode(), ledgerId, entryId));
@@ -315,6 +364,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
             }
             break;
         case BookieProtocol.READENTRY:
+            statType = BKStats.STATS_READ;
             ByteBuffer[] rsp = new ByteBuffer[2];
             LOG.debug("Received new read request: " + ledgerId + ", " + entryId);
             int errorCode = BookieProtocol.EIO;
@@ -326,6 +376,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
                 rsp[1] = bookie.readEntry(ledgerId, entryId);
                 LOG.debug("##### Read entry ##### " + rsp[1].remaining());
                 errorCode = BookieProtocol.EOK;
+                success = true;
             } catch (Bookie.NoLedgerException e) {
                 if (LOG.isTraceEnabled()) {
                     LOG.error("Error reading " + entryId + "@" + ledgerId, e);
@@ -358,11 +409,19 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
             LOG.debug("Sending response for: " + entryId + ", " + new String(rsp[1].array()));
             src.sendResponse(rsp);
             break;
-        default: 
+        default:
             src.sendResponse(buildResponse(BookieProtocol.EBADREQ, h.getVersion(), h.getOpCode(), ledgerId, entryId));
         }
+        if (isStatsEnabled) {
+            if (success) {
+                long elapsedTime = System.currentTimeMillis() - startTime;
+                bkStats.getOpStats(statType).updateLatency(elapsedTime);
+            } else {
+                bkStats.getOpStats(statType).incrementFailedOps();
+            }
+        }
     }
-    
+
     private ByteBuffer buildResponse(int errorCode, byte version, byte opCode, long ledgerId, long entryId) {
         ByteBuffer rsp = ByteBuffer.allocate(24);
         rsp.putInt(new PacketHeader(version, 

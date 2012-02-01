@@ -22,8 +22,6 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-150: Entry is lost when recovering a ledger with not enough bookies. (Sijie Guo via ivank)
 
-        BOOKKEEPER-95: extends zookeeper JMX to monitor and manage bookie server (Sijie Guo via ivank)
-
         BOOKKEEPER-153: Ledger can't be opened or closed due to zero-length metadata (Sijie Guo via ivank)
 
         BOOKKEEPER-23: Timeout requests (ivank)
@@ -35,6 +33,13 @@ Trunk (unreleased changes)
         BOOKKEEPER-133: Hub server should update subscription state to zookeeper when losing topic or shutting down (Sijie Gou via ivank)
 
     IMPROVEMENTS:
+
+      bookkeeper-server/
+
+        BOOKKEEPER-95: extends zookeeper JMX to monitor and manage bookie server (Sijie Guo via ivank)
+
+        BOOKKEEPER-98: collect add/read statistics on bookie server (Sijie Guo via ivank)
+
 
 Release 4.0.0 - 2011-11-30
 

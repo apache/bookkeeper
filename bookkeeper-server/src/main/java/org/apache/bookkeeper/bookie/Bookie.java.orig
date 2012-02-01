@@ -47,8 +47,6 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.jmx.BKMBeanInfo;
-import org.apache.bookkeeper.jmx.BKMBeanRegistry;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,10 +97,6 @@ public class Bookie extends Thread {
 
     // Running flag
     private volatile boolean running = false;
-
-    // jmx related beans
-    BookieBean jmxBookieBean;
-    LedgerCacheBean jmxLedgerCacheBean;
 
     public static class NoLedgerException extends IOException {
         private static final long serialVersionUID = 1L;
@@ -393,53 +387,6 @@ public class Bookie extends Thread {
         Collections.sort(logs);
         return logs;
     }
-
-    /**
-     * Register jmx with parent
-     *
-     * @param parent parent bk mbean info
-     */
-    public void registerJMX(BKMBeanInfo parent) {
-        try {
-            jmxBookieBean = new BookieBean(this);
-            BKMBeanRegistry.getInstance().register(jmxBookieBean, parent);
-
-            try {
-                jmxLedgerCacheBean = new LedgerCacheBean(this.ledgerCache);
-                BKMBeanRegistry.getInstance().register(jmxLedgerCacheBean, jmxBookieBean);
-            } catch (Exception e) {
-                LOG.warn("Failed to register with JMX for ledger cache", e);
-                jmxLedgerCacheBean = null;
-            }
-
-        } catch (Exception e) {
-            LOG.warn("Failed to register with JMX", e);
-            jmxBookieBean = null;
-        }
-    }
-
-    /**
-     * Unregister jmx
-     */
-    public void unregisterJMX() {
-        try {
-            if (jmxLedgerCacheBean != null) {
-                BKMBeanRegistry.getInstance().unregister(jmxLedgerCacheBean);
-            }
-        } catch (Exception e) {
-            LOG.warn("Failed to unregister with JMX", e);
-        }
-        try {
-            if (jmxBookieBean != null) {
-                BKMBeanRegistry.getInstance().unregister(jmxBookieBean);
-            }
-        } catch (Exception e) {
-            LOG.warn("Failed to unregister with JMX", e);
-        }
-        jmxBookieBean = null;
-        jmxLedgerCacheBean = null;
-    }
-
 
     /**
      * Instantiate the ZooKeeper client for the Bookie.

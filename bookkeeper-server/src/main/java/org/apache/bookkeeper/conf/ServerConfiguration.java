@@ -50,6 +50,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     // Zookeeper Parameters
     protected final static String ZK_TIMEOUT = "zkTimeout";
     protected final static String ZK_SERVERS = "zkServers";
+    // Statistics Parameters
+    protected final static String ENABLE_STATISTICS = "enableStatistics";
 
     // separator for ledger dir
     protected final static String SEP = ",";
@@ -374,4 +376,24 @@ public class ServerConfiguration extends AbstractConfiguration {
         return this;
     }
 
+    /**
+     * Is statistics enabled
+     *
+     * @return is statistics enabled
+     */
+    public boolean isStatisticsEnabled() {
+        return getBoolean(ENABLE_STATISTICS, true);
+    }
+
+    /**
+     * Turn on/off statistics
+     *
+     * @param enabled
+     *          Whether statistics enabled or not.
+     * @return server configuration
+     */
+    public ServerConfiguration setStatisticsEnabled(boolean enabled) {
+        setProperty(ENABLE_STATISTICS, Boolean.toString(enabled));
+        return this;
+    }
 }
