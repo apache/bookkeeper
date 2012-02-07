@@ -112,7 +112,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         this.totalBytesOutstanding = totalBytesOutstanding;
         this.channelFactory = channelFactory;
         this.state = ConnectionState.DISCONNECTED;
-        this.readTimeoutTimer = new HashedWheelTimer();
+        this.readTimeoutTimer = null;
     }
 
     synchronized private void connect() {
@@ -302,6 +302,10 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         if (channel != null) {
             channel.close().awaitUninterruptibly();
         }
+        if (readTimeoutTimer != null) {
+            readTimeoutTimer.stop();
+            readTimeoutTimer = null;
+        }
     }
 
     void errorOutReadKey(final CompletionKey key) {
@@ -382,6 +386,10 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = Channels.pipeline();
 
+        if (readTimeoutTimer == null) {
+            readTimeoutTimer = new HashedWheelTimer();
+        }
+
         pipeline.addLast("readTimeout", new ReadTimeoutHandler(readTimeoutTimer, 
                                                                conf.getReadTimeout()));
         pipeline.addLast("lengthbasedframedecoder", new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 0, 4, 0, 4));
@@ -397,7 +405,6 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         LOG.info("Disconnected from bookie: " + addr);
         errorOutOutstandingEntries();
         channel.close();
-        readTimeoutTimer.stop();
 
         state = ConnectionState.DISCONNECTED;
 
