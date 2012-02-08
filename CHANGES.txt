@@ -37,7 +37,6 @@ Trunk (unreleased changes)
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)
 
         BOOKKEEPER-133: Hub server should update subscription state to zookeeper when losing topic or shutting down (Sijie Gou via ivank)
-
     IMPROVEMENTS:
 
       bookkeeper-server/
@@ -48,6 +47,9 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-157:	For small packets, increasing number of bookies actually degrades performance. (ivank via fpj)
 
+      hedwig-server/
+
+        BOOKKEEPER-77: Add a console client for hedwig (Sijie Guo via ivank)
 
 Release 4.0.0 - 2011-11-30
 

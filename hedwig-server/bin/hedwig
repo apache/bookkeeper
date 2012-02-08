@@ -34,6 +34,8 @@ HW_HOME=`cd $BINDIR/..;pwd`
 
 DEFAULT_CONF=$HW_HOME/conf/hw_server.conf
 
+. $HW_HOME/conf/hwenv.sh
+
 RELEASE_JAR=`ls $HW_HOME/hedwig-server-*.jar 2> /dev/null | tail -1`
 if [ $? == 0 ]; then
     HEDWIG_JAR=$RELEASE_JAR
@@ -78,6 +80,7 @@ hedwig_help() {
 Usage: hedwig <command>
 where command is one of:
     server           Run the hedwig server
+    console          Run the hedwig admin console
     help             This help message
 
 or command is the full name of a class with a defined main() method.
@@ -118,6 +121,8 @@ OPTS="$OPTS -Djava.net.preferIPv4Stack=true"
 
 if [ $COMMAND == "server" ]; then
     exec java $OPTS org.apache.hedwig.server.netty.PubSubServer $HEDWIG_SERVER_CONF $@
+elif [ $COMMAND == "console" ]; then
+    exec java $OPTS org.apache.hedwig.admin.console.HedwigConsole -server-cfg $HEDWIG_SERVER_CONF $@
 elif [ $COMMAND == "help" ]; then
     hedwig_help;
 else
