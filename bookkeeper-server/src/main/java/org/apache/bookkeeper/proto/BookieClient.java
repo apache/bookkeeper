@@ -65,7 +65,7 @@ public class BookieClient {
         PerChannelBookieClient channel = channels.get(addr);
 
         if (channel == null) {
-            channel = new PerChannelBookieClient(executor, channelFactory, addr, totalBytesOutstanding);
+            channel = new PerChannelBookieClient(conf, executor, channelFactory, addr, totalBytesOutstanding);
             PerChannelBookieClient prevChannel = channels.putIfAbsent(addr, channel);
             if (prevChannel != null) {
                 channel = prevChannel;
