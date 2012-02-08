@@ -30,6 +30,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-167: PerChannelBookieClient doesn't use ClientConfiguration (Sijie Guo via ivank)
 
+        BOOKKEEPER-156: BookieJournalRollingTest failing (Sijie Guo via ivank)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)

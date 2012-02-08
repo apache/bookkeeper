@@ -128,6 +128,11 @@ public abstract class BaseTestCase extends TestCase {
             zkc.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             zkc.create("/ledgers/available", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 
+            baseClientConf.setZkServers("127.0.0.1");
+            if (numBookies > 0) {
+                bkc = new BookKeeperTestClient(baseClientConf);
+            }
+
             // Create Bookie Servers (B1, B2, B3)
             for (int i = 0; i < numBookies; i++) {
                 File f = File.createTempFile("bookie", "test");
@@ -139,14 +144,7 @@ public abstract class BaseTestCase extends TestCase {
                     initialPort + i, HOSTPORT, f, new File[] { f });
                 bsConfs.add(conf);
 
-                BookieServer server = new BookieServer(conf);
-                server.start();
-                bs.add(server);
-            }
-
-            baseClientConf.setZkServers("127.0.0.1");
-            if (numBookies > 0) {
-                bkc = new BookKeeperTestClient(baseClientConf);
+                bs.add(startBookie(conf));
             }
         } catch(Exception e) {
             LOG.error("Error setting up", e);
@@ -223,9 +221,7 @@ public abstract class BaseTestCase extends TestCase {
             if (null != newConf) {
                 conf.loadConf(newConf);
             }
-            BookieServer server = new BookieServer(conf);
-            server.start();
-            bs.add(server);
+            bs.add(startBookie(conf));
             j++;
         }
     }
@@ -247,16 +243,29 @@ public abstract class BaseTestCase extends TestCase {
 
         ServerConfiguration conf = newServerConfiguration(port, HOSTPORT, f, new File[] { f });
 
+        bs.add(startBookie(conf));
+    }
+
+    /**
+     * Helper method to startup a bookie server using a configuration object
+     *
+     * @param conf
+     *            Server Configuration Object
+     *
+     */
+    private BookieServer startBookie(ServerConfiguration conf)
+            throws IOException, InterruptedException, KeeperException {
         BookieServer server = new BookieServer(conf);
         server.start();
-        bs.add(server);
 
+        int port = conf.getBookiePort();
         while(bkc.getZkHandle().exists("/ledgers/available/" + InetAddress.getLocalHost().getHostAddress() + ":" + port, false) == null) {
             Thread.sleep(500);
         }
 
         bkc.readBookiesBlocking();
         LOG.info("New bookie on port " + port + " has been created.");
+        return server;
     }
 
     @After
