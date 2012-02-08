@@ -302,12 +302,12 @@ public class Bookie extends Thread {
         ByteBuffer lenBuff = ByteBuffer.allocate(4);
         ByteBuffer recBuff = ByteBuffer.allocate(64*1024);
         for(Long id: logs) {
-            FileChannel recLog ;
+            JournalChannel recLog;
             if(id == markedLogId) {
-              long markedLogPosition = lastLogMark.txnLogPosition;
-              recLog = openChannel(id, markedLogPosition);
+                long markedLogPosition = lastLogMark.txnLogPosition;
+                recLog = new JournalChannel(journalDirectory, id, markedLogPosition);
             } else {
-              recLog = openChannel(id);
+                recLog = new JournalChannel(journalDirectory, id);
             }
 
             while(true) {
@@ -344,6 +344,7 @@ public class Bookie extends Thread {
                     putHandle(handle);
                 }
             }
+            recLog.close();
         }
         // pass zookeeper instance here
         // since GarbageCollector thread should only start after journal
@@ -602,7 +603,7 @@ public class Bookie extends Thread {
         }
     }
 
-    private static int fullRead(FileChannel fc, ByteBuffer bb) throws IOException {
+    private static int fullRead(JournalChannel fc, ByteBuffer bb) throws IOException {
         int total = 0;
         while(bb.remaining() > 0) {
             int rc = fc.read(bb);
@@ -711,10 +712,6 @@ public class Bookie extends Thread {
     }
 
     LinkedBlockingQueue<QueueEntry> queue = new LinkedBlockingQueue<QueueEntry>();
-
-    public final static long preAllocSize = 4*1024*1024;
-
-    public final static ByteBuffer zeros = ByteBuffer.allocate(512);
 
     class LastLogMark {
         long txnLogId;
@@ -825,7 +822,7 @@ public class Bookie extends Thread {
         ByteBuffer lenBuff = ByteBuffer.allocate(4);
         try {
             long logId = 0;
-            FileChannel logFile = null;
+            JournalChannel logFile = null;
             BufferedChannel bc = null;
             long nextPrealloc = 0;
             long lastFlushPosition = 0;
@@ -835,12 +832,10 @@ public class Bookie extends Thread {
                 // new journal file to write
                 if (null == logFile) {
                     logId = System.currentTimeMillis();
-                    logFile = openChannel(logId);
-                    bc = new BufferedChannel(logFile, 65536);
-                    zeros.clear();
-                    nextPrealloc = preAllocSize;
+                    logFile = new JournalChannel(journalDirectory, logId);
+                    bc = logFile.getBufferedChannel();
+
                     lastFlushPosition = 0;
-                    logFile.write(zeros, nextPrealloc);
                 }
 
                 if (qe == null) {
@@ -884,33 +879,15 @@ public class Bookie extends Thread {
                 // logFile.write(new ByteBuffer[] { lenBuff, qe.entry });
                 bc.write(lenBuff);
                 bc.write(qe.entry);
-                if (bc.position() > nextPrealloc) {
-                    nextPrealloc = (logFile.size() / preAllocSize + 1) * preAllocSize;
-                    zeros.clear();
-                    logFile.write(zeros, nextPrealloc);
-                }
+
+                logFile.preAllocIfNeeded();
+
                 toFlush.add(qe);
                 qe = null;
             }
         } catch (Exception e) {
             LOG.error("Bookie thread exiting", e);
         }
-    }
-
-    private FileChannel openChannel(long logId) throws FileNotFoundException {
-        return openChannel(logId, 0);
-    }
-
-    private FileChannel openChannel(long logId, long position) throws FileNotFoundException {
-        FileChannel logFile = new RandomAccessFile(new File(journalDirectory,
-                Long.toHexString(logId) + ".txn"),
-                "rw").getChannel();
-        try {
-            logFile.position(position);
-        } catch (IOException e) {
-            LOG.error("Bookie journal file can seek to position :", e);
-        }
-        return logFile;
     }
 
     public synchronized void shutdown() throws InterruptedException {

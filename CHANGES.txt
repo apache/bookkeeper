@@ -47,6 +47,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-157:	For small packets, increasing number of bookies actually degrades performance. (ivank via fpj)
 
+        BOOKKEEPER-165: Add versioning support for journal files (ivank)
+
       hedwig-server/
 
         BOOKKEEPER-77: Add a console client for hedwig (Sijie Guo via ivank)

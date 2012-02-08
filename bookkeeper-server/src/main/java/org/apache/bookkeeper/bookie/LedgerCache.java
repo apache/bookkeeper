@@ -197,7 +197,7 @@ public class LedgerCache {
         }
     }
 
-    static final private String getLedgerName(long ledgerId) {
+    static final String getLedgerName(long ledgerId) {
         int parent = (int) (ledgerId & 0xff);
         int grandParent = (int) ((ledgerId & 0xff00) >> 8);
         StringBuilder sb = new StringBuilder();
