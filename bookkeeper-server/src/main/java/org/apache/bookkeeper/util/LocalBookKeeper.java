@@ -27,6 +27,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.slf4j.Logger;
@@ -123,7 +124,7 @@ public class LocalBookKeeper {
         }
     }
     private void runBookies(ServerConfiguration baseConf) 
-            throws IOException, KeeperException, InterruptedException {
+            throws IOException, KeeperException, InterruptedException, BookieException {
         LOG.info("Starting Bookie(s)");
         // Create Bookie Servers (B1, B2, B3)
 
@@ -150,7 +151,7 @@ public class LocalBookKeeper {
     }
 
     public static void main(String[] args)
-            throws IOException, KeeperException, InterruptedException {
+            throws IOException, KeeperException, InterruptedException, BookieException {
         if(args.length < 1) {
             usage();
             System.exit(-1);

@@ -126,7 +126,7 @@ public class BookieLayoutVersionTest extends BaseTestCase {
         try {
             Bookie b = new Bookie(newServerConfiguration(
                 BOOKIE_PORT, HOSTPORT, newDirectoryWithoutVersion(),
-                new File[] { newDirectory(Bookie.CURRENT_DIRECTORY_LAYOUT_VERSION - 1) }));
+                new File[] { newDirectory(Bookie.MIN_COMPAT_DIRECTORY_LAYOUT_VERSION - 1) }));
             fail("Shouldn't reach here");
         } catch (IOException ioe) {
             assertTrue("Invalid exception", 
@@ -136,7 +136,7 @@ public class BookieLayoutVersionTest extends BaseTestCase {
         // test with bad data dir
         try {
             Bookie b = new Bookie(newServerConfiguration(
-                BOOKIE_PORT, HOSTPORT, newDirectory(Bookie.CURRENT_DIRECTORY_LAYOUT_VERSION - 1),
+                BOOKIE_PORT, HOSTPORT, newDirectory(Bookie.MIN_COMPAT_DIRECTORY_LAYOUT_VERSION - 1),
                 new File[] { newDirectoryWithoutVersion() }));
             fail("Shouldn't reach here");
         } catch (IOException ioe) {
@@ -147,8 +147,8 @@ public class BookieLayoutVersionTest extends BaseTestCase {
         // test with both bad        
         try {
             Bookie b = new Bookie(newServerConfiguration(
-                BOOKIE_PORT, HOSTPORT, newDirectory(Bookie.CURRENT_DIRECTORY_LAYOUT_VERSION - 1),
-                new File[] { newDirectory(Bookie.CURRENT_DIRECTORY_LAYOUT_VERSION - 1) }));
+                BOOKIE_PORT, HOSTPORT, newDirectory(Bookie.MIN_COMPAT_DIRECTORY_LAYOUT_VERSION - 1),
+                new File[] { newDirectory(Bookie.MIN_COMPAT_DIRECTORY_LAYOUT_VERSION - 1) }));
             fail("Shouldn't reach here");
         } catch (IOException ioe) {
             assertTrue("Invalid exception", 
@@ -162,11 +162,11 @@ public class BookieLayoutVersionTest extends BaseTestCase {
         try {
             Bookie b = new Bookie(newServerConfiguration(
                     BOOKIE_PORT, HOSTPORT, newDirectory(Bookie.CURRENT_DIRECTORY_LAYOUT_VERSION),
-                    new File[] { newDirectory(Bookie.CURRENT_DIRECTORY_LAYOUT_VERSION - 1),
+                    new File[] { newDirectory(Bookie.MIN_COMPAT_DIRECTORY_LAYOUT_VERSION - 1),
                                  newDirectory(Bookie.CURRENT_DIRECTORY_LAYOUT_VERSION),
                                  newDirectory(Bookie.CURRENT_DIRECTORY_LAYOUT_VERSION + 1),
                                  newDirectory(Bookie.CURRENT_DIRECTORY_LAYOUT_VERSION),
-                                 newDirectory(Bookie.CURRENT_DIRECTORY_LAYOUT_VERSION - 1),}));
+                                 newDirectory(Bookie.MIN_COMPAT_DIRECTORY_LAYOUT_VERSION - 1),}));
             fail("Shouldn't reach here");
         } catch (IOException ioe) {
             assertTrue("Invalid exception", 

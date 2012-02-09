@@ -67,7 +67,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     protected BookieServerBean jmxBkServerBean;
 
     public BookieServer(ServerConfiguration conf) 
-            throws IOException, KeeperException, InterruptedException {
+            throws IOException, KeeperException, InterruptedException, BookieException {
         this.conf = conf;
         this.bookie = new Bookie(conf);
 
@@ -261,7 +261,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
      * @throws InterruptedException
      */
     public static void main(String[] args) 
-            throws IOException, KeeperException, InterruptedException {
+            throws IOException, KeeperException, InterruptedException, BookieException {
         ServerConfiguration conf = null;
         try {
             conf = parseArgs(args);

@@ -23,6 +23,7 @@ package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,16 +44,45 @@ public class LedgerDescriptor {
         this.ledgerCache = ledgerCache;
     }
 
-    private ByteBuffer masterKey = null;
+    private byte[] masterKey = null;
     volatile private boolean fenced = false;
+    private boolean masterKeyPersisted = false;
 
-    void setMasterKey(ByteBuffer masterKey) {
-        this.masterKey = masterKey;
+    synchronized boolean isMasterKeyPersisted() {
+        if (masterKeyPersisted) {
+            return true;
+        }
+
+        try {
+            FileInfo fi = ledgerCache.getFileInfo(ledgerId, masterKey);
+            fi.readHeader();
+            masterKeyPersisted = true;
+            return true;
+        } catch (IOException ioe) {
+            return false;
+        }
     }
 
-    boolean cmpMasterKey(ByteBuffer masterKey) {
-        return this.masterKey.equals(masterKey);
+    void setMasterKeyPersisted() {
+        masterKeyPersisted = true;
     }
+
+    void checkAccess(byte masterKey[]) throws BookieException, IOException {
+        if (this.masterKey == null) {
+            FileInfo fi = ledgerCache.getFileInfo(ledgerId, masterKey);
+            try {
+                if (fi == null) {
+                    throw new IOException(ledgerId + " does not exist");
+                }
+                this.masterKey = fi.getMasterKey();
+            } finally {
+                fi.release();
+            }
+        }
+        if (!Arrays.equals(this.masterKey, masterKey)) {
+            throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
+        }
+    } 
 
     private long ledgerId;
     public long getLedgerId() {
@@ -109,7 +139,7 @@ public class LedgerDescriptor {
             long lastEntry = ledgerCache.getLastEntry(ledgerId);
             FileInfo fi = null;
             try {
-                fi = ledgerCache.getFileInfo(ledgerId, false);
+                fi = ledgerCache.getFileInfo(ledgerId, null);
                 long size = fi.size();
                 // we may not have the last entry in the cache
                 if (size > lastEntry*8) {

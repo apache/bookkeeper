@@ -50,6 +50,7 @@ import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

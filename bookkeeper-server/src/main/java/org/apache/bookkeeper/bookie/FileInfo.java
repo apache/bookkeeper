@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
  * <b>Header</b> is formated as below:
  * <pre>&lt;magic bytes&gt;&lt;len of master key&gt;&lt;master key&gt;</pre>
  * <ul>
- * <li>magic bytes: 8 bytes, 'BKLE\0\0\0\0'
+ * <li>magic bytes: 4 bytes, 'BKLE', version: 4 bytes
  * <li>len of master key: indicates length of master key. -1 means no master key stored in header.
  * <li>master key: master key
  * </ul>
@@ -54,78 +54,86 @@ class FileInfo {
 
     private FileChannel fc;
     private final File lf;
+    byte[] masterKey;
+
     /**
      * The fingerprint of a ledger index file
      */
-    private byte header[] = "BKLE\0\0\0\0".getBytes();
+    static final public int signature = ByteBuffer.wrap("BKLE".getBytes()).getInt();
+    static final public int headerVersion = 0;
+
     static final long START_OF_DATA = 1024;
     private long size;
     private int useCount;
     private boolean isClosed;
-    public FileInfo(File lf) throws IOException {
+
+    public FileInfo(File lf, byte[] masterKey) throws IOException {
         this.lf = lf;
-        fc = new RandomAccessFile(lf, "rws").getChannel();
-        size = fc.size();
-        if (size == 0) {
-            fc.write(ByteBuffer.wrap(header));
-            // write NO_MASTER_KEY, which means there is no master key
-            ByteBuffer buf = ByteBuffer.allocate(4);
-            buf.putInt(NO_MASTER_KEY);
-            buf.flip();
-            fc.write(buf);
+
+        this.masterKey = masterKey;
+    }
+
+    synchronized public void readHeader() throws IOException {
+        if (lf.exists()) {
+            if (fc != null) {
+                return;
+            }
+
+            fc = new RandomAccessFile(lf, "rw").getChannel();
+            size = fc.size();
+
+            ByteBuffer bb = ByteBuffer.allocate(1024);
+            while(bb.hasRemaining()) {
+                fc.read(bb);
+            }
+            bb.flip();
+            if (bb.getInt() != signature) {
+                throw new IOException("Missing ledger signature");
+            }
+            int version = bb.getInt();
+            if (version != headerVersion) {
+                throw new IOException("Incompatible ledger version " + version);
+            }
+            int length = bb.getInt();
+            if (length < 0 || length > bb.remaining()) {
+                throw new IOException("Length " + length + " is invalid");
+            }
+            masterKey = new byte[length];
+            bb.get(masterKey);
+        } else {
+            throw new IOException("Ledger index file does not exist");
         }
     }
 
-    /**
-     * Write master key to index file header
-     *
-     * @param masterKey master key to store
-     * @return void
-     * @throws IOException
-     */
-    synchronized public void writeMasterKey(byte[] masterKey) throws IOException {
-        // write master key
-        if (masterKey == null ||
-            masterKey.length + 4 + header.length > START_OF_DATA) {
-            throw new IOException("master key is more than " + (START_OF_DATA - 4 - header.length));
+    synchronized private void checkOpen(boolean create) throws IOException {
+        if (fc != null) {
+            return;
         }
-
-        int len = masterKey.length;
-        ByteBuffer lenBuf = ByteBuffer.allocate(4);
-        lenBuf.putInt(len);
-        lenBuf.flip();
-        fc.position(header.length);
-        fc.write(lenBuf);
-        fc.write(ByteBuffer.wrap(masterKey));
+        boolean exists = lf.exists();
+        if (masterKey == null && !exists) {
+            throw new IOException(lf + " not found");
+        }
+        ByteBuffer bb = ByteBuffer.allocate(1024);
+        if (!exists) { 
+            if (create) {
+                fc = new RandomAccessFile(lf, "rw").getChannel();
+                size = fc.size();
+                if (size == 0) {
+                    bb.putInt(signature);
+                    bb.putInt(headerVersion);
+                    bb.putInt(masterKey.length);
+                    bb.put(masterKey);
+                    bb.rewind();
+                    fc.write(bb);
+                }
+            }
+        } else {
+            readHeader();
+        }
     }
 
-    /**
-     * Read master key
-     *
-     * @return master key. null means no master key stored in index header
-     * @throws IOException
-     */
-    synchronized public byte[] readMasterKey() throws IOException {
-        ByteBuffer lenBuf = ByteBuffer.allocate(4);
-        int total = readAbsolute(lenBuf, header.length);
-        if (total != 4) {
-            throw new IOException("Short read during reading master key length");
-        }
-        lenBuf.rewind();
-        int len = lenBuf.getInt();
-        if (len == NO_MASTER_KEY) {
-            return null;
-        }
-
-        byte[] masterKey = new byte[len];
-        total = readAbsolute(ByteBuffer.wrap(masterKey), header.length + 4);
-        if (total != len) {
-            throw new IOException("Short read during reading master key");
-        }
-        return masterKey;
-    }
-
-    synchronized public long size() {
+    synchronized public long size() throws IOException {
+        checkOpen(false);
         long rc = size-START_OF_DATA;
         if (rc < 0) {
             rc = 0;
@@ -138,6 +146,7 @@ class FileInfo {
     }
 
     private int readAbsolute(ByteBuffer bb, long start) throws IOException {
+        checkOpen(false);
         int total = 0;
         while(bb.remaining() > 0) {
             int rc = fc.read(bb, start);
@@ -153,12 +162,13 @@ class FileInfo {
 
     synchronized public void close() throws IOException {
         isClosed = true;
-        if (useCount == 0) {
+        if (useCount == 0 && fc != null) {
             fc.close();
         }
     }
 
     synchronized public long write(ByteBuffer[] buffs, long position) throws IOException {
+        checkOpen(true);
         long total = 0;
         try {
             fc.position(position+START_OF_DATA);
@@ -170,6 +180,7 @@ class FileInfo {
                 total += rc;
             }
         } finally {
+            fc.force(true);
             long newsize = position+START_OF_DATA+total;
             if (newsize > size) {
                 size = newsize;
@@ -178,13 +189,18 @@ class FileInfo {
         return total;
     }
 
+    synchronized public byte[] getMasterKey() throws IOException {
+        checkOpen(false);
+        return masterKey;
+    }
+
     synchronized public void use() {
         useCount++;
     }
 
     synchronized public void release() {
         useCount--;
-        if (isClosed && useCount == 0) {
+        if (isClosed && useCount == 0 && fc != null) {
             try {
                 fc.close();
             } catch (IOException e) {
@@ -193,12 +209,7 @@ class FileInfo {
         }
     }
 
-    /**
-     * Getter to a handle on the actual ledger index file.
-     * This is used when we are deleting a ledger and want to physically remove the index file.
-     */
-    File getFile() {
-        return lf;
+    public boolean delete() {
+        return lf.delete();
     }
-
 }

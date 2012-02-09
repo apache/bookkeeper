@@ -226,7 +226,7 @@ public class LedgerCache {
         return dirs[rand.nextInt(dirs.length)];
     }
 
-    FileInfo getFileInfo(Long ledger, boolean create) throws IOException {
+    FileInfo getFileInfo(Long ledger, byte masterKey[]) throws IOException {
         synchronized(fileInfoCache) {
             FileInfo fi = fileInfoCache.get(ledger);
             if (fi == null) {
@@ -240,7 +240,7 @@ public class LedgerCache {
                     lf = null;
                 }
                 if (lf == null) {
-                    if (!create) {
+                    if (masterKey == null) {
                         throw new Bookie.NoLedgerException(ledger);
                     }
                     File dir = pickDirs(ledgerDirectories);
@@ -256,7 +256,7 @@ public class LedgerCache {
                 if (openLedgers.size() > openFileLimit) {
                     fileInfoCache.remove(openLedgers.removeFirst()).close();
                 }
-                fi = new FileInfo(lf);
+                fi = new FileInfo(lf, masterKey);
                 fileInfoCache.put(ledger, fi);
                 openLedgers.add(ledger);
             }
@@ -272,7 +272,7 @@ public class LedgerCache {
         }
         FileInfo fi = null;
         try {
-            fi = getFileInfo(lep.getLedger(), true);
+            fi = getFileInfo(lep.getLedger(), null);
             long pos = lep.getFirstEntry()*8;
             if (pos >= fi.size()) {
                 lep.zeroPage();
@@ -338,7 +338,7 @@ public class LedgerCache {
                         }
                     });
                     ArrayList<Integer> versions = new ArrayList<Integer>(entries.size());
-                    fi = getFileInfo(l, true);
+                    fi = getFileInfo(l, null);
                     int start = 0;
                     long lastOffset = -1;
                     for(int i = 0; i < entries.size(); i++) {
@@ -427,6 +427,7 @@ public class LedgerCache {
                 LedgerEntryPage lep = new LedgerEntryPage(pageSize, entriesPerPage);
                 lep.setLedger(ledger);
                 lep.setFirstEntry(entry);
+
                 // note, this will not block since it is a new page
                 lep.usePage();
                 pageCount++;
@@ -536,8 +537,8 @@ public class LedgerCache {
         if (LOG.isDebugEnabled())
             LOG.debug("Deleting ledgerId: " + ledgerId);
         // Delete the ledger's index file and close the FileInfo
-        FileInfo fi = getFileInfo(ledgerId, false);
-        fi.getFile().delete();
+        FileInfo fi = getFileInfo(ledgerId, null);
+        fi.delete();
         fi.close();
 
         // Remove it from the active ledger manager

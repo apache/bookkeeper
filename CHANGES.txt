@@ -49,6 +49,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-165: Add versioning support for journal files (ivank)
 
+        BOOKKEEPER-137: Do not create Ledger index files until absolutely necessary. (ivank)
+
       hedwig-server/
 
         BOOKKEEPER-77: Add a console client for hedwig (Sijie Guo via ivank)

@@ -59,8 +59,9 @@ public class BookieJournalTest {
             throws Exception {
         File fn = new File(indexDir, LedgerCache.getLedgerName(ledgerId));
         fn.getParentFile().mkdirs();
-        FileInfo fi = new FileInfo(fn);
-        fi.writeMasterKey(masterKey);
+        FileInfo fi = new FileInfo(fn, masterKey);
+        // force creation of index file
+        fi.write(new ByteBuffer[]{ ByteBuffer.allocate(0) }, 0);
         fi.close();
     }
 

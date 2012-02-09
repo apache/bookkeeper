@@ -36,6 +36,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.bookie.BookieException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.KeeperException;
@@ -199,7 +200,7 @@ public abstract class BaseTestCase extends TestCase {
      * @throws IOException
      */
     protected void restartBookies() 
-            throws InterruptedException, IOException, KeeperException {
+            throws InterruptedException, IOException, KeeperException, BookieException {
         restartBookies(null);
     }
 
@@ -207,7 +208,7 @@ public abstract class BaseTestCase extends TestCase {
      * Restart bookie servers add new configuration settings
      */
     protected void restartBookies(ServerConfiguration newConf)
-            throws InterruptedException, IOException, KeeperException {
+            throws InterruptedException, IOException, KeeperException, BookieException {
         // shut down bookie server
         for (BookieServer server : bs) {
             server.shutdown();
@@ -235,7 +236,7 @@ public abstract class BaseTestCase extends TestCase {
      * @throws IOException
      */
     protected void startNewBookie(int port)
-            throws IOException, InterruptedException, KeeperException {
+            throws IOException, InterruptedException, KeeperException, BookieException {
         File f = File.createTempFile("bookie", "test");
         tmpDirs.add(f);
         f.delete();
@@ -254,7 +255,7 @@ public abstract class BaseTestCase extends TestCase {
      *
      */
     private BookieServer startBookie(ServerConfiguration conf)
-            throws IOException, InterruptedException, KeeperException {
+            throws IOException, InterruptedException, KeeperException, BookieException {
         BookieServer server = new BookieServer(conf);
         server.start();
 

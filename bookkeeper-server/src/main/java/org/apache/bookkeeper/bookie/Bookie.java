@@ -87,9 +87,12 @@ public class Bookie extends Thread {
      * when you make a change to the format of any of the files in 
      * this directory or to the general layout of the directory.
      */
-    static final int CURRENT_DIRECTORY_LAYOUT_VERSION = 1;
+    static final int MIN_COMPAT_DIRECTORY_LAYOUT_VERSION = 1;
+    static final int CURRENT_DIRECTORY_LAYOUT_VERSION = 2;
     static final String VERSION_FILENAME = "VERSION";
-    
+
+    static final long METAENTRY_ID_LEDGER_KEY = -0x1000;
+
     // ZK registration path for this bookie
     static final String BOOKIE_REGISTRATION_PATH = "/ledgers/available/";
 
@@ -250,7 +253,7 @@ public class Bookie extends Thread {
     }
 
     public Bookie(ServerConfiguration conf) 
-            throws IOException, KeeperException, InterruptedException {
+            throws IOException, KeeperException, InterruptedException, BookieException {
         super("Bookie-" + conf.getBookiePort());
         this.conf = conf;
         this.journalDirectory = conf.getJournalDir();
@@ -336,12 +339,28 @@ public class Bookie extends Thread {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Relay journal - ledger id : " + ledgerId);
                 }
-                LedgerDescriptor handle = getHandle(ledgerId, false);
-                try {
-                    recBuff.rewind();
-                    handle.addEntry(recBuff);
-                } finally {
-                    putHandle(handle);
+                LedgerDescriptor handle = getHandle(ledgerId);
+                long entryId = recBuff.getLong();
+                if (entryId == METAENTRY_ID_LEDGER_KEY) {
+                    if (recLog.getFormatVersion() >= 3) {
+                        int masterKeyLen = recBuff.getInt();
+                        byte[] masterKey = new byte[masterKeyLen];
+                        recBuff.get(masterKey);
+                        
+                        handle.checkAccess(masterKey);
+                        putHandle(handle);
+                    } else {
+                        throw new IOException("Invalid journal. Contains journalKey "
+                                + " but layout version (" + recLog.getFormatVersion() 
+                                + ") is too old to hold this");
+                    }
+                } else {
+                    try {
+                        recBuff.rewind();
+                        handle.addEntry(recBuff);
+                    } finally {
+                        putHandle(handle);
+                    }
                 }
             }
             recLog.close();
@@ -540,7 +559,7 @@ public class Bookie extends Thread {
      * @throws IOException if layout version if is outside usable range
      *               or if there is a problem reading the version file
      */
-    private void checkDirectoryLayoutVersion(File dir) 
+    private void checkDirectoryLayoutVersion(File dir)
             throws IOException {
         if (!dir.isDirectory()) {
             throw new IOException("Directory("+dir+") isn't a directory");
@@ -566,8 +585,10 @@ public class Bookie extends Thread {
         try {
             String layoutVersionStr = br.readLine();
             int layoutVersion = Integer.parseInt(layoutVersionStr);
-            if (layoutVersion != CURRENT_DIRECTORY_LAYOUT_VERSION) {
-                String errmsg = "Directory has an invalid version, expected " 
+            if (layoutVersion < MIN_COMPAT_DIRECTORY_LAYOUT_VERSION
+                || layoutVersion > CURRENT_DIRECTORY_LAYOUT_VERSION) {
+                String errmsg = "Directory has an invalid version, expected between "
+                    + MIN_COMPAT_DIRECTORY_LAYOUT_VERSION + " and "
                     + CURRENT_DIRECTORY_LAYOUT_VERSION + ", found " + layoutVersion;
                 LOG.error(errmsg);
                 throw new IOException(errmsg);
@@ -620,73 +641,38 @@ public class Bookie extends Thread {
         }
     }
 
-    private LedgerDescriptor getHandle(long ledgerId, boolean readonly, byte[] masterKey) throws IOException {
+    private LedgerDescriptor getHandle(long ledgerId, boolean readonly, byte[] masterKey) 
+            throws IOException, BookieException {
         LedgerDescriptor handle = null;
         synchronized (ledgers) {
             handle = ledgers.get(ledgerId);
             if (handle == null) {
-                FileInfo fi = null;
-                try {
-                    // get file info will throw NoLedgerException
-                    fi = ledgerCache.getFileInfo(ledgerId, !readonly);
-
-                    // if an existed ledger index file, we can get its master key
-                    // if an new created ledger index file, we will get a null master key
-                    byte[] existingMasterKey = fi.readMasterKey();
-                    ByteBuffer masterKeyToSet = ByteBuffer.wrap(masterKey);
-                    if (existingMasterKey == null) {
-                        // no master key set before
-                        fi.writeMasterKey(masterKey);
-                    } else if (!masterKeyToSet.equals(ByteBuffer.wrap(existingMasterKey))) {
-                        throw new IOException("Wrong master key for ledger " + ledgerId);
-                    }
-                    handle = createHandle(ledgerId, readonly);
-                    ledgers.put(ledgerId, handle);
-                    handle.setMasterKey(masterKeyToSet);
-                } finally {
-                    if (fi != null) {
-                        fi.release();
-                    }
+                if (readonly) {
+                    throw new NoLedgerException(ledgerId);
                 }
+                handle = createHandle(ledgerId);
+                ledgers.put(ledgerId, handle);
+            }
+            handle.checkAccess(masterKey);
+            handle.incRef();
+        }
+        return handle;
+    }
+
+    private LedgerDescriptor getHandle(long ledgerId) throws IOException {
+        LedgerDescriptor handle = null;
+        synchronized (ledgers) {
+            handle = ledgers.get(ledgerId);
+            if (handle == null) {
+                handle = createHandle(ledgerId);
+                ledgers.put(ledgerId, handle);
             }
             handle.incRef();
         }
         return handle;
     }
 
-    private LedgerDescriptor getHandle(long ledgerId, boolean readonly) throws IOException {
-        LedgerDescriptor handle = null;
-        synchronized (ledgers) {
-            handle = ledgers.get(ledgerId);
-            if (handle == null) {
-                FileInfo fi = null;
-                try {
-                    // get file info will throw NoLedgerException
-                    fi = ledgerCache.getFileInfo(ledgerId, !readonly);
-
-                    // if an existed ledger index file, we can get its master key
-                    // if an new created ledger index file, we will get a null master key
-                    byte[] existingMasterKey = fi.readMasterKey();
-                    if (existingMasterKey == null) {
-                        throw new IOException("Weird! No master key found in ledger " + ledgerId);
-                    }
-
-                    handle = createHandle(ledgerId, readonly);
-                    ledgers.put(ledgerId, handle);
-                    handle.setMasterKey(ByteBuffer.wrap(existingMasterKey));
-                } finally {
-                    if (fi != null) {
-                        fi.release();
-                    }
-                }
-            }
-            handle.incRef();
-        }
-        return handle;
-    }
-
-
-    private LedgerDescriptor createHandle(long ledgerId, boolean readOnly) throws IOException {
+    private LedgerDescriptor createHandle(long ledgerId) throws IOException {
         return new LedgerDescriptor(ledgerId, entryLogger, ledgerCache);
     }
 
@@ -920,13 +906,28 @@ public class Bookie extends Thread {
     private LedgerDescriptor getLedgerForEntry(ByteBuffer entry, byte[] masterKey) 
             throws IOException, BookieException {
         long ledgerId = entry.getLong();
-        LedgerDescriptor handle = getHandle(ledgerId, false, masterKey);
+        LedgerDescriptor l = getHandle(ledgerId, false, masterKey);
+        if (!l.isMasterKeyPersisted()) {
+            // new handle, we should add the key to journal ensure we can rebuild
+            ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
+            bb.putLong(ledgerId);
+            bb.putLong(METAENTRY_ID_LEDGER_KEY);
+            bb.putInt(masterKey.length);
+            bb.put(masterKey);
+            bb.flip();
 
-        if(!handle.cmpMasterKey(ByteBuffer.wrap(masterKey))) {
-            putHandle(handle);
-            throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
+            queue.add(new QueueEntry(bb,
+                                     ledgerId, METAENTRY_ID_LEDGER_KEY,
+                                     new WriteCallback() {
+                                         public void writeComplete(int rc, long ledgerId, 
+                                                 long entryId, InetSocketAddress addr,
+                                                 Object ctx) {
+                                             // do nothing
+                                         }
+                                     }, null));
+            l.setMasterKeyPersisted();
         }
-        return handle;
+        return l;
     }
 
     /**
@@ -991,14 +992,14 @@ public class Bookie extends Thread {
      * never be unfenced. Fencing a fenced ledger has no effect.
      */
     public void fenceLedger(long ledgerId) throws IOException {
-        LedgerDescriptor handle = getHandle(ledgerId, true);
+        LedgerDescriptor handle = getHandle(ledgerId);
         synchronized (handle) {
             handle.setFenced();
         }
     }
 
     public ByteBuffer readEntry(long ledgerId, long entryId) throws IOException {
-        LedgerDescriptor handle = getHandle(ledgerId, true);
+        LedgerDescriptor handle = getHandle(ledgerId);
         try {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("Reading " + entryId + "@" + ledgerId);
