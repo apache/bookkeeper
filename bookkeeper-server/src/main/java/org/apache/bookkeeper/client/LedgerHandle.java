@@ -55,7 +55,6 @@ import org.jboss.netty.buffer.ChannelBuffer;
  */
 public class LedgerHandle {
     final static Logger LOG = LoggerFactory.getLogger(LedgerHandle.class);
-    final static long LAST_ADD_CONFIRMED = -1;
 
     final byte[] ledgerKey;
     LedgerMetadata metadata;
@@ -107,7 +106,14 @@ public class LedgerHandle {
     }
 
     /**
-     * Get the last confirmed entry id on this ledger
+     * Get the last confirmed entry id on this ledger. It reads
+     * the local state of the ledger handle, which is different
+     * from the readLastConfirmed call. In the case the ledger
+     * is not closed and the client is a reader, it is necessary
+     * to call readLastConfirmed to obtain an estimate of the
+     * last add operation that has been confirmed.  
+     * 
+     * @see #readLastConfirmed()
      *
      * @return the last confirmed entry id
      */
@@ -478,7 +484,15 @@ public class LedgerHandle {
     }
 
     /**
-     * Obtains last confirmed write from a quorum of bookies.
+     * Obtains asynchronously the last confirmed write from a quorum of bookies. This 
+     * call obtains the the last add confirmed each bookie has received for this ledger
+     * and returns the maximum. If the ledger has been closed, the value returned by this
+     * call may not correspond to the id of the last entry of the ledger, since it reads
+     * the hint of bookies. Consequently, in the case the ledger has been closed, it may 
+     * return a different value than getLastAddConfirmed, which returns the local value 
+     * of the ledger handle.
+     * 
+     * @see #getLastAddConfirmed()
      *
      * @param cb
      * @param ctx
@@ -497,7 +511,7 @@ public class LedgerHandle {
         int rc;
 
         LastConfirmedCtx() {
-            this.response = -1;
+            this.response = -10;
         }
 
         void setLastConfirmed(long lastConfirmed) {
@@ -517,10 +531,26 @@ public class LedgerHandle {
         }
 
         boolean ready() {
-            return (this.response != -1);
+            return (this.response != -10);
         }
     }
 
+    /**
+     * Obtains synchronously the last confirmed write from a quorum of bookies. This call
+     * obtains the the last add confirmed each bookie has received for this ledger
+     * and returns the maximum. If the ledger has been closed, the value returned by this
+     * call may not correspond to the id of the last entry of the ledger, since it reads
+     * the hint of bookies. Consequently, in the case the ledger has been closed, it may 
+     * return a different value than getLastAddConfirmed, which returns the local value 
+     * of the ledger handle.
+     * 
+     * @see #getLastAddConfirmed()
+     * 
+     * @return
+     * @throws InterruptedException
+     * @throws BKException
+     */
+    
     public long readLastConfirmed()
             throws InterruptedException, BKException {
         LastConfirmedCtx ctx = new LastConfirmedCtx();

@@ -32,6 +32,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-156: BookieJournalRollingTest failing (Sijie Guo via ivank)
 
+	BOOKKEEPER-162: LedgerHandle.readLastConfirmed does not work (fpj)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)

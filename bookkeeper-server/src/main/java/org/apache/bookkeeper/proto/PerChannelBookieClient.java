@@ -553,7 +553,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
              * submits a read request with id -1, and receives a response with a
              * different entry id.
              */
-            readCompletion = readCompletions.remove(new CompletionKey(ledgerId, -1));
+            
+            readCompletion = readCompletions.remove(new CompletionKey(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED));
         }
 
         if (readCompletion == null) {

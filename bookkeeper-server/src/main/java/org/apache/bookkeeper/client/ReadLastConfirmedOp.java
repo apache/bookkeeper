@@ -46,13 +46,15 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
         this.cb = cb;
         this.ctx = ctx;
         this.lh = lh;
+        this.maxAddConfirmed = -1L;
         this.validResponses = 0;
         this.numResponsesPending = lh.metadata.ensembleSize;
     }
 
     public void initiate() {
+        LOG.info("### Initiate ###");
         for (int i = 0; i < lh.metadata.currentEnsemble.size(); i++) {
-            lh.bk.bookieClient.readEntry(lh.metadata.currentEnsemble.get(i), lh.ledgerId, LedgerHandle.LAST_ADD_CONFIRMED, 
+            lh.bk.bookieClient.readEntry(lh.metadata.currentEnsemble.get(i), lh.ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, 
                                          this, i, BookieProtocol.FLAG_NONE);
         }
     }
@@ -81,13 +83,14 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
             validResponses++;
         }
 
-        // other return codes dont count as valid responses
+        // other return codes don't count as valid responses
         if ((validResponses >= lh.metadata.quorumSize) &&
                 !completed) {
             completed = true;
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Read Complete with enough validResponses");
             }
+            if(maxAddConfirmed > lh.lastAddConfirmed) lh.lastAddConfirmed = maxAddConfirmed;
             cb.readLastConfirmedComplete(BKException.Code.OK, maxAddConfirmed, this.ctx);
             return;
         }

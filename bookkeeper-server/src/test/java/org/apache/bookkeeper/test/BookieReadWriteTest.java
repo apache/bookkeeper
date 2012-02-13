@@ -904,7 +904,133 @@ public class BookieReadWriteTest extends BaseTestCase
             fail("Test failed due to interruption");
         }
     }
+    
+    @Test
+    public void testReadFromOpenLedgerOpenOnce() throws Exception {
+        try {
+            // Create a ledger
+            lh = bkc.createLedger(digestType, ledgerPassword);
+            // bkc.initMessageDigest("SHA1");
+            ledgerId = lh.getId();
+            LOG.info("Ledger ID: " + lh.getId());
+            LedgerHandle lhOpen = bkc.openLedgerNoRecovery(ledgerId, digestType, ledgerPassword);
+            for (int i = 0; i < numEntriesToWrite; i++) {
+                ByteBuffer entry = ByteBuffer.allocate(4);
+                entry.putInt(rng.nextInt(maxInt));
+                entry.position(0);
+                
+                entries.add(entry.array());
+                entriesSize.add(entry.array().length);
+                lh.addEntry(entry.array());
+                if (i == numEntriesToWrite / 2) {
+                    // no recovery opened ledger 's last confirmed entry id is
+                    // less than written
+                    // and it just can read until (i-1)
+                    int toRead = i - 1;
+                    
+                    long readLastConfirmed = lhOpen.readLastConfirmed();
+                    assertTrue(readLastConfirmed != 0);
+                    Enumeration<LedgerEntry> readEntry = lhOpen.readEntries(toRead, toRead);
+                    assertTrue("Enumeration of ledger entries has no element", readEntry.hasMoreElements() == true);
+                    LedgerEntry e = readEntry.nextElement();
+                    assertEquals(toRead, e.getEntryId());
+                    Assert.assertArrayEquals(entries.get(toRead), e.getEntry());
+                    // should not written to a read only ledger
+                    try {
+                        lhOpen.addEntry(entry.array());
+                        fail("Should have thrown an exception here");
+                    } catch (BKException.BKIllegalOpException bkioe) {
+                        // this is the correct response
+                    } catch (Exception ex) {
+                        LOG.error("Unexpected exception", ex);
+                        fail("Unexpected exception");
+                    }
+                    
+                }
+            }
+            long last = lh.readLastConfirmed();
+            assertTrue("Last confirmed add: " + last, last == (numEntriesToWrite - 2));
+    
+            LOG.debug("*** WRITE COMPLETE ***");
+            // close ledger
+            lh.close();
+            // close read only ledger should not change metadata
+            lhOpen.close();
+        } catch (BKException e) {
+            LOG.error("Test failed", e);
+            fail("Test failed due to BookKeeper exception");
+        } catch (InterruptedException e) {
+            LOG.error("Test failed", e);
+            fail("Test failed due to interruption");
+        } 
+    }
+    
+    @Test
+    public void testReadFromOpenLedgerZeroAndOne() throws Exception {
+        try {
+            // Create a ledger
+            lh = bkc.createLedger(digestType, ledgerPassword);
+            // bkc.initMessageDigest("SHA1");
+            ledgerId = lh.getId();
+            LOG.info("Ledger ID: " + lh.getId());
+            LedgerHandle lhOpen = bkc.openLedgerNoRecovery(ledgerId, digestType, ledgerPassword);
+            
+            /*
+             * We haven't written anything, so it should be empty.
+             */
+            LOG.debug("Checking that it is empty");
+            long readLastConfirmed = lhOpen.readLastConfirmed();
+            assertTrue("Last confirmed has the wrong value", readLastConfirmed == -1L);
+            
+            /*
+             * Writing one entry.
+             */
+            LOG.debug("Going to write one entry");
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+            
+            entries.add(entry.array());
+            entriesSize.add(entry.array().length);
+            lh.addEntry(entry.array());
 
+            /*
+             * The hint should still indicate that there is no confirmed
+             * add.
+             */
+            LOG.debug("Checking that it is still empty even after writing one entry");
+            readLastConfirmed = lhOpen.readLastConfirmed();
+            assertTrue(readLastConfirmed == -1L);
+
+            /*
+             * Adding one more, and this time we should expect to 
+             * see one entry.
+             */
+            entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+            
+            entries.add(entry.array());
+            entriesSize.add(entry.array().length);
+            lh.addEntry(entry.array());
+
+            LOG.info("Checking that it has an entry");
+            readLastConfirmed = lhOpen.readLastConfirmed();
+            assertTrue(readLastConfirmed == 0L);
+                        
+            // close ledger
+            lh.close();
+            // close read only ledger should not change metadata
+            lhOpen.close();
+        } catch (BKException e) {
+            LOG.error("Test failed", e);
+            fail("Test failed due to BookKeeper exception");
+        } catch (InterruptedException e) {
+            LOG.error("Test failed", e);
+            fail("Test failed due to interruption");
+        } 
+    }
+    
 
     @Test
     public void testLastConfirmedAdd() throws IOException {

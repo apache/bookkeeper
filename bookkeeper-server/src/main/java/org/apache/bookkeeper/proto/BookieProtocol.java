@@ -38,6 +38,11 @@ public interface BookieProtocol {
      * Current version of the protocol, which client will use. 
      */
     public static final byte CURRENT_PROTOCOL_VERSION = 1;
+    
+    /**
+     * Entry identifier representing a request to obtain the last add entry confirmed
+     */
+    public static final long LAST_ADD_CONFIRMED = -1;
 
     /** 
      * The first int of a packet is the header.
