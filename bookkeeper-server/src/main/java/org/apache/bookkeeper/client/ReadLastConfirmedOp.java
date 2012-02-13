@@ -33,29 +33,41 @@ import org.jboss.netty.buffer.ChannelBuffer;
 class ReadLastConfirmedOp implements ReadEntryCallback {
     static final Logger LOG = LoggerFactory.getLogger(LedgerRecoveryOp.class);
     LedgerHandle lh;
-    Object ctx;
     int numResponsesPending;
-    int validResponses;
-    long maxAddConfirmed;
-    long maxLength = 0;
+    RecoveryData maxRecoveredData;
     volatile boolean completed = false;
 
-    ReadLastConfirmedCallback cb;
+    LastConfirmedDataCallback cb;
+    final DistributionSchedule.QuorumCoverageSet coverageSet;
 
-    public ReadLastConfirmedOp(LedgerHandle lh, ReadLastConfirmedCallback cb, Object ctx) {
+    /**
+     * Wrapper to get all recovered data from the request
+     */
+    interface LastConfirmedDataCallback {
+        public void readLastConfirmedDataComplete(int rc, RecoveryData data);
+    }
+
+    public ReadLastConfirmedOp(LedgerHandle lh, LastConfirmedDataCallback cb) {
         this.cb = cb;
-        this.ctx = ctx;
+        this.maxRecoveredData = new RecoveryData(-1,-1,0);
         this.lh = lh;
-        this.maxAddConfirmed = -1L;
-        this.validResponses = 0;
         this.numResponsesPending = lh.metadata.ensembleSize;
+        this.coverageSet = lh.distributionSchedule.getCoverageSet();
     }
 
     public void initiate() {
-        LOG.info("### Initiate ###");
+        initiate(BookieProtocol.FLAG_NONE);
+    }
+
+    public void initiateWithFencing() {
+        initiate(BookieProtocol.FLAG_DO_FENCING);
+    }
+
+    private void initiate(short flags) {
         for (int i = 0; i < lh.metadata.currentEnsemble.size(); i++) {
-            lh.bk.bookieClient.readEntry(lh.metadata.currentEnsemble.get(i), lh.ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, 
-                                         this, i, BookieProtocol.FLAG_NONE);
+            lh.bk.bookieClient.readEntry(lh.metadata.currentEnsemble.get(i), lh.ledgerId,
+                                         BookieProtocol.LAST_ADD_CONFIRMED,
+                                         this, i, flags);
         }
     }
 
@@ -64,12 +76,14 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
         int bookieIndex = (Integer) ctx;
 
         numResponsesPending--;
-
+        boolean heardValidResponse = false;
         if (rc == BKException.Code.OK) {
             try {
                 RecoveryData recoveryData = lh.macManager.verifyDigestAndReturnLastConfirmed(buffer);
-                maxAddConfirmed = Math.max(maxAddConfirmed, recoveryData.lastAddConfirmed);
-                validResponses++;
+                if (recoveryData.lastAddConfirmed > maxRecoveredData.lastAddConfirmed) {
+                    maxRecoveredData = recoveryData;
+                }
+                heardValidResponse = true;
             } catch (BKDigestMatchException e) {
                 // Too bad, this bookie didn't give us a valid answer, we
                 // still might be able to recover though so continue
@@ -80,26 +94,26 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
 
         if (rc == BKException.Code.NoSuchLedgerExistsException || rc == BKException.Code.NoSuchEntryException) {
             // this still counts as a valid response, e.g., if the client crashed without writing any entry
-            validResponses++;
+            heardValidResponse = true;
         }
 
-        // other return codes don't count as valid responses
-        if ((validResponses >= lh.metadata.quorumSize) &&
-                !completed) {
+        // other return codes dont count as valid responses
+        if (heardValidResponse
+            && coverageSet.addBookieAndCheckCovered(bookieIndex)
+            && !completed) {
             completed = true;
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Read Complete with enough validResponses");
             }
-            if(maxAddConfirmed > lh.lastAddConfirmed) lh.lastAddConfirmed = maxAddConfirmed;
-            cb.readLastConfirmedComplete(BKException.Code.OK, maxAddConfirmed, this.ctx);
+
+            cb.readLastConfirmedDataComplete(BKException.Code.OK, maxRecoveredData);
             return;
         }
 
         if (numResponsesPending == 0 && !completed) {
-            completed = true;
             // Have got all responses back but was still not enough, just fail the operation
             LOG.error("While readLastConfirmed ledger: " + ledgerId + " did not hear success responses from all quorums");
-            cb.readLastConfirmedComplete(BKException.Code.LedgerRecoveryException, maxAddConfirmed, this.ctx);
+            cb.readLastConfirmedDataComplete(BKException.Code.LedgerRecoveryException, maxRecoveredData);
         }
 
     }

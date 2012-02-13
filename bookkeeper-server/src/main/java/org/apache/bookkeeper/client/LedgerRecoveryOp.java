@@ -23,11 +23,11 @@ import java.util.Enumeration;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
+import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.LedgerHandle.NoopCloseCallback;
 import org.apache.bookkeeper.client.DigestManager.RecoveryData;
 import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 
 import org.apache.zookeeper.KeeperException;
@@ -43,7 +43,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
  * the ledger at that entry.
  *
  */
-class LedgerRecoveryOp implements ReadEntryCallback, ReadCallback, AddCallback {
+class LedgerRecoveryOp implements ReadCallback, AddCallback {
     static final Logger LOG = LoggerFactory.getLogger(LedgerRecoveryOp.class);
     LedgerHandle lh;
     int numResponsesPending;
@@ -61,70 +61,25 @@ class LedgerRecoveryOp implements ReadEntryCallback, ReadCallback, AddCallback {
     }
 
     public void initiate() {
-        /** 
+        ReadLastConfirmedOp rlcop = new ReadLastConfirmedOp(lh,
+                new ReadLastConfirmedOp.LastConfirmedDataCallback() {
+                public void readLastConfirmedDataComplete(int rc, RecoveryData data) {
+                    if (rc == BKException.Code.OK) {
+                        lh.lastAddPushed = lh.lastAddConfirmed = data.lastAddConfirmed;
+                        lh.length = data.length;
+                        doRecoveryRead();
+                    } else {
+                        cb.operationComplete(BKException.Code.ReadException, null);
+                    }
+                }
+                });
+
+        /**
          * Enable fencing on this op. When the read request reaches the bookies
          * server it will fence off the ledger, stopping any subsequent operation
          * from writing to it.
          */
-        int flags = BookieProtocol.FLAG_DO_FENCING;
-        for (int i = 0; i < lh.metadata.currentEnsemble.size(); i++) {
-            lh.bk.bookieClient.readEntry(lh.metadata.currentEnsemble.get(i), lh.ledgerId, 
-                                         BookieProtocol.LAST_ADD_CONFIRMED, this, i, flags);
-        }
-    }
-
-    public synchronized void readEntryComplete(final int rc, final long ledgerId, final long entryId,
-            final ChannelBuffer buffer, final Object ctx) {
-
-        // Already proceeding with recovery, nothing to do
-        if (proceedingWithRecovery) {
-            return;
-        }
-
-        int bookieIndex = (Integer) ctx;
-
-        numResponsesPending--;
-
-        boolean heardValidResponse = false;
-
-        if (rc == BKException.Code.OK) {
-            try {
-                RecoveryData recoveryData = lh.macManager.verifyDigestAndReturnLastConfirmed(buffer);
-                maxAddConfirmed = Math.max(maxAddConfirmed, recoveryData.lastAddConfirmed);
-                maxAddPushed = Math.max(maxAddPushed, recoveryData.entryId);
-                heardValidResponse = true;
-            } catch (BKDigestMatchException e) {
-                // Too bad, this bookie didnt give us a valid answer, we
-                // still might be able to recover though so continue
-                LOG.error("Mac mismatch while reading last entry from bookie: "
-                          + lh.metadata.currentEnsemble.get(bookieIndex));
-            }
-        }
-
-        if (rc == BKException.Code.NoSuchLedgerExistsException || rc == BKException.Code.NoSuchEntryException) {
-            // this still counts as a valid response, e.g., if the
-            // client
-            // crashed without writing any entry
-            heardValidResponse = true;
-        }
-
-        // other return codes dont count as valid responses
-        if (heardValidResponse && lh.distributionSchedule.canProceedWithRecovery(bookieIndex)) {
-            proceedingWithRecovery = true;
-            lh.lastAddPushed = lh.lastAddConfirmed = maxAddConfirmed;
-            lh.length = maxLength;
-            doRecoveryRead();
-            return;
-        }
-
-        if (numResponsesPending == 0) {
-            // Have got all responses back but was still not enough to
-            // start
-            // recovery, just fail the operation
-            LOG.error("While recovering ledger: " + ledgerId + " did not hear success responses from all quorums");
-            cb.operationComplete(BKException.Code.LedgerRecoveryException, null);
-        }
-
+        rlcop.initiateWithFencing();
     }
 
     /**
@@ -163,10 +118,9 @@ class LedgerRecoveryOp implements ReadEntryCallback, ReadCallback, AddCallback {
                         cb.operationComplete(BKException.Code.ZKException, null);
                     } else {
                         cb.operationComplete(BKException.Code.OK, null);
-                        LOG.debug("After closing length is: " + lh.getLength()); 
+                        LOG.debug("After closing length is: " + lh.getLength());
                     }
-                } 
-                
+                }
                 }, null, BKException.Code.LedgerClosedException);
             return;
         }

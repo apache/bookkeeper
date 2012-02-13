@@ -237,8 +237,7 @@ public class BookieRecoveryTest extends BaseTestCase {
         bs.remove(0);
 
         // Startup a new bookie server
-        int newBookiePort = initialPort + numBookies;
-        startNewBookie(newBookiePort);
+        int newBookiePort = startNewBookie();
 
         // Write some more entries for the ledgers so a new ensemble will be
         // created for them.
@@ -292,8 +291,7 @@ public class BookieRecoveryTest extends BaseTestCase {
 
         // Startup three new bookie servers
         for (int i = 0; i < 3; i++) {
-            int newBookiePort = initialPort + numBookies + i;
-            startNewBookie(newBookiePort);
+            startNewBookie();
         }
 
         // Write some more entries for the ledgers so a new ensemble will be
@@ -346,8 +344,7 @@ public class BookieRecoveryTest extends BaseTestCase {
         bs.remove(0);
 
         // Startup a new bookie server
-        int newBookiePort = initialPort + numBookies;
-        startNewBookie(newBookiePort);
+        int newBookiePort = startNewBookie();
 
         // Write some more entries for the ledgers so a new ensemble will be
         // created for them.
@@ -391,8 +388,7 @@ public class BookieRecoveryTest extends BaseTestCase {
 
         // Startup three new bookie servers
         for (int i = 0; i < 3; i++) {
-            int newBookiePort = initialPort + numBookies + i;
-            startNewBookie(newBookiePort);
+            startNewBookie();
         }
 
         // Write some more entries for the ledgers so a new ensemble will be
@@ -561,8 +557,7 @@ public class BookieRecoveryTest extends BaseTestCase {
             bs.remove(removeIndex);
             
             // Startup three new bookie servers
-            int newBookiePort = initialPort + numBookies + i;
-            startNewBookie(newBookiePort);
+            startNewBookie();
             
             // Write some more entries for the ledgers so a new ensemble will be
             // created for them.

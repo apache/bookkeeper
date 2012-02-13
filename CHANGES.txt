@@ -34,6 +34,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-162: LedgerHandle.readLastConfirmed does not work (fpj)
 
+        BOOKKEEPER-152: Can't recover a ledger whose current ensemble contain failed bookie. (ivank)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)

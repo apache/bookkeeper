@@ -72,6 +72,7 @@ public abstract class BaseTestCase extends TestCase {
     protected List<BookieServer> bs = new ArrayList<BookieServer>();
     protected List<ServerConfiguration> bsConfs = new ArrayList<ServerConfiguration>();
     protected Integer initialPort = 5000;
+    private Integer nextPort = initialPort;
     protected int numBookies;
     protected BookKeeperTestClient bkc;
 
@@ -142,7 +143,7 @@ public abstract class BaseTestCase extends TestCase {
                 f.mkdir();
 
                 ServerConfiguration conf = newServerConfiguration(
-                    initialPort + i, HOSTPORT, f, new File[] { f });
+                    nextPort++, HOSTPORT, f, new File[] { f });
                 bsConfs.add(conf);
 
                 bs.add(startBookie(conf));
@@ -164,6 +165,15 @@ public abstract class BaseTestCase extends TestCase {
         if (toRemove != null) {
             bs.remove(toRemove);
         }
+    }
+
+    public void killBookie(int index) throws InterruptedException, IOException {
+        if (index >= bs.size()) {
+            throw new IOException("Bookie does not exist");
+        }
+        BookieServer server = bs.get(index);
+        server.shutdown();
+        bs.remove(server);
     }
 
     public void sleepBookie(InetSocketAddress addr, final int seconds,
@@ -235,16 +245,19 @@ public abstract class BaseTestCase extends TestCase {
      *            Port to start the new bookie server on
      * @throws IOException
      */
-    protected void startNewBookie(int port)
+    protected int startNewBookie()
             throws IOException, InterruptedException, KeeperException, BookieException {
         File f = File.createTempFile("bookie", "test");
         tmpDirs.add(f);
         f.delete();
         f.mkdir();
 
+        int port = nextPort++;
         ServerConfiguration conf = newServerConfiguration(port, HOSTPORT, f, new File[] { f });
 
         bs.add(startBookie(conf));
+
+        return port;
     }
 
     /**
@@ -266,6 +279,7 @@ public abstract class BaseTestCase extends TestCase {
 
         bkc.readBookiesBlocking();
         LOG.info("New bookie on port " + port + " has been created.");
+
         return server;
     }
 

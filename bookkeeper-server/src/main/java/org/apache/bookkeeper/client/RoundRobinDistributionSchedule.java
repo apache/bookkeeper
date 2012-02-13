@@ -31,10 +31,6 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
     int quorumSize;
     int ensembleSize;
 
-    // covered[i] is true if the quorum starting at bookie index i has been
-    // covered by a recovery reply
-    boolean[] covered = null;
-    int numQuorumsUncovered;
 
     public RoundRobinDistributionSchedule(int quorumSize, int ensembleSize) {
         this.quorumSize = quorumSize;
@@ -57,31 +53,38 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
 
     }
 
-    public synchronized boolean canProceedWithRecovery(int bookieIndexHeardFrom) {
-        if (covered == null) {
+    private class RRQuorumCoverageSet implements QuorumCoverageSet {
+        // covered[i] is true if the quorum starting at bookie index i has been
+        // covered by a recovery reply
+        private boolean[] covered = null;
+        private int numQuorumsUncovered;
+
+        private RRQuorumCoverageSet() {
             covered = new boolean[ensembleSize];
             numQuorumsUncovered = ensembleSize;
         }
 
-        if (numQuorumsUncovered == 0) {
-            return true;
-        }
-
-        for (int i = 0; i < quorumSize; i++) {
-            int quorumStartIndex = MathUtils.signSafeMod(bookieIndexHeardFrom - i, ensembleSize);
-            if (!covered[quorumStartIndex]) {
-                covered[quorumStartIndex] = true;
-                numQuorumsUncovered--;
-
-                if (numQuorumsUncovered == 0) {
-                    return true;
-                }
+        public synchronized boolean addBookieAndCheckCovered(int bookieIndexHeardFrom) {
+            if (numQuorumsUncovered == 0) {
+                return true;
             }
 
+            for (int i = 0; i < quorumSize; i++) {
+                int quorumStartIndex = MathUtils.signSafeMod(bookieIndexHeardFrom - i, ensembleSize);
+                if (!covered[quorumStartIndex]) {
+                    covered[quorumStartIndex] = true;
+                    numQuorumsUncovered--;
+
+                    if (numQuorumsUncovered == 0) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
-
-        return false;
-
     }
 
+    public QuorumCoverageSet getCoverageSet() {
+        return new RRQuorumCoverageSet();
+    }
 }

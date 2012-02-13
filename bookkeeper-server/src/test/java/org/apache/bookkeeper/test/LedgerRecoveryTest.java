@@ -139,8 +139,7 @@ public class LedgerRecoveryTest extends BaseTestCase {
         }
 
         // start a new bookie server
-        int newBookiePort = initialPort + numBookies;
-        startNewBookie(newBookiePort);
+        startNewBookie();
 
         LedgerHandle afterlh = bkc.openLedger(beforelh.getId(), digestType, "".getBytes());
 

@@ -498,8 +498,20 @@ public class LedgerHandle {
      * @param ctx
      */
 
-    public void asyncReadLastConfirmed(ReadLastConfirmedCallback cb, Object ctx) {
-        new ReadLastConfirmedOp(this, cb, ctx).initiate();
+    public void asyncReadLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
+        ReadLastConfirmedOp.LastConfirmedDataCallback innercb = new ReadLastConfirmedOp.LastConfirmedDataCallback() {
+                public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
+                    if (rc == BKException.Code.OK) {
+                        lastAddConfirmed = Math.max(lastAddConfirmed, data.lastAddConfirmed);
+                        lastAddPushed = Math.max(lastAddPushed, data.lastAddConfirmed);
+                        length = Math.max(length, data.length);
+                        cb.readLastConfirmedComplete(rc, data.lastAddConfirmed, ctx);
+                    } else {
+                        cb.readLastConfirmedComplete(rc, -1, ctx);
+                    }
+                }
+            };
+        new ReadLastConfirmedOp(this, innercb).initiate();
     }
 
 
@@ -685,6 +697,13 @@ public class LedgerHandle {
 
             // We are already closed, nothing to do
             cb.operationComplete(BKException.Code.OK, null);
+            return;
+        }
+
+        // if metadata is already in recover, dont try to write again,
+        // just do the recovery from the starting point
+        if (metadata.isInRecovery()) {
+            new LedgerRecoveryOp(LedgerHandle.this, cb).initiate();
             return;
         }
 

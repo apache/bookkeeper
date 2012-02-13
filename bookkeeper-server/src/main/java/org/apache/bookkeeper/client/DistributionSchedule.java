@@ -48,14 +48,18 @@ interface DistributionSchedule {
     public int getReplicaIndex(long entryId, int bookieIndex);
 
     /**
-     * Specifies whether its ok to proceed with recovery given that we have
-     * heard back from the given bookie index. These calls will be a made in a
-     * sequence and an implementation of this interface should accumulate
-     * history about which bookie indexes we have heard from. Once this method
-     * has returned true, it wont be called again on the same instance
-     *
-     * @param bookieIndexHeardFrom
-     * @return true if its ok to proceed with recovery
+     * Interface to keep track of which bookies in an ensemble, an action
+     * has been performed for.
      */
-    public boolean canProceedWithRecovery(int bookieIndexHeardFrom);
+    public interface QuorumCoverageSet {
+        /**
+         * Add a bookie to the set, and check if all quorum in the set
+         * have had the action performed for it.
+         * @param bookieIndexHeardFrom Bookie we've just heard from
+         * @return whether all quorums have been covered
+         */
+        public boolean addBookieAndCheckCovered(int bookieIndexHeardFrom);
+    }
+
+    public QuorumCoverageSet getCoverageSet();
 }

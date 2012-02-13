@@ -302,4 +302,80 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
         }
     }
 
+    @Test
+    public void testLedgerNoRecoveryOpenAfterBKCrashed() throws Exception {
+        // Create a ledger
+        LedgerHandle beforelh = bkc.createLedger(numBookies, numBookies, digestType, "".getBytes());
+
+        int numEntries = 10;
+        String tmp = "BookKeeper is cool!";
+        for (int i=0; i<numEntries; i++) {
+            beforelh.addEntry(tmp.getBytes());
+        }
+
+        // shutdown first bookie server
+        killBookie(0);
+
+        // try to open ledger no recovery
+        LedgerHandle afterlh = bkc.openLedgerNoRecovery(beforelh.getId(), digestType, "".getBytes());
+
+        assertEquals(numEntries - 2, afterlh.getLastAddConfirmed());
+
+        startNewBookie();
+        LedgerHandle beforelh2 = bkc.createLedger(numBookies, 1, digestType, "".getBytes());
+
+        for (int i=0; i<numEntries; i++) {
+            beforelh2.addEntry(tmp.getBytes());
+        }
+
+        // shutdown first bookie server
+        killBookie(0);
+
+        // try to open ledger no recovery
+        try {
+            bkc.openLedgerNoRecovery(beforelh2.getId(), digestType, "".getBytes());
+            fail("Should have thrown exception");
+        } catch (BKException.BKReadException e) {
+            // correct behaviour
+        }
+    }
+
+    @Test
+    public void testLedgerOpenAfterBKCrashed() throws Exception {
+        // Create a ledger
+        LedgerHandle beforelh = bkc.createLedger(numBookies, numBookies, digestType, "".getBytes());
+
+        int numEntries = 10;
+        String tmp = "BookKeeper is cool!";
+        for (int i=0; i<numEntries; i++) {
+            beforelh.addEntry(tmp.getBytes());
+        }
+
+        // shutdown first bookie server
+        killBookie(0);
+        startNewBookie();
+
+        // try to open ledger no recovery
+        LedgerHandle afterlh = bkc.openLedger(beforelh.getId(), digestType, "".getBytes());
+
+        assertEquals(beforelh.getLastAddPushed(), afterlh.getLastAddConfirmed());
+
+        LedgerHandle beforelh2 = bkc.createLedger(numBookies, 1, digestType, "".getBytes());
+
+        for (int i=0; i<numEntries; i++) {
+            beforelh2.addEntry(tmp.getBytes());
+        }
+
+        // shutdown first bookie server
+        killBookie(0);
+
+        // try to open ledger no recovery
+        try {
+            bkc.openLedger(beforelh2.getId(), digestType, "".getBytes());
+            fail("Should have thrown exception");
+        } catch (BKException.BKLedgerRecoveryException e) {
+            // correct behaviour
+        }
+    }
+
 }

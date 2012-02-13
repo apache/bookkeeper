@@ -164,10 +164,12 @@ abstract class DigestManager {
     static class RecoveryData {
         long lastAddConfirmed;
         long entryId;
+        long length;
 
-        public RecoveryData(long lastAddConfirmed, long entryId) {
+        public RecoveryData(long lastAddConfirmed, long entryId, long length) {
             this.lastAddConfirmed = lastAddConfirmed;
             this.entryId = entryId;
+            this.length = length;
         }
 
     }
@@ -179,7 +181,6 @@ abstract class DigestManager {
         long entryId = dataReceived.readLong();
         long lastAddConfirmed = dataReceived.readLong();
         long length = dataReceived.readLong();
-        return new RecoveryData(lastAddConfirmed, entryId);
-
+        return new RecoveryData(lastAddConfirmed, entryId, length);
     }
 }

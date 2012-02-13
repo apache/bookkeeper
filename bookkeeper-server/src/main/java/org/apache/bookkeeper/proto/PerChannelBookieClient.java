@@ -405,7 +405,6 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         LOG.info("Disconnected from bookie: " + addr);
         errorOutOutstandingEntries();
         channel.close();
-
         state = ConnectionState.DISCONNECTED;
 
         // we don't want to reconnect right away. If someone sends a request to
