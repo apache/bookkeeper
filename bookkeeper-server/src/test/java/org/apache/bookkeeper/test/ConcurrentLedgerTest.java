@@ -76,6 +76,7 @@ public class ConcurrentLedgerTest extends TestCase {
         conf.setJournalDirName(txnDir.getPath());
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
         bookie = new Bookie(conf);
+        bookie.start();
     }
 
     static void recursiveDelete(File f) {

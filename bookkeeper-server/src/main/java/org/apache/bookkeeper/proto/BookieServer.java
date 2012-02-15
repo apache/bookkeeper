@@ -75,6 +75,8 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     }
 
     public void start() throws IOException {
+        this.bookie.start();
+
         nioServerFactory = new NIOServerFactory(conf, this);
         running = true;
         deathWatcher = new DeathWatcher(conf);

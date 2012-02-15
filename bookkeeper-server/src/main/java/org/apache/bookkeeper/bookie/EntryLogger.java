@@ -106,6 +106,9 @@ public class EntryLogger {
             }
         }
         createLogId(logId);
+    }
+
+    public void start() {
         // Start the Garbage Collector thread to prune unneeded entry logs.
         gcThread.start();
     }

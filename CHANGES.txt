@@ -37,6 +37,8 @@ Trunk (unreleased changes)
         BOOKKEEPER-152: Can't recover a ledger whose current ensemble contain failed bookie. (ivank)
 
         BOOKKEEPER-171: ServerConfiguration can't use more than one directory for ledgers. (ivank via sijie)
+	
+	BOOKKEEPER-170: Bookie constructor starts a number of threads. (ivank via fpj)
 
       hedwig-server/
       

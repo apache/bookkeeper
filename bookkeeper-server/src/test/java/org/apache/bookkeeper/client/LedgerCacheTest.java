@@ -86,6 +86,7 @@ public class LedgerCacheTest extends TestCase {
         conf.setJournalDirName(txnDir.getPath());
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
         bookie = new Bookie(conf);
+        bookie.start();
     }
 
 

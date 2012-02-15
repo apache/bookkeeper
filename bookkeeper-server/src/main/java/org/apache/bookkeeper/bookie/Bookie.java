@@ -268,13 +268,17 @@ public class Bookie extends Thread {
         }
 
         // instantiate zookeeper client to initialize ledger manager
-        ZooKeeper newZk = instantiateZookeeperClient(conf.getZkServers());
-        ledgerManager = LedgerManagerFactory.newLedgerManager(conf, newZk);
+        this.zk = instantiateZookeeperClient(conf.getZkServers());
+        ledgerManager = LedgerManagerFactory.newLedgerManager(conf, this.zk);
 
         syncThread = new SyncThread(conf);
         entryLogger = new EntryLogger(conf, this);
         ledgerCache = new LedgerCache(conf, ledgerManager);
 
+        readJournal();
+    }
+
+    private void readJournal() throws IOException, BookieException {
         lastLogMark.readLog();
         if (LOG.isDebugEnabled()) {
             LOG.debug("Last Log Mark : " + lastLogMark);
@@ -346,12 +350,11 @@ public class Bookie extends Thread {
                         int masterKeyLen = recBuff.getInt();
                         byte[] masterKey = new byte[masterKeyLen];
                         recBuff.get(masterKey);
-                        
                         handle.checkAccess(masterKey);
                         putHandle(handle);
                     } else {
                         throw new IOException("Invalid journal. Contains journalKey "
-                                + " but layout version (" + recLog.getFormatVersion() 
+                                + " but layout version (" + recLog.getFormatVersion()
                                 + ") is too old to hold this");
                     }
                 } else {
@@ -365,20 +368,29 @@ public class Bookie extends Thread {
             }
             recLog.close();
         }
-        // pass zookeeper instance here
-        // since GarbageCollector thread should only start after journal
-        // finished replay
-        this.zk = newZk;
-        // make the bookie available
-        registerBookie(conf.getBookiePort());
+    }
+
+    synchronized public void start() {
         setDaemon(true);
         LOG.debug("I'm starting a bookie with journal directory " + journalDirectory.getName());
-        start();
+        super.start();
         syncThread.start();
+        entryLogger.start();
         // set running here.
         // since bookie server use running as a flag to tell bookie server whether it is alive
         // if setting it in bookie thread, the watcher might run before bookie thread.
         running = true;
+        try {
+            registerBookie(conf.getBookiePort());
+        } catch (IOException e) {
+            LOG.error("Couldn't register bookie with zookeeper, shutting down", e);
+            try {
+                shutdown();
+            } catch (InterruptedException ie) {
+                LOG.error("Interrupted shutting down", ie);
+                System.exit(-1);
+            }
+        }
     }
 
     public static interface JournalIdFilter {
@@ -1040,6 +1052,7 @@ public class Bookie extends Thread {
     public static void main(String[] args) 
             throws IOException, InterruptedException, BookieException, KeeperException {
         Bookie b = new Bookie(new ServerConfiguration());
+        b.start();
         CounterCallback cb = new CounterCallback();
         long start = System.currentTimeMillis();
         for (int i = 0; i < 100000; i++) {

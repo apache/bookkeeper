@@ -66,6 +66,8 @@ public class EntryLogTest extends TestCase {
         raf.close();
         // now see which ledgers are in the log
         logger = new EntryLogger(conf, null);
+        logger.start();
+
         Thread.sleep(2 * gcWaitTime);
         Field entryLogs2LedgersMapField = logger.getClass().getDeclaredField("entryLogs2LedgersMap");
         entryLogs2LedgersMapField.setAccessible(true);

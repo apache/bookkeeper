@@ -152,6 +152,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
         Bookie b = new Bookie(conf);
+        b.start();
 
         b.readEntry(1, 100);
         try {
@@ -223,7 +224,6 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
         Bookie b = new Bookie(conf);
-        b.shutdown();
     }
 
     /**
@@ -248,7 +248,6 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
         Bookie b = new Bookie(conf);
-        b.shutdown();
     }
 
     /**
@@ -281,10 +280,6 @@ public class BookieJournalTest {
             b = new Bookie(conf);
         } catch (Throwable t) {
             // correct behaviour
-        } finally {
-            if (b != null) {
-                b.shutdown();
-            }
         }
     }
 
@@ -330,8 +325,6 @@ public class BookieJournalTest {
         } catch (Bookie.NoEntryException e) {
             // correct behaviour
         }
-
-        b.shutdown();
     }
 
     /**
@@ -388,8 +381,6 @@ public class BookieJournalTest {
         } catch (Bookie.NoEntryException e) {
             // correct behaviour
         }
-
-        b.shutdown();
     }
 
 }
