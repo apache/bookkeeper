@@ -19,8 +19,6 @@ package org.apache.bookkeeper.conf;
 
 import java.io.File;
 
-import org.apache.commons.lang.StringUtils;
-
 /**
  * Configuration manages server-side settings
  */
@@ -52,9 +50,6 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String ZK_SERVERS = "zkServers";
     // Statistics Parameters
     protected final static String ENABLE_STATISTICS = "enableStatistics";
-
-    // separator for ledger dir
-    protected final static String SEP = ",";
 
     /**
      * Construct a default configuration object
@@ -275,11 +270,11 @@ public class ServerConfiguration extends AbstractConfiguration {
      * @return ledger dir names, if not provided return null
      */
     public String[] getLedgerDirNames() {
-        String ledgerDirs = this.getString(LEDGER_DIRS, "/tmp/bk-data");
+        String[] ledgerDirs = this.getStringArray(LEDGER_DIRS);
         if (null == ledgerDirs) {
-            return null;
+            return new String[] { "/tmp/bk-data" };
         }
-        return ledgerDirs.split(SEP);
+        return ledgerDirs;
     }
 
     /**
@@ -293,7 +288,7 @@ public class ServerConfiguration extends AbstractConfiguration {
         if (null == ledgerDirs) {
             return this;
         }
-        this.setProperty(LEDGER_DIRS, StringUtils.join(ledgerDirs, SEP));
+        this.setProperty(LEDGER_DIRS, ledgerDirs);
         return this;
     }
 

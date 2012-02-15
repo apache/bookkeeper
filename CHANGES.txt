@@ -36,6 +36,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-152: Can't recover a ledger whose current ensemble contain failed bookie. (ivank)
 
+        BOOKKEEPER-171: ServerConfiguration can't use more than one directory for ledgers. (ivank via sijie)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)
