@@ -42,6 +42,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-169: bookie hangs on reading header when encountering partial header index file (sijie via ivank)
 
+        BOOKKEEPER-174: Bookie can't start when replaying entries whose ledger were deleted and garbage collected. (sijie via ivank)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)

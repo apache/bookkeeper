@@ -340,30 +340,34 @@ public class Bookie extends Thread {
                 }
                 recBuff.flip();
                 long ledgerId = recBuff.getLong();
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Relay journal - ledger id : " + ledgerId);
-                }
-                LedgerDescriptor handle = getHandle(ledgerId);
                 long entryId = recBuff.getLong();
-                if (entryId == METAENTRY_ID_LEDGER_KEY) {
-                    if (recLog.getFormatVersion() >= 3) {
-                        int masterKeyLen = recBuff.getInt();
-                        byte[] masterKey = new byte[masterKeyLen];
-                        recBuff.get(masterKey);
-                        handle.checkAccess(masterKey);
-                        putHandle(handle);
+                LedgerDescriptor handle;
+                try {
+                    handle = getHandle(ledgerId);
+                    LOG.debug("Relay journal - ledger id : {}, entry id : {}.", ledgerId, entryId);
+                    if (entryId == METAENTRY_ID_LEDGER_KEY) {
+                        if (recLog.getFormatVersion() >= 3) {
+                            int masterKeyLen = recBuff.getInt();
+                            byte[] masterKey = new byte[masterKeyLen];
+                            recBuff.get(masterKey);
+                            handle.checkAccess(masterKey);
+                            putHandle(handle);
+                        } else {
+                            throw new IOException("Invalid journal. Contains journalKey "
+                                    + " but layout version (" + recLog.getFormatVersion()
+                                    + ") is too old to hold this");
+                        }
                     } else {
-                        throw new IOException("Invalid journal. Contains journalKey "
-                                + " but layout version (" + recLog.getFormatVersion()
-                                + ") is too old to hold this");
+                        try {
+                            recBuff.rewind();
+                            handle.addEntry(recBuff);
+                        } finally {
+                            putHandle(handle);
+                        }
                     }
-                } else {
-                    try {
-                        recBuff.rewind();
-                        handle.addEntry(recBuff);
-                    } finally {
-                        putHandle(handle);
-                    }
+                } catch (NoLedgerException nsle) {
+                    LOG.debug("Skip replaying entries of ledger {} since it was deleted.", ledgerId);
+                    continue;
                 }
             }
             recLog.close();

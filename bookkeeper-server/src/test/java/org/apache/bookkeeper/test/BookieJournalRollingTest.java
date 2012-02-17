@@ -79,7 +79,12 @@ public class BookieJournalRollingTest extends BaseTestCase {
             lhs[i] = bkc.createLedger(digestType, "".getBytes());
             ledgerIds[i] = lhs[i].getId();
         }
+        writeLedgerEntries(lhs, msgSize, numMsgs);
+        // Return the ledger handles to the inserted ledgers and entries
+        return lhs;
+    }
 
+    private void writeLedgerEntries(LedgerHandle[] lhs, int msgSize, int numMsgs) throws Exception {
         // Create a dummy message string to write as ledger entries
         StringBuilder msgSB = new StringBuilder();
         for (int i = 0; i < msgSize; i++) {
@@ -89,16 +94,13 @@ public class BookieJournalRollingTest extends BaseTestCase {
 
         // Write all of the entries for all of the ledgers
         for (int i = 0; i < numMsgs; i++) {
-            for (int j = 0; j < numLedgers; j++) {
+            for (int j = 0; j < lhs.length; j++) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(ledgerIds[j]).append('-').append(i).append('-')
+                sb.append(lhs[j].getId()).append('-').append(i).append('-')
                   .append(msg);
                 lhs[j].addEntry(sb.toString().getBytes());
             }
         }
-
-        // Return the ledger handles to the inserted ledgers and entries
-        return lhs;
     }
 
     private void validLedgerEntries(long[] ledgerIds, int msgSize, int numMsgs) throws Exception {
@@ -214,6 +216,43 @@ public class BookieJournalRollingTest extends BaseTestCase {
         // ensure that we can still read the entries
         restartBookies(newConf);
         validLedgerEntries(ledgerIds, 1024, 1024);
+    }
+
+    /**
+     * This test writes enough ledger entries to roll over the journals
+     * without sync up
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testReplayDeletedLedgerJournalEntries() throws Exception {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Testing replaying journal entries whose ledger has been removed.");
+        }
+
+        // Write entries
+        LedgerHandle[] lhs = writeLedgerEntries(1, 1024, 10);
+        // Wait until all entries are flushed and last mark rolls
+        Thread.sleep(3 * baseConf.getFlushInterval());
+
+        // restart bookies with flush interval set to a large value
+        ServerConfiguration newConf = new ServerConfiguration();
+        newConf.setFlushInterval(999999999);
+        // restart bookies
+        restartBookies(newConf);
+
+        // Write entries again to let them existed in journal
+        writeLedgerEntries(lhs, 1024, 10);
+
+        // delete them
+        for (LedgerHandle lh : lhs) {
+            bkc.deleteLedger(lh.getId());
+        }
+        // wait for gc
+        Thread.sleep(2 * newConf.getGcWaitTime());
+
+        // restart bookies again to trigger replaying journal
+        restartBookies(newConf);
     }
 
 }
