@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.BufferUnderflowException;
 import java.nio.channels.FileChannel;
 
 import org.slf4j.Logger;
@@ -82,7 +83,8 @@ class FileInfo {
             fc = new RandomAccessFile(lf, "rw").getChannel();
             size = fc.size();
 
-            ByteBuffer bb = ByteBuffer.allocate(1024);
+            // avoid hang on reading partial index
+            ByteBuffer bb = ByteBuffer.allocate((int)(Math.min(size, START_OF_DATA)));
             while(bb.hasRemaining()) {
                 fc.read(bb);
             }
@@ -95,8 +97,10 @@ class FileInfo {
                 throw new IOException("Incompatible ledger version " + version);
             }
             int length = bb.getInt();
-            if (length < 0 || length > bb.remaining()) {
+            if (length < 0) {
                 throw new IOException("Length " + length + " is invalid");
+            } else if (length > bb.remaining()) {
+                throw new BufferUnderflowException();
             }
             masterKey = new byte[length];
             bb.get(masterKey);
@@ -113,23 +117,39 @@ class FileInfo {
         if (masterKey == null && !exists) {
             throw new IOException(lf + " not found");
         }
-        ByteBuffer bb = ByteBuffer.allocate(1024);
+
         if (!exists) { 
             if (create) {
                 fc = new RandomAccessFile(lf, "rw").getChannel();
                 size = fc.size();
                 if (size == 0) {
-                    bb.putInt(signature);
-                    bb.putInt(headerVersion);
-                    bb.putInt(masterKey.length);
-                    bb.put(masterKey);
-                    bb.rewind();
-                    fc.write(bb);
+                    writeHeader();
                 }
             }
         } else {
-            readHeader();
+            try {
+                readHeader();
+            } catch (BufferUnderflowException buf) {
+                LOG.warn("Exception when reading header of {} : {}", lf, buf);
+                if (null != masterKey) {
+                    LOG.warn("Attempting to write header of {} again.", lf);
+                    writeHeader();
+                } else {
+                    throw new IOException("Error reading header " + lf);
+                }
+            }
         }
+    }
+
+    private void writeHeader() throws IOException {
+        ByteBuffer bb = ByteBuffer.allocate((int)START_OF_DATA);
+        bb.putInt(signature);
+        bb.putInt(headerVersion);
+        bb.putInt(masterKey.length);
+        bb.put(masterKey);
+        bb.rewind();
+        fc.position(0);
+        fc.write(bb);
     }
 
     synchronized public long size() throws IOException {

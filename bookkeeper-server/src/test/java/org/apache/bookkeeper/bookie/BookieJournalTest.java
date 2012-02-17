@@ -54,6 +54,8 @@ import static org.junit.Assert.*;
 public class BookieJournalTest {
     static Logger LOG = LoggerFactory.getLogger(BookieJournalTest.class);
 
+    final Random r = new Random(System.currentTimeMillis());
+
     private void writeIndexFileForLedger(File indexDir, long ledgerId,
                                          byte[] masterKey)
             throws Exception {
@@ -63,6 +65,42 @@ public class BookieJournalTest {
         // force creation of index file
         fi.write(new ByteBuffer[]{ ByteBuffer.allocate(0) }, 0);
         fi.close();
+    }
+
+    private void writePartialIndexFileForLedger(File indexDir, long ledgerId,
+                                                byte[] masterKey, boolean truncateToMasterKey)
+            throws Exception {
+        File fn = new File(indexDir, LedgerCache.getLedgerName(ledgerId));
+        fn.getParentFile().mkdirs();
+        FileInfo fi = new FileInfo(fn, masterKey);
+        // force creation of index file
+        fi.write(new ByteBuffer[]{ ByteBuffer.allocate(0) }, 0);
+        fi.close();
+        // file info header
+        int headerLen = 8 + 4 + masterKey.length;
+        // truncate the index file
+        int leftSize;
+        if (truncateToMasterKey) {
+            leftSize = r.nextInt(headerLen);
+        } else {
+            leftSize = headerLen + r.nextInt(1024 - headerLen);
+        }
+        FileChannel fc = new RandomAccessFile(fn, "rw").getChannel();
+        fc.truncate(leftSize);
+        fc.close();
+    }
+
+    /**
+     * Generate meta entry with given master key
+     */
+    private ByteBuffer generateMetaEntry(long ledgerId, byte[] masterKey) {
+        ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
+        bb.putLong(ledgerId);
+        bb.putLong(Bookie.METAENTRY_ID_LEDGER_KEY);
+        bb.putInt(masterKey.length);
+        bb.put(masterKey);
+        bb.flip();
+        return bb;
     }
 
     private void writeJunkJournal(File journalDir) throws Exception {
@@ -115,6 +153,35 @@ public class BookieJournalTest {
         long lastConfirmed = -1;
         for (int i = 1; i <= numEntries; i++) {
             ByteBuffer packet = ClientUtil.generatePacket(1, i, lastConfirmed, i*data.length, data).toByteBuffer();
+            lastConfirmed = i;
+            ByteBuffer lenBuff = ByteBuffer.allocate(4);
+            lenBuff.putInt(packet.remaining());
+            lenBuff.flip();
+
+            bc.write(lenBuff);
+            bc.write(packet);
+        }
+        bc.flush(true);
+
+        return jc;
+    }
+
+    private JournalChannel writePostV3Journal(File journalDir, int numEntries, byte[] masterKey) throws Exception {
+        long logId = System.currentTimeMillis();
+        JournalChannel jc = new JournalChannel(journalDir, logId);
+
+        BufferedChannel bc = jc.getBufferedChannel();
+
+        byte[] data = new byte[1024];
+        Arrays.fill(data, (byte)'X');
+        long lastConfirmed = -1;
+        for (int i = 0; i <= numEntries; i++) {
+            ByteBuffer packet;
+            if (i == 0) {
+                packet = generateMetaEntry(1, masterKey);
+            } else {
+                packet = ClientUtil.generatePacket(1, i, lastConfirmed, i*data.length, data).toByteBuffer();
+            }
             lastConfirmed = i;
             ByteBuffer lenBuff = ByteBuffer.allocate(4);
             lenBuff.putInt(packet.remaining());
@@ -383,4 +450,111 @@ public class BookieJournalTest {
         }
     }
 
+    /**
+     * Test partial index (truncate master key) with pre-v3 journals
+     */
+    @Test
+    public void testPartialFileInfoPreV3Journal1() throws Exception {
+        testPartialFileInfoPreV3Journal(true);
+    }
+
+    /**
+     * Test partial index with pre-v3 journals
+     */
+    @Test
+    public void testPartialFileInfoPreV3Journal2() throws Exception {
+        testPartialFileInfoPreV3Journal(false);
+    }
+
+    /**
+     * Test partial index file with pre-v3 journals.
+     */
+    private void testPartialFileInfoPreV3Journal(boolean truncateMasterKey)
+        throws Exception {
+        File journalDir = File.createTempFile("bookie", "journal");
+        journalDir.delete();
+        journalDir.mkdir();
+
+        File ledgerDir = File.createTempFile("bookie", "ledger");
+        ledgerDir.delete();
+        ledgerDir.mkdir();
+
+        writePreV2Journal(journalDir, 100);
+        writePartialIndexFileForLedger(ledgerDir, 1, "testPasswd".getBytes(),
+                                       truncateMasterKey);
+
+        ServerConfiguration conf = new ServerConfiguration()
+            .setZkServers(null)
+            .setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[] { ledgerDir.getPath() });
+
+        if (truncateMasterKey) {
+            try {
+                Bookie b = new Bookie(conf);
+                fail("Should not reach here!");
+            } catch (IOException ie) {
+            }
+        } else {
+            Bookie b = new Bookie(conf);
+
+            b.readEntry(1, 100);
+            try {
+                b.readEntry(1, 101);
+                fail("Shouldn't have found entry 101");
+            } catch (Bookie.NoEntryException e) {
+                // correct behaviour
+            }
+        }
+    }
+
+    /**
+     * Test partial index (truncate master key) with post-v3 journals
+     */
+    @Test
+    public void testPartialFileInfoPostV3Journal1() throws Exception {
+        testPartialFileInfoPostV3Journal(true);
+    }
+
+    /**
+     * Test partial index with post-v3 journals
+     */
+    @Test
+    public void testPartialFileInfoPostV3Journal2() throws Exception {
+        testPartialFileInfoPostV3Journal(false);
+    }
+
+    /**
+     * Test partial index file with post-v3 journals.
+     */
+    private void testPartialFileInfoPostV3Journal(boolean truncateMasterKey)
+        throws Exception {
+        File journalDir = File.createTempFile("bookie", "journal");
+        journalDir.delete();
+        journalDir.mkdir();
+
+        File ledgerDir = File.createTempFile("bookie", "ledger");
+        ledgerDir.delete();
+        ledgerDir.mkdir();
+
+        byte[] masterKey = "testPasswd".getBytes();
+
+        writePostV3Journal(journalDir, 100, masterKey);
+        writePartialIndexFileForLedger(ledgerDir, 1, masterKey,
+                                       truncateMasterKey);
+
+        ServerConfiguration conf = new ServerConfiguration()
+            .setZkServers(null)
+            .setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[] { ledgerDir.getPath() });
+
+        Bookie b = new Bookie(conf);
+
+        b.readEntry(1, 100);
+        try {
+            b.readEntry(1, 101);
+            fail("Shouldn't have found entry 101");
+        } catch (Bookie.NoEntryException e) {
+            // correct behaviour
+        }
+    }
 }
