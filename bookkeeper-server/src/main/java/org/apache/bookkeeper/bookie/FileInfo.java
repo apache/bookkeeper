@@ -120,6 +120,8 @@ class FileInfo {
 
         if (!exists) { 
             if (create) {
+                // delayed the creation of parents directories
+                checkParents(lf);
                 fc = new RandomAccessFile(lf, "rw").getChannel();
                 size = fc.size();
                 if (size == 0) {
@@ -231,5 +233,15 @@ class FileInfo {
 
     public boolean delete() {
         return lf.delete();
+    }
+
+    static final private void checkParents(File f) throws IOException {
+        File parent = f.getParentFile();
+        if (parent.exists()) {
+            return;
+        }
+        if (parent.mkdirs() == false) {
+            throw new IOException("Counldn't mkdirs for " + parent);
+        }
     }
 }

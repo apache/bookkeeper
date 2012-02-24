@@ -51,6 +51,7 @@ Trunk (unreleased changes)
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)
 
         BOOKKEEPER-133: Hub server should update subscription state to zookeeper when losing topic or shutting down (Sijie Gou via ivank)
+
     IMPROVEMENTS:
 
       bookkeeper-server/
@@ -66,6 +67,8 @@ Trunk (unreleased changes)
         BOOKKEEPER-137: Do not create Ledger index files until absolutely necessary. (ivank)
 
 	BOOKKEEPER-172: Upgrade framework for filesystem layouts (ivank via fpj)
+
+        BOOKKEEPER-178: Delay ledger directory creation until the ledger index file was created (sijie via ivank)
 
       hedwig-server/
 

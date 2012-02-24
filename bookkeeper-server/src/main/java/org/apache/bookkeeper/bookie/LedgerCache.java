@@ -211,16 +211,6 @@ public class LedgerCache {
         return sb.toString();
     }
 
-    static final private void checkParents(File f) throws IOException {
-        File parent = f.getParentFile();
-        if (parent.exists()) {
-            return;
-        }
-        if (parent.mkdirs() == false) {
-            throw new IOException("Counldn't mkdirs for " + parent);
-        }
-    }
-
     static final private Random rand = new Random();
 
     static final private File pickDirs(File dirs[]) {
@@ -246,7 +236,6 @@ public class LedgerCache {
                     }
                     File dir = pickDirs(ledgerDirectories);
                     lf = new File(dir, ledgerName);
-                    checkParents(lf);
                     // A new ledger index file has been created for this Bookie.
                     // Add this new ledger to the set of active ledgers.
                     if (LOG.isDebugEnabled()) {
