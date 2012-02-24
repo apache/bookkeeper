@@ -46,6 +46,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-177: Index file is lost or some index pages aren't flushed. (sijie via ivank)
 
+        BOOKKEEPER-113: NPE In BookKeeper test (fpj via ivank)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)

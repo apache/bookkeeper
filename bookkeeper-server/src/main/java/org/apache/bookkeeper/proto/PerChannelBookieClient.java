@@ -225,11 +225,6 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                   Object ctx, final int options) {
         final int entrySize = toSend.readableBytes();
 
-        // if (totalBytesOutstanding.get() > maxMemory) {
-        // // TODO: how to throttle, throw an exception, or call the callback?
-        // // Maybe this should be done at the layer above?
-        // }
-
         final CompletionKey completionKey = new CompletionKey(ledgerId, entryId);
 
         addCompletions.put(completionKey, new AddCompletion(cb, entrySize, ctx));
@@ -238,30 +233,35 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                               + 4 // for the type of request
                               + masterKey.length; // for the master key
 
-        ChannelBuffer header = channel.getConfig().getBufferFactory().getBuffer(totalHeaderSize);
-        header.writeInt(totalHeaderSize - 4 + entrySize);
-        header.writeInt(new PacketHeader(BookieProtocol.CURRENT_PROTOCOL_VERSION, 
-                                         BookieProtocol.ADDENTRY, (short)options).toInt());
-        header.writeBytes(masterKey);
+        try{
+            ChannelBuffer header = channel.getConfig().getBufferFactory().getBuffer(totalHeaderSize);
 
-        ChannelBuffer wrappedBuffer = ChannelBuffers.wrappedBuffer(header, toSend);
+            header.writeInt(totalHeaderSize - 4 + entrySize);
+            header.writeInt(new PacketHeader(BookieProtocol.CURRENT_PROTOCOL_VERSION,
+                                             BookieProtocol.ADDENTRY, (short)options).toInt());
+            header.writeBytes(masterKey);
 
-        ChannelFuture future = channel.write(wrappedBuffer);
-        future.addListener(new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture future) throws Exception {
-                if (future.isSuccess()) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Successfully wrote request for adding entry: " + entryId + " ledger-id: " + ledgerId
-                                  + " bookie: " + channel.getRemoteAddress() + " entry length: " + entrySize);
+            ChannelBuffer wrappedBuffer = ChannelBuffers.wrappedBuffer(header, toSend);
+
+            ChannelFuture future = channel.write(wrappedBuffer);
+            future.addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    if (future.isSuccess()) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Successfully wrote request for adding entry: " + entryId + " ledger-id: " + ledgerId
+                                                            + " bookie: " + channel.getRemoteAddress() + " entry length: " + entrySize);
+                        }
+                        // totalBytesOutstanding.addAndGet(entrySize);
+                    } else {
+                        errorOutAddKey(completionKey);
                     }
-                    // totalBytesOutstanding.addAndGet(entrySize);
-                } else {
-                    errorOutAddKey(completionKey);
                 }
-            }
-        });
-
+            });
+        } catch (Throwable e) {
+            LOG.warn("Read entry operation failed", e);
+            errorOutReadKey(completionKey);
+        }
     }
 
     public void readEntry(final long ledgerId, final long entryId, ReadEntryCallback cb, Object ctx, final int options) {
@@ -273,29 +273,33 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                               + 8 // for ledgerId
                               + 8; // for entryId
 
-        ChannelBuffer tmpEntry = channel.getConfig().getBufferFactory().getBuffer(totalHeaderSize);
-        tmpEntry.writeInt(totalHeaderSize - 4);
+        try{
+            ChannelBuffer tmpEntry = channel.getConfig().getBufferFactory().getBuffer(totalHeaderSize);
+            tmpEntry.writeInt(totalHeaderSize - 4);
 
-        tmpEntry.writeInt(new PacketHeader(BookieProtocol.CURRENT_PROTOCOL_VERSION, 
-                                           BookieProtocol.READENTRY, (short)options).toInt());
-        tmpEntry.writeLong(ledgerId);
-        tmpEntry.writeLong(entryId);
+            tmpEntry.writeInt(new PacketHeader(BookieProtocol.CURRENT_PROTOCOL_VERSION,
+                                               BookieProtocol.READENTRY, (short)options).toInt());
+            tmpEntry.writeLong(ledgerId);
+            tmpEntry.writeLong(entryId);
 
-        ChannelFuture future = channel.write(tmpEntry);
-        future.addListener(new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture future) throws Exception {
-                if (future.isSuccess()) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Successfully wrote request for reading entry: " + entryId + " ledger-id: "
-                                  + ledgerId + " bookie: " + channel.getRemoteAddress());
+            ChannelFuture future = channel.write(tmpEntry);
+            future.addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    if (future.isSuccess()) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Successfully wrote request for reading entry: " + entryId + " ledger-id: "
+                                                            + ledgerId + " bookie: " + channel.getRemoteAddress());
+                        }
+                    } else {
+                        errorOutReadKey(key);
                     }
-                } else {
-                    errorOutReadKey(key);
                 }
-            }
-        });
-
+            });
+        } catch(Throwable e) {
+            LOG.warn("Read entry operation failed", e);
+            errorOutReadKey(key);
+        }
     }
 
     public void close() {
