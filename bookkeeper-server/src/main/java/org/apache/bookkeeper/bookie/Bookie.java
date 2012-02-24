@@ -197,42 +197,53 @@ public class Bookie extends Thread {
                 }
 
                 lastLogMark.markLog();
+
+                boolean flushFailed = false;
                 try {
                     ledgerCache.flushLedger(true);
                 } catch (IOException e) {
                     LOG.error("Exception flushing Ledger", e);
+                    flushFailed = true;
                 }
                 try {
                     entryLogger.flush();
                 } catch (IOException e) {
                     LOG.error("Exception flushing entry logger", e);
+                    flushFailed = true;
                 }
-                lastLogMark.rollLog();
 
-                // list the journals that have been marked
-                List<Long> logs = listJournalIds(journalDirectory, new JournalIdFilter() {
-                    @Override
-                    public boolean accept(long journalId) {
-                        if (journalId < lastLogMark.lastMark.txnLogId) {
-                            return true;
-                        } else {
-                            return false;
+                // if flush failed, we should not roll last mark, otherwise we would
+                // have some ledgers are not flushed and their journal entries were lost
+                if (!flushFailed) {
+
+                    lastLogMark.rollLog();
+
+                    // list the journals that have been marked
+                    List<Long> logs = listJournalIds(journalDirectory, new JournalIdFilter() {
+                        @Override
+                        public boolean accept(long journalId) {
+                            if (journalId < lastLogMark.lastMark.txnLogId) {
+                                return true;
+                            } else {
+                                return false;
+                            }
+                        }
+                    });
+
+                    // keep MAX_BACKUP_JOURNALS journal files before marked journal
+                    if (logs.size() >= maxBackupJournals) {
+                        int maxIdx = logs.size() - maxBackupJournals;
+                        for (int i=0; i<maxIdx; i++) {
+                            long id = logs.get(i);
+                            // make sure the journal id is smaller than marked journal id
+                            if (id < lastLogMark.lastMark.txnLogId) {
+                                File journalFile = new File(journalDirectory, Long.toHexString(id) + ".txn");
+                                journalFile.delete();
+                                LOG.info("garbage collected journal " + journalFile.getName());
+                            }
                         }
                     }
-                });
 
-                // keep MAX_BACKUP_JOURNALS journal files before marked journal
-                if (logs.size() >= maxBackupJournals) {
-                    int maxIdx = logs.size() - maxBackupJournals;
-                    for (int i=0; i<maxIdx; i++) {
-                        long id = logs.get(i);
-                        // make sure the journal id is smaller than marked journal id
-                        if (id < lastLogMark.lastMark.txnLogId) {
-                            File journalFile = new File(journalDirectory, Long.toHexString(id) + ".txn");
-                            journalFile.delete();
-                            LOG.info("garbage collected journal " + journalFile.getName());
-                        }
-                    }
                 }
 
                 // clear flushing flag

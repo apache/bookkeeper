@@ -183,11 +183,12 @@ public class LedgerCache {
         try {
             if (lep == null) {
                 lep = grabCleanPage(ledger, pageEntry);
+                // should update page before we put it into table
+                // otherwise we would put an empty page in it
+                updatePage(lep);
                 synchronized(this) {
                     putIntoTable(pages, lep);
                 }
-                updatePage(lep);
-
             }
             return lep.getOffset(offsetInPage*8);
         } finally {
@@ -303,75 +304,9 @@ public class LedgerCache {
             }
             while(!dirtyLedgers.isEmpty()) {
                 Long l = dirtyLedgers.removeFirst();
-                LinkedList<Long> firstEntryList;
-                synchronized(this) {
-                    HashMap<Long, LedgerEntryPage> pageMap = pages.get(l);
-                    if (pageMap == null || pageMap.isEmpty()) {
-                        continue;
-                    }
-                    firstEntryList = new LinkedList<Long>();
-                    for(Map.Entry<Long, LedgerEntryPage> entry: pageMap.entrySet()) {
-                        LedgerEntryPage lep = entry.getValue();
-                        if (lep.isClean()) {
-                            if (LOG.isTraceEnabled()) {
-                                LOG.trace("Page is clean " + lep);
-                            }
-                            continue;
-                        }
-                        firstEntryList.add(lep.getFirstEntry());
-                    }
-                }
-                // Now flush all the pages of a ledger
-                List<LedgerEntryPage> entries = new ArrayList<LedgerEntryPage>(firstEntryList.size());
-                FileInfo fi = null;
-                try {
-                    for(Long firstEntry: firstEntryList) {
-                        LedgerEntryPage lep = getLedgerEntryPage(l, firstEntry, true);
-                        if (lep != null) {
-                            entries.add(lep);
-                        }
-                    }
-                    Collections.sort(entries, new Comparator<LedgerEntryPage>() {
-                        @Override
-                        public int compare(LedgerEntryPage o1, LedgerEntryPage o2) {
-                            return (int)(o1.getFirstEntry()-o2.getFirstEntry());
-                        }
-                    });
-                    ArrayList<Integer> versions = new ArrayList<Integer>(entries.size());
-                    fi = getFileInfo(l, null);
-                    int start = 0;
-                    long lastOffset = -1;
-                    for(int i = 0; i < entries.size(); i++) {
-                        versions.add(i, entries.get(i).getVersion());
-                        if (lastOffset != -1 && (entries.get(i).getFirstEntry() - lastOffset) != entriesPerPage) {
-                            // send up a sequential list
-                            int count = i - start;
-                            if (count == 0) {
-                                System.out.println("Count cannot possibly be zero!");
-                            }
-                            writeBuffers(l, entries, fi, start, count);
-                            start = i;
-                        }
-                        lastOffset = entries.get(i).getFirstEntry();
-                    }
-                    if (entries.size()-start == 0 && entries.size() != 0) {
-                        System.out.println("Nothing to write, but there were entries!");
-                    }
-                    writeBuffers(l, entries, fi, start, entries.size()-start);
-                    synchronized(this) {
-                        for(int i = 0; i < entries.size(); i++) {
-                            LedgerEntryPage lep = entries.get(i);
-                            lep.setClean(versions.get(i));
-                        }
-                    }
-                } finally {
-                    for(LedgerEntryPage lep: entries) {
-                        lep.releasePage();
-                    }
-                    if (fi != null) {
-                        fi.release();
-                    }
-                }
+
+                flushLedger(l);
+
                 if (!doAll) {
                     break;
                 }
@@ -383,6 +318,92 @@ public class LedgerCache {
                     // just pass it on
                     Thread.currentThread().interrupt();
                 }
+            }
+        }
+    }
+
+    /**
+     * Flush a specified ledger
+     *
+     * @param l
+     *          Ledger Id
+     * @throws IOException
+     */
+    private void flushLedger(long l) throws IOException {
+        LinkedList<Long> firstEntryList;
+        synchronized(this) {
+            HashMap<Long, LedgerEntryPage> pageMap = pages.get(l);
+            if (pageMap == null || pageMap.isEmpty()) {
+                return;
+            }
+            firstEntryList = new LinkedList<Long>();
+            for(Map.Entry<Long, LedgerEntryPage> entry: pageMap.entrySet()) {
+                LedgerEntryPage lep = entry.getValue();
+                if (lep.isClean()) {
+                    if (LOG.isTraceEnabled()) {
+                        LOG.trace("Page is clean " + lep);
+                    }
+                    continue;
+                }
+                firstEntryList.add(lep.getFirstEntry());
+            }
+        }
+
+        if (firstEntryList.size() == 0) {
+            LOG.debug("Nothing to flush for ledger {}.", l);
+            // nothing to do
+            return;
+        }
+
+        // Now flush all the pages of a ledger
+        List<LedgerEntryPage> entries = new ArrayList<LedgerEntryPage>(firstEntryList.size());
+        FileInfo fi = null;
+        try {
+            for(Long firstEntry: firstEntryList) {
+                LedgerEntryPage lep = getLedgerEntryPage(l, firstEntry, true);
+                if (lep != null) {
+                    entries.add(lep);
+                }
+            }
+            Collections.sort(entries, new Comparator<LedgerEntryPage>() {
+                    @Override
+                    public int compare(LedgerEntryPage o1, LedgerEntryPage o2) {
+                    return (int)(o1.getFirstEntry()-o2.getFirstEntry());
+                    }
+                    });
+            ArrayList<Integer> versions = new ArrayList<Integer>(entries.size());
+            fi = getFileInfo(l, null);
+            int start = 0;
+            long lastOffset = -1;
+            for(int i = 0; i < entries.size(); i++) {
+                versions.add(i, entries.get(i).getVersion());
+                if (lastOffset != -1 && (entries.get(i).getFirstEntry() - lastOffset) != entriesPerPage) {
+                    // send up a sequential list
+                    int count = i - start;
+                    if (count == 0) {
+                        System.out.println("Count cannot possibly be zero!");
+                    }
+                    writeBuffers(l, entries, fi, start, count);
+                    start = i;
+                }
+                lastOffset = entries.get(i).getFirstEntry();
+            }
+            if (entries.size()-start == 0 && entries.size() != 0) {
+                System.out.println("Nothing to write, but there were entries!");
+            }
+            writeBuffers(l, entries, fi, start, entries.size()-start);
+            synchronized(this) {
+                for(int i = 0; i < entries.size(); i++) {
+                    LedgerEntryPage lep = entries.get(i);
+                    lep.setClean(versions.get(i));
+                }
+            }
+        } finally {
+            for(LedgerEntryPage lep: entries) {
+                lep.releasePage();
+            }
+            if (fi != null) {
+                fi.release();
             }
         }
     }

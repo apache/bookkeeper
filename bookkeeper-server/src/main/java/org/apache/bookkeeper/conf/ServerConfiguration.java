@@ -168,6 +168,20 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Set page size
+     *
+     * @see #getPageSize()
+     *
+     * @param pageSize
+     *          Page Size
+     * @return Server Configuration
+     */
+    public ServerConfiguration setPageSize(int pageSize) {
+        this.setProperty(PAGE_SIZE, pageSize);
+        return this;
+    }
+
+    /**
      * Max journal file size
      *
      * @return max journal file size

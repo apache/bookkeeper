@@ -141,6 +141,12 @@ public class LedgerDescriptor {
             try {
                 fi = ledgerCache.getFileInfo(ledgerId, null);
                 long size = fi.size();
+                // make sure the file size is aligned with index entry size
+                // otherwise we may read incorret data
+                if (0 != size % 8) {
+                    LOG.warn("Index file of ledger {} is not aligned with index entry size.", ledgerId);
+                    size = size - size % 8;
+                }
                 // we may not have the last entry in the cache
                 if (size > lastEntry*8) {
                     ByteBuffer bb = ByteBuffer.allocate(ledgerCache.getPageSize());
