@@ -63,6 +63,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-137: Do not create Ledger index files until absolutely necessary. (ivank)
 
+	BOOKKEEPER-172: Upgrade framework for filesystem layouts (ivank via fpj)
+
       hedwig-server/
 
         BOOKKEEPER-77: Add a console client for hedwig (Sijie Guo via ivank)

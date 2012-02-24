@@ -56,6 +56,7 @@ Usage: bookkeeper <command>
 where command is one of:
     bookie              Run a bookie server
     localbookie <n>     Run a test ensemble of <n> bookies locally
+    upgrade             Upgrade bookie filesystem
     help                This help message
 
 or command is the full name of a class with a defined main() method.
@@ -126,6 +127,8 @@ elif [ $COMMAND == "localbookie" ]; then
     NUMBER=$1
     shift
     exec java $OPTS org.apache.bookkeeper.util.LocalBookKeeper $NUMBER $BOOKIE_CONF $@
+elif [ $COMMAND == "upgrade" ]; then
+    exec java $OPTS org.apache.bookkeeper.bookie.FileSystemUpgrade --conf $BOOKIE_CONF $@
 elif [ $COMMAND == "help" ]; then
     bookkeeper_help;
 else
