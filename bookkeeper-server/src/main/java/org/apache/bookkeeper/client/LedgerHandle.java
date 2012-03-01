@@ -23,7 +23,7 @@ package org.apache.bookkeeper.client;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
-import java.util.ArrayDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Queue;
@@ -69,7 +69,7 @@ public class LedgerHandle {
     final Semaphore opCounterSem;
     private final Integer throttling;
 
-    final Queue<PendingAddOp> pendingAddOps = new ArrayDeque<PendingAddOp>();
+    final Queue<PendingAddOp> pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
 
     LedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
                  DigestType digestType, byte[] password)

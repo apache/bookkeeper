@@ -26,10 +26,10 @@ setup_delays() {
 	Darwin|FreeBSD)
 	    sudo ipfw pipe 1 config delay ${1}ms
 	    sudo ipfw add pipe 1 dst-port 4081
-	    sudo ipfw add pipe 1 dst-port 4081
+	    sudo ipfw add pipe 1 src-port 4081
+	    sudo ipfw add pipe 1 dst-port 4082 
 	    sudo ipfw add pipe 1 src-port 4082 
-	    sudo ipfw add pipe 1 src-port 4082 
-	    sudo ipfw add pipe 1 src-port 4083 
+	    sudo ipfw add pipe 1 dst-port 4083 
 	    sudo ipfw add pipe 1 src-port 4083 
             ;;
 	Linux)

@@ -48,6 +48,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-113: NPE In BookKeeper test (fpj via ivank)
 
+	BOOKKEEPER-176: HierarchicalBookieFailureTest Hung (ivank via fpj)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)

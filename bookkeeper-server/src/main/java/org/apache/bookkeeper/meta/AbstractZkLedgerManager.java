@@ -168,7 +168,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager {
             });
             ctx.wait();
         }
-        if (Code.OK.intValue() != ctx.rc && null != ctx.ledgers) {
+        if (Code.OK.intValue() != ctx.rc) {
             throw new IOException("Error on getting ledgers from node " + nodePath);
         }
         return ctx.ledgers;
