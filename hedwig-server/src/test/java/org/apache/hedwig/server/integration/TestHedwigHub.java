@@ -254,23 +254,12 @@ public class TestHedwigHub extends HedwigHubTestBase {
         }
     }
 
-    protected void publishFirstBatch(int batchSize, boolean messagesToBeConsumed) throws Exception {
+    protected void publishBatch(int batchSize, boolean expected, boolean messagesToBeConsumed, int loop) throws Exception {
         if (logger.isDebugEnabled())
-            logger.debug("Publishing first batch of messages.");
+            logger.debug("Publishing " + loop + " batch of messages.");
         for (int i = 0; i < batchSize; i++) {
-            publisher.asyncPublish(getTopic(i), getMsg(i), new TestCallback(queue), null);
-            assertTrue(queue.take());
-            if (messagesToBeConsumed)
-                assertTrue(consumeQueue.take());
-        }
-    }
-
-    protected void publishSecondBatch(int batchSize, boolean messagesToBeConsumed) throws Exception {
-        if (logger.isDebugEnabled())
-            logger.debug("Publishing second batch of messages.");
-        for (int i = 0; i < batchSize; i++) {
-            publisher.asyncPublish(getTopic(i), getMsg(i + batchSize), new TestCallback(queue), null);
-            assertTrue(queue.take());
+            publisher.asyncPublish(getTopic(i), getMsg(i + loop * batchSize), new TestCallback(queue), null);
+            assertTrue(expected == queue.take());
             if (messagesToBeConsumed)
                 assertTrue(consumeQueue.take());
         }
@@ -387,31 +376,31 @@ public class TestHedwigHub extends HedwigHubTestBase {
     @Test
     public void testServerRedirect() throws Exception {
         int batchSize = 10;
-        publishFirstBatch(batchSize, false);
+        publishBatch(batchSize, true, false, 0);
     }
 
     @Test
     public void testSubscribeAndConsume() throws Exception {
         int batchSize = 10;
         subscribeToTopics(batchSize);
-        publishFirstBatch(batchSize, true);
+        publishBatch(batchSize, true, true, 0);
     }
 
     @Test
     public void testServerFailoverPublishOnly() throws Exception {
         int batchSize = 10;
-        publishFirstBatch(batchSize, false);
+        publishBatch(batchSize, true, false, 0);
         shutDownLastServer();
-        publishSecondBatch(batchSize, false);
+        publishBatch(batchSize, true, false, 1);
     }
 
     @Test
     public void testServerFailover() throws Exception {
         int batchSize = 10;
         subscribeToTopics(batchSize);
-        publishFirstBatch(batchSize, true);
+        publishBatch(batchSize, true, true, 0);
         shutDownLastServer();
-        publishSecondBatch(batchSize, true);
+        publishBatch(batchSize, true, true, 1);
     }
 
     @Test
@@ -690,4 +679,17 @@ public class TestHedwigHub extends HedwigHubTestBase {
         hubClient.close();
     }
 
+    @Test
+    public void testPublishWithBookKeeperError() throws Exception {
+        int batchSize = 10;
+        publishBatch(batchSize, true, false, 0);
+        // stop all bookie servers
+        bktb.stopAllBookieServers();
+        // following publish would failed with NotEnoughBookies
+        publishBatch(batchSize, false, false, 1);
+        // start all bookie servers
+        bktb.startAllBookieServers();
+        // following publish should succeed
+        publishBatch(batchSize, true, false, 1);
+    }
 }

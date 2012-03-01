@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -77,6 +78,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
     private BookKeeper bk;
     private ZooKeeper zk;
     private ServerConfiguration cfg;
+    private TopicManager tm;
 
     static class InMemoryLedgerRange {
         LedgerRange range;
@@ -125,6 +127,10 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
          */
         InMemoryLedgerRange currentLedgerRange;
 
+        /**
+         * Flag to release topic when encountering unrecoverable exceptions
+         */
+        AtomicBoolean doRelease = new AtomicBoolean(false);
     }
 
     Map<ByteString, TopicInfo> topicInfos = new ConcurrentHashMap<ByteString, TopicInfo>();
@@ -148,6 +154,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
         this.bk = bk;
         this.zk = zk;
         this.cfg = cfg;
+        this.tm = tm;
         queuer = new TopicOpQueuer(executor);
         tm.addTopicOwnershipChangeListener(this);
     }
@@ -359,6 +366,12 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                 return;
             }
 
+            if (topicInfo.doRelease.get()) {
+                request.callback.operationFailed(request.ctx, new PubSubException.ServiceDownException(
+                    "The ownership of the topic is releasing due to unrecoverable issue."));
+                return;
+            }
+
             final long localSeqId = topicInfo.lastSeqIdPushed.getLocalComponent() + 1;
             MessageSeqId.Builder builder = MessageSeqId.newBuilder();
             if (request.message.hasMsgId()) {
@@ -383,6 +396,20 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                         // To preserve ordering guarantees, we
                         // should give up the topic and not let
                         // other operations through
+                        if (topicInfo.doRelease.compareAndSet(false, true)) {
+                            tm.releaseTopic(request.topic, new Callback<Void>() {
+                                @Override
+                                public void operationFailed(Object ctx, PubSubException exception) {
+                                    logger.error("Exception found on releasing topic " + request.topic.toStringUtf8()
+                                               + " when encountering exception from bookkeeper:", exception);
+                                }
+                                @Override
+                                public void operationFinished(Object ctx, Void resultOfOperation) {
+                                    logger.debug("successfully releasing topic {} when encountering"
+                                                 + " exception from bookkeeper", request.topic.toStringUtf8());
+                                }
+                            }, null);
+                        }
                         request.callback.operationFailed(ctx, new PubSubException.ServiceDownException(bke));
                         return;
                     }

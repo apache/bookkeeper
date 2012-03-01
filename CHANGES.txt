@@ -54,6 +54,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-133: Hub server should update subscription state to zookeeper when losing topic or shutting down (Sijie Gou via ivank)
 
+        BOOKKEEPER-74: Bookkeeper Persistence Manager should give up topic on error (sijie via ivank)
+
     IMPROVEMENTS:
 
       bookkeeper-server/

@@ -17,6 +17,7 @@
  */
 package org.apache.hedwig.server.persistence;
 
+import java.net.InetAddress;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,6 +50,7 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
 
     // BookKeeper Server variables
     private List<BookieServer> bookiesList;
+    private List<ServerConfiguration> bkConfsList;
     private int initialPort = 5000;
     private int nextPort = initialPort;
 
@@ -101,6 +103,7 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
 
         // Create Bookie Servers
         bookiesList = new LinkedList<BookieServer>();
+        bkConfsList = new LinkedList<ServerConfiguration>();
 
         for (int i = 0; i < numBookies; i++) {
             startUpNewBookieServer();
@@ -129,6 +132,27 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
         bk.close();
         super.tearDown();
     }
+
+    public void stopAllBookieServers() throws Exception {
+        try {
+            for (BookieServer bs : bookiesList) {
+                bs.shutdown();
+            }
+            bookiesList.clear();
+        } catch (InterruptedException e) {
+            LOG.error("Error stopping all bookie servers", e);
+        }
+    }
+
+    public void startAllBookieServers() throws Exception {
+        try {
+            for (ServerConfiguration conf : bkConfsList) {
+                bookiesList.add(startBookie(conf));
+            }
+        } catch (InterruptedException e) {
+            LOG.error("Error starting all bookie servers", e);
+        }
+    }
     
     public void tearDownOneBookieServer() throws Exception {
         Random r = new Random();
@@ -140,6 +164,7 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
             LOG.error("Error tearing down", e);
         }
         bookiesList.remove(bi);
+        bkConfsList.remove(bi);
     }
     
     public void startUpNewBookieServer() throws Exception {
@@ -147,9 +172,27 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
                 PREFIX + (nextPort - initialPort), SUFFIX);
         ServerConfiguration conf = newServerConfiguration(
                 nextPort++, hostPort, tmpDir, new File[] { tmpDir });
-        BookieServer bs = new BookieServer(conf);
-        bs.start();
-        bookiesList.add(bs);
+        bookiesList.add(startBookie(conf));
+        bkConfsList.add(conf);
+    }
+
+    /**
+     * Helper method to startup a bookie server using a configuration object
+     *
+     * @param conf
+     *            Server Configuration Object
+     *
+     */
+    private BookieServer startBookie(ServerConfiguration conf) throws Exception {
+        BookieServer server = new BookieServer(conf);
+        server.start();
+
+        int port = conf.getBookiePort();
+        while(zk.exists("/ledgers/available/" + InetAddress.getLocalHost().getHostAddress() + ":" + port, false) == null) {
+            Thread.sleep(500);
+        }
+
+        return server;
     }
 
     protected ServerConfiguration newServerConfiguration(int port, String zkServers, File journalDir, File[] ledgerDirs) {
