@@ -25,6 +25,10 @@ import java.io.File;
 public class ServerConfiguration extends AbstractConfiguration {
     // Entry Log Parameters
     protected final static String ENTRY_LOG_SIZE_LIMIT = "logSizeLimit";
+    protected final static String MINOR_COMPACTION_INTERVAL = "minorCompactionInterval";
+    protected final static String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
+    protected final static String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
+    protected final static String MAJOR_COMPACTION_THRESHOLD = "majorCompactionThreshold";
 
     // Gc Parameters
     protected final static String GC_WAIT_TIME = "gcWaitTime";
@@ -403,6 +407,112 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setStatisticsEnabled(boolean enabled) {
         setProperty(ENABLE_STATISTICS, Boolean.toString(enabled));
+        return this;
+    }
+
+    /**
+     * Get threshold of minor compaction.
+     *
+     * For those entry log files whose remaining size percentage reaches below
+     * this threshold  will be compacted in a minor compaction.
+     *
+     * If it is set to less than zero, the minor compaction is disabled.
+     *
+     * @return threshold of minor compaction
+     */
+    public double getMinorCompactionThreshold() {
+        return getDouble(MINOR_COMPACTION_THRESHOLD, 0.2f);
+    }
+
+    /**
+     * Set threshold of minor compaction
+     *
+     * @see #getMinorCompactionThreshold()
+     *
+     * @param threshold
+     *          Threshold for minor compaction
+     * @return server configuration
+     */
+    public ServerConfiguration setMinorCompactionThreshold(double threshold) {
+        setProperty(MINOR_COMPACTION_THRESHOLD, threshold);
+        return this;
+    }
+
+    /**
+     * Get threshold of major compaction.
+     *
+     * For those entry log files whose remaining size percentage reaches below
+     * this threshold  will be compacted in a major compaction.
+     *
+     * If it is set to less than zero, the major compaction is disabled.
+     *
+     * @return threshold of major compaction
+     */
+    public double getMajorCompactionThreshold() {
+        return getDouble(MAJOR_COMPACTION_THRESHOLD, 0.8f);
+    }
+
+    /**
+     * Set threshold of major compaction.
+     *
+     * @see #getMajorCompactionThreshold()
+     *
+     * @param threshold
+     *          Threshold of major compaction
+     * @return server configuration
+     */
+    public ServerConfiguration setMajorCompactionThreshold(double threshold) {
+        setProperty(MAJOR_COMPACTION_THRESHOLD, threshold);
+        return this;
+    }
+
+    /**
+     * Get interval to run minor compaction, in seconds.
+     *
+     * If it is set to less than zero, the minor compaction is disabled.
+     *
+     * @return threshold of minor compaction
+     */
+    public long getMinorCompactionInterval() {
+        return getLong(MINOR_COMPACTION_INTERVAL, 3600);
+    }
+
+    /**
+     * Set interval to run minor compaction
+     *
+     * @see #getMinorCompactionInterval()
+     *
+     * @param interval
+     *          Interval to run minor compaction
+     * @return server configuration
+     */
+    public ServerConfiguration setMinorCompactionInterval(long interval) {
+        setProperty(MINOR_COMPACTION_INTERVAL, interval);
+        return this;
+    }
+
+    /**
+     * Get interval to run major compaction, in seconds.
+     *
+     * If it is set to less than zero, the major compaction is disabled.
+     *
+     * @return high water mark
+     */
+    public long getMajorCompactionInterval() {
+        return getLong(MAJOR_COMPACTION_INTERVAL, 86400);
+    }
+
+    /**
+     * Set interval to run major compaction.
+     *
+     * @see #getMajorCompactionInterval()
+     *
+     * @param interval
+     *          Interval to run major compaction
+     * @return server configuration
+     */
+    public ServerConfiguration setMajorCompactionInterval(long interval) {
+        setProperty(MAJOR_COMPACTION_INTERVAL, interval);
         return this;
     }
 }

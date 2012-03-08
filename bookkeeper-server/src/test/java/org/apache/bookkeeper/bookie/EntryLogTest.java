@@ -23,12 +23,13 @@ package org.apache.bookkeeper.bookie;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.HashMap;
 
 import junit.framework.TestCase;
 
+import org.apache.bookkeeper.bookie.EntryLogger.EntryLogMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.junit.After;
 import org.junit.Before;
@@ -54,7 +55,7 @@ public class EntryLogTest extends TestCase {
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
         // create some entries
-        EntryLogger logger = new EntryLogger(conf, null);
+        EntryLogger logger = new EntryLogger(conf);
         logger.addEntry(1, generateEntry(1, 1));
         logger.addEntry(3, generateEntry(3, 1));
         logger.addEntry(2, generateEntry(2, 1));
@@ -65,18 +66,14 @@ public class EntryLogTest extends TestCase {
         raf.setLength(raf.length()-10);
         raf.close();
         // now see which ledgers are in the log
-        logger = new EntryLogger(conf, null);
-        logger.start();
+        logger = new EntryLogger(conf);
+        EntryLogMetadata meta =
+            logger.extractMetaFromEntryLog(0L);
 
-        Thread.sleep(2 * gcWaitTime);
-        Field entryLogs2LedgersMapField = logger.getClass().getDeclaredField("entryLogs2LedgersMap");
-        entryLogs2LedgersMapField.setAccessible(true);
-        @SuppressWarnings("unchecked")
-        Map<Long, Map<Long, Boolean>> ledgersMap = (Map<Long, Map<Long, Boolean>>) entryLogs2LedgersMapField.get(logger);
-        LOG.info("LedgersMap.get(0) {}", ledgersMap.get(0L));
-        assertNotNull(ledgersMap.get(0L).get(1L));
-        assertNull(ledgersMap.get(0L).get(2L));
-        assertNotNull(ledgersMap.get(0L).get(3L));
+        LOG.info("Extracted Meta From Entry Log {}", meta);
+        assertNotNull(meta.ledgersMap.get(1L));
+        assertNull(meta.ledgersMap.get(2L));
+        assertNotNull(meta.ledgersMap.get(3L));
     }
 
     private ByteBuffer generateEntry(long ledger, long entry) {

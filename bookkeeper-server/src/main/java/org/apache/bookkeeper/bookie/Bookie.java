@@ -136,6 +136,11 @@ public class Bookie extends Thread {
 
     EntryLogger entryLogger;
     LedgerCache ledgerCache;
+    // This is the thread that garbage collects the entry logs that do not
+    // contain any active ledgers in them; and compacts the entry logs that
+    // has lower remaining percentage to reclaim disk space.
+    final GarbageCollectorThread gcThread;
+
     /**
      * SyncThread is a background thread which flushes ledger index pages periodically.
      * Also it takes responsibility of garbage collecting journal files.
@@ -263,6 +268,28 @@ public class Bookie extends Thread {
         }
     }
 
+    /**
+     * Scanner used to do entry log compaction
+     */
+    class EntryLogCompactionScanner implements EntryLogger.EntryLogScanner {
+        @Override
+        public boolean accept(long ledgerId) {
+            // bookie has no knowledge about which ledger is deleted
+            // so just accept all ledgers.
+            return true;
+        }
+
+        @Override
+        public void process(long ledgerId, ByteBuffer buffer)
+            throws IOException {
+            try {
+                Bookie.this.addEntryByLedgerId(ledgerId, buffer);
+            } catch (BookieException be) {
+                throw new IOException(be);
+            }
+        }
+    }
+
     public Bookie(ServerConfiguration conf) 
             throws IOException, KeeperException, InterruptedException, BookieException {
         super("Bookie-" + conf.getBookiePort());
@@ -283,9 +310,11 @@ public class Bookie extends Thread {
         ledgerManager = LedgerManagerFactory.newLedgerManager(conf, this.zk);
 
         syncThread = new SyncThread(conf);
-        entryLogger = new EntryLogger(conf, this);
+        entryLogger = new EntryLogger(conf);
         ledgerCache = new LedgerCache(conf, ledgerManager);
-
+        gcThread = new GarbageCollectorThread(conf, this.zk, ledgerCache, entryLogger,
+                                              new EntryLogCompactionScanner());
+        // replay journals
         readJournal();
     }
 
@@ -390,7 +419,7 @@ public class Bookie extends Thread {
         LOG.debug("I'm starting a bookie with journal directory " + journalDirectory.getName());
         super.start();
         syncThread.start();
-        entryLogger.start();
+        gcThread.start();
         // set running here.
         // since bookie server use running as a flag to tell bookie server whether it is alive
         // if setting it in bookie thread, the watcher might run before bookie thread.
@@ -907,6 +936,9 @@ public class Bookie extends Thread {
         if (!running) { // avoid shutdown twice
             return;
         }
+        // shut down gc thread, which depends on zookeeper client
+        // also compaction will write entries again to entry log file
+        gcThread.shutdown();
         // Shutdown the ZK client
         if(zk != null) zk.close();
         this.interrupt();
@@ -955,6 +987,16 @@ public class Bookie extends Thread {
             l.setMasterKeyPersisted();
         }
         return l;
+    }
+
+    protected void addEntryByLedgerId(long ledgerId, ByteBuffer entry)
+        throws IOException, BookieException {
+        LedgerDescriptor handle = getHandle(ledgerId);
+        try {
+            handle.addEntry(entry);
+        } finally {
+            putHandle(handle);
+        }
     }
 
     /**

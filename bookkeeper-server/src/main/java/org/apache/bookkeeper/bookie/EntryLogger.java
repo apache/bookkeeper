@@ -36,13 +36,13 @@ import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.LedgerManager;
 
 /**
  * This class manages the writing of the bookkeeper entries. All the new
@@ -54,9 +54,6 @@ import org.apache.bookkeeper.meta.LedgerManager;
 public class EntryLogger {
     private static final Logger LOG = LoggerFactory.getLogger(EntryLogger.class);
     private File dirs[];
-    // This is a handle to the Bookie parent instance. We need this to get
-    // access to the LedgerCache as well as the ZooKeeper client handle.
-    private final Bookie bookie;
 
     private long logId;
     /**
@@ -74,24 +71,102 @@ public class EntryLogger {
     // this indicates that a write has happened since the last flush
     private volatile boolean somethingWritten = false;
 
-    // Maps entry log files to the set of ledgers that comprise the file.
-    private ConcurrentMap<Long, ConcurrentHashMap<Long, Boolean>> entryLogs2LedgersMap = new ConcurrentHashMap<Long, ConcurrentHashMap<Long, Boolean>>();
-    // This is the thread that garbage collects the entry logs that do not
-    // contain any active ledgers in them.
-    GarbageCollectorThread gcThread = new GarbageCollectorThread();
-    // This is how often we want to run the Garbage Collector Thread (in milliseconds).
-    final long gcWaitTime;
+    final static long MB = 1024 * 1024;
+
+    /**
+     * Records the total size, remaining size and the set of ledgers that comprise a entry log.
+     */
+    static class EntryLogMetadata {
+        long entryLogId;
+        long totalSize;
+        long remainingSize;
+        ConcurrentHashMap<Long, Long> ledgersMap;
+
+        public EntryLogMetadata(long logId) {
+            this.entryLogId = logId;
+
+            totalSize = remainingSize = 0;
+            ledgersMap = new ConcurrentHashMap<Long, Long>();
+        }
+
+        public void addLedgerSize(long ledgerId, long size) {
+            totalSize += size;
+            remainingSize += size;
+            Long ledgerSize = ledgersMap.get(ledgerId);
+            if (null == ledgerSize) {
+                ledgerSize = 0L;
+            }
+            ledgerSize += size;
+            ledgersMap.put(ledgerId, ledgerSize);
+        }
+
+        public void removeLedger(long ledgerId) {
+            Long size = ledgersMap.remove(ledgerId);
+            if (null == size) {
+                return;
+            }
+            remainingSize -= size;
+        }
+
+        public boolean containsLedger(long ledgerId) {
+            return ledgersMap.containsKey(ledgerId);
+        }
+
+        public double getUsage() {
+            if (totalSize == 0L) {
+                return 0.0f;
+            }
+            return (double)remainingSize / totalSize;
+        }
+
+        public boolean isEmpty() {
+            return ledgersMap.isEmpty();
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("{ totalSize = ").append(totalSize).append(", remainingSize = ")
+              .append(remainingSize).append(", ledgersMap = ").append(ledgersMap).append(" }");
+            return sb.toString();
+        }
+    }
+
+    /**
+     * Scan entries in a entry log file.
+     */
+    static interface EntryLogScanner {
+        /**
+         * Tests whether or not the entries belongs to the specified ledger
+         * should be processed.
+         *
+         * @param ledgerId
+         *          Ledger ID.
+         * @return true if and only the entries of the ledger should be scanned.
+         */
+        public boolean accept(long ledgerId);
+
+        /**
+         * Process an entry.
+         *
+         * @param ledgerId
+         *          Ledger ID.
+         * @param entry
+         *          Entry ByteBuffer
+         * @throws IOException
+         */
+        public void process(long ledgerId, ByteBuffer entry) throws IOException;
+    }
 
     /**
      * Create an EntryLogger that stores it's log files in the given
      * directories
      */
-    public EntryLogger(ServerConfiguration conf, Bookie bookie) throws IOException {
+    public EntryLogger(ServerConfiguration conf) throws IOException {
         this.dirs = conf.getLedgerDirs();
-        this.bookie = bookie;
         // log size limit
         this.logSizeLimit = conf.getEntryLogSizeLimit();
-        this.gcWaitTime = conf.getGcWaitTime();
+
         // Initialize the entry log header buffer. This cannot be a static object
         // since in our unit tests, we run multiple Bookies and thus EntryLoggers
         // within the same JVM. All of these Bookie instances access this header
@@ -108,117 +183,10 @@ public class EntryLogger {
         createLogId(logId);
     }
 
-    public void start() {
-        // Start the Garbage Collector thread to prune unneeded entry logs.
-        gcThread.start();
-    }
-
     /**
      * Maps entry log files to open channels.
      */
     private ConcurrentHashMap<Long, BufferedChannel> channels = new ConcurrentHashMap<Long, BufferedChannel>();
-
-    /**
-     * This is the garbage collector thread that runs in the background to
-     * remove any entry log files that no longer contains any active ledger.
-     */
-    class GarbageCollectorThread extends Thread {
-        volatile boolean running = true;
-
-        public GarbageCollectorThread() {
-            super("GarbageCollectorThread");
-        }
-
-        @Override
-        public void run() {
-            while (running) {
-                synchronized (this) {
-                    try {
-                        wait(gcWaitTime);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        continue;
-                    }
-                }
-                // Extract all of the ledger ID's that comprise all of the entry logs
-                // (except for the current new one which is still being written to).
-                try {
-                    extractLedgersFromEntryLogs();
-                } catch (IOException ie) {
-                    LOG.warn("Exception when extracting ledgers from entry logs : ", ie);
-                }
-
-                // Initialization check. No need to run any logic if we are still starting up.
-                if (bookie == null ||
-                    bookie.zk == null || bookie.ledgerCache == null) {
-                    continue;
-                }
-
-                // gc inactive/deleted ledgers
-                doGcLedgers();
-
-                // gc entry logs
-                doGcEntryLogs();
-            }
-        }
-
-        /**
-         * Do garbage collection ledger index files
-         */
-        private void doGcLedgers() {
-            bookie.ledgerCache.activeLedgerManager.garbageCollectLedgers(
-            new LedgerManager.GarbageCollector() {
-                @Override
-                public void gc(long ledgerId) {
-                    try {
-                        bookie.ledgerCache.deleteLedger(ledgerId);
-                    } catch (IOException e) {
-                        LOG.error("Exception when deleting the ledger index file on the Bookie: ", e);
-                    }
-                }
-            });
-        }
-
-        /**
-         * Garbage collect those entry loggers which are not associated with any active ledgers
-         */
-        private void doGcEntryLogs() {
-            // Loop through all of the entry logs and remove the non-active ledgers.
-            for (Long entryLogId : entryLogs2LedgersMap.keySet()) {
-                ConcurrentHashMap<Long, Boolean> entryLogLedgers = entryLogs2LedgersMap.get(entryLogId);
-                for (Long entryLogLedger : entryLogLedgers.keySet()) {
-                    // Remove the entry log ledger from the set if it isn't active.
-                    if (!bookie.ledgerCache.activeLedgerManager.containsActiveLedger(entryLogLedger)) {
-                        entryLogLedgers.remove(entryLogLedger);
-                    }
-                }
-                if (entryLogLedgers.isEmpty()) {
-                    // This means the entry log is not associated with any active ledgers anymore.
-                    // We can remove this entry log file now.
-                    LOG.info("Deleting entryLogId " + entryLogId + " as it has no active ledgers!");
-                    BufferedChannel bc = channels.remove(entryLogId);
-                    if (null != bc) {
-                        // close its underlying file channel, so it could be deleted really
-                        try {
-                            bc.getFileChannel().close();
-                        } catch (IOException ie) {
-                            LOG.warn("Exception while closing garbage collected entryLog file : ", ie);
-                        }
-                    }
-                    File entryLogFile;
-                    try {
-                        entryLogFile = findFile(entryLogId);
-                    } catch (FileNotFoundException e) {
-                        LOG.error("Trying to delete an entryLog file that could not be found: "
-                                + entryLogId + ".log");
-                        continue;
-                    }
-                    entryLogFile.delete();
-                    entryLogs2LedgersMap.remove(entryLogId);
-                }
-            }
-        }
-    }
 
     /**
      * Creates a new log file with the given id.
@@ -236,6 +204,34 @@ public class EntryLogger {
         for(File f: dirs) {
             setLastLogId(f, logId);
         }
+    }
+
+    /**
+     * Remove entry log.
+     *
+     * @param entryLogId
+     *          Entry Log File Id
+     */
+    protected boolean removeEntryLog(long entryLogId) {
+        BufferedChannel bc = channels.remove(entryLogId);
+        if (null != bc) {
+            // close its underlying file channel, so it could be deleted really
+            try {
+                bc.getFileChannel().close();
+            } catch (IOException ie) {
+                LOG.warn("Exception while closing garbage collected entryLog file : ", ie);
+            }
+        }
+        File entryLogFile;
+        try {
+            entryLogFile = findFile(entryLogId);
+        } catch (FileNotFoundException e) {
+            LOG.error("Trying to delete an entryLog file that could not be found: "
+                    + entryLogId + ".log");
+            return false;
+        }
+        entryLogFile.delete();
+        return true;
     }
 
     /**
@@ -326,7 +322,7 @@ public class EntryLogger {
         sizeBuff.flip();
         int entrySize = sizeBuff.getInt();
         // entrySize does not include the ledgerId
-        if (entrySize > 1024*1024) {
+        if (entrySize > MB) {
             LOG.error("Sanity check failed for entry size of " + entrySize + " at location " + pos + " in " + entryLogId);
 
         }
@@ -390,84 +386,147 @@ public class EntryLogger {
     }
 
     /**
-     * Method to read in all of the entry logs (those that we haven't done so yet),
-     * and find the set of ledger ID's that make up each entry log file.
+     * A scanner used to extract entry log meta from entry log files.
      */
-    private void extractLedgersFromEntryLogs() throws IOException {
-        // Extract it for every entry log except for the current one.
-        // Entry Log ID's are just a long value that starts at 0 and increments
-        // by 1 when the log fills up and we roll to a new one.
-        ByteBuffer sizeBuff = ByteBuffer.allocate(4);
-        BufferedChannel bc;
-        long curLogId = logId;
-        for (long entryLogId = 0; entryLogId < curLogId; entryLogId++) {
-            // Comb the current entry log file if it has not already been extracted.
-            if (entryLogs2LedgersMap.containsKey(entryLogId)) {
-                continue;
-            }
-            LOG.info("Extracting the ledgers from entryLogId: " + entryLogId);
-            // Get the BufferedChannel for the current entry log file
-            try {
-                bc = getChannelForLogId(entryLogId);
-            } catch (FileNotFoundException e) {
-                // If we can't find the entry log file, just log a warning message and continue.
-                // This could be a deleted/garbage collected entry log.
-                LOG.warn("Entry Log file not found in log directories: " + entryLogId + ".log");
-                continue;
-            }
-            // Start the read position in the current entry log file to be after
-            // the header where all of the ledger entries are.
-            long pos = LOGFILE_HEADER_SIZE;
-            ConcurrentHashMap<Long, Boolean> entryLogLedgers = new ConcurrentHashMap<Long, Boolean>();
-            // Read through the entry log file and extract the ledger ID's.
-            try {
-                while (true) {
-                    // Check if we've finished reading the entry log file.
-                    if (pos >= bc.size()) {
-                        break;
-                    }
-                    if (bc.read(sizeBuff, pos) != sizeBuff.capacity()) {
-                        throw new IOException("Short read from entrylog " + entryLogId);
-                    }
-                    pos += 4;
-                    sizeBuff.flip();
-                    int entrySize = sizeBuff.getInt();
-                    if (entrySize > 1024 * 1024) {
-                        LOG.error("Sanity check failed for entry size of " + entrySize + " at location " + pos + " in "
-                                + entryLogId);
-                    }
-                    byte data[] = new byte[entrySize];
-                    ByteBuffer buff = ByteBuffer.wrap(data);
-                    int rc = bc.read(buff, pos);
-                    if (rc != data.length) {
-                        throw new IOException("Short read for entryLog " + entryLogId + "@" + pos + "(" + rc + "!="
-                                + data.length + ")");
-                    }
-                    buff.flip();
-                    long ledgerId = buff.getLong();
-                    entryLogLedgers.put(ledgerId, true);
-                    // Advance position to the next entry and clear sizeBuff.
-                    pos += entrySize;
-                    sizeBuff.clear();
-                }
-            } catch(IOException e) {
-              LOG.info("Premature exception when processing " + entryLogId + 
-                       "recovery will take care of the problem", e);
-            }
-            LOG.info("Retrieved all ledgers that comprise entryLogId: " + entryLogId + ", values: " + entryLogLedgers);
-            entryLogs2LedgersMap.put(entryLogId, entryLogLedgers);
+    class ExtractionScanner implements EntryLogScanner {
+        EntryLogMetadata meta;
+
+        public ExtractionScanner(EntryLogMetadata meta) {
+            this.meta = meta;
+        }
+
+        @Override
+        public boolean accept(long ledgerId) {
+            return true;
+        }
+        @Override
+        public void process(long ledgerId, ByteBuffer entry) {
+            // add new entry size of a ledger to entry log meta
+            meta.addLedgerSize(ledgerId, entry.limit() + 4);
         }
     }
 
     /**
-     * Shutdown method to gracefully stop all threads spawned in this class and exit.
+     * Method to read in all of the entry logs (those that we haven't done so yet),
+     * and find the set of ledger ID's that make up each entry log file.
      *
-     * @throws InterruptedException if there is an exception stopping threads.
+     * @param entryLogMetaMap
+     *          Existing EntryLogs to Meta
+     * @throws IOException
      */
-    public void shutdown() throws InterruptedException {
-        gcThread.running = false;
-        gcThread.interrupt();
-        gcThread.join();
+    protected Map<Long, EntryLogMetadata> extractMetaFromEntryLogs(Map<Long, EntryLogMetadata> entryLogMetaMap) throws IOException {
+        // Extract it for every entry log except for the current one.
+        // Entry Log ID's are just a long value that starts at 0 and increments
+        // by 1 when the log fills up and we roll to a new one.
+        long curLogId = logId;
+        for (long entryLogId = 0; entryLogId < curLogId; entryLogId++) {
+            // Comb the current entry log file if it has not already been extracted.
+            if (entryLogMetaMap.containsKey(entryLogId)) {
+                continue;
+            }
+            LOG.info("Extracting entry log meta from entryLogId: " + entryLogId);
+            EntryLogMetadata entryLogMeta = new EntryLogMetadata(entryLogId);
+            ExtractionScanner scanner = new ExtractionScanner(entryLogMeta);
+            // Read through the entry log file and extract the entry log meta
+            try {
+                scanEntryLog(entryLogId, scanner);
+                LOG.info("Retrieved entry log meta data entryLogId: " + entryLogId + ", meta: " + entryLogMeta);
+                entryLogMetaMap.put(entryLogId, entryLogMeta);
+            } catch(IOException e) {
+              LOG.warn("Premature exception when processing " + entryLogId +
+                       "recovery will take care of the problem", e);
+            }
+
+        }
+        return entryLogMetaMap;
+    }
+
+    protected EntryLogMetadata extractMetaFromEntryLog(long entryLogId) {
+        EntryLogMetadata entryLogMeta = new EntryLogMetadata(entryLogId);
+        ExtractionScanner scanner = new ExtractionScanner(entryLogMeta);
+        // Read through the entry log file and extract the entry log meta
+        try {
+            scanEntryLog(entryLogId, scanner);
+            LOG.info("Retrieved entry log meta data entryLogId: " + entryLogId + ", meta: " + entryLogMeta);
+        } catch(IOException e) {
+          LOG.warn("Premature exception when processing " + entryLogId +
+                   "recovery will take care of the problem", e);
+        }
+        return entryLogMeta;
+    }
+
+    /**
+     * Scan entry log
+     *
+     * @param entryLogId
+     *          Entry Log Id
+     * @param scanner
+     *          Entry Log Scanner
+     * @throws IOException
+     */
+    protected void scanEntryLog(long entryLogId, EntryLogScanner scanner) throws IOException {
+        ByteBuffer sizeBuff = ByteBuffer.allocate(4);
+        ByteBuffer lidBuff = ByteBuffer.allocate(8);
+        BufferedChannel bc;
+        // Get the BufferedChannel for the current entry log file
+        try {
+            bc = getChannelForLogId(entryLogId);
+        } catch (IOException e) {
+            LOG.warn("Failed to get channel to scan entry log: " + entryLogId + ".log");
+            throw e;
+        }
+        // Start the read position in the current entry log file to be after
+        // the header where all of the ledger entries are.
+        long pos = LOGFILE_HEADER_SIZE;
+        // Read through the entry log file and extract the ledger ID's.
+        while (true) {
+            // Check if we've finished reading the entry log file.
+            if (pos >= bc.size()) {
+                break;
+            }
+            if (bc.read(sizeBuff, pos) != sizeBuff.capacity()) {
+                throw new IOException("Short read for entry size from entrylog " + entryLogId);
+            }
+            pos += 4;
+            sizeBuff.flip();
+            int entrySize = sizeBuff.getInt();
+            if (entrySize > MB) {
+                LOG.warn("Found large size entry of " + entrySize + " at location " + pos + " in "
+                        + entryLogId);
+            }
+            sizeBuff.clear();
+            // try to read ledger id first
+            if (bc.read(lidBuff, pos) != lidBuff.capacity()) {
+                throw new IOException("Short read for ledger id from entrylog " + entryLogId);
+            }
+            lidBuff.flip();
+            long lid = lidBuff.getLong();
+            lidBuff.clear();
+            if (!scanner.accept(lid)) {
+                // skip this entry
+                pos += entrySize;
+                continue;
+            }
+            // read the entry
+            byte data[] = new byte[entrySize];
+            ByteBuffer buff = ByteBuffer.wrap(data);
+            int rc = bc.read(buff, pos);
+            if (rc != data.length) {
+                throw new IOException("Short read for ledger entry from entryLog " + entryLogId
+                                    + "@" + pos + "(" + rc + "!=" + data.length + ")");
+            }
+            buff.flip();
+            // process the entry
+            scanner.process(lid, buff);
+            // Advance position to the next entry
+            pos += entrySize;
+        }
+    }
+
+    /**
+     * Shutdown method to gracefully stop entry logger.
+     */
+    public void shutdown() {
         // since logChannel is buffered channel, do flush when shutting down
         try {
             flush();

@@ -76,6 +76,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-178: Delay ledger directory creation until the ledger index file was created (sijie via ivank)
 
+        BOOKKEEPER-160: bookie server needs to do compaction over entry log files to reclaim disk space (sijie via ivank)
+
       hedwig-server/
 
         BOOKKEEPER-77: Add a console client for hedwig (Sijie Guo via ivank)
