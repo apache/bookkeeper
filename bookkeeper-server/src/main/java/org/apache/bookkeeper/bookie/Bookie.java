@@ -67,6 +67,7 @@ import org.apache.zookeeper.ZooDefs.Ids;
 public class Bookie extends Thread {
     HashMap<Long, LedgerDescriptor> ledgers = new HashMap<Long, LedgerDescriptor>();
     static Logger LOG = LoggerFactory.getLogger(Bookie.class);
+
     final static long MB = 1024 * 1024L;
     // max journal file size
     final long maxJournalSize;
@@ -102,6 +103,10 @@ public class Bookie extends Thread {
 
     // Running flag
     private volatile boolean running = false;
+    // Flag identify whether it is in shutting down progress
+    private volatile boolean shuttingdown = false;
+
+    private int exitCode = ExitCode.OK;
 
     // jmx related beans
     BookieBean jmxBookieBean;
@@ -428,12 +433,7 @@ public class Bookie extends Thread {
             registerBookie(conf.getBookiePort());
         } catch (IOException e) {
             LOG.error("Couldn't register bookie with zookeeper, shutting down", e);
-            try {
-                shutdown();
-            } catch (InterruptedException ie) {
-                LOG.error("Interrupted shutting down", ie);
-                System.exit(-1);
-            }
+            shutdown(ExitCode.ZK_REG_FAIL);
         }
     }
 
@@ -594,11 +594,7 @@ public class Bookie extends Thread {
                 Watcher.Event.KeeperState.Expired)) {
                     LOG.error("ZK client connection to the ZK server has expired!");
                     isZkExpired = true;
-                    try {
-                        shutdown();
-                    } catch (InterruptedException ie) {
-                        System.exit(-1);
-                    }
+                    shutdown(ExitCode.ZK_EXPIRED);
                 }
             }
         });
@@ -928,31 +924,56 @@ public class Bookie extends Thread {
                 qe = null;
             }
         } catch (Exception e) {
-            LOG.error("Bookie thread exiting", e);
+            // if the bookie thread quits due to shutting down, it is ok
+            if (shuttingdown) {
+                LOG.warn("Bookie thread exits when shutting down", e);
+            } else {
+                // some error found in bookie thread and it quits
+                // following add operations to it would hang unit client timeout
+                // so we should let bookie server exists
+                LOG.error("Exception occurred in bookie thread and it quits : ", e);
+                shutdown(ExitCode.BOOKIE_EXCEPTION);
+            }
         }
     }
 
-    public synchronized void shutdown() throws InterruptedException {
-        if (!running) { // avoid shutdown twice
-            return;
+    // provided a public shutdown method for other caller
+    // to shut down bookie gracefully
+    public int shutdown() {
+        return shutdown(ExitCode.OK);
+    }
+
+    // internal shutdown method to let shutdown bookie gracefully
+    // when encountering exception
+    synchronized int shutdown(int exitCode) {
+        try {
+            if (running) { // avoid shutdown twice
+                // the exitCode only set when first shutdown usually due to exception found
+                this.exitCode = exitCode;
+                // mark bookie as in shutting down progress
+                shuttingdown = true;
+                // shut down gc thread, which depends on zookeeper client
+                // also compaction will write entries again to entry log file
+                gcThread.shutdown();
+                // Shutdown the ZK client
+                if(zk != null) zk.close();
+                this.interrupt();
+                this.join();
+                syncThread.shutdown();
+                for(LedgerDescriptor d: ledgers.values()) {
+                    d.close();
+                }
+                // Shutdown the EntryLogger which has the GarbageCollector Thread running
+                entryLogger.shutdown();
+                // close Ledger Manager
+                ledgerManager.close();
+                // setting running to false here, so watch thread in bookie server know it only after bookie shut down
+                running = false;
+            }
+        } catch (InterruptedException ie) {
+            LOG.error("Interrupted during shutting down bookie : ", ie);
         }
-        // shut down gc thread, which depends on zookeeper client
-        // also compaction will write entries again to entry log file
-        gcThread.shutdown();
-        // Shutdown the ZK client
-        if(zk != null) zk.close();
-        this.interrupt();
-        this.join();
-        syncThread.shutdown(); 
-        for(LedgerDescriptor d: ledgers.values()) {
-            d.close();
-        }
-        // Shutdown the EntryLogger which has the GarbageCollector Thread running
-        entryLogger.shutdown();
-        // close Ledger Manager
-        ledgerManager.close();
-        // setting running to false here, so watch thread in bookie server know it only after bookie shut down
-        running = false;
+        return exitCode;
     }
 
     /** 

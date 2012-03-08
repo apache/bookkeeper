@@ -121,12 +121,8 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
     @After
     public void tearDown() throws Exception {
         // Shutdown all of the bookie servers
-        try {
-            for (BookieServer bs : bookiesList) {
-                bs.shutdown();
-            }
-        } catch (InterruptedException e) {
-            LOG.error("Error tearing down", e);
+        for (BookieServer bs : bookiesList) {
+            bs.shutdown();
         }
         // Close the BookKeeper client
         bk.close();
@@ -134,23 +130,15 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
     }
 
     public void stopAllBookieServers() throws Exception {
-        try {
-            for (BookieServer bs : bookiesList) {
-                bs.shutdown();
-            }
-            bookiesList.clear();
-        } catch (InterruptedException e) {
-            LOG.error("Error stopping all bookie servers", e);
+        for (BookieServer bs : bookiesList) {
+            bs.shutdown();
         }
+        bookiesList.clear();
     }
 
     public void startAllBookieServers() throws Exception {
-        try {
-            for (ServerConfiguration conf : bkConfsList) {
-                bookiesList.add(startBookie(conf));
-            }
-        } catch (InterruptedException e) {
-            LOG.error("Error starting all bookie servers", e);
+        for (ServerConfiguration conf : bkConfsList) {
+            bookiesList.add(startBookie(conf));
         }
     }
     
@@ -158,11 +146,7 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
         Random r = new Random();
         int bi = r.nextInt(bookiesList.size());
         BookieServer bs = bookiesList.get(bi);
-        try {
-            bs.shutdown();
-        } catch (InterruptedException e) {
-            LOG.error("Error tearing down", e);
-        }
+        bs.shutdown();
         bookiesList.remove(bi);
         bkConfsList.remove(bi);
     }

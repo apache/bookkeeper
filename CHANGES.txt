@@ -50,6 +50,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-176: HierarchicalBookieFailureTest Hung (ivank via fpj)
 
+        BOOKKEEPER-180: bookie server doesn't quit when running out of disk space (sijie via ivank)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)

@@ -93,13 +93,9 @@ public class ConcurrentLedgerTest extends TestCase {
     @Override
     @After
     public void tearDown() {
-        try {
-            bookie.shutdown();
-            recursiveDelete(txnDir);
-            recursiveDelete(ledgerDir);
-        } catch (InterruptedException e) {
-            LOG.error("Error tearing down", e);
-        }
+        bookie.shutdown();
+        recursiveDelete(txnDir);
+        recursiveDelete(ledgerDir);
     }
 
     byte zeros[] = new byte[16];

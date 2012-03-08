@@ -35,6 +35,7 @@ import org.apache.zookeeper.KeeperException;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.jmx.BKMBeanRegistry;
 import org.apache.bookkeeper.proto.NIOServerFactory.Cnxn;
@@ -60,6 +61,8 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     Bookie bookie;
     DeathWatcher deathWatcher;
     static Logger LOG = LoggerFactory.getLogger(BookieServer.class);
+
+    int exitCode = ExitCode.OK;
 
     // operation stats
     final BKStats bkStats = BKStats.getInstance();
@@ -94,12 +97,12 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         }
     }
 
-    public synchronized void shutdown() throws InterruptedException {
+    public synchronized void shutdown() {
         if (!running) {
             return;
         }
         nioServerFactory.shutdown();
-        bookie.shutdown();
+        exitCode = bookie.shutdown();
         running = false;
 
         // unregister JMX
@@ -156,6 +159,10 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         nioServerFactory.join();
     }
 
+    public int getExitCode() {
+        return exitCode;
+    }
+
     /**
      * A thread to watch whether bookie & nioserver is still alive
      */
@@ -176,11 +183,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
                     // do nothing
                 }
                 if (!isBookieRunning() || !isNioServerRunning()) {
-                    try {
-                        shutdown();
-                    } catch (InterruptedException ie) {
-                        System.exit(-1);
-                    }
+                    shutdown();
                     break;
                 }
             }
@@ -262,8 +265,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
      * @throws IOException
      * @throws InterruptedException
      */
-    public static void main(String[] args) 
-            throws IOException, KeeperException, InterruptedException, BookieException {
+    public static void main(String[] args) {
         ServerConfiguration conf = null;
         try {
             conf = parseArgs(args);
@@ -271,7 +273,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
             LOG.error("Error parsing command line arguments : ", iae);
             System.err.println(iae.getMessage());
             printUsage();
-            throw iae;
+            System.exit(ExitCode.INVALID_CONF);
         }
 
         StringBuilder sb = new StringBuilder();
@@ -288,21 +290,24 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
                            conf.getBookiePort(), conf.getZkServers(),
                            conf.getJournalDirName(), sb);
         LOG.info(hello);
-        final BookieServer bs = new BookieServer(conf);
-        bs.start();
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                try {
+        try {
+            final BookieServer bs = new BookieServer(conf);
+            bs.start();
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                @Override
+                public void run() {
                     bs.shutdown();
                     LOG.info("Shut down bookie server successfully");
-                } catch (InterruptedException ie) {
-                    LOG.warn("Exception when shutting down bookie server : ", ie);
                 }
-            }
-        });
-        LOG.info("Register shutdown hook successfully");
-        bs.join();
+            });
+            LOG.info("Register shutdown hook successfully");
+            bs.join();
+
+            System.exit(bs.getExitCode());
+        } catch (Exception e) {
+            LOG.error("Exception running bookie server : ", e);
+            System.exit(ExitCode.SERVER_EXCEPTION);
+        }
     }
 
     public void processPacket(ByteBuffer packet, Cnxn src) {
