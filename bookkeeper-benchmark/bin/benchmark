@@ -30,44 +30,41 @@ then
 fi
 
 BINDIR=`dirname "$0"`
-BK_HOME=`cd $BINDIR/..;pwd`
+BENCH_HOME=`cd $BINDIR/..;pwd`
 
-DEFAULT_CONF=$BK_HOME/conf/bk_server.conf
-
-source $BK_HOME/conf/bkenv.sh
-
-RELEASE_JAR=`ls $BK_HOME/bookkeeper-server-*.jar 2> /dev/null | tail -1` 
+RELEASE_JAR=`ls $BENCH_HOME/bookkeeper-benchmark-*.jar 2> /dev/null | tail -1` 
 if [ $? == 0 ]; then
-    BOOKIE_JAR=$RELEASE_JAR
+    BENCHMARK_JAR=$RELEASE_JAR
 fi
 
-BUILT_JAR=`ls $BK_HOME/target/bookkeeper-server-*.jar 2> /dev/null | tail -1`
-if [ $? != 0 ] && [ ! -e "$BOOKIE_JAR" ]; then 
-    echo "\nCouldn't find bookkeeper jar.";
+BUILT_JAR=`ls $BENCH_HOME/target/bookkeeper-benchmark-*.jar 2> /dev/null | tail -1`
+if [ $? != 0 ] && [ ! -e "$BENCHMARK_JAR" ]; then 
+    echo "\nCouldn't find benchmark jar.";
     echo "Make sure you've run 'mvn package'\n";
     exit 1;
 elif [ -e "$BUILT_JAR" ]; then
-    BOOKIE_JAR=$BUILT_JAR
+    BENCHMARK_JAR=$BUILT_JAR
 fi
 
-bookkeeper_help() {
+benchmark_help() {
     cat <<EOF
-Usage: bookkeeper <command>
+Usage: $0 <command>
 where command is one of:
-    bookie              Run a bookie server
-    localbookie <n>     Run a test ensemble of <n> bookies locally
-    upgrade             Upgrade bookie filesystem
+    writes              Benchmark throughput and latency for writes
+    reads               Benchmark throughput and latency for reads
+    bookie              Benchmark an individual bookie
     help                This help message
+
+use -help with individual commands for more options. For example,
+   $0 writes -help
 
 or command is the full name of a class with a defined main() method.
 
 Environment variables:
-   BOOKIE_LOG_CONF        Log4j configuration file
-   BOOKIE_CONF            Configuration file (default: conf/bk_server.conf)
-   BOOKIE_EXTRA_OPTS      Extra options to be passed to the jvm
-   BOOKIE_EXTRA_CLASSPATH Add extra paths to the bookkeeper classpath
+   BENCHMARK_LOG_CONF        Log4j configuration file (default: conf/log4j.properties)
+   BENCHMARK_EXTRA_OPTS      Extra options to be passed to the jvm
+   BENCHMARK_EXTRA_CLASSPATH Add extra paths to the bookkeeper classpath
 
-These variable can also be set in conf/bkenv.sh
 EOF
 }
 
@@ -80,17 +77,17 @@ add_maven_deps_to_classpath() {
     # Need to generate classpath from maven pom. This is costly so generate it
     # and cache it. Save the file into our target dir so a mvn clean will get
     # clean it up and force us create a new one.
-    f="${BK_HOME}/target/cached_classpath.txt"
+    f="${BENCH_HOME}/target/cached_classpath.txt"
     if [ ! -f "${f}" ]
     then
-	${MVN} -f "${BK_HOME}/pom.xml" dependency:build-classpath -Dmdep.outputFile="${f}" &> /dev/null
+	${MVN} -f "${BENCH_HOME}/pom.xml" dependency:build-classpath -Dmdep.outputFile="${f}" &> /dev/null
     fi
-    BOOKIE_CLASSPATH=${CLASSPATH}:`cat "${f}"`
+    BENCHMARK_CLASSPATH=${CLASSPATH}:`cat "${f}"`
 }
 
-if [ -d "$BK_HOME/lib" ]; then
-    for i in $BK_HOME/lib/*.jar; do
-	BOOKIE_CLASSPATH=$BOOKIE_CLASSPATH:$i
+if [ -d "$BENCH_HOME/lib" ]; then
+    for i in $BENCH_HOME/lib/*.jar; do
+	BENCHMARK_CLASSPATH=$BENCHMARK_CLASSPATH:$i
     done
 else
     add_maven_deps_to_classpath
@@ -98,7 +95,7 @@ fi
 
 # if no args specified, show usage
 if [ $# = 0 ]; then
-    bookkeeper_help;
+    benchmark_help;
     exit 1;
 fi
 
@@ -106,32 +103,28 @@ fi
 COMMAND=$1
 shift
 
-if [ "$BOOKIE_CONF" == "" ]; then
-    BOOKIE_CONF=$DEFAULT_CONF
-fi
+BENCHMARK_CLASSPATH="$BENCHMARK_JAR:$BENCHMARK_CLASSPATH:$BENCHMARK_EXTRA_CLASSPATH"
+BENCHMARK_LOG_CONF=${BENCHMARK_LOG_CONF:-$BENCH_HOME/conf/log4j.properties}
 
-BOOKIE_CLASSPATH="$BOOKIE_JAR:$BOOKIE_CLASSPATH:$BOOKIE_EXTRA_CLASSPATH"
-if [ "$BOOKIE_LOG_CONF" != "" ]; then
-    BOOKIE_CLASSPATH="`dirname $BOOKIE_LOG_CONF`:$BOOKIE_CLASSPATH"
-    OPTS="$OPTS -Dlog4j.configuration=`basename $BOOKIE_LOG_CONF`"
+if [ "$BENCHMARK_LOG_CONF" != "" ]; then
+    BENCHMARK_CLASSPATH="`dirname $BENCHMARK_LOG_CONF`:$BENCHMARK_CLASSPATH"
+    OPTS="$OPTS -Dlog4j.configuration=`basename $BENCHMARK_LOG_CONF`"
 fi
-OPTS="-cp $BOOKIE_CLASSPATH $OPTS $BOOKIE_EXTRA_OPTS"
+OPTS="-cp $BENCHMARK_CLASSPATH $OPTS $BENCHMARK_EXTRA_OPTS"
 
-OPTS="$OPTS $BOOKIE_EXTRA_OPTS"
+OPTS="$OPTS $BENCHMARK_EXTRA_OPTS"
 
 # Disable ipv6 as it can cause issues
 OPTS="$OPTS -Djava.net.preferIPv4Stack=true"
 
-if [ $COMMAND == "bookie" ]; then
-    exec java $OPTS org.apache.bookkeeper.proto.BookieServer --conf $BOOKIE_CONF $@
-elif [ $COMMAND == "localbookie" ]; then
-    NUMBER=$1
-    shift
-    exec java $OPTS org.apache.bookkeeper.util.LocalBookKeeper $NUMBER $BOOKIE_CONF $@
-elif [ $COMMAND == "upgrade" ]; then
-    exec java $OPTS org.apache.bookkeeper.bookie.FileSystemUpgrade --conf $BOOKIE_CONF $@
+if [ $COMMAND == "writes" ]; then
+    exec java $OPTS org.apache.bookkeeper.benchmark.BenchThroughputLatency $@
+elif [ $COMMAND == "reads" ]; then
+    exec java $OPTS org.apache.bookkeeper.benchmark.BenchReadThroughputLatency $@
+elif [ $COMMAND == "bookie" ]; then
+    exec java $OPTS org.apache.bookkeeper.benchmark.BenchBookie $@
 elif [ $COMMAND == "help" ]; then
-    bookkeeper_help;
+    benchmark_help;
 else
     exec java $OPTS $COMMAND $@
 fi

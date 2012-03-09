@@ -84,6 +84,9 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-77: Add a console client for hedwig (Sijie Guo via ivank)
 
+      bookkeeper-benchmark/
+	BOOKKEEPER-158: Move latest benchmarking code into trunk (ivank via fpj)
+
 Release 4.0.0 - 2011-11-30
 
   Non-backward compatible changes:
