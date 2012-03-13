@@ -163,7 +163,7 @@ public class EntryLogger {
      * directories
      */
     public EntryLogger(ServerConfiguration conf) throws IOException {
-        this.dirs = conf.getLedgerDirs();
+        this.dirs = Bookie.getCurrentDirectories(conf.getLedgerDirs());
         // log size limit
         this.logSizeLimit = conf.getEntryLogSizeLimit();
 

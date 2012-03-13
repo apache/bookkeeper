@@ -60,6 +60,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-74: Bookkeeper Persistence Manager should give up topic on error (sijie via ivank)
 
+        BOOKKEEPER-163: Prevent incorrect NoSuchLedgerException for readLastConfirmed. (ivank via sijie)
+
     IMPROVEMENTS:
 
       bookkeeper-server/

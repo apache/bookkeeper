@@ -58,7 +58,8 @@ public class BookieZKExpireTest extends BaseTestCase {
                 }
             }
 
-            ServerConfiguration conf = newServerConfiguration(initialPort + 1, HOSTPORT, f, new File[] { f });
+            ServerConfiguration conf = newServerConfiguration(initialPort + 1,
+                                                              zkUtil.getZooKeeperConnectString(), f, new File[] { f });
             server = new BookieServer(conf);
             server.start();
 

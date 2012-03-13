@@ -21,6 +21,9 @@
 
 package org.apache.bookkeeper.bookie;
 
+import org.apache.hadoop.fs.HardLink;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLine;
@@ -33,6 +36,14 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.NoSuchElementException;
 
@@ -40,6 +51,10 @@ import java.net.MalformedURLException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.KeeperException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -49,21 +64,57 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class FileSystemUpgrade {
     static Logger LOG = LoggerFactory.getLogger(FileSystemUpgrade.class);
 
-    private int detectPreviousVersion(File directory) throws IOException {
-        final AtomicBoolean oldDataExists = new AtomicBoolean(false);
-        directory.list(new FilenameFilter() {
-                public boolean accept(File dir, String name) {
-                    if (name.endsWith(".txn") || name.endsWith(".idx") || name.endsWith(".log")
-                        || name.equals(Bookie.VERSION_FILENAME)) {
-                        oldDataExists.set(true);
-                    }
+    static FilenameFilter BOOKIE_FILES_FILTER = new FilenameFilter() {
+            private boolean containsIndexFiles(File dir, String name) {
+                if (name.endsWith(".idx")) {
                     return true;
                 }
-            });
-        if (!oldDataExists.get()) { // no old data, so we're ok
-            return Bookie.CURRENT_DIRECTORY_LAYOUT_VERSION;
+
+                try {
+                    Long.parseLong(name, 16);
+                    File d = new File(dir, name);
+                    if (d.isDirectory()) {
+                        String[] files = d.list();
+                        for (String f : files) {
+                            if (containsIndexFiles(d, f)) {
+                                return true;
+                            }
+                        }
+                    }
+                } catch (NumberFormatException nfe) {
+                    return false;
+                }
+                return false;
+            }
+
+            public boolean accept(File dir, String name) {
+                if (name.endsWith(".txn") || name.endsWith(".log")
+                    || name.equals("lastId") || name.equals("lastMark")) {
+                    return true;
+                }
+                if (containsIndexFiles(dir, name)) {
+                    return true;
+                }
+                return false;
+            }
+        };
+
+    private static List<File> getAllDirectories(ServerConfiguration conf) {
+        List<File> dirs = new ArrayList<File>();
+        dirs.add(conf.getJournalDir());
+        for (File d: conf.getLedgerDirs()) {
+            dirs.add(d);
         }
-        File v2versionFile = new File(directory, Bookie.VERSION_FILENAME);
+        return dirs;
+    }
+
+    private static int detectPreviousVersion(File directory) throws IOException {
+        String[] files = directory.list(BOOKIE_FILES_FILTER);
+        File v2versionFile = new File(directory, Cookie.VERSION_FILENAME);
+        if (files.length == 0 && !v2versionFile.exists()) { // no old data, so we're ok
+            return Cookie.CURRENT_COOKIE_LAYOUT_VERSION;
+        }
+
         if (!v2versionFile.exists()) {
             return 1;
         }
@@ -81,21 +132,181 @@ public class FileSystemUpgrade {
         }
     }
 
-    public static void upgrade(ServerConfiguration conf) {
+    private static ZooKeeper newZookeeper(final ServerConfiguration conf)
+            throws BookieException.UpgradeException {
+        try {
+            final CountDownLatch latch = new CountDownLatch(1);
+            ZooKeeper zk = new ZooKeeper(conf.getZkServers(), conf.getZkTimeout(),
+                    new Watcher() {
+                        @Override
+                        public void process(WatchedEvent event) {
+                            // handle session disconnects and expires
+                            if (event.getState().equals(Watcher.Event.KeeperState.SyncConnected)) {
+                                latch.countDown();
+                            }
+                        }
+                    });
+            if (!latch.await(conf.getZkTimeout()*2, TimeUnit.MILLISECONDS)) {
+                zk.close();
+                throw new BookieException.UpgradeException("Couldn't connect to zookeeper");
+            }
+            return zk;
+        } catch (InterruptedException ie) {
+            throw new BookieException.UpgradeException(ie);
+        } catch (IOException ioe) {
+            throw new BookieException.UpgradeException(ioe);
+        }
+    }
+
+    private static void linkIndexDirectories(File srcPath, File targetPath) throws IOException {
+        String[] files = srcPath.list();
+
+        for (String f : files) {
+            if (f.endsWith(".idx")) { // this is an index dir, create the links
+                targetPath.mkdirs();
+                HardLink.createHardLinkMult(srcPath, files, targetPath);
+                return;
+            }
+            File newSrcPath = new File(srcPath, f);
+            if (newSrcPath.isDirectory()) {
+                try {
+                    Long.parseLong(f, 16);
+                    linkIndexDirectories(newSrcPath, new File(targetPath, f));
+                } catch (NumberFormatException nfe) {
+                    // filename does not parse to a hex Long, so
+                    // it will not contain idx files. Ignoring
+                }
+            }
+        }
+    }
+
+    public static void upgrade(ServerConfiguration conf)
+            throws BookieException.UpgradeException, InterruptedException {
         LOG.info("Upgrading...");
-        // noop at the moment
+
+        ZooKeeper zk = newZookeeper(conf);
+        try {
+            Map<File,File> deferredMoves = new HashMap<File, File>();
+            Cookie c = Cookie.generateCookie(conf);
+            for (File d : getAllDirectories(conf)) {
+                LOG.info("Upgrading {}", d);
+                int version = detectPreviousVersion(d);
+                if (version == Cookie.CURRENT_COOKIE_LAYOUT_VERSION) {
+                    LOG.info("Directory is current, no need to upgrade");
+                }
+                try {
+                    File curDir = new File(d, Bookie.CURRENT_DIR);
+                    File tmpDir = new File(d, "upgradeTmp." + System.nanoTime());
+                    deferredMoves.put(curDir, tmpDir);
+                    tmpDir.mkdirs();
+                    c.writeToDirectory(tmpDir);
+
+                    String[] files = d.list(new FilenameFilter() {
+                            public boolean accept(File dir, String name) {
+                                return BOOKIE_FILES_FILTER.accept(dir, name)
+                                    && !(new File(dir, name).isDirectory());
+                            }
+                        });
+                    HardLink.createHardLinkMult(d, files, tmpDir);
+
+                    linkIndexDirectories(d, tmpDir);
+                } catch (IOException ioe) {
+                    LOG.error("Error upgrading {}", d);
+                    throw new BookieException.UpgradeException(ioe);
+                }
+            }
+
+            for (Map.Entry<File,File> e : deferredMoves.entrySet()) {
+                try {
+                    FileUtils.moveDirectory(e.getValue(), e.getKey());
+                } catch (IOException ioe) {
+                    String err = String.format("Error moving upgraded directories into place %s -> %s ",
+                                               e.getValue(), e.getKey());
+                    LOG.error(err, ioe);
+                    throw new BookieException.UpgradeException(ioe);
+                }
+            }
+            try {
+                c.writeToZooKeeper(zk, conf);
+            } catch (KeeperException ke) {
+                LOG.error("Error writing cookie to zookeeper");
+                throw new BookieException.UpgradeException(ke);
+            }
+        } catch (IOException ioe) {
+            throw new BookieException.UpgradeException(ioe);
+        } finally {
+            zk.close();
+        }
         LOG.info("Done");
     }
 
-    public static void finalizeUpgrade(ServerConfiguration conf) {
+    public static void finalizeUpgrade(ServerConfiguration conf)
+            throws BookieException.UpgradeException, InterruptedException {
         LOG.info("Finalizing upgrade...");
+        // verify that upgrade is correct
+        for (File d : getAllDirectories(conf)) {
+            LOG.info("Finalizing {}", d);
+            try {
+                int version = detectPreviousVersion(d);
+                if (version < 3) {
+                    if (version == 2) {
+                        File v2versionFile = new File(d, Cookie.VERSION_FILENAME);
+                        v2versionFile.delete();
+                    }
+                    File[] files = d.listFiles(BOOKIE_FILES_FILTER);
+                    for (File f : files) {
+                        if (f.isDirectory()) {
+                            FileUtils.deleteDirectory(f);
+                        } else{
+                            f.delete();
+                        }
+                    }
+                }
+            } catch (IOException ioe) {
+                LOG.error("Error finalizing {}", d);
+                throw new BookieException.UpgradeException(ioe);
+            }
+        }
         // noop at the moment
         LOG.info("Done");
     }
 
-    public static void rollback(ServerConfiguration conf) {
+    public static void rollback(ServerConfiguration conf)
+            throws BookieException.UpgradeException, InterruptedException {
         LOG.info("Rolling back upgrade...");
-        // noop at the moment
+        ZooKeeper zk = newZookeeper(conf);
+        try {
+            for (File d : getAllDirectories(conf)) {
+                LOG.info("Rolling back {}", d);
+                try {
+                    // ensure there is a previous version before rollback
+                    int version = detectPreviousVersion(d);
+
+                    if (version <= Cookie.CURRENT_COOKIE_LAYOUT_VERSION) {
+                        File curDir = new File(d, Bookie.CURRENT_DIR);
+                        FileUtils.deleteDirectory(curDir);
+                    } else {
+                        throw new BookieException.UpgradeException(
+                                "Cannot rollback as previous data does not exist");
+                    }
+                } catch (IOException ioe) {
+                    LOG.error("Error rolling back {}", d);
+                    throw new BookieException.UpgradeException(ioe);
+                }
+            }
+            try {
+                Cookie c = Cookie.readFromZooKeeper(zk, conf);
+                c.deleteFromZooKeeper(zk, conf);
+            } catch (KeeperException ke) {
+                LOG.error("Error deleting cookie from ZooKeeper");
+                throw new BookieException.UpgradeException(ke);
+            } catch (IOException ioe) {
+                LOG.error("I/O Error deleting cookie from ZooKeeper");
+                throw new BookieException.UpgradeException(ioe);
+            }
+        } finally {
+            zk.close();
+        }
         LOG.info("Done");
     }
 

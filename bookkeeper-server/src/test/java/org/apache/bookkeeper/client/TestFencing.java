@@ -255,7 +255,7 @@ public class TestFencing extends BaseTestCase {
         System.setProperty("digestType", digestType.toString());
         System.setProperty("passwd", "testPasswd");
 
-        BookKeeperAdmin admin = new BookKeeperAdmin(HOSTPORT);
+        BookKeeperAdmin admin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
 
         LedgerHandle writelh = bkc.createLedger(digestType, "testPasswd".getBytes());
         
@@ -308,7 +308,7 @@ public class TestFencing extends BaseTestCase {
         System.setProperty("digestType", digestType.toString());
         System.setProperty("passwd", "testPasswd");
 
-        BookKeeperAdmin admin = new BookKeeperAdmin(HOSTPORT);
+        BookKeeperAdmin admin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
 
         LedgerHandle writelh = bkc.createLedger(digestType, "testPasswd".getBytes());
         

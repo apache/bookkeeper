@@ -279,29 +279,6 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
         zkc.close();
     }
 
-
-    /* Clean up a directory recursively */
-    @Override
-    protected boolean cleanUpDir(File dir) {
-        if (dir.isDirectory()) {
-            LOG.info("Cleaning up " + dir.getName());
-            String[] children = dir.list();
-            for (String string : children) {
-                boolean success = cleanUpDir(new File(dir, string));
-                if (!success)
-                    return false;
-            }
-        }
-        // The directory is now empty so delete it
-        return dir.delete();
-    }
-
-    /* User for testing purposes, void */
-    class emptyWatcher implements Watcher {
-        public void process(WatchedEvent event) {
-        }
-    }
-
     @Test
     public void testLedgerNoRecoveryOpenAfterBKCrashed() throws Exception {
         // Create a ledger

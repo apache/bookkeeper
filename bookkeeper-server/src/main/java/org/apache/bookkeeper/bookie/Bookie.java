@@ -31,8 +31,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.FilenameFilter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
@@ -83,19 +85,11 @@ public class Bookie extends Thread {
     final SyncThread syncThread;
     final LedgerManager ledgerManager;
 
-    /**
-     * Current directory layout version. Increment this 
-     * when you make a change to the format of any of the files in 
-     * this directory or to the general layout of the directory.
-     */
-    static final int MIN_COMPAT_DIRECTORY_LAYOUT_VERSION = 1;
-    static final int CURRENT_DIRECTORY_LAYOUT_VERSION = 2;
-    static final String VERSION_FILENAME = "VERSION";
-
     static final long METAENTRY_ID_LEDGER_KEY = -0x1000;
 
     // ZK registration path for this bookie
     static final String BOOKIE_REGISTRATION_PATH = "/ledgers/available/";
+    static final String CURRENT_DIR = "current";
 
     // ZooKeeper client instance for the Bookie
     ZooKeeper zk;
@@ -273,6 +267,100 @@ public class Bookie extends Thread {
         }
     }
 
+    public static void checkDirectoryStructure(File dir) throws IOException {
+        if (!dir.exists()) {
+            File parent = dir.getParentFile();
+            File preV3versionFile = new File(dir.getParent(), Cookie.VERSION_FILENAME);
+
+            final AtomicBoolean oldDataExists = new AtomicBoolean(false);
+            parent.list(new FilenameFilter() {
+                    public boolean accept(File dir, String name) {
+                        if (name.endsWith(".txn") || name.endsWith(".idx") || name.endsWith(".log")) {
+                            oldDataExists.set(true);
+                        }
+                        return true;
+                    }
+                });
+            if (preV3versionFile.exists() || oldDataExists.get()) {
+                String err = "Directory layout version is less than 3, upgrade needed";
+                LOG.error(err);
+                throw new IOException(err);
+            }
+            dir.mkdirs();
+        }
+    }
+
+    /**
+     * Check that the environment for the bookie is correct.
+     * This means that the configuration has stayed the same as the
+     * first run and the filesystem structure is up to date.
+     */
+    private void checkEnvironment(ZooKeeper zk) throws BookieException, IOException {
+        if (zk == null) { // exists only for testing, just make sure directories are correct
+            checkDirectoryStructure(journalDirectory);
+            for (File dir : ledgerDirectories) {
+                    checkDirectoryStructure(dir);
+            }
+            return;
+        }
+        try {
+            boolean newEnv = false;
+            Cookie masterCookie = Cookie.generateCookie(conf);
+            try {
+                Cookie zkCookie = Cookie.readFromZooKeeper(zk, conf);
+                masterCookie.verify(zkCookie);
+            } catch (KeeperException.NoNodeException nne) {
+                newEnv = true;
+            }
+            try {
+                checkDirectoryStructure(journalDirectory);
+
+                Cookie journalCookie = Cookie.readFromDirectory(journalDirectory);
+                journalCookie.verify(masterCookie);
+                for (File dir : ledgerDirectories) {
+                    checkDirectoryStructure(dir);
+                    Cookie c = Cookie.readFromDirectory(dir);
+                    c.verify(masterCookie);
+                }
+            } catch (FileNotFoundException fnf) {
+                if (!newEnv){
+                    LOG.error("Cookie exists in zookeeper, but not in all local directories", fnf);
+                    throw new BookieException.InvalidCookieException();
+                }
+
+                masterCookie.writeToDirectory(journalDirectory);
+                for (File dir : ledgerDirectories) {
+                    masterCookie.writeToDirectory(dir);
+                }
+                masterCookie.writeToZooKeeper(zk, conf);
+            }
+        } catch (KeeperException ke) {
+            LOG.error("Couldn't access cookie in zookeeper", ke);
+            throw new BookieException.InvalidCookieException(ke);
+        } catch (UnknownHostException uhe) {
+            LOG.error("Couldn't check cookies, networking is broken", uhe);
+            throw new BookieException.InvalidCookieException(uhe);
+        } catch (IOException ioe) {
+            LOG.error("Error accessing cookie on disks", ioe);
+            throw new BookieException.InvalidCookieException(ioe);
+        } catch (InterruptedException ie) {
+            LOG.error("Thread interrupted while checking cookies, exiting", ie);
+            throw new BookieException.InvalidCookieException(ie);
+        }
+    }
+
+    public static File getCurrentDirectory(File dir) {
+        return new File(dir, CURRENT_DIR);
+    }
+
+    public static File[] getCurrentDirectories(File[] dirs) {
+        File[] currentDirs = new File[dirs.length];
+        for (int i = 0; i < dirs.length; i++) {
+            currentDirs[i] = getCurrentDirectory(dirs[i]);
+        }
+        return currentDirs;
+    }
+
     /**
      * Scanner used to do entry log compaction
      */
@@ -295,23 +383,19 @@ public class Bookie extends Thread {
         }
     }
 
-    public Bookie(ServerConfiguration conf) 
+    public Bookie(ServerConfiguration conf)
             throws IOException, KeeperException, InterruptedException, BookieException {
         super("Bookie-" + conf.getBookiePort());
         this.conf = conf;
-        this.journalDirectory = conf.getJournalDir();
-        this.ledgerDirectories = conf.getLedgerDirs();
+        this.journalDirectory = getCurrentDirectory(conf.getJournalDir());
+        this.ledgerDirectories = getCurrentDirectories(conf.getLedgerDirs());
         this.maxJournalSize = conf.getMaxJournalSize() * MB;
         this.maxBackupJournals = conf.getMaxBackupJournals();
 
-        // check directory layouts
-        checkDirectoryLayoutVersion(journalDirectory);
-        for (File dir : ledgerDirectories) {
-            checkDirectoryLayoutVersion(dir);
-        }
-
         // instantiate zookeeper client to initialize ledger manager
-        this.zk = instantiateZookeeperClient(conf.getZkServers());
+        this.zk = instantiateZookeeperClient(conf);
+        checkEnvironment(this.zk);
+
         ledgerManager = LedgerManagerFactory.newLedgerManager(conf, this.zk);
 
         syncThread = new SyncThread(conf);
@@ -520,15 +604,14 @@ public class Bookie extends Thread {
     /**
      * Instantiate the ZooKeeper client for the Bookie.
      */
-    private ZooKeeper instantiateZookeeperClient(String zkServers) throws IOException {
-        if (zkServers == null) {
+    private ZooKeeper instantiateZookeeperClient(ServerConfiguration conf) throws IOException {
+        if (conf.getZkServers() == null) {
             LOG.warn("No ZK servers passed to Bookie constructor so BookKeeper clients won't know about this server!");
             isZkExpired = false;
             return null;
         }
-        int zkTimeout = conf.getZkTimeout();
         // Create the ZooKeeper client instance
-        return newZookeeper(zkServers, zkTimeout);
+        return newZookeeper(conf.getZkServers(), conf.getZkTimeout());
     }
 
     /**
@@ -600,80 +683,6 @@ public class Bookie extends Thread {
         });
         isZkExpired = false;
         return newZk;
-    }
-
-    /**
-     * Check the layout version of a directory. If it is outside of the 
-     * range which this version of the software can handle, throw an
-     * exception.
-     *
-     * @param dir Directory to check
-     * @throws IOException if layout version if is outside usable range
-     *               or if there is a problem reading the version file
-     */
-    private void checkDirectoryLayoutVersion(File dir)
-            throws IOException {
-        if (!dir.isDirectory()) {
-            throw new IOException("Directory("+dir+") isn't a directory");
-        }
-        File versionFile = new File(dir, VERSION_FILENAME);
-        
-        FileInputStream fis;
-        try {
-            fis = new FileInputStream(versionFile);
-        } catch (FileNotFoundException e) {
-            /* 
-             * If the version file is not found, this must
-             * either be the first time we've used this directory,
-             * or it must date from before layout versions were introduced.
-             * In both cases, we just create the version file
-             */
-            LOG.info("No version file found, creating");
-            createDirectoryLayoutVersionFile(dir);
-            return;
-        }
-        
-        BufferedReader br = new BufferedReader(new InputStreamReader(fis));
-        try {
-            String layoutVersionStr = br.readLine();
-            int layoutVersion = Integer.parseInt(layoutVersionStr);
-            if (layoutVersion < MIN_COMPAT_DIRECTORY_LAYOUT_VERSION
-                || layoutVersion > CURRENT_DIRECTORY_LAYOUT_VERSION) {
-                String errmsg = "Directory has an invalid version, expected between "
-                    + MIN_COMPAT_DIRECTORY_LAYOUT_VERSION + " and "
-                    + CURRENT_DIRECTORY_LAYOUT_VERSION + ", found " + layoutVersion;
-                LOG.error(errmsg);
-                throw new IOException(errmsg);
-            }
-        } catch(NumberFormatException e) {
-            throw new IOException("Version file has invalid content", e);
-        } finally {
-            try {
-                fis.close();
-            } catch (IOException e) {
-                LOG.warn("Error closing version file", e);
-            }
-        }
-    }
-    
-    /**
-     * Create the directory layout version file with the current
-     * directory layout version
-     */
-    private void createDirectoryLayoutVersionFile(File dir) throws IOException {
-        File versionFile = new File(dir, VERSION_FILENAME);
-
-        FileOutputStream fos = new FileOutputStream(versionFile);
-        BufferedWriter bw = null;
-        try {
-            bw = new BufferedWriter(new OutputStreamWriter(fos));
-            bw.write(String.valueOf(CURRENT_DIRECTORY_LAYOUT_VERSION));
-        } finally {
-            if (bw != null) {
-                bw.close();
-            }
-            fos.close();
-        }
     }
 
     private static int fullRead(JournalChannel fc, ByteBuffer bb) throws IOException {

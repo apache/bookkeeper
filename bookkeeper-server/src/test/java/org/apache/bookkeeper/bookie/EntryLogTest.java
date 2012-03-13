@@ -50,6 +50,9 @@ public class EntryLogTest extends TestCase {
         File tmpDir = File.createTempFile("bkTest", ".dir");
         tmpDir.delete();
         tmpDir.mkdir();
+        File curDir = Bookie.getCurrentDirectory(tmpDir);
+        Bookie.checkDirectoryStructure(curDir);
+
         int gcWaitTime = 1000;
         ServerConfiguration conf = new ServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
@@ -61,7 +64,7 @@ public class EntryLogTest extends TestCase {
         logger.addEntry(2, generateEntry(2, 1));
         logger.flush();
         // now lets truncate the file to corrupt the last entry, which simulates a partial write
-        File f = new File(tmpDir, "0.log");
+        File f = new File(curDir, "0.log");
         RandomAccessFile raf = new RandomAccessFile(f, "rw");
         raf.setLength(raf.length()-10);
         raf.close();

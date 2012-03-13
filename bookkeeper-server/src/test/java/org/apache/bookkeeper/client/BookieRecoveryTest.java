@@ -114,7 +114,7 @@ public class BookieRecoveryTest extends BaseTestCase {
         sync = new SyncObject();
         bookieRecoverCb = new BookieRecoverCallback();
         ClientConfiguration adminConf = new ClientConfiguration(baseClientConf);
-        adminConf.setZkServers(HOSTPORT);
+        adminConf.setZkServers(zkUtil.getZooKeeperConnectString());
         bkAdmin = new BookKeeperAdmin(adminConf);
     }
 

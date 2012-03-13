@@ -21,6 +21,8 @@
 
 package org.apache.bookkeeper.test;
 
+import org.apache.commons.io.FileUtils;
+
 import java.io.IOException;
 import java.io.File;
 import java.net.InetAddress;
@@ -39,15 +41,10 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
+
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.ZooDefs.Ids;
-import org.apache.zookeeper.server.NIOServerCnxnFactory;
-import org.apache.zookeeper.server.ZooKeeperServer;
-import org.apache.zookeeper.test.ClientBase;
+import org.apache.zookeeper.KeeperException;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -59,13 +56,9 @@ import junit.framework.TestCase;
 @RunWith(Parameterized.class)
 public abstract class BaseTestCase extends TestCase {
     static final Logger LOG = LoggerFactory.getLogger(BaseTestCase.class);
-    // ZooKeeper related variables
-    protected static final String HOSTPORT = "127.0.0.1:2181";
-    protected static Integer ZooKeeperDefaultPort = 2181;
-    protected ZooKeeperServer zks;
-    protected ZooKeeper zkc; // zookeeper client
-    protected NIOServerCnxnFactory serverFactory;
-    protected File ZkTmpDir;
+
+    protected ZooKeeperUtil zkUtil = new ZooKeeperUtil();
+    protected ZooKeeper zkc;
 
     // BookKeeper
     protected List<File> tmpDirs = new ArrayList<File>();
@@ -105,32 +98,10 @@ public abstract class BaseTestCase extends TestCase {
     @Override
     public void setUp() throws Exception {
         try {
-            // create a ZooKeeper server(dataDir, dataLogDir, port)
-            LOG.debug("Running ZK server");
-            // ServerStats.registerAsConcrete();
-            ClientBase.setupTestEnv();
-            ZkTmpDir = File.createTempFile("zookeeper", "test");
-            ZkTmpDir.delete();
-            ZkTmpDir.mkdir();
+            zkUtil.startServer();
+            zkc = zkUtil.getZooKeeperClient();
 
-            zks = new ZooKeeperServer(ZkTmpDir, ZkTmpDir, ZooKeeperDefaultPort);
-            serverFactory = new NIOServerCnxnFactory();
-            serverFactory.configure(new InetSocketAddress(ZooKeeperDefaultPort), 100);
-            serverFactory.startup(zks);
-
-            boolean b = ClientBase.waitForServerUp(HOSTPORT, ClientBase.CONNECTION_TIMEOUT);
-
-            LOG.debug("Server up: " + b);
-
-            // create a zookeeper client
-            LOG.debug("Instantiate ZK Client");
-            zkc = new ZooKeeper("127.0.0.1", ZooKeeperDefaultPort, new emptyWatcher());
-
-            // initialize the zk client with values
-            zkc.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            zkc.create("/ledgers/available", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-
-            baseClientConf.setZkServers("127.0.0.1");
+            baseClientConf.setZkServers(zkUtil.getZooKeeperConnectString());
             if (numBookies > 0) {
                 bkc = new BookKeeperTestClient(baseClientConf);
             }
@@ -143,7 +114,7 @@ public abstract class BaseTestCase extends TestCase {
                 f.mkdir();
 
                 ServerConfiguration conf = newServerConfiguration(
-                    nextPort++, HOSTPORT, f, new File[] { f });
+                        nextPort++, zkUtil.getZooKeeperConnectString(), f, new File[] { f });
                 bsConfs.add(conf);
 
                 bs.add(startBookie(conf));
@@ -253,7 +224,8 @@ public abstract class BaseTestCase extends TestCase {
         f.mkdir();
 
         int port = nextPort++;
-        ServerConfiguration conf = newServerConfiguration(port, HOSTPORT, f, new File[] { f });
+        ServerConfiguration conf = newServerConfiguration(port, zkUtil.getZooKeeperConnectString(),
+                                                          f, new File[] { f });
 
         bs.add(startBookie(conf));
 
@@ -296,44 +268,11 @@ public abstract class BaseTestCase extends TestCase {
             server.shutdown();
         }
 
-        if (zkc != null) {
-            zkc.close();
-        }
-
         for (File f : tmpDirs) {
-            cleanUpDir(f);
+            FileUtils.deleteDirectory(f);
         }
 
-        // shutdown ZK server
-        if (serverFactory != null) {
-            serverFactory.shutdown();
-            assertTrue("waiting for server down", ClientBase.waitForServerDown(HOSTPORT, ClientBase.CONNECTION_TIMEOUT));
-        }
-        // ServerStats.unregister();
-        cleanUpDir(ZkTmpDir);
-
-
-    }
-
-    /* Clean up a directory recursively */
-    protected boolean cleanUpDir(File dir) {
-        if (dir.isDirectory()) {
-            LOG.info("Cleaning up " + dir.getName());
-            String[] children = dir.list();
-            for (String string : children) {
-                boolean success = cleanUpDir(new File(dir, string));
-                if (!success)
-                    return false;
-            }
-        }
-        // The directory is now empty so delete it
-        return dir.delete();
-    }
-
-    /* User for testing purposes, void */
-    class emptyWatcher implements Watcher {
-        public void process(WatchedEvent event) {
-        }
+        zkUtil.killServer();
     }
 
 }

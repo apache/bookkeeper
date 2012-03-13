@@ -32,12 +32,24 @@ public abstract class BookieException extends Exception {
         this.code = code;
     }
 
+    public BookieException(int code, Throwable t) {
+        super(t);
+    }
+
+    public BookieException(int code, String reason) {
+        super(reason);
+    }
+
     public static BookieException create(int code) {
         switch(code) {
         case Code.UnauthorizedAccessException:
             return new BookieUnauthorizedAccessException();
         case Code.LedgerFencedException:
             return new LedgerFencedException();
+        case Code.InvalidCookieException:
+            return new InvalidCookieException();
+        case Code.UpgradeException:
+            return new UpgradeException();
         default:
             return new BookieIllegalOpException();
         }
@@ -49,6 +61,9 @@ public abstract class BookieException extends Exception {
 
         int IllegalOpException = -100;
         int LedgerFencedException = -101;
+
+        int InvalidCookieException = -102;
+        int UpgradeException = -103;
     }
 
     public void setCode(int code) {
@@ -60,15 +75,29 @@ public abstract class BookieException extends Exception {
     }
 
     public String getMessage(int code) {
+        String err = "Invalid operation";
         switch(code) {
         case Code.OK:
-            return "No problem";
+            err = "No problem";
         case Code.UnauthorizedAccessException:
-            return "Error while reading ledger";
+            err = "Error while reading ledger";
         case Code.LedgerFencedException:
-            return "Ledger has been fenced; No more entries can be added";
-        default:
-            return "Invalid operation";
+            err = "Ledger has been fenced; No more entries can be added";
+        case Code.InvalidCookieException:
+            err = "Invalid environment cookie found";
+        case Code.UpgradeException:
+            err = "Error performing an upgrade operation ";
+        }
+        String reason = super.getMessage();
+        if (reason == null) {
+            if (super.getCause() != null) {
+                reason = super.getCause().getMessage();
+            }
+        }
+        if (reason == null) {
+            return err;
+        } else {
+            return String.format("%s [%s]", err, reason);
         }
     }
 
@@ -87,6 +116,30 @@ public abstract class BookieException extends Exception {
     public static class LedgerFencedException extends BookieException {
         public LedgerFencedException() {
             super(Code.LedgerFencedException);
+        }
+    }
+
+    public static class InvalidCookieException extends BookieException {
+        public InvalidCookieException() {
+            this(null);
+        }
+
+        public InvalidCookieException(Throwable cause) {
+            super(Code.InvalidCookieException, cause);
+        }
+    }
+
+    public static class UpgradeException extends BookieException {
+        public UpgradeException() {
+            super(Code.UpgradeException);
+        }
+
+        public UpgradeException(Throwable cause) {
+            super(Code.UpgradeException, cause);
+        }
+
+        public UpgradeException(String reason) {
+            super(Code.UpgradeException, reason);
         }
     }
 }

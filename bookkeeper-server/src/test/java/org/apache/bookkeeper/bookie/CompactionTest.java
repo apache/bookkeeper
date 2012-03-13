@@ -133,7 +133,7 @@ public class CompactionTest extends BaseTestCase {
     private boolean[] checkLogFiles(File ledgerDirectory, int numFiles) {
         boolean[] hasLogFiles = new boolean[numFiles];
         Arrays.fill(hasLogFiles, false);
-        for (File f : ledgerDirectory.listFiles()) {
+        for (File f : Bookie.getCurrentDirectory(ledgerDirectory).listFiles()) {
             LOG.info("Checking file : " + f);
             if (f.isFile()) {
                 String name = f.getName();

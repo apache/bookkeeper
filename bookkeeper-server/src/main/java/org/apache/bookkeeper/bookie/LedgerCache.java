@@ -50,7 +50,7 @@ public class LedgerCache {
     final File ledgerDirectories[];
 
     public LedgerCache(ServerConfiguration conf, LedgerManager alm) {
-        this.ledgerDirectories = conf.getLedgerDirs();
+        this.ledgerDirectories = Bookie.getCurrentDirectories(conf.getLedgerDirs());
         this.openFileLimit = conf.getOpenFileLimit();
         this.pageSize = conf.getPageSize();
         this.entriesPerPage = pageSize / 8;
