@@ -36,6 +36,7 @@ const int DEFAULT_SUBSCRIBER_CONSUME_RETRY_WAIT_TIME = 5000;
 const int DEFAULT_MAX_MESSAGE_QUEUE_SIZE = 10;
 const int DEFAULT_RECONNECT_SUBSCRIBE_RETRY_WAIT_TIME = 5000;
 const bool DEFAULT_SUBSCRIBER_AUTOCONSUME = true;
+const int DEFAULT_SUBSCRIPTION_MESSAGE_BOUND = 0;
 
 SubscriberWriteCallback::SubscriberWriteCallback(const ClientImplPtr& client, const PubSubDataPtr& data) : client(client), data(data) {}
 
@@ -298,17 +299,37 @@ SubscriberImpl::~SubscriberImpl()
 
 
 void SubscriberImpl::subscribe(const std::string& topic, const std::string& subscriberId, const SubscribeRequest::CreateOrAttach mode) {
+  SubscriptionOptions options;
+  options.set_createorattach(mode);
+  subscribe(topic, subscriberId, options);
+}
+
+void SubscriberImpl::subscribe(const std::string& topic, const std::string& subscriberId, const SubscriptionOptions& options) {
   SyncOperationCallback* cb = new SyncOperationCallback(client->getConfiguration().getInt(Configuration::SYNC_REQUEST_TIMEOUT, 
 											  DEFAULT_SYNC_REQUEST_TIMEOUT));
   OperationCallbackPtr callback(cb);
-  asyncSubscribe(topic, subscriberId, mode, callback);
+  asyncSubscribe(topic, subscriberId, options, callback);
   cb->wait();
   
   cb->throwExceptionIfNeeded();  
 }
 
 void SubscriberImpl::asyncSubscribe(const std::string& topic, const std::string& subscriberId, const SubscribeRequest::CreateOrAttach mode, const OperationCallbackPtr& callback) {
-  PubSubDataPtr data = PubSubData::forSubscribeRequest(client->counter().next(), subscriberId, topic, callback, mode);
+  SubscriptionOptions options;
+  options.set_createorattach(mode);
+  asyncSubscribe(topic, subscriberId, options, callback);
+}
+
+void SubscriberImpl::asyncSubscribe(const std::string& topic, const std::string& subscriberId, const SubscriptionOptions& options, const OperationCallbackPtr& callback) {
+  SubscriptionOptions options2 = options;
+
+  if (!options2.has_messagebound()) {
+    int messageBound = client->getConfiguration().getInt(Configuration::SUBSCRIPTION_MESSAGE_BOUND,
+							 DEFAULT_SUBSCRIPTION_MESSAGE_BOUND);
+    options2.set_messagebound(messageBound);
+  }
+
+  PubSubDataPtr data = PubSubData::forSubscribeRequest(client->counter().next(), subscriberId, topic, callback, options2);
 
   SubscriberClientChannelHandlerPtr handler(new SubscriberClientChannelHandler(client, *this, data));
   ChannelHandlerPtr baseptr = handler;

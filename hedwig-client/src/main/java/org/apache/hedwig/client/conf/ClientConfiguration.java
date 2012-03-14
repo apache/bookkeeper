@@ -41,6 +41,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected static final String SERVER_ACK_RESPONSE_TIMEOUT = "server_ack_response_timeout";
     protected static final String TIMEOUT_THREAD_RUN_INTERVAL = "timeout_thread_run_interval";
     protected static final String SSL_ENABLED = "ssl_enabled";
+    protected static final String SUBSCRIPTION_MESSAGE_BOUND = "subscription_message_bound";
 
     // Singletons we want to instantiate only once per ClientConfiguration
     protected HedwigSocketAddress myDefaultServerAddress = null;
@@ -136,6 +137,18 @@ public class ClientConfiguration extends AbstractConfiguration {
     // cross-colo hub clients listening to non-local servers.
     public boolean isSSLEnabled() {
         return conf.getBoolean(SSL_ENABLED, false);
+    }
+
+    /**
+     * The maximum number of messages the hub will queue for subscriptions
+     * created using this configuration. The hub will always queue the most
+     * recent messages. If there are enough publishes to the topic to hit
+     * the bound, then the oldest messages are dropped from the queue.
+     *
+     * A bound of 0 disabled the bound completely. This is the default.
+     */
+    public int getSubscriptionMessageBound() {
+        return conf.getInt(SUBSCRIPTION_MESSAGE_BOUND, 0);
     }
 
     // Validate that the configuration properties are valid.

@@ -250,6 +250,18 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
         realPersistenceManager.consumedUntil(topic, seqId);
     }
 
+    public void setMessageBound(ByteString topic, Integer bound) {
+        realPersistenceManager.setMessageBound(topic, bound);
+    }
+
+    public void clearMessageBound(ByteString topic) {
+        realPersistenceManager.clearMessageBound(topic);
+    }
+
+    public void consumeToBound(ByteString topic) {
+        realPersistenceManager.consumeToBound(topic);
+    }
+
     /**
      * ========================================================================
      * BEGINNING OF CODE FOR THE CACHE MAINTAINER THREAD

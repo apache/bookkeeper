@@ -19,6 +19,8 @@
 
 cd `dirname $0`;
 
+export LOG4CXX_CONF=`pwd`/log4cxx.conf
+
 source network-delays.sh
 source server-control.sh
 
@@ -31,6 +33,41 @@ all() {
     start_cluster;
 
     ../test/hedwigtest 
+    RESULT=$?
+    stop_cluster;
+
+    if [ "z$HEDWIG_NETWORK_DELAY" != "z" ]; then
+	clear_delays
+    else
+	cat <<EOF
+
+The environment variable HEDWIG_NETWORK_DELAY is not set, so the tests were run directly 
+with a localhost server. This isn't quite realistic as usually there will be some delay between 
+the client and the hedwig server. Set HEDWIG_NETWORK_DELAY to the number of milliseconds you want
+to delay the packets between the server and client. 
+
+ $ export HEDWIG_NETWORK_DELAY=500
+
+Requires root privileges.
+
+WARNING!!! This will modify your traffic shaping and firewall rules. If you do run with delays, 
+check your firewall rules afterwards.
+
+EOF
+    fi
+
+    exit $RESULT
+}
+
+singletest() {
+    if [ "z$HEDWIG_NETWORK_DELAY" != "z" ]; then
+	setup_delays $HEDWIG_NETWORK_DELAY
+    fi
+
+    stop_cluster;
+    start_cluster;
+
+    ../test/hedwigtest $1
     RESULT=$?
     stop_cluster;
 
@@ -73,12 +110,18 @@ case "$1" in
     all)
 	all
 	;;
+    singletest)
+	singletest $2
+	;;
     *)
 	cat <<EOF
 Usage: tester.sh [command]
 
 tester.sh all
    Run through the tests, setting up and cleaning up all prerequisites.
+
+tester.sh singletest <name>
+   Run a single test
 
 tester.sh start-cluster
    Start a hedwig cluster

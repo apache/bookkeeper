@@ -42,6 +42,18 @@ public class StubPersistenceManager implements PersistenceManagerWithRangeScan {
         // noop
     }
 
+    public void setMessageBound(ByteString topic, Integer bound) {
+        // noop
+    }
+
+    public void clearMessageBound(ByteString topic) {
+        // noop
+    }
+
+    public void consumeToBound(ByteString topic) {
+        // noop
+    }
+
     protected static class ArrayListMessageFactory implements Factory<List<Message>> {
         static ArrayListMessageFactory instance = new ArrayListMessageFactory();
 

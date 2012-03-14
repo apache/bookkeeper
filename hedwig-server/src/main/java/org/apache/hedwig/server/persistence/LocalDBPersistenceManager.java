@@ -398,6 +398,18 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
         }
     }
 
+    public void setMessageBound(ByteString topic, Integer bound) {
+        // noop; Maybe implement later
+    }
+
+    public void clearMessageBound(ByteString topic) {
+        // noop; Maybe implement later
+    }
+
+    public void consumeToBound(ByteString topic) {
+        // noop; Maybe implement later
+    }
+
     @Override
     protected void finalize() throws Throwable {
         if (driver.equals("org.apache.derby.jdbc.EmbeddedDriver")) {

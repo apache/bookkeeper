@@ -20,6 +20,8 @@ package org.apache.hedwig.server.persistence;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -120,6 +122,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
          * include the current ledger
          */
         TreeMap<Long, InMemoryLedgerRange> ledgerRanges = new TreeMap<Long, InMemoryLedgerRange>();
+        int ledgerRangesZnodeVersion = -1;
 
         /**
          * This is the handle of the current ledger that is being used to write
@@ -131,6 +134,9 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
          * Flag to release topic when encountering unrecoverable exceptions
          */
         AtomicBoolean doRelease = new AtomicBoolean(false);
+
+        final static int UNLIMITED = 0;
+        int messageBound = UNLIMITED;
     }
 
     Map<ByteString, TopicInfo> topicInfos = new ConcurrentHashMap<ByteString, TopicInfo>();
@@ -308,29 +314,123 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
         // Nothing to do here. this is just a hint that we cannot use.
     }
 
+    class UpdateLedgerOp extends TopicOpQueuer.AsynchronousOp<Void> {
+        private long ledgerDeleted;
+
+        public UpdateLedgerOp(ByteString topic, final Callback<Void> cb, final Object ctx, final long ledgerDeleted) {
+            queuer.super(topic, cb, ctx);
+            this.ledgerDeleted = ledgerDeleted;
+        }
+
+        @Override
+        public void run() {
+            final TopicInfo topicInfo = topicInfos.get(topic);
+            if (topicInfo == null) {
+                logger.error("Server is not responsible for topic!");
+                return;
+            }
+            boolean needsUpdate = false;
+            LedgerRanges.Builder builder = LedgerRanges.newBuilder();
+            final Set<Long> keysToRemove = new HashSet<Long>();
+            for (Map.Entry<Long, InMemoryLedgerRange> e : topicInfo.ledgerRanges.entrySet()) {
+                if (e.getValue().range.getLedgerId() == ledgerDeleted) {
+                    needsUpdate = true;
+                    keysToRemove.add(e.getKey());
+                } else {
+                    builder.addRanges(e.getValue().range);
+                }
+            }
+            builder.addRanges(topicInfo.currentLedgerRange.range);
+
+            if (needsUpdate) {
+                final LedgerRanges newRanges = builder.build();
+                updateLedgerRangesNode(topic, newRanges, topicInfo.ledgerRangesZnodeVersion,
+                                       new Callback<Integer>() {
+                                           public void operationFinished(Object ctx, Integer newVersion) {
+                                               // Finally, all done
+                                               for (Long k : keysToRemove) {
+                                                   topicInfo.ledgerRanges.remove(k);
+                                               }
+                                               topicInfo.ledgerRangesZnodeVersion = newVersion;
+                                               cb.operationFinished(ctx, null);
+                                           }
+                                           public void operationFailed(Object ctx, PubSubException exception) {
+                                               cb.operationFailed(ctx, exception);
+                                           }
+                                       }, ctx);
+            } else {
+                cb.operationFinished(ctx, null);
+            }
+        }
+    }
+
+    class ConsumeUntilOp extends TopicOpQueuer.SynchronousOp {
+        private final long seqId;
+
+        public ConsumeUntilOp(ByteString topic, long seqId) {
+            queuer.super(topic);
+            this.seqId = seqId;
+        }
+
+        @Override
+        public void runInternal() {
+            TopicInfo topicInfo = topicInfos.get(topic);
+            if (topicInfo == null) {
+                logger.error("Server is not responsible for topic!");
+                return;
+            }
+
+            for (Long endSeqIdIncluded : topicInfo.ledgerRanges.keySet()) {
+                if (endSeqIdIncluded <= seqId) {
+                    // This ledger's message entries have all been consumed already
+                    // so it is safe to delete it from BookKeeper.
+                    long ledgerId = topicInfo.ledgerRanges.get(endSeqIdIncluded).range.getLedgerId();
+                    try {
+                        bk.deleteLedger(ledgerId);
+                        Callback<Void> cb = new Callback<Void>() {
+                            public void operationFinished(Object ctx, Void result) {
+                                // do nothing, op is async to stop other ops
+                                // occurring on the topic during the update
+                            }
+                            public void operationFailed(Object ctx, PubSubException exception) {
+                                logger.error("Failed to update ledger znode", exception);
+                            }
+                        };
+                        queuer.pushAndMaybeRun(topic, new UpdateLedgerOp(topic, cb, null, ledgerId));
+                    } catch (Exception e) {
+                        // For now, just log an exception error message. In the
+                        // future, we can have more complicated retry logic to
+                        // delete a consumed ledger. The next time the ledger
+                        // garbage collection job runs, we'll once again try to
+                        // delete this ledger.
+                        logger.error("Exception while deleting consumed ledgerId: " + ledgerId, e);
+                    }
+                } else
+                    break;
+            }
+        }
+    }
+
     public void consumedUntil(ByteString topic, Long seqId) {
+        queuer.pushAndMaybeRun(topic, new ConsumeUntilOp(topic, Math.max(seqId, getMinSeqIdForTopic(topic))));
+    }
+
+    public void consumeToBound(ByteString topic) {
         TopicInfo topicInfo = topicInfos.get(topic);
-        if (topicInfo == null) {
-            logger.error("Server is not responsible for topic!");
+
+        if (topicInfo == null || topicInfo.messageBound == topicInfo.UNLIMITED) {
             return;
         }
-        for (Long endSeqIdIncluded : topicInfo.ledgerRanges.keySet()) {
-            if (endSeqIdIncluded <= seqId) {
-                // This ledger's message entries have all been consumed already
-                // so it is safe to delete it from BookKeeper.
-                long ledgerId = topicInfo.ledgerRanges.get(endSeqIdIncluded).range.getLedgerId();
-                try {
-                    bk.deleteLedger(ledgerId);
-                } catch (Exception e) {
-                    // For now, just log an exception error message. In the
-                    // future, we can have more complicated retry logic to
-                    // delete a consumed ledger. The next time the ledger
-                    // garbage collection job runs, we'll once again try to
-                    // delete this ledger.
-                    logger.error("Exception while deleting consumed ledgerId: " + ledgerId, e);
-                }
-            } else
-                break;
+        queuer.pushAndMaybeRun(topic, new ConsumeUntilOp(topic, getMinSeqIdForTopic(topic)));
+    }
+
+    public long getMinSeqIdForTopic(ByteString topic) {
+        TopicInfo topicInfo = topicInfos.get(topic);
+
+        if (topicInfo == null || topicInfo.messageBound == topicInfo.UNLIMITED) {
+            return Long.MIN_VALUE;
+        } else {
+            return (topicInfo.lastSeqIdPushed.getLocalComponent() - topicInfo.messageBound) + 1;
         }
     }
 
@@ -345,7 +445,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
     }
 
     public long getSeqIdAfterSkipping(ByteString topic, long seqId, int skipAmount) {
-        return seqId + skipAmount;
+        return Math.max(seqId + skipAmount, getMinSeqIdForTopic(topic));
     }
 
     public class PersistOp extends TopicOpQueuer.SynchronousOp {
@@ -615,7 +715,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                             LedgerRange lr = LedgerRange.newBuilder().setLedgerId(ledgerId)
                                              .setEndSeqIdIncluded(lastMessage.getMsgId()).build();
                             topicInfo.ledgerRanges.put(lr.getEndSeqIdIncluded().getLocalComponent(),
-                                                       new InMemoryLedgerRange(lr, prevLedgerEnd + 1, lh));
+                                    new InMemoryLedgerRange(lr, prevLedgerEnd + 1, lh));
 
                             logger.info("Recovered unclosed ledger: " + ledgerId + " for topic: "
                                         + topic.toStringUtf8() + " with " + numEntriesInLastLedger + " entries");
@@ -673,33 +773,40 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                     }
                     builder.addRanges(lastRange);
 
-                    writeTopicLedgersNode(topic, builder.build().toByteArray(), expectedVersionOfLedgersNode,
-                                          topicInfo);
+                    updateLedgerRangesNode(topic, builder.build(), expectedVersionOfLedgersNode,
+                                           new Callback<Integer>() {
+                                               public void operationFinished(Object ctx, Integer newVersion) {
+                                                   // Finally, all done
+                                                   topicInfo.ledgerRangesZnodeVersion = newVersion;
+                                                   topicInfos.put(topic, topicInfo);
+                                                   cb.operationFinished(ctx, null);
+                                               }
+                                               public void operationFailed(Object ctx, PubSubException exception) {
+                                                   cb.operationFailed(ctx, exception);
+                                               }
+                                           }, ctx);
                     return;
                 }
             }, ctx);
         }
+    }
 
-        void writeTopicLedgersNode(final ByteString topic, byte[] data, int expectedVersion, final TopicInfo topicInfo) {
-            final String zNodePath = ledgersPath(topic);
+    public void updateLedgerRangesNode(final ByteString topic, LedgerRanges ranges,
+                                       int version, final Callback<Integer> callback, Object ctx) {
+        final String zNodePath = ledgersPath(topic);
 
-            zk.setData(zNodePath, data, expectedVersion, new SafeAsyncZKCallback.StatCallback() {
+        zk.setData(zNodePath, ranges.toByteArray(), version, new SafeAsyncZKCallback.StatCallback() {
                 @Override
                 public void safeProcessResult(int rc, String path, Object ctx, Stat stat) {
                     if (rc != KeeperException.Code.OK.intValue()) {
                         KeeperException ke = ZkUtils.logErrorAndCreateZKException(
-                                                 "Could not write ledgers node for topic: " + topic.toStringUtf8(), path, rc);
-                        cb.operationFailed(ctx, new PubSubException.ServiceDownException(ke));
+                                "Could not write ledgers node for topic: " + topic.toStringUtf8(), path, rc);
+                        callback.operationFailed(ctx, new PubSubException.ServiceDownException(ke));
                         return;
                     }
-
-                    // Finally, all done
-                    topicInfos.put(topic, topicInfo);
-                    cb.operationFinished(ctx, null);
+                    callback.operationFinished(ctx, stat.getVersion());
                 }
             }, ctx);
-
-        }
     }
 
     /**
@@ -761,4 +868,28 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
         queuer.pushAndMaybeRun(topic, new ReleaseOp(topic));
     }
 
+    class SetMessageBoundOp extends TopicOpQueuer.SynchronousOp {
+        final int bound;
+
+        public SetMessageBoundOp(ByteString topic, int bound) {
+            queuer.super(topic);
+            this.bound = bound;
+        }
+
+        @Override
+        public void runInternal() {
+            TopicInfo topicInfo = topicInfos.get(topic);
+            if (topicInfo != null) {
+                topicInfo.messageBound = bound;
+            }
+        }
+    }
+
+    public void setMessageBound(ByteString topic, Integer bound) {
+        queuer.pushAndMaybeRun(topic, new SetMessageBoundOp(topic, bound));
+    }
+
+    public void clearMessageBound(ByteString topic) {
+        queuer.pushAndMaybeRun(topic, new SetMessageBoundOp(topic, TopicInfo.UNLIMITED));
+    }
 }

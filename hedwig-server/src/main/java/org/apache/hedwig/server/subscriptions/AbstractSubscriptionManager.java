@@ -111,6 +111,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
             for (ByteString topic : top2sub2seq.keySet()) {
                 final Map<ByteString, InMemorySubscriptionState> topicSubscriptions = top2sub2seq.get(topic);
                 long minConsumedMessage = Long.MAX_VALUE;
+                boolean hasBound = true;
                 // Loop through all subscribers to the current topic to find the
                 // minimum consumed message id. The consume pointers are
                 // persisted lazily so we'll use the stale in-memory value
@@ -119,20 +120,20 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                 for (InMemorySubscriptionState curSubscription : topicSubscriptions.values()) {
                     if (curSubscription.getSubscriptionState().getMsgId().getLocalComponent() < minConsumedMessage)
                         minConsumedMessage = curSubscription.getSubscriptionState().getMsgId().getLocalComponent();
+                    hasBound = hasBound && curSubscription.getSubscriptionState().hasMessageBound();
                 }
                 boolean callPersistenceManager = true;
                 // Don't call the PersistenceManager if nobody is subscribed to
                 // the topic yet, or the consume pointer has not changed since
                 // the last time, or if this is the initial subscription.
                 if (topicSubscriptions.isEmpty()
-                        || (topic2MinConsumedMessagesMap.containsKey(topic) && topic2MinConsumedMessagesMap.get(topic) == minConsumedMessage)
-                        || minConsumedMessage == 0) {
-                    callPersistenceManager = false;
-                }
-                // Pass the new consume pointers to the PersistenceManager.
-                if (callPersistenceManager) {
+                    || (topic2MinConsumedMessagesMap.containsKey(topic)
+                        && topic2MinConsumedMessagesMap.get(topic) == minConsumedMessage)
+                    || minConsumedMessage == 0) {
                     topic2MinConsumedMessagesMap.put(topic, minConsumedMessage);
                     pm.consumedUntil(topic, minConsumedMessage);
+                } else if (hasBound) {
+                    pm.consumeToBound(topic);
                 }
             }
         }
@@ -198,6 +199,8 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                     } else {
                         cb2.operationFinished(ctx, null);
                     }
+
+                    updateMessageBound(topic);
                 }
 
             }, ctx);
@@ -360,7 +363,12 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
             }
 
             // now the hard case, this is a brand new subscription, must record
-            final SubscriptionState newState = SubscriptionState.newBuilder().setMsgId(consumeSeqId).build();
+            SubscriptionState.Builder stateBuilder = SubscriptionState.newBuilder().setMsgId(consumeSeqId);
+            if (subRequest.hasMessageBound()) {
+                stateBuilder = stateBuilder.setMessageBound(subRequest.getMessageBound());
+            }
+            final SubscriptionState newState = stateBuilder.build();
+
             createSubscriptionState(topic, subscriberId, newState, new Callback<Void>() {
                 @Override
                 public void operationFailed(Object ctx, PubSubException exception) {
@@ -406,6 +414,9 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                         @Override
                         public void operationFinished(Object ctx, Void resultOfOperation) {
                             topicSubscriptions.put(subscriberId, new InMemorySubscriptionState(newState));
+
+                            updateMessageBound(topic);
+
                             cb.operationFinished(ctx, consumeSeqId);
                         }
 
@@ -418,6 +429,27 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                         cb2.operationFinished(ctx, resultOfOperation);
                 }
             }, ctx);
+        }
+    }
+
+    public void updateMessageBound(ByteString topic) {
+        final Map<ByteString, InMemorySubscriptionState> topicSubscriptions = top2sub2seq.get(topic);
+        if (topicSubscriptions == null) {
+            return;
+        }
+        int maxBound = Integer.MIN_VALUE;
+        for (Map.Entry<ByteString, InMemorySubscriptionState> e : topicSubscriptions.entrySet()) {
+            if (!e.getValue().getSubscriptionState().hasMessageBound()) {
+                maxBound = Integer.MIN_VALUE;
+                break;
+            } else {
+                maxBound = Math.max(maxBound, e.getValue().getSubscriptionState().getMessageBound());
+            }
+        }
+        if (maxBound == Integer.MIN_VALUE) {
+            pm.clearMessageBound(topic);
+        } else {
+            pm.setMessageBound(topic, maxBound);
         }
     }
 
@@ -508,6 +540,8 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                     if (!SubscriptionStateUtils.isHubSubscriber(subscriberId)
                             && topic2LocalCounts.get(topic).decrementAndGet() == 0)
                         notifyUnsubcribe(topic);
+
+                    updateMessageBound(topic);
                     cb.operationFinished(ctx, null);
                 }
             }, ctx);

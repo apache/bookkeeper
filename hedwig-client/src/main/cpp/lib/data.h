@@ -62,7 +62,8 @@ namespace Hedwig {
   public:
     // to be used for publish
     static PubSubDataPtr forPublishRequest(long txnid, const std::string& topic, const std::string& body, const OperationCallbackPtr& callback);
-    static PubSubDataPtr forSubscribeRequest(long txnid, const std::string& subscriberid, const std::string& topic, const OperationCallbackPtr& callback, SubscribeRequest::CreateOrAttach mode);
+    static PubSubDataPtr forSubscribeRequest(long txnid, const std::string& subscriberid, const std::string& topic,
+					     const OperationCallbackPtr& callback, const SubscriptionOptions& options);
     static PubSubDataPtr forUnsubscribeRequest(long txnid, const std::string& subscriberid, const std::string& topic, const OperationCallbackPtr& callback);
     static PubSubDataPtr forConsumeRequest(long txnid, const std::string& subscriberid, const std::string& topic, const MessageSeqId msgid);
 
@@ -76,11 +77,12 @@ namespace Hedwig {
     const MessageSeqId getMessageSeqId() const;
 
     void setShouldClaim(bool shouldClaim);
+    void setMessageBound(int messageBound);
 
     const PubSubRequestPtr getRequest();
     void setCallback(const OperationCallbackPtr& callback);
     OperationCallbackPtr& getCallback();
-    SubscribeRequest::CreateOrAttach getMode() const;
+    const SubscriptionOptions& getSubscriptionOptions() const;
 
     void addTriedServer(HostAddress& h);
     bool hasTriedServer(HostAddress& h);
@@ -95,8 +97,9 @@ namespace Hedwig {
     std::string topic;
     std::string body;
     bool shouldClaim;
+    int messageBound;
     OperationCallbackPtr callback;
-    SubscribeRequest::CreateOrAttach mode;
+    SubscriptionOptions options;
     MessageSeqId msgid;
     std::tr1::unordered_set<HostAddress, HostAddressHash > triedservers;
   };

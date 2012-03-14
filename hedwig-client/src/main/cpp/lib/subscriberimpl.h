@@ -145,6 +145,8 @@ namespace Hedwig {
 
     void subscribe(const std::string& topic, const std::string& subscriberId, const SubscribeRequest::CreateOrAttach mode);
     void asyncSubscribe(const std::string& topic, const std::string& subscriberId, const SubscribeRequest::CreateOrAttach mode, const OperationCallbackPtr& callback);
+    void subscribe(const std::string& topic, const std::string& subscriberId, const SubscriptionOptions& options);
+    void asyncSubscribe(const std::string& topic, const std::string& subscriberId, const SubscriptionOptions& options, const OperationCallbackPtr& callback);
     
     void unsubscribe(const std::string& topic, const std::string& subscriberId);
     void asyncUnsubscribe(const std::string& topic, const std::string& subscriberId, const OperationCallbackPtr& callback);

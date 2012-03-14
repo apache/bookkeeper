@@ -68,6 +68,7 @@ int main( int argc, char **argv)
     registry.addRegistry("Subscribe");
     registry.addRegistry("Publish"); 
     registry.addRegistry("PubSub");
+    registry.addRegistry("MessageBound");
     
     runner.addTest( registry.makeTest() );
   }

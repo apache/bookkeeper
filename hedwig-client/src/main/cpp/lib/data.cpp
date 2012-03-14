@@ -38,14 +38,14 @@ PubSubDataPtr PubSubData::forPublishRequest(long txnid, const std::string& topic
   return ptr;
 }
 
-PubSubDataPtr PubSubData::forSubscribeRequest(long txnid, const std::string& subscriberid, const std::string& topic, const OperationCallbackPtr& callback, SubscribeRequest::CreateOrAttach mode) {
+PubSubDataPtr PubSubData::forSubscribeRequest(long txnid, const std::string& subscriberid, const std::string& topic, const OperationCallbackPtr& callback, const SubscriptionOptions& options) {
   PubSubDataPtr ptr(new PubSubData());
   ptr->type = SUBSCRIBE;
   ptr->txnid = txnid;
   ptr->subscriberid = subscriberid;
   ptr->topic = topic;
   ptr->callback = callback;
-  ptr->mode = mode;
+  ptr->options = options;
   return ptr;  
 }
 
@@ -69,7 +69,7 @@ PubSubDataPtr PubSubData::forConsumeRequest(long txnid, const std::string& subsc
   return ptr;  
 }
 
-PubSubData::PubSubData() : shouldClaim(false) {  
+PubSubData::PubSubData() : shouldClaim(false), messageBound(0) {  
 }
 
 PubSubData::~PubSubData() {
@@ -116,7 +116,10 @@ const PubSubRequestPtr PubSubData::getRequest() {
 
     Hedwig::SubscribeRequest* subreq = request->mutable_subscriberequest();
     subreq->set_subscriberid(subscriberid);
-    subreq->set_createorattach(mode);
+    subreq->set_createorattach(options.createorattach());
+    if (options.messagebound() > 0) {
+      subreq->set_messagebound(options.messagebound());
+    }
   } else if (type == CONSUME) {
     LOG4CXX_DEBUG(logger, "Creating consume request");
 
@@ -164,6 +167,6 @@ const std::string& PubSubData::getSubscriberId() const {
   return subscriberid;
 }
 
-SubscribeRequest::CreateOrAttach PubSubData::getMode() const {
-  return mode;
+const SubscriptionOptions& PubSubData::getSubscriptionOptions() const {
+  return options;
 }

@@ -86,6 +86,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-77: Add a console client for hedwig (Sijie Guo via ivank)
 
+        BOOKKEEPER-168: Message bounding on subscriptions (ivank)
+
       bookkeeper-benchmark/
 	BOOKKEEPER-158: Move latest benchmarking code into trunk (ivank via fpj)
 

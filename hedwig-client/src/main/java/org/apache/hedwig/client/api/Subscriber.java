@@ -27,6 +27,7 @@ import org.apache.hedwig.exceptions.PubSubException.CouldNotConnectException;
 import org.apache.hedwig.exceptions.PubSubException.ServiceDownException;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.util.Callback;
 
 /**
@@ -81,6 +82,52 @@ public interface Subscriber {
      */
     public void asyncSubscribe(ByteString topic, ByteString subscriberId, CreateOrAttach mode, Callback<Void> callback,
                                Object context);
+
+
+    /**
+     * Subscribe to the given topic for the inputted subscriberId.
+     *
+     * @param topic
+     *            Topic name of the subscription
+     * @param subscriberId
+     *            ID of the subscriber
+     * @param options
+     *            Options to pass to the subscription. Can contain attach mode.
+     * @throws CouldNotConnectException
+     *             If we are not able to connect to the server host
+     * @throws ClientAlreadySubscribedException
+     *             If client is already subscribed to the topic
+     * @throws ServiceDownException
+     *             If unable to subscribe to topic
+     * @throws InvalidSubscriberIdException
+     *             If the subscriberId is not valid. We may want to set aside
+     *             certain formats of subscriberId's for different purposes.
+     *             e.g. local vs. hub subscriber
+     */
+    public void subscribe(ByteString topic, ByteString subscriberId, SubscriptionOptions options)
+            throws CouldNotConnectException, ClientAlreadySubscribedException, ServiceDownException,
+        InvalidSubscriberIdException;
+
+    /**
+     * Subscribe to the given topic asynchronously for the inputted subscriberId
+     * disregarding if the topic has been created yet or not.
+     *
+     * @param topic
+     *            Topic name of the subscription
+     * @param subscriberId
+     *            ID of the subscriber
+     * @param options
+     *            Options to pass to the subscription. Can contain attach mode.
+     * @param callback
+     *            Callback to invoke when the subscribe request to the server
+     *            has actually gone through. This will have to deal with error
+     *            conditions on the async subscribe request.
+     * @param context
+     *            Calling context that the Callback needs since this is done
+     *            asynchronously.
+     */
+    public void asyncSubscribe(ByteString topic, ByteString subscriberId, SubscriptionOptions options,
+                               Callback<Void> callback, Object context);
 
     /**
      * Unsubscribe from a topic that the subscriberId user has previously

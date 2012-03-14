@@ -96,6 +96,12 @@ message SubscribeRequest{
 	
 	// wait for cross-regional subscriptions to be established before returning
 	optional bool synchronous = 4 [default = false];
+	optional uint32 messageBound = 5;
+}
+
+message SubscriptionOptions {
+    optional SubscribeRequest.CreateOrAttach createOrAttach = 2 [default = CREATE_OR_ATTACH];
+    optional uint32 messageBound = 3 [default = 0];
 }
 
 message ConsumeRequest{
@@ -162,6 +168,7 @@ enum StatusCode{
     
 message SubscriptionState {
     required MessageSeqId msgId = 1;
+    optional uint32 messageBound = 2;
 }
 
 message LedgerRange{

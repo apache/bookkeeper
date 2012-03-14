@@ -26,6 +26,7 @@ import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException
 import org.apache.hedwig.exceptions.PubSubException.CouldNotConnectException;
 import org.apache.hedwig.exceptions.PubSubException.ServiceDownException;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.util.Callback;
 
 /**
@@ -46,13 +47,28 @@ public class HedwigHubSubscriber extends HedwigSubscriber {
     public void subscribe(ByteString topic, ByteString subscriberId, CreateOrAttach mode)
             throws CouldNotConnectException, ClientAlreadySubscribedException, ServiceDownException,
         InvalidSubscriberIdException {
-        subscribe(topic, subscriberId, mode, true);
+        SubscriptionOptions options = SubscriptionOptions.newBuilder().setCreateOrAttach(mode).build();
+        subscribe(topic, subscriberId, options);
     }
 
     @Override
     public void asyncSubscribe(ByteString topic, ByteString subscriberId, CreateOrAttach mode, Callback<Void> callback,
                                Object context) {
-        asyncSubscribe(topic, subscriberId, mode, callback, context, true);
+        SubscriptionOptions options = SubscriptionOptions.newBuilder().setCreateOrAttach(mode).build();
+        asyncSubscribe(topic, subscriberId, options, callback, context);
+    }
+
+    @Override
+    public void subscribe(ByteString topic, ByteString subscriberId, SubscriptionOptions options)
+            throws CouldNotConnectException, ClientAlreadySubscribedException, ServiceDownException,
+        InvalidSubscriberIdException {
+        subscribe(topic, subscriberId, options, true);
+    }
+
+    @Override
+    public void asyncSubscribe(ByteString topic, ByteString subscriberId,
+                               SubscriptionOptions options, Callback<Void> callback, Object context) {
+        asyncSubscribe(topic, subscriberId, options, callback, context, true);
     }
 
     @Override

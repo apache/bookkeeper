@@ -22,7 +22,7 @@ import java.util.List;
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
-import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.util.Callback;
 
 /**
@@ -45,10 +45,8 @@ public class PubSubData {
     // Enum to indicate what type of operation this PubSub request data object
     // is for.
     public final OperationType operationType;
-    // Enum for subscribe requests to indicate if this is a CREATE, ATTACH, or
-    // CREATE_OR_ATTACH subscription request. For non-subscribe requests,
-    // this will be null.
-    public final CreateOrAttach createOrAttach;
+    // Options for the subscription
+    public final SubscriptionOptions options;
     // These two variables are not final since we might override them
     // in the case of a Subscribe reconnect.
     public Callback<Void> callback;
@@ -84,13 +82,13 @@ public class PubSubData {
 
     // Constructor for all types of PubSub request data to send to the server
     public PubSubData(final ByteString topic, final Message msg, final ByteString subscriberId,
-                      final OperationType operationType, final CreateOrAttach createOrAttach, final Callback<Void> callback,
-                      final Object context) {
+                      final OperationType operationType, final SubscriptionOptions options,
+                      final Callback<Void> callback, final Object context) {
         this.topic = topic;
         this.msg = msg;
         this.subscriberId = subscriberId;
         this.operationType = operationType;
-        this.createOrAttach = createOrAttach;
+        this.options = options;
         this.callback = callback;
         this.context = context;
     }
@@ -117,8 +115,9 @@ public class PubSubData {
             sb.append(COMMA).append("SubscriberId: " + subscriberId.toStringUtf8());
         if (operationType != null)
             sb.append(COMMA).append("Operation Type: " + operationType.toString());
-        if (createOrAttach != null)
-            sb.append(COMMA).append("Create Or Attach: " + createOrAttach.toString());
+        if (options != null)
+            sb.append(COMMA).append("Create Or Attach: " + options.getCreateOrAttach().toString())
+                .append(COMMA).append("Message Bound: " + options.getMessageBound());
         if (triedServers != null && triedServers.size() > 0) {
             sb.append(COMMA).append("Tried Servers: ");
             for (ByteString triedServer : triedServers) {

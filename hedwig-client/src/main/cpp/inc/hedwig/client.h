@@ -47,6 +47,15 @@ namespace Hedwig {
     static const std::string SYNC_REQUEST_TIMEOUT;
     static const std::string SUBSCRIBER_AUTOCONSUME;
     static const std::string NUM_DISPATCH_THREADS;
+    /**
+     * The maximum number of messages the hub will queue for subscriptions
+     * created using this configuration. The hub will always queue the most
+     * recent messages. If there are enough publishes to the topic to hit
+     * the bound, then the oldest messages are dropped from the queue.
+     *
+     * A bound of 0 disabled the bound completely.
+     */
+    static const std::string SUBSCRIPTION_MESSAGE_BOUND;
 
   public:
     Configuration() {};
