@@ -21,7 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
-import org.apache.hadoop.fs.HardLink;
+import org.apache.bookkeeper.util.HardLink;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.cli.BasicParser;

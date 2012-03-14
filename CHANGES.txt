@@ -52,6 +52,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-180: bookie server doesn't quit when running out of disk space (sijie via ivank)
 
+        BOOKKEEPER-185: Remove bookkeeper-server dependency on hadoop-common (ivank)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)
