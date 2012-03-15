@@ -28,20 +28,19 @@ import org.junit.After;
 import static org.junit.Assert.*;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import java.util.HashSet;
 import junit.framework.TestCase;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.bookie.Bookie;
 
-public class BookieZKExpireTest extends BaseTestCase {
+public class BookieZKExpireTest extends BookKeeperClusterTestCase {
 
-    public BookieZKExpireTest(DigestType digestType) {
+    public BookieZKExpireTest() {
         super(0);
     }
 
     @Test
-    public void runBookieServerZKExpireBehaviourTest() throws Exception {
+    public void testBookieServerZKExpireBehaviour() throws Exception {
         BookieServer server = null;
         try {
             File f = File.createTempFile("bookieserver", "test");

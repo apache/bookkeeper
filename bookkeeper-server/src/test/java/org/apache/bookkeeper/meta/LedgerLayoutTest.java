@@ -30,18 +30,16 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
-import org.apache.bookkeeper.test.BaseTestCase;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.Assert.*;
 
-public class LedgerLayoutTest extends BaseTestCase {
-    DigestType digestType;
+public class LedgerLayoutTest extends BookKeeperClusterTestCase {
 
-    public LedgerLayoutTest(DigestType digestType) {
+    public LedgerLayoutTest() {
         super(0);
-        this.digestType = digestType;
     }
 
     @Test

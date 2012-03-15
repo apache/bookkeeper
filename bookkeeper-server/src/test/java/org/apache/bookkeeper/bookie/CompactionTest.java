@@ -27,7 +27,7 @@ import java.util.Enumeration;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.test.BaseTestCase;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,11 +38,12 @@ import org.junit.Test;
 /**
  * This class tests the entry log compaction functionality.
  */
-public class CompactionTest extends BaseTestCase {
+public class CompactionTest extends BookKeeperClusterTestCase {
     static Logger LOG = LoggerFactory.getLogger(CompactionTest.class);
     DigestType digestType;
 
     static int ENTRY_SIZE = 1024;
+    static int NUM_BOOKIES = 1;
 
     int numEntries;
     int gcWaitTime;
@@ -53,11 +54,12 @@ public class CompactionTest extends BaseTestCase {
 
     String msg;
 
-    public CompactionTest(DigestType digestType) {
-        super(3);
-        this.digestType = digestType;
+    public CompactionTest() {
+        super(NUM_BOOKIES);
 
-        numEntries = 2048;
+        this.digestType = DigestType.CRC32;
+
+        numEntries = 100;
         gcWaitTime = 1000;
         minorCompactionThreshold = 0.1f;
         majorCompactionThreshold = 0.5f;
@@ -88,7 +90,7 @@ public class CompactionTest extends BaseTestCase {
 
     LedgerHandle[] prepareData(int numEntryLogs, boolean changeNum)
         throws Exception {
-        // since an entry log file can hold at most 2048 entries
+        // since an entry log file can hold at most 100 entries
         // first ledger write 2 entries, which is less than low water mark
         int num1 = 2;
         // third ledger write more than high water mark entries
@@ -99,7 +101,7 @@ public class CompactionTest extends BaseTestCase {
 
         LedgerHandle[] lhs = new LedgerHandle[3];
         for (int i=0; i<3; ++i) {
-            lhs[i] = bkc.createLedger(3, 3, digestType, "".getBytes());
+            lhs[i] = bkc.createLedger(NUM_BOOKIES, NUM_BOOKIES, digestType, "".getBytes());
         }
 
         for (int n = 0; n < numEntryLogs; n++) {
@@ -161,7 +163,7 @@ public class CompactionTest extends BaseTestCase {
         baseConf.setMajorCompactionThreshold(0.0f);
 
         // restart bookies
-        restartBookies();
+        restartBookies(baseConf);
 
         // remove ledger2 and ledger3
         // so entry log 1 and 2 would have ledger1 entries left
@@ -191,7 +193,7 @@ public class CompactionTest extends BaseTestCase {
         baseConf.setMajorCompactionThreshold(0.0f);
 
         // restart bookies
-        restartBookies();
+        restartBookies(baseConf);
 
         // remove ledger2 and ledger3
         bkc.deleteLedger(lhs[1].getId());
@@ -226,7 +228,7 @@ public class CompactionTest extends BaseTestCase {
         baseConf.setMinorCompactionThreshold(0.0f);
 
         // restart bookies
-        restartBookies();
+        restartBookies(baseConf);
 
         // remove ledger1 and ledger3
         bkc.deleteLedger(lhs[0].getId());
@@ -276,7 +278,7 @@ public class CompactionTest extends BaseTestCase {
     public void testCompactionSmallEntryLogs() throws Exception {
 
         // create a ledger to write a few entries
-        LedgerHandle alh = bkc.createLedger(3, 3, digestType, "".getBytes());
+        LedgerHandle alh = bkc.createLedger(NUM_BOOKIES, NUM_BOOKIES, digestType, "".getBytes());
         for (int i=0; i<3; i++) {
            alh.addEntry(msg.getBytes());
         }

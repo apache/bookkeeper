@@ -32,10 +32,6 @@ import org.junit.Before;
  */
 public class HierarchicalLedgerDeleteTest extends LedgerDeleteTest {
 
-    public HierarchicalLedgerDeleteTest(DigestType digestType) {
-        super(digestType);
-    }
-
     @Before
     @Override
     public void setUp() throws Exception {

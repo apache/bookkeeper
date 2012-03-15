@@ -38,16 +38,16 @@ import org.junit.Test;
 /**
  * This class tests that index corruption cases
  */
-public class IndexCorruptionTest extends BaseTestCase {
+public class IndexCorruptionTest extends BookKeeperClusterTestCase {
     static Logger LOG = LoggerFactory.getLogger(IndexCorruptionTest.class);
 
     DigestType digestType;
 
     int pageSize = 1024;
 
-    public IndexCorruptionTest(DigestType digestType) {
+    public IndexCorruptionTest() {
         super(1);
-        this.digestType = digestType;
+        this.digestType = DigestType.CRC32;
         baseConf.setPageSize(pageSize);
     }
 

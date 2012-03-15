@@ -33,7 +33,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.List;
 import java.util.ArrayList;
 
-import org.apache.bookkeeper.test.BaseTestCase;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,10 +42,10 @@ import org.junit.Assert.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TestLedgerManager extends BaseTestCase {
+public class TestLedgerManager extends BookKeeperClusterTestCase {
     static Logger LOG = LoggerFactory.getLogger(TestLedgerManager.class);
 
-    public TestLedgerManager(DigestType digestType) {
+    public TestLedgerManager() {
         super(0);
     }
 

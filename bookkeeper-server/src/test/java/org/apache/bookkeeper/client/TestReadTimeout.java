@@ -36,7 +36,7 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.test.BaseTestCase;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -47,14 +47,14 @@ import org.slf4j.LoggerFactory;
  * This unit test tests ledger fencing;
  *
  */
-public class TestReadTimeout extends BaseTestCase {
+public class TestReadTimeout extends BookKeeperClusterTestCase {
     static Logger LOG = LoggerFactory.getLogger(TestReadTimeout.class);
 
     DigestType digestType;
 
-    public TestReadTimeout(DigestType digestType) {
+    public TestReadTimeout() {
         super(10);
-        this.digestType = digestType;
+        this.digestType = DigestType.CRC32;
     }
 
     @Test

@@ -35,13 +35,13 @@ import org.junit.Test;
  * This class tests the ledger delete functionality both from the BookKeeper
  * client and the server side.
  */
-public class LedgerDeleteTest extends BaseTestCase {
+public class LedgerDeleteTest extends BookKeeperClusterTestCase {
     static Logger LOG = LoggerFactory.getLogger(LedgerDeleteTest.class);
     DigestType digestType;
 
-    public LedgerDeleteTest(DigestType digestType) {
+    public LedgerDeleteTest() {
         super(3);
-        this.digestType = digestType;
+        this.digestType = DigestType.CRC32;
     }
 
     @Before

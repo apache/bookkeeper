@@ -43,14 +43,14 @@ import org.junit.Test;
 /**
  * This class tests that bookie rolling journals
  */
-public class BookieJournalRollingTest extends BaseTestCase {
+public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
     static Logger LOG = LoggerFactory.getLogger(BookieJournalRollingTest.class);
 
     DigestType digestType;
 
-    public BookieJournalRollingTest(DigestType digestType) {
+    public BookieJournalRollingTest() {
         super(3);
-        this.digestType = digestType;
+        this.digestType = DigestType.CRC32;
     }
 
     @Before
