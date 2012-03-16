@@ -83,10 +83,70 @@ public class EntryLogTest extends TestCase {
         ByteBuffer bb = ByteBuffer.wrap(new byte[64]);
         bb.putLong(ledger);
         bb.putLong(entry);
-        bb.put(("ledger"+ledger).getBytes());
+        bb.put(("ledger-" + ledger + "-" + entry).getBytes());
         bb.flip();
         return bb;
     }
+
+    @Test
+    public void testMissingLogId() throws Exception {
+        File tmpDir = File.createTempFile("entryLogTest", ".dir");
+        tmpDir.delete();
+        tmpDir.mkdir();
+        File curDir = Bookie.getCurrentDirectory(tmpDir);
+        Bookie.checkDirectoryStructure(curDir);
+
+        ServerConfiguration conf = new ServerConfiguration();
+        conf.setLedgerDirNames(new String[] {tmpDir.toString()});
+        // create some entries
+        int numLogs = 3;
+        int numEntries = 10;
+        long[][] positions = new long[2*numLogs][];
+        for (int i=0; i<numLogs; i++) {
+            positions[i] = new long[numEntries];
+
+            EntryLogger logger = new EntryLogger(conf);
+            for (int j=0; j<numEntries; j++) {
+                positions[i][j] = logger.addEntry(i, generateEntry(i, j));
+            }
+            logger.flush();
+        }
+        // delete last log id
+        File lastLogId = new File(curDir, "lastId");
+        lastLogId.delete();
+
+        // write another entries
+        for (int i=numLogs; i<2*numLogs; i++) {
+            positions[i] = new long[numEntries];
+
+            EntryLogger logger = new EntryLogger(conf);
+            for (int j=0; j<numEntries; j++) {
+                positions[i][j] = logger.addEntry(i, generateEntry(i, j));
+            }
+            logger.flush();
+        }
+
+        EntryLogger newLogger = new EntryLogger(conf);
+        for (int i=0; i<(2*numLogs+1); i++) {
+            File logFile = new File(curDir, Long.toHexString(i) + ".log");
+            assertTrue(logFile.exists());
+        }
+        for (int i=0; i<2*numLogs; i++) {
+            for (int j=0; j<numEntries; j++) {
+                String expectedValue = "ledger-" + i + "-" + j;
+                byte[] value = newLogger.readEntry(i, j, positions[i][j]);
+                ByteBuffer buf = ByteBuffer.wrap(value);
+                long ledgerId = buf.getLong();
+                long entryId = buf.getLong();
+                byte[] data = new byte[buf.remaining()];
+                buf.get(data);
+                assertEquals(i, ledgerId);
+                assertEquals(j, entryId);
+                assertEquals(expectedValue, new String(data));
+            }
+        }
+    }
+
     
     @After
     public void tearDown() throws Exception {

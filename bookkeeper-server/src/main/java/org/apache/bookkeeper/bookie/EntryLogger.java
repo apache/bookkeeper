@@ -24,6 +24,7 @@ package org.apache.bookkeeper.bookie;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -34,6 +35,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -174,13 +176,14 @@ public class EntryLogger {
         // this header buffer is cleared before writing it into the new logChannel.
         LOGFILE_HEADER.put("BKLO".getBytes());
         // Find the largest logId
+        logId = -1;
         for(File f: dirs) {
             long lastLogId = getLastLogId(f);
-            if (lastLogId >= logId) {
-                logId = lastLogId+1;
+            if (lastLogId > logId) {
+                logId = lastLogId;
             }
         }
-        createLogId(logId);
+        createNewLog();
     }
 
     /**
@@ -189,16 +192,31 @@ public class EntryLogger {
     private ConcurrentHashMap<Long, BufferedChannel> channels = new ConcurrentHashMap<Long, BufferedChannel>();
 
     /**
-     * Creates a new log file with the given id.
+     * Creates a new log file
      */
-    private void createLogId(long logId) throws IOException {
+    private void createNewLog() throws IOException {
         List<File> list = Arrays.asList(dirs);
         Collections.shuffle(list);
-        File firstDir = list.get(0);
         if (logChannel != null) {
             logChannel.flush(true);
         }
-        logChannel = new BufferedChannel(new RandomAccessFile(new File(firstDir, Long.toHexString(logId)+".log"), "rw").getChannel(), 64*1024);
+
+        // It would better not to overwrite existing entry log files
+        File newLogFile = null;
+        do {
+            String logFileName = Long.toHexString(++logId) + ".log";
+            for (File dir : list) {
+                newLogFile = new File(dir, logFileName);
+                if (newLogFile.exists()) {
+                    LOG.warn("Found existed entry log " + newLogFile
+                           + " when trying to create it as a new log.");
+                    newLogFile = null;
+                    break;
+                }
+            }
+        } while (newLogFile == null);
+
+        logChannel = new BufferedChannel(new RandomAccessFile(newLogFile, "rw").getChannel(), 64*1024);
         logChannel.write((ByteBuffer) LOGFILE_HEADER.clear());
         channels.put(logId, logChannel);
         for(File f: dirs) {
@@ -252,10 +270,41 @@ public class EntryLogger {
         }
     }
 
+    private long getLastLogId(File dir) {
+        long id = readLastLogId(dir);
+        // read success
+        if (id > 0) {
+            return id;
+        }
+        // read failed, scan the ledger directories to find biggest log id
+        File[] logFiles = dir.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                return file.getName().endsWith(".log");
+            }
+        });
+        List<Long> logs = new ArrayList<Long>();
+        for (File lf : logFiles) {
+            String idString = lf.getName().split("\\.")[0];
+            try {
+                long lid = Long.parseLong(idString, 16);
+                logs.add(lid);
+            } catch (NumberFormatException nfe) {
+            }
+        }
+        // no log file found in this directory
+        if (0 == logs.size()) {
+            return -1;
+        }
+        // order the collections
+        Collections.sort(logs);
+        return logs.get(logs.size() - 1);
+    }
+
     /**
      * reads id from the "lastId" file in the given directory.
      */
-    private long getLastLogId(File f) {
+    private long readLastLogId(File f) {
         FileInputStream fis;
         try {
             fis = new FileInputStream(new File(f, "lastId"));
@@ -278,10 +327,6 @@ public class EntryLogger {
         }
     }
 
-    private void openNewChannel() throws IOException {
-        createLogId(++logId);
-    }
-
     synchronized void flush() throws IOException {
         if (logChannel != null) {
             logChannel.flush(true);
@@ -289,7 +334,7 @@ public class EntryLogger {
     }
     synchronized long addEntry(long ledger, ByteBuffer entry) throws IOException {
         if (logChannel.position() + entry.remaining() + 4 > logSizeLimit) {
-            openNewChannel();
+            createNewLog();
         }
         ByteBuffer buff = ByteBuffer.allocate(4);
         buff.putInt(entry.remaining());
@@ -351,7 +396,9 @@ public class EntryLogger {
             return fc;
         }
         File file = findFile(entryLogId);
-        FileChannel newFc = new RandomAccessFile(file, "rw").getChannel();
+        // get channel is used to open an existing entry log file
+        // it would be better to open using read mode
+        FileChannel newFc = new RandomAccessFile(file, "r").getChannel();
         // If the file already exists before creating a BufferedChannel layer above it,
         // set the FileChannel's position to the end so the write buffer knows where to start.
         newFc.position(newFc.size());
