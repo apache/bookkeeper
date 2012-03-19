@@ -58,6 +58,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-182: Entry log file is overwritten when fail to read lastLogId. (sijie via ivank)
 
+        BOOKKEEPER-186: Bookkeeper throttling - permits is not released when read has failed from all replicas (Rakesh R via sijie)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)

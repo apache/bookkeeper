@@ -97,6 +97,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         if (entry.nextReplicaIndexToReadFrom >= lh.metadata.quorumSize) {
             // we are done, the read has failed from all replicas, just fail the
             // read
+            lh.opCounterSem.release();
             submitCallback(lastErrorCode);
             return;
         }
