@@ -94,6 +94,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-168: Message bounding on subscriptions (ivank)
 
+        BOOKKEEPER-96: extends zookeeper JMX to monitor and manage hedwig server (sijie via ivank)
+
       bookkeeper-benchmark/
 	BOOKKEEPER-158: Move latest benchmarking code into trunk (ivank via fpj)
 

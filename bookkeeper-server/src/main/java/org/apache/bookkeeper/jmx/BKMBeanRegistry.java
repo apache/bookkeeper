@@ -41,6 +41,10 @@ public class BKMBeanRegistry extends MBeanRegistry {
     public static BKMBeanRegistry getInstance(){
         return instance;
     }
+
+    protected String getDomainName() {
+        return DOMAIN;
+    }
     
     /**
      * This takes a path, such as /a/b/c, and converts it to 
@@ -68,7 +72,7 @@ public class BKMBeanRegistry extends MBeanRegistry {
         throws MalformedObjectNameException {
         if(path==null)
             return null;
-        StringBuilder beanName = new StringBuilder(DOMAIN + ":");
+        StringBuilder beanName = new StringBuilder(getDomainName() + ":");
         int counter=0;
         counter=tokenize(beanName,path,counter);
         tokenize(beanName,bean.getName(),counter);
