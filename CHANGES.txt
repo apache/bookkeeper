@@ -90,6 +90,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-160: bookie server needs to do compaction over entry log files to reclaim disk space (sijie via ivank)
 
+        BOOKKEEPER-187: Create well defined interface for LedgerCache (ivank)
+
       hedwig-server/
 
         BOOKKEEPER-77: Add a console client for hedwig (Sijie Guo via ivank)

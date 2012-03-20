@@ -37,11 +37,13 @@ import org.slf4j.LoggerFactory;
  */
 public class LedgerDescriptor {
     final static Logger LOG = LoggerFactory.getLogger(LedgerDescriptor.class);
-    LedgerCache ledgerCache;
+    LedgerCacheImpl ledgerCache;
     LedgerDescriptor(long ledgerId, EntryLogger entryLogger, LedgerCache ledgerCache) {
         this.ledgerId = ledgerId;
         this.entryLogger = entryLogger;
-        this.ledgerCache = ledgerCache;
+        // This cast is only here until ledgerDescriptor changes go in to make it
+        // unnecessary
+        this.ledgerCache = (LedgerCacheImpl)ledgerCache;
     }
 
     private byte[] masterKey = null;
@@ -136,42 +138,7 @@ public class LedgerDescriptor {
          * If entryId is -1, then return the last written.
          */
         if (entryId == -1) {
-            long lastEntry = ledgerCache.getLastEntry(ledgerId);
-            FileInfo fi = null;
-            try {
-                fi = ledgerCache.getFileInfo(ledgerId, null);
-                long size = fi.size();
-                // make sure the file size is aligned with index entry size
-                // otherwise we may read incorret data
-                if (0 != size % 8) {
-                    LOG.warn("Index file of ledger {} is not aligned with index entry size.", ledgerId);
-                    size = size - size % 8;
-                }
-                // we may not have the last entry in the cache
-                if (size > lastEntry*8) {
-                    ByteBuffer bb = ByteBuffer.allocate(ledgerCache.getPageSize());
-                    long position = size - ledgerCache.getPageSize();
-                    if (position < 0) {
-                        position = 0;
-                    }
-                    fi.read(bb, position);
-                    bb.flip();
-                    long startingEntryId = position/8;
-                    for(int i = ledgerCache.getEntriesPerPage()-1; i >= 0; i--) {
-                        if (bb.getLong(i*8) != 0) {
-                            if (lastEntry < startingEntryId+i) {
-                                lastEntry = startingEntryId+i;
-                            }
-                            break;
-                        }
-                    }
-                }
-            } finally {
-                if (fi != null) {
-                    fi.release();
-                }
-            }
-            entryId = lastEntry;
+            entryId = ledgerCache.getLastEntry(ledgerId);
         }
 
         offset = ledgerCache.getEntryOffset(ledgerId, entryId);

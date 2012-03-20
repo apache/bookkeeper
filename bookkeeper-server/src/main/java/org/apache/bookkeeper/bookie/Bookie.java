@@ -400,8 +400,9 @@ public class Bookie extends Thread {
 
         syncThread = new SyncThread(conf);
         entryLogger = new EntryLogger(conf);
-        ledgerCache = new LedgerCache(conf, ledgerManager);
+        ledgerCache = new LedgerCacheImpl(conf, ledgerManager);
         gcThread = new GarbageCollectorThread(conf, this.zk, ledgerCache, entryLogger,
+                                              ledgerManager,
                                               new EntryLogCompactionScanner());
         // replay journals
         readJournal();
@@ -565,7 +566,7 @@ public class Bookie extends Thread {
             BKMBeanRegistry.getInstance().register(jmxBookieBean, parent);
 
             try {
-                jmxLedgerCacheBean = new LedgerCacheBean(this.ledgerCache);
+                jmxLedgerCacheBean = this.ledgerCache.getJMXBean();
                 BKMBeanRegistry.getInstance().register(jmxLedgerCacheBean, jmxBookieBean);
             } catch (Exception e) {
                 LOG.warn("Failed to register with JMX for ledger cache", e);

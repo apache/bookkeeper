@@ -72,7 +72,7 @@ public class UpgradeTest {
             throws Exception {
         long ledgerId = 1;
 
-        File fn = new File(dir, LedgerCache.getLedgerName(ledgerId));
+        File fn = new File(dir, LedgerCacheImpl.getLedgerName(ledgerId));
         fn.getParentFile().mkdirs();
         FileInfo fi = new FileInfo(fn, masterKey);
         // force creation of index file

@@ -59,7 +59,7 @@ public class BookieJournalTest {
     private void writeIndexFileForLedger(File indexDir, long ledgerId,
                                          byte[] masterKey)
             throws Exception {
-        File fn = new File(indexDir, LedgerCache.getLedgerName(ledgerId));
+        File fn = new File(indexDir, LedgerCacheImpl.getLedgerName(ledgerId));
         fn.getParentFile().mkdirs();
         FileInfo fi = new FileInfo(fn, masterKey);
         // force creation of index file
@@ -70,7 +70,7 @@ public class BookieJournalTest {
     private void writePartialIndexFileForLedger(File indexDir, long ledgerId,
                                                 byte[] masterKey, boolean truncateToMasterKey)
             throws Exception {
-        File fn = new File(indexDir, LedgerCache.getLedgerName(ledgerId));
+        File fn = new File(indexDir, LedgerCacheImpl.getLedgerName(ledgerId));
         fn.getParentFile().mkdirs();
         FileInfo fi = new FileInfo(fn, masterKey);
         // force creation of index file
