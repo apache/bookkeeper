@@ -28,125 +28,37 @@ import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-
 /**
  * Implements a ledger inside a bookie. In particular, it implements operations
  * to write entries to a ledger and read entries from a ledger.
- *
  */
-public class LedgerDescriptor {
-    final static Logger LOG = LoggerFactory.getLogger(LedgerDescriptor.class);
-    LedgerCacheImpl ledgerCache;
-    LedgerDescriptor(long ledgerId, EntryLogger entryLogger, LedgerCache ledgerCache) {
-        this.ledgerId = ledgerId;
-        this.entryLogger = entryLogger;
-        // This cast is only here until ledgerDescriptor changes go in to make it
-        // unnecessary
-        this.ledgerCache = (LedgerCacheImpl)ledgerCache;
+public abstract class LedgerDescriptor {
+    static LedgerDescriptor create(byte[] masterKey,
+                                   long ledgerId,
+                                   EntryLogger entryLogger,
+                                   LedgerCache ledgerCache) throws IOException {
+        LedgerDescriptor ledger = new LedgerDescriptorImpl(masterKey, ledgerId, entryLogger, ledgerCache);
+        ledgerCache.setMasterKey(ledgerId, masterKey);
+        return ledger;
     }
 
-    private byte[] masterKey = null;
-    volatile private boolean fenced = false;
-    private boolean masterKeyPersisted = false;
-
-    synchronized boolean isMasterKeyPersisted() {
-        if (masterKeyPersisted) {
-            return true;
+    static LedgerDescriptor createReadOnly(long ledgerId,
+                                           EntryLogger entryLogger,
+                                           LedgerCache ledgerCache)
+            throws IOException, Bookie.NoLedgerException {
+        if (!ledgerCache.ledgerExists(ledgerId)) {
+            throw new Bookie.NoLedgerException(ledgerId);
         }
-
-        try {
-            FileInfo fi = ledgerCache.getFileInfo(ledgerId, masterKey);
-            fi.readHeader();
-            masterKeyPersisted = true;
-            return true;
-        } catch (IOException ioe) {
-            return false;
-        }
+        return new LedgerDescriptorReadOnlyImpl(ledgerId, entryLogger, ledgerCache);
     }
 
-    void setMasterKeyPersisted() {
-        masterKeyPersisted = true;
-    }
+    abstract void checkAccess(byte masterKey[]) throws BookieException, IOException;
 
-    void checkAccess(byte masterKey[]) throws BookieException, IOException {
-        if (this.masterKey == null) {
-            FileInfo fi = ledgerCache.getFileInfo(ledgerId, masterKey);
-            try {
-                if (fi == null) {
-                    throw new IOException(ledgerId + " does not exist");
-                }
-                this.masterKey = fi.getMasterKey();
-            } finally {
-                fi.release();
-            }
-        }
-        if (!Arrays.equals(this.masterKey, masterKey)) {
-            throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
-        }
-    } 
+    abstract long getLedgerId();
 
-    private long ledgerId;
-    public long getLedgerId() {
-        return ledgerId;
-    }
+    abstract void setFenced() throws IOException;
+    abstract boolean isFenced();
 
-    EntryLogger entryLogger;
-    private int refCnt;
-    synchronized public void incRef() {
-        refCnt++;
-    }
-    synchronized public void decRef() {
-        refCnt--;
-    }
-    synchronized public int getRefCnt() {
-        return refCnt;
-    }
-    
-    void setFenced() {
-        fenced = true;
-    }
-    
-    boolean isFenced() {
-        return fenced;
-    }
-
-    long addEntry(ByteBuffer entry) throws IOException {
-        long ledgerId = entry.getLong();
-
-        if (ledgerId != this.ledgerId) {
-            throw new IOException("Entry for ledger " + ledgerId + " was sent to " + this.ledgerId);
-        }
-        long entryId = entry.getLong();
-        entry.rewind();
-
-        /*
-         * Log the entry
-         */
-        long pos = entryLogger.addEntry(ledgerId, entry);
-
-
-        /*
-         * Set offset of entry id to be the current ledger position
-         */
-        ledgerCache.putEntryOffset(ledgerId, entryId, pos);
-        return entryId;
-    }
-    ByteBuffer readEntry(long entryId) throws IOException {
-        long offset;
-        /*
-         * If entryId is -1, then return the last written.
-         */
-        if (entryId == -1) {
-            entryId = ledgerCache.getLastEntry(ledgerId);
-        }
-
-        offset = ledgerCache.getEntryOffset(ledgerId, entryId);
-        if (offset == 0) {
-            throw new Bookie.NoEntryException(ledgerId, entryId);
-        }
-        return ByteBuffer.wrap(entryLogger.readEntry(ledgerId, entryId, offset));
-    }
-    void close() {
-    }
+    abstract long addEntry(ByteBuffer entry) throws IOException;
+    abstract ByteBuffer readEntry(long entryId) throws IOException;
 }

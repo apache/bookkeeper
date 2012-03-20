@@ -92,6 +92,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-187: Create well defined interface for LedgerCache (ivank)
 
+        BOOKKEEPER-175: Bookie code is very coupled (ivank)
+
       hedwig-server/
 
         BOOKKEEPER-77: Add a console client for hedwig (Sijie Guo via ivank)
