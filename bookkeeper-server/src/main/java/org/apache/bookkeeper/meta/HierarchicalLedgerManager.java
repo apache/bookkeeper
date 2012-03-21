@@ -377,11 +377,11 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
                     }
                 } catch (Exception e) {
                     LOG.warn("Exception during garbage collecting ledgers for " + l1Node
-                           + " of " + ledgerRootPath);
+                             + " of " + ledgerRootPath, e);
                 }
             }
         } catch (Exception e) {
-            LOG.warn("Exception during garbage collecting inactive/deleted ledgers");
+            LOG.warn("Exception during garbage collecting inactive/deleted ledgers", e);
         }
     }
 

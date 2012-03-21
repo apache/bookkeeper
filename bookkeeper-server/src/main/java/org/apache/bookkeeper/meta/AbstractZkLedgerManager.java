@@ -45,6 +45,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager {
     // Ledger Node Prefix
     static public final String LEDGER_NODE_PREFIX = "L";
     static final String AVAILABLE_NODE = "available";
+    static final String COOKIES_NODE = "cookies";
 
     protected final AbstractConfiguration conf;
     protected final ZooKeeper zk;
@@ -240,7 +241,8 @@ abstract class AbstractZkLedgerManager implements LedgerManager {
      * @return true  if the znode is a special znode otherwise false
      */
     protected boolean isSpecialZnode(String znode) {
-        if (AVAILABLE_NODE.equals(znode) 
+        if (AVAILABLE_NODE.equals(znode)
+            || COOKIES_NODE.equals(znode)
             || LedgerLayout.LAYOUT_ZNODE.equals(znode)) {
             return true;
         }
