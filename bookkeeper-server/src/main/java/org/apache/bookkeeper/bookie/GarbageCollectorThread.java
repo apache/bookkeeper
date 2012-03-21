@@ -34,7 +34,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.bookkeeper.bookie.EntryLogger.EntryLogMetadata;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -198,7 +197,7 @@ public class GarbageCollectorThread extends Thread {
             // Extract all of the ledger ID's that comprise all of the entry logs
             // (except for the current new one which is still being written to).
             try {
-                entryLogMetaMap = entryLogger.extractMetaFromEntryLogs(entryLogMetaMap);
+                entryLogMetaMap = extractMetaFromEntryLogs(entryLogMetaMap);
             } catch (IOException ie) {
                 LOG.warn("Exception when extracting entry log meta from entry logs : ", ie);
             }
@@ -378,5 +377,130 @@ public class GarbageCollectorThread extends Thread {
             // clear compacting flag
             compacting.set(false);
         }
+    }
+
+    /**
+     * Records the total size, remaining size and the set of ledgers that comprise a entry log.
+     */
+    static class EntryLogMetadata {
+        long entryLogId;
+        long totalSize;
+        long remainingSize;
+        ConcurrentHashMap<Long, Long> ledgersMap;
+
+        public EntryLogMetadata(long logId) {
+            this.entryLogId = logId;
+
+            totalSize = remainingSize = 0;
+            ledgersMap = new ConcurrentHashMap<Long, Long>();
+        }
+
+        public void addLedgerSize(long ledgerId, long size) {
+            totalSize += size;
+            remainingSize += size;
+            Long ledgerSize = ledgersMap.get(ledgerId);
+            if (null == ledgerSize) {
+                ledgerSize = 0L;
+            }
+            ledgerSize += size;
+            ledgersMap.put(ledgerId, ledgerSize);
+        }
+
+        public void removeLedger(long ledgerId) {
+            Long size = ledgersMap.remove(ledgerId);
+            if (null == size) {
+                return;
+            }
+            remainingSize -= size;
+        }
+
+        public boolean containsLedger(long ledgerId) {
+            return ledgersMap.containsKey(ledgerId);
+        }
+
+        public double getUsage() {
+            if (totalSize == 0L) {
+                return 0.0f;
+            }
+            return (double)remainingSize / totalSize;
+        }
+
+        public boolean isEmpty() {
+            return ledgersMap.isEmpty();
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("{ totalSize = ").append(totalSize).append(", remainingSize = ")
+              .append(remainingSize).append(", ledgersMap = ").append(ledgersMap).append(" }");
+            return sb.toString();
+        }
+    }
+
+    /**
+     * A scanner used to extract entry log meta from entry log files.
+     */
+    static class ExtractionScanner implements EntryLogScanner {
+        EntryLogMetadata meta;
+
+        public ExtractionScanner(EntryLogMetadata meta) {
+            this.meta = meta;
+        }
+
+        @Override
+        public boolean accept(long ledgerId) {
+            return true;
+        }
+        @Override
+        public void process(long ledgerId, ByteBuffer entry) {
+            // add new entry size of a ledger to entry log meta
+            meta.addLedgerSize(ledgerId, entry.limit() + 4);
+        }
+    }
+
+    /**
+     * Method to read in all of the entry logs (those that we haven't done so yet),
+     * and find the set of ledger ID's that make up each entry log file.
+     *
+     * @param entryLogMetaMap
+     *          Existing EntryLogs to Meta
+     * @throws IOException
+     */
+    protected Map<Long, EntryLogMetadata> extractMetaFromEntryLogs(Map<Long, EntryLogMetadata> entryLogMetaMap)
+            throws IOException {
+        // Extract it for every entry log except for the current one.
+        // Entry Log ID's are just a long value that starts at 0 and increments
+        // by 1 when the log fills up and we roll to a new one.
+        long curLogId = entryLogger.logId;
+        for (long entryLogId = 0; entryLogId < curLogId; entryLogId++) {
+            // Comb the current entry log file if it has not already been extracted.
+            if (entryLogMetaMap.containsKey(entryLogId)) {
+                continue;
+            }
+            LOG.info("Extracting entry log meta from entryLogId: " + entryLogId);
+
+            // Read through the entry log file and extract the entry log meta
+            entryLogMetaMap.put(entryLogId,
+                                extractMetaFromEntryLog(entryLogger, entryLogId));
+        }
+        return entryLogMetaMap;
+    }
+
+    static EntryLogMetadata extractMetaFromEntryLog(EntryLogger entryLogger, long entryLogId)
+            throws IOException {
+        EntryLogMetadata entryLogMeta = new EntryLogMetadata(entryLogId);
+        ExtractionScanner scanner = new ExtractionScanner(entryLogMeta);
+        try {
+            // Read through the entry log file and extract the entry log meta
+            entryLogger.scanEntryLog(entryLogId, scanner);
+            LOG.info("Retrieved entry log meta data entryLogId: "
+                     + entryLogId + ", meta: " + entryLogMeta);
+        } catch(IOException e) {
+            LOG.warn("Premature exception when processing " + entryLogId +
+                     "recovery will take care of the problem", e);
+        }
+
+        return entryLogMeta;
     }
 }

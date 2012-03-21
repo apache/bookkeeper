@@ -94,6 +94,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-175: Bookie code is very coupled (ivank)
 
+        BOOKKEEPER-188: Garbage collection code is in the wrong place (ivank via sijie)
+
       hedwig-server/
 
         BOOKKEEPER-77: Add a console client for hedwig (Sijie Guo via ivank)

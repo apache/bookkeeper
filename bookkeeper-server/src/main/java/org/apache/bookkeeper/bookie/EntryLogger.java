@@ -57,7 +57,7 @@ public class EntryLogger {
     private static final Logger LOG = LoggerFactory.getLogger(EntryLogger.class);
     private File dirs[];
 
-    private long logId;
+    long logId;
     /**
      * The maximum size of a entry logger file.
      */
@@ -74,65 +74,6 @@ public class EntryLogger {
     private volatile boolean somethingWritten = false;
 
     final static long MB = 1024 * 1024;
-
-    /**
-     * Records the total size, remaining size and the set of ledgers that comprise a entry log.
-     */
-    static class EntryLogMetadata {
-        long entryLogId;
-        long totalSize;
-        long remainingSize;
-        ConcurrentHashMap<Long, Long> ledgersMap;
-
-        public EntryLogMetadata(long logId) {
-            this.entryLogId = logId;
-
-            totalSize = remainingSize = 0;
-            ledgersMap = new ConcurrentHashMap<Long, Long>();
-        }
-
-        public void addLedgerSize(long ledgerId, long size) {
-            totalSize += size;
-            remainingSize += size;
-            Long ledgerSize = ledgersMap.get(ledgerId);
-            if (null == ledgerSize) {
-                ledgerSize = 0L;
-            }
-            ledgerSize += size;
-            ledgersMap.put(ledgerId, ledgerSize);
-        }
-
-        public void removeLedger(long ledgerId) {
-            Long size = ledgersMap.remove(ledgerId);
-            if (null == size) {
-                return;
-            }
-            remainingSize -= size;
-        }
-
-        public boolean containsLedger(long ledgerId) {
-            return ledgersMap.containsKey(ledgerId);
-        }
-
-        public double getUsage() {
-            if (totalSize == 0L) {
-                return 0.0f;
-            }
-            return (double)remainingSize / totalSize;
-        }
-
-        public boolean isEmpty() {
-            return ledgersMap.isEmpty();
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("{ totalSize = ").append(totalSize).append(", remainingSize = ")
-              .append(remainingSize).append(", ledgersMap = ").append(ledgersMap).append(" }");
-            return sb.toString();
-        }
-    }
 
     /**
      * Scan entries in a entry log file.
@@ -430,76 +371,6 @@ public class EntryLogger {
         } finally {
             somethingWritten = false;
         }
-    }
-
-    /**
-     * A scanner used to extract entry log meta from entry log files.
-     */
-    class ExtractionScanner implements EntryLogScanner {
-        EntryLogMetadata meta;
-
-        public ExtractionScanner(EntryLogMetadata meta) {
-            this.meta = meta;
-        }
-
-        @Override
-        public boolean accept(long ledgerId) {
-            return true;
-        }
-        @Override
-        public void process(long ledgerId, ByteBuffer entry) {
-            // add new entry size of a ledger to entry log meta
-            meta.addLedgerSize(ledgerId, entry.limit() + 4);
-        }
-    }
-
-    /**
-     * Method to read in all of the entry logs (those that we haven't done so yet),
-     * and find the set of ledger ID's that make up each entry log file.
-     *
-     * @param entryLogMetaMap
-     *          Existing EntryLogs to Meta
-     * @throws IOException
-     */
-    protected Map<Long, EntryLogMetadata> extractMetaFromEntryLogs(Map<Long, EntryLogMetadata> entryLogMetaMap) throws IOException {
-        // Extract it for every entry log except for the current one.
-        // Entry Log ID's are just a long value that starts at 0 and increments
-        // by 1 when the log fills up and we roll to a new one.
-        long curLogId = logId;
-        for (long entryLogId = 0; entryLogId < curLogId; entryLogId++) {
-            // Comb the current entry log file if it has not already been extracted.
-            if (entryLogMetaMap.containsKey(entryLogId)) {
-                continue;
-            }
-            LOG.info("Extracting entry log meta from entryLogId: " + entryLogId);
-            EntryLogMetadata entryLogMeta = new EntryLogMetadata(entryLogId);
-            ExtractionScanner scanner = new ExtractionScanner(entryLogMeta);
-            // Read through the entry log file and extract the entry log meta
-            try {
-                scanEntryLog(entryLogId, scanner);
-                LOG.info("Retrieved entry log meta data entryLogId: " + entryLogId + ", meta: " + entryLogMeta);
-                entryLogMetaMap.put(entryLogId, entryLogMeta);
-            } catch(IOException e) {
-              LOG.warn("Premature exception when processing " + entryLogId +
-                       "recovery will take care of the problem", e);
-            }
-
-        }
-        return entryLogMetaMap;
-    }
-
-    protected EntryLogMetadata extractMetaFromEntryLog(long entryLogId) {
-        EntryLogMetadata entryLogMeta = new EntryLogMetadata(entryLogId);
-        ExtractionScanner scanner = new ExtractionScanner(entryLogMeta);
-        // Read through the entry log file and extract the entry log meta
-        try {
-            scanEntryLog(entryLogId, scanner);
-            LOG.info("Retrieved entry log meta data entryLogId: " + entryLogId + ", meta: " + entryLogMeta);
-        } catch(IOException e) {
-          LOG.warn("Premature exception when processing " + entryLogId +
-                   "recovery will take care of the problem", e);
-        }
-        return entryLogMeta;
     }
 
     /**

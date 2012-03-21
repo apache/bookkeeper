@@ -29,7 +29,7 @@ import java.util.HashMap;
 
 import junit.framework.TestCase;
 
-import org.apache.bookkeeper.bookie.EntryLogger.EntryLogMetadata;
+import org.apache.bookkeeper.bookie.GarbageCollectorThread.EntryLogMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.junit.After;
 import org.junit.Before;
@@ -70,8 +70,9 @@ public class EntryLogTest extends TestCase {
         raf.close();
         // now see which ledgers are in the log
         logger = new EntryLogger(conf);
+
         EntryLogMetadata meta =
-            logger.extractMetaFromEntryLog(0L);
+            GarbageCollectorThread.extractMetaFromEntryLog(logger, 0L);
 
         LOG.info("Extracted Meta From Entry Log {}", meta);
         assertNotNull(meta.ledgersMap.get(1L));
