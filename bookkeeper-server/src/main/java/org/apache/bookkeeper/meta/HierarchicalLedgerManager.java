@@ -84,7 +84,8 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
 
     public static final int CUR_VERSION = 1;
 
-    static final String IDGENERATION_PREFIX = "/idgen/ID-";
+    static final String IDGEN_ZNODE = "idgen";
+    static final String IDGENERATION_PREFIX = "/" + IDGEN_ZNODE + "/ID-";
     private static final String MAX_ID_SUFFIX = "9999";
     private static final String MIN_ID_SUFFIX = "0000";
 
@@ -513,5 +514,10 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
             T firstElement = data.get(0);
             processor.process(firstElement, stubCallback);
         }
+    }
+
+    @Override
+    protected boolean isSpecialZnode(String znode) {
+        return IDGEN_ZNODE.equals(znode) || super.isSpecialZnode(znode);
     }
 }

@@ -62,6 +62,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-189: AbstractZkLedgerManager doesn't disregard cookies (ivank via sijie)
 
+        BOOKKEEPER-195: HierarchicalLedgerManager doesn't consider idgen as a "specialNode" (ivank)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)
