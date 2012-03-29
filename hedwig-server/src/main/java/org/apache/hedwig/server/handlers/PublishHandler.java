@@ -20,9 +20,12 @@ package org.apache.hedwig.server.handlers;
 import org.jboss.netty.channel.Channel;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
+import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubRequest;
 import org.apache.hedwig.protoextensions.PubSubResponseUtils;
 import org.apache.hedwig.server.common.ServerConfiguration;
+import org.apache.hedwig.server.netty.ServerStats;
+import org.apache.hedwig.server.netty.ServerStats.OpStats;
 import org.apache.hedwig.server.netty.UmbrellaHandler;
 import org.apache.hedwig.server.persistence.PersistRequest;
 import org.apache.hedwig.server.persistence.PersistenceManager;
@@ -32,10 +35,12 @@ import org.apache.hedwig.util.Callback;
 public class PublishHandler extends BaseHandler {
 
     private PersistenceManager persistenceMgr;
+    private final OpStats pubStats;
 
     public PublishHandler(TopicManager topicMgr, PersistenceManager persistenceMgr, ServerConfiguration cfg) {
         super(topicMgr, cfg);
         this.persistenceMgr = persistenceMgr;
+        this.pubStats = ServerStats.getInstance().getOpStats(OperationType.PUBLISH);
     }
 
     @Override
@@ -43,22 +48,26 @@ public class PublishHandler extends BaseHandler {
         if (!request.hasPublishRequest()) {
             UmbrellaHandler.sendErrorResponseToMalformedRequest(channel, request.getTxnId(),
                     "Missing publish request data");
+            pubStats.incrementFailedOps();
             return;
         }
 
         Message msgToSerialize = Message.newBuilder(request.getPublishRequest().getMsg()).setSrcRegion(
                                      cfg.getMyRegionByteString()).build();
 
+        final long requestTime = System.currentTimeMillis();
         PersistRequest persistRequest = new PersistRequest(request.getTopic(), msgToSerialize,
         new Callback<Long>() {
             @Override
             public void operationFailed(Object ctx, PubSubException exception) {
                 channel.write(PubSubResponseUtils.getResponseForException(exception, request.getTxnId()));
+                pubStats.incrementFailedOps();
             }
 
             @Override
             public void operationFinished(Object ctx, Long resultOfOperation) {
                 channel.write(PubSubResponseUtils.getSuccessResponse(request.getTxnId()));
+                pubStats.updateLatency(System.currentTimeMillis() - requestTime);
             }
         }, null);
 

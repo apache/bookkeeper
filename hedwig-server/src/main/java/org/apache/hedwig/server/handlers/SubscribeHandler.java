@@ -29,6 +29,7 @@ import org.apache.hedwig.client.data.TopicSubscriber;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.exceptions.PubSubException.ServerNotResponsibleForTopicException;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
+import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest;
 import org.apache.hedwig.protoextensions.PubSubResponseUtils;
@@ -36,6 +37,8 @@ import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.delivery.ChannelEndPoint;
 import org.apache.hedwig.server.delivery.DeliveryManager;
+import org.apache.hedwig.server.netty.ServerStats;
+import org.apache.hedwig.server.netty.ServerStats.OpStats;
 import org.apache.hedwig.server.netty.UmbrellaHandler;
 import org.apache.hedwig.server.persistence.PersistenceManager;
 import org.apache.hedwig.server.subscriptions.SubscriptionManager;
@@ -51,6 +54,8 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
     private SubscriptionManager subMgr;
     ConcurrentHashMap<TopicSubscriber, Channel> sub2Channel;
     ConcurrentHashMap<Channel, TopicSubscriber> channel2sub;
+    // op stats
+    private final OpStats subStats;
 
     public SubscribeHandler(TopicManager topicMgr, DeliveryManager deliveryManager, PersistenceManager persistenceMgr,
                             SubscriptionManager subMgr, ServerConfiguration cfg) {
@@ -60,6 +65,7 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
         this.subMgr = subMgr;
         sub2Channel = new ConcurrentHashMap<TopicSubscriber, Channel>();
         channel2sub = new ConcurrentHashMap<Channel, TopicSubscriber>();
+        subStats = ServerStats.getInstance().getOpStats(OperationType.SUBSCRIBE);
     }
 
     public void channelDisconnected(Channel channel) {
@@ -80,6 +86,7 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
         if (!request.hasSubscribeRequest()) {
             UmbrellaHandler.sendErrorResponseToMalformedRequest(channel, request.getTxnId(),
                     "Missing subscribe request data");
+            subStats.incrementFailedOps();
             return;
         }
 
@@ -91,6 +98,8 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
         } catch (ServerNotResponsibleForTopicException e) {
             channel.write(PubSubResponseUtils.getResponseForException(e, request.getTxnId())).addListener(
                 ChannelFutureListener.CLOSE);
+            subStats.incrementFailedOps();
+            ServerStats.getInstance().incrementRequestsRedirect();
             return;
         }
 
@@ -99,12 +108,14 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
 
         MessageSeqId lastSeqIdPublished = MessageSeqId.newBuilder(seqId).setLocalComponent(seqId.getLocalComponent()).build();
 
+        final long requestTime = System.currentTimeMillis();
         subMgr.serveSubscribeRequest(topic, subRequest, lastSeqIdPublished, new Callback<MessageSeqId>() {
 
             @Override
             public void operationFailed(Object ctx, PubSubException exception) {
                 channel.write(PubSubResponseUtils.getResponseForException(exception, request.getTxnId())).addListener(
                     ChannelFutureListener.CLOSE);
+                subStats.incrementFailedOps();
             }
 
             @Override
@@ -119,6 +130,7 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
                         // channel got disconnected while we were processing the
                         // subscribe request,
                         // nothing much we can do in this case
+                        subStats.incrementFailedOps();
                         return;
                     }
 
@@ -128,6 +140,7 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
                             "subscription for this topic, subscriberId is already being served on a different channel");
                         channel.write(PubSubResponseUtils.getResponseForException(pse, request.getTxnId()))
                         .addListener(ChannelFutureListener.CLOSE);
+                        subStats.incrementFailedOps();
                         return;
                     } else {
                         // channel2sub is just a cache, so we can add to it
@@ -139,6 +152,7 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
                 // otherwise the first message might go out before the response
                 // to the subscribe
                 channel.write(PubSubResponseUtils.getSuccessResponse(request.getTxnId()));
+                subStats.updateLatency(System.currentTimeMillis() - requestTime);
 
                 // want to start 1 ahead of the consume ptr
                 MessageSeqId seqIdToStartFrom = MessageSeqId.newBuilder(resultOfOperation).setLocalComponent(

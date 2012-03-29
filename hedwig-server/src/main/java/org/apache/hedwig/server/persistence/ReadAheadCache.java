@@ -42,9 +42,13 @@ import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protoextensions.MessageIdUtils;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.common.UnexpectedError;
+import org.apache.hedwig.server.jmx.HedwigJMXService;
+import org.apache.hedwig.server.jmx.HedwigMBeanInfo;
+import org.apache.hedwig.server.jmx.HedwigMBeanRegistry;
+import org.apache.hedwig.server.persistence.ReadAheadCacheBean;
 import org.apache.hedwig.util.Callback;
 
-public class ReadAheadCache implements PersistenceManager, Runnable {
+public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXService {
 
     static Logger logger = LoggerFactory.getLogger(ReadAheadCache.class);
 
@@ -105,6 +109,9 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
     // Boolean indicating if this thread should continue running. This is used
     // when we want to stop the thread during a PubSubServer shutdown.
     protected boolean keepRunning = true;
+
+    // JMX Beans
+    ReadAheadCacheBean jmxCacheBean = null;
 
     /**
      * Constructor. Starts the cache maintainer thread
@@ -713,4 +720,25 @@ public class ReadAheadCache implements PersistenceManager, Runnable {
         }
     }
 
+    @Override
+    public void registerJMX(HedwigMBeanInfo parent) {
+        try {
+            jmxCacheBean = new ReadAheadCacheBean(this);
+            HedwigMBeanRegistry.getInstance().register(jmxCacheBean, null);
+        } catch (Exception e) {
+            logger.warn("Failed to register readahead cache with JMX", e);
+            jmxCacheBean = null;
+        }
+    }
+
+    @Override
+    public void unregisterJMX() {
+        try {
+            if (jmxCacheBean != null) {
+                HedwigMBeanRegistry.getInstance().unregister(jmxCacheBean);
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to unregister readahead cache with JMX", e);
+        }
+    }
 }

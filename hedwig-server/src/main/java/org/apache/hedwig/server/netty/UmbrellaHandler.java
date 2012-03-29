@@ -154,6 +154,7 @@ public class UmbrellaHandler extends SimpleChannelHandler {
         }
 
         handler.handleRequest(request, channel);
+        ServerStats.getInstance().incrementRequestsReceived();
     }
 
 }

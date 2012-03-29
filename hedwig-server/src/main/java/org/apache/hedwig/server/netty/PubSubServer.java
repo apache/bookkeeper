@@ -58,9 +58,11 @@ import org.apache.hedwig.server.delivery.DeliveryManager;
 import org.apache.hedwig.server.delivery.FIFODeliveryManager;
 import org.apache.hedwig.server.handlers.ConsumeHandler;
 import org.apache.hedwig.server.handlers.Handler;
+import org.apache.hedwig.server.handlers.NettyHandlerBean;
 import org.apache.hedwig.server.handlers.PublishHandler;
 import org.apache.hedwig.server.handlers.SubscribeHandler;
 import org.apache.hedwig.server.handlers.UnsubscribeHandler;
+import org.apache.hedwig.server.jmx.HedwigMBeanRegistry;
 import org.apache.hedwig.server.persistence.BookkeeperPersistenceManager;
 import org.apache.hedwig.server.persistence.LocalDBPersistenceManager;
 import org.apache.hedwig.server.persistence.PersistenceManager;
@@ -101,6 +103,10 @@ public class PubSubServer {
 
     // we use this to prevent long stack chains from building up in callbacks
     ScheduledExecutorService scheduler;
+
+    // JMX Beans
+    NettyHandlerBean jmxNettyBean;
+    PubSubServerBean jmxServerBean;
 
     protected PersistenceManager instantiatePersistenceManager(TopicManager topicMgr) throws IOException,
         InterruptedException {
@@ -248,6 +254,51 @@ public class PubSubServer {
         serverChannelFactory.releaseExternalResources();
         clientChannelFactory.releaseExternalResources();
         scheduler.shutdown();
+
+        // unregister jmx
+        unregisterJMX();
+    }
+
+    protected void registerJMX(Map<OperationType, Handler> handlers) {
+        try {
+            jmxServerBean = new PubSubServerBean();
+            HedwigMBeanRegistry.getInstance().register(jmxServerBean, null);
+            try {
+                jmxNettyBean = new NettyHandlerBean(handlers);
+                HedwigMBeanRegistry.getInstance().register(jmxNettyBean, jmxServerBean);
+            } catch (Exception e) {
+                logger.warn("Failed to register with JMX", e);
+                jmxNettyBean = null;
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to register with JMX", e);
+            jmxServerBean = null;
+        }
+        if (pm instanceof ReadAheadCache) {
+            ((ReadAheadCache)pm).registerJMX(jmxServerBean);
+        }
+    }
+
+    protected void unregisterJMX() {
+        if (pm != null && pm instanceof ReadAheadCache) {
+            ((ReadAheadCache)pm).unregisterJMX();
+        }
+        try {
+            if (jmxNettyBean != null) {
+                HedwigMBeanRegistry.getInstance().unregister(jmxNettyBean);
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to unregister with JMX", e);
+        }
+        try {
+            if (jmxServerBean != null) {
+                HedwigMBeanRegistry.getInstance().unregister(jmxServerBean);
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to unregister with JMX", e);
+        }
+        jmxNettyBean = null;
+        jmxServerBean = null;
     }
 
     /**
@@ -312,6 +363,8 @@ public class PubSubServer {
                     if (conf.isSSLEnabled()) {
                         initializeNetty(new SslServerContextFactory(conf), handlers);
                     }
+                    // register jmx
+                    registerJMX(handlers);
                 } catch (Exception e) {
                     ConcurrencyUtils.put(queue, Either.right(e));
                     return;

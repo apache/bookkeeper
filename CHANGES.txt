@@ -108,6 +108,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-96: extends zookeeper JMX to monitor and manage hedwig server (sijie via ivank)
 
+        BOOKKEEPER-97: collect pub/sub/consume statistics on hub server (sijie via ivank)
+
       bookkeeper-benchmark/
 	BOOKKEEPER-158: Move latest benchmarking code into trunk (ivank via fpj)
 

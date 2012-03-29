@@ -41,6 +41,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
 import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.common.UnexpectedError;
+import org.apache.hedwig.server.netty.ServerStats;
 import org.apache.hedwig.server.persistence.Factory;
 import org.apache.hedwig.server.persistence.MapMethods;
 import org.apache.hedwig.server.persistence.PersistenceManager;
@@ -416,6 +417,8 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
                 lastSeqIdCommunicatedExternally = lastLocalSeqIdDelivered;
                 moveDeliveryPtrForward(this, prevId, lastLocalSeqIdDelivered);
             }
+            // increment deliveried message
+            ServerStats.getInstance().incrementMessagesDelivered();
             deliverNextMessage();
         }
 
