@@ -64,7 +64,7 @@ public class BookieJournalTest {
         FileInfo fi = new FileInfo(fn, masterKey);
         // force creation of index file
         fi.write(new ByteBuffer[]{ ByteBuffer.allocate(0) }, 0);
-        fi.close();
+        fi.close(true);
     }
 
     private void writePartialIndexFileForLedger(File indexDir, long ledgerId,
@@ -75,7 +75,7 @@ public class BookieJournalTest {
         FileInfo fi = new FileInfo(fn, masterKey);
         // force creation of index file
         fi.write(new ByteBuffer[]{ ByteBuffer.allocate(0) }, 0);
-        fi.close();
+        fi.close(true);
         // file info header
         int headerLen = 8 + 4 + masterKey.length;
         // truncate the index file

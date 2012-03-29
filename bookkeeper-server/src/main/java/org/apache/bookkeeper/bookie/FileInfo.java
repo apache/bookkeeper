@@ -182,8 +182,16 @@ class FileInfo {
         return total;
     }
 
-    synchronized public void close() throws IOException {
+    /**
+     * Close a file info
+     *
+     * @param force
+     *          if set to true, the index is forced to create before closed,
+     *          if set to false, the index is not forced to create.
+     */
+    synchronized public void close(boolean force) throws IOException {
         isClosed = true;
+        checkOpen(force);
         if (useCount == 0 && fc != null) {
             fc.close();
         }

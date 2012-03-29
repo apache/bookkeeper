@@ -77,7 +77,7 @@ public class UpgradeTest {
         FileInfo fi = new FileInfo(fn, masterKey);
         // force creation of index file
         fi.write(new ByteBuffer[]{ ByteBuffer.allocate(0) }, 0);
-        fi.close();
+        fi.close(true);
 
         long logId = 0;
         ByteBuffer LOGFILE_HEADER = ByteBuffer.allocate(1024);

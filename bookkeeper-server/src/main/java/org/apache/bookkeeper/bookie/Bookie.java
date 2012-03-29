@@ -113,6 +113,7 @@ public class Bookie extends Thread {
         private static final long serialVersionUID = 1L;
         private long ledgerId;
         public NoLedgerException(long ledgerId) {
+            super("Ledger " + ledgerId + " not found");
             this.ledgerId = ledgerId;
         }
         public long getLedgerId() {

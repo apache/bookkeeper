@@ -154,12 +154,36 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Set limitation of number of open files.
+     *
+     * @param fileLimit
+     *          Limitation of number of open files.
+     * @return server configuration
+     */
+    public ServerConfiguration setOpenFileLimit(int fileLimit) {
+        setProperty(OPEN_FILE_LIMIT, fileLimit);
+        return this;
+    }
+
+    /**
      * Get limitation number of index pages in ledger cache
      *
      * @return max number of index pages in ledger cache
      */
     public int getPageLimit() {
         return this.getInt(PAGE_LIMIT, -1);
+    }
+
+    /**
+     * Set limitation number of index pages in ledger cache.
+     *
+     * @param pageLimit
+     *          Limitation of number of index pages in ledger cache.
+     * @return server configuration
+     */
+    public ServerConfiguration setPageLimit(int pageLimit) {
+        this.setProperty(PAGE_LIMIT, pageLimit);
+        return this;
     }
 
     /**

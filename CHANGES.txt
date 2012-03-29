@@ -64,6 +64,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-195: HierarchicalLedgerManager doesn't consider idgen as a "specialNode" (ivank)
 
+        BOOKKEEPER-190: Add entries would fail when number of open ledgers reaches more than openFileLimit. (sijie via ivank)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)

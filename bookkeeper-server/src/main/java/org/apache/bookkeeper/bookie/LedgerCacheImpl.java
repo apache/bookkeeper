@@ -238,9 +238,7 @@ public class LedgerCacheImpl implements LedgerCache {
                     }
                     activeLedgerManager.addActiveLedger(ledger, true);
                 }
-                if (openLedgers.size() > openFileLimit) {
-                    fileInfoCache.remove(openLedgers.removeFirst()).close();
-                }
+                evictFileInfoIfNecessary();
                 fi = new FileInfo(lf, masterKey);
                 fileInfoCache.put(ledger, fi);
                 openLedgers.add(ledger);
@@ -366,7 +364,7 @@ public class LedgerCacheImpl implements LedgerCache {
                     // send up a sequential list
                     int count = i - start;
                     if (count == 0) {
-                        System.out.println("Count cannot possibly be zero!");
+                        LOG.warn("Count cannot possibly be zero!");
                     }
                     writeBuffers(l, entries, fi, start, count);
                     start = i;
@@ -374,7 +372,7 @@ public class LedgerCacheImpl implements LedgerCache {
                 lastOffset = entries.get(i).getFirstEntry();
             }
             if (entries.size()-start == 0 && entries.size() != 0) {
-                System.out.println("Nothing to write, but there were entries!");
+                LOG.warn("Nothing to write, but there were entries!");
             }
             writeBuffers(l, entries, fi, start, entries.size()-start);
             synchronized(this) {
@@ -400,7 +398,6 @@ public class LedgerCacheImpl implements LedgerCache {
             LOG.trace("Writing " + count + " buffers of " + Long.toHexString(ledger));
         }
         if (count == 0) {
-            //System.out.println("Count is zero!");
             return;
         }
         ByteBuffer buffs[] = new ByteBuffer[count];
@@ -417,7 +414,6 @@ public class LedgerCacheImpl implements LedgerCache {
             if (rc <= 0) {
                 throw new IOException("Short write to ledger " + ledger + " rc = " + rc);
             }
-            //System.out.println("Wrote " + rc + " to " + ledger);
             totalWritten += rc;
         }
         if (totalWritten != count * pageSize) {
@@ -457,14 +453,20 @@ public class LedgerCacheImpl implements LedgerCache {
                 synchronized(this) {
                     Long cleanLedger = cleanLedgers.getFirst();
                     Map<Long, LedgerEntryPage> map = pages.get(cleanLedger);
-                    if (map == null || map.isEmpty()) {
+                    while (map == null || map.isEmpty()) {
                         cleanLedgers.removeFirst();
-                        continue;
+                        if (cleanLedgers.isEmpty()) {
+                            continue outerLoop; 
+                        }
+                        cleanLedger = cleanLedgers.getFirst();
+                        map = pages.get(cleanLedger);
                     }
                     Iterator<Map.Entry<Long, LedgerEntryPage>> it = map.entrySet().iterator();
                     LedgerEntryPage lep = it.next().getValue();
                     while((lep.inUse() || !lep.isClean())) {
                         if (!it.hasNext()) {
+                            // no clean page found in this ledger
+                            cleanLedgers.removeFirst();
                             continue outerLoop;
                         }
                         lep = it.next().getValue();
@@ -581,19 +583,30 @@ public class LedgerCacheImpl implements LedgerCache {
     public void deleteLedger(long ledgerId) throws IOException {
         if (LOG.isDebugEnabled())
             LOG.debug("Deleting ledgerId: " + ledgerId);
+
+        // remove pages first to avoid page flushed when deleting file info
+        synchronized(this) {
+            pages.remove(ledgerId);
+        }
         // Delete the ledger's index file and close the FileInfo
-        FileInfo fi = getFileInfo(ledgerId, null);
-        fi.delete();
-        fi.close();
+        FileInfo fi = null;
+        try {
+            fi = getFileInfo(ledgerId, null);
+            fi.delete();
+            fi.close(false);
+        } finally {
+            // should release use count
+            // otherwise the file channel would not be closed.
+            if (null != fi) {
+                fi.release();
+            }
+        }
 
         // Remove it from the active ledger manager
         activeLedgerManager.removeActiveLedger(ledgerId);
 
         // Now remove it from all the other lists and maps.
         // These data structures need to be synchronized first before removing entries.
-        synchronized(this) {
-            pages.remove(ledgerId);
-        }
         synchronized(fileInfoCache) {
             fileInfoCache.remove(ledgerId);
         }
@@ -628,9 +641,7 @@ public class LedgerCacheImpl implements LedgerCache {
                 if (lf == null) {
                     throw new Bookie.NoLedgerException(ledgerId);
                 }
-                if (openLedgers.size() > openFileLimit) {
-                    fileInfoCache.remove(openLedgers.removeFirst()).close();
-                }
+                evictFileInfoIfNecessary();        
                 fi = new FileInfo(lf, null);
                 byte[] key = fi.getMasterKey();
                 fileInfoCache.put(ledgerId, fi);
@@ -641,9 +652,26 @@ public class LedgerCacheImpl implements LedgerCache {
         }
     }
 
+    // evict file info if necessary
+    private void evictFileInfoIfNecessary() throws IOException {
+        if (openLedgers.size() > openFileLimit) {
+            long ledgerToRemove = openLedgers.removeFirst();
+            LOG.info("Ledger {} is evicted from file info cache.",
+                     ledgerToRemove);
+            fileInfoCache.remove(ledgerToRemove).close(true);
+        }
+    }
+
     @Override
     public void setMasterKey(long ledgerId, byte[] masterKey) throws IOException {
-        getFileInfo(ledgerId, masterKey);
+        FileInfo fi = null;
+        try {
+            fi = getFileInfo(ledgerId, masterKey);
+        } finally {
+            if (null != fi) {
+                fi.release();
+            }
+        }
     }
 
     @Override
