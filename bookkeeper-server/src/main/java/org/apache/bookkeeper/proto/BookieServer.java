@@ -352,11 +352,12 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         case BookieProtocol.ADDENTRY:
             statType = BKStats.STATS_ADD;
             try {
+                TimedCnxn tsrc = new TimedCnxn(src, startTime);
                 // LOG.debug("Master key: " + new String(masterKey));
                 if ((flags & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD) {
-                    bookie.recoveryAddEntry(packet.slice(), this, src, masterKey);
+                    bookie.recoveryAddEntry(packet.slice(), this, tsrc, masterKey);
                 } else {
-                    bookie.addEntry(packet.slice(), this, src, masterKey);
+                    bookie.addEntry(packet.slice(), this, tsrc, masterKey);
                 }
                 success = true;
             } catch (IOException e) {
@@ -421,8 +422,11 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         }
         if (isStatsEnabled) {
             if (success) {
-                long elapsedTime = System.currentTimeMillis() - startTime;
-                bkStats.getOpStats(statType).updateLatency(elapsedTime);
+                // for add operations, we compute latency in writeComplete callbacks.
+                if (statType != BKStats.STATS_ADD) {
+                    long elapsedTime = System.currentTimeMillis() - startTime;
+                    bkStats.getOpStats(statType).updateLatency(elapsedTime);
+                }
             } else {
                 bkStats.getOpStats(statType).incrementFailedOps();
             }
@@ -442,7 +446,9 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     }
 
     public void writeComplete(int rc, long ledgerId, long entryId, InetSocketAddress addr, Object ctx) {
-        Cnxn src = (Cnxn) ctx;
+        TimedCnxn tcnxn = (TimedCnxn) ctx;
+        Cnxn src = tcnxn.cnxn;
+        long startTime = tcnxn.time;
         ByteBuffer bb = ByteBuffer.allocate(24);
         bb.putInt(new PacketHeader(BookieProtocol.CURRENT_PROTOCOL_VERSION, 
                                    BookieProtocol.ADDENTRY, (short)0).toInt());
@@ -454,6 +460,29 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
             LOG.trace("Add entry rc = " + rc + " for " + entryId + "@" + ledgerId);
         }
         src.sendResponse(new ByteBuffer[] { bb });
+        if (isStatsEnabled) {
+            // compute the latency
+            if (0 == rc) {
+                // for add operations, we compute latency in writeComplete callbacks.
+                long elapsedTime = System.currentTimeMillis() - startTime;
+                bkStats.getOpStats(BKStats.STATS_ADD).updateLatency(elapsedTime);
+            } else {
+                bkStats.getOpStats(BKStats.STATS_ADD).incrementFailedOps();                
+            }
+        }
+    }
+
+    /**
+     * A cnxn wrapper for time
+     */
+    class TimedCnxn {
+        Cnxn cnxn;
+        long time;
+
+        public TimedCnxn(Cnxn cnxn, long startTime) {
+            this.cnxn = cnxn;
+            this.time = startTime;
+        }
     }
 
 }
