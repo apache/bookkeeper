@@ -68,6 +68,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-194: Get correct latency for addEntry operations for JMX. (sijie via ivank)
 
+        BOOKKEEPER-166: Bookie will not recover its journal if the length prefix of an entry is truncated (ivank)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)

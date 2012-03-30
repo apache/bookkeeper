@@ -368,7 +368,7 @@ public class BookieJournalTest {
      * should be fine here. The bookie has crashed while writing
      * but so the client has not be notified of success.
      */
-    //    @Test TODO, fix and reenable
+    @Test
     public void testTruncatedInLenJournal() throws Exception {
         File journalDir = File.createTempFile("bookie", "journal");
         journalDir.delete();
