@@ -19,9 +19,9 @@ package org.apache.bookkeeper.meta;
  */
 
 import java.io.IOException;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -67,7 +67,7 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
     // path prefix to store ledger znodes
     private final String ledgerPrefix;
     // hash map to store all active ledger ids
-    private ConcurrentMap<Long, Boolean> activeLedgers;
+    private SnapshotMap<Long, Boolean> activeLedgers;
 
     /**
      * Constructor
@@ -91,7 +91,7 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
         }
 
         ledgerPrefix = ledgerRootPath + "/" + LEDGER_NODE_PREFIX;
-        activeLedgers = new ConcurrentHashMap<Long, Boolean>();
+        activeLedgers = new SnapshotMap<Long, Boolean>();
     }
 
     @Override
@@ -158,8 +158,9 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
     @Override
     public void garbageCollectLedgers(GarbageCollector gc) {
         try {
-            HashSet<Long> zkActiveLedgers = getLedgersInSingleNode(ledgerRootPath);
-            ConcurrentMap<Long, Boolean> bkActiveLedgers = activeLedgers;
+            // create a snapshot first
+            Map<Long, Boolean> bkActiveLedgers = activeLedgers.snapshot();
+            Set<Long> zkActiveLedgers = getLedgersInSingleNode(ledgerRootPath);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("All active ledgers from ZK: " + zkActiveLedgers);
                 LOG.debug("Current active ledgers from Bookie: " + bkActiveLedgers.keySet());
@@ -171,26 +172,4 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
             LOG.warn("Interrupted during garbage collecting ledgers from " + ledgerRootPath, inte);
         }
     }
-
-    /**
-     * Do garbage collecting comparing hosted ledgers and zk ledgers
-     *
-     * @param gc
-     *          Garbage collector to do garbage collection when found inactive/deleted ledgers
-     * @param bkActiveLedgers
-     *          Active ledgers hosted in bookie server
-     * @param zkAllLedgers
-     *          All ledgers stored in zookeeper
-     */
-    void doGc(GarbageCollector gc, ConcurrentMap<Long, Boolean> bkActiveLedgers, HashSet<Long> zkAllLedgers) {
-        // remove any active ledgers that doesn't exist in zk
-        for (Long bkLid : bkActiveLedgers.keySet()) {
-            if (!zkAllLedgers.contains(bkLid)) {
-                // remove it from current active ledger
-                bkActiveLedgers.remove(bkLid);
-                gc.gc(bkLid);
-            }
-        }
-    }
-
 }

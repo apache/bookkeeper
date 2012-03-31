@@ -19,11 +19,12 @@ package org.apache.bookkeeper.meta;
  */
 
 import java.io.IOException;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Set;
+import java.util.Map;
+import java.util.NavigableMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -92,7 +93,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
     // Path to generate global id
     private final String idGenPath;
     // A sorted map to stored all active ledger ids
-    private ConcurrentSkipListMap<Long, Boolean> activeLedgers;
+    private SnapshotMap<Long, Boolean> activeLedgers;
 
     // we use this to prevent long stack chains from building up in callbacks
     ScheduledExecutorService scheduler;
@@ -119,7 +120,8 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
         }
 
         this.idGenPath = ledgerRootPath + IDGENERATION_PREFIX;
-        this.activeLedgers = new ConcurrentSkipListMap<Long, Boolean>();
+        activeLedgers = new SnapshotMap<Long, Boolean>();
+
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
         if (LOG.isDebugEnabled()) {
             LOG.debug("Using HierarchicalLedgerManager with root path : " + ledgerRootPath);
@@ -365,6 +367,8 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
 
     @Override
     public void garbageCollectLedgers(GarbageCollector gc) {
+        // create a snapshot before garbage collection
+        NavigableMap<Long, Boolean> snapshot = activeLedgers.snapshot();
         try {
             List<String> l1Nodes = zk.getChildren(ledgerRootPath, null);
             for (String l1Node : l1Nodes) {
@@ -374,7 +378,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
                 try {
                     List<String> l2Nodes = zk.getChildren(ledgerRootPath + "/" + l1Node, null);
                     for (String l2Node : l2Nodes) {
-                        doGcByLevel(gc, l1Node, l2Node);
+                        doGcByLevel(gc, l1Node, l2Node, snapshot);
                     }
                 } catch (Exception e) {
                     LOG.warn("Exception during garbage collecting ledgers for " + l1Node
@@ -395,10 +399,13 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
      *          1st level node name
      * @param level2
      *          2nd level node name
+     * @param snapshot
+     *          Snapshot of the active ledgers map.
      * @throws IOException
      * @throws InterruptedException
      */
-    void doGcByLevel(GarbageCollector gc, final String level1, final String level2)
+    void doGcByLevel(GarbageCollector gc, final String level1, final String level2,
+                     NavigableMap snapshot)
         throws IOException, InterruptedException {
 
         StringBuilder nodeBuilder = new StringBuilder();
@@ -406,12 +413,11 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
                    .append(level1).append("/").append(level2);
         String nodePath = nodeBuilder.toString();
 
-        HashSet<Long> zkActiveLedgers = getLedgersInSingleNode(nodePath);
+        Set<Long> zkActiveLedgers = getLedgersInSingleNode(nodePath);
         // get hosted ledgers in /level1/level2
         long startLedgerId = getStartLedgerIdByLevel(level1, level2);
         long endLedgerId = getEndLedgerIdByLevel(level1, level2);
-        ConcurrentMap<Long, Boolean> bkActiveLedgers =
-            activeLedgers.subMap(startLedgerId, true, endLedgerId, true);
+        Map<Long, Boolean> bkActiveLedgers = snapshot.subMap(startLedgerId, true, endLedgerId, true);
         if (LOG.isDebugEnabled()) {
             LOG.debug("All active ledgers from ZK for hash node "
                       + level1 + "/" + level2 + " : " + zkActiveLedgers);
@@ -420,28 +426,6 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
         }
 
         doGc(gc, bkActiveLedgers, zkActiveLedgers);
-    }
-
-    /**
-     * Do garbage collecting comparing hosted ledgers and zk ledgers
-     *
-     * @param gc
-     *          Garbage collector
-     * @param bkActiveLedgers
-     *          Active ledgers hosted in bookie server
-     * @param zkAllLedgers
-     *          All ledgers stored in zookeeper
-     */
-    void doGc(GarbageCollector gc, ConcurrentMap<Long, Boolean> bkActiveLedgers,
-              HashSet<Long> zkAllLedgers) {
-        // remove any active ledgers that doesn't exist in zk
-        for (Long lid : bkActiveLedgers.keySet()) {
-            if (!zkAllLedgers.contains(lid)) {
-                // remove it from current active ledger
-                bkActiveLedgers.remove(lid);
-                gc.gc(lid);
-            }
-        }
     }
 
     /**

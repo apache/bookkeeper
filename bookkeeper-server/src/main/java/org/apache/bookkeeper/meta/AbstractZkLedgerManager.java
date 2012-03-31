@@ -21,6 +21,8 @@ package org.apache.bookkeeper.meta;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.Map;
 
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -251,5 +253,26 @@ abstract class AbstractZkLedgerManager implements LedgerManager {
 
     @Override
     public void close() {
+    }
+
+    /**
+     * Do garbage collecting comparing hosted ledgers and zk ledgers
+     *
+     * @param gc
+     *          Garbage collector to do garbage collection when found inactive/deleted ledgers
+     * @param bkActiveLedgers
+     *          Active ledgers hosted in bookie server
+     * @param zkAllLedgers
+     *          All ledgers stored in zookeeper
+     */
+    void doGc(GarbageCollector gc, Map<Long, Boolean> bkActiveLedgers, Set<Long> zkAllLedgers) {
+        // remove any active ledgers that doesn't exist in zk
+        for (Long bkLid : bkActiveLedgers.keySet()) {
+            if (!zkAllLedgers.contains(bkLid)) {
+                // remove it from current active ledger
+                bkActiveLedgers.remove(bkLid);
+                gc.gc(bkLid);
+            }
+        }
     }
 }

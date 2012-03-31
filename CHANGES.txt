@@ -70,6 +70,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-166: Bookie will not recover its journal if the length prefix of an entry is truncated (ivank)
 
+        BOOKKEEPER-193: Ledger is garbage collected by mistake. (sijie, ivank via sijie)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)
