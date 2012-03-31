@@ -153,6 +153,40 @@ public class LedgerCacheImpl implements LedgerCache {
         }
     }
 
+    /** 
+     * Grab ledger entry page whose first entry is <code>pageEntry</code>.
+     *
+     * If the page doesn't existed before, we allocate a memory page.
+     * Otherwise, we grab a clean page and read it from disk.
+     *
+     * @param ledger
+     *          Ledger Id
+     * @param pageEntry
+     *          Start entry of this entry page.
+     */
+    private LedgerEntryPage grabLedgerEntryPage(long ledger, long pageEntry) throws IOException {
+        LedgerEntryPage lep = grabCleanPage(ledger, pageEntry);
+        try {
+            // should update page before we put it into table
+            // otherwise we would put an empty page in it
+            updatePage(lep);
+            synchronized(this) {
+                putIntoTable(pages, lep);
+            }   
+        } catch (IOException ie) {
+            // if we grab a clean page, but failed to update the page
+            // we are exhuasting the count of ledger entry pages.
+            // since this page will be never used, so we need to decrement
+            // page count of ledger cache.
+            lep.releasePage();
+            synchronized (this) {
+                --pageCount;
+            }
+            throw ie; 
+        }   
+        return lep;
+    }
+
     @Override
     public void putEntryOffset(long ledger, long entry, long offset) throws IOException {
         int offsetInPage = (int) (entry % entriesPerPage);
@@ -161,12 +195,7 @@ public class LedgerCacheImpl implements LedgerCache {
         long pageEntry = entry-offsetInPage;
         LedgerEntryPage lep = getLedgerEntryPage(ledger, pageEntry, false);
         if (lep == null) {
-            // find a free page
-            lep = grabCleanPage(ledger, pageEntry);
-            updatePage(lep);
-            synchronized(this) {
-                putIntoTable(pages, lep);
-            }
+            lep = grabLedgerEntryPage(ledger, pageEntry); 
         }
         if (lep != null) {
             lep.setOffset(offset, offsetInPage*8);
@@ -184,13 +213,7 @@ public class LedgerCacheImpl implements LedgerCache {
         LedgerEntryPage lep = getLedgerEntryPage(ledger, pageEntry, false);
         try {
             if (lep == null) {
-                lep = grabCleanPage(ledger, pageEntry);
-                // should update page before we put it into table
-                // otherwise we would put an empty page in it
-                updatePage(lep);
-                synchronized(this) {
-                    putIntoTable(pages, lep);
-                }
+                lep = grabLedgerEntryPage(ledger, pageEntry);
             }
             return lep.getOffset(offsetInPage*8);
         } finally {

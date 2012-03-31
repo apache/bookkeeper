@@ -24,6 +24,7 @@ package org.apache.bookkeeper.bookie;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -124,4 +125,51 @@ public class LedgerCacheTest extends TestCase {
         }
     }
 
+    @Test
+    public void testPageEviction() throws Exception {
+        int numLedgers = 10;
+        byte[] masterKey = "blah".getBytes();
+        // limit page count
+        conf.setOpenFileLimit(999999).setPageLimit(3);
+        // create ledger cache
+        newLedgerCache();
+        try {
+            // create serveral ledgers
+            for (int i=1; i<=numLedgers; i++) {
+                ledgerCache.setMasterKey((long)i, masterKey);
+                ledgerCache.putEntryOffset(i, 0, i*8);
+                ledgerCache.putEntryOffset(i, 1, i*8);
+            }
+
+            // flush all first to clean previous dirty ledgers
+            ledgerCache.flushLedger(true);
+            // flush all 
+            ledgerCache.flushLedger(true);
+
+            // delete serveral ledgers
+            for (int i=1; i<=numLedgers/2; i++) {
+                ledgerCache.deleteLedger(i);
+            }
+
+            // bookie restarts
+            newLedgerCache();
+
+            // simulate replaying journals to add entries again
+            for (int i=1; i<=numLedgers; i++) {
+                try {
+                    ledgerCache.putEntryOffset(i, 1, i*8);
+                } catch (NoLedgerException nsle) {
+                    if (i<=numLedgers/2) {
+                        // it is ok
+                    } else {
+                        LOG.error("Error put entry offset : ", nsle);
+                        fail("Should not reach here.");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOG.error("Got Exception.", e);
+            fail("Failed to add entry.");
+        }
+    }
 }

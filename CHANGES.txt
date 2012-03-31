@@ -72,6 +72,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-193: Ledger is garbage collected by mistake. (sijie, ivank via sijie)
 
+        BOOKKEEPER-198: replaying entries of deleted ledgers would exhaust ledger cache. (sijie)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)
