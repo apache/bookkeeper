@@ -126,7 +126,7 @@ class LedgerRecoveryOp implements ReadCallback, AddCallback {
         }
 
         // otherwise, some other error, we can't handle
-        LOG.error("Failure " + BKException.getMessage(rc) + " while reading entry: " + lh.lastAddConfirmed + 1
+        LOG.error("Failure " + BKException.getMessage(rc) + " while reading entry: " + (lh.lastAddConfirmed + 1)
                   + " ledger: " + lh.ledgerId + " while recovering ledger");
         cb.operationComplete(rc, null);
         return;
@@ -137,7 +137,7 @@ class LedgerRecoveryOp implements ReadCallback, AddCallback {
         if (rc != BKException.Code.OK) {
             // Give up, we can't recover from this error
 
-            LOG.error("Failure " + BKException.getMessage(rc) + " while writing entry: " + lh.lastAddConfirmed + 1
+            LOG.error("Failure " + BKException.getMessage(rc) + " while writing entry: " + (lh.lastAddConfirmed + 1)
                       + " ledger: " + lh.ledgerId + " while recovering ledger");
             cb.operationComplete(rc, null);
             return;

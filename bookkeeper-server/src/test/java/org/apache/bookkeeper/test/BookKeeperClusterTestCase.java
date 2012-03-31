@@ -169,9 +169,10 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      *
      * @param addr
      *          Socket Address
+     * @return the configuration of killed bookie
      * @throws InterruptedException
      */
-    public void killBookie(InetSocketAddress addr) throws InterruptedException {
+    public ServerConfiguration killBookie(InetSocketAddress addr) throws InterruptedException {
         BookieServer toRemove = null;
         int toRemoveIndex = 0;
         for (BookieServer server : bs) {
@@ -184,8 +185,9 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
         }
         if (toRemove != null) {
             bs.remove(toRemove);
-            bsConfs.remove(toRemoveIndex);
+            return bsConfs.remove(toRemoveIndex);
         }
+        return null;
     }
 
     /**
@@ -193,17 +195,18 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      *
      * @param index
      *          Bookie Index
+     * @return the configuration of killed bookie
      * @throws InterruptedException
      * @throws IOException
      */
-    public void killBookie(int index) throws InterruptedException, IOException {
+    public ServerConfiguration killBookie(int index) throws InterruptedException, IOException {
         if (index >= bs.size()) {
             throw new IOException("Bookie does not exist");
         }
         BookieServer server = bs.get(index);
         server.shutdown();
         bs.remove(server);
-        bsConfs.remove(index);
+        return bsConfs.remove(index);
     }
 
     /**
@@ -318,7 +321,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      *            Server Configuration Object
      *
      */
-    private BookieServer startBookie(ServerConfiguration conf)
+    protected BookieServer startBookie(ServerConfiguration conf)
             throws IOException, InterruptedException, KeeperException, BookieException {
         BookieServer server = new BookieServer(conf);
         server.start();

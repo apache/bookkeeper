@@ -269,16 +269,18 @@ public class TestFencing extends BaseTestCase {
         InetSocketAddress bookieToKill 
             = writelh.getLedgerMetadata().getEnsemble(numEntries).get(0);
         killBookie(bookieToKill);
-        admin.recoverBookieData(bookieToKill, null);
-        
-        /* TODO: uncomment this when BOOKKEEPER-112 is
-           fixed
-           
+
+        // write entries to change ensemble
         for (int i = 0; i < numEntries; i++) {
             writelh.addEntry(tmp.getBytes());
         }
-        */
+
+        admin.recoverBookieData(bookieToKill, null);
         
+        for (int i = 0; i < numEntries; i++) {
+            writelh.addEntry(tmp.getBytes());
+        }
+
         LedgerHandle readlh = bkc.openLedger(writelh.getId(), 
                                              digestType, "testPasswd".getBytes());
         try {

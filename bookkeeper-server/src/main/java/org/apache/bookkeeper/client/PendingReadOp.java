@@ -121,6 +121,21 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     public void readEntryComplete(int rc, long ledgerId, final long entryId, final ChannelBuffer buffer, Object ctx) {
         final LedgerEntry entry = (LedgerEntry) ctx;
 
+        // if we just read only one entry, and this entry is not existed (in recoveryRead case)
+        // we don't need to do ReattemptRead, otherwise we could not handle following case:
+        //
+        // an empty ledger with quorum (bk1, bk2), bk2 is failed forever.
+        // bk1 return NoLedgerException, client do ReattemptRead to bk2 but bk2 isn't connected
+        // so the read 0 entry would failed. this ledger could never be closed.
+        if (startEntryId == endEntryId) {
+            if (BKException.Code.NoSuchLedgerExistsException == rc ||
+                BKException.Code.NoSuchEntryException == rc) {
+                lh.opCounterSem.release();
+                submitCallback(rc);
+                return;
+            }
+        }
+
         if (rc != BKException.Code.OK) {
             logErrorAndReattemptRead(entry, "Error: " + BKException.getMessage(rc), rc);
             return;

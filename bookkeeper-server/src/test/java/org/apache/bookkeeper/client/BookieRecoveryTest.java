@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Collections;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import java.util.concurrent.atomic.AtomicLong;
@@ -41,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.test.BaseTestCase;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -159,6 +161,15 @@ public class BookieRecoveryTest extends BaseTestCase {
         return lhs;
     }
 
+    private List<LedgerHandle> openLedgers(List<LedgerHandle> oldLhs)
+            throws Exception {
+        List<LedgerHandle> newLhs = new ArrayList<LedgerHandle>();
+        for (LedgerHandle oldLh : oldLhs) {
+            newLhs.add(bkc.openLedger(oldLh.getId(), digestType, baseClientConf.getBookieRecoveryPasswd()));
+        }
+        return newLhs;
+    }
+
     /**
      * Helper method to write dummy ledger entries to all of the ledgers passed.
      *
@@ -171,12 +182,19 @@ public class BookieRecoveryTest extends BaseTestCase {
      * @throws BKException
      * @throws InterruptedException
      */
-    private void writeEntriestoLedgers(int numEntries, long startEntryId, List<LedgerHandle> lhs) throws BKException,
-        InterruptedException {
+    private void writeEntriestoLedgers(int numEntries, long startEntryId,
+                                       List<LedgerHandle> lhs)
+        throws BKException, InterruptedException {
         for (LedgerHandle lh : lhs) {
             for (int i = 0; i < numEntries; i++) {
                 lh.addEntry(("LedgerId: " + lh.getId() + ", EntryId: " + (startEntryId + i)).getBytes());
             }
+        }
+    }
+
+    private void closeLedgers(List<LedgerHandle> lhs) throws BKException, InterruptedException {
+        for (LedgerHandle lh : lhs) {
+            lh.close();
         }
     }
 
@@ -507,6 +525,140 @@ public class BookieRecoveryTest extends BaseTestCase {
         return numDupes > 0;
     }
 
+    /**
+     * Test recoverying the closed ledgers when the failed bookie server is in the last ensemble
+     */
+    @Test
+    public void testBookieRecoveryOnClosedLedgers() throws Exception {
+        // Create the ledgers
+        int numLedgers = 3;
+        List<LedgerHandle> lhs = createLedgers(numLedgers, numBookies, 2);
+
+        // Write the entries for the ledgers with dummy values
+        int numMsgs = 10;
+        writeEntriestoLedgers(numMsgs, 0, lhs);
+
+        closeLedgers(lhs);
+
+        // Shutdown last bookie server in last ensemble
+        ArrayList<InetSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
+                                                       .entrySet().iterator().next().getValue();
+        InetSocketAddress bookieToKill = lastEnsemble.get(lastEnsemble.size() - 1);
+        killBookie(bookieToKill);
+
+        // start a new bookie
+        startNewBookie();
+
+        InetSocketAddress bookieDest = null;
+        LOG.info("Now recover the data on the killed bookie (" + bookieToKill
+               + ") and replicate it to a random available one");
+
+        bkAdmin.recoverBookieData(bookieToKill, bookieDest);
+        for (LedgerHandle lh : lhs) {
+            assertTrue("Not fully replicated", verifyFullyReplicated(lh, numMsgs));
+            lh.close();
+        }
+    }
+
+    @Test
+    public void testBookieRecoveryOnOpenedLedgers() throws Exception {
+        // Create the ledgers
+        int numLedgers = 3;
+        List<LedgerHandle> lhs = createLedgers(numLedgers, numBookies, 2);
+
+        // Write the entries for the ledgers with dummy values
+        int numMsgs = 10;
+        writeEntriestoLedgers(numMsgs, 0, lhs);
+
+        // Shutdown the first bookie server
+        ArrayList<InetSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
+                                                       .entrySet().iterator().next().getValue();
+        InetSocketAddress bookieToKill = lastEnsemble.get(lastEnsemble.size() - 1);
+        killBookie(bookieToKill);
+
+        // start a new bookie
+        startNewBookie();
+
+        InetSocketAddress bookieDest = null;
+        LOG.info("Now recover the data on the killed bookie (" + bookieToKill
+               + ") and replicate it to a random available one");
+
+        bkAdmin.recoverBookieData(bookieToKill, bookieDest);
+
+        for (LedgerHandle lh : lhs) {
+            assertTrue("Not fully replicated", verifyFullyReplicated(lh, numMsgs));
+        }
+
+        try {
+            // we can't write entries
+            writeEntriestoLedgers(numMsgs, 0, lhs);
+            fail("should not reach here");
+        } catch (Exception e) {
+        }
+    }
+
+    @Test
+    public void testBookieRecoveryOnInRecoveryLedger() throws Exception {
+        int numMsgs = 10;
+        // Create the ledgers
+        int numLedgers = 1;
+        List<LedgerHandle> lhs = createLedgers(numLedgers, 2, 2);
+
+        // Write the entries for the ledgers with dummy values
+        writeEntriestoLedgers(numMsgs, 0, lhs);
+
+        // Shutdown the first bookie server
+        ArrayList<InetSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
+                                                       .entrySet().iterator().next().getValue();
+        // removed bookie
+        InetSocketAddress bookieToKill = lastEnsemble.get(0);
+        killBookie(bookieToKill);
+        // temp failure
+        InetSocketAddress bookieToKill2 = lastEnsemble.get(1);
+        ServerConfiguration conf2 = killBookie(bookieToKill2);
+
+        // start a new bookie
+        startNewBookie();
+
+        // open these ledgers
+        for (LedgerHandle oldLh : lhs) {
+            try {
+                bkc.openLedger(oldLh.getId(), digestType, baseClientConf.getBookieRecoveryPasswd());
+                fail("Should have thrown exception");
+            } catch (Exception e) {
+            }
+        }
+
+        try {
+            bkAdmin.recoverBookieData(bookieToKill, null);
+            fail("Should have thrown exception");
+        } catch (BKException.BKLedgerRecoveryException bke) {
+            // correct behaviour
+        }
+
+        // restart failed bookie
+        bs.add(startBookie(conf2));
+        bsConfs.add(conf2);
+
+        // recover them
+        bkAdmin.recoverBookieData(bookieToKill, null);
+
+        for (LedgerHandle lh : lhs) {
+            assertTrue("Not fully replicated", verifyFullyReplicated(lh, numMsgs));
+        }
+
+        // open ledgers to read metadata
+        List<LedgerHandle> newLhs = openLedgers(lhs);
+        for (LedgerHandle newLh : newLhs) {
+            // first ensemble should contains bookieToKill2 and not contain bookieToKill
+            Map.Entry<Long, ArrayList<InetSocketAddress>> entry =
+                newLh.getLedgerMetadata().getEnsembles().entrySet().iterator().next();
+            assertFalse(entry.getValue().contains(bookieToKill));
+            assertTrue(entry.getValue().contains(bookieToKill2));
+        }
+
+    }
+
     @Test
     public void testAsyncBookieRecoveryToRandomBookiesNotEnoughBookies() throws Exception {
         // Create the ledgers
@@ -575,9 +727,7 @@ public class BookieRecoveryTest extends BaseTestCase {
             writeEntriestoLedgers(numMsgs, numMsgs*2, lhs);
             for (LedgerHandle lh : lhs) {
                 assertTrue("Not fully replicated", verifyFullyReplicated(lh, numMsgs*3));
-                // TODO (BOOKKEEPER-112) this throws an exception at the moment 
-                // because recovering a ledger updates the ledger znode
-                //lh.close();
+                lh.close();
             }
         }
     }

@@ -72,4 +72,29 @@ public class CloseTest extends BaseTestCase {
             lh[i].close();
         }
     }
+
+    @Test
+    public void testCloseByOthers() throws Exception {
+
+        int numLedgers = 1;
+        int numMsgs = 10;
+
+        LedgerHandle lh = bkc.createLedger(digestType, "".getBytes());
+
+        String tmp = "BookKeeper is cool!";
+
+        /*
+         * Write 10 entries to lh.
+         */
+        for (int i = 0; i < numMsgs; i++) {
+            lh.addEntry(tmp.getBytes());
+        }
+
+        // other one close the entries
+        LedgerHandle lh2 = bkc.openLedger(lh.getId(), digestType, "".getBytes());
+
+        // so the ledger would be closed, the metadata is changed
+        // the original ledger handle should be able to close it successfully
+        lh2.close();
+    }
 }

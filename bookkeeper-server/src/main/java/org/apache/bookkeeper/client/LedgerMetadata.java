@@ -21,6 +21,7 @@ package org.apache.bookkeeper.client;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -258,5 +259,48 @@ public class LedgerMetadata {
      */
     public int getZnodeVersion() {
         return this.znodeVersion;
+    }
+
+    /**
+     * Resolve conflict with new updated metadata.
+     *
+     * @param newMeta
+     *          Re-read metadata
+     * @return true if the confliction is resolved, otherwise false.
+     */
+    boolean resolveConflict(LedgerMetadata newMeta) {
+        // length & close is changed means other one open the ledger
+        // can't resolve this confliction
+        if (metadataFormatVersion != newMeta.metadataFormatVersion ||
+            ensembleSize != newMeta.ensembleSize ||
+            quorumSize != newMeta.quorumSize ||
+            length != newMeta.length ||
+            close != newMeta.close) {
+            return false;
+        }
+        // new meta znode version should be larger than old one
+        if (znodeVersion > newMeta.znodeVersion) {
+            return false;
+        }
+        // ensemble size should be same
+        if (ensembles.size() != newMeta.ensembles.size()) {
+            return false;
+        }
+        // ensemble distribution should be same
+        // we don't check the detail ensemble, since new bookie will be set
+        // using recovery tool.
+        Iterator<Long> keyIter = ensembles.keySet().iterator();
+        Iterator<Long> newMetaKeyIter = newMeta.ensembles.keySet().iterator();
+        for (int i=0; i<ensembles.size(); i++) {
+            Long curKey = keyIter.next();
+            Long newMetaKey = newMetaKeyIter.next();
+            if (curKey != newMetaKey) {
+                return false;
+            }
+        }
+        // if the confliction could be resolved, update ensembles and znode version
+        ensembles = newMeta.ensembles;
+        znodeVersion = newMeta.znodeVersion;
+        return true;
     }
 }

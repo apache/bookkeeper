@@ -74,6 +74,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-198: replaying entries of deleted ledgers would exhaust ledger cache. (sijie)
 
+        BOOKKEEPER-112: Bookie Recovery on an open ledger will cause LedgerHandle#close on that ledger to fail (sijie)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)
