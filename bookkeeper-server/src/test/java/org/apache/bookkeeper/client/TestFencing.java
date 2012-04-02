@@ -62,7 +62,7 @@ public class TestFencing extends BaseTestCase {
          * Create ledger.
          */
         LedgerHandle writelh = null;
-        writelh = bkc.createLedger(digestType, "".getBytes());
+        writelh = bkc.createLedger(digestType, "password".getBytes());
 
         String tmp = "BookKeeper is cool!";
         for (int i = 0; i < 10; i++) {
@@ -72,7 +72,7 @@ public class TestFencing extends BaseTestCase {
         /*
          * Try to open ledger.
          */
-        LedgerHandle readlh = bkc.openLedger(writelh.getId(), digestType, "".getBytes());
+        LedgerHandle readlh = bkc.openLedger(writelh.getId(), digestType, "password".getBytes());
         // should have triggered recovery and fencing
         
         try {
@@ -346,4 +346,35 @@ public class TestFencing extends BaseTestCase {
             // correct behaviour
         }
     }
+
+    /**
+     * Test that fencing doesn't work with a bad password
+     */
+    @Test
+    public void testFencingBadPassword() throws Exception {
+        /*
+         * Create ledger.
+         */
+        LedgerHandle writelh = null;
+        writelh = bkc.createLedger(digestType, "password1".getBytes());
+
+        String tmp = "BookKeeper is cool!";
+        for (int i = 0; i < 10; i++) {
+            writelh.addEntry(tmp.getBytes());
+        }
+
+        /*
+         * Try to open ledger.
+         */
+        try {
+            LedgerHandle readlh = bkc.openLedger(writelh.getId(), digestType, "badPassword".getBytes());
+            fail("Should not have been able to open with a bad password");
+        } catch (BKException.BKUnauthorizedAccessException uue) {
+            // correct behaviour
+        }
+        // should have triggered recovery and fencing
+
+        writelh.addEntry(tmp.getBytes());
+    }
+
 }

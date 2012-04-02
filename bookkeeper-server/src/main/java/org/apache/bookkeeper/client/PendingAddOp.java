@@ -138,6 +138,10 @@ class PendingAddOp implements WriteCallback {
             LOG.warn("Fencing exception on write: " + ledgerId + ", " + entryId);
             lh.handleUnrecoverableErrorDuringAdd(rc);
             return;
+        case BKException.Code.UnauthorizedAccessException:
+            LOG.warn("Unauthorized access exception on write: " + ledgerId + ", " + entryId);
+            lh.handleUnrecoverableErrorDuringAdd(rc);
+            return;
         default:
             LOG.warn("Write did not succeed: " + ledgerId + ", " + entryId);
             lh.handleBookieFailure(addr, bookieIndex);

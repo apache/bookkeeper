@@ -105,7 +105,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         int bookieIndex = lh.distributionSchedule.getBookieIndex(entry.entryId, entry.nextReplicaIndexToReadFrom);
         entry.nextReplicaIndexToReadFrom++;
         lh.bk.bookieClient.readEntry(ensemble.get(bookieIndex), lh.ledgerId, entry.entryId, 
-                                     this, entry, BookieProtocol.FLAG_NONE);
+                                     this, entry);
     }
 
     void logErrorAndReattemptRead(LedgerEntry entry, String errMsg, int rc) {

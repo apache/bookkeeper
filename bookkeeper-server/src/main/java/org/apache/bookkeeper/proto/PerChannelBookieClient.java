@@ -231,7 +231,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
         int totalHeaderSize = 4 // for the length of the packet
                               + 4 // for the type of request
-                              + masterKey.length; // for the master key
+                              + BookieProtocol.MASTER_KEY_LENGTH; // for the master key
 
         try{
             ChannelBuffer header = channel.getConfig().getBufferFactory().getBuffer(totalHeaderSize);
@@ -239,7 +239,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             header.writeInt(totalHeaderSize - 4 + entrySize);
             header.writeInt(new PacketHeader(BookieProtocol.CURRENT_PROTOCOL_VERSION,
                                              BookieProtocol.ADDENTRY, (short)options).toInt());
-            header.writeBytes(masterKey);
+            header.writeBytes(masterKey, 0, BookieProtocol.MASTER_KEY_LENGTH);
 
             ChannelBuffer wrappedBuffer = ChannelBuffers.wrappedBuffer(header, toSend);
 
@@ -264,7 +264,45 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         }
     }
 
-    public void readEntry(final long ledgerId, final long entryId, ReadEntryCallback cb, Object ctx, final int options) {
+    public void readEntryAndFenceLedger(final long ledgerId, byte[] masterKey,
+                                        final long entryId,
+                                        ReadEntryCallback cb, Object ctx) {
+        final CompletionKey key = new CompletionKey(ledgerId, entryId);
+        readCompletions.put(key, new ReadCompletion(cb, ctx));
+
+        int totalHeaderSize = 4 // for the length of the packet
+                              + 4 // for request type
+                              + 8 // for ledgerId
+                              + 8 // for entryId
+                              + BookieProtocol.MASTER_KEY_LENGTH; // for masterKey
+
+        ChannelBuffer tmpEntry = channel.getConfig().getBufferFactory().getBuffer(totalHeaderSize);
+        tmpEntry.writeInt(totalHeaderSize - 4);
+
+        tmpEntry.writeInt(new PacketHeader(BookieProtocol.CURRENT_PROTOCOL_VERSION,
+                                           BookieProtocol.READENTRY,
+                                           BookieProtocol.FLAG_DO_FENCING).toInt());
+        tmpEntry.writeLong(ledgerId);
+        tmpEntry.writeLong(entryId);
+        tmpEntry.writeBytes(masterKey, 0, BookieProtocol.MASTER_KEY_LENGTH);
+
+        ChannelFuture future = channel.write(tmpEntry);
+        future.addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                if (future.isSuccess()) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Successfully wrote request for reading entry: " + entryId + " ledger-id: "
+                                  + ledgerId + " bookie: " + channel.getRemoteAddress());
+                    }
+                } else {
+                    errorOutReadKey(key);
+                }
+            }
+        });
+    }
+
+    public void readEntry(final long ledgerId, final long entryId, ReadEntryCallback cb, Object ctx) {
         final CompletionKey key = new CompletionKey(ledgerId, entryId);
         readCompletions.put(key, new ReadCompletion(cb, ctx));
 
@@ -278,7 +316,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             tmpEntry.writeInt(totalHeaderSize - 4);
 
             tmpEntry.writeInt(new PacketHeader(BookieProtocol.CURRENT_PROTOCOL_VERSION,
-                                               BookieProtocol.READENTRY, (short)options).toInt());
+                                               BookieProtocol.READENTRY, BookieProtocol.FLAG_NONE).toInt());
             tmpEntry.writeLong(ledgerId);
             tmpEntry.writeLong(entryId);
 
@@ -505,7 +543,10 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         case BookieProtocol.EFENCED:
             rc = BKException.Code.LedgerFencedException;
             break;
-        default: 
+        case BookieProtocol.EUA:
+            rc = BKException.Code.UnauthorizedAccessException;
+            break;
+        default:
             LOG.error("Add for ledger: " + ledgerId + ", entry: " + entryId + " failed on bookie: " + addr
                       + " with code: " + rc);
             rc = BKException.Code.WriteException;
@@ -541,6 +582,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             rc = BKException.Code.NoSuchEntryException;
         } else if (rc == BookieProtocol.EBADVERSION) {
             rc = BKException.Code.ProtocolVersionException;
+        } else if (rc == BookieProtocol.EUA) {
+            rc = BKException.Code.UnauthorizedAccessException;
         } else {
             LOG.error("Read for ledger: " + ledgerId + ", entry: " + entryId + " failed on bookie: " + addr
                       + " with code: " + rc);

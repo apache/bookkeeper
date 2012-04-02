@@ -76,6 +76,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-112: Bookie Recovery on an open ledger will cause LedgerHandle#close on that ledger to fail (sijie)
 
+        BOOKKEEPER-135: Fencing does not check the ledger masterPasswd (ivank)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)

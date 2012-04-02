@@ -1037,21 +1037,16 @@ public class Bookie extends Thread {
     }
 
     /**
-     * Fences a ledger. From this point on, clients will be unable to 
+     * Fences a ledger. From this point on, clients will be unable to
      * write to this ledger. Only recoveryAddEntry will be
      * able to add entries to the ledger.
      * This method is idempotent. Once a ledger is fenced, it can
      * never be unfenced. Fencing a fenced ledger has no effect.
      */
-    public void fenceLedger(long ledgerId) throws IOException {
-        try {
-            byte[] key = ledgerCache.readMasterKey(ledgerId);
-            LedgerDescriptor handle = handles.getHandle(ledgerId, key);
-            synchronized (handle) {
-                handle.setFenced();
-            }
-        } catch (BookieException e) {
-            throw new IOException("Error fencing", e);
+    public void fenceLedger(long ledgerId, byte[] masterKey) throws IOException, BookieException {
+        LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
+        synchronized (handle) {
+            handle.setFenced();
         }
     }
 

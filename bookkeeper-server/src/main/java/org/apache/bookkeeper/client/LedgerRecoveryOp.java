@@ -68,6 +68,8 @@ class LedgerRecoveryOp implements ReadCallback, AddCallback {
                         lh.lastAddPushed = lh.lastAddConfirmed = data.lastAddConfirmed;
                         lh.length = data.length;
                         doRecoveryRead();
+                    } else if (rc == BKException.Code.UnauthorizedAccessException) {
+                        cb.operationComplete(rc, null);
                     } else {
                         cb.operationComplete(BKException.Code.ReadException, null);
                     }

@@ -37,12 +37,20 @@ public interface BookieProtocol {
     /**
      * Current version of the protocol, which client will use. 
      */
-    public static final byte CURRENT_PROTOCOL_VERSION = 1;
-    
+    public static final byte CURRENT_PROTOCOL_VERSION = 2;
+
     /**
      * Entry identifier representing a request to obtain the last add entry confirmed
      */
     public static final long LAST_ADD_CONFIRMED = -1;
+
+    /**
+     * The length of the master key in add packets. This
+     * is fixed at 20 for historic reasons. This is because it
+     * is always generated using the MacDigestManager regardless
+     * of whether Mac is being used for the digest or not
+     */
+    public static final int MASTER_KEY_LENGTH = 20;
 
     /** 
      * The first int of a packet is the header.

@@ -91,8 +91,28 @@ public class BookieClient {
         });
     }
 
+    public void readEntryAndFenceLedger(final InetSocketAddress addr,
+                                        final long ledgerId,
+                                        final byte[] masterKey,
+                                        final long entryId,
+                                        final ReadEntryCallback cb,
+                                        final Object ctx) {
+        final PerChannelBookieClient client = lookupClient(addr);
+
+        client.connectIfNeededAndDoOp(new GenericCallback<Void>() {
+            @Override
+            public void operationComplete(int rc, Void result) {
+                if (rc != BKException.Code.OK) {
+                    cb.readEntryComplete(rc, ledgerId, entryId, null, ctx);
+                    return;
+                }
+                client.readEntryAndFenceLedger(ledgerId, masterKey, entryId, cb, ctx);
+            }
+        });
+    }
+
     public void readEntry(final InetSocketAddress addr, final long ledgerId, final long entryId,
-                          final ReadEntryCallback cb, final Object ctx, final int options) {
+                          final ReadEntryCallback cb, final Object ctx) {
         final PerChannelBookieClient client = lookupClient(addr);
 
         client.connectIfNeededAndDoOp(new GenericCallback<Void>() {
@@ -103,7 +123,7 @@ public class BookieClient {
                     cb.readEntryComplete(rc, ledgerId, entryId, null, ctx);
                     return;
                 }
-                client.readEntry(ledgerId, entryId, cb, ctx, options);
+                client.readEntry(ledgerId, entryId, cb, ctx);
             }
         });
     }

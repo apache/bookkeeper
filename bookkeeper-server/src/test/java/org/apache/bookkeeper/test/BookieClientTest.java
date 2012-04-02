@@ -138,7 +138,7 @@ public class BookieClientTest extends TestCase {
         bc.addEntry(addr, 1, passwd, 1, bb, wrcb, arc, BookieProtocol.FLAG_NONE);
         synchronized (arc) {
             arc.wait(1000);
-            bc.readEntry(addr, 1, 1, recb, arc, BookieProtocol.FLAG_NONE);
+            bc.readEntry(addr, 1, 1, recb, arc);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(1, arc.entry.getInt());
@@ -157,63 +157,63 @@ public class BookieClientTest extends TestCase {
             notifyObject.wait();
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 6, recb, arc, BookieProtocol.FLAG_NONE);
+            bc.readEntry(addr, 1, 6, recb, arc);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchEntryException, arc.rc);
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 7, recb, arc, BookieProtocol.FLAG_NONE);
+            bc.readEntry(addr, 1, 7, recb, arc);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(7, arc.entry.getInt());
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 1, recb, arc, BookieProtocol.FLAG_NONE);
+            bc.readEntry(addr, 1, 1, recb, arc);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(1, arc.entry.getInt());
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 2, recb, arc, BookieProtocol.FLAG_NONE);
+            bc.readEntry(addr, 1, 2, recb, arc);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(2, arc.entry.getInt());
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 3, recb, arc, BookieProtocol.FLAG_NONE);
+            bc.readEntry(addr, 1, 3, recb, arc);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(3, arc.entry.getInt());
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 4, recb, arc, BookieProtocol.FLAG_NONE);
+            bc.readEntry(addr, 1, 4, recb, arc);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchEntryException, arc.rc);
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 11, recb, arc, BookieProtocol.FLAG_NONE);
+            bc.readEntry(addr, 1, 11, recb, arc);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(11, arc.entry.getInt());
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 5, recb, arc, BookieProtocol.FLAG_NONE);
+            bc.readEntry(addr, 1, 5, recb, arc);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(5, arc.entry.getInt());
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 10, recb, arc, BookieProtocol.FLAG_NONE);
+            bc.readEntry(addr, 1, 10, recb, arc);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchEntryException, arc.rc);
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 12, recb, arc, BookieProtocol.FLAG_NONE);
+            bc.readEntry(addr, 1, 12, recb, arc);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchEntryException, arc.rc);
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 13, recb, arc, BookieProtocol.FLAG_NONE);
+            bc.readEntry(addr, 1, 13, recb, arc);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchEntryException, arc.rc);
         }
@@ -235,7 +235,7 @@ public class BookieClientTest extends TestCase {
         InetSocketAddress addr = new InetSocketAddress("127.0.0.1", port);
         BookieClient bc = new BookieClient(new ClientConfiguration(), channelFactory, executor);
         synchronized (arc) {
-            bc.readEntry(addr, 2, 13, recb, arc, BookieProtocol.FLAG_NONE);
+            bc.readEntry(addr, 2, 13, recb, arc);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchEntryException, arc.rc);
         }

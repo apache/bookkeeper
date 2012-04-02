@@ -78,6 +78,8 @@ public abstract class BKException extends Exception {
             return new BKProtocolVersionException();
         case Code.LedgerFencedException:
             return new BKLedgerFencedException();
+        case Code.UnauthorizedAccessException:
+            return new BKUnauthorizedAccessException();
         default:
             return new BKIllegalOpException();
         }
@@ -108,6 +110,7 @@ public abstract class BKException extends Exception {
 
         int IllegalOpException = -100;
         int LedgerFencedException = -101;
+        int UnauthorizedAccessException = -102;
     }
 
     public void setCode(int code) {
@@ -156,6 +159,8 @@ public abstract class BKException extends Exception {
             return "Bookie protocol version on server is incompatible with client";
         case Code.LedgerFencedException:
             return "Ledger has been fenced off. Some other client must have opened it to read";
+        case Code.UnauthorizedAccessException:
+            return "Attempted to access ledger using the wrong password";
         default:
             return "Invalid operation";
         }
@@ -266,6 +271,12 @@ public abstract class BKException extends Exception {
     public static class BKLedgerFencedException extends BKException {
         public BKLedgerFencedException() {
             super(Code.LedgerFencedException);
+        }
+    }
+
+    public static class BKUnauthorizedAccessException extends BKException {
+        public BKUnauthorizedAccessException() {
+            super(Code.UnauthorizedAccessException);
         }
     }
 }

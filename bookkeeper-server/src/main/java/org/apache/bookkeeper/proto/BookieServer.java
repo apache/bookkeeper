@@ -327,13 +327,15 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         switch (h.getOpCode()) {
         case BookieProtocol.ADDENTRY:
             // first read master key
-            masterKey = new byte[20];
-            packet.get(masterKey, 0, 20);
-            // !! fall thru to read ledger id and entry id
-        case BookieProtocol.READENTRY:
+            masterKey = new byte[BookieProtocol.MASTER_KEY_LENGTH];
+            packet.get(masterKey, 0, BookieProtocol.MASTER_KEY_LENGTH);
             ByteBuffer bb = packet.duplicate();
             ledgerId = bb.getLong();
             entryId = bb.getLong();
+            break;
+        case BookieProtocol.READENTRY:
+            ledgerId = packet.getLong();
+            entryId = packet.getLong();
             break;
         }
 
@@ -379,7 +381,15 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
             try {
                 if ((flags & BookieProtocol.FLAG_DO_FENCING) == BookieProtocol.FLAG_DO_FENCING) {
                     LOG.warn("Ledger " + ledgerId + " fenced by " + src.getPeerName());
-                    bookie.fenceLedger(ledgerId);
+                    if (h.getVersion() >= 2) {
+                        masterKey = new byte[BookieProtocol.MASTER_KEY_LENGTH];
+                        packet.get(masterKey, 0, BookieProtocol.MASTER_KEY_LENGTH);
+
+                        bookie.fenceLedger(ledgerId, masterKey);
+                    } else {
+                        LOG.error("Password not provided, Not safe to fence {}", ledgerId);
+                        throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
+                    }
                 }
                 rsp[1] = bookie.readEntry(ledgerId, entryId);
                 LOG.debug("##### Read entry ##### " + rsp[1].remaining());
@@ -400,6 +410,9 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
                     LOG.error("Error reading " + entryId + "@" + ledgerId, e);
                 }
                 errorCode = BookieProtocol.EIO;
+            } catch (BookieException e) {
+                LOG.error("Unauthorized access to ledger " + ledgerId, e);
+                errorCode = BookieProtocol.EUA;
             }
             rsp[0] = buildResponse(errorCode, h.getVersion(), h.getOpCode(), ledgerId, entryId);
 

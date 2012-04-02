@@ -482,7 +482,7 @@ public class BookieRecoveryTest extends BaseTestCase {
             ReplicationVerificationCallback cb = new ReplicationVerificationCallback(numRequests);
             for (long i = startEntryId; i < endEntryId; i++) {
                 for (InetSocketAddress addr : e.getValue()) {
-                    bkc.bookieClient.readEntry(addr, lh.getId(), i, cb, addr, BookieProtocol.FLAG_NONE);
+                    bkc.bookieClient.readEntry(addr, lh.getId(), i, cb, addr);
                 }
             }
 

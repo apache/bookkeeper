@@ -56,18 +56,21 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
     }
 
     public void initiate() {
-        initiate(BookieProtocol.FLAG_NONE);
+        for (int i = 0; i < lh.metadata.currentEnsemble.size(); i++) {
+            lh.bk.bookieClient.readEntry(lh.metadata.currentEnsemble.get(i),
+                                         lh.ledgerId,
+                                         BookieProtocol.LAST_ADD_CONFIRMED,
+                                         this, i);
+        }
     }
 
     public void initiateWithFencing() {
-        initiate(BookieProtocol.FLAG_DO_FENCING);
-    }
-
-    private void initiate(short flags) {
         for (int i = 0; i < lh.metadata.currentEnsemble.size(); i++) {
-            lh.bk.bookieClient.readEntry(lh.metadata.currentEnsemble.get(i), lh.ledgerId,
-                                         BookieProtocol.LAST_ADD_CONFIRMED,
-                                         this, i, flags);
+            lh.bk.bookieClient.readEntryAndFenceLedger(lh.metadata.currentEnsemble.get(i),
+                                                       lh.ledgerId,
+                                                       lh.ledgerKey,
+                                                       BookieProtocol.LAST_ADD_CONFIRMED,
+                                                       this, i);
         }
     }
 
@@ -97,6 +100,10 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
             heardValidResponse = true;
         }
 
+        if (rc == BKException.Code.UnauthorizedAccessException  && !completed) {
+            cb.readLastConfirmedDataComplete(rc, maxRecoveredData);
+            completed = true;
+        }
         // other return codes dont count as valid responses
         if (heardValidResponse
             && coverageSet.addBookieAndCheckCovered(bookieIndex)

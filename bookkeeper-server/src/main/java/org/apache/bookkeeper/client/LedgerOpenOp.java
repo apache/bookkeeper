@@ -141,10 +141,12 @@ class LedgerOpenOp implements DataCallback {
             lh.recover(new GenericCallback<Void>() {
                     @Override
                     public void operationComplete(int rc, Void result) {
-                        if (rc != BKException.Code.OK) {
-                            cb.openComplete(BKException.Code.LedgerRecoveryException, null, LedgerOpenOp.this.ctx);
-                        } else {
+                        if (rc == BKException.Code.OK) {
                             cb.openComplete(BKException.Code.OK, lh, LedgerOpenOp.this.ctx);
+                        } else if (rc == BKException.Code.UnauthorizedAccessException) {
+                            cb.openComplete(BKException.Code.UnauthorizedAccessException, null, LedgerOpenOp.this.ctx);
+                        } else {
+                            cb.openComplete(BKException.Code.LedgerRecoveryException, null, LedgerOpenOp.this.ctx);
                         }
                     }
                 });
