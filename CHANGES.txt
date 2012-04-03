@@ -88,6 +88,10 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-163: Prevent incorrect NoSuchLedgerException for readLastConfirmed. (ivank via sijie)
 
+      bookkeeper-benchmark/
+	
+	BOOKKEEPER-207: BenchBookie doesn't run correctly (ivank via fpj)
+
     IMPROVEMENTS:
 
       bookkeeper-server/

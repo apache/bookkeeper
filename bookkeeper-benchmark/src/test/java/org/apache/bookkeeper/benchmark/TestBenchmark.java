@@ -126,7 +126,7 @@ public class TestBenchmark {
         BenchBookie.main(new String[] {
                 "--host", parts[0],
                 "--port", parts[1],
-                "--ledger", "12345"
+                "--zookeeper", zkString
                 });
     }
 

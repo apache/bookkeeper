@@ -22,10 +22,17 @@ package org.apache.bookkeeper.benchmark;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 
+import java.io.IOException;
+
+import org.apache.zookeeper.KeeperException;
+
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
+import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -89,15 +96,33 @@ public class BenchBookie {
         }
     }
 
+    private static long getValidLedgerId(String zkServers)
+            throws IOException, BKException, KeeperException, InterruptedException {
+        BookKeeper bkc = null;
+        LedgerHandle lh = null;
+        long id = 0;
+        try {
+            bkc =new BookKeeper(zkServers);
+            lh = bkc.createLedger(1, 1, BookKeeper.DigestType.CRC32,
+                                  new byte[20]);
+            id = lh.getId();
+            return id;
+        } finally {
+            if (lh != null) { lh.close(); }
+            if (bkc != null) { bkc.close(); }
+        }
+    }
     /**
      * @param args
      * @throws InterruptedException
      */
-    public static void main(String[] args) throws InterruptedException, ParseException {
+    public static void main(String[] args)
+            throws InterruptedException, ParseException, IOException,
+            BKException, KeeperException {
         Options options = new Options();
         options.addOption("host", true, "Hostname or IP of bookie to benchmark");
         options.addOption("port", true, "Port of bookie to benchmark (default 3181)");
-        options.addOption("ledger", true, "Ledger Id to write to (default 1)");
+        options.addOption("zookeeper", true, "Zookeeper ensemble, default \"localhost:2181\"");
         options.addOption("help", false, "This message");
 
         CommandLineParser parser = new PosixParser();
@@ -111,7 +136,9 @@ public class BenchBookie {
 
         String addr = cmd.getOptionValue("host");
         int port = Integer.valueOf(cmd.getOptionValue("port", "3181"));
-        int ledger = Integer.valueOf(cmd.getOptionValue("ledger", "1"));
+        String servers = cmd.getOptionValue("zookeeper", "localhost:2181");
+
+
 
         ClientSocketChannelFactory channelFactory
             = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors
@@ -124,6 +151,8 @@ public class BenchBookie {
 
         ThroughputCallback tc = new ThroughputCallback();
         int warmUpCount = 999;
+
+        long ledger = getValidLedgerId(servers);
         for(long entry = 0; entry < warmUpCount; entry++) {
             ChannelBuffer toSend = ChannelBuffers.buffer(128);
             toSend.resetReaderIndex();
@@ -131,12 +160,13 @@ public class BenchBookie {
             toSend.writeLong(ledger);
             toSend.writeLong(entry);
             toSend.writerIndex(toSend.capacity());
-            bc.addEntry(new InetSocketAddress(addr, port), ledger, new byte[20], 
+            bc.addEntry(new InetSocketAddress(addr, port), ledger, new byte[20],
                         entry, toSend, tc, null, BookieProtocol.FLAG_NONE);
         }
         LOG.info("Waiting for warmup");
         tc.waitFor(warmUpCount);
 
+        ledger = getValidLedgerId(servers);
         LOG.info("Benchmarking latency");
         int entryCount = 5000;
         long startTime = System.nanoTime();
@@ -144,11 +174,11 @@ public class BenchBookie {
             ChannelBuffer toSend = ChannelBuffers.buffer(128);
             toSend.resetReaderIndex();
             toSend.resetWriterIndex();
-            toSend.writeLong(ledger+1);
+            toSend.writeLong(ledger);
             toSend.writeLong(entry);
             toSend.writerIndex(toSend.capacity());
             lc.resetComplete();
-            bc.addEntry(new InetSocketAddress(addr, port), ledger+1, new byte[20], 
+            bc.addEntry(new InetSocketAddress(addr, port), ledger, new byte[20],
                         entry, toSend, lc, null, BookieProtocol.FLAG_NONE);
             lc.waitForComplete();
         }
@@ -156,6 +186,8 @@ public class BenchBookie {
         LOG.info("Latency: " + (((double)(endTime-startTime))/((double)entryCount))/1000000.0);
 
         entryCount = 50000;
+
+        ledger = getValidLedgerId(servers);
         LOG.info("Benchmarking throughput");
         startTime = System.currentTimeMillis();
         tc = new ThroughputCallback();
@@ -163,10 +195,10 @@ public class BenchBookie {
             ChannelBuffer toSend = ChannelBuffers.buffer(128);
             toSend.resetReaderIndex();
             toSend.resetWriterIndex();
-            toSend.writeLong(ledger+2);
+            toSend.writeLong(ledger);
             toSend.writeLong(entry);
             toSend.writerIndex(toSend.capacity());
-            bc.addEntry(new InetSocketAddress(addr, port), ledger+2, new byte[20], 
+            bc.addEntry(new InetSocketAddress(addr, port), ledger, new byte[20],
                         entry, toSend, tc, null, BookieProtocol.FLAG_NONE);
         }
         tc.waitFor(entryCount);
