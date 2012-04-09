@@ -615,8 +615,8 @@ public class LedgerCacheImpl implements LedgerCache {
         FileInfo fi = null;
         try {
             fi = getFileInfo(ledgerId, null);
-            fi.delete();
             fi.close(false);
+            fi.delete();
         } finally {
             // should release use count
             // otherwise the file channel would not be closed.
