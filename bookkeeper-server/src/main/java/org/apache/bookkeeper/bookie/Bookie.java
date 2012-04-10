@@ -316,25 +316,38 @@ public class Bookie extends Thread {
             } catch (KeeperException.NoNodeException nne) {
                 newEnv = true;
             }
-            try {
-                checkDirectoryStructure(journalDirectory);
+            List<File> missedCookieDirs = new ArrayList<File>();
+            checkDirectoryStructure(journalDirectory);
 
+            // try to read cookie from journal directory
+            try {
                 Cookie journalCookie = Cookie.readFromDirectory(journalDirectory);
                 journalCookie.verify(masterCookie);
-                for (File dir : ledgerDirectories) {
-                    checkDirectoryStructure(dir);
+            } catch (FileNotFoundException fnf) {
+                missedCookieDirs.add(journalDirectory);
+            }
+            for (File dir : ledgerDirectories) {
+                checkDirectoryStructure(dir);
+                try {
                     Cookie c = Cookie.readFromDirectory(dir);
                     c.verify(masterCookie);
+                } catch (FileNotFoundException fnf) {
+                    missedCookieDirs.add(dir);
                 }
-            } catch (FileNotFoundException fnf) {
-                if (!newEnv){
-                    LOG.error("Cookie exists in zookeeper, but not in all local directories", fnf);
-                    throw new BookieException.InvalidCookieException();
-                }
+            }
 
-                masterCookie.writeToDirectory(journalDirectory);
-                for (File dir : ledgerDirectories) {
-                    masterCookie.writeToDirectory(dir);
+            if (!newEnv && missedCookieDirs.size() > 0){
+                LOG.error("Cookie exists in zookeeper, but not in all local directories. "
+                        + " Directories missing cookie file are " + missedCookieDirs);
+                throw new BookieException.InvalidCookieException();
+            }
+            if (newEnv) {
+                if (missedCookieDirs.size() > 0) {
+                    LOG.debug("Directories missing cookie file are {}", missedCookieDirs);
+                    masterCookie.writeToDirectory(journalDirectory);
+                    for (File dir : ledgerDirectories) {
+                        masterCookie.writeToDirectory(dir);
+                    }
                 }
                 masterCookie.writeToZooKeeper(zk, conf);
             }

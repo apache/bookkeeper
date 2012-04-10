@@ -80,6 +80,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-212: Bookie stops responding when creating and deleting many ledgers (sijie via fpj)
 
+        BOOKKEEPER-211: Bookie fails to to start (sijie)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)

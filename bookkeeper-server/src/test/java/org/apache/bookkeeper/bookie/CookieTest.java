@@ -60,11 +60,34 @@ public class CookieTest {
     }
 
     private static String newDirectory() throws IOException {
+        return newDirectory(true);
+    }
+
+    private static String newDirectory(boolean createCurDir) throws IOException {
         File d = File.createTempFile("bookie", "tmpdir");
         d.delete();
         d.mkdirs();
-        new File(d, "current").mkdirs();
+        if (createCurDir) {
+            new File(d, "current").mkdirs();
+        }
         return d.getPath();
+    }
+
+    /**
+     * Test starting bookie with clean state.
+     */
+    @Test
+    public void testCleanStart() throws Exception {
+        ServerConfiguration conf = new ServerConfiguration()
+            .setZkServers(zkutil.getZooKeeperConnectString())
+            .setJournalDirName(newDirectory(false))
+            .setLedgerDirNames(new String[] { newDirectory(false) })
+            .setBookiePort(3181);
+        try {
+            Bookie b = new Bookie(conf);
+        } catch (Exception e) {
+            fail("Should not reach here.");
+        }
     }
 
     /**
