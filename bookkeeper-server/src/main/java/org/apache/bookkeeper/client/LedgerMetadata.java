@@ -266,11 +266,14 @@ public class LedgerMetadata {
      *
      * @param newMeta
      *          Re-read metadata
-     * @return true if the confliction is resolved, otherwise false.
+     * @return true if the conflict has been resolved, otherwise false.
      */
     boolean resolveConflict(LedgerMetadata newMeta) {
-        // length & close is changed means other one open the ledger
-        // can't resolve this confliction
+        /*
+         *  if length & close have changed, then another client has
+         *  opened the ledger, can't resolve this conflict.
+         */
+
         if (metadataFormatVersion != newMeta.metadataFormatVersion ||
             ensembleSize != newMeta.ensembleSize ||
             quorumSize != newMeta.quorumSize ||
@@ -298,7 +301,10 @@ public class LedgerMetadata {
                 return false;
             }
         }
-        // if the confliction could be resolved, update ensembles and znode version
+        /*
+         *  if the conflict has been resolved, then update
+         *  ensemble and znode version
+         */
         ensembles = newMeta.ensembles;
         znodeVersion = newMeta.znodeVersion;
         return true;

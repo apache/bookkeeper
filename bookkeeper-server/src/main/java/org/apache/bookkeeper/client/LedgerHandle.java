@@ -700,7 +700,7 @@ public class LedgerHandle {
                                             writeLedgerConfig(new ChangeEnsembleCb(), null);
                                             return;
                                         } else {
-                                            LOG.error("Could not resolve ledger metadata confliction while changing ensemble to: "
+                                            LOG.error("Could not resolve ledger metadata conflict while changing ensemble to: "
                                                       + newEnsemble + ", old meta data is \n" + new String(metadata.serialize())
                                                       + "\n, new meta data is \n" + new String(newMeta.serialize()) + "\n ,closing ledger");
                                             handleUnrecoverableErrorDuringAdd(BKException.Code.ZKException);

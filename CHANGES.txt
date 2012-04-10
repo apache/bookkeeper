@@ -82,6 +82,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-211: Bookie fails to to start (sijie)
 
+	BOOKKEEPER-200: Fix format and comments (fpj)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)
