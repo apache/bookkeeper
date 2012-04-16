@@ -86,9 +86,13 @@ where command is one of:
 or command is the full name of a class with a defined main() method.
 
 Environment variables:
-   HEDWIG_SERVER_CONF     Hedwig server configuration file (default $DEFAULT_CONF)
-   HEDWIG_LOG_CONF        Log4j configuration file
-   HEDWIG_EXTRA_OPTS      Extra options to be passed to the jvm
+   HEDWIG_SERVER_CONF           Hedwig server configuration file (default $DEFAULT_CONF)
+   HEDWIG_CONSOLE_SERVER_CONF   Server part configuration for hedwig console,
+                                used for metadata management (default it is same as HEDWIG_SERVER_CONF)
+   HEDWIG_CONSOLE_CLIENT_CONF   Client part configuration for hedwig console,
+                                used for interacting with hub server.
+   HEDWIG_LOG_CONF              Log4j configuration file
+   HEDWIG_EXTRA_OPTS            Extra options to be passed to the jvm
 
 These variable can also be set in conf/hwenv.sh
 EOF
@@ -122,7 +126,15 @@ OPTS="$OPTS -Djava.net.preferIPv4Stack=true"
 if [ $COMMAND == "server" ]; then
     exec java $OPTS org.apache.hedwig.server.netty.PubSubServer $HEDWIG_SERVER_CONF $@
 elif [ $COMMAND == "console" ]; then
-    exec java $OPTS org.apache.hedwig.admin.console.HedwigConsole -server-cfg $HEDWIG_SERVER_CONF $@
+    # hedwig console configuration server part
+    if [ -n "$HEDWIG_CONSOLE_SERVER_CONF" ]; then
+        HEDWIG_CONSOLE_SERVER_CONF=$HEDWIG_SERVER_CONF
+    fi
+    # hedwig console configuration client part
+    if [ -n "$HEDWIG_CONSOLE_CLIENT_CONF" ]; then
+        HEDWIG_CONSOLE_CLIENT_OPTIONS="-client-cfg $HEDWIG_CONSOLE_CLIENT_CONF"
+    fi
+    exec java $OPTS org.apache.hedwig.admin.console.HedwigConsole -server-cfg $HEDWIG_CONSOLE_SERVER_CONF $HEDWIG_CONSOLE_CLIENT_OPTIONS $@
 elif [ $COMMAND == "help" ]; then
     hedwig_help;
 else

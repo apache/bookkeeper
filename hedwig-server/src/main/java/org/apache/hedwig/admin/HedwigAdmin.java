@@ -84,10 +84,10 @@ public class HedwigAdmin {
         this.bkClientConf = bkConf;
 
         // connect to zookeeper
-        zk = new ZooKeeper(bkClientConf.getZkServers(), bkClientConf.getZkTimeout(), new MyWatcher());
+        zk = new ZooKeeper(hubConf.getZkHost(), hubConf.getZkTimeout(), new MyWatcher());
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Connecting to zookeeper " + bkClientConf.getZkServers() + ", timeout = "
-                    + bkClientConf.getZkTimeout());
+            LOG.debug("Connecting to zookeeper " + hubConf.getZkHost() + ", timeout = "
+                    + hubConf.getZkTimeout());
         }
 
         // connect to bookkeeper
