@@ -959,7 +959,7 @@ public class Bookie extends Thread {
         } catch (InterruptedException ie) {
             LOG.error("Interrupted during shutting down bookie : ", ie);
         }
-        return exitCode;
+        return this.exitCode;
     }
 
     /** 

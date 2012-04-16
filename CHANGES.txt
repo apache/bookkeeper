@@ -84,6 +84,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-200: Fix format and comments (fpj)
 
+        BOOKKEEPER-216: Bookie doesn't exit with right exit code (sijie via ivank)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)
