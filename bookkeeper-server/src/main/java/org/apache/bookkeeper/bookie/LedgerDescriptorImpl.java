@@ -35,18 +35,16 @@ import org.slf4j.LoggerFactory;
  */
 public class LedgerDescriptorImpl extends LedgerDescriptor {
     final static Logger LOG = LoggerFactory.getLogger(LedgerDescriptor.class);
-    LedgerCache ledgerCache;
+    final LedgerStorage ledgerStorage;
     private long ledgerId;
-    EntryLogger entryLogger;
 
     volatile private boolean fenced = false;
     final byte[] masterKey;
 
-    LedgerDescriptorImpl(byte[] masterKey, long ledgerId, EntryLogger entryLogger, LedgerCache ledgerCache) {
+    LedgerDescriptorImpl(byte[] masterKey, long ledgerId, LedgerStorage ledgerStorage) {
         this.masterKey = masterKey;
         this.ledgerId = ledgerId;
-        this.entryLogger = entryLogger;
-        this.ledgerCache = ledgerCache;
+        this.ledgerStorage = ledgerStorage;
     }
 
     @Override
@@ -78,36 +76,13 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
         if (ledgerId != this.ledgerId) {
             throw new IOException("Entry for ledger " + ledgerId + " was sent to " + this.ledgerId);
         }
-        long entryId = entry.getLong();
         entry.rewind();
 
-        /*
-         * Log the entry
-         */
-        long pos = entryLogger.addEntry(ledgerId, entry);
-
-
-        /*
-         * Set offset of entry id to be the current ledger position
-         */
-        ledgerCache.putEntryOffset(ledgerId, entryId, pos);
-        return entryId;
+        return ledgerStorage.addEntry(entry);
     }
 
     @Override
     ByteBuffer readEntry(long entryId) throws IOException {
-        long offset;
-        /*
-         * If entryId is -1, then return the last written.
-         */
-        if (entryId == -1) {
-            entryId = ledgerCache.getLastEntry(ledgerId);
-        }
-
-        offset = ledgerCache.getEntryOffset(ledgerId, entryId);
-        if (offset == 0) {
-            throw new Bookie.NoEntryException(ledgerId, entryId);
-        }
-        return ByteBuffer.wrap(entryLogger.readEntry(ledgerId, entryId, offset));
+        return ledgerStorage.getEntry(ledgerId, entryId);
     }
 }

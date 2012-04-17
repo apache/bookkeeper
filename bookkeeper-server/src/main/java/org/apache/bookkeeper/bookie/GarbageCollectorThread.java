@@ -75,9 +75,6 @@ public class GarbageCollectorThread extends Thread {
 
     final LedgerManager ledgerManager;
 
-    // ZooKeeper Client
-    final ZooKeeper zk;
-
     // flag to ensure gc thread will not be interrupted during compaction
     // to reduce the risk getting entry log corrupted
     final AtomicBoolean compacting = new AtomicBoolean(false);
@@ -114,7 +111,6 @@ public class GarbageCollectorThread extends Thread {
      * @throws IOException
      */
     public GarbageCollectorThread(ServerConfiguration conf,
-                                  ZooKeeper zookeeper,
                                   LedgerCache ledgerCache,
                                   EntryLogger entryLogger,
                                   LedgerManager ledgerManager,
@@ -122,7 +118,6 @@ public class GarbageCollectorThread extends Thread {
         throws IOException {
         super("GarbageCollectorThread");
 
-        this.zk = zookeeper;
         this.ledgerCache = ledgerCache;
         this.entryLogger = entryLogger;
         this.ledgerManager = ledgerManager;
@@ -187,11 +182,6 @@ public class GarbageCollectorThread extends Thread {
                     Thread.currentThread().interrupt();
                     continue;
                 }
-            }
-
-            // Dependency check.
-            if (null == zk) {
-                continue;
             }
 
             // Extract all of the ledger ID's that comprise all of the entry logs

@@ -70,9 +70,6 @@ public class EntryLogger {
     final static int LOGFILE_HEADER_SIZE = 1024;
     final ByteBuffer LOGFILE_HEADER = ByteBuffer.allocate(LOGFILE_HEADER_SIZE);
 
-    // this indicates that a write has happened since the last flush
-    private volatile boolean somethingWritten = false;
-
     final static long MB = 1024 * 1024;
 
     /**
@@ -284,7 +281,7 @@ public class EntryLogger {
         long pos = logChannel.position();
         logChannel.write(entry);
         //logChannel.flush(false);
-        somethingWritten = true;
+
         return (logId << 32L) | pos;
     }
 
@@ -363,14 +360,6 @@ public class EntryLogger {
             }
         }
         throw new FileNotFoundException("No file for log " + Long.toHexString(logId));
-    }
-
-    synchronized public boolean testAndClearSomethingWritten() {
-        try {
-            return somethingWritten;
-        } finally {
-            somethingWritten = false;
-        }
     }
 
     /**

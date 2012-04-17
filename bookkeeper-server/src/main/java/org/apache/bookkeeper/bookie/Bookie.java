@@ -84,6 +84,7 @@ public class Bookie extends Thread {
 
     final SyncThread syncThread;
     final LedgerManager ledgerManager;
+    final LedgerStorage ledgerStorage;
     final HandleFactory handles;
 
     static final long METAENTRY_ID_LEDGER_KEY = -0x1000;
@@ -105,7 +106,7 @@ public class Bookie extends Thread {
 
     // jmx related beans
     BookieBean jmxBookieBean;
-    LedgerCacheBean jmxLedgerCacheBean;
+    BKMBeanInfo jmxLedgerStorageBean;
 
     Map<Long, byte[]> masterKeyCache = Collections.synchronizedMap(new HashMap<Long, byte[]>());
 
@@ -137,12 +138,6 @@ public class Bookie extends Thread {
         }
     }
 
-    EntryLogger entryLogger;
-    LedgerCache ledgerCache;
-    // This is the thread that garbage collects the entry logs that do not
-    // contain any active ledgers in them; and compacts the entry logs that
-    // has lower remaining percentage to reclaim disk space.
-    final GarbageCollectorThread gcThread;
 
     /**
      * SyncThread is a background thread which flushes ledger index pages periodically.
@@ -185,7 +180,7 @@ public class Bookie extends Thread {
                 synchronized(this) {
                     try {
                         wait(flushInterval);
-                        if (!entryLogger.testAndClearSomethingWritten()) {
+                        if (!ledgerStorage.isFlushRequired()) {
                             continue;
                         }
                     } catch (InterruptedException e) {
@@ -208,15 +203,9 @@ public class Bookie extends Thread {
 
                 boolean flushFailed = false;
                 try {
-                    ledgerCache.flushLedger(true);
+                    ledgerStorage.flush();
                 } catch (IOException e) {
                     LOG.error("Exception flushing Ledger", e);
-                    flushFailed = true;
-                }
-                try {
-                    entryLogger.flush();
-                } catch (IOException e) {
-                    LOG.error("Exception flushing entry logger", e);
                     flushFailed = true;
                 }
 
@@ -378,27 +367,6 @@ public class Bookie extends Thread {
         return currentDirs;
     }
 
-    /**
-     * Scanner used to do entry log compaction
-     */
-    class EntryLogCompactionScanner implements EntryLogger.EntryLogScanner {
-        @Override
-        public boolean accept(long ledgerId) {
-            // bookie has no knowledge about which ledger is deleted
-            // so just accept all ledgers.
-            return true;
-        }
-
-        @Override
-        public void process(long ledgerId, ByteBuffer buffer)
-            throws IOException {
-            try {
-                Bookie.this.addEntryByLedgerId(ledgerId, buffer);
-            } catch (BookieException be) {
-                throw new IOException(be);
-            }
-        }
-    }
 
     public Bookie(ServerConfiguration conf)
             throws IOException, KeeperException, InterruptedException, BookieException {
@@ -416,11 +384,9 @@ public class Bookie extends Thread {
         ledgerManager = LedgerManagerFactory.newLedgerManager(conf, this.zk);
 
         syncThread = new SyncThread(conf);
-        entryLogger = new EntryLogger(conf);
-        ledgerCache = new LedgerCacheImpl(conf, ledgerManager);
-        gcThread = new GarbageCollectorThread(conf, this.zk, ledgerCache, entryLogger,
-                ledgerManager, new EntryLogCompactionScanner());
-        handles = new HandleFactoryImpl(entryLogger, ledgerCache);
+        ledgerStorage = new InterleavedLedgerStorage(conf, ledgerManager);
+
+        handles = new HandleFactoryImpl(ledgerStorage);
 
         // replay journals
         readJournal();
@@ -506,7 +472,7 @@ public class Bookie extends Thread {
                     } else {
                         byte[] key = masterKeyCache.get(ledgerId);
                         if (key == null) {
-                            key = ledgerCache.readMasterKey(ledgerId);
+                            key = ledgerStorage.readMasterKey(ledgerId);
                         }
                         LedgerDescriptor handle = handles.getHandle(ledgerId, key);
 
@@ -527,7 +493,8 @@ public class Bookie extends Thread {
         LOG.debug("I'm starting a bookie with journal directory " + journalDirectory.getName());
         super.start();
         syncThread.start();
-        gcThread.start();
+
+        ledgerStorage.start();
         // set running here.
         // since bookie server use running as a flag to tell bookie server whether it is alive
         // if setting it in bookie thread, the watcher might run before bookie thread.
@@ -584,13 +551,12 @@ public class Bookie extends Thread {
             BKMBeanRegistry.getInstance().register(jmxBookieBean, parent);
 
             try {
-                jmxLedgerCacheBean = this.ledgerCache.getJMXBean();
-                BKMBeanRegistry.getInstance().register(jmxLedgerCacheBean, jmxBookieBean);
+                jmxLedgerStorageBean = this.ledgerStorage.getJMXBean();
+                BKMBeanRegistry.getInstance().register(jmxLedgerStorageBean, jmxBookieBean);
             } catch (Exception e) {
                 LOG.warn("Failed to register with JMX for ledger cache", e);
-                jmxLedgerCacheBean = null;
+                jmxLedgerStorageBean = null;
             }
-
         } catch (Exception e) {
             LOG.warn("Failed to register with JMX", e);
             jmxBookieBean = null;
@@ -602,8 +568,8 @@ public class Bookie extends Thread {
      */
     public void unregisterJMX() {
         try {
-            if (jmxLedgerCacheBean != null) {
-                BKMBeanRegistry.getInstance().unregister(jmxLedgerCacheBean);
+            if (jmxLedgerStorageBean != null) {
+                BKMBeanRegistry.getInstance().unregister(jmxLedgerStorageBean);
             }
         } catch (Exception e) {
             LOG.warn("Failed to unregister with JMX", e);
@@ -616,7 +582,7 @@ public class Bookie extends Thread {
             LOG.warn("Failed to unregister with JMX", e);
         }
         jmxBookieBean = null;
-        jmxLedgerCacheBean = null;
+        jmxLedgerStorageBean = null;
     }
 
 
@@ -940,17 +906,16 @@ public class Bookie extends Thread {
                 this.exitCode = exitCode;
                 // mark bookie as in shutting down progress
                 shuttingdown = true;
-                // shut down gc thread, which depends on zookeeper client
-                // also compaction will write entries again to entry log file
-                gcThread.shutdown();
+
+                // Shutdown the EntryLogger which has the GarbageCollector Thread running
+                ledgerStorage.shutdown();
+
                 // Shutdown the ZK client
                 if(zk != null) zk.close();
                 this.interrupt();
                 this.join();
                 syncThread.shutdown();
 
-                // Shutdown the EntryLogger which has the GarbageCollector Thread running
-                entryLogger.shutdown();
                 // close Ledger Manager
                 ledgerManager.close();
                 // setting running to false here, so watch thread in bookie server know it only after bookie shut down
@@ -998,7 +963,7 @@ public class Bookie extends Thread {
 
     protected void addEntryByLedgerId(long ledgerId, ByteBuffer entry)
         throws IOException, BookieException {
-        byte[] key = ledgerCache.readMasterKey(ledgerId);
+        byte[] key = ledgerStorage.readMasterKey(ledgerId);
         LedgerDescriptor handle = handles.getHandle(ledgerId, key);
         handle.addEntry(entry);
     }

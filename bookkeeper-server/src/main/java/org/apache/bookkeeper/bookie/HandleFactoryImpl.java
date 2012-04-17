@@ -29,12 +29,10 @@ class HandleFactoryImpl implements HandleFactory {
     HashMap<Long, LedgerDescriptor> readOnlyLedgers
         = new HashMap<Long, LedgerDescriptor>();
 
-    final EntryLogger entryLogger;
-    final LedgerCache ledgerCache;
+    final LedgerStorage ledgerStorage;
 
-    HandleFactoryImpl(EntryLogger entryLogger, LedgerCache ledgerCache) {
-        this.entryLogger = entryLogger;
-        this.ledgerCache = ledgerCache;
+    HandleFactoryImpl(LedgerStorage ledgerStorage) {
+        this.ledgerStorage = ledgerStorage;
     }
 
     @Override
@@ -44,8 +42,7 @@ class HandleFactoryImpl implements HandleFactory {
         synchronized (ledgers) {
             handle = ledgers.get(ledgerId);
             if (handle == null) {
-                handle = LedgerDescriptor.create(masterKey, ledgerId,
-                                                 entryLogger, ledgerCache);
+                handle = LedgerDescriptor.create(masterKey, ledgerId, ledgerStorage);
                 ledgers.put(ledgerId, handle);
             }
             handle.checkAccess(masterKey);
@@ -60,7 +57,7 @@ class HandleFactoryImpl implements HandleFactory {
         synchronized (ledgers) {
             handle = readOnlyLedgers.get(ledgerId);
             if (handle == null) {
-                handle = LedgerDescriptor.createReadOnly(ledgerId, entryLogger, ledgerCache);
+                handle = LedgerDescriptor.createReadOnly(ledgerId, ledgerStorage);
                 readOnlyLedgers.put(ledgerId, handle);
             }
         }

@@ -35,21 +35,19 @@ import org.slf4j.LoggerFactory;
 public abstract class LedgerDescriptor {
     static LedgerDescriptor create(byte[] masterKey,
                                    long ledgerId,
-                                   EntryLogger entryLogger,
-                                   LedgerCache ledgerCache) throws IOException {
-        LedgerDescriptor ledger = new LedgerDescriptorImpl(masterKey, ledgerId, entryLogger, ledgerCache);
-        ledgerCache.setMasterKey(ledgerId, masterKey);
+                                   LedgerStorage ledgerStorage) throws IOException {
+        LedgerDescriptor ledger = new LedgerDescriptorImpl(masterKey, ledgerId, ledgerStorage);
+        ledgerStorage.setMasterKey(ledgerId, masterKey);
         return ledger;
     }
 
     static LedgerDescriptor createReadOnly(long ledgerId,
-                                           EntryLogger entryLogger,
-                                           LedgerCache ledgerCache)
+                                           LedgerStorage ledgerStorage)
             throws IOException, Bookie.NoLedgerException {
-        if (!ledgerCache.ledgerExists(ledgerId)) {
+        if (!ledgerStorage.ledgerExists(ledgerId)) {
             throw new Bookie.NoLedgerException(ledgerId);
         }
-        return new LedgerDescriptorReadOnlyImpl(ledgerId, entryLogger, ledgerCache);
+        return new LedgerDescriptorReadOnlyImpl(ledgerId, ledgerStorage);
     }
 
     abstract void checkAccess(byte masterKey[]) throws BookieException, IOException;

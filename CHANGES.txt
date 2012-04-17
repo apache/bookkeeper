@@ -86,6 +86,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-216: Bookie doesn't exit with right exit code (sijie via ivank)
 
+        BOOKKEEPER-196: Define interface between bookie and ledger storage (ivank)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)

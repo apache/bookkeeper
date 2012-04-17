@@ -28,9 +28,8 @@ import java.nio.ByteBuffer;
  * to write entries to a ledger and read entries from a ledger.
  */
 public class LedgerDescriptorReadOnlyImpl extends LedgerDescriptorImpl {
-    LedgerDescriptorReadOnlyImpl(long ledgerId, EntryLogger entryLogger,
-            LedgerCache ledgerCache) {
-        super(null, ledgerId, entryLogger, ledgerCache);
+    LedgerDescriptorReadOnlyImpl(long ledgerId, LedgerStorage storage) {
+        super(null, ledgerId, storage);
     }
 
     @Override
