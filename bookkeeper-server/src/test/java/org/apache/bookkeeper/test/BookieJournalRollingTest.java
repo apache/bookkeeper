@@ -26,7 +26,6 @@ import java.util.List;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.bookie.Bookie.JournalIdFilter;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -171,13 +170,15 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
 
         // verify that we only keep at most journal files 
         for (File journalDir : tmpDirs) {
-            List<Long> logs = Bookie.listJournalIds(journalDir, new JournalIdFilter() {
-                @Override
-                public boolean accept(long journalId) {
-                    return true;
+            File[] journals = journalDir.listFiles();
+            int numJournals = 0;
+            for (File f : journals) {
+                if (!f.getName().endsWith(".txn")) {
+                    continue;
                 }
-            });
-            assertTrue(logs.size() <= 2);
+                ++numJournals;
+            }
+            assertTrue(numJournals <= 2);
         }
 
         // restart bookies 

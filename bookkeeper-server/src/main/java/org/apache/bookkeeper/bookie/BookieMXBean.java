@@ -20,8 +20,6 @@ package org.apache.bookkeeper.bookie;
 
 import java.io.File;
 
-import org.apache.bookkeeper.bookie.Bookie.LastLogMark;
-
 /**
  * Bookie MBean
  */

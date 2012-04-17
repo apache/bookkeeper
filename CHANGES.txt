@@ -130,6 +130,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-188: Garbage collection code is in the wrong place (ivank via sijie)
 
+        BOOKKEEPER-218: Provide journal manager to manage journal related operations (sijie)
+
       hedwig-server/
 
         BOOKKEEPER-77: Add a console client for hedwig (Sijie Guo via ivank)
