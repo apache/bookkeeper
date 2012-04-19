@@ -88,6 +88,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-196: Define interface between bookie and ledger storage (ivank)
 
+        BOOKKEEPER-213: PerChannelBookieClient calls the wrong errorOut function when encountering an exception (Aniruddha via sijie)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)

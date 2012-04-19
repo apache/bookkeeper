@@ -259,8 +259,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                 }
             });
         } catch (Throwable e) {
-            LOG.warn("Read entry operation failed", e);
-            errorOutReadKey(completionKey);
+            LOG.warn("Add entry operation failed", e);
+            errorOutAddKey(completionKey);
         }
     }
 
