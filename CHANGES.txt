@@ -134,6 +134,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-218: Provide journal manager to manage journal related operations (sijie)
 
+	BOOKKEEPER-173: Uncontrolled number of threads in bookkeeper (sijie via fpj)
+
       hedwig-server/
 
         BOOKKEEPER-77: Add a console client for hedwig (Sijie Guo via ivank)

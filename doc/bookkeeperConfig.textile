@@ -41,7 +41,7 @@ The important parameters are:
 * @journalDir@, Path for Log Device (stores bookie write-ahead log); 
 * @ledgerDir@, Path for Ledger Device (stores ledger entries); 
 
-p. Ideally, @journalDir@ and @ledgerDir@ are each in a different device. See "BookKeeper Configuration Parameters":./bookkeeperConfigParams.html for a full list of configuration parameters.
+p. Ideally, @journalDir@ and @ledgerDir@ are each in a different device. See "Bookie Configuration Parameters":./bookieConfigParams.html for a full list of configuration parameters.
 
 h3. Upgrading
 

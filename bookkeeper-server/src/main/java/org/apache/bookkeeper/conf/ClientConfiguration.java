@@ -40,6 +40,9 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String CLIENT_TCP_NODELAY = "clientTcpNoDelay";
     protected final static String READ_TIMEOUT = "readTimeout";
 
+    // Number Woker Threads
+    protected final static String NUM_WORKER_THREADS = "numWorkerThreads";
+
     /**
      * Construct a default client-side configuration
      */
@@ -233,6 +236,33 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setReadTimeout(int timeout) {
         setProperty(READ_TIMEOUT, Integer.toString(timeout));
+        return this;
+    }
+
+    /**
+     * Get the number of worker threads. This is the number of
+     * worker threads used by bookkeeper client to submit operations.
+     *
+     * @return the number of worker threads
+     */
+    public int getNumWorkerThreads() {
+        return getInt(NUM_WORKER_THREADS, Runtime.getRuntime().availableProcessors());
+    }
+
+    /**
+     * Set the number of worker threads.
+     *
+     * <p>
+     * NOTE: setting the number of worker threads after BookKeeper object is constructed
+     * will not take any effect on the number of threads in the pool.
+     * </p>
+     *
+     * @see #getNumWorkerThreads()
+     * @param numThreads number of worker threads used for bookkeeper
+     * @return client configuration
+     */
+    public ClientConfiguration setNumWorkerThreads(int numThreads) {
+        setProperty(NUM_WORKER_THREADS, numThreads);
         return this;
     }
 }
