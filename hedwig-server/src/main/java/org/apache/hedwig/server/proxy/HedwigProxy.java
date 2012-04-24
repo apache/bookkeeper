@@ -52,6 +52,7 @@ public class HedwigProxy {
     ChannelGroup allChannels;
     Map<OperationType, Handler> handlers;
     ProxyConfiguration cfg;
+    ChannelTracker tracker;
 
     public HedwigProxy(final ProxyConfiguration cfg, final UncaughtExceptionHandler exceptionHandler)
             throws InterruptedException {
@@ -87,9 +88,14 @@ public class HedwigProxy {
         this(conf, new TerminateJVMExceptionHandler());
     }
 
+    // used for testing
+    public ChannelTracker getChannelTracker() {
+        return tracker;
+    }
+
     protected void initializeHandlers() {
         handlers = new HashMap<OperationType, Handler>();
-        ChannelTracker tracker = new ChannelTracker(client.getSubscriber());
+        tracker = new ChannelTracker(client.getSubscriber());
 
         handlers.put(OperationType.PUBLISH, new ProxyPublishHander(client.getPublisher()));
         handlers.put(OperationType.SUBSCRIBE, new ProxySubscribeHandler(client.getSubscriber(), tracker));
@@ -128,6 +134,10 @@ public class HedwigProxy {
     // away once we make start delivery totally server-side
     public Handler getStartDeliveryHandler() {
         return handlers.get(OperationType.START_DELIVERY);
+    }
+
+    public Handler getStopDeliveryHandler() {
+        return handlers.get(OperationType.STOP_DELIVERY);
     }
 
     /**

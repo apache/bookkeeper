@@ -35,6 +35,7 @@ import org.apache.hedwig.client.api.MessageHandler;
 import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.exceptions.InvalidSubscriberIdException;
+import org.apache.hedwig.client.exceptions.AlreadyStartDeliveryException;
 import org.apache.hedwig.client.HedwigClient;
 import org.apache.hedwig.client.api.Client;
 import org.apache.hedwig.client.api.Publisher;
@@ -48,6 +49,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.ProtocolVersion;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
 import org.apache.hedwig.protocol.PubSubProtocol.StartDeliveryRequest;
+import org.apache.hedwig.protocol.PubSubProtocol.StopDeliveryRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
@@ -251,6 +253,20 @@ public class TestHedwigHub extends HedwigHubTestBase {
                                         StartDeliveryRequest.newBuilder().setSubscriberId(subscriberId)).build();
             proxy.getStartDeliveryHandler().handleRequest(request, channel);
             assertEquals(StatusCode.SUCCESS, ((PubSubResponse) channel.getMessagesWritten().get(0)).getStatusCode());
+        }
+    }
+
+    protected void stopDelivery(ByteString topic, ByteString subscriberId) throws Exception {
+        stopDelivery(subscriber, topic, subscriberId);
+    }
+
+    protected void stopDelivery(Subscriber subscriber, ByteString topic, ByteString subscriberId) throws Exception {
+        subscriber.stopDelivery(topic, subscriberId);
+        if (mode == Mode.PROXY) {
+            PubSubRequest request = PubSubRequest.newBuilder().setProtocolVersion(ProtocolVersion.VERSION_ONE)
+                                    .setTopic(topic).setTxnId(1).setType(OperationType.STOP_DELIVERY).setStopDeliveryRequest(
+                                        StopDeliveryRequest.newBuilder().setSubscriberId(subscriberId)).build();
+            proxy.getStopDeliveryHandler().handleRequest(request, proxy.getChannelTracker().getChannel(topic, subscriberId));
         }
     }
 
@@ -487,6 +503,20 @@ public class TestHedwigHub extends HedwigHubTestBase {
     }
 
     @Test
+    public void testStartDeliveryTwice() throws Exception {
+        ByteString topic = getTopic(0);
+        subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
+                                  null);
+        assertTrue(queue.take());
+        startDelivery(topic, localSubscriberId, new TestMessageHandler(consumeQueue));
+        try {
+            startDelivery(topic, localSubscriberId, new TestMessageHandler(consumeQueue));
+            fail("Should not reach here!");
+        } catch (AlreadyStartDeliveryException e) {
+        }
+    }
+
+    @Test
     public void testStopDelivery() throws Exception {
         ByteString topic = getTopic(0);
         subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
@@ -497,7 +527,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         assertTrue(queue.take());
         assertTrue(consumeQueue.take());
         // Stop the delivery for this subscription
-        subscriber.stopDelivery(topic, localSubscriberId);
+        stopDelivery(topic, localSubscriberId);
         // Publish some more messages so they are queued up to be delivered to
         // the client
         int batchSize = 10;

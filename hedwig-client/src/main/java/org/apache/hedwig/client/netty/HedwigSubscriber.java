@@ -34,6 +34,7 @@ import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.data.PubSubData;
 import org.apache.hedwig.client.data.TopicSubscriber;
+import org.apache.hedwig.client.exceptions.AlreadyStartDeliveryException;
 import org.apache.hedwig.client.exceptions.InvalidSubscriberIdException;
 import org.apache.hedwig.client.handlers.PubSubCallback;
 import org.apache.hedwig.exceptions.PubSubException;
@@ -67,6 +68,11 @@ public class HedwigSubscriber implements Subscriber {
     // it. We can also get the ResponseHandler tied to the Channel via the
     // Channel Pipeline.
     protected final ConcurrentMap<TopicSubscriber, Channel> topicSubscriber2Channel = new ConcurrentHashMap<TopicSubscriber, Channel>();
+
+    // Concurrent Map to store Message handler for each topic + sub id combination.
+    // Store it here instead of in SubscriberResponseHandler as we don't want to lose the handler
+    // user set when connection is recovered
+    protected final ConcurrentMap<TopicSubscriber, MessageHandler> topicSubscriber2MessageHandler= new ConcurrentHashMap<TopicSubscriber, MessageHandler>();
 
     protected final HedwigClientImpl client;
     protected final ClientConfiguration cfg;
@@ -463,7 +469,18 @@ public class HedwigSubscriber implements Subscriber {
     }
 
     public void startDelivery(final ByteString topic, final ByteString subscriberId, MessageHandler messageHandler)
-            throws ClientNotSubscribedException {
+            throws ClientNotSubscribedException, AlreadyStartDeliveryException {
+        startDelivery(topic, subscriberId, messageHandler, false);
+    }
+
+    public void restartDelivery(final ByteString topic, final ByteString subscriberId)
+        throws ClientNotSubscribedException, AlreadyStartDeliveryException {
+        startDelivery(topic, subscriberId, null, true);
+    }
+
+    private void startDelivery(final ByteString topic, final ByteString subscriberId,
+                               MessageHandler messageHandler, boolean restart)
+        throws ClientNotSubscribedException, AlreadyStartDeliveryException {
         if (logger.isDebugEnabled())
             logger.debug("Starting delivery for topic: " + topic.toStringUtf8() + ", subscriberId: "
                          + subscriberId.toStringUtf8());
@@ -482,6 +499,25 @@ public class HedwigSubscriber implements Subscriber {
         // Register the MessageHandler with the subscribe Channel's
         // Response Handler.
         Channel topicSubscriberChannel = topicSubscriber2Channel.get(topicSubscriber);
+
+        // Need to ensure the setting of handler and the readability of channel is in sync
+        // as there's a race condition that connection recovery and user might call this at the same time
+
+        MessageHandler existedMsgHandler = topicSubscriber2MessageHandler.get(topicSubscriber);
+        if (restart) {
+            // restart using existing msg handler 
+            messageHandler = existedMsgHandler;
+        } else {
+            // some has started delivery but not stop it
+            if (null != existedMsgHandler) {
+                throw new AlreadyStartDeliveryException("A message handler has been started for topic subscriber " + topicSubscriber);
+            }
+            if (messageHandler != null) {
+                if (null != topicSubscriber2MessageHandler.putIfAbsent(topicSubscriber, messageHandler)) {
+                    throw new AlreadyStartDeliveryException("Someone is also starting delivery for topic subscriber " + topicSubscriber);
+                }
+            }
+        }
         HedwigClientImpl.getResponseHandlerFromChannel(topicSubscriberChannel).getSubscribeResponseHandler()
         .setMessageHandler(messageHandler);
         // Now make the TopicSubscriber Channel readable (it is set to not be
@@ -521,6 +557,7 @@ public class HedwigSubscriber implements Subscriber {
         Channel topicSubscriberChannel = topicSubscriber2Channel.get(topicSubscriber);
         HedwigClientImpl.getResponseHandlerFromChannel(topicSubscriberChannel).getSubscribeResponseHandler()
         .setMessageHandler(null);
+        this.topicSubscriber2MessageHandler.remove(topicSubscriber);
         // Now make the TopicSubscriber channel not-readable. This will buffer
         // up messages if any are sent from the server. Note that this is an
         // asynchronous call. If this fails (not likely), the futureListener

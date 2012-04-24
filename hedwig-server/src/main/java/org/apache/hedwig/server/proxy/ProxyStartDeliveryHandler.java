@@ -26,6 +26,7 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.api.MessageHandler;
 import org.apache.hedwig.client.api.Subscriber;
+import org.apache.hedwig.client.exceptions.AlreadyStartDeliveryException;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
@@ -119,9 +120,10 @@ public class ProxyStartDeliveryHandler implements Handler {
                 // channel and so on
                 logger.error("Unexpected: No subscription when attempting to start delivery", e);
                 throw new RuntimeException(e);
+            } catch (AlreadyStartDeliveryException e) {
+                logger.error("Unexpected: Already start delivery when attempting to start delivery", e);
+                throw new RuntimeException(e);
             }
-
-
 
         }
 

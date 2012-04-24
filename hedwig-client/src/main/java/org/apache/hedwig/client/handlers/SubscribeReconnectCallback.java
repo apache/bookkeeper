@@ -25,9 +25,11 @@ import org.slf4j.LoggerFactory;
 import org.apache.hedwig.client.api.MessageHandler;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.data.PubSubData;
+import org.apache.hedwig.client.exceptions.AlreadyStartDeliveryException;
 import org.apache.hedwig.client.netty.HedwigClientImpl;
 import org.apache.hedwig.client.netty.HedwigSubscriber;
 import org.apache.hedwig.exceptions.PubSubException;
+
 import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException;
 import org.apache.hedwig.util.Callback;
 
@@ -48,15 +50,13 @@ public class SubscribeReconnectCallback implements Callback<Void> {
     private final HedwigClientImpl client;
     private final HedwigSubscriber sub;
     private final ClientConfiguration cfg;
-    private final MessageHandler messageHandler;
 
     // Constructor
-    public SubscribeReconnectCallback(PubSubData origSubData, HedwigClientImpl client, MessageHandler messageHandler) {
+    public SubscribeReconnectCallback(PubSubData origSubData, HedwigClientImpl client) {
         this.origSubData = origSubData;
         this.client = client;
         this.sub = client.getSubscriber();
         this.cfg = client.getConfiguration();
-        this.messageHandler = messageHandler;
     }
 
     class SubscribeReconnectRetryTask extends TimerTask {
@@ -77,17 +77,17 @@ public class SubscribeReconnectCallback implements Callback<Void> {
         // Now we want to restart delivery for the subscription channel only
         // if delivery was started at the time the original subscribe channel
         // was disconnected.
-        if (messageHandler != null) {
-            try {
-                sub.startDelivery(origSubData.topic, origSubData.subscriberId, messageHandler);
-            } catch (ClientNotSubscribedException e) {
-                // This exception should never be thrown here but just in case,
-                // log an error and just keep retrying the subscribe request.
-                logger.error("Subscribe was successful but error starting delivery for topic: "
-                             + origSubData.topic.toStringUtf8() + ", subscriberId: "
-                             + origSubData.subscriberId.toStringUtf8(), e);
-                retrySubscribeRequest();
-            }
+        try {
+            sub.restartDelivery(origSubData.topic, origSubData.subscriberId);
+        } catch (ClientNotSubscribedException e) {
+            // This exception should never be thrown here but just in case,
+            // log an error and just keep retrying the subscribe request.
+            logger.error("Subscribe was successful but error starting delivery for topic: "
+                         + origSubData.topic.toStringUtf8() + ", subscriberId: "
+                         + origSubData.subscriberId.toStringUtf8(), e);
+            retrySubscribeRequest();
+        } catch (AlreadyStartDeliveryException asde) {
+            // should not reach here
         }
     }
 

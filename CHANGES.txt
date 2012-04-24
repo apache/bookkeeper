@@ -102,6 +102,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-197: HedwigConsole uses the same file to load bookkeeper client config and hub server config (sijie)
 
+        BOOKKEEPER-56: Race condition of message handler in connection recovery in Hedwig client (sijie & Gavin Li via ivank)
+
       bookkeeper-benchmark/
 	
 	BOOKKEEPER-207: BenchBookie doesn't run correctly (ivank via fpj)

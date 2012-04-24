@@ -50,7 +50,7 @@ public class ProxyStopDeliveryHandler implements Handler {
         }
 
         final ByteString topic = request.getTopic();
-        final ByteString subscriberId = request.getStartDeliveryRequest().getSubscriberId();
+        final ByteString subscriberId = request.getStopDeliveryRequest().getSubscriberId();
 
         synchronized (tracker) {
             try {

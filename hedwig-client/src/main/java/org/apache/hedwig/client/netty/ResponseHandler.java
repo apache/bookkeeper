@@ -318,7 +318,7 @@ public class ResponseHandler extends SimpleChannelHandler {
             // hook so after the subscribe reconnect has completed, delivery for
             // that topic subscriber should also be restarted (if it was that
             // case before the channel disconnect).
-            origSubData.callback = new SubscribeReconnectCallback(origSubData, client, subHandler.getMessageHandler());
+            origSubData.callback = new SubscribeReconnectCallback(origSubData, client);
             origSubData.context = null;
             if (logger.isDebugEnabled())
                 logger.debug("Disconnected subscribe channel so reconnect with origSubData: " + origSubData);

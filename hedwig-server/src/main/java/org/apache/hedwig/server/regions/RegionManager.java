@@ -34,6 +34,7 @@ import org.apache.zookeeper.ZooKeeper;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.api.MessageHandler;
+import org.apache.hedwig.client.exceptions.AlreadyStartDeliveryException;
 import org.apache.hedwig.client.netty.HedwigSubscriber;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
@@ -243,6 +244,10 @@ public class RegionManager implements SubscriptionEventListener {
                         LOGGER.error(
                                 "[" + myRegion.toStringUtf8() + "] cross-region start-delivery failed for topic " + topic.toStringUtf8(), ex);
                     mcb.operationFailed(ctx, ex);
+                } catch (AlreadyStartDeliveryException ex) {
+                    LOGGER.error("[" + myRegion.toStringUtf8() + "] cross-region start-delivery failed for topic "
+                               + topic.toStringUtf8(), ex);
+                    mcb.operationFailed(ctx, new PubSubException.UnexpectedConditionException("cross-region start-delivery failed : " + ex.getMessage()));
                 }
             }
 

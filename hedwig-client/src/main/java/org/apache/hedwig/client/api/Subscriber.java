@@ -20,6 +20,7 @@ package org.apache.hedwig.client.api;
 import java.util.List;
 
 import com.google.protobuf.ByteString;
+import org.apache.hedwig.client.exceptions.AlreadyStartDeliveryException;
 import org.apache.hedwig.client.exceptions.InvalidSubscriberIdException;
 import org.apache.hedwig.exceptions.PubSubException.ClientAlreadySubscribedException;
 import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException;
@@ -232,9 +233,11 @@ public interface Subscriber {
      *            Message Handler that will consume the subscribed messages
      * @throws ClientNotSubscribedException
      *             If the client is not currently subscribed to the topic
+     * @throws AlreadyStartDeliveryException
+     *             If someone started delivery a message handler before stopping existed one.
      */
     public void startDelivery(ByteString topic, ByteString subscriberId, MessageHandler messageHandler)
-            throws ClientNotSubscribedException;
+            throws ClientNotSubscribedException, AlreadyStartDeliveryException;
 
     /**
      * Stop delivery of messages for this topic and subscriberId.
