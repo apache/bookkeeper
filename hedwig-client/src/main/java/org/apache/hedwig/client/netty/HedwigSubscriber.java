@@ -90,10 +90,17 @@ public class HedwigSubscriber implements Subscriber {
                           SubscriptionOptions options)
             throws CouldNotConnectException, ClientAlreadySubscribedException,
         ClientNotSubscribedException, ServiceDownException {
-        if (logger.isDebugEnabled())
-            logger.debug("Calling a sync subUnsub request for topic: " + topic.toStringUtf8() + ", subscriberId: "
-                         + subscriberId.toStringUtf8() + ", operationType: " + operationType + ", createOrAttach: "
-                         + options.getCreateOrAttach() + ", messageBound: " + options.getMessageBound());
+        if (logger.isDebugEnabled()) {
+            StringBuilder debugMsg = new StringBuilder().append("Calling a sync subUnsub request for topic: ")
+                                     .append(topic.toStringUtf8()).append(", subscriberId: ")
+                                     .append(subscriberId.toStringUtf8()).append(", operationType: ")
+                                     .append(operationType);
+            if (null != options) {
+                debugMsg.append(", createOrAttach: ").append(options.getCreateOrAttach())
+                        .append(", messageBound: ").append(options.getMessageBound());
+            }
+            logger.debug(debugMsg.toString());
+        }
         PubSubData pubSubData = new PubSubData(topic, null, subscriberId, operationType, options, null, null);
         synchronized (pubSubData) {
             PubSubCallback pubSubCallback = new PubSubCallback(pubSubData);
@@ -142,10 +149,17 @@ public class HedwigSubscriber implements Subscriber {
     // either SUBSCRIBE or UNSUBSCRIBE.
     private void asyncSubUnsub(ByteString topic, ByteString subscriberId, Callback<Void> callback, Object context,
                                OperationType operationType, SubscriptionOptions options) {
-        if (logger.isDebugEnabled())
-            logger.debug("Calling an async subUnsub request for topic: " + topic.toStringUtf8() + ", subscriberId: "
-                         + subscriberId.toStringUtf8() + ", operationType: " + operationType + ", createOrAttach: "
-                         + options.getCreateOrAttach() + ", messageBound: " + options.getMessageBound());
+        if (logger.isDebugEnabled()) {
+            StringBuilder debugMsg = new StringBuilder().append("Calling a async subUnsub request for topic: ")
+                                     .append(topic.toStringUtf8()).append(", subscriberId: ")
+                                     .append(subscriberId.toStringUtf8()).append(", operationType: ")
+                                     .append(operationType);
+            if (null != options) {
+                debugMsg.append(", createOrAttach: ").append(options.getCreateOrAttach())
+                        .append(", messageBound: ").append(options.getMessageBound());
+            }
+            logger.debug(debugMsg.toString());
+        }
         // Check if we know which server host is the master for the topic we are
         // subscribing to.
         PubSubData pubSubData = new PubSubData(topic, null, subscriberId, operationType, options, callback,

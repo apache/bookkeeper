@@ -90,6 +90,10 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-213: PerChannelBookieClient calls the wrong errorOut function when encountering an exception (Aniruddha via sijie)
 
+      hedwig-client/
+
+        BOOKKEEPER-217: NPE in hedwig client when enable DEBUG (sijie via ivank)
+
       hedwig-server/
       
         BOOKKEEPER-140: Hub server doesn't subscribe remote region correctly when a region is down. (Sijie Gou via ivank)
