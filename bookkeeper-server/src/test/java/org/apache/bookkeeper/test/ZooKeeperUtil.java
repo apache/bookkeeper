@@ -127,6 +127,9 @@ public class ZooKeeperUtil {
                        ClientBase.waitForServerDown(getZooKeeperConnectString(),
                                                     ClientBase.CONNECTION_TIMEOUT));
         }
+        if (zks != null) {
+            zks.getTxnLogFactory().close();
+        }
         // ServerStats.unregister();
         FileUtils.deleteDirectory(ZkTmpDir);
     }

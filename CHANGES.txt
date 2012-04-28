@@ -90,6 +90,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-213: PerChannelBookieClient calls the wrong errorOut function when encountering an exception (Aniruddha via sijie)
 
+        BOOKKEEPER-231: ZKUtil.killServer not closing the FileTxnSnapLog from ZK. (Uma Maheswara Rao G via sijie)
+
       hedwig-client/
 
         BOOKKEEPER-217: NPE in hedwig client when enable DEBUG (sijie via ivank)
