@@ -114,6 +114,8 @@ Trunk (unreleased changes)
 	
 	BOOKKEEPER-207: BenchBookie doesn't run correctly (ivank via fpj)
 
+        BOOKKEEPER-228: Fix the bugs in BK benchmark (umamaheswararao via ivank)
+
     IMPROVEMENTS:
 
       bookkeeper-server/

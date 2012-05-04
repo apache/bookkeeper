@@ -1,4 +1,3 @@
-package org.apache.bookkeeper.benchmark;
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,7 +18,7 @@ package org.apache.bookkeeper.benchmark;
  * under the License.
  *
  */
-
+package org.apache.bookkeeper.benchmark;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -173,8 +172,9 @@ public class TestClient
         }
         LOG.debug("Finished " + times + " async writes in ms: " + (System.currentTimeMillis() - start));
         synchronized (map) {
-            if(map.size() != 0)
-                map.wait();
+            while (map.size() != 0) {
+                map.wait(100);
+            }
         }
         LOG.debug("Finished processing in ms: " + (System.currentTimeMillis() - start));
 
@@ -194,15 +194,16 @@ public class TestClient
         }
         LOG.debug("Finished " + times + " async writes in ms: " + (System.currentTimeMillis() - start));
         synchronized (map) {
-            if(map.size() != 0)
-                map.wait();
+            while (map.size() != 0) {
+                map.wait(100);
+            }
         }
         LOG.debug("Finished processing writes (ms): " + (System.currentTimeMillis() - start));
 
-        Integer mon = Integer.valueOf(0);
-        synchronized(mon) {
-            lh.asyncReadEntries(1, times - 1, this, mon);
-            mon.wait();
+        Object syncObj = new Object();
+        synchronized(syncObj) {
+            lh.asyncReadEntries(1, times - 1, this, syncObj);
+            syncObj.wait();
         }
         LOG.error("Ended computation");
     }

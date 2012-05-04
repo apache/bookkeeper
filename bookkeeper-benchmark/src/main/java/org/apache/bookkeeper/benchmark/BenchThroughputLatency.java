@@ -20,7 +20,6 @@
 package org.apache.bookkeeper.benchmark;
 
 import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -34,12 +33,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -48,14 +51,8 @@ import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
-
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.PosixParser;
-import org.apache.commons.cli.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BenchThroughputLatency implements AddCallback, Runnable {
     static Logger LOG = LoggerFactory.getLogger(BenchThroughputLatency.class);
@@ -70,14 +67,13 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
     int numberOfLedgers = 1;
     final String servers;
 
-    class Context {
+    static class Context {
         long localStartTime;
-        long globalStartTime;
         long id;
 
         Context(long id, long time){
             this.id = id;
-            this.localStartTime = this.globalStartTime = time;
+            this.localStartTime = time;
         }
     }
 
@@ -85,7 +81,6 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
                                   int throttle, int numberOfLedgers, String servers) 
             throws KeeperException, IOException, InterruptedException {
         this.sem = new Semaphore(throttle);
-        this.pace = pace;
         this.throttle = throttle;
 
         ClientConfiguration conf = new ClientConfiguration();
@@ -148,7 +143,6 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         LOG.info("Running...");
         long start = previous = System.currentTimeMillis();
 
-        byte messageCount = 0;
         int sent = 0;
 
         Thread reporter = new Thread() {
@@ -193,8 +187,9 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         LOG.info("Sent: "  + sent);
         try {
             synchronized (this) {
-                while(this.counter.get() > 0)
-                    Thread.sleep(1000);
+                while (this.counter.get() > 0) {
+                    waitFor(1000);
+                }
             }
         } catch(InterruptedException e) {
             LOG.error("Interrupted while waiting", e);
@@ -202,7 +197,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         synchronized(this) {
             duration = System.currentTimeMillis() - start;
         }
-        throughput = sent*1000/duration;
+        throughput = sent*1000/getDuration();
 
         reporter.interrupt();
         try {
@@ -210,7 +205,11 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         } catch (InterruptedException ie) {
             // ignore
         }
-        LOG.info("Finished processing in ms: " + duration + " tp = " + throughput);
+        LOG.info("Finished processing in ms: " + getDuration() + " tp = " + throughput);
+    }
+
+    private void waitFor(int waitTime) throws InterruptedException {
+        Thread.sleep(waitTime);
     }
 
     long throughput = -1;
@@ -291,11 +290,8 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         byte data[] = new byte[entrysize];
         Arrays.fill(data, (byte)'x');
 
-        while(lastWarmUpTP < (throughput = warmUp(servers, data, ledgers, ensemble, quorum, passwd, throttle))) {
+        if(lastWarmUpTP < (throughput = warmUp(servers, data, ledgers, ensemble, quorum, passwd, throttle))) {
             LOG.info("Warmup tp: " + throughput);
-            lastWarmUpTP = throughput;
-            // we will just run once, so lets break
-            break;
         }
         LOG.info("Warmup phase finished");
 
