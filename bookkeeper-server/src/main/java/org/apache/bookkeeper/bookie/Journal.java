@@ -34,6 +34,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -449,11 +450,10 @@ class Journal extends Thread {
     public void run() {
         LinkedList<QueueEntry> toFlush = new LinkedList<QueueEntry>();
         ByteBuffer lenBuff = ByteBuffer.allocate(4);
+        JournalChannel logFile = null;
         try {
             long logId = 0;
-            JournalChannel logFile = null;
             BufferedChannel bc = null;
-            long nextPrealloc = 0;
             long lastFlushPosition = 0;
 
             QueueEntry qe = null;
@@ -515,8 +515,12 @@ class Journal extends Thread {
                 toFlush.add(qe);
                 qe = null;
             }
+            logFile.close();
+            logFile = null;
         } catch (Exception e) {
             LOG.warn("Journal exits when shutting down", e);
+        } finally {
+            IOUtils.close(LOG, logFile);
         }
     }
 

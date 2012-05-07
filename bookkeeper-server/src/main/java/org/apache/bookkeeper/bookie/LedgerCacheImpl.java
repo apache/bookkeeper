@@ -33,6 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Map.Entry;
 
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -759,5 +760,15 @@ public class LedgerCacheImpl implements LedgerCache {
                 return openLedgers.size();
             }
         };
+    }
+
+    @Override
+    public void close() throws IOException {
+        for (Entry<Long, FileInfo> fileInfo : fileInfoCache.entrySet()) {
+            FileInfo value = fileInfo.getValue();
+            if (value != null) {
+                value.close(true);
+            }
+        }
     }
 }

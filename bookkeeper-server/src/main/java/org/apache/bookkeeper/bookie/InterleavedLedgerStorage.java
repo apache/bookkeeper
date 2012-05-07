@@ -68,6 +68,11 @@ class InterleavedLedgerStorage implements LedgerStorage {
         // also compaction will write entries again to entry log file
         gcThread.shutdown();
         entryLogger.shutdown();
+        try {
+            ledgerCache.close();
+        } catch (IOException e) {
+            LOG.error("Error while closing the ledger cache", e);
+        }
     }
 
     @Override

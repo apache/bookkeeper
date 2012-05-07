@@ -23,6 +23,7 @@ package org.apache.bookkeeper.bookie;
 
 import java.util.Arrays;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.io.IOException;
@@ -36,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * Simple wrapper around FileChannel to add versioning
  * information to the file.
  */
-class JournalChannel {
+class JournalChannel implements Closeable {
     static Logger LOG = LoggerFactory.getLogger(JournalChannel.class);
 
     final FileChannel fc;
@@ -151,7 +152,7 @@ class JournalChannel {
         return fc.read(dst);
     }
 
-    void close() throws IOException {
+    public void close() throws IOException {
         fc.close();
     }
 }

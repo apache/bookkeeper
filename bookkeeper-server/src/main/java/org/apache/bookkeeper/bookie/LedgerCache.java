@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 /**
@@ -28,7 +29,7 @@ import java.io.IOException;
  * an entry log file. It does user level caching to more efficiently manage disk
  * head scheduling.
  */
-interface LedgerCache {
+interface LedgerCache extends Closeable {
     void setMasterKey(long ledgerId, byte[] masterKey) throws IOException;
     byte[] readMasterKey(long ledgerId) throws IOException, BookieException;
     boolean ledgerExists(long ledgerId) throws IOException;

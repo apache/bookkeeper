@@ -38,13 +38,13 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.util.IOUtils;
 
 /**
  * This class manages the writing of the bookkeeper entries. All the new
@@ -437,9 +437,14 @@ public class EntryLogger {
         // since logChannel is buffered channel, do flush when shutting down
         try {
             flush();
+            logChannel.getFileChannel().close();
         } catch (IOException ie) {
             // we have no idea how to avoid io exception during shutting down, so just ignore it
             LOG.error("Error flush entry log during shutting down, which may cause entry log corrupted.", ie);
+        } finally {
+            if (logChannel.getFileChannel().isOpen()) {
+                IOUtils.close(LOG, logChannel.getFileChannel());
+            }
         }
     }
 

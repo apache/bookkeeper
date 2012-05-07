@@ -92,6 +92,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-231: ZKUtil.killServer not closing the FileTxnSnapLog from ZK. (Uma Maheswara Rao G via sijie)
 
+        BOOKKEEPER-232: AsyncBK tests failing (umamaheswararao via ivank)
+
       hedwig-client/
 
         BOOKKEEPER-217: NPE in hedwig client when enable DEBUG (sijie via ivank)
