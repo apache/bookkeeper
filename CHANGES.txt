@@ -94,6 +94,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-232: AsyncBK tests failing (umamaheswararao via ivank)
 
+	BOOKKEEPER-229: Deleted entry log files would be garbage collected again and again. (sijie via fpj)
+
       hedwig-client/
 
         BOOKKEEPER-217: NPE in hedwig client when enable DEBUG (sijie via ivank)

@@ -30,6 +30,7 @@ import java.util.HashMap;
 import junit.framework.TestCase;
 
 import org.apache.bookkeeper.bookie.GarbageCollectorThread.EntryLogMetadata;
+import org.apache.bookkeeper.bookie.GarbageCollectorThread.ExtractionScanner;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.junit.After;
 import org.junit.Before;
@@ -71,8 +72,14 @@ public class EntryLogTest extends TestCase {
         // now see which ledgers are in the log
         logger = new EntryLogger(conf);
 
-        EntryLogMetadata meta =
-            GarbageCollectorThread.extractMetaFromEntryLog(logger, 0L);
+        EntryLogMetadata meta = new EntryLogMetadata(0L);
+        ExtractionScanner scanner = new ExtractionScanner(meta);
+
+        try {
+            logger.scanEntryLog(0L, scanner);
+            fail("Should not reach here!");
+        } catch (IOException ie) {
+        }
 
         LOG.info("Extracted Meta From Entry Log {}", meta);
         assertNotNull(meta.ledgersMap.get(1L));

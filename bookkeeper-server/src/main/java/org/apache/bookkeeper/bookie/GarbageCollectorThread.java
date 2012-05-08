@@ -186,11 +186,7 @@ public class GarbageCollectorThread extends Thread {
 
             // Extract all of the ledger ID's that comprise all of the entry logs
             // (except for the current new one which is still being written to).
-            try {
-                entryLogMetaMap = extractMetaFromEntryLogs(entryLogMetaMap);
-            } catch (IOException ie) {
-                LOG.warn("Exception when extracting entry log meta from entry logs : ", ie);
-            }
+            entryLogMetaMap = extractMetaFromEntryLogs(entryLogMetaMap);
 
             // gc inactive/deleted ledgers
             doGcLedgers();
@@ -457,8 +453,7 @@ public class GarbageCollectorThread extends Thread {
      *          Existing EntryLogs to Meta
      * @throws IOException
      */
-    protected Map<Long, EntryLogMetadata> extractMetaFromEntryLogs(Map<Long, EntryLogMetadata> entryLogMetaMap)
-            throws IOException {
+    protected Map<Long, EntryLogMetadata> extractMetaFromEntryLogs(Map<Long, EntryLogMetadata> entryLogMetaMap) {
         // Extract it for every entry log except for the current one.
         // Entry Log ID's are just a long value that starts at 0 and increments
         // by 1 when the log fills up and we roll to a new one.
@@ -470,9 +465,14 @@ public class GarbageCollectorThread extends Thread {
             }
             LOG.info("Extracting entry log meta from entryLogId: " + entryLogId);
 
-            // Read through the entry log file and extract the entry log meta
-            entryLogMetaMap.put(entryLogId,
-                                extractMetaFromEntryLog(entryLogger, entryLogId));
+            try {
+                // Read through the entry log file and extract the entry log meta
+                EntryLogMetadata entryLogMeta = extractMetaFromEntryLog(entryLogger, entryLogId);
+                entryLogMetaMap.put(entryLogId, entryLogMeta);
+            } catch (IOException e) {
+                LOG.warn("Premature exception when processing " + entryLogId +
+                         "recovery will take care of the problem", e);
+            }
         }
         return entryLogMetaMap;
     }
@@ -481,16 +481,10 @@ public class GarbageCollectorThread extends Thread {
             throws IOException {
         EntryLogMetadata entryLogMeta = new EntryLogMetadata(entryLogId);
         ExtractionScanner scanner = new ExtractionScanner(entryLogMeta);
-        try {
-            // Read through the entry log file and extract the entry log meta
-            entryLogger.scanEntryLog(entryLogId, scanner);
-            LOG.info("Retrieved entry log meta data entryLogId: "
-                     + entryLogId + ", meta: " + entryLogMeta);
-        } catch(IOException e) {
-            LOG.warn("Premature exception when processing " + entryLogId +
-                     "recovery will take care of the problem", e);
-        }
-
+        // Read through the entry log file and extract the entry log meta
+        entryLogger.scanEntryLog(entryLogId, scanner);
+        LOG.info("Retrieved entry log meta data entryLogId: "
+                 + entryLogId + ", meta: " + entryLogMeta);
         return entryLogMeta;
     }
 }
