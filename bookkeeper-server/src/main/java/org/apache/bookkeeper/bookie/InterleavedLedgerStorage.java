@@ -136,29 +136,27 @@ class InterleavedLedgerStorage implements LedgerStorage {
 
     @Override
     public void flush() throws IOException {
-        synchronized (entryLogger) {
-            if (!somethingWritten) {
-                return;
-            }
-            somethingWritten = false;
-            boolean flushFailed = false;
+        if (!somethingWritten) {
+            return;
+        }
+        somethingWritten = false;
+        boolean flushFailed = false;
 
-            try {
-                ledgerCache.flushLedger(true);
-            } catch (IOException ioe) {
-                LOG.error("Exception flushing Ledger cache", ioe);
-                flushFailed = true;
-            }
-            
-            try {
-                entryLogger.flush();
-            } catch (IOException ioe) {
-                LOG.error("Exception flushing Ledger", ioe);
-                flushFailed = true;
-            }
-            if (flushFailed) {
-                throw new IOException("Flushing to storage failed, check logs");
-            }
+        try {
+            ledgerCache.flushLedger(true);
+        } catch (IOException ioe) {
+            LOG.error("Exception flushing Ledger cache", ioe);
+            flushFailed = true;
+        }
+
+        try {
+            entryLogger.flush();
+        } catch (IOException ioe) {
+            LOG.error("Exception flushing Ledger", ioe);
+            flushFailed = true;
+        }
+        if (flushFailed) {
+            throw new IOException("Flushing to storage failed, check logs");
         }
     }
 

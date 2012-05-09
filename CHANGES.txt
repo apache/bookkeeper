@@ -100,6 +100,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-234: EntryLogger will throw NPE, if any dir does not exist or IO Errors. (umamaheswararao via ivank)
 
+	BOOKKEEPER-235: Bad syncing in entrylogger degrades performance for many concurrent ledgers (ivank via fpj)
+
       hedwig-client/
 
         BOOKKEEPER-217: NPE in hedwig client when enable DEBUG (sijie via ivank)
