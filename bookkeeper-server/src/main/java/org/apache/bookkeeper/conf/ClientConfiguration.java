@@ -17,7 +17,11 @@
  */
 package org.apache.bookkeeper.conf;
 
+import java.util.List;
+
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Configuration settings for client side
@@ -182,7 +186,11 @@ public class ClientConfiguration extends AbstractConfiguration {
      * @return zookeeper servers
      */
     public String getZkServers() {
-        return getString(ZK_SERVERS, "localhost");
+        List<Object> servers = getList(ZK_SERVERS, null);
+        if (null == servers || 0 == servers.size()) {
+            return "localhost";
+        }
+        return StringUtils.join(servers, ",");
     }
 
     /**

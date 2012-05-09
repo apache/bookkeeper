@@ -96,6 +96,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-229: Deleted entry log files would be garbage collected again and again. (sijie via fpj)
 
+        BOOKKEEPER-242: Bookkeeper not able to connect other zookeeper when shutdown the zookeeper server where the BK has connected. (sijie & rakeshr via ivank)
+
       hedwig-client/
 
         BOOKKEEPER-217: NPE in hedwig client when enable DEBUG (sijie via ivank)

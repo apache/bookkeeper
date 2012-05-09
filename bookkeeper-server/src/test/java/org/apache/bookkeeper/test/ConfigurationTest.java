@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.test;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 
 import junit.framework.TestCase;
 
@@ -51,5 +52,16 @@ public class ConfigurationTest extends TestCase {
         assertEquals("newserver", newConf.getZkServers());
         conf2.loadConf(newConf);
         assertEquals("newserver", conf2.getZkServers());
+    }
+
+    @Test
+    public void testGetZkServers() {
+        System.setProperty("zkServers", "server1:port1,server2:port2");
+        ServerConfiguration conf = new ServerConfiguration();
+        ClientConfiguration clientConf = new ClientConfiguration();
+        assertEquals("zookeeper connect string doesn't match in server configuration",
+                     "server1:port1,server2:port2", conf.getZkServers());
+        assertEquals("zookeeper connect string doesn't match in client configuration",
+                     "server1:port1,server2:port2", clientConf.getZkServers());
     }
 }
