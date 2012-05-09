@@ -50,6 +50,18 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+       <groupId>org.apache.hadoop</groupId>
+       <artifactId>hadoop-common</artifactId>
+       <version>0.23.1</version>
+       <scope>compile</scope>
+    </dependency>
+    <dependency>
+       <groupId>org.apache.hadoop</groupId>
+       <artifactId>hadoop-hdfs</artifactId>
+       <version>0.23.1</version>
+       <scope>compile</scope>
+    </dependency>
+    <dependency>
     	<groupId>org.apache.zookeeper</groupId>
     	<artifactId>zookeeper</artifactId>
     	<version>3.4.0</version>

@@ -31,6 +31,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -62,10 +64,9 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
     AtomicLong counter;
 
     Semaphore sem;
-    int pace;
-    int throttle;
     int numberOfLedgers = 1;
-    final String servers;
+    final int sendLimit;
+    final long latencies[];
 
     static class Context {
         long localStartTime;
@@ -78,24 +79,19 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
     }
 
     public BenchThroughputLatency(int ensemble, int qSize, byte[] passwd,
-                                  int throttle, int numberOfLedgers, String servers) 
+            int numberOfLedgers, int sendLimit, ClientConfiguration conf)
             throws KeeperException, IOException, InterruptedException {
-        this.sem = new Semaphore(throttle);
-        this.throttle = throttle;
-
-        ClientConfiguration conf = new ClientConfiguration();
-        conf.setThrottleValue(100000);
-        conf.setZkServers(servers);
-        this.servers = servers;
-
+        this.sem = new Semaphore(conf.getThrottleValue());
         bk = new BookKeeper(conf);
         this.counter = new AtomicLong(0);
         this.numberOfLedgers = numberOfLedgers;
+        this.sendLimit = sendLimit;
+        this.latencies = new long[sendLimit];
         try{
             lh = new LedgerHandle[this.numberOfLedgers];
 
             for(int i = 0; i < this.numberOfLedgers; i++) {
-                lh[i] = bk.createLedger(ensemble, qSize, BookKeeper.DigestType.CRC32, 
+                lh[i] = bk.createLedger(ensemble, qSize, BookKeeper.DigestType.CRC32,
                                         passwd);
                 LOG.info("Ledger Handle: " + lh[i].getId());
             }
@@ -124,15 +120,8 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
          return rand.nextInt(numberOfLedgers);
     }
 
-    int sendLimit = 2000000;
-    long latencies[] = new long[sendLimit];
     int latencyIndex = -1;
     AtomicLong completedRequests = new AtomicLong(0);
-
-    public void setSendLimit(int sendLimit) {
-        this.sendLimit = sendLimit;
-        latencies = new long[sendLimit];
-    }
 
     long duration = -1;
     synchronized public long getDuration() {
@@ -149,7 +138,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
                 public void run() {
                     try {
                         while(true) {
-                            Thread.sleep(200);
+                            Thread.sleep(1000);
                             LOG.info("ms: {} req: {}", System.currentTimeMillis(), completedRequests.getAndSet(0));
                         }
                     } catch (InterruptedException ie) {
@@ -186,9 +175,12 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         }
         LOG.info("Sent: "  + sent);
         try {
-            synchronized (this) {
-                while (this.counter.get() > 0) {
-                    waitFor(1000);
+            int i = 0;
+            while(this.counter.get() > 0) {
+                Thread.sleep(1000);
+                i++;
+                if (i > 30) {
+                    break;
                 }
             }
         } catch(InterruptedException e) {
@@ -206,10 +198,6 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
             // ignore
         }
         LOG.info("Finished processing in ms: " + getDuration() + " tp = " + throughput);
-    }
-
-    private void waitFor(int waitTime) throws InterruptedException {
-        Thread.sleep(waitTime);
     }
 
     long throughput = -1;
@@ -232,9 +220,10 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         sem.release();
         counter.decrementAndGet();
 
-        latencies[(int)entryId] = newTime;
-
-        completedRequests.incrementAndGet();
+        if (rc == 0) {
+            latencies[(int)entryId] = newTime;
+            completedRequests.incrementAndGet();
+        }
     }
 
     public static void main(String[] args)
@@ -248,7 +237,11 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         options.addOption("ledgers", true, "Number of ledgers, default 1");
         options.addOption("zookeeper", true, "Zookeeper ensemble, default \"localhost:2181\"");
         options.addOption("password", true, "Password used to create ledgers (default 'benchPasswd')");
-        options.addOption("coord_node", true, "Coordination znode for multi client benchmarks (optional)");
+        options.addOption("coordnode", true, "Coordination znode for multi client benchmarks (optional)");
+        options.addOption("timeout", true, "Number of seconds after which to give up");
+        options.addOption("sockettimeout", true, "Socket timeout for bookkeeper client. In seconds. Default 5");
+        options.addOption("skipwarmup", false, "Skip warm up, default false");
+        options.addOption("sendlimit", true, "Max number of entries to send. Default 20000000");
         options.addOption("help", false, "This message");
 
         CommandLineParser parser = new PosixParser();
@@ -268,9 +261,24 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         int ensemble = Integer.valueOf(cmd.getOptionValue("ensemble", "3"));
         int quorum = Integer.valueOf(cmd.getOptionValue("quorum", "2"));
         int throttle = Integer.valueOf(cmd.getOptionValue("throttle", "10000"));
+        int sendLimit = Integer.valueOf(cmd.getOptionValue("sendlimit", "20000000"));
 
-        String coordinationZnode = cmd.getOptionValue("coord_node");
+        final int sockTimeout = Integer.valueOf(cmd.getOptionValue("sockettimeout", "5"));
+
+        String coordinationZnode = cmd.getOptionValue("coordnode");
         final byte[] passwd = cmd.getOptionValue("password", "benchPasswd").getBytes();
+
+        Timer timeouter = new Timer();
+        if (cmd.hasOption("timeout")) {
+            final long timeout = Long.valueOf(cmd.getOptionValue("timeout", "360")) * 1000;
+
+            timeouter.schedule(new TimerTask() {
+                    public void run() {
+                        System.err.println("Timing out benchmark after " + timeout + "ms");
+                        System.exit(-1);
+                    }
+                }, timeout);
+        }
 
         LOG.warn("(Parameters received) running time: " + runningTime +
                 ", entry size: " + entrysize + ", ensemble size: " + ensemble +
@@ -284,19 +292,25 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         // Do a warmup run
         Thread thread;
 
-        long lastWarmUpTP = -1;
-        long throughput;
-        LOG.info("Starting warmup");
         byte data[] = new byte[entrysize];
         Arrays.fill(data, (byte)'x');
 
-        if(lastWarmUpTP < (throughput = warmUp(servers, data, ledgers, ensemble, quorum, passwd, throttle))) {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setThrottleValue(throttle).setReadTimeout(sockTimeout).setZkServers(servers);
+
+        if (!cmd.hasOption("skipwarmup")) {
+            long throughput;
+            LOG.info("Starting warmup");
+
+            throughput = warmUp(data, ledgers, ensemble, quorum, passwd, conf);
             LOG.info("Warmup tp: " + throughput);
+            LOG.info("Warmup phase finished");
         }
-        LOG.info("Warmup phase finished");
+
 
         // Now do the benchmark
-        BenchThroughputLatency bench = new BenchThroughputLatency(ensemble, quorum, passwd, throttle, ledgers, servers);
+        BenchThroughputLatency bench = new BenchThroughputLatency(ensemble, quorum, passwd,
+                                                                  ledgers, sendLimit, conf);
         bench.setEntryData(data);
         thread = new Thread(bench);
         ZooKeeper zk = null;
@@ -336,18 +350,31 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         thread.join();
 
         LOG.info("Calculating percentiles");
-        ArrayList<Long> latency = new ArrayList<Long>();
+
+        int numlat = 0;
         for(int i = 0; i < bench.latencies.length; i++) {
             if (bench.latencies[i] > 0) {
-                latency.add(bench.latencies[i]);
+                numlat++;
             }
         }
-        double tp = (double)latency.size()*1000.0/(double)bench.getDuration();
-        LOG.info(latency.size() + " completions in " + bench.getDuration() + " seconds: " + tp + " ops/sec");
+        int numcompletions = numlat;
+        numlat = Math.min(bench.sendLimit, numlat);
+        long[] latency = new long[numlat];
+        int j =0;
+        for(int i = 0; i < bench.latencies.length && j < numlat; i++) {
+            if (bench.latencies[i] > 0) {
+                latency[j++] = bench.latencies[i];
+            }
+        }
+        Arrays.sort(latency);
+
+        long tp = (long)((double)(numcompletions*1000.0)/(double)bench.getDuration());
+
+        LOG.info(numcompletions + " completions in " + bench.getDuration() + " seconds: " + tp + " ops/sec");
 
         if (zk != null) {
-            zk.create(coordinationZnode + "/worker-", 
-                      ("tp " + tp + " duration " + bench.getDuration()).getBytes(), 
+            zk.create(coordinationZnode + "/worker-",
+                      ("tp " + tp + " duration " + bench.getDuration()).getBytes(),
                       ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
             zk.close();
         }
@@ -362,32 +389,33 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         fos.close();
 
         // now get the latencies
-        Collections.sort(latency);
         LOG.info("99th percentile latency: {}", percentile(latency, 99));
         LOG.info("95th percentile latency: {}", percentile(latency, 95));
 
         bench.close();
+        timeouter.cancel();
     }
 
-    private static double percentile(ArrayList<Long> latency, int percentile) {
-        int size = latency.size();
+    private static double percentile(long[] latency, int percentile) {
+        int size = latency.length;
         int sampleSize = (size * percentile) / 100;
         long total = 0;
         int count = 0;
         for(int i = 0; i < sampleSize; i++) {
-            total += latency.get(i);
+            total += latency[i];
             count++;
         }
         return ((double)total/(double)count)/1000000.0;
     }
 
-    private static long warmUp(String servers, byte[] data,
-                               int ledgers, int ensemble, int qSize, byte[] passwd, int throttle)
+    private static long warmUp(byte[] data, int ledgers, int ensemble, int qSize,
+                               byte[] passwd, ClientConfiguration conf)
             throws KeeperException, IOException, InterruptedException, BKException {
         final CountDownLatch connectLatch = new CountDownLatch(1);
         final int bookies;
         ZooKeeper zk = null;
         try {
+            final String servers = conf.getZkServers();
             zk = new ZooKeeper(servers, 15000, new Watcher() {
                     @Override
                     public void process(WatchedEvent event) {
@@ -407,10 +435,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         }
 
         BenchThroughputLatency warmup = new BenchThroughputLatency(bookies, bookies, passwd,
-                                                                   throttle, ledgers, servers);
-        int limit = 50000;
-
-        warmup.setSendLimit(limit);
+                ledgers, 50000, conf);
         warmup.setEntryData(data);
         Thread thread = new Thread(warmup);
         thread.start();

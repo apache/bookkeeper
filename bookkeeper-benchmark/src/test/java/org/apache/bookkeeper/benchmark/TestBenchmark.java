@@ -115,7 +115,10 @@ public class TestBenchmark {
     @Test
     public void testThroughputLatency() throws Exception {
         BenchThroughputLatency.main(new String[] {
-                "--time", "10"
+                "--time", "10",
+                "--skipwarmup",
+                "--throttle", "1",
+                "--sendlimit", "10000"
             });
     }
 

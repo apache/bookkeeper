@@ -75,7 +75,7 @@ public class BenchReadThroughputLatency {
         }
     };
 
-    private static void readLedger(String zkservers, long ledgerId, byte[] passwd) {
+    private static void readLedger(ClientConfiguration conf, long ledgerId, byte[] passwd) {
         LOG.info("Reading ledger {}", ledgerId);
         BookKeeper bk = null;
         long time = 0;
@@ -83,13 +83,14 @@ public class BenchReadThroughputLatency {
         long lastRead = 0;
         int nochange = 0;
 
+        long absoluteLimit = 5000000;
         LedgerHandle lh = null;
         try {
-            bk = new BookKeeper(zkservers);
+            bk = new BookKeeper(conf);
             while (true) {
                 lh = bk.openLedgerNoRecovery(ledgerId, BookKeeper.DigestType.CRC32, 
                                              passwd);
-                long lastConfirmed = lh.getLastAddConfirmed();
+                long lastConfirmed = Math.min(lh.getLastAddConfirmed(), absoluteLimit);
                 if (lastConfirmed == lastRead) {
                     nochange++;
                     if (nochange == 10) {
@@ -103,13 +104,17 @@ public class BenchReadThroughputLatency {
                 }
                 long starttime = System.nanoTime();
 
-                Enumeration<LedgerEntry> entries = lh.readEntries(lastRead+1, lastConfirmed);
-                lastRead = lastConfirmed;
-                while (entries.hasMoreElements()) {
-                    LedgerEntry e = entries.nextElement();
-                    entriesRead++;
-                    if ((entriesRead % 10000) == 0) {
-                        LOG.info("{} entries read", entriesRead);
+                while (lastRead < lastConfirmed) {
+                    long nextLimit = lastRead + 100000;
+                    long readTo = Math.min(nextLimit, lastConfirmed);
+                    Enumeration<LedgerEntry> entries = lh.readEntries(lastRead+1, readTo);
+                    lastRead = readTo;
+                    while (entries.hasMoreElements()) {
+                        LedgerEntry e = entries.nextElement();
+                        entriesRead++;
+                        if ((entriesRead % 10000) == 0) {
+                            LOG.info("{} entries read", entriesRead);
+                        }
                     }
                 }
                 long endtime = System.nanoTime();
@@ -151,6 +156,7 @@ public class BenchReadThroughputLatency {
         options.addOption("listen", true, "Listen for creation of <arg> ledgers, and read each one fully");
         options.addOption("password", true, "Password used to access ledgers (default 'benchPasswd')");
         options.addOption("zookeeper", true, "Zookeeper ensemble, default \"localhost:2181\"");
+        options.addOption("sockettimeout", true, "Socket timeout for bookkeeper client. In seconds. Default 5");
         options.addOption("help", false, "This message");
 
         CommandLineParser parser = new PosixParser();
@@ -163,6 +169,7 @@ public class BenchReadThroughputLatency {
 
         final String servers = cmd.getOptionValue("zookeeper", "localhost:2181");
         final byte[] passwd = cmd.getOptionValue("password", "benchPasswd").getBytes();
+        final int sockTimeout = Integer.valueOf(cmd.getOptionValue("sockettimeout", "5"));
         if (cmd.hasOption("ledger") && cmd.hasOption("listen")) {
             LOG.error("Cannot used -ledger and -listen together");
             usage(options);
@@ -185,6 +192,10 @@ public class BenchReadThroughputLatency {
         final CountDownLatch connectedLatch = new CountDownLatch(1);
         final String nodepath = String.format("/ledgers/L%010d", ledger.get());
 
+        final ClientConfiguration conf = new ClientConfiguration();
+        conf.setReadTimeout(sockTimeout).setZkServers(servers);
+
+
         final ZooKeeper zk = new ZooKeeper(servers, 3000, new Watcher() {
                 public void process(WatchedEvent event) {
                     if (event.getState() == Event.KeeperState.SyncConnected
@@ -202,7 +213,7 @@ public class BenchReadThroughputLatency {
                                 connectedLatch.countDown();
                             } else if (event.getType() == Event.EventType.NodeCreated
                                        && event.getPath().equals(nodepath)) {
-                                readLedger(servers, ledger.get(), passwd);
+                                readLedger(conf, ledger.get(), passwd);
                                 shutdownLatch.countDown();
                             } else if (event.getType() == Event.EventType.NodeChildrenChanged) {
                                 if (numLedgers.get() < 0) {
@@ -222,7 +233,7 @@ public class BenchReadThroughputLatency {
                                     int ledgersLeft = numLedgers.decrementAndGet();
                                     Thread t = new Thread() {
                                             public void run() {
-                                                readLedger(servers, Long.valueOf(m.group(1)), passwd);
+                                                readLedger(conf, Long.valueOf(m.group(1)), passwd);
                                             }
                                         };
                                     t.start();
@@ -243,7 +254,7 @@ public class BenchReadThroughputLatency {
             connectedLatch.await();
             if (ledger.get() != 0) {
                 if (zk.exists(nodepath, true) != null) {
-                    readLedger(servers, ledger.get(), passwd);
+                    readLedger(conf, ledger.get(), passwd);
                     shutdownLatch.countDown();
                 } else {
                     LOG.info("Watching for creation of" + nodepath);

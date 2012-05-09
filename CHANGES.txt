@@ -173,6 +173,8 @@ Trunk (unreleased changes)
       bookkeeper-benchmark/
 	BOOKKEEPER-158: Move latest benchmarking code into trunk (ivank via fpj)
 
+	BOOKKEEPER-236: Benchmarking improvements from latest round of benchmarking (ivank via fpj)
+
 Release 4.0.0 - 2011-11-30
 
   Non-backward compatible changes:

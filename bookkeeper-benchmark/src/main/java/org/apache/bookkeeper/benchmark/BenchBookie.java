@@ -122,7 +122,8 @@ public class BenchBookie {
         Options options = new Options();
         options.addOption("host", true, "Hostname or IP of bookie to benchmark");
         options.addOption("port", true, "Port of bookie to benchmark (default 3181)");
-        options.addOption("zookeeper", true, "Zookeeper ensemble, default \"localhost:2181\"");
+        options.addOption("zookeeper", true, "Zookeeper ensemble, (default \"localhost:2181\")");
+        options.addOption("size", true, "Size of message to send, in bytes (default 1024)");
         options.addOption("help", false, "This message");
 
         CommandLineParser parser = new PosixParser();
@@ -136,6 +137,7 @@ public class BenchBookie {
 
         String addr = cmd.getOptionValue("host");
         int port = Integer.valueOf(cmd.getOptionValue("port", "3181"));
+        int size = Integer.valueOf(cmd.getOptionValue("size", "1024"));
         String servers = cmd.getOptionValue("zookeeper", "localhost:2181");
 
 
@@ -154,7 +156,7 @@ public class BenchBookie {
 
         long ledger = getValidLedgerId(servers);
         for(long entry = 0; entry < warmUpCount; entry++) {
-            ChannelBuffer toSend = ChannelBuffers.buffer(128);
+            ChannelBuffer toSend = ChannelBuffers.buffer(size);
             toSend.resetReaderIndex();
             toSend.resetWriterIndex();
             toSend.writeLong(ledger);
@@ -171,7 +173,7 @@ public class BenchBookie {
         int entryCount = 5000;
         long startTime = System.nanoTime();
         for(long entry = 0; entry < entryCount; entry++) {
-            ChannelBuffer toSend = ChannelBuffers.buffer(128);
+            ChannelBuffer toSend = ChannelBuffers.buffer(size);
             toSend.resetReaderIndex();
             toSend.resetWriterIndex();
             toSend.writeLong(ledger);
@@ -192,7 +194,7 @@ public class BenchBookie {
         startTime = System.currentTimeMillis();
         tc = new ThroughputCallback();
         for(long entry = 0; entry < entryCount; entry++) {
-            ChannelBuffer toSend = ChannelBuffers.buffer(128);
+            ChannelBuffer toSend = ChannelBuffers.buffer(size);
             toSend.resetReaderIndex();
             toSend.resetWriterIndex();
             toSend.writeLong(ledger);
@@ -204,6 +206,10 @@ public class BenchBookie {
         tc.waitFor(entryCount);
         endTime = System.currentTimeMillis();
         LOG.info("Throughput: " + ((long)entryCount)*1000/(endTime-startTime));
+
+        bc.close();
+        channelFactory.releaseExternalResources();
+        executor.shutdown();
     }
 
 }

@@ -23,12 +23,27 @@ package org.apache.bookkeeper.benchmark;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import java.util.concurrent.Future;;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -38,84 +53,29 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.zookeeper.KeeperException;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.Path;
+
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.PosixParser;
+import org.apache.commons.cli.ParseException;
+
+
 /**
  * This is a simple test program to compare the performance of writing to
  * BookKeeper and to the local file system.
  *
  */
 
-public class TestClient
-    implements AddCallback, ReadCallback {
+public class TestClient {
     private static final Logger LOG = LoggerFactory.getLogger(TestClient.class);
 
-    BookKeeper x;
-    LedgerHandle lh;
-    Integer entryId;
-    HashMap<Integer, Integer> map;
-
-    FileOutputStream fStream;
-    FileOutputStream fStreamLocal;
-    long start, lastId;
-
-    public TestClient() {
-        entryId = 0;
-        map = new HashMap<Integer, Integer>();
-    }
-
-    public TestClient(String servers) throws KeeperException, IOException, InterruptedException {
-        this();
-        x = new BookKeeper(servers);
-        try {
-            lh = x.createLedger(DigestType.MAC, new byte[] {'a', 'b'});
-        } catch (BKException e) {
-            LOG.error(e.toString());
-        }
-    }
-
-    public TestClient(String servers, int ensSize, int qSize)
-            throws KeeperException, IOException, InterruptedException {
-        this();
-        x = new BookKeeper(servers);
-        try {
-            lh = x.createLedger(ensSize, qSize, DigestType.MAC, new byte[] {'a', 'b'});
-        } catch (BKException e) {
-            LOG.error(e.toString());
-        }
-    }
-
-    public TestClient(FileOutputStream fStream)
-            throws FileNotFoundException {
-        this.fStream = fStream;
-        this.fStreamLocal = new FileOutputStream("./local.log");
-    }
-
-
-    public Integer getFreshEntryId(int val) {
-        ++this.entryId;
-        synchronized (map) {
-            map.put(this.entryId, val);
-        }
-        return this.entryId;
-    }
-
-    public boolean removeEntryId(Integer id) {
-        boolean retVal = false;
-        synchronized (map) {
-            map.remove(id);
-            retVal = true;
-
-            if(map.size() == 0) map.notifyAll();
-            else {
-                if(map.size() < 4)
-                    LOG.error(map.toString());
-            }
-        }
-        return retVal;
-    }
-
-    public void closeHandle() throws KeeperException, InterruptedException, BKException {
-        lh.close();
-    }
     /**
      * First says if entries should be written to BookKeeper (0) or to the local
      * disk (1). Second parameter is an integer defining the length of a ledger entry.
@@ -123,123 +83,286 @@ public class TestClient
      *
      * @param args
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ParseException {
+        Options options = new Options();
+        options.addOption("length", true, "Length of packets being written. Default 1024");
+        options.addOption("target", true, "Target medium to write to. Options are bk, fs & hdfs. Default fs");
+        options.addOption("runfor", true, "Number of seconds to run for. Default 60");
+        options.addOption("path", true, "Path to write to. fs & hdfs only. Default /foobar");
+        options.addOption("zkservers", true, "ZooKeeper servers, comma separated. bk only. Default localhost:2181.");
+        options.addOption("bkensemble", true, "BookKeeper ledger ensemble size. bk only. Default 3");
+        options.addOption("bkquorum", true, "BookKeeper ledger quorum size. bk only. Default 2");
+        options.addOption("bkthrottle", true, "BookKeeper throttle size. bk only. Default 10000");
+        options.addOption("sync", false, "Use synchronous writes with BookKeeper. bk only.");
+        options.addOption("numconcurrent", true, "Number of concurrently clients. Default 1");
+        options.addOption("timeout", true, "Number of seconds after which to give up");
+        options.addOption("help", false, "This message");
 
-        int lenght = Integer.parseInt(args[1]);
+        CommandLineParser parser = new PosixParser();
+        CommandLine cmd = parser.parse(options, args);
+
+        if (cmd.hasOption("help")) {
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp("TestClient <options>", options);
+            System.exit(-1);
+        }
+
+        int length = Integer.valueOf(cmd.getOptionValue("length", "1024"));
+        String target = cmd.getOptionValue("target", "fs");
+        long runfor = Long.valueOf(cmd.getOptionValue("runfor", "60")) * 1000;
+
         StringBuilder sb = new StringBuilder();
-        while(lenght-- > 0) {
+        while(length-- > 0) {
             sb.append('a');
         }
 
-        Integer selection = Integer.parseInt(args[0]);
-        switch(selection) {
-        case 0:
-            StringBuilder servers_sb = new StringBuilder();
-            for (int i = 4; i < args.length; i++) {
-                servers_sb.append(args[i] + " ");
-            }
+        Timer timeouter = new Timer();
+        if (cmd.hasOption("timeout")) {
+            final long timeout = Long.valueOf(cmd.getOptionValue("timeout", "360")) * 1000;
 
-            String servers = servers_sb.toString().trim().replace(' ', ',');
-            try {
-                TestClient c = new TestClient(servers, Integer.parseInt(args[3]), Integer.parseInt(args[4]));
-                c.writeSameEntryBatch(sb.toString().getBytes(), Integer.parseInt(args[2]));
-                //c.writeConsecutiveEntriesBatch(Integer.parseInt(args[0]));
-                c.closeHandle();
-            } catch (Exception e) {
-                LOG.error("Exception occurred", e);
-            } 
-            break;
-        case 1:
-
-            try {
-                TestClient c = new TestClient(new FileOutputStream(args[2]));
-                c.writeSameEntryBatchFS(sb.toString().getBytes(), Integer.parseInt(args[3]));
-            } catch(FileNotFoundException e) {
-                LOG.error("File not found", e);
-            }
-            break;
-        case 2:
-            break;
+            timeouter.schedule(new TimerTask() {
+                    public void run() {
+                        System.err.println("Timing out benchmark after " + timeout + "ms");
+                        System.exit(-1);
+                    }
+                }, timeout);
         }
-    }
 
-    void writeSameEntryBatch(byte[] data, int times) throws InterruptedException {
-        start = System.currentTimeMillis();
-        int count = times;
-        LOG.debug("Data: " + new String(data) + ", " + data.length);
-        while(count-- > 0) {
-            lh.asyncAddEntry(data, this, this.getFreshEntryId(2));
-        }
-        LOG.debug("Finished " + times + " async writes in ms: " + (System.currentTimeMillis() - start));
-        synchronized (map) {
-            while (map.size() != 0) {
-                map.wait(100);
-            }
-        }
-        LOG.debug("Finished processing in ms: " + (System.currentTimeMillis() - start));
-
-        LOG.debug("Ended computation");
-    }
-
-    void writeConsecutiveEntriesBatch(int times) throws InterruptedException {
-        start = System.currentTimeMillis();
-        int count = times;
-        while(count-- > 0) {
-            byte[] write = new byte[2];
-            int j = count%100;
-            int k = (count+1)%100;
-            write[0] = (byte) j;
-            write[1] = (byte) k;
-            lh.asyncAddEntry(write, this, this.getFreshEntryId(2));
-        }
-        LOG.debug("Finished " + times + " async writes in ms: " + (System.currentTimeMillis() - start));
-        synchronized (map) {
-            while (map.size() != 0) {
-                map.wait(100);
-            }
-        }
-        LOG.debug("Finished processing writes (ms): " + (System.currentTimeMillis() - start));
-
-        Object syncObj = new Object();
-        synchronized(syncObj) {
-            lh.asyncReadEntries(1, times - 1, this, syncObj);
-            syncObj.wait();
-        }
-        LOG.error("Ended computation");
-    }
-
-    void writeSameEntryBatchFS(byte[] data, int times) {
-        int count = times;
-        LOG.debug("Data: " + data.length + ", " + times);
+        BookKeeper bkc = null;
         try {
-            start = System.currentTimeMillis();
-            while(count-- > 0) {
-                fStream.write(data);
-                fStreamLocal.write(data);
-                fStream.flush();
+            int numFiles = Integer.valueOf(cmd.getOptionValue("numconcurrent", "1"));
+            int numThreads = Math.min(numFiles, 1000);
+            byte[] data = sb.toString().getBytes();
+            long runid = System.currentTimeMillis();
+            List<Callable<Long>> clients = new ArrayList<Callable<Long>>();
+
+            if (target.equals("bk")) {
+                String zkservers = cmd.getOptionValue("zkservers", "localhost:2181");
+                int bkensemble = Integer.valueOf(cmd.getOptionValue("bkensemble", "3"));
+                int bkquorum = Integer.valueOf(cmd.getOptionValue("bkquorum", "2"));
+                int bkthrottle = Integer.valueOf(cmd.getOptionValue("bkthrottle", "10000"));
+
+                ClientConfiguration conf = new ClientConfiguration();
+                conf.setThrottleValue(bkthrottle);
+                conf.setZkServers(zkservers);
+
+                bkc = new BookKeeper(conf);
+                List<LedgerHandle> handles = new ArrayList<LedgerHandle>();
+                for (int i = 0; i < numFiles; i++) {
+                    handles.add(bkc.createLedger(bkensemble, bkquorum, DigestType.CRC32, new byte[] {'a', 'b'}));
+                }
+                for (int i = 0; i < numFiles; i++) {
+                    clients.add(new BKClient(handles, data, runfor, cmd.hasOption("sync")));
+                }
+            } else if (target.equals("hdfs")) {
+                FileSystem fs = FileSystem.get(new Configuration());
+                LOG.info("Default replication for HDFS: {}", fs.getDefaultReplication());
+
+                List<FSDataOutputStream> streams = new ArrayList<FSDataOutputStream>();
+                for (int i = 0; i < numFiles; i++) {
+                    String path = cmd.getOptionValue("path", "/foobar");
+                    streams.add(fs.create(new Path(path + runid + "_" + i)));
+                }
+
+                for (int i = 0; i < numThreads; i++) {
+                    clients.add(new HDFSClient(streams, data, runfor));
+                }
+            } else if (target.equals("fs")) {
+                List<FileOutputStream> streams = new ArrayList<FileOutputStream>();
+                for (int i = 0; i < numFiles; i++) {
+                    String path = cmd.getOptionValue("path", "/foobar " + i);
+                    streams.add(new FileOutputStream(path + runid + "_" + i));
+                }
+
+                for (int i = 0; i < numThreads; i++) {
+                    clients.add(new FileClient(streams, data, runfor));
+                }
+            } else {
+                LOG.error("Unknown option: " + target);
+                throw new IllegalArgumentException("Unknown target " + target);
             }
-            fStream.close();
-            System.out.println("Finished processing writes (ms): " + (System.currentTimeMillis() - start));
-        } catch(IOException e) {
-            LOG.error("IOException occurred", e);
+
+            ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+            long start = System.currentTimeMillis();
+
+            List<Future<Long>> results = executor.invokeAll(clients,
+                                                            10, TimeUnit.MINUTES);
+            long end = System.currentTimeMillis();
+            long count = 0;
+            for (Future<Long> r : results) {
+                if (!r.isDone()) {
+                    LOG.warn("Job didn't complete");
+                    System.exit(2);
+                }
+                long c = r.get();
+                if (c == 0) {
+                    LOG.warn("Task didn't complete");
+                }
+                count += c;
+            }
+            long time = end-start;
+            LOG.info("Finished processing writes (ms): {} TPT: {} op/s",
+                     time, count/((double)time/1000));
+            executor.shutdown();
+        } catch (ExecutionException ee) {
+            LOG.error("Exception in worker", ee);
+        }  catch (KeeperException ke) {
+            LOG.error("Error accessing zookeeper", ke);
+        } catch (BKException e) {
+            LOG.error("Error accessing bookkeeper", e);
+        } catch (IOException ioe) {
+            LOG.error("I/O exception during benchmark", ioe);
+        } catch (InterruptedException ie) {
+            LOG.error("Benchmark interrupted", ie);
+        } finally {
+            if (bkc != null) {
+                try {
+                    bkc.close();
+                } catch (BKException bke) {
+                    LOG.error("Error closing bookkeeper client", bke);
+                } catch (InterruptedException ie) {
+                    LOG.warn("Interrupted closing bookkeeper client", ie);
+                }
+            }
+        }
+        timeouter.cancel();
+    }
+
+    static class HDFSClient implements Callable<Long> {
+        final List<FSDataOutputStream> streams;
+        final byte[] data;
+        final long time;
+        final Random r;
+
+        HDFSClient(List<FSDataOutputStream> streams, byte[] data, long time) {
+            this.streams = streams;
+            this.data = data;
+            this.time = time;
+            this.r = new Random(System.identityHashCode(this));
+        }
+
+        public Long call() {
+            try {
+                long count = 0;
+                long start = System.currentTimeMillis();
+                long stopat = start + time;
+                while(System.currentTimeMillis() < stopat) {
+                    FSDataOutputStream stream = streams.get(r.nextInt(streams.size()));
+                    synchronized(stream) {
+                        stream.write(data);
+                        stream.flush();
+                        stream.hflush();
+                    }
+                    count++;
+                }
+
+                long time = (System.currentTimeMillis() - start);
+                LOG.info("Worker finished processing writes (ms): {} TPT: {} op/s",
+                         time, count/((double)time/1000));
+                return count;
+            } catch(IOException ioe) {
+                LOG.error("Exception in worker thread", ioe);
+                return 0L;
+            }
         }
     }
 
+    static class FileClient implements Callable<Long> {
+        final List<FileOutputStream> streams;
+        final byte[] data;
+        final long time;
+        final Random r;
 
-    @Override
-    public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-        this.removeEntryId((Integer) ctx);
+        FileClient(List<FileOutputStream> streams, byte[] data, long time) {
+            this.streams = streams;
+            this.data = data;
+            this.time = time;
+            this.r = new Random(System.identityHashCode(this));
+        }
+
+        public Long call() {
+            try {
+                long count = 0;
+                long start = System.currentTimeMillis();
+
+                long stopat = start + time;
+                while(System.currentTimeMillis() < stopat) {
+                    FileOutputStream stream = streams.get(r.nextInt(streams.size()));
+                    synchronized(stream) {
+                        stream.write(data);
+                        stream.flush();
+                        stream.getChannel().force(false);
+                    }
+                    count++;
+                }
+
+                long time = (System.currentTimeMillis() - start);
+                LOG.info("Worker finished processing writes (ms): {} TPT: {} op/s", time, count/((double)time/1000));
+                return count;
+            } catch(IOException ioe) {
+                LOG.error("Exception in worker thread", ioe);
+                return 0L;
+            }
+        }
     }
 
-    @Override
-    public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
-        System.out.println("Read callback: " + rc);
-        while(seq.hasMoreElements()) {
-            LedgerEntry le = seq.nextElement();
-            LOG.debug(new String(le.getEntry()));
+    static class BKClient implements Callable<Long>, AddCallback {
+        final List<LedgerHandle> handles;
+        final byte[] data;
+        final long time;
+        final Random r;
+        final boolean sync;
+        final AtomicLong success = new AtomicLong(0);
+        final AtomicLong outstanding = new AtomicLong(0);
+
+        BKClient(List<LedgerHandle> handles, byte[] data, long time, boolean sync) {
+            this.handles = handles;
+            this.data = data;
+            this.time = time;
+            this.r = new Random(System.identityHashCode(this));
+            this.sync = sync;
         }
-        synchronized(ctx) {
-            ctx.notify();
+
+        public Long call() {
+            try {
+                long start = System.currentTimeMillis();
+
+                long stopat = start + time;
+                while(System.currentTimeMillis() < stopat) {
+                    LedgerHandle lh = handles.get(r.nextInt(handles.size()));
+                    if (sync) {
+                        lh.addEntry(data);
+                        success.incrementAndGet();
+                    } else {
+                        lh.asyncAddEntry(data, this, null);
+                        outstanding.incrementAndGet();
+                    }
+                }
+
+                int ticks = 10; // don't wait for more than 10 seconds
+                while (outstanding.get() > 0 && ticks-- > 0) {
+                    Thread.sleep(10);
+                }
+
+                long time = (System.currentTimeMillis() - start);
+                LOG.info("Worker finished processing writes (ms): {} TPT: {} op/s",
+                         time, success.get()/((double)time/1000));
+                return success.get();
+            } catch (BKException e) {
+                LOG.error("Exception in worker thread", e);
+                return 0L;
+            } catch (InterruptedException ie) {
+                LOG.error("Exception in worker thread", ie);
+                return 0L;
+            }
+        }
+
+        @Override
+        public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+            if (rc == BKException.Code.OK) {
+                success.incrementAndGet();
+            }
+            outstanding.decrementAndGet();
         }
     }
 }

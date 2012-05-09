@@ -27,10 +27,19 @@ import org.jboss.netty.logging.InternalLoggerFactory;
 import org.jboss.netty.logging.Log4JLoggerFactory;
 
 import com.google.protobuf.ByteString;
+import org.apache.hedwig.util.HedwigSocketAddress;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.HedwigClient;
 import org.apache.hedwig.client.api.Publisher;
 import org.apache.hedwig.client.api.Subscriber;
+
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.PosixParser;
+import org.apache.commons.cli.ParseException;
 
 public class HedwigBenchmark implements Callable<Void> {
     protected static final Logger logger = LoggerFactory.getLogger(HedwigBenchmark.class);
@@ -40,11 +49,13 @@ public class HedwigBenchmark implements Callable<Void> {
     private final HedwigClient client;
     private final Publisher publisher;
     private final Subscriber subscriber;
+    private final CommandLine cmd;
 
-    public HedwigBenchmark(ClientConfiguration cfg) {
+    public HedwigBenchmark(ClientConfiguration cfg, CommandLine cmd) {
         client = new HedwigClient(cfg);
         publisher = client.getPublisher();
         subscriber = client.getSubscriber();
+        this.cmd = cmd;
     }
 
     static boolean amIResponsibleForTopic(int topicNum, int partitionIndex, int numPartitions) {
@@ -59,24 +70,24 @@ public class HedwigBenchmark implements Callable<Void> {
         //
 
         // What program to run: pub, sub (subscription benchmark), recv.
-        final String mode = System.getProperty("mode","");
+        final String mode = cmd.getOptionValue("mode","");
 
         // Number of requests to make (publishes or subscribes).
-        int numTopics = Integer.getInteger("nTopics", 50);
-        int numMessages = Integer.getInteger("nMsgs", 1000);
-        int numRegions = Integer.getInteger("nRegions", 1);
-        int startTopicLabel = Integer.getInteger("startTopicLabel", 0);
-        int partitionIndex = Integer.getInteger("partitionIndex", 0);
-        int numPartitions = Integer.getInteger("nPartitions", 1);
+        int numTopics = Integer.valueOf(cmd.getOptionValue("nTopics", "50"));
+        int numMessages = Integer.valueOf(cmd.getOptionValue("nMsgs", "1000"));
+        int numRegions = Integer.valueOf(cmd.getOptionValue("nRegions", "1"));
+        int startTopicLabel = Integer.valueOf(cmd.getOptionValue("startTopicLabel", "0"));
+        int partitionIndex = Integer.valueOf(cmd.getOptionValue("partitionIndex", "0"));
+        int numPartitions = Integer.valueOf(cmd.getOptionValue("nPartitions", "1"));
 
-        int replicaIndex = Integer.getInteger("replicaIndex", 0);
+        int replicaIndex = Integer.valueOf(cmd.getOptionValue("replicaIndex", "0"));
 
-        int rate = Integer.getInteger("rate", 0);
-        int nParallel = Integer.getInteger("npar", 100);
-        int msgSize = Integer.getInteger("msgSize", 1024);
+        int rate = Integer.valueOf(cmd.getOptionValue("rate", "0"));
+        int nParallel = Integer.valueOf(cmd.getOptionValue("npar", "100"));
+        int msgSize = Integer.valueOf(cmd.getOptionValue("msgSize", "1024"));
 
         // Number of warmup subscriptions to make.
-        final int nWarmups = Integer.getInteger("nwarmups", 1000);
+        final int nWarmups = Integer.valueOf(cmd.getOptionValue("nwarmups", "1000"));
 
         if (mode.equals("sub")) {
             BenchmarkSubscriber benchmarkSub = new BenchmarkSubscriber(numTopics, 0, 1, startTopicLabel, 0, 1,
@@ -108,19 +119,45 @@ public class HedwigBenchmark implements Callable<Void> {
     }
 
     public static void main(String[] args) throws Exception {
-        ClientConfiguration cfg = new ClientConfiguration();
-        if (args.length > 0) {
-            String confFile = args[0];
-            try {
-                cfg.loadConf(new File(confFile).toURI().toURL());
-            } catch (ConfigurationException e) {
-                throw new RuntimeException(e);
-            }
+        Options options = new Options();
+        options.addOption("mode", true, "sub, recv, or pub");
+        options.addOption("nTopics", true, "Number of topics, default 50");
+        options.addOption("nMsgs", true, "Number of messages, default 1000");
+        options.addOption("nRegions", true, "Number of regsions, default 1");
+        options.addOption("startTopicLabel", true,
+                          "Prefix of topic labels. Must be numeric. Default 0");
+        options.addOption("partitionIndex", true, "If partitioning, the partition index for this client");
+        options.addOption("nPartitions", true, "Number of partitions, default 1");
+        options.addOption("replicaIndex", true, "default 0");
+        options.addOption("rate", true, "default 0");
+        options.addOption("npar", true, "default 100");
+        options.addOption("msgSize", true, "Size of messages, default 1024");
+        options.addOption("nwarmups", true, "Number of warmup messages, default 1000");
+        options.addOption("defaultHub", true, "Default hedwig hub to connect to, default localhost:4080");
+
+        CommandLineParser parser = new PosixParser();
+        final CommandLine cmd = parser.parse(options, args);
+
+        if (cmd.hasOption("help")) {
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp("HedwigBenchmark <options>", options);
+            System.exit(-1);
         }
+
+        ClientConfiguration cfg = new ClientConfiguration() {
+                public HedwigSocketAddress getDefaultServerHedwigSocketAddress() {
+                    return new HedwigSocketAddress(cmd.getOptionValue("defaultHub",
+                                                                      "localhost:4080"));
+                }
+
+                public boolean isSSLEnabled() {
+                    return false;
+                }
+            };
 
         InternalLoggerFactory.setDefaultFactory(new Log4JLoggerFactory());
 
-        HedwigBenchmark app = new HedwigBenchmark(cfg);
+        HedwigBenchmark app = new HedwigBenchmark(cfg, cmd);
         app.call();
         System.exit(0);
     }
