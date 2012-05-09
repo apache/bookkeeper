@@ -115,8 +115,12 @@ public class EntryLogger {
         LOGFILE_HEADER.put("BKLO".getBytes());
         // Find the largest logId
         logId = -1;
-        for(File f: dirs) {
-            long lastLogId = getLastLogId(f);
+        for(File dir: dirs) {
+            if (!dir.exists()) {
+                throw new FileNotFoundException(
+                        "Entry log directory does not exist");
+            }
+            long lastLogId = getLastLogId(dir);
             if (lastLogId > logId) {
                 logId = lastLogId;
             }

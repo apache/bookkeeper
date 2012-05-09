@@ -98,6 +98,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-242: Bookkeeper not able to connect other zookeeper when shutdown the zookeeper server where the BK has connected. (sijie & rakeshr via ivank)
 
+        BOOKKEEPER-234: EntryLogger will throw NPE, if any dir does not exist or IO Errors. (umamaheswararao via ivank)
+
       hedwig-client/
 
         BOOKKEEPER-217: NPE in hedwig client when enable DEBUG (sijie via ivank)

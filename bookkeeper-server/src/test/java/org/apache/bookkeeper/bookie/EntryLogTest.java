@@ -21,11 +21,10 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.util.Map;
-import java.util.HashMap;
 
 import junit.framework.TestCase;
 
@@ -155,7 +154,28 @@ public class EntryLogTest extends TestCase {
         }
     }
 
-    
+    @Test
+    /** Test that EntryLogger Should fail with FNFE, if entry logger directories does not exist*/
+    public void testEntryLoggerShouldThrowFNFEIfDirectoriesDoesNotExist()
+            throws Exception {
+        File tmpDir = File.createTempFile("bkTest", ".dir");
+        tmpDir.delete();
+        ServerConfiguration conf = new ServerConfiguration();
+        conf.setLedgerDirNames(new String[] { tmpDir.toString() });
+        EntryLogger entryLogger = null;
+        try {
+            entryLogger = new EntryLogger(conf);
+            fail("Expecting FileNotFoundException");
+        } catch (FileNotFoundException e) {
+            assertEquals("Entry log directory does not exist", e
+                    .getLocalizedMessage());
+        } finally {
+            if (entryLogger != null) {
+                entryLogger.shutdown();
+            }
+        }
+    }
+
     @After
     public void tearDown() throws Exception {
     }
