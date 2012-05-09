@@ -18,11 +18,15 @@
 package org.apache.hedwig.server.persistence;
 
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
 import java.io.File;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -48,6 +52,40 @@ import org.slf4j.LoggerFactory;
 public class BookKeeperTestBase extends ZooKeeperTestBase {
     private static Logger LOG = LoggerFactory.getLogger(BookKeeperTestBase.class);
 
+    class TestBookie extends Bookie {
+        final long readDelay;
+
+        public TestBookie(ServerConfiguration conf, long readDelay)
+            throws IOException, KeeperException, InterruptedException, BookieException {
+            super(conf);
+            this.readDelay = readDelay;
+        }
+
+        @Override
+        public ByteBuffer readEntry(long ledgerId, long entryId)
+            throws IOException, NoLedgerException {
+            if (readDelay > 0) {
+                try {
+                    Thread.sleep(readDelay);
+                } catch (InterruptedException ie) {
+                }
+            }
+            return super.readEntry(ledgerId, entryId);
+        }
+    }
+
+    class TestBookieServer extends BookieServer {
+        public TestBookieServer(ServerConfiguration conf)
+            throws IOException, KeeperException, InterruptedException, BookieException {
+            super(conf);
+        }
+
+        protected Bookie newBookie(ServerConfiguration conf)
+            throws IOException, KeeperException, InterruptedException, BookieException {
+            return new TestBookie(conf, readDelay);
+        }
+    }
+
     // BookKeeper Server variables
     private List<BookieServer> bookiesList;
     private List<ServerConfiguration> bkConfsList;
@@ -57,6 +95,9 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
     // String constants used for creating the bookie server files.
     private static final String PREFIX = "bookie";
     private static final String SUFFIX = "test";
+
+    // readDelay
+    protected long readDelay;
 
     // Variable to decide how many bookie servers to set up.
     private final int numBookies;
@@ -68,7 +109,12 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
 
     // Constructor
     public BookKeeperTestBase(int numBookies) {
+        this(numBookies, 0L);
+    }
+
+    public BookKeeperTestBase(int numBookies, long readDelay) {
         this.numBookies = numBookies;
+        this.readDelay = readDelay;
     }
 
     public BookKeeperTestBase() {
@@ -168,7 +214,7 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
      *
      */
     private BookieServer startBookie(ServerConfiguration conf) throws Exception {
-        BookieServer server = new BookieServer(conf);
+        BookieServer server = new TestBookieServer(conf);
         server.start();
 
         int port = conf.getBookiePort();

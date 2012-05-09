@@ -44,6 +44,7 @@ public abstract class HedwigHubTestBase extends TestCase {
     // Default number of bookie servers to setup. Extending classes can
     // override this.
     protected int numBookies = 3;
+    protected long readDelay = 0L;
     protected BookKeeperTestBase bktb;
 
     // PubSubServer variables
@@ -132,7 +133,7 @@ public abstract class HedwigHubTestBase extends TestCase {
     @Before
     public void setUp() throws Exception {
         logger.info("STARTING " + getName());
-        bktb = new BookKeeperTestBase(numBookies);
+        bktb = new BookKeeperTestBase(numBookies, readDelay);
         bktb.setUp();
         startHubServers();
         logger.info("HedwigHub test setup finished");

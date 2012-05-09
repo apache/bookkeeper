@@ -72,9 +72,14 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     public BookieServer(ServerConfiguration conf) 
             throws IOException, KeeperException, InterruptedException, BookieException {
         this.conf = conf;
-        this.bookie = new Bookie(conf);
+        this.bookie = newBookie(conf);
 
         isStatsEnabled = conf.isStatisticsEnabled();
+    }
+
+    protected Bookie newBookie(ServerConfiguration conf)
+        throws IOException, KeeperException, InterruptedException, BookieException {
+        return new Bookie(conf);
     }
 
     public void start() throws IOException {

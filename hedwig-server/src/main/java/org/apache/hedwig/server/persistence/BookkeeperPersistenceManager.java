@@ -170,10 +170,16 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
         int numMessagesRead = 0;
         long totalSizeRead = 0;
         TopicInfo topicInfo;
+        long startSeqIdToScan;
 
         public RangeScanOp(RangeScanRequest request) {
+            this(request, -1L);
+        }
+
+        public RangeScanOp(RangeScanRequest request, long startSeqId) {
             queuer.super(request.topic);
             this.request = request;
+            this.startSeqIdToScan = startSeqId;
         }
 
         @Override
@@ -185,8 +191,9 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                 return;
             }
 
-            startReadingFrom(request.startSeqId);
-
+            // if startSeqIdToScan is less than zero, which means it is an unfinished scan request
+            // we continue the scan from the provided position
+            startReadingFrom(startSeqIdToScan < 0 ? request.startSeqId : startSeqIdToScan);
         }
 
         protected void read(final InMemoryLedgerRange imlr, final long startSeqId, final long endSeqId) {
@@ -275,8 +282,8 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                         }
                     }
 
-                    startReadingFrom(imlr.startSeqIdIncluded + entry.getEntryId() + 1);
-
+                    // continue scanning messages
+                    scanMessages(request, imlr.startSeqIdIncluded + entry.getEntryId() + 1);
                 }
             }, request.ctx);
         }
@@ -308,6 +315,10 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
     @Override
     public void scanMessages(RangeScanRequest request) {
         queuer.pushAndMaybeRun(request.topic, new RangeScanOp(request));
+    }
+
+    protected void scanMessages(RangeScanRequest request, long scanSeqId) {
+        queuer.pushAndMaybeRun(request.topic, new RangeScanOp(request, scanSeqId));
     }
 
     public void deliveredUntil(ByteString topic, Long seqId) {

@@ -51,4 +51,13 @@ public abstract class AbstractConfiguration {
         conf.addConfiguration(loadedConf);
 
     }
+
+    /**
+     * Add configuration object.
+     *
+     * @param conf configuration object
+     */
+    public void addConf(Configuration otherConf) throws ConfigurationException {
+        conf.addConfiguration(otherConf);
+    }
 }

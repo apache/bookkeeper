@@ -78,8 +78,6 @@ public class BookKeeper {
     final BookieClient bookieClient;
     final BookieWatcher bookieWatcher;
 
-    // used to call bookkeeper op in callback
-    final OrderedSafeExecutor callbackWorker;
     final OrderedSafeExecutor mainWorkerPool;
 
     // Ledger manager responsible for how to store ledger meta data
@@ -140,7 +138,6 @@ public class BookKeeper {
         bookieWatcher = new BookieWatcher(this);
         bookieWatcher.readBookiesBlocking();
         mainWorkerPool = new OrderedSafeExecutor(conf.getNumWorkerThreads());
-        callbackWorker = new OrderedSafeExecutor(conf.getNumWorkerThreads());
         bookieClient = new BookieClient(conf, channelFactory, mainWorkerPool);
         // initialize ledger meta manager
         ledgerManager = LedgerManagerFactory.newLedgerManager(conf, zk);
@@ -197,7 +194,6 @@ public class BookKeeper {
         bookieWatcher = new BookieWatcher(this);
         bookieWatcher.readBookiesBlocking();
         mainWorkerPool = new OrderedSafeExecutor(conf.getNumWorkerThreads());
-        callbackWorker = new OrderedSafeExecutor(conf.getNumWorkerThreads());
         bookieClient = new BookieClient(conf, channelFactory, mainWorkerPool);
         // initialize ledger meta manager
         ledgerManager = LedgerManagerFactory.newLedgerManager(conf, zk);
@@ -553,7 +549,6 @@ public class BookKeeper {
         if (ownZKHandle) {
             zk.close();
         }
-        callbackWorker.shutdown();
         mainWorkerPool.shutdown();
     }
 
