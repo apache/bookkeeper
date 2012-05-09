@@ -165,3 +165,21 @@ p. Using the above data flush mechanism, it is safe for the _Sync Thread_ to ski
 p. As described above, _EntryLogger#flush_ is invoked in the following two cases:
 * in _Sync Thread_ : used to ensure entries added before _LastLogMark_ are persisted to disk.
 * in _ShutDown_ : used to ensure its buffered data persisted to disk to avoid data corruption with partial entries.
+
+h2. Data Compaction
+
+p. In bookie server, entries of different ledgers are interleaved in entry log files. A bookie server runs a _Garbage Collector_ thread to delete un-associated entry log files to reclaim disk space. If a given entry log file contains entries from a ledger that has not been deleted, then the entry log file would never be removed and the occupied disk space never reclaimed. In order to avoid such a case, a bookie server compacts entry log files in _Garbage Collector_ thread to reclaim disk space.
+
+p. There are two kinds of compaction running with different frequency, which are _Minor Compaction_ and _Major Compaction_. The differences of _Minor Compaction_ and _Major Compaction_ are just their threshold value and compaction interval.
+
+# _Threshold_ : Size percentage of an entry log file occupied by those undeleted ledgers. Default minor compaction threshold is 0.2, while major compaction threshold is 0.8.
+# _Interval_ : How long to run the compaction. Default minor compaction is 1 hour, while major compaction threshold is 1 day.
+
+p. NOTE: if either _Threshold_ or _Interval_ is set to less than or equal to zero, then compaction is disabled.
+
+p. The data compaction flow in _Garbage Collector Thread_ is as follows:
+
+# _Garbage Collector_ thread scans entry log files to get their entry log metadata, which records a list of ledgers comprising an entry log and their corresponding percentages.
+# With the normal garbage collection flow, once the bookie determines that a ledger has been deleted, the ledger will be removed from the entry log metadata and the size of the entry log reduced.
+# If the remaining size of an entry log file reaches a specified threshold, the entries of active ledgers in the entry log will be copied to a new entry log file.
+# Once all valid entries have been copied, the old entry log file is deleted.

@@ -43,4 +43,9 @@ h3. Ledger manager settings
 | @ledgerManagerType@ | What kind of ledger manager is used to manage how ledgers are stored, managed and garbage collected. See "BookKeeper Internals":./bookkeeperInternals.html for detailed info. Default is flat. |
 | @zkLedgersRootPath@ | Root zookeeper path to store ledger metadata. Default is /ledgers. |
 
+h3. Entry Log compaction settings
 
+| @minorCompactionInterval@ | Interval to run minor compaction, in seconds. If it is set to less than or equal to zero, then minor compaction is disabled. Default is 1 hour. |
+| @minorCompactionThreshold@ | Entry log files with remaining size under this threshold value will be compacted in a minor compaction. If it is set to less than or equal to zero, the minor compaction is disabled. Default is 0.2 |
+| @majorCompactionInterval@ | Interval to run major compaction, in seconds. If it is set to less than or equal to zero, then major compaction is disabled. Default is 1 day. |
+| @majorCompactionThreshold@ | Entry log files with remaining size below this threshold value will be compacted in a major compaction. Those entry log files whose remaining size percentage is still higher than the threshold value will never be compacted. If it is set to less than or equal to zero, the major compaction is disabled. Default is 0.8. |

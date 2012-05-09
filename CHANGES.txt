@@ -150,6 +150,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-173: Uncontrolled number of threads in bookkeeper (sijie via fpj)
 
+	BOOKKEEPER-241: Add documentation for bookie entry log compaction (sijie via fpj)
+
       hedwig-server/
 
         BOOKKEEPER-77: Add a console client for hedwig (Sijie Guo via ivank)
