@@ -28,6 +28,7 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.apache.hedwig.util.Either;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.HelperMethods;
@@ -114,11 +115,20 @@ public class TestBookkeeperPersistenceManagerWhiteBox extends TestCase {
             index++;
         }
 
+        // ensure the bkpm has the topic before scanning
+        StubCallback<Void> stubCallback = new StubCallback<Void>();
+        bkpm.acquiredTopic(topic, stubCallback, null);
+
         // Lets scan now
         StubScanCallback scanCallback = new StubScanCallback();
         bkpm.scanMessages(new RangeScanRequest(topic, 1, NUM_MESSAGES_TO_TEST, Long.MAX_VALUE, scanCallback, null));
         for (int i = 0; i < messages.size(); i++) {
-            Message scannedMessage = ConcurrencyUtils.take(scanCallback.queue).left();
+            Either<Message,Exception> e = ConcurrencyUtils.take(scanCallback.queue);
+            Message scannedMessage = e.left();
+            if (scannedMessage == null) {
+                throw e.right();
+            }
+
             assertTrue(messages.get(i).getBody().equals(scannedMessage.getBody()));
             assertEquals(i + 1, scannedMessage.getMsgId().getLocalComponent());
         }

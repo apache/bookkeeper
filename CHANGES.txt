@@ -122,6 +122,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-215: Deadlock occurs under high load (sijie via ivank)
 
+        BOOKKEEPER-245: Intermittent failures in PersistanceManager tests (ivank)
+
       bookkeeper-benchmark/
 	
 	BOOKKEEPER-207: BenchBookie doesn't run correctly (ivank via fpj)
