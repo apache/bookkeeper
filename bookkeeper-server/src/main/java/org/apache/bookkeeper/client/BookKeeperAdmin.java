@@ -183,7 +183,7 @@ public class BookKeeperAdmin {
     }
 
     // Object used for calling async methods and waiting for them to complete.
-    class SyncObject {
+    static class SyncObject {
         boolean value;
         int rc;
 
@@ -324,7 +324,7 @@ public class BookKeeperAdmin {
                         availableBookies.add(new InetSocketAddress(parts[0], Integer.parseInt(parts[1])));
                     }
                     // Now poll ZK to get the active ledgers
-                    getActiveLedgers(bookieSrc, bookieDest, cb, context, availableBookies);
+                    getActiveLedgers(bookieSrc, null, cb, context, availableBookies);
                 }
             }, null);
         }
@@ -702,7 +702,7 @@ public class BookKeeperAdmin {
      * Once finished propogate callback up to ledgerFragmentsMcb which should
      * be a multicallback responsible for all fragments in a single ledger
      */
-    class SingleFragmentCallback implements AsyncCallback.VoidCallback {
+    static class SingleFragmentCallback implements AsyncCallback.VoidCallback {
         final AsyncCallback.VoidCallback ledgerFragmentsMcb;
         final LedgerHandle lh;
         final long fragmentStartId;

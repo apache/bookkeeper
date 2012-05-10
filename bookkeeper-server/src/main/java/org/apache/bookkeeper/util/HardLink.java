@@ -48,7 +48,7 @@ public class HardLink {
     OS_TYPE_MAC
   }
   
-  public static OSType osType;
+  public static final OSType osType;
   private static HardLinkCommandGetter getHardLinkCommand;
   
   public final LinkStats linkStats; //not static

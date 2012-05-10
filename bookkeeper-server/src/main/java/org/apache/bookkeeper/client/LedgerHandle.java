@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Queue;
@@ -128,7 +129,7 @@ public class LedgerHandle {
      *
      * @return the id of the last entry pushed
      */
-    public long getLastAddPushed() {
+    synchronized public long getLastAddPushed() {
         return lastAddPushed;
     }
 
@@ -138,7 +139,7 @@ public class LedgerHandle {
      * @return byte array for the ledger's key/password.
      */
     public byte[] getLedgerKey() {
-        return ledgerKey;
+        return Arrays.copyOf(ledgerKey, ledgerKey.length);
     }
 
     /**
@@ -184,7 +185,7 @@ public class LedgerHandle {
      *
      * @return the length of the ledger in bytes
      */
-    public long getLength() {
+    synchronized public long getLength() {
         return this.length;
     }
 
@@ -399,7 +400,8 @@ public class LedgerHandle {
      */
     public void addEntry(byte[] data, int offset, int length)
             throws InterruptedException, BKException {
-        LOG.debug("Adding entry " + data);
+        LOG.debug("Adding entry {}", data);
+
         SyncCounter counter = new SyncCounter();
         counter.inc();
 
@@ -552,7 +554,7 @@ public class LedgerHandle {
     /**
      * Context objects for synchronous call to read last confirmed.
      */
-    class LastConfirmedCtx {
+    static class LastConfirmedCtx {
         long response;
         int rc;
 
@@ -754,7 +756,7 @@ public class LedgerHandle {
         }, null);
     }
 
-    void recover(final GenericCallback<Void> cb) {
+    synchronized void recover(final GenericCallback<Void> cb) {
         if (metadata.isClosed()) {
             lastAddConfirmed = lastAddPushed = metadata.close;
             length = metadata.length;

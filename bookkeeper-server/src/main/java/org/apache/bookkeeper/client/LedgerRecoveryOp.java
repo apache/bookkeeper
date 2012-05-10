@@ -105,9 +105,10 @@ class LedgerRecoveryOp implements ReadCallback, AddCallback {
              * replicas. We subtract the length of the data itself, since it will
              * be added again when processing the call to add it.
              */
-            lh.length = entry.getLength() - (long) data.length;
+            synchronized (lh) {
+                lh.length = entry.getLength() - (long) data.length;
+            }
             lh.asyncRecoveryAddEntry(data, 0, data.length, this, null);
-
             return;
         }
 

@@ -80,8 +80,12 @@ public class LedgerEntryPage {
     }
     @Override
     public boolean equals(Object other) {
-        LedgerEntryPage otherLEP = (LedgerEntryPage) other;
-        return otherLEP.getLedger() == getLedger() && otherLEP.getFirstEntry() == getFirstEntry();
+        if (other instanceof LedgerEntryPage) {
+            LedgerEntryPage otherLEP = (LedgerEntryPage) other;
+            return otherLEP.getLedger() == getLedger() && otherLEP.getFirstEntry() == getFirstEntry();
+        } else {
+            return false;
+        }
     }
     @Override
     public int hashCode() {

@@ -440,7 +440,7 @@ public class LedgerCacheImpl implements LedgerCache {
             }
             totalWritten += rc;
         }
-        if (totalWritten != count * pageSize) {
+        if (totalWritten != (long)count * (long)pageSize) {
             throw new IOException("Short write to ledger " + ledger + " wrote " + totalWritten
                                   + " expected " + count * pageSize);
         }
@@ -727,12 +727,12 @@ public class LedgerCacheImpl implements LedgerCache {
 
             @Override
             public int getPageCount() {
-                return getNumUsedPages();
+                return LedgerCacheImpl.this.getNumUsedPages();
             }
 
             @Override
             public int getPageSize() {
-                return getPageSize();
+                return LedgerCacheImpl.this.getPageSize();
             }
 
             @Override
@@ -742,7 +742,7 @@ public class LedgerCacheImpl implements LedgerCache {
 
             @Override
             public int getPageLimit() {
-                return getPageLimit();
+                return LedgerCacheImpl.this.getPageLimit();
             }
 
             @Override

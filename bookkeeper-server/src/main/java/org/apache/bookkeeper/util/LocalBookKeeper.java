@@ -86,8 +86,9 @@ public class LocalBookKeeper {
         //ServerStats.registerAsConcrete();
         //ClientBase.setupTestEnv();
         ZkTmpDir = File.createTempFile("zookeeper", "test");
-        ZkTmpDir.delete();
-        ZkTmpDir.mkdir();
+        if (!ZkTmpDir.delete() || !ZkTmpDir.mkdir()) {
+            throw new IOException("Couldn't create zk directory " + ZkTmpDir);
+        }
 
         try {
             zks = new ZooKeeperServer(ZkTmpDir, ZkTmpDir, ZooKeeperDefaultPort);
@@ -134,8 +135,9 @@ public class LocalBookKeeper {
 
         for(int i = 0; i < numberOfBookies; i++) {
             tmpDirs[i] = File.createTempFile("bookie" + Integer.toString(i), "test");
-            tmpDirs[i].delete();
-            tmpDirs[i].mkdir();
+            if (!tmpDirs[i].delete() || !tmpDirs[i].mkdir()) {
+                throw new IOException("Couldn't create bookie dir " + tmpDirs[i]);
+            }
 
             bsConfs[i] = new ServerConfiguration(baseConf);
             // override settings
@@ -183,7 +185,7 @@ public class LocalBookKeeper {
     }
 
     /*	User for testing purposes, void */
-    class emptyWatcher implements Watcher {
+    static class emptyWatcher implements Watcher {
         public void process(WatchedEvent event) {}
     }
 

@@ -297,7 +297,7 @@ public class LedgerMetadata {
         for (int i=0; i<ensembles.size(); i++) {
             Long curKey = keyIter.next();
             Long newMetaKey = newMetaKeyIter.next();
-            if (curKey != newMetaKey) {
+            if (!curKey.equals(newMetaKey)) {
                 return false;
             }
         }

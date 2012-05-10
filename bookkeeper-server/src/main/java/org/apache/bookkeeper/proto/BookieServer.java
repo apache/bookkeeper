@@ -86,6 +86,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         this.bookie.start();
 
         nioServerFactory = new NIOServerFactory(conf, this);
+        nioServerFactory.start();
         running = true;
         deathWatcher = new DeathWatcher(conf);
         deathWatcher.start();
@@ -493,7 +494,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     /**
      * A cnxn wrapper for time
      */
-    class TimedCnxn {
+    static class TimedCnxn {
         Cnxn cnxn;
         long time;
 

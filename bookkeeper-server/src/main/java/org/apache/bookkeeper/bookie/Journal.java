@@ -99,14 +99,25 @@ class Journal extends Thread {
         synchronized void markLog() {
             lastMark = new LastLogMark(txnLogId, txnLogPosition);
         }
+
+        synchronized LastLogMark getLastMark() {
+            return lastMark;
+        }
+        synchronized long getTxnLogId() {
+            return txnLogId;
+        }
+        synchronized long getTxnLogPosition() {
+            return txnLogPosition;
+        }
+
         synchronized void rollLog() {
             byte buff[] = new byte[16];
             ByteBuffer bb = ByteBuffer.wrap(buff);
             // we should record <logId, logPosition> marked in markLog
             // which is safe since records before lastMark have been
             // persisted to disk (both index & entry logger)
-            bb.putLong(lastMark.txnLogId);
-            bb.putLong(lastMark.txnLogPosition);
+            bb.putLong(lastMark.getTxnLogId());
+            bb.putLong(lastMark.getTxnLogPosition());
             if (LOG.isDebugEnabled()) {
                 LOG.debug("RollLog to persist last marked log : " + lastMark);
             }
@@ -135,8 +146,15 @@ class Journal extends Thread {
                 File file = new File(dir, "lastMark");
                 try {
                     FileInputStream fis = new FileInputStream(file);
-                    fis.read(buff);
-                    fis.close();
+                    try {
+                        int bytesRead = fis.read(buff);
+                        if (bytesRead != 16) {
+                            throw new IOException("Couldn't read enough bytes from lastMark."
+                                                  + " Wanted " + 16 + ", got " + bytesRead);
+                        }
+                    } finally {
+                        fis.close();
+                    }
                     bb.clear();
                     long i = bb.getLong();
                     long p = bb.getLong();
@@ -169,7 +187,7 @@ class Journal extends Thread {
     private class JournalRollingFilter implements JournalIdFilter {
         @Override
         public boolean accept(long journalId) {
-            if (journalId < lastLogMark.lastMark.txnLogId) {
+            if (journalId < lastLogMark.getLastMark().getTxnLogId()) {
                 return true;
             } else {
                 return false;
@@ -308,9 +326,11 @@ class Journal extends Thread {
             for (int i=0; i<maxIdx; i++) {
                 long id = logs.get(i);
                 // make sure the journal id is smaller than marked journal id
-                if (id < lastLogMark.lastMark.txnLogId) {
+                if (id < lastLogMark.getLastMark().getTxnLogId()) {
                     File journalFile = new File(journalDirectory, Long.toHexString(id) + ".txn");
-                    journalFile.delete();
+                    if (!journalFile.delete()) {
+                        LOG.warn("Could not delete old journal file {}", journalFile);
+                    }
                     LOG.info("garbage collected journal " + journalFile.getName());
                 }
             }
@@ -380,7 +400,7 @@ class Journal extends Thread {
      * @throws IOException
      */
     public void replay(JournalScanner scanner) throws IOException {
-        final long markedLogId = lastLogMark.txnLogId;
+        final long markedLogId = lastLogMark.getTxnLogId();
         List<Long> logs = listJournalIds(journalDirectory, new JournalIdFilter() {
             @Override
             public boolean accept(long journalId) {
@@ -406,7 +426,7 @@ class Journal extends Thread {
         for(Long id: logs) {
             long logPosition = 0L;
             if(id == markedLogId) {
-                logPosition = lastLogMark.txnLogPosition;
+                logPosition = lastLogMark.getTxnLogPosition();
             }
             scanJournal(id, logPosition, scanner);
         }
@@ -517,8 +537,10 @@ class Journal extends Thread {
             }
             logFile.close();
             logFile = null;
-        } catch (Exception e) {
-            LOG.warn("Journal exits when shutting down", e);
+        } catch (IOException ioe) {
+            LOG.error("I/O exception in Journal thread!", ioe);
+        } catch (InterruptedException ie) {
+            LOG.warn("Journal exits when shutting down", ie);
         } finally {
             IOUtils.close(LOG, logFile);
         }

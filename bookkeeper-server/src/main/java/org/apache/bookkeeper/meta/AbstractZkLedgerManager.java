@@ -137,8 +137,9 @@ abstract class AbstractZkLedgerManager implements LedgerManager {
         }, null);
     }
 
-    private class GetLedgersCtx {
+    private static class GetLedgersCtx {
         int rc;
+        boolean done = false;
         HashSet<Long> ledgers = null;
     }
 
@@ -156,8 +157,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Try to get ledgers of node : " + nodePath);
         }
-        synchronized (ctx) {
-            asyncGetLedgersInSingleNode(nodePath, new GenericCallback<HashSet<Long>>() {
+        asyncGetLedgersInSingleNode(nodePath, new GenericCallback<HashSet<Long>>() {
                 @Override
                 public void operationComplete(int rc, HashSet<Long> zkActiveLedgers) {
                     synchronized (ctx) {
@@ -165,11 +165,16 @@ abstract class AbstractZkLedgerManager implements LedgerManager {
                             ctx.ledgers = zkActiveLedgers;
                         }
                         ctx.rc = rc;
+                        ctx.done = true;
                         ctx.notifyAll();
                     }
                 }
             });
-            ctx.wait();
+
+        synchronized (ctx) {
+            while (ctx.done == false) {
+                ctx.wait();
+            }
         }
         if (Code.OK.intValue() != ctx.rc) {
             throw new IOException("Error on getting ledgers from node " + nodePath);

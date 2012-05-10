@@ -64,7 +64,7 @@ public class BookKeeperTools {
         String zkServers = args[0];
         String bookieSrcString[] = args[1].split(":");
         if (bookieSrcString.length < 2) {
-            System.err.println("BookieSrc inputted has invalid name format (host:port expected): " + bookieSrcString);
+            System.err.println("BookieSrc inputted has invalid name format (host:port expected): " + args[1]);
             return;
         }
         final InetSocketAddress bookieSrc = new InetSocketAddress(bookieSrcString[0], Integer
@@ -74,7 +74,7 @@ public class BookKeeperTools {
             String bookieDestString[] = args[2].split(":");
             if (bookieDestString.length < 2) {
                 System.err.println("BookieDest inputted has invalid name format (host:port expected): "
-                                   + bookieDestString);
+                                   + args[2]);
                 return;
             }
             bookieDest = new InetSocketAddress(bookieDestString[0], Integer.parseInt(bookieDestString[1]));

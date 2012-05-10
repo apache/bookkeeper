@@ -79,14 +79,19 @@ public abstract class BookieException extends Exception {
         switch(code) {
         case Code.OK:
             err = "No problem";
+            break;
         case Code.UnauthorizedAccessException:
             err = "Error while reading ledger";
+            break;
         case Code.LedgerFencedException:
             err = "Ledger has been fenced; No more entries can be added";
+            break;
         case Code.InvalidCookieException:
             err = "Invalid environment cookie found";
+            break;
         case Code.UpgradeException:
             err = "Error performing an upgrade operation ";
+            break;
         }
         String reason = super.getMessage();
         if (reason == null) {

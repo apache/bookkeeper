@@ -83,7 +83,6 @@ public class NIOServerFactory extends Thread {
         ss.socket().bind(new InetSocketAddress(conf.getBookiePort()));
         ss.configureBlocking(false);
         ss.register(selector, SelectionKey.OP_ACCEPT);
-        start();
     }
 
     public InetSocketAddress getLocalAddress() {
@@ -187,10 +186,6 @@ public class NIOServerFactory extends Thread {
         LinkedBlockingQueue<ByteBuffer> outgoingBuffers = new LinkedBlockingQueue<ByteBuffer>();
 
         int sessionTimeout;
-
-        int packetsSent;
-
-        int packetsReceived;
 
         void doIO(SelectionKey k) throws InterruptedException {
             try {
@@ -490,16 +485,18 @@ public class NIOServerFactory extends Thread {
         }
 
         private class CnxnStats {
-            long packetsReceived;
+            int packetsSent = 0;
 
-            long packetsSent;
+            int packetsReceived = 0;
 
             /**
              * The number of requests that have been submitted but not yet
              * responded to.
              */
             public long getOutstandingRequests() {
-                return outstandingRequests;
+                synchronized(Cnxn.this) {
+                    return outstandingRequests;
+                }
             }
 
             public long getPacketsReceived() {

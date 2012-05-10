@@ -194,6 +194,11 @@ class LedgerLayout {
     }
 
     @Override
+    public int hashCode() {
+        return (managerType + managerVersion).hashCode();
+    }
+
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("LV").append(layoutFormatVersion).append(":")

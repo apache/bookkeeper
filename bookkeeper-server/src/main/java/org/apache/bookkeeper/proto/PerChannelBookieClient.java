@@ -73,7 +73,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     static final Logger LOG = LoggerFactory.getLogger(PerChannelBookieClient.class);
 
     static final long maxMemory = Runtime.getRuntime().maxMemory() / 5;
-    public static int MAX_FRAME_LENGTH = 2 * 1024 * 1024; // 2M
+    public static final int MAX_FRAME_LENGTH = 2 * 1024 * 1024; // 2M
 
     InetSocketAddress addr;
     Semaphore opCounterSem = new Semaphore(2000);
@@ -174,38 +174,29 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     void connectIfNeededAndDoOp(GenericCallback<Void> op) {
         boolean doOpNow;
 
-        // common case without lock first
-        if (channel != null && state == ConnectionState.CONNECTED) {
-            doOpNow = true;
-        } else {
+        synchronized (this) {
+            if (channel != null && state == ConnectionState.CONNECTED) {
+                doOpNow = true;
+            } else {
+                // if reached here, channel is either null (first connection
+                // attempt),
+                // or the channel is disconnected
+                doOpNow = false;
 
-            synchronized (this) {
-                // check again under lock
-                if (channel != null && state == ConnectionState.CONNECTED) {
-                    doOpNow = true;
-                } else {
+                // connection attempt is still in progress, queue up this
+                // op. Op will be executed when connection attempt either
+                // fails
+                // or
+                // succeeds
+                pendingOps.add(op);
 
-                    // if reached here, channel is either null (first connection
-                    // attempt),
-                    // or the channel is disconnected
-                    doOpNow = false;
-
-                    // connection attempt is still in progress, queue up this
-                    // op. Op will be executed when connection attempt either
-                    // fails
-                    // or
-                    // succeeds
-                    pendingOps.add(op);
-
-                    connect();
-                }
+                connect();
             }
         }
 
         if (doOpNow) {
             op.operationComplete(BKException.Code.OK, null);
         }
-
     }
 
     /**
@@ -447,7 +438,9 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         LOG.info("Disconnected from bookie: " + addr);
         errorOutOutstandingEntries();
         channel.close();
-        state = ConnectionState.DISCONNECTED;
+        synchronized (this) {
+            state = ConnectionState.DISCONNECTED;
+        }
 
         // we don't want to reconnect right away. If someone sends a request to
         // this address, we will reconnect.

@@ -50,7 +50,7 @@ public class LedgerManagerFactory {
         
         // if zk is null, return the default ledger manager
         if (zk == null) {
-            return new FlatLedgerManager(conf, zk, 
+            return new FlatLedgerManager(conf, null,
                     ledgerRootPath, FlatLedgerManager.CUR_VERSION);
         }
 

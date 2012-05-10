@@ -100,7 +100,7 @@ class LedgerCreateOp implements GenericCallback<String> {
         /*
          * Add ensemble to the configuration
          */
-        metadata.addEnsemble(new Long(0), ensemble);
+        metadata.addEnsemble(0L, ensemble);
 
         // create a ledger path with metadata
         bk.getLedgerManager().newLedgerPath(this, metadata);

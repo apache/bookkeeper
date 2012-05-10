@@ -163,7 +163,9 @@ public class FileSystemUpgrade {
 
         for (String f : files) {
             if (f.endsWith(".idx")) { // this is an index dir, create the links
-                targetPath.mkdirs();
+                if (!targetPath.mkdirs()) {
+                    throw new IOException("Could not create target path ["+targetPath+"]");
+                }
                 HardLink.createHardLinkMult(srcPath, files, targetPath);
                 return;
             }
@@ -198,7 +200,9 @@ public class FileSystemUpgrade {
                     File curDir = new File(d, Bookie.CURRENT_DIR);
                     File tmpDir = new File(d, "upgradeTmp." + System.nanoTime());
                     deferredMoves.put(curDir, tmpDir);
-                    tmpDir.mkdirs();
+                    if (!tmpDir.mkdirs()) {
+                        throw new BookieException.UpgradeException("Could not create temporary directory " + tmpDir);
+                    }
                     c.writeToDirectory(tmpDir);
 
                     String[] files = d.list(new FilenameFilter() {
@@ -251,14 +255,18 @@ public class FileSystemUpgrade {
                 if (version < 3) {
                     if (version == 2) {
                         File v2versionFile = new File(d, Cookie.VERSION_FILENAME);
-                        v2versionFile.delete();
+                        if (!v2versionFile.delete()) {
+                            LOG.warn("Could not delete old version file {}", v2versionFile);
+                        }
                     }
                     File[] files = d.listFiles(BOOKIE_FILES_FILTER);
                     for (File f : files) {
                         if (f.isDirectory()) {
                             FileUtils.deleteDirectory(f);
                         } else{
-                            f.delete();
+                            if (!f.delete()) {
+                                LOG.warn("Could not delete {}", f);
+                            }
                         }
                     }
                 }

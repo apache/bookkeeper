@@ -123,7 +123,7 @@ public class Bookie extends Thread {
     }
 
     // Write Callback do nothing
-    class NopWriteCallback implements WriteCallback {
+    static class NopWriteCallback implements WriteCallback {
         @Override
         public void writeComplete(int rc, long ledgerId, long entryId,
                                   InetSocketAddress addr, Object ctx) {
@@ -246,7 +246,11 @@ public class Bookie extends Thread {
                 LOG.error(err);
                 throw new IOException(err);
             }
-            dir.mkdirs();
+            if (!dir.mkdirs()) {
+                String err = "Unable to create directory " + dir;
+                LOG.error(err);
+                throw new IOException(err);
+            }
         }
     }
 

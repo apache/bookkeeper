@@ -49,6 +49,7 @@ public class NIOServerFactoryTest extends TestCase {
         ServerConfiguration conf = new ServerConfiguration();
         conf.setBookiePort(22334);
         NIOServerFactory factory = new NIOServerFactory(conf, problemProcessor);
+        factory.start();
         Socket s = new Socket("127.0.0.1", 22334);
         s.setSoTimeout(5000);
         try {

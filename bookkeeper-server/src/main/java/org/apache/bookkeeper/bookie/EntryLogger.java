@@ -57,7 +57,7 @@ public class EntryLogger {
     private static final Logger LOG = LoggerFactory.getLogger(EntryLogger.class);
     private File dirs[];
 
-    long logId;
+    private long logId;
     /**
      * The maximum size of a entry logger file.
      */
@@ -133,6 +133,10 @@ public class EntryLogger {
      */
     private ConcurrentHashMap<Long, BufferedChannel> channels = new ConcurrentHashMap<Long, BufferedChannel>();
 
+    synchronized long getCurrentLogId() {
+        return logId;
+    }
+
     /**
      * Creates a new log file
      */
@@ -190,7 +194,9 @@ public class EntryLogger {
                     + entryLogId + ".log");
             return false;
         }
-        entryLogFile.delete();
+        if (!entryLogFile.delete()) {
+            LOG.warn("Could not delete entry log file {}", entryLogFile);
+        }
         return true;
     }
 
@@ -206,7 +212,7 @@ public class EntryLogger {
             bw.flush();
         } finally {
             try {
-                fos.close();
+                bw.close();
             } catch (IOException e) {
             }
         }
@@ -263,7 +269,7 @@ public class EntryLogger {
             return -1;
         } finally {
             try {
-                fis.close();
+                br.close();
             } catch (IOException e) {
             }
         }
@@ -344,14 +350,13 @@ public class EntryLogger {
         // If the file already exists before creating a BufferedChannel layer above it,
         // set the FileChannel's position to the end so the write buffer knows where to start.
         newFc.position(newFc.size());
-        synchronized (channels) {
-            fc = channels.get(entryLogId);
-            if (fc != null) {
-                newFc.close();
-                return fc;
-            }
-            fc = new BufferedChannel(newFc, 8192);
-            channels.put(entryLogId, fc);
+        fc = new BufferedChannel(newFc, 8192);
+
+        BufferedChannel oldfc = channels.putIfAbsent(entryLogId, fc);
+        if (oldfc != null) {
+            newFc.close();
+            return oldfc;
+        } else {
             return fc;
         }
     }

@@ -102,6 +102,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-235: Bad syncing in entrylogger degrades performance for many concurrent ledgers (ivank via fpj)
 
+        BOOKKEEPER-224: Fix findbugs in bookkeeper-server component (ivank)
+
       hedwig-client/
 
         BOOKKEEPER-217: NPE in hedwig client when enable DEBUG (sijie via ivank)
