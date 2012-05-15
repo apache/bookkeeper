@@ -128,6 +128,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-245: Intermittent failures in PersistanceManager tests (ivank)
 
+        BOOKKEEPER-209: Typo in ServerConfiguration for READAHEAD_ENABLED (ivank)
+
       bookkeeper-benchmark/
 	
 	BOOKKEEPER-207: BenchBookie doesn't run correctly (ivank via fpj)

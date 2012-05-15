@@ -45,7 +45,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String ZK_PREFIX = "zk_prefix";
     protected final static String ZK_HOST = "zk_host";
     protected final static String ZK_TIMEOUT = "zk_timeout";
-    protected final static String READAHEAD_ENABLED = "readhead_enabled";
+    protected final static String READAHEAD_ENABLED = "readahead_enabled";
     protected final static String STANDALONE = "standalone";
     protected final static String REGIONS = "regions";
     protected final static String CERT_NAME = "cert_name";
@@ -181,7 +181,9 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     public boolean getReadAheadEnabled() {
-        return conf.getBoolean(READAHEAD_ENABLED, true);
+        return conf.getBoolean(READAHEAD_ENABLED, true)
+            || conf.getBoolean("readhead_enabled");
+        // the key was misspelt in a previous version, so compensate here
     }
 
     public boolean isStandalone() {
