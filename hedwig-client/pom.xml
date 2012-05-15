@@ -114,6 +114,13 @@
   <build>
     <plugins>
       <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.2.1</version>
+        <configuration>
+	  <skipAssembly>true</skipAssembly>
+        </configuration>
+      </plugin>
+      <plugin>
 	<groupId>org.apache.rat</groupId>
 	<artifactId>apache-rat-plugin</artifactId>
 	<version>0.7</version>
