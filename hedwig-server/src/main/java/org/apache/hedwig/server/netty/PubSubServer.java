@@ -107,6 +107,7 @@ public class PubSubServer {
     // JMX Beans
     NettyHandlerBean jmxNettyBean;
     PubSubServerBean jmxServerBean;
+    final ThreadGroup tg;
 
     protected PersistenceManager instantiatePersistenceManager(TopicManager topicMgr) throws IOException,
         InterruptedException {
@@ -311,8 +312,9 @@ public class PubSubServer {
      * @throws InterruptedException
      * @throws ConfigurationException
      */
-    public PubSubServer(final ServerConfiguration conf, final Thread.UncaughtExceptionHandler exceptionHandler)
-            throws Exception {
+    public PubSubServer(final ServerConfiguration conf,
+                        final Thread.UncaughtExceptionHandler exceptionHandler)
+            throws ConfigurationException {
 
         // First validate the conf
         this.conf = conf;
@@ -320,7 +322,7 @@ public class PubSubServer {
 
         // We need a custom thread group, so that we can override the uncaught
         // exception method
-        ThreadGroup tg = new ThreadGroup("hedwig") {
+        tg = new ThreadGroup("hedwig") {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
                 exceptionHandler.uncaughtException(t, e);
@@ -330,7 +332,9 @@ public class PubSubServer {
         // we do in ZK threads throws an exception, we want our handler to be
         // called, not theirs.
         SafeAsyncCallback.setUncaughtExceptionHandler(exceptionHandler);
+    }
 
+    public void start() throws Exception {
         final SynchronousQueue<Either<Object, Exception>> queue = new SynchronousQueue<Either<Object, Exception>>();
 
         new Thread(tg, new Runnable() {
@@ -349,6 +353,8 @@ public class PubSubServer {
                     tm = instantiateTopicManager();
                     pm = instantiatePersistenceManager(tm);
                     dm = new FIFODeliveryManager(pm, conf);
+                    dm.start();
+
                     sm = instantiateSubscriptionManager(tm, pm);
                     rm = instantiateRegionManager(pm, scheduler);
                     sm.addListener(rm);
@@ -422,7 +428,7 @@ public class PubSubServer {
             logger.info("Using configuration file " + confFile);
         }
         try {
-            new PubSubServer(conf);
+            new PubSubServer(conf).start();
         } catch (Throwable t) {
             errorMsgAndExit("Error during startup", t, RC_OTHER);
         }

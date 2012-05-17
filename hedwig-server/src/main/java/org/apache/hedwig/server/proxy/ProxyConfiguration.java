@@ -21,8 +21,8 @@ import org.apache.hedwig.client.conf.ClientConfiguration;
 
 public class ProxyConfiguration extends ClientConfiguration {
 
-    protected static String PROXY_PORT = "proxy_port";
-    protected static String MAX_MESSAGE_SIZE = "max_message_size";
+    protected final static String PROXY_PORT = "proxy_port";
+    protected final static String MAX_MESSAGE_SIZE = "max_message_size";
 
     public int getProxyPort() {
         return conf.getInt(PROXY_PORT, 9099);

@@ -26,7 +26,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CountDownLatch;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,7 +93,7 @@ public class RegionManager implements SubscriptionEventListener {
                 if (null == topics || topics.isEmpty()) {
                     continue;
                 }
-                final AtomicBoolean done = new AtomicBoolean(false);
+                final CountDownLatch done = new CountDownLatch(1);
                 Callback<Void> postCb = new Callback<Void>() {
                     @Override
                     public void operationFinished(Object ctx,
@@ -106,10 +106,7 @@ public class RegionManager implements SubscriptionEventListener {
                         finish();
                     }
                     void finish() {
-                        synchronized (done) {
-                            done.set(true);
-                            done.notifyAll();
-                        }
+                        done.countDown();
                     }
                 };
                 Callback<Void> mcb = CallbackUtils.multiCallback(topics.size(), postCb, null);
@@ -122,14 +119,10 @@ public class RegionManager implements SubscriptionEventListener {
                     }
                     retrySubscribe(client, topic, mcb);
                 }
-                synchronized (done) {
-                    if (done.get()) {
-                        try {
-                            done.wait();
-                        } catch (InterruptedException e) {
-                            LOGGER.warn("Exception during retrying remote subscriptions : ", e);
-                        }
-                    }
+                try {
+                    done.await();
+                } catch (InterruptedException e) {
+                    LOGGER.warn("Exception during retrying remote subscriptions : ", e);
                 }
             }
         }

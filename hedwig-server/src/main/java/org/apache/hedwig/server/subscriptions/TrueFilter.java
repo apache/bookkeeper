@@ -20,7 +20,7 @@ package org.apache.hedwig.server.subscriptions;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 
 public class TrueFilter implements MessageFilter {
-    protected static TrueFilter instance = new TrueFilter();
+    protected final static TrueFilter instance = new TrueFilter();
 
     public static TrueFilter instance() {
         return instance;

@@ -336,8 +336,6 @@ public final class HedwigCommands {
 
         public String getDescription() { return desc; }
 
-        public String[] getUsage() { return usage; }
-
         public Map<String, COMMAND> getSubCommands() { return subCmds; }
 
         public void addSubCommand(COMMAND c) {
@@ -364,7 +362,10 @@ public final class HedwigCommands {
         commands.put(c.getName(), c);
     }
 
-    static {
+    static synchronized void init() {
+        if (commands != null) {
+            return;
+        }
         commands = new LinkedHashMap<String, COMMAND>();
 
         addCommand(COMMAND.CMD_PUB);

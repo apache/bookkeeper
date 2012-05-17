@@ -48,6 +48,7 @@ public abstract class PubSubServerStandAloneTestBase extends TestCase {
     public void setUp() throws Exception {
         logger.info("STARTING " + getName());
         server = new PubSubServer(new StandAloneServerConfiguration());
+        server.start();
         logger.info("Standalone PubSubServer test setup finished");
     }
 

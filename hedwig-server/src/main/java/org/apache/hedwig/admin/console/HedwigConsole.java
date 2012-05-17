@@ -34,7 +34,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.hedwig.admin.HedwigAdmin;
@@ -100,7 +101,7 @@ public class HedwigConsole {
         boolean runCmd(String[] args) throws Exception;
     }
 
-    class HelpCmd implements MyCommand {
+    static class HelpCmd implements MyCommand {
 
         @Override
         public boolean runCmd(String[] args) throws Exception {
@@ -127,7 +128,7 @@ public class HedwigConsole {
             printMessage("Quitting ...");
             hubClient.close();
             admin.close();
-            System.exit(0);
+            Runtime.getRuntime().exit(0);
             return true;
         }
     }
@@ -223,7 +224,7 @@ public class HedwigConsole {
         
     }
 
-    class ConsoleMessageHandler implements MessageHandler {
+    static class ConsoleMessageHandler implements MessageHandler {
 
         @Override
         public void deliver(ByteString topic, ByteString subscriberId,
@@ -444,7 +445,7 @@ public class HedwigConsole {
 
             boolean subscribed = false;
             boolean success = false;
-            final AtomicBoolean isDone = new AtomicBoolean(false);
+            final CountDownLatch isDone = new CountDownLatch(1);
             long elapsedTime = 0L;
 
             System.out.println("Starting PUBSUB test ...");
@@ -471,10 +472,7 @@ public class HedwigConsole {
                         if (thisTopic.equals(topic) && subscriberId.equals(subId) &&
                             msg.getBody().equals(message.getBody())) {
                             System.out.println("Received message : " + message.getBody().toStringUtf8());
-                            synchronized(isDone) {
-                                isDone.set(true);
-                                isDone.notify();
-                            }
+                            isDone.countDown();
                         }
                         callback.operationFinished(context, null);
                     }
@@ -482,10 +480,7 @@ public class HedwigConsole {
                 });
 
                 // wait for the message
-                synchronized (isDone) {
-                    isDone.wait(timeoutSecs * 1000L);
-                }
-                success = isDone.get();
+                success = isDone.await(timeoutSecs, TimeUnit.SECONDS);
                 elapsedTime = System.currentTimeMillis() - startTime;
             } finally {
                 try {
@@ -783,6 +778,7 @@ public class HedwigConsole {
      * @throws InterruptedException 
      */
     public HedwigConsole(String[] args) throws IOException, InterruptedException {
+        HedwigCommands.init();
         cl.parseOptions(args);
 
         if (cl.getCommand() == null) {
@@ -970,10 +966,26 @@ public class HedwigConsole {
 
                     historyEnabled = true;
                     System.out.println("JLine history support is enabled");
-                } catch (Exception e) {
-                    historyEnabled = false;
-                    e.printStackTrace();
+                } catch (ClassNotFoundException e) {
                     System.out.println("JLine history support is disabled");
+                    LOG.debug("JLine history disabled with exception", e);
+                    historyEnabled = false;
+                } catch (NoSuchMethodException e) {
+                    System.out.println("JLine history support is disabled");
+                    LOG.debug("JLine history disabled with exception", e);
+                    historyEnabled = false;
+                } catch (InvocationTargetException e) {
+                    System.out.println("JLine history support is disabled");
+                    LOG.debug("JLine history disabled with exception", e);
+                    historyEnabled = false;
+                } catch (IllegalAccessException e) {
+                    System.out.println("JLine history support is disabled");
+                    LOG.debug("JLine history disabled with exception", e);
+                    historyEnabled = false;
+                } catch (InstantiationException e) {
+                    System.out.println("JLine history support is disabled");
+                    LOG.debug("JLine history disabled with exception", e);
+                    historyEnabled = false;
                 }
 
                 String line;

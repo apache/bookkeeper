@@ -118,7 +118,10 @@ public abstract class HedwigHubTestBase extends TestCase {
         // Now create the PubSubServer Hubs
         serversList = new LinkedList<PubSubServer>();
         for (int i = 0; i < numServers; i++) {
-            serversList.add(new PubSubServer(getServerConfiguration(initialServerPort + i, initialSSLServerPort + i)));
+            PubSubServer s = new PubSubServer(
+                    getServerConfiguration(initialServerPort + i, initialSSLServerPort + i));
+            serversList.add(s);
+            s.start();
         }
     }
     protected void stopHubServers() throws Exception {

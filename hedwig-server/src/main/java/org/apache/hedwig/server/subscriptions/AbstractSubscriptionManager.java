@@ -71,7 +71,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
 
     Callback<Void> noopCallback = new NoopCallback<Void>();
 
-    class NoopCallback<T> implements Callback<T> {
+    static class NoopCallback<T> implements Callback<T> {
         @Override
         public void operationFailed(Object ctx, PubSubException exception) {
             logger.warn("Exception found in AbstractSubscriptionManager : ", exception);
@@ -110,6 +110,10 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
             // so it should be safe to run this fairly often.
             for (ByteString topic : top2sub2seq.keySet()) {
                 final Map<ByteString, InMemorySubscriptionState> topicSubscriptions = top2sub2seq.get(topic);
+                if (topicSubscriptions == null) {
+                    continue;
+                }
+
                 long minConsumedMessage = Long.MAX_VALUE;
                 boolean hasBound = true;
                 // Loop through all subscribers to the current topic to find the
@@ -126,9 +130,9 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                 // Don't call the PersistenceManager if nobody is subscribed to
                 // the topic yet, or the consume pointer has not changed since
                 // the last time, or if this is the initial subscription.
+                Long minConsumedFromMap = topic2MinConsumedMessagesMap.get(topic);
                 if (topicSubscriptions.isEmpty()
-                    || (topic2MinConsumedMessagesMap.containsKey(topic)
-                        && topic2MinConsumedMessagesMap.get(topic) == minConsumedMessage)
+                    || (minConsumedFromMap != null && minConsumedFromMap.equals(minConsumedMessage))
                     || minConsumedMessage == 0) {
                     topic2MinConsumedMessagesMap.put(topic, minConsumedMessage);
                     pm.consumedUntil(topic, minConsumedMessage);
@@ -404,7 +408,8 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                                         // so the following codes only happened when remote subscription failed.
                                         // it is safe to decrement the local count so next subscribe op
                                         // could have the chance to subscribe remote.
-                                        topic2LocalCounts.get(topic).decrementAndGet();
+                                        AtomicInteger count = topic2LocalCounts.get(topic);
+                                        if (count != null) { count.decrementAndGet(); }
                                     }
                                     cb.operationFailed(ctx, exception);
                                 }
@@ -422,8 +427,10 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
 
                     };
 
+                    AtomicInteger count = topic2LocalCounts.get(topic);
                     if (!SubscriptionStateUtils.isHubSubscriber(subRequest.getSubscriberId())
-                            && topic2LocalCounts.get(topic).incrementAndGet() == 1)
+                        && count != null
+                        && count.incrementAndGet() == 1)
                         notifySubscribe(topic, subRequest.getSynchronous(), cb2, ctx);
                     else
                         cb2.operationFinished(ctx, resultOfOperation);
@@ -537,8 +544,9 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                 public void operationFinished(Object ctx, Void resultOfOperation) {
                     topicSubscriptions.remove(subscriberId);
                     // Notify listeners if necessary.
+                    AtomicInteger count = topic2LocalCounts.get(topic);
                     if (!SubscriptionStateUtils.isHubSubscriber(subscriberId)
-                            && topic2LocalCounts.get(topic).decrementAndGet() == 0)
+                        && count != null && count.decrementAndGet() == 0)
                         notifyUnsubcribe(topic);
 
                     updateMessageBound(topic);

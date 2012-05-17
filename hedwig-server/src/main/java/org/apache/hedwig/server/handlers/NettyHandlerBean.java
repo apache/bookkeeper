@@ -30,7 +30,7 @@ public class NettyHandlerBean implements NettyHandlerMXBean, HedwigMBeanInfo {
 
     public NettyHandlerBean(Map<OperationType, Handler> handlers) {
         this.handlers = handlers;
-        subHandler = (SubscribeHandler) handlers.get(OperationType.SUBSCRIBE);
+        subHandler = (SubscribeHandler) this.handlers.get(OperationType.SUBSCRIBE);
     }
 
     @Override

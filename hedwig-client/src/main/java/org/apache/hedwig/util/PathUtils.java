@@ -26,12 +26,12 @@ public class PathUtils {
     /** Generate all prefixes for a path. "/a/b/c" -> ["/a","/a/b","/a/b/c"] */
     public static List<String> prefixes(String path) {
         List<String> prefixes = new ArrayList<String>();
-        String prefix = "";
+        StringBuilder prefix = new StringBuilder();
         for (String comp : path.split("/+")) {
             // Skip the first (empty) path component.
             if (!comp.equals("")) {
-                prefix += "/" + comp;
-                prefixes.add(prefix);
+                prefix.append("/").append(comp);
+                prefixes.add(prefix.toString());
             }
         }
         return prefixes;

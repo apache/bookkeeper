@@ -59,6 +59,8 @@ public class BenchmarkSubscriber extends BenchmarkWorker implements Callable<Voi
     public Void call() throws Exception {
 
         final ThroughputAggregator agg = new ThroughputAggregator("recvs", numMessages);
+        agg.startProgress();
+
         final Map<String, Long> lastSeqIdSeenMap = new HashMap<String, Long>();
 
         for (int i = startTopicLabel; i < startTopicLabel + numTopics; i++) {
@@ -120,6 +122,8 @@ public class BenchmarkSubscriber extends BenchmarkWorker implements Callable<Voi
             throws InterruptedException {
         long startTime = System.currentTimeMillis();
         ThroughputLatencyAggregator agg = new ThroughputLatencyAggregator(label, count / numPartitions, npar);
+        agg.startProgress();
+
         int end = start + count;
         for (int i = start; i < end; ++i) {
             if (!HedwigBenchmark.amIResponsibleForTopic(i, partitionIndex, numPartitions)) {

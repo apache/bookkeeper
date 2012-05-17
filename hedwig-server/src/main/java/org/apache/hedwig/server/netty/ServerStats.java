@@ -121,7 +121,7 @@ public class ServerStats {
             ++latencyBuckets[bucket];
         }
 
-        public OpStatData toOpStatData() {
+        synchronized public OpStatData toOpStatData() {
             double avgLatency = numSuccessOps > 0 ? totalLatency / numSuccessOps : 0.0f;
             StringBuilder sb = new StringBuilder();
             for (int i=0; i<NUM_BUCKETS; i++) {
@@ -131,7 +131,8 @@ public class ServerStats {
                 }
             }
 
-            return new OpStatData(maxLatency, minLatency, avgLatency, numSuccessOps, numFailedOps, sb.toString());
+            return new OpStatData(maxLatency, minLatency, avgLatency,
+                                  numSuccessOps, numFailedOps, sb.toString());
         }
 
     }

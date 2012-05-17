@@ -458,7 +458,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
     }
 
     protected static class HashSetCacheKeyFactory implements Factory<Set<CacheKey>> {
-        protected static HashSetCacheKeyFactory instance = new HashSetCacheKeyFactory();
+        protected final static HashSetCacheKeyFactory instance = new HashSetCacheKeyFactory();
 
         public Set<CacheKey> newInstance() {
             return new HashSet<CacheKey>();
@@ -466,7 +466,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
     }
 
     protected static class TreeSetLongFactory implements Factory<SortedSet<Long>> {
-        protected static TreeSetLongFactory instance = new TreeSetLongFactory();
+        protected final static TreeSetLongFactory instance = new TreeSetLongFactory();
 
         public SortedSet<Long> newInstance() {
             return new TreeSet<Long>();

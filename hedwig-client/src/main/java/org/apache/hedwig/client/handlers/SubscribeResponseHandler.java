@@ -78,7 +78,7 @@ public class SubscribeResponseHandler {
 
     // Public getter to retrieve the original PubSubData used for the Subscribe
     // request.
-    public PubSubData getOrigSubData() {
+    synchronized public PubSubData getOrigSubData() {
         return origSubData;
     }
 
@@ -98,35 +98,37 @@ public class SubscribeResponseHandler {
                          + HedwigClientImpl.getHostFromChannel(channel));
         switch (response.getStatusCode()) {
         case SUCCESS:
-            // For successful Subscribe requests, store this Channel locally
-            // and set it to not be readable initially.
-            // This way we won't be delivering messages for this topic
-            // subscription until the client explicitly says so.
-            subscribeChannel = channel;
-            subscribeChannel.setReadable(false);
-            // Store the original PubSubData used to create this successful
-            // Subscribe request.
-            origSubData = pubSubData;
-            // Store the mapping for the TopicSubscriber to the Channel.
-            // This is so we can control the starting and stopping of
-            // message deliveries from the server on that Channel. Store
-            // this only on a successful ack response from the server.
-            TopicSubscriber topicSubscriber = new TopicSubscriber(pubSubData.topic, pubSubData.subscriberId);
-            responseHandler.getSubscriber().setChannelForTopic(topicSubscriber, channel);
-            // Lazily create the Set (from a concurrent hashmap) to keep track
-            // of outstanding Messages to be consumed by the client app. At this
-            // stage, delivery for that topic hasn't started yet so creation of 
-            // this Set should be thread safe. We'll create the Set with an initial
-            // capacity equal to the configured parameter for the maximum number of
-            // outstanding messages to allow. The load factor will be set to
-            // 1.0f which means we'll only rehash and allocate more space if
-            // we ever exceed the initial capacity. That should be okay
-            // because when that happens, things are slow already and piling
-            // up on the client app side to consume messages.
-            
-            outstandingMsgSet = Collections.newSetFromMap(new ConcurrentHashMap<Message,Boolean>(
-                responseHandler.getConfiguration().getMaximumOutstandingMessages(), 1.0f));
-            
+            synchronized(this) {
+                // For successful Subscribe requests, store this Channel locally
+                // and set it to not be readable initially.
+                // This way we won't be delivering messages for this topic
+                // subscription until the client explicitly says so.
+                subscribeChannel = channel;
+                subscribeChannel.setReadable(false);
+                // Store the original PubSubData used to create this successful
+                // Subscribe request.
+                origSubData = pubSubData;
+
+                // Store the mapping for the TopicSubscriber to the Channel.
+                // This is so we can control the starting and stopping of
+                // message deliveries from the server on that Channel. Store
+                // this only on a successful ack response from the server.
+                TopicSubscriber topicSubscriber = new TopicSubscriber(pubSubData.topic, pubSubData.subscriberId);
+                responseHandler.getSubscriber().setChannelForTopic(topicSubscriber, channel);
+                // Lazily create the Set (from a concurrent hashmap) to keep track
+                // of outstanding Messages to be consumed by the client app. At this
+                // stage, delivery for that topic hasn't started yet so creation of
+                // this Set should be thread safe. We'll create the Set with an initial
+                // capacity equal to the configured parameter for the maximum number of
+                // outstanding messages to allow. The load factor will be set to
+                // 1.0f which means we'll only rehash and allocate more space if
+                // we ever exceed the initial capacity. That should be okay
+                // because when that happens, things are slow already and piling
+                // up on the client app side to consume messages.
+                outstandingMsgSet = Collections.newSetFromMap(
+                        new ConcurrentHashMap<Message,Boolean>(
+                                responseHandler.getConfiguration().getMaximumOutstandingMessages(), 1.0f));
+            }
             // Response was success so invoke the callback's operationFinished
             // method.
             pubSubData.callback.operationFinished(pubSubData.context, null);
@@ -162,9 +164,11 @@ public class SubscribeResponseHandler {
     // Main method to handle consuming a message for a topic that the client is
     // subscribed to.
     public void handleSubscribeMessage(PubSubResponse response) {
-        if (logger.isDebugEnabled())
-            logger.debug("Handling a Subscribe message in response: " + response + ", topic: "
-                         + origSubData.topic.toStringUtf8() + ", subscriberId: " + origSubData.subscriberId.toStringUtf8());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Handling a Subscribe message in response: {}, topic: {}, subscriberId: {}",
+                    new Object[] { response, getOrigSubData().topic.toStringUtf8(),
+                                   getOrigSubData().subscriberId.toStringUtf8() });
+        }
         Message message = response.getMessage();
 
         synchronized (this) {
@@ -300,9 +304,11 @@ public class SubscribeResponseHandler {
      *            MessageHandler to register for this ResponseHandler instance.
      */
     public void setMessageHandler(MessageHandler messageHandler) {
-        if (logger.isDebugEnabled())
-            logger.debug("Setting the messageHandler for topic: " + origSubData.topic.toStringUtf8()
-                         + ", subscriberId: " + origSubData.subscriberId.toStringUtf8());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Setting the messageHandler for topic: {}, subscriberId: {}",
+                         getOrigSubData().topic.toStringUtf8(),
+                         getOrigSubData().subscriberId.toStringUtf8());
+        }
         synchronized (this) {
             this.messageHandler = messageHandler;
             // Once the MessageHandler is registered, see if we have any queued up

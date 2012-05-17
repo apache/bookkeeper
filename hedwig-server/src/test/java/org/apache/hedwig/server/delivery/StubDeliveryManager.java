@@ -64,6 +64,10 @@ public class StubDeliveryManager implements DeliveryManager {
     }
 
     @Override
+    public void start() {
+    }
+
+    @Override
     public void stop() {
         // do nothing now
     }

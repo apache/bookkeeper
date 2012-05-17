@@ -28,6 +28,10 @@ import java.sql.Statement;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 import javax.sql.rowset.serial.SerialBlob;
 
 import org.slf4j.Logger;
@@ -70,6 +74,18 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
                 return DriverManager.getConnection(connectionURL);
             } catch (SQLException e) {
                 logger.error("Could not connect to derby", e);
+                return null;
+            }
+        }
+    };
+
+    private static final ThreadLocal<MessageDigest> threadLocalDigest = new ThreadLocal<MessageDigest>() {
+        @Override
+        protected MessageDigest initialValue() {
+            try {
+                return MessageDigest.getInstance("MD5");
+            } catch (NoSuchAlgorithmException e) {
+                logger.error("Could not find MD5 hash", e);
                 return null;
             }
         }
@@ -246,14 +262,22 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
      * sneak in and create the table before us
      */
     private void createTable(Connection conn, ByteString topic) {
-
+        Statement stmt = null;
         try {
-            Statement stmt = conn.createStatement();
+            stmt = conn.createStatement();
             String tableName = getTableNameForTopic(topic);
             stmt.execute("CREATE TABLE " + tableName + " (" + ID_FIELD_NAME + " BIGINT NOT NULL CONSTRAINT ID_PK_"
-                         + tableName + " PRIMARY KEY," + MSG_FIELD_NAME + " BLOB(2M) NOT NULL)");
+                    + tableName + " PRIMARY KEY," + MSG_FIELD_NAME + " BLOB(2M) NOT NULL)");
         } catch (SQLException e) {
             logger.debug("Could not create table", e);
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (SQLException e) {
+                logger.error("Error closing statement", e);
+            }
         }
     }
 
@@ -274,7 +298,11 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
     }
 
     private String getTableNameForTopic(ByteString topic) {
-        return (topic.toStringUtf8() + "_" + version);
+        String src = (topic.toStringUtf8() + "_" + version);
+        threadLocalDigest.get().reset();
+        byte[] digest = threadLocalDigest.get().digest(src.getBytes());
+        BigInteger bigInt = new BigInteger(1,digest);
+        return String.format("TABLE_%032X", bigInt);
     }
 
     private void scanMessagesInternal(ByteString topic, long startSeqId, int messageLimit, long sizeLimit,
@@ -290,7 +318,7 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
         long currentSeqId;
         currentSeqId = startSeqId;
 
-        PreparedStatement stmt;
+        PreparedStatement stmt = null;
         try {
             try {
                 stmt = conn.prepareStatement("SELECT * FROM " + getTableNameForTopic(topic) + " WHERE " + ID_FIELD_NAME
@@ -367,8 +395,15 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
             logger.error("Message stored in derby is not parseable", e);
             callback.scanFailed(ctx, new ServiceDownException(e));
             return;
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (SQLException e) {
+                logger.error("Error closing statement", e);
+            }
         }
-
     }
 
     public void deliveredUntil(ByteString topic, Long seqId) {
@@ -381,20 +416,27 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
             logger.error("Not connected to derby");
             return;
         }
-        PreparedStatement stmt;
+        PreparedStatement stmt = null;
         try {
             stmt = conn.prepareStatement("DELETE FROM " + getTableNameForTopic(topic) + " WHERE " + ID_FIELD_NAME
                                          + " <= ?");
             stmt.setLong(1, seqId);
             int rowCount = stmt.executeUpdate();
             logger.debug("Deleted " + rowCount + " records for topic: " + topic.toStringUtf8() + ", seqId: " + seqId);
-            stmt.close();
         } catch (SQLException sqle) {
             String theError = (sqle).getSQLState();
             if (theError.equals("42X05")) {
                 logger.warn("Table for topic (" + topic + ") does not exist so no consumed messages to delete!");
             } else
                 logger.error("Error while executing derby delete for consumed messages", sqle);
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (SQLException e) {
+                logger.error("Error closing statement", e);
+            }
         }
     }
 

@@ -96,6 +96,7 @@ public class TestPubSubServerStartup {
         try {
             logger.info("starting hedwig broker!");
             hedwigServer = new PubSubServer(serverConf);
+            hedwigServer.start();
         } catch (Exception e) {
             e.printStackTrace();
         }

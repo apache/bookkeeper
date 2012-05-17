@@ -89,13 +89,18 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
     // Boolean indicating if this thread should continue running. This is used
     // when we want to stop the thread during a PubSubServer shutdown.
     protected boolean keepRunning = true;
+    private final Thread workerThread;
 
     public FIFODeliveryManager(PersistenceManager persistenceMgr, ServerConfiguration cfg) {
         this.persistenceMgr = persistenceMgr;
         perTopicDeliveryPtrs = new HashMap<ByteString, SortedMap<Long, Set<ActiveSubscriberState>>>();
         subscriberStates = new HashMap<TopicSubscriber, ActiveSubscriberState>();
-        new Thread(this, "DeliveryManagerThread").start();
+        workerThread = new Thread(this, "DeliveryManagerThread");
         this.cfg = cfg;
+    }
+
+    public void start() {
+        workerThread.start();
     }
 
     /**
@@ -296,7 +301,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
         long localSeqIdDeliveringNow;
         long lastSeqIdCommunicatedExternally;
         // TODO make use of these variables
-        MessageFilter filter;
+
         boolean isHubSubscriber;
         final static int SEQ_ID_SLACK = 10;
 
@@ -306,7 +311,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
             this.subscriberId = subscriberId;
             this.lastLocalSeqIdDelivered = lastLocalSeqIdDelivered;
             this.deliveryEndPoint = deliveryEndPoint;
-            this.filter = filter;
+
             this.isHubSubscriber = isHubSubscriber;
         }
 

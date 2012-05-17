@@ -103,7 +103,7 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
                 // Check for expired connection.
                 if (event.getState().equals(Watcher.Event.KeeperState.Expired)) {
                     logger.error("ZK client connection to the ZK server has expired!");
-                    System.exit(1);
+                    Runtime.getRuntime().exit(1);
                 }
             }
         });

@@ -18,6 +18,7 @@
 
 package org.apache.hedwig.admin;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -65,7 +66,7 @@ public class HedwigAdmin {
     protected ClientConfiguration bkClientConf;
 
     // Empty watcher
-    private class MyWatcher implements Watcher {
+    private static class MyWatcher implements Watcher {
         public void process(WatchedEvent event) {
         }
     }
@@ -140,7 +141,7 @@ public class HedwigAdmin {
      * @return bookeeper passwd
      */
     public byte[] getBkPasswd() {
-        return passwd;
+        return Arrays.copyOf(passwd, passwd.length);
     }
 
     /**
@@ -187,8 +188,10 @@ public class HedwigAdmin {
                 if (data != null) {
                     load = Integer.parseInt(new String(data));
                 }
-            } catch (Exception e) {
-                // igore
+            } catch (KeeperException ke) {
+                LOG.warn("Couldn't read hub data from ZooKeeper", ke);
+            } catch (InterruptedException ie) {
+                LOG.warn("Interrupted during read", ie);
             }
             hubs.put(new HedwigSocketAddress(host), load);
         }

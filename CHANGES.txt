@@ -14,6 +14,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-254: Bump zookeeper version in poms (ivank)
 
+      BOOKKEEPER-72: Fix warnings issued by FindBugs (ivank)
+
       bookkeeper-server/
 
         BOOKKEEPER-142: Parsing last log id is wrong, which may make entry log files overwritten (Sijie Gou via ivank)

@@ -124,6 +124,11 @@ public class HedwigSocketAddress {
         return (this.hostname.equals(that.hostname) && (this.port == that.port) && (this.sslPort == that.sslPort));
     }
 
+    @Override
+    public int hashCode() {
+        return (this.hostname + this.port + this.sslPort).hashCode();
+    }
+
     // Static helper method to return the string representation for an
     // InetSocketAddress. The HedwigClient can only operate in SSL or non-SSL
     // mode. So the server hosts it connects to will just be an

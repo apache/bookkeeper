@@ -72,7 +72,6 @@ public class ReadTopic {
     static final int NUM_MESSAGES_TO_PRINT = 15;
 
     SortedMap<Long, InMemoryLedgerRange> ledgers = new TreeMap<Long, InMemoryLedgerRange>();
-    SubscriptionState leastSubscriber = null;
     
     static class InMemoryLedgerRange {
         LedgerRange range;
@@ -152,7 +151,6 @@ public class ReadTopic {
             long localMsgId = state.getMsgId().getLocalComponent();
             if (localMsgId < leastConsumedSeqId) {
                 leastConsumedSeqId = localMsgId;
-                this.leastSubscriber = state;
             }
         }
         if (leastConsumedSeqId == Long.MAX_VALUE) {

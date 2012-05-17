@@ -26,7 +26,7 @@ public class TerminateJVMExceptionHandler implements Thread.UncaughtExceptionHan
     @Override
     public void uncaughtException(Thread t, Throwable e) {
         logger.error("Uncaught exception in thread " + t.getName(), e);
-        System.exit(1);
+        Runtime.getRuntime().exit(1);
     }
 
 }

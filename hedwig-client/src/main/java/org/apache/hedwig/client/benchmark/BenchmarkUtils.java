@@ -60,6 +60,10 @@ public class BenchmarkUtils {
             }
         }
 
+        public void startProgress() {
+            tpAgg.startProgress();
+        }
+
         public void reportLatency(long latency) {
             sum.addAndGet(latency);
 
@@ -101,6 +105,7 @@ public class BenchmarkUtils {
         final AtomicInteger done = new AtomicInteger();
         final AtomicLong earliest = new AtomicLong();
         final AtomicInteger numFailed = new AtomicInteger();
+        final Thread progressThread;
         final LinkedBlockingQueue<Integer> queue = new LinkedBlockingQueue<Integer>();
 
         public ThroughputAggregator(final String label, final int count) {
@@ -109,7 +114,7 @@ public class BenchmarkUtils {
             if (count == 0)
                 queue.add(0);
             if (Boolean.getBoolean("progress")) {
-                new Thread(new Runnable() {
+                progressThread = new Thread(new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -123,7 +128,15 @@ public class BenchmarkUtils {
                             throw new RuntimeException(ex);
                         }
                     }
-                }).start();
+                    });
+            } else {
+                progressThread = null;
+            }
+        }
+
+        public void startProgress() {
+            if (progressThread != null) {
+                progressThread.start();
             }
         }
 

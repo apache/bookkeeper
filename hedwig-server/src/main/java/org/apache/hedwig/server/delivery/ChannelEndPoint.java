@@ -78,4 +78,8 @@ public class ChannelEndPoint implements DeliveryEndPoint, ChannelFutureListener 
         }
     }
 
+    @Override
+    public int hashCode() {
+        return channel.hashCode();
+    }
 }

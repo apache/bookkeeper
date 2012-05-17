@@ -61,6 +61,8 @@ public class BenchmarkPublisher extends BenchmarkWorker {
 
         // picking constants arbitarily for warmup phase
         ThroughputLatencyAggregator agg = new ThroughputLatencyAggregator("acked pubs", nWarmup, 100);
+        agg.startProgress();
+
         Message msg = getMsg(1024);
         for (int i = 0; i < nWarmup; i++) {
             publisher.asyncPublish(topic, msg, new BenchmarkCallback(agg), null);
@@ -100,6 +102,7 @@ public class BenchmarkPublisher extends BenchmarkWorker {
         int myPublishLimit = numMessages / numRegions / numPartitions - myPublishCount;
         myPublishCount = 0;
         ThroughputLatencyAggregator agg = new ThroughputLatencyAggregator("acked pubs", myPublishLimit, nParallel);
+        agg.startProgress();
 
         int topicLabel = 0;
 

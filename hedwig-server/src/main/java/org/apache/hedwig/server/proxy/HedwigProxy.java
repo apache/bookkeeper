@@ -53,18 +53,24 @@ public class HedwigProxy {
     Map<OperationType, Handler> handlers;
     ProxyConfiguration cfg;
     ChannelTracker tracker;
+    ThreadGroup tg;
 
-    public HedwigProxy(final ProxyConfiguration cfg, final UncaughtExceptionHandler exceptionHandler)
-            throws InterruptedException {
+    public HedwigProxy(final ProxyConfiguration cfg, final UncaughtExceptionHandler exceptionHandler) {
         this.cfg = cfg;
 
-        ThreadGroup tg = new ThreadGroup("hedwigproxy") {
+        tg = new ThreadGroup("hedwigproxy") {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
                 exceptionHandler.uncaughtException(t, e);
             }
         };
+    }
 
+    public HedwigProxy(ProxyConfiguration conf) throws InterruptedException {
+        this(conf, new TerminateJVMExceptionHandler());
+    }
+
+    public void start() throws InterruptedException {
         final LinkedBlockingQueue<Boolean> queue = new LinkedBlockingQueue<Boolean>();
 
         new Thread(tg, new Runnable() {
@@ -82,10 +88,6 @@ public class HedwigProxy {
         }).start();
 
         queue.take();
-    }
-
-    public HedwigProxy(ProxyConfiguration conf) throws InterruptedException {
-        this(conf, new TerminateJVMExceptionHandler());
     }
 
     // used for testing
@@ -161,7 +163,7 @@ public class HedwigProxy {
             logger.info("Using configuration file " + confFile);
         }
         try {
-            new HedwigProxy(conf);
+            new HedwigProxy(conf).start();
         } catch (Throwable t) {
             PubSubServer.errorMsgAndExit("Error during startup", t, PubSubServer.RC_OTHER);
         }

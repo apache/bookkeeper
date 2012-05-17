@@ -212,6 +212,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         super.setUp();
         if (mode == Mode.PROXY) {
             proxy = new HedwigProxy(proxyConf);
+            proxy.start();
         }
         client = new HedwigClient(getClientConfiguration());
         publisher = client.getPublisher();

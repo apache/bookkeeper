@@ -22,7 +22,7 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import org.apache.hedwig.server.common.TerminateJVMExceptionHandler;
 
 public class SafeAsyncCallback {
-    protected static UncaughtExceptionHandler uncaughtExceptionHandler = new TerminateJVMExceptionHandler();
+    static UncaughtExceptionHandler uncaughtExceptionHandler = new TerminateJVMExceptionHandler();
 
     public static void setUncaughtExceptionHandler(UncaughtExceptionHandler uncaughtExceptionHandler) {
         SafeAsyncCallback.uncaughtExceptionHandler = uncaughtExceptionHandler;

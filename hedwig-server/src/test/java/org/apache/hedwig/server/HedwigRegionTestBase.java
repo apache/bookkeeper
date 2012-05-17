@@ -232,9 +232,13 @@ public abstract class HedwigRegionTestBase extends TestCase {
         // servers. We will basically increment through the port numbers
         // starting from the initial ones defined.
         for (int j = 0; j < numServersPerRegion; j++) {
-            serversList.add(new PubSubServer(getServerConfiguration(initialServerPort
-                                             + (j + i * numServersPerRegion), initialSSLServerPort + (j + i * numServersPerRegion),
-                                             regionName)));
+            PubSubServer s = new PubSubServer(
+                    getServerConfiguration(initialServerPort
+                                           + (j + i * numServersPerRegion),
+                                           initialSSLServerPort + (j + i * numServersPerRegion),
+                                           regionName));
+            serversList.add(s);
+            s.start();
         }
         // Store this list of servers created for the current region
         regionServersMap.put(regionName, serversList);

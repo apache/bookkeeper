@@ -55,6 +55,7 @@ public class TestPubSubServer extends PubSubServerStandAloneTestBase {
                 return super.getServerPort() + 1;
             }
         });
+        server1.start();
         server1.shutdown();
     }
 
@@ -91,7 +92,7 @@ public class TestPubSubServer extends PubSubServerStandAloneTestBase {
                 return instantiator.instantiateTopicManager();
             }
         };
-
+        server.start();
         return server;
 
     }
