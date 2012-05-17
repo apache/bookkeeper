@@ -22,3 +22,17 @@
 
 # default settings for starting hedwig
 #HEDWIG_SERVER_CONF=
+
+# Server part configuration for hedwig console,
+# used for metadata management
+# HEDWIG_CONSOLE_SERVER_CONF=
+
+# Client part configuration for hedwig console,
+# used for interacting with hub server.
+# HEDWIG_CONSOLE_CLIENT_CONF=
+
+# Log4j configuration file
+# HEDWIG_LOG_CONF=
+
+# Extra options to be passed to the jvm
+# HEDWIG_EXTRA_OPTS=

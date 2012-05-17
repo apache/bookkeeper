@@ -33,6 +33,7 @@ BINDIR=`dirname "$0"`
 HW_HOME=`cd $BINDIR/..;pwd`
 
 DEFAULT_CONF=$HW_HOME/conf/hw_server.conf
+DEFAULT_LOG_CONF=$HW_HOME/conf/log4j.properties
 
 . $HW_HOME/conf/hwenv.sh
 
@@ -88,10 +89,10 @@ or command is the full name of a class with a defined main() method.
 Environment variables:
    HEDWIG_SERVER_CONF           Hedwig server configuration file (default $DEFAULT_CONF)
    HEDWIG_CONSOLE_SERVER_CONF   Server part configuration for hedwig console,
-                                used for metadata management (default it is same as HEDWIG_SERVER_CONF)
+                                used for metadata management (defaults to HEDWIG_SERVER_CONF)
    HEDWIG_CONSOLE_CLIENT_CONF   Client part configuration for hedwig console,
                                 used for interacting with hub server.
-   HEDWIG_LOG_CONF              Log4j configuration file
+   HEDWIG_LOG_CONF              Log4j configuration file (default $DEFAULT_LOG_CONF)
    HEDWIG_EXTRA_OPTS            Extra options to be passed to the jvm
 
 These variable can also be set in conf/hwenv.sh
@@ -108,8 +109,12 @@ fi
 COMMAND=$1
 shift
 
-if [ "$HEDWIG_SERVER_CONF" == "" ]; then
+if [ -z "$HEDWIG_SERVER_CONF" ]; then
     HEDWIG_SERVER_CONF=$DEFAULT_CONF;
+fi
+
+if [ -z "$HEDWIG_LOG_CONF" ]; then
+    HEDWIG_LOG_CONF=$DEFAULT_LOG_CONF
 fi
 
 HEDWIG_CLASSPATH="$HEDWIG_JAR:$HEDWIG_CLASSPATH"

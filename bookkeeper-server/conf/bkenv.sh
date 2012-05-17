@@ -24,3 +24,12 @@
 
 # Configuration file of settings used in bookie server
 # BOOKIE_CONF=
+
+# Log4j configuration file
+# BOOKIE_LOG_CONF=
+
+# Extra options to be passed to the jvm
+# BOOKIE_EXTRA_OPTS=
+
+# Add extra paths to the bookkeeper classpath
+# BOOKIE_EXTRA_CLASSPATH=
