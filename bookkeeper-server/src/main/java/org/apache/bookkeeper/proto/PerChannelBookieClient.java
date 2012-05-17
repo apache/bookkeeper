@@ -90,13 +90,13 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
      * because they are always updated under a lock
      */
     Queue<GenericCallback<Void>> pendingOps = new ArrayDeque<GenericCallback<Void>>();
-    Channel channel = null;
+    volatile Channel channel = null;
 
     private enum ConnectionState {
         DISCONNECTED, CONNECTING, CONNECTED
             };
 
-    private ConnectionState state;
+    private volatile ConnectionState state;
     private final ClientConfiguration conf;
 
     public PerChannelBookieClient(OrderedSafeExecutor executor, ClientSocketChannelFactory channelFactory,
@@ -174,29 +174,38 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     void connectIfNeededAndDoOp(GenericCallback<Void> op) {
         boolean doOpNow;
 
-        synchronized (this) {
-            if (channel != null && state == ConnectionState.CONNECTED) {
-                doOpNow = true;
-            } else {
-                // if reached here, channel is either null (first connection
-                // attempt),
-                // or the channel is disconnected
-                doOpNow = false;
+        // common case without lock first
+        if (channel != null && state == ConnectionState.CONNECTED) {
+            doOpNow = true;
+        } else {
 
-                // connection attempt is still in progress, queue up this
-                // op. Op will be executed when connection attempt either
-                // fails
-                // or
-                // succeeds
-                pendingOps.add(op);
+            synchronized (this) {
+                // check again under lock
+                if (channel != null && state == ConnectionState.CONNECTED) {
+                    doOpNow = true;
+                } else {
 
-                connect();
+                    // if reached here, channel is either null (first connection
+                    // attempt),
+                    // or the channel is disconnected
+                    doOpNow = false;
+
+                    // connection attempt is still in progress, queue up this
+                    // op. Op will be executed when connection attempt either
+                    // fails
+                    // or
+                    // succeeds
+                    pendingOps.add(op);
+
+                    connect();
+                }
             }
         }
 
         if (doOpNow) {
             op.operationComplete(BKException.Code.OK, null);
         }
+
     }
 
     /**

@@ -485,9 +485,8 @@ public class NIOServerFactory extends Thread {
         }
 
         private class CnxnStats {
-            int packetsSent = 0;
-
-            int packetsReceived = 0;
+            long packetsSent = 0;
+            long packetsReceived = 0;
 
             /**
              * The number of requests that have been submitted but not yet
