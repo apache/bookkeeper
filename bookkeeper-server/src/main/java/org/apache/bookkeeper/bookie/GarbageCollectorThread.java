@@ -81,6 +81,9 @@ public class GarbageCollectorThread extends Thread {
 
     volatile boolean running = true;
 
+    // track the last scanned successfully log id
+    long scannedLogId = 0;
+
     /**
      * A scanner wrapper to check whether a ledger is alive in an entry log file
      */
@@ -458,11 +461,19 @@ public class GarbageCollectorThread extends Thread {
         // Entry Log ID's are just a long value that starts at 0 and increments
         // by 1 when the log fills up and we roll to a new one.
         long curLogId = entryLogger.getCurrentLogId();
-        for (long entryLogId = 0; entryLogId < curLogId; entryLogId++) {
+        boolean hasExceptionWhenScan = false;
+        for (long entryLogId = scannedLogId; entryLogId < curLogId; entryLogId++) {
             // Comb the current entry log file if it has not already been extracted.
             if (entryLogMetaMap.containsKey(entryLogId)) {
                 continue;
             }
+
+            // check whether log file exists or not
+            // if it doesn't exist, this log file might have been garbage collected.
+            if (!entryLogger.logExists(entryLogId)) {
+                continue;
+            }
+
             LOG.info("Extracting entry log meta from entryLogId: " + entryLogId);
 
             try {
@@ -470,8 +481,16 @@ public class GarbageCollectorThread extends Thread {
                 EntryLogMetadata entryLogMeta = extractMetaFromEntryLog(entryLogger, entryLogId);
                 entryLogMetaMap.put(entryLogId, entryLogMeta);
             } catch (IOException e) {
+                hasExceptionWhenScan = true;
                 LOG.warn("Premature exception when processing " + entryLogId +
                          "recovery will take care of the problem", e);
+            }
+
+            // if scan failed on some entry log, we don't move 'scannedLogId' to next id
+            // if scan succeed, we don't need to scan it again during next gc run,
+            // we move 'scannedLogId' to next id
+            if (!hasExceptionWhenScan) {
+                ++scannedLogId;
             }
         }
         return entryLogMetaMap;

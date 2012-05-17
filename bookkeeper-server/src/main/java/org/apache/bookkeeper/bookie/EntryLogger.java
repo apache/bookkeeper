@@ -361,6 +361,19 @@ public class EntryLogger {
         }
     }
 
+    /**
+     * Whether the log file exists or not.
+     */
+    boolean logExists(long logId) {
+        for (File d : dirs) {
+            File f = new File(d, Long.toHexString(logId) + ".log");
+            if (f.exists()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private File findFile(long logId) throws FileNotFoundException {
         for(File d: dirs) {
             File f = new File(d, Long.toHexString(logId)+".log");
