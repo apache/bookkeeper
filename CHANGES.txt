@@ -12,6 +12,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-145: Put notice and license file for distributed binaries in SVN (ivank)
 
+      BOOKKEEPER-254: Bump zookeeper version in poms (ivank)
+
       bookkeeper-server/
 
         BOOKKEEPER-142: Parsing last log id is wrong, which may make entry log files overwritten (Sijie Gou via ivank)

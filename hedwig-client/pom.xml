@@ -68,10 +68,10 @@
       <version>1.6</version>
     </dependency>
     <dependency>
-    	<groupId>org.apache.zookeeper</groupId>
-    	<artifactId>zookeeper</artifactId>
-    	<version>3.4.0</version>
-    	<type>jar</type>
+      <groupId>org.apache.zookeeper</groupId>
+      <artifactId>zookeeper</artifactId>
+      <version>3.4.3</version>
+      <type>jar</type>
     </dependency>
     <dependency>
     	<groupId>org.apache.bookkeeper</groupId>
