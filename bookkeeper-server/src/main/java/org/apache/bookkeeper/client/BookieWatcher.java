@@ -30,6 +30,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.util.StringUtils;
 import org.slf4j.Logger;
@@ -50,7 +51,8 @@ import org.apache.zookeeper.KeeperException.Code;
 class BookieWatcher implements Watcher, ChildrenCallback {
     static final Logger logger = LoggerFactory.getLogger(BookieWatcher.class);
 
-    public static final String BOOKIE_REGISTRATION_PATH = "/ledgers/available";
+    // Bookie registration path in ZK
+    private final String bookieRegistrationPath;
     static final Set<InetSocketAddress> EMPTY_SET = new HashSet<InetSocketAddress>();
     public static int ZK_CONNECT_BACKOFF_SEC = 1;
 
@@ -66,8 +68,10 @@ class BookieWatcher implements Watcher, ChildrenCallback {
         }
     };
 
-    public BookieWatcher(BookKeeper bk) {
+    public BookieWatcher(ClientConfiguration conf, BookKeeper bk) {
         this.bk = bk;
+        // ZK bookie registration path
+        this.bookieRegistrationPath = conf.getZkAvailableBookiesPath();
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
     }
 
@@ -80,7 +84,7 @@ class BookieWatcher implements Watcher, ChildrenCallback {
     }
 
     public void readBookies(ChildrenCallback callback) {
-        bk.getZkHandle().getChildren(BOOKIE_REGISTRATION_PATH, this, callback, null);
+        bk.getZkHandle().getChildren(this.bookieRegistrationPath, this, callback, null);
     }
 
     @Override

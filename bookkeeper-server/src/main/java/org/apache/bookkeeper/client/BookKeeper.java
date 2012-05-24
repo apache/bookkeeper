@@ -98,7 +98,7 @@ public class BookKeeper {
      *          A list of one of more servers on which zookeeper is running. The
      *          client assumes that the running bookies have been registered with
      *          zookeeper under the path
-     *          {@link BookieWatcher#BOOKIE_REGISTRATION_PATH}
+     *          {@link BookieWatcher#bookieRegistrationPath}
      * @throws IOException
      * @throws InterruptedException
      * @throws KeeperException
@@ -135,7 +135,7 @@ public class BookKeeper {
                 });
         this.channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                                                                 Executors.newCachedThreadPool());
-        bookieWatcher = new BookieWatcher(this);
+        bookieWatcher = new BookieWatcher(conf, this);
         bookieWatcher.readBookiesBlocking();
         mainWorkerPool = new OrderedSafeExecutor(conf.getNumWorkerThreads());
         bookieClient = new BookieClient(conf, channelFactory, mainWorkerPool);
@@ -191,7 +191,7 @@ public class BookKeeper {
         this.conf = conf;
         this.zk = zk;
         this.channelFactory = channelFactory;
-        bookieWatcher = new BookieWatcher(this);
+        bookieWatcher = new BookieWatcher(conf, this);
         bookieWatcher.readBookiesBlocking();
         mainWorkerPool = new OrderedSafeExecutor(conf.getNumWorkerThreads());
         bookieClient = new BookieClient(conf, channelFactory, mainWorkerPool);

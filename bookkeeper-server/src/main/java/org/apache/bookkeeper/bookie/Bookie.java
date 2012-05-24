@@ -74,7 +74,7 @@ public class Bookie extends Thread {
     static final long METAENTRY_ID_LEDGER_KEY = -0x1000;
 
     // ZK registration path for this bookie
-    static final String BOOKIE_REGISTRATION_PATH = "/ledgers/available/";
+    private final String bookieRegistrationPath;
     static final String CURRENT_DIR = "current";
 
     // ZooKeeper client instance for the Bookie
@@ -342,6 +342,7 @@ public class Bookie extends Thread {
     public Bookie(ServerConfiguration conf)
             throws IOException, KeeperException, InterruptedException, BookieException {
         super("Bookie-" + conf.getBookiePort());
+        this.bookieRegistrationPath = conf.getZkAvailableBookiesPath() + "/";
         this.conf = conf;
         this.journalDirectory = getCurrentDirectory(conf.getJournalDir());
         this.ledgerDirectories = getCurrentDirectories(conf.getLedgerDirs());
@@ -490,7 +491,7 @@ public class Bookie extends Thread {
         }
         // Create the ZK ephemeral node for this Bookie.
         try {
-            zk.create(BOOKIE_REGISTRATION_PATH + InetAddress.getLocalHost().getHostAddress() + ":" + port, new byte[0],
+            zk.create(this.bookieRegistrationPath + InetAddress.getLocalHost().getHostAddress() + ":" + port, new byte[0],
                       Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
         } catch (Exception e) {
             LOG.error("ZK exception registering ephemeral Znode for Bookie!", e);

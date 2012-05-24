@@ -60,8 +60,7 @@ class Cookie {
     static Logger LOG = LoggerFactory.getLogger(Cookie.class);
 
     static final int CURRENT_COOKIE_LAYOUT_VERSION = 3;
-    static final String BOOKIE_COOKIE_PATH = "/ledgers/cookies";
-
+    static final String COOKIE_NODE = "cookies";
     static final String VERSION_FILENAME = "VERSION";
     private int layoutVersion = 0;
     private String bookieHost = null;
@@ -126,18 +125,19 @@ class Cookie {
 
     void writeToZooKeeper(ZooKeeper zk, ServerConfiguration conf)
             throws KeeperException, InterruptedException, UnknownHostException {
+        String bookieCookiePath = conf.getZkLedgersRootPath() + "/" + COOKIE_NODE;
         String zkPath = getZkPath(conf);
         byte[] data = toString().getBytes();
         if (znodeVersion != -1) {
             zk.setData(zkPath, data, znodeVersion);
         } else {
-            if (zk.exists(BOOKIE_COOKIE_PATH, false) == null) {
+            if (zk.exists(bookieCookiePath, false) == null) {
                 try {
-                    zk.create(BOOKIE_COOKIE_PATH, new byte[0],
+                    zk.create(bookieCookiePath, new byte[0],
                               Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
                 } catch (KeeperException.NodeExistsException nne) {
                     LOG.info("More than one bookie tried to create {} at once. Safe to ignore",
-                             BOOKIE_COOKIE_PATH);
+                             bookieCookiePath);
                 }
             }
             zk.create(zkPath, data,
@@ -190,6 +190,7 @@ class Cookie {
 
     private static String getZkPath(ServerConfiguration conf)
             throws UnknownHostException {
-        return BOOKIE_COOKIE_PATH + "/" + InetAddress.getLocalHost().getHostAddress() + ":" + conf.getBookiePort();
+        String bookieCookiePath = conf.getZkLedgersRootPath() + "/" + COOKIE_NODE;
+        return bookieCookiePath + "/" + InetAddress.getLocalHost().getHostAddress() + ":" + conf.getBookiePort();
     }
 }

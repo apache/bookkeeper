@@ -63,7 +63,7 @@ public class BookKeeperAdmin {
     // ZK client instance
     private ZooKeeper zk;
     // ZK ledgers related String constants
-    static final String BOOKIES_PATH = BookieWatcher.BOOKIE_REGISTRATION_PATH;
+    private final String bookiesPath;
 
     // BookKeeper client instance
     private BookKeeper bkc;
@@ -135,7 +135,8 @@ public class BookKeeperAdmin {
                 }
             }
         });
-
+        // Create the bookie path
+        bookiesPath = conf.getZkAvailableBookiesPath();
         // Create the BookKeeper client instance
         bkc = new BookKeeper(conf);
         DIGEST_TYPE = conf.getBookieRecoveryDigestType();
@@ -265,7 +266,7 @@ public class BookKeeperAdmin {
     public void asyncRecoverBookieData(final InetSocketAddress bookieSrc, final InetSocketAddress bookieDest,
                                        final RecoverCallback cb, final Object context) {
         // Sync ZK to make sure we're reading the latest bookie data.
-        zk.sync(BOOKIES_PATH, new AsyncCallback.VoidCallback() {
+        zk.sync(bookiesPath, new AsyncCallback.VoidCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx) {
                 if (rc != Code.OK.intValue()) {
@@ -305,7 +306,7 @@ public class BookKeeperAdmin {
             // Now poll ZK to get the active ledgers
             getActiveLedgers(bookieSrc, bookieDest, cb, context, availableBookies);
         } else {
-            zk.getChildren(BOOKIES_PATH, null, new AsyncCallback.ChildrenCallback() {
+            zk.getChildren(bookiesPath, null, new AsyncCallback.ChildrenCallback() {
                 @Override
                 public void processResult(int rc, String path, Object ctx, List<String> children) {
                     if (rc != Code.OK.intValue()) {

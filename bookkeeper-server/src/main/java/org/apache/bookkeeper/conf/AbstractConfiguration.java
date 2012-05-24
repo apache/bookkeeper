@@ -35,7 +35,7 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     // Ledger Manager
     protected final static String LEDGER_MANAGER_TYPE = "ledgerManagerType";
     protected final static String ZK_LEDGERS_ROOT_PATH = "zkLedgersRootPath";
-
+    protected final static String AVAILABLE_NODE = "available";
     protected AbstractConfiguration() {
         super();
         // add configuration for system properties
@@ -101,5 +101,14 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      */
     public String getZkLedgersRootPath() {
         return getString(ZK_LEDGERS_ROOT_PATH, "/ledgers");
+    }
+
+    /**
+     * Get the node under which available bookies are stored
+     *
+     * @return Node under which available bookies are stored.
+     */
+    public String getZkAvailableBookiesPath() {
+        return getZkLedgersRootPath() + "/" + AVAILABLE_NODE;
     }
 }

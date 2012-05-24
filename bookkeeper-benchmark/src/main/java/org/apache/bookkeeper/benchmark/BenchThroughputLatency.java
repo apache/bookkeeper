@@ -413,6 +413,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
             throws KeeperException, IOException, InterruptedException, BKException {
         final CountDownLatch connectLatch = new CountDownLatch(1);
         final int bookies;
+        String bookieRegistrationPath = conf.getZkAvailableBookiesPath();
         ZooKeeper zk = null;
         try {
             final String servers = conf.getZkServers();
@@ -427,7 +428,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
                 LOG.error("Couldn't connect to zookeeper at " + servers);
                 throw new IOException("Couldn't connect to zookeeper " + servers);
             }
-            bookies = zk.getChildren("/ledgers/available", false).size();
+            bookies = zk.getChildren(bookieRegistrationPath, false).size();
         } finally {
             if (zk != null) {
                 zk.close();

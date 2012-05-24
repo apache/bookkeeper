@@ -176,6 +176,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-241: Add documentation for bookie entry log compaction (sijie via fpj)
 
+	BOOKKEEPER-263: ZK ledgers root path is hard coded (Aniruddha via sijie)
+
       hedwig-server/
 
         BOOKKEEPER-77: Add a console client for hedwig (Sijie Guo via ivank)
