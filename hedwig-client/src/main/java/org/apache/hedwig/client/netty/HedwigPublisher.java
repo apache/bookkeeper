@@ -58,6 +58,7 @@ public class HedwigPublisher implements Publisher {
 
     private final HedwigClientImpl client;
     private final ClientConfiguration cfg;
+    private boolean closed = false;
 
     protected HedwigPublisher(HedwigClientImpl client) {
         this.client = client;
@@ -194,7 +195,7 @@ public class HedwigPublisher implements Publisher {
     // RemoteAddress tied to it.
     protected synchronized void storeHost2ChannelMapping(Channel channel) {
         InetSocketAddress host = HedwigClientImpl.getHostFromChannel(channel);
-        if (!host2Channel.containsKey(host)) {
+        if (!closed && !host2Channel.containsKey(host)) {
             if (logger.isDebugEnabled())
                 logger.debug("Storing a new Channel mapping for host: " + host);
             host2Channel.put(host, channel);
@@ -228,4 +229,14 @@ public class HedwigPublisher implements Publisher {
         return host2Channel.get(host);
     }
 
+    void close() {
+        synchronized(this) {
+            closed = true;
+        }
+        for (Channel channel : host2Channel.values()) {
+            client.getResponseHandlerFromChannel(channel).channelClosedExplicitly = true;
+            channel.close().awaitUninterruptibly();
+        }
+        host2Channel.clear();
+    }
 }

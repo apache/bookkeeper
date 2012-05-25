@@ -58,12 +58,17 @@ public class ConnectCallback implements ChannelFutureListener {
     public void operationComplete(ChannelFuture future) throws Exception {
         // If the client has stopped, there is no need to proceed with any
         // callback logic here.
-        if (client.hasStopped())
+        if (client.hasStopped()) {
+            future.getChannel().close();
             return;
+        }
 
         // Check if the connection to the server was done successfully.
         if (!future.isSuccess()) {
             logger.error("Error connecting to host: " + host);
+
+            future.getChannel().close();
+
             // If we were not able to connect to the host, it could be down.
             ByteString hostString = ByteString.copyFromUtf8(HedwigSocketAddress.sockAddrStr(host));
             if (pubSubData.connectFailedServers != null && pubSubData.connectFailedServers.contains(hostString)) {
@@ -83,6 +88,7 @@ public class ConnectCallback implements ChannelFutureListener {
                 pubSubData.connectFailedServers.add(hostString);
                 client.doConnect(pubSubData, cfg.getDefaultServerHost());
             }
+
             // Finished with failure logic so just return.
             return;
         }

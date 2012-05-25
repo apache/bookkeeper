@@ -76,6 +76,8 @@ public class HedwigSubscriber implements Subscriber {
 
     protected final HedwigClientImpl client;
     protected final ClientConfiguration cfg;
+    private Object closeLock = new Object();
+    private boolean closed = false;
 
     public HedwigSubscriber(HedwigClientImpl client) {
         this.client = client;
@@ -649,11 +651,32 @@ public class HedwigSubscriber implements Subscriber {
     }
 
     public void setChannelForTopic(TopicSubscriber topic, Channel channel) {
-        topicSubscriber2Channel.put(topic, channel);
+        synchronized (closeLock) {
+            if (closed) {
+                channel.close();
+                return;
+            }
+            Channel oldc = topicSubscriber2Channel.putIfAbsent(topic, channel);
+            if (oldc != null) {
+                channel.close();
+            }
+        }
     }
 
     public void removeChannelForTopic(TopicSubscriber topic) {
         topicSubscriber2Channel.remove(topic);
     }
 
+    void close() {
+        synchronized (closeLock) {
+            closed = true;
+        }
+
+        // Close all of the open Channels.
+        for (Channel channel : topicSubscriber2Channel.values()) {
+            client.getResponseHandlerFromChannel(channel).channelClosedExplicitly = true;
+            channel.close().awaitUninterruptibly();
+        }
+        topicSubscriber2Channel.clear();
+    }
 }

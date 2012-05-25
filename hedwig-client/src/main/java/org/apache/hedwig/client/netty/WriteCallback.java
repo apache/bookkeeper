@@ -51,8 +51,10 @@ public class WriteCallback implements ChannelFutureListener {
     public void operationComplete(ChannelFuture future) throws Exception {
         // If the client has stopped, there is no need to proceed
         // with any callback logic here.
-        if (client.hasStopped())
+        if (client.hasStopped()) {
+            future.getChannel().close();
             return;
+        }
 
         // When the write operation to the server is done, we just need to check
         // if it was successful or not.
@@ -64,6 +66,8 @@ public class WriteCallback implements ChannelFutureListener {
             // requests will not receive an ack response from the server
             // so there is no point storing that information there anymore.
             HedwigClientImpl.getResponseHandlerFromChannel(future.getChannel()).txn2PubSubData.remove(pubSubData.txnId);
+
+            future.getChannel().close();
 
             // If we were not able to write on the channel to the server host,
             // the host could have died or something is wrong with the channel

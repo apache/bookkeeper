@@ -214,20 +214,14 @@ public class HedwigClientImpl implements Client {
         isStopped = true;
         // Stop the timer and all timer task threads.
         clientTimer.cancel();
-        // Close all of the open Channels.
-        for (Channel channel : pub.host2Channel.values()) {
-            getResponseHandlerFromChannel(channel).channelClosedExplicitly = true;
-            channel.close().awaitUninterruptibly();
-        }
-        for (Channel channel : sub.topicSubscriber2Channel.values()) {
-            getResponseHandlerFromChannel(channel).channelClosedExplicitly = true;
-            channel.close().awaitUninterruptibly();
-        }
+
+        pub.close();
+        sub.close();
+
         // Clear out all Maps.
         topic2Host.clear();
         host2Topics.clear();
-        pub.host2Channel.clear();
-        sub.topicSubscriber2Channel.clear();
+
         // Release resources used by the ChannelFactory on the client if we are
         // the owner that created it.
         if (ownChannelFactory) {

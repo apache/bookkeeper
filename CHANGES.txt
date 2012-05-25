@@ -138,6 +138,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-209: Typo in ServerConfiguration for READAHEAD_ENABLED (ivank)
 
+        BOOKKEEPER-146: TestConcurrentTopicAcquisition sometimes hangs (ivank)
+
       bookkeeper-benchmark/
 	
 	BOOKKEEPER-207: BenchBookie doesn't run correctly (ivank via fpj)
