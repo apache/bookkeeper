@@ -21,12 +21,16 @@ h1. Apache BookKeeper documentation
 * "Overview":./bookkeeperOverview.html
 * "Getting started":./bookkeeperStarted.html
 * "Programmer's Guide":./bookkeeperProgrammer.html
-* "Admin Guide":./bookkeeperConfig.html
 * "Bookie Server Configuration Parameters":./bookieConfigParams.html
 * "BookKeeper Configuration Parameters":./bookkeeperConfigParams.html
 * "BookKeeper Internals":./bookkeeperInternals.html
 * "Bookie Recovery":./bookieRecovery.html
 * "Using BookKeeper stream library":./bookkeeperStream.html
+
+h2. BookKeeper Admin & Ops
+
+* "Admin Guide":./bookkeeperConfig.html
+* "BookKeeper JMX":./bookkeeperJMX.html
 
 h1. Apache Hedwig documentation
 
@@ -34,3 +38,6 @@ h1. Apache Hedwig documentation
 * "User's Guide, or how to program against the Hedwig API and how to run it":./hedwigUser.html
 * "Developer's Guide, or Hedwig internals and hacking details":./hedwigDesign.html
 
+h2. Hedwig Admin & Ops
+
+* "Hedwig JMX":./hedwigJMX.html

@@ -150,6 +150,8 @@ Trunk (unreleased changes)
 
     IMPROVEMENTS:
 
+	BOOKKEEPER-265: Review JMX documentation (sijie via fpj)
+
       bookkeeper-server/
 
         BOOKKEEPER-95: extends zookeeper JMX to monitor and manage bookie server (Sijie Guo via ivank)
