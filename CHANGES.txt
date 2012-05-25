@@ -114,6 +114,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-251: Noise error message printed when scanning entry log files those have been garbage collected. (sijie via ivank)
 
+        BOOKKEEPER-266: Review versioning documentation (ivank)
+
       hedwig-client/
 
         BOOKKEEPER-217: NPE in hedwig client when enable DEBUG (sijie via ivank)

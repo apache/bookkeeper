@@ -45,9 +45,11 @@ p. Ideally, @journalDir@ and @ledgerDir@ are each in a different device. See "Bo
 
 h3. Upgrading
 
-From time to time, we may make changes to the filesystem layout of the bookie, which are incompatible with previous versions of bookkeeper and require that directories used with previous versions are upgraded. If you upgrade your bookkeeper software, and an upgrade is required, then the bookie will fail to start and print an error to the effect that an upgrade is required.
+From time to time, we may make changes to the filesystem layout of the bookie, which are incompatible with previous versions of bookkeeper and require that directories used with previous versions are upgraded. If you upgrade your bookkeeper software, and an upgrade is required, then the bookie will fail to start and print an error such as;
 
-BookKeeper provides a utility for doing the upgrade.
+@2012-05-25 10:41:50,494 - ERROR - [main:Bookie@246] - Directory layout version is less than 3, upgrade needed@
+
+BookKeeper provides a utility for upgrading the filesystem.
 @bookkeeper-server/bin/bookkeeper upgrade@
 
 The upgrade application takes 3 possible switches, @--upgrade@, @--rollback@ or @--finalize@. A normal upgrade process looks like.
