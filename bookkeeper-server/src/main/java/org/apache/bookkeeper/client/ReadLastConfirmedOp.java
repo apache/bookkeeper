@@ -49,7 +49,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
 
     public ReadLastConfirmedOp(LedgerHandle lh, LastConfirmedDataCallback cb) {
         this.cb = cb;
-        this.maxRecoveredData = new RecoveryData(-1,0);
+        this.maxRecoveredData = new RecoveryData(LedgerHandle.INVALID_ENTRY_ID, 0);
         this.lh = lh;
         this.numResponsesPending = lh.metadata.ensembleSize;
         this.coverageSet = lh.distributionSchedule.getCoverageSet();

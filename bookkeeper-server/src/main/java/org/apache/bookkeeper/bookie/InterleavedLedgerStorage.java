@@ -27,6 +27,7 @@ import java.io.IOException;
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.proto.BookieProtocol;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,9 +117,9 @@ class InterleavedLedgerStorage implements LedgerStorage {
     public ByteBuffer getEntry(long ledgerId, long entryId) throws IOException {
         long offset;
         /*
-         * If entryId is -1, then return the last written.
+         * If entryId is BookieProtocol.LAST_ADD_CONFIRMED, then return the last written.
          */
-        if (entryId == -1) {
+        if (entryId == BookieProtocol.LAST_ADD_CONFIRMED) {
             entryId = ledgerCache.getLastEntry(ledgerId);
         }
 

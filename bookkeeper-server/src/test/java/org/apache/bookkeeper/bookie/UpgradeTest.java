@@ -41,6 +41,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import org.apache.bookkeeper.client.ClientUtil;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 
 import org.apache.zookeeper.ZooKeeper;
@@ -98,7 +99,7 @@ public class UpgradeTest {
         long ledgerId = 1;
         byte[] data = new byte[1024];
         Arrays.fill(data, (byte)'X');
-        long lastConfirmed = -1;
+        long lastConfirmed = LedgerHandle.INVALID_ENTRY_ID;
 
         for (int i = 1; i <= numEntries; i++) {
             ByteBuffer packet = ClientUtil.generatePacket(ledgerId, i, lastConfirmed,

@@ -328,7 +328,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
 
         // packet format is different between ADDENTRY and READENTRY
         long ledgerId = -1;
-        long entryId = -1;
+        long entryId = BookieProtocol.INVALID_ENTRY_ID;
         byte[] masterKey = null;
         switch (h.getOpCode()) {
         case BookieProtocol.ADDENTRY:

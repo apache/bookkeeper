@@ -24,6 +24,8 @@ package org.apache.bookkeeper.bookie;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import org.apache.bookkeeper.proto.BookieProtocol;
+
 /**
  * This is a page in the LedgerCache. It holds the locations
  * (entrylogfile, offset) for entry ids.
@@ -32,7 +34,7 @@ public class LedgerEntryPage {
     private final int pageSize;
     private final int entriesPerPage;
     private long ledger = -1;
-    private long firstEntry = -1;
+    private long firstEntry = BookieProtocol.INVALID_ENTRY_ID;
     private final ByteBuffer page;
     private boolean clean = true;
     private boolean pinned = false;

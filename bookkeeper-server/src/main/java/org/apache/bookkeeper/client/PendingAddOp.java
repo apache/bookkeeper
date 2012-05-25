@@ -51,7 +51,7 @@ class PendingAddOp implements WriteCallback {
         this.lh = lh;
         this.cb = cb;
         this.ctx = ctx;
-        this.entryId = -1;
+        this.entryId = LedgerHandle.INVALID_ENTRY_ID;
         
         successesSoFar = new boolean[lh.metadata.quorumSize];
         numResponsesPending = successesSoFar.length;

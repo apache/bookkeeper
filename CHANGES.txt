@@ -184,6 +184,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-263: ZK ledgers root path is hard coded (Aniruddha via sijie)
 
+	BOOKKEEPER-260: Define constant for -1 (invalid entry id) (ivank via fpj)
+
       hedwig-server/
 
         BOOKKEEPER-77: Add a console client for hedwig (Sijie Guo via ivank)

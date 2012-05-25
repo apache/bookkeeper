@@ -40,6 +40,7 @@ import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.util.SafeRunnable;
 
 import org.slf4j.Logger;
@@ -71,6 +72,12 @@ public class LedgerHandle {
     final Semaphore opCounterSem;
     private final Integer throttling;
 
+    /**
+     * Invalid entry id. This value is returned from methods which
+     * should return an entry id but there is no valid entry available.
+     */
+    final static public long INVALID_ENTRY_ID = BookieProtocol.INVALID_ENTRY_ID;
+
     final Queue<PendingAddOp> pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
 
     LedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
@@ -83,7 +90,7 @@ public class LedgerHandle {
             lastAddConfirmed = lastAddPushed = metadata.close;
             length = metadata.length;
         } else {
-            lastAddConfirmed = lastAddPushed = -1;
+            lastAddConfirmed = lastAddPushed = INVALID_ENTRY_ID;
             length = 0;
         }
 
@@ -113,11 +120,11 @@ public class LedgerHandle {
      * from the readLastConfirmed call. In the case the ledger
      * is not closed and the client is a reader, it is necessary
      * to call readLastConfirmed to obtain an estimate of the
-     * last add operation that has been confirmed.  
-     * 
+     * last add operation that has been confirmed.
+     *
      * @see #readLastConfirmed()
      *
-     * @return the last confirmed entry id
+     * @return the last confirmed entry id or {@link #INVALID_ENTRY_ID INVALID_ENTRY_ID} if no entry has been confirmed
      */
     public long getLastAddConfirmed() {
         return lastAddConfirmed;
@@ -127,7 +134,7 @@ public class LedgerHandle {
      * Get the entry id of the last entry that has been enqueued for addition (but
      * may not have possibly been persited to the ledger)
      *
-     * @return the id of the last entry pushed
+     * @return the id of the last entry pushed or {@link #INVALID_ENTRY_ID INVALID_ENTRY_ID} if no entry has been pushed
      */
     synchronized public long getLastAddPushed() {
         return lastAddPushed;
@@ -481,7 +488,7 @@ public class LedgerHandle {
             opCounterSem.acquire();
         } catch (InterruptedException e) {
             cb.addComplete(BKException.Code.InterruptedException,
-                           LedgerHandle.this, -1, ctx);
+                           LedgerHandle.this, INVALID_ENTRY_ID, ctx);
         }
 
         final long entryId;
@@ -494,7 +501,7 @@ public class LedgerHandle {
                 LOG.warn("Attempt to add to closed ledger: " + ledgerId);
                 LedgerHandle.this.opCounterSem.release();
                 cb.addComplete(BKException.Code.LedgerClosedException,
-                               LedgerHandle.this, -1, ctx);
+                               LedgerHandle.this, INVALID_ENTRY_ID, ctx);
                 return;
             }
 
@@ -543,7 +550,7 @@ public class LedgerHandle {
                         length = Math.max(length, data.length);
                         cb.readLastConfirmedComplete(rc, data.lastAddConfirmed, ctx);
                     } else {
-                        cb.readLastConfirmedComplete(rc, -1, ctx);
+                        cb.readLastConfirmedComplete(rc, INVALID_ENTRY_ID, ctx);
                     }
                 }
             };
@@ -555,11 +562,12 @@ public class LedgerHandle {
      * Context objects for synchronous call to read last confirmed.
      */
     static class LastConfirmedCtx {
+        final static long ENTRY_ID_PENDING = -10;
         long response;
         int rc;
 
         LastConfirmedCtx() {
-            this.response = -10;
+            this.response = ENTRY_ID_PENDING;
         }
 
         void setLastConfirmed(long lastConfirmed) {
@@ -579,7 +587,7 @@ public class LedgerHandle {
         }
 
         boolean ready() {
-            return (this.response != -10);
+            return (this.response != ENTRY_ID_PENDING);
         }
     }
 
@@ -594,7 +602,8 @@ public class LedgerHandle {
      * 
      * @see #getLastAddConfirmed()
      * 
-     * @return
+     * @return The entry id of the last confirmed write or {@link #INVALID_ENTRY_ID INVALID_ENTRY_ID}
+     *         if no entry has been confirmed
      * @throws InterruptedException
      * @throws BKException
      */

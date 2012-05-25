@@ -31,7 +31,7 @@ public interface AsyncCallback {
          * @param entryId
          *          entry identifier
          * @param ctx
-         *          control object
+         *          context object
          */
         void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx);
     }
@@ -45,7 +45,7 @@ public interface AsyncCallback {
          * @param lh
          *          ledger handle
          * @param ctx
-         *          control object
+         *          context object
          */
         void closeComplete(int rc, LedgerHandle lh, Object ctx);
     }
@@ -59,7 +59,7 @@ public interface AsyncCallback {
          * @param lh
          *          ledger handle
          * @param ctx
-         *          control object
+         *          context object
          */
 
         void createComplete(int rc, LedgerHandle lh, Object ctx);
@@ -74,7 +74,7 @@ public interface AsyncCallback {
          * @param lh
          *          ledger handle
          * @param ctx
-         *          control object
+         *          context object
          */
 
         public void openComplete(int rc, LedgerHandle lh, Object ctx);
@@ -92,7 +92,7 @@ public interface AsyncCallback {
          * @param seq
          *          sequence of entries
          * @param ctx
-         *          control object
+         *          context object
          */
 
         void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq,
@@ -106,7 +106,7 @@ public interface AsyncCallback {
          * @param rc
          *          return code
          * @param ctx
-         *          control object
+         *          context object
          */
         void deleteComplete(int rc, Object ctx);
     }
@@ -115,10 +115,12 @@ public interface AsyncCallback {
         /**
          * Callback definition for bookie recover operations
          *
-         * @param rc
-         *          return code
+         * @param rc Return code
+         * @param lastConfirmed The entry id of the last confirmed write or
+         *                      {@link LedgerHandle#INVALID_ENTRY_ID INVALID_ENTRY_ID}
+         *                      if no entry has been confirmed
          * @param ctx
-         *          control object
+         *          context object
          */
         void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx);
     }
@@ -130,7 +132,7 @@ public interface AsyncCallback {
          * @param rc
          *          return code
          * @param ctx
-         *          control object
+         *          context object
          */
         void recoverComplete(int rc, Object ctx);
     }

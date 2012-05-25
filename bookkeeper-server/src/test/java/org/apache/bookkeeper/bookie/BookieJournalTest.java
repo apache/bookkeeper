@@ -129,7 +129,7 @@ public class BookieJournalTest {
         fc.position(0);
 
         byte[] data = "JournalTestData".getBytes();
-        long lastConfirmed = -1;
+        long lastConfirmed = LedgerHandle.INVALID_ENTRY_ID;
         for (int i = 1; i <= numEntries; i++) {
             ByteBuffer packet = ClientUtil.generatePacket(1, i, lastConfirmed, i*data.length, data).toByteBuffer();
             lastConfirmed = i;
@@ -150,7 +150,7 @@ public class BookieJournalTest {
 
         byte[] data = new byte[1024];
         Arrays.fill(data, (byte)'X');
-        long lastConfirmed = -1;
+        long lastConfirmed = LedgerHandle.INVALID_ENTRY_ID;
         for (int i = 1; i <= numEntries; i++) {
             ByteBuffer packet = ClientUtil.generatePacket(1, i, lastConfirmed, i*data.length, data).toByteBuffer();
             lastConfirmed = i;
@@ -174,7 +174,7 @@ public class BookieJournalTest {
 
         byte[] data = new byte[1024];
         Arrays.fill(data, (byte)'X');
-        long lastConfirmed = -1;
+        long lastConfirmed = LedgerHandle.INVALID_ENTRY_ID;
         for (int i = 0; i <= numEntries; i++) {
             ByteBuffer packet;
             if (i == 0) {

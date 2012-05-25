@@ -37,7 +37,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
  * This class encapsulated the ledger recovery operation. It first does a read
- * with entry-id of -1 (LedgerHandle.LAST_ADD_CONFIRMED) to all bookies. Then
+ * with entry-id of -1 (BookieProtocol.LAST_ADD_CONFIRMED) to all bookies. Then
  * starting from the last confirmed entry (from hints in the ledger entries),
  * it reads forward until it is not able to find a particular entry. It closes
  * the ledger at that entry.
@@ -48,8 +48,8 @@ class LedgerRecoveryOp implements ReadCallback, AddCallback {
     LedgerHandle lh;
     int numResponsesPending;
     boolean proceedingWithRecovery = false;
-    long maxAddPushed = -1;
-    long maxAddConfirmed = -1;
+    long maxAddPushed = LedgerHandle.INVALID_ENTRY_ID;
+    long maxAddConfirmed = LedgerHandle.INVALID_ENTRY_ID;
     long maxLength = 0;
 
     GenericCallback<Void> cb;

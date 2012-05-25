@@ -103,7 +103,7 @@ abstract class DigestManager {
     }
 
     private void verifyDigest(ChannelBuffer dataReceived) throws BKDigestMatchException {
-        verifyDigest(-1, dataReceived, true);
+        verifyDigest(LedgerHandle.INVALID_ENTRY_ID, dataReceived, true);
     }
 
     private void verifyDigest(long entryId, ChannelBuffer dataReceived) throws BKDigestMatchException {

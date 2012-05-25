@@ -99,7 +99,7 @@ public class BookieReadWriteTest extends BaseTestCase
 
         public SyncObj() {
             counter = 0;
-            lastConfirmed = -1;
+            lastConfirmed = LedgerHandle.INVALID_ENTRY_ID;
             value = false;
         }
     }
@@ -980,7 +980,8 @@ public class BookieReadWriteTest extends BaseTestCase
              */
             LOG.debug("Checking that it is empty");
             long readLastConfirmed = lhOpen.readLastConfirmed();
-            assertTrue("Last confirmed has the wrong value", readLastConfirmed == -1L);
+            assertTrue("Last confirmed has the wrong value",
+                       readLastConfirmed == LedgerHandle.INVALID_ENTRY_ID);
             
             /*
              * Writing one entry.
@@ -1000,7 +1001,7 @@ public class BookieReadWriteTest extends BaseTestCase
              */
             LOG.debug("Checking that it is still empty even after writing one entry");
             readLastConfirmed = lhOpen.readLastConfirmed();
-            assertTrue(readLastConfirmed == -1L);
+            assertTrue(readLastConfirmed == LedgerHandle.INVALID_ENTRY_ID);
 
             /*
              * Adding one more, and this time we should expect to 
@@ -1079,7 +1080,7 @@ public class BookieReadWriteTest extends BaseTestCase
 
             // Wait for for last confirmed
             synchronized (sync) {
-                while (sync.lastConfirmed == -1) {
+                while (sync.lastConfirmed == LedgerHandle.INVALID_ENTRY_ID) {
                     LOG.debug("Counter = " + sync.lastConfirmed);
                     sync.wait();
                 }

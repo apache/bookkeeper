@@ -73,6 +73,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle {
     public void asyncAddEntry(final byte[] data, final int offset, final int length,
                               final AddCallback cb, final Object ctx) {
         LOG.error("Tried to add entry on a Read-Only ledger handle, ledgerid=" + ledgerId);
-        cb.addComplete(BKException.Code.IllegalOpException, this, -1, ctx);
+        cb.addComplete(BKException.Code.IllegalOpException, this,
+                       LedgerHandle.INVALID_ENTRY_ID, ctx);
     }
 }

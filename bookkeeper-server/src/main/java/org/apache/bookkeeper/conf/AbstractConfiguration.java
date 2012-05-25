@@ -69,7 +69,6 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *
      * @param lmType
      *          Ledger Manager Type
-     * @return void
      */
     public void setLedgerManagerType(String lmType) {
         setProperty(LEDGER_MANAGER_TYPE, lmType); 
