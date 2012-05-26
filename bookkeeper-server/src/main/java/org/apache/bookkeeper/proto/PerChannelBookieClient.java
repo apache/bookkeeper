@@ -468,10 +468,19 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             return;
         }
         if (t instanceof ReadTimeoutException) {
-            ctx.getChannel().disconnect();
+            for (CompletionKey key : addCompletions.keySet()) {
+                if (key.shouldTimeout()) {
+                    errorOutAddKey(key);
+                }
+            }
+            for (CompletionKey key : readCompletions.keySet()) {
+                if (key.shouldTimeout()) {
+                    errorOutReadKey(key);
+                }
+            }
             return;
         }
- 
+
         if (t instanceof IOException) {
             // these are thrown when a bookie fails, logging them just pollutes
             // the logs (the failure is logged from the listeners on the write
@@ -641,15 +650,22 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             this.ctx = ctx;
         }
     }
-    
+
     // visable for testing
-    static class CompletionKey {
+    CompletionKey newCompletionKey(long ledgerId, long entryId) {
+        return new CompletionKey(ledgerId, entryId);
+    }
+
+    // visable for testing
+    class CompletionKey {
         long ledgerId;
         long entryId;
+        final long timeoutAt;
 
         CompletionKey(long ledgerId, long entryId) {
             this.ledgerId = ledgerId;
             this.entryId = entryId;
+            this.timeoutAt = System.currentTimeMillis() + (conf.getReadTimeout()*1000);
         }
 
         @Override
@@ -668,6 +684,10 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
         public String toString() {
             return String.format("LedgerEntry(%d, %d)", ledgerId, entryId);
+        }
+
+        public boolean shouldTimeout() {
+            return this.timeoutAt <= System.currentTimeMillis();
         }
     }
 

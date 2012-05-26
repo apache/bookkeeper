@@ -21,6 +21,8 @@ package org.apache.bookkeeper.proto;
  *
  */
 
+import java.util.Set;
+import java.util.HashSet;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,6 +34,8 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
+import org.apache.bookkeeper.util.SafeRunnable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -73,6 +77,28 @@ public class BookieClient {
         }
 
         return channel;
+    }
+
+    public void closeClients(Set<InetSocketAddress> addrs) {
+        final HashSet<PerChannelBookieClient> clients = new HashSet<PerChannelBookieClient>();
+        for (InetSocketAddress a : addrs) {
+            PerChannelBookieClient c = channels.get(a);
+            if (c != null) {
+                clients.add(c);
+            }
+        }
+
+        if (clients.size() == 0) {
+            return;
+        }
+        executor.submit(new SafeRunnable() {
+                @Override
+                public void safeRun() {
+                    for (PerChannelBookieClient c : clients) {
+                        c.close();
+                    }
+                }
+            });
     }
 
     public void addEntry(final InetSocketAddress addr, final long ledgerId, final byte[] masterKey, final long entryId,

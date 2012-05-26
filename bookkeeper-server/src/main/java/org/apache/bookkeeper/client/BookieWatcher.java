@@ -59,7 +59,7 @@ class BookieWatcher implements Watcher, ChildrenCallback {
     BookKeeper bk;
     ScheduledExecutorService scheduler;
 
-    Set<InetSocketAddress> knownBookies = new HashSet<InetSocketAddress>();
+    HashSet<InetSocketAddress> knownBookies = new HashSet<InetSocketAddress>();
 
     SafeRunnable reReadTask = new SafeRunnable() {
         @Override
@@ -103,7 +103,7 @@ class BookieWatcher implements Watcher, ChildrenCallback {
         }
 
         // Read the bookie addresses into a set for efficient lookup
-        Set<InetSocketAddress> newBookieAddrs = new HashSet<InetSocketAddress>();
+        HashSet<InetSocketAddress> newBookieAddrs = new HashSet<InetSocketAddress>();
         for (String bookieAddrString : children) {
             InetSocketAddress bookieAddr;
             try {
@@ -115,8 +115,15 @@ class BookieWatcher implements Watcher, ChildrenCallback {
             newBookieAddrs.add(bookieAddr);
         }
 
+        HashSet<InetSocketAddress> deadBookies = (HashSet<InetSocketAddress>)knownBookies.clone();
+        deadBookies.removeAll(newBookieAddrs);
+
         synchronized (this) {
             knownBookies = newBookieAddrs;
+        }
+
+        if (bk.getBookieClient() != null) {
+            bk.getBookieClient().closeClients(deadBookies);
         }
     }
 

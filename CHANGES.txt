@@ -116,6 +116,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-266: Review versioning documentation (ivank)
 
+        BOOKKEEPER-258: CompactionTest failed (ivank via sijie)
+
       hedwig-client/
 
         BOOKKEEPER-217: NPE in hedwig client when enable DEBUG (sijie via ivank)

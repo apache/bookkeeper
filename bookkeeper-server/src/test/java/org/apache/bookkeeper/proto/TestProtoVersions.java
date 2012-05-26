@@ -80,7 +80,7 @@ public class TestProtoVersions {
                     readLatch.countDown();
                 }
             };
-        bc.readCompletions.put(new PerChannelBookieClient.CompletionKey(1, 1), 
+        bc.readCompletions.put(bc.newCompletionKey(1, 1),
                                new PerChannelBookieClient.ReadCompletion(cb, this));
         
         int totalHeaderSize = 4 // for the length of the packet
