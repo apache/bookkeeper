@@ -93,7 +93,12 @@ public interface Subscriber {
      * @param subscriberId
      *            ID of the subscriber
      * @param options
-     *            Options to pass to the subscription. Can contain attach mode.
+     *            Options to pass to the subscription. See
+     *             {@link Subscriber#asyncSubscribe(com.google.protobuf.ByteString,
+     *                                              com.google.protobuf.ByteString,
+     *                                              PubSubProtocol.SubscriptionOptions,
+     *                                              Callback,Object) asyncSubscribe}
+     *            for details on how to set options.
      * @throws CouldNotConnectException
      *             If we are not able to connect to the server host
      * @throws ClientAlreadySubscribedException
@@ -110,15 +115,41 @@ public interface Subscriber {
         InvalidSubscriberIdException;
 
     /**
-     * Subscribe to the given topic asynchronously for the inputted subscriberId
-     * disregarding if the topic has been created yet or not.
+     * <p>Subscribe to the given topic asynchronously for the inputted subscriberId.</p>
      *
+     * <p>SubscriptionOptions contains parameters for how the hub should make the subscription.
+     * The two options are the createorattach mode and message bound.</p>
+     *
+     * <p>The createorattach mode defines whether the subscription should create a new subscription, or
+     * just attach to a preexisting subscription. If it tries to create the subscription, and the
+     * subscription already exists, then an error will occur.</p>
+     *
+     * <p>The message bound defines the maximum number of undelivered messages which will be stored
+     * for the subscription. This can be used to ensure that unused subscriptions do not grow
+     * in an unbounded fashion. By default, the message bound is infinite, i.e. all undelivered messages
+     * will be stored for the subscription. Note that if one subscription on a topic has a infinite
+     * message bound, the message bound for all other subscriptions on that topic will effectively be
+     * infinite as the messages have to be stored for the first subscription in any case. </p>
+     *
+     * Usage is as follows:
+     * <pre>
+     * {@code
+     * // create a new subscription with a message bound of 5
+     * SubscriptionOptions options = SubscriptionOptions.newBuilder()
+     *     .setCreateOrAttach(CreateOrAttach.CREATE).setMessageBound(5).build();
+     * client.getSubscriber().asyncSubscribe(ByteString.copyFromUtf8("myTopic"),
+     *                                       ByteString.copyFromUtf8("mySubscription"),
+     *                                       options,
+     *                                       myCallback,
+     *                                       myContext);
+     * }
+     * </pre>
      * @param topic
      *            Topic name of the subscription
      * @param subscriberId
      *            ID of the subscriber
      * @param options
-     *            Options to pass to the subscription. Can contain attach mode.
+     *            Options to pass to the subscription.
      * @param callback
      *            Callback to invoke when the subscribe request to the server
      *            has actually gone through. This will have to deal with error
