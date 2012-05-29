@@ -188,6 +188,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-260: Define constant for -1 (invalid entry id) (ivank via fpj)
 
+	BOOKKEEPER-270: Review documentation on bookie cookie (ivank via fpj)
+
       hedwig-server/
 
         BOOKKEEPER-77: Add a console client for hedwig (Sijie Guo via ivank)
