@@ -40,4 +40,5 @@ h1. Apache Hedwig documentation
 
 h2. Hedwig Admin & Ops
 
+* "Hedwig Console":./hedwigConsole.html
 * "Hedwig JMX":./hedwigJMX.html

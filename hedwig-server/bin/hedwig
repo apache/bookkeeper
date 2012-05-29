@@ -152,7 +152,7 @@ if [ $COMMAND == "server" ]; then
     exec java $OPTS $JMX_ARGS org.apache.hedwig.server.netty.PubSubServer $HEDWIG_SERVER_CONF $@
 elif [ $COMMAND == "console" ]; then
     # hedwig console configuration server part
-    if [ -n "$HEDWIG_CONSOLE_SERVER_CONF" ]; then
+    if [ -z "$HEDWIG_CONSOLE_SERVER_CONF" ]; then
         HEDWIG_CONSOLE_SERVER_CONF=$HEDWIG_SERVER_CONF
     fi
     # hedwig console configuration client part
