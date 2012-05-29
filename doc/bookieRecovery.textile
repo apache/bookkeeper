@@ -18,13 +18,13 @@ Notice:    Licensed to the Apache Software Foundation (ASF) under one
 
 h1. Bookie Recovery
 
-p. When a bookie crashes, any ledgers with entries on the bookie potentially become underreplicated. For this reason, we provide a recovery tool which will ensure that all ledgers which had entries on the bookie are fully replicated. At the moment, this is not an automatic process. The administrator must run this tool manually when he sees that the bookie has died. 
+p. When a bookie crashes, any ledgers with entries on the bookie potentially become under-replicated. For this reason, we provide a recovery tool which will ensure that all ledgers which had entries on the bookie are fully replicated. At the moment, this is not an automatic process. The administrator must run this tool manually when he sees that the bookie has died. 
 
-To run recovery, with zk1.example.com as the zookeeper ensemble, and bk3.example.com as the failed bookie, do the following:
+To run recovery, with zk1.example.com as the zookeeper ensemble, and 192.168.1.10 as the failed bookie, do the following:
 
-@bookkeeper-server/bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools zk1.example.com:2181 bk3.example.com:3181@
+@bookkeeper-server/bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools zk1.example.com:2181 192.168.1.10:3181@
 
-It is necessary to specify the host and port portion of failed bookie, as this is how it identifies itself to zookeeper. It is possible to specify a third argument, which is the bookie to replicate to. If this is omitted, as in our example, a random bookie is chosen for each ledger fragment. A ledger fragment is a continous sequence of entries in a bookie, which share the same ensemble. 
+It is necessary to specify the host and port portion of failed bookie, as this is how it identifies itself to zookeeper. It is possible to specify a third argument, which is the bookie to replicate to. If this is omitted, as in our example, a random bookie is chosen for each ledger fragment. A ledger fragment is a continuous sequence of entries in a bookie, which share the same ensemble. 
 
 The recovery process is as follows.
 
@@ -37,5 +37,5 @@ The recovery process is as follows.
 ### the client reads entries that belong to the ledger fragment from other bookies in the ensemble and writes them to the selected bookie;
 ### Once all entries have been replicated, the zookeeper metadata for the fragment is updated to reflect the new ensemble;
 ### The fragment is marked as fully replicated in the recovery tool;
-## Once all ledger fragements are marked as fully replicated, the ledger is marked as fully replicated;
+## Once all ledger fragments are marked as fully replicated, the ledger is marked as fully replicated;
 # Once all ledgers are marked as fully replicated, bookie recovery is finished.
