@@ -118,6 +118,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-258: CompactionTest failed (ivank via sijie)
 
+        BOOKKEEPER-273: LedgerHandle.deleteLedger() should be idempotent (Matteo Merli via ivank)
+
       hedwig-client/
 
         BOOKKEEPER-217: NPE in hedwig client when enable DEBUG (sijie via ivank)

@@ -520,6 +520,7 @@ public class BookKeeper {
      * @param lId
      *            ledgerId
      * @throws InterruptedException
+     * @throws BKException.BKNoSuchLedgerExistsException if the ledger doesn't exist
      * @throws BKException
      */
     public void deleteLedger(long lId) throws InterruptedException, BKException {
@@ -529,7 +530,10 @@ public class BookKeeper {
         asyncDeleteLedger(lId, new SyncDeleteCallback(), counter);
         // Wait
         counter.block(0);
-        if (counter.getrc() != KeeperException.Code.OK.intValue()) {
+        if (counter.getrc() == KeeperException.Code.NONODE.intValue()) {
+            LOG.warn("Ledger node does not exist in ZooKeeper: ledgerId={}", lId);
+            throw BKException.create(Code.NoSuchLedgerExistsException);
+        } else if (counter.getrc() != KeeperException.Code.OK.intValue()) {
             LOG.error("ZooKeeper error deleting ledger node: " + counter.getrc());
             throw BKException.create(Code.ZKException);
         }
