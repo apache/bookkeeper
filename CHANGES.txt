@@ -1,4 +1,4 @@
-Trunk (unreleased changes)
+Release 4.1.0 - 2012-05-31
 
   Non-backward compatible changes:
 
