@@ -124,6 +124,8 @@ Release 4.1.0 - 2012-05-31
 
         BOOKKEEPER-279: LocalBookKeeper is failing intermittently due to zkclient connection establishment delay (Rakesh R via sijie)
 
+        BOOKKEEPER-286: Compilation warning (ivank via sijie)
+
       hedwig-client/
 
         BOOKKEEPER-217: NPE in hedwig client when enable DEBUG (sijie via ivank)
