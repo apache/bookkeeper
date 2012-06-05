@@ -88,7 +88,7 @@ public class TestReadTimeout extends BookKeeperClusterTestCase {
                         completed.set(true);
                     }
                 }, null);
-        Thread.sleep((baseClientConf.getReadTimeout()*2)*1000);
+        Thread.sleep((baseClientConf.getReadTimeout()*3)*1000);
         Assert.assertTrue("Write request did not finish", completed.get());
 
         Set<InetSocketAddress> afterSet = new HashSet<InetSocketAddress>();
