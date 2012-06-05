@@ -150,6 +150,8 @@ Release 4.1.0 - 2012-05-31
 
         BOOKKEEPER-146: TestConcurrentTopicAcquisition sometimes hangs (ivank)
 
+        BOOKKEEPER-285: TestZkSubscriptionManager quits due to NPE, so other tests are not run in hedwig server. (sijie)
+
       bookkeeper-benchmark/
 	
 	BOOKKEEPER-207: BenchBookie doesn't run correctly (ivank via fpj)
