@@ -119,27 +119,35 @@ public class BookKeeper {
      * @throws InterruptedException
      * @throws KeeperException
      */
-    public BookKeeper(ClientConfiguration conf)
+    public BookKeeper(final ClientConfiguration conf)
             throws IOException, InterruptedException, KeeperException {
         this.conf = conf;
+
+        final CountDownLatch zkConnectLatch = new CountDownLatch(1);
         this.zk = new ZooKeeper(conf.getZkServers(), conf.getZkTimeout(),
                 new Watcher() {
                     @Override
                     public void process(WatchedEvent event) {
-                        if (event.getState().equals(Watcher.Event.KeeperState.SyncConnected)) {
-                            connectLatch.countDown();
-                        }
+                        // countdown the latch on all events, even if we haven't
+                        // successfully connected.
+                        zkConnectLatch.countDown();
+
                         // TODO: handle session disconnects and expires
                         LOG.debug("Process: {} {}", event.getType(), event.getPath());
                     }
                 });
+        if (!zkConnectLatch.await(conf.getZkTimeout(), TimeUnit.MILLISECONDS)
+            || !zk.getState().isConnected()) {
+            throw KeeperException.create(KeeperException.Code.CONNECTIONLOSS);
+        }
+
         this.channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                                                                 Executors.newCachedThreadPool());
-        bookieWatcher = new BookieWatcher(conf, this);
-        bookieWatcher.readBookiesBlocking();
         mainWorkerPool = new OrderedSafeExecutor(conf.getNumWorkerThreads());
         bookieClient = new BookieClient(conf, channelFactory, mainWorkerPool);
-        // initialize ledger meta manager
+        bookieWatcher = new BookieWatcher(conf, this);
+        bookieWatcher.readBookiesBlocking();
+
         ledgerManager = LedgerManagerFactory.newLedgerManager(conf, zk);
 
         ownChannelFactory = true;
@@ -176,49 +184,33 @@ public class BookKeeper {
      *          {@link ClientConfiguration}
      * @param zk
      *          Zookeeper client instance connected to the zookeeper with which
-     *          the bookies have registered
+     *          the bookies have registered. The ZooKeeper client must be connected
+     *          before it is passed to BookKeeper. Otherwise a KeeperException is thrown.
      * @param channelFactory
      *          A factory that will be used to create connections to the bookies
      * @throws IOException
      * @throws InterruptedException
-     * @throws KeeperException
+     * @throws KeeperException if the passed zk handle is not connected
      */
     public BookKeeper(ClientConfiguration conf, ZooKeeper zk, ClientSocketChannelFactory channelFactory)
             throws IOException, InterruptedException, KeeperException {
         if (zk == null || channelFactory == null) {
             throw new NullPointerException();
         }
+        if (!zk.getState().isConnected()) {
+            LOG.error("Unconnected zookeeper handle passed to bookkeeper");
+            throw KeeperException.create(KeeperException.Code.CONNECTIONLOSS);
+        }
         this.conf = conf;
         this.zk = zk;
         this.channelFactory = channelFactory;
-        bookieWatcher = new BookieWatcher(conf, this);
-        bookieWatcher.readBookiesBlocking();
+
         mainWorkerPool = new OrderedSafeExecutor(conf.getNumWorkerThreads());
         bookieClient = new BookieClient(conf, channelFactory, mainWorkerPool);
-        // initialize ledger meta manager
-        ledgerManager = LedgerManagerFactory.newLedgerManager(conf, zk);
-    }
+        bookieWatcher = new BookieWatcher(conf, this);
+        bookieWatcher.readBookiesBlocking();
 
-    void withZKConnected(final ZKConnectCallback cb) {
-        if (ownZKHandle) {
-            mainWorkerPool.submit(new SafeRunnable() {
-                    @Override
-                    public void safeRun() {
-                        try {
-                            if (!connectLatch.await(zkConnectTimeoutMs, TimeUnit.MILLISECONDS)) {
-                                cb.connectionFailed(BKException.Code.ZKException);
-                            } else {
-                                cb.connected();
-                            }
-                        } catch (InterruptedException ie) {
-                            // someone trying to kill the process
-                            cb.connectionFailed(BKException.Code.InterruptedException);
-                        }
-                    }
-                });
-        } else {
-            cb.connected();
-        }
+        ledgerManager = LedgerManagerFactory.newLedgerManager(conf, zk);
     }
 
     LedgerManager getLedgerManager() {
@@ -278,15 +270,8 @@ public class BookKeeper {
      */
     public void asyncCreateLedger(final int ensSize, final int qSize, final DigestType digestType,
                                   final byte[] passwd, final CreateCallback cb, final Object ctx) {
-        withZKConnected(new ZKConnectCallback() {
-                public void connected() {
-                    new LedgerCreateOp(BookKeeper.this, ensSize, qSize, digestType, passwd, cb, ctx)
-                        .initiate();
-                }
-                public void connectionFailed(int code) {
-                    cb.createComplete(code, null, ctx);
-                }
-            });
+        new LedgerCreateOp(BookKeeper.this, ensSize, qSize, digestType, passwd, cb, ctx)
+            .initiate();
     }
 
 
@@ -370,14 +355,7 @@ public class BookKeeper {
      */
     public void asyncOpenLedger(final long lId, final DigestType digestType, final byte passwd[],
                                 final OpenCallback cb, final Object ctx) {
-        withZKConnected(new ZKConnectCallback() {
-                public void connected() {
-                    new LedgerOpenOp(BookKeeper.this, lId, digestType, passwd, cb, ctx).initiate();
-                }
-                public void connectionFailed(int code) {
-                    cb.openComplete(code, null, ctx);
-                }
-            });
+        new LedgerOpenOp(BookKeeper.this, lId, digestType, passwd, cb, ctx).initiate();
     }
 
     /**
@@ -409,14 +387,7 @@ public class BookKeeper {
      */
     public void asyncOpenLedgerNoRecovery(final long lId, final DigestType digestType, final byte passwd[],
                                           final OpenCallback cb, final Object ctx) {
-        withZKConnected(new ZKConnectCallback() {
-                public void connected() {
-                    new LedgerOpenOp(BookKeeper.this, lId, digestType, passwd, cb, ctx).initiateWithoutRecovery();
-                }
-                public void connectionFailed(int code) {
-                    cb.openComplete(code, null, ctx);
-                }
-            });
+        new LedgerOpenOp(BookKeeper.this, lId, digestType, passwd, cb, ctx).initiateWithoutRecovery();
     }
 
 
@@ -502,14 +473,7 @@ public class BookKeeper {
      *            optional control object
      */
     public void asyncDeleteLedger(final long lId, final DeleteCallback cb, final Object ctx) {
-        withZKConnected(new ZKConnectCallback() {
-                public void connected() {
-                    new LedgerDeleteOp(BookKeeper.this, lId, cb, ctx).initiate();
-                }
-                public void connectionFailed(int code) {
-                    cb.deleteComplete(code, ctx);
-                }
-            });
+        new LedgerDeleteOp(BookKeeper.this, lId, cb, ctx).initiate();
     }
 
 

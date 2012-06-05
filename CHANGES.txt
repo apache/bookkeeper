@@ -134,6 +134,8 @@ Release 4.1.0 - 2012-05-31
 
         BOOKKEEPER-273: LedgerHandle.deleteLedger() should be idempotent (Matteo Merli via ivank)
 
+        BOOKKEEPER-281: BKClient is failing when zkclient connection delays (ivank via sijie)
+
       hedwig-client/
 
         BOOKKEEPER-217: NPE in hedwig client when enable DEBUG (sijie via ivank)
