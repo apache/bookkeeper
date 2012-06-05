@@ -31,6 +31,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.topics.TrivialOwnAllTopicManager;
+import org.apache.hedwig.server.persistence.LocalDBPersistenceManager;
 import org.apache.hedwig.util.ConcurrencyUtils;
 import org.apache.hedwig.util.Either;
 import org.apache.hedwig.util.Callback;
@@ -50,7 +51,8 @@ public class TestZkSubscriptionManager extends ZooKeeperTestBase {
         super.setUp();
         cfg = new ServerConfiguration();
         final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        sm = new ZkSubscriptionManager(zk, new TrivialOwnAllTopicManager(cfg, scheduler), null, cfg, scheduler);
+        sm = new ZkSubscriptionManager(zk, new TrivialOwnAllTopicManager(cfg, scheduler),
+                                       LocalDBPersistenceManager.instance(), cfg, scheduler);
         msgIdCallback = new Callback<MessageSeqId>() {
             @Override
             public void operationFailed(Object ctx, final PubSubException exception) {
