@@ -176,7 +176,7 @@ public class LedgerCacheImpl implements LedgerCache {
             }   
         } catch (IOException ie) {
             // if we grab a clean page, but failed to update the page
-            // we are exhuasting the count of ledger entry pages.
+            // we are exhausting the count of ledger entry pages.
             // since this page will be never used, so we need to decrement
             // page count of ledger cache.
             lep.releasePage();
@@ -317,7 +317,7 @@ public class LedgerCacheImpl implements LedgerCache {
                 if (!doAll) {
                     break;
                 }
-                // Yeild. if we are doing all the ledgers we don't want to block other flushes that
+                // Yield. if we are doing all the ledgers we don't want to block other flushes that
                 // need to happen
                 try {
                     dirtyLedgers.wait(1);
@@ -449,22 +449,22 @@ public class LedgerCacheImpl implements LedgerCache {
         if (entry % entriesPerPage != 0) {
             throw new IllegalArgumentException(entry + " is not a multiple of " + entriesPerPage);
         }
-        synchronized(this) {
-            if (pageCount  < pageLimit) {
-                // let's see if we can allocate something
-                LedgerEntryPage lep = new LedgerEntryPage(pageSize, entriesPerPage);
-                lep.setLedger(ledger);
-                lep.setFirstEntry(entry);
-
-                // note, this will not block since it is a new page
-                lep.usePage();
-                pageCount++;
-                return lep;
-            }
-        }
-
         outerLoop:
         while(true) {
+            synchronized(this) {
+                if (pageCount  < pageLimit) {
+                    // let's see if we can allocate something
+                    LedgerEntryPage lep = new LedgerEntryPage(pageSize, entriesPerPage);
+                    lep.setLedger(ledger);
+                    lep.setFirstEntry(entry);
+
+                    // note, this will not block since it is a new page
+                    lep.usePage();
+                    pageCount++;
+                    return lep;
+                }
+            }
+
             synchronized(cleanLedgers) {
                 if (cleanLedgers.isEmpty()) {
                     flushLedger(false);
@@ -475,6 +475,14 @@ public class LedgerCacheImpl implements LedgerCache {
                     }
                 }
                 synchronized(this) {
+                    // if ledgers deleted between checking pageCount and putting
+                    // ledgers into cleanLedgers list, the cleanLedgers list would be empty.
+                    // so give it a chance to go back to check pageCount again because
+                    // deleteLedger would decrement pageCount to return the number of pages
+                    // occupied by deleted ledgers.
+                    if (cleanLedgers.isEmpty()) {
+                        continue outerLoop;
+                    }
                     Long cleanLedger = cleanLedgers.getFirst();
                     Map<Long, LedgerEntryPage> map = pages.get(cleanLedger);
                     while (map == null || map.isEmpty()) {
@@ -610,7 +618,13 @@ public class LedgerCacheImpl implements LedgerCache {
 
         // remove pages first to avoid page flushed when deleting file info
         synchronized(this) {
-            pages.remove(ledgerId);
+            Map<Long, LedgerEntryPage> lpages = pages.remove(ledgerId);
+            if (null != lpages) {
+                pageCount -= lpages.size();
+                if (pageCount < 0) {
+                    LOG.error("Page count of ledger cache has been decremented to be less than zero.");
+                }
+            }
         }
         // Delete the ledger's index file and close the FileInfo
         FileInfo fi = null;
