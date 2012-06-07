@@ -1,4 +1,4 @@
-Release 4.1.0 - 2012-05-31
+Release 4.1.0 - 2012-06-07
 
   Non-backward compatible changes:
 
@@ -127,6 +127,8 @@ Release 4.1.0 - 2012-05-31
         BOOKKEEPER-286: Compilation warning (ivank via sijie)
 
         BOOKKEEPER-287: NoSuchElementException in LedgerCacheImpl (sijie)
+
+        BOOKKEEPER-288: NOTICE files don't have the correct year (ivank via sijie)
 
       hedwig-client/
 
