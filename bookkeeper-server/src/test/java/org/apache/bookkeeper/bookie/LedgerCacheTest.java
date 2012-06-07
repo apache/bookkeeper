@@ -126,6 +126,41 @@ public class LedgerCacheTest extends TestCase {
     }
 
     @Test
+    public void testDeleteLedger() throws Exception {
+        int numEntries = 10;
+        // limit open files & pages
+        conf.setOpenFileLimit(999).setPageLimit(2)
+            .setPageSize(8 * numEntries);
+        // create ledger cache
+        newLedgerCache();
+        try {
+            int numLedgers = 2;
+            byte[] masterKey = "blah".getBytes();
+            for (int i=1; i<=numLedgers; i++) {
+                ledgerCache.setMasterKey((long)i, masterKey);
+                for (int j=0; j<numEntries; j++) {
+                    ledgerCache.putEntryOffset(i, j, i*numEntries + j);
+                }
+            }
+            // ledger cache is exhausted
+            // delete ledgers
+            for (int i=1; i<=numLedgers; i++) {
+                ledgerCache.deleteLedger((long)i);
+            }
+            // create num ledgers to add entries
+            for (int i=numLedgers+1; i<=2*numLedgers; i++) {
+                ledgerCache.setMasterKey((long)i, masterKey);
+                for (int j=0; j<numEntries; j++) {
+                    ledgerCache.putEntryOffset(i, j, i*numEntries + j);
+                }
+            }
+        } catch (Exception e) {
+            LOG.error("Got Exception.", e);
+            fail("Failed to add entry.");
+        }
+    }
+
+    @Test
     public void testPageEviction() throws Exception {
         int numLedgers = 10;
         byte[] masterKey = "blah".getBytes();

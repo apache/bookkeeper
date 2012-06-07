@@ -26,16 +26,12 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
@@ -43,6 +39,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.apache.zookeeper.server.ZooKeeperServer;
@@ -68,6 +65,7 @@ public class LocalBookKeeper {
     ZooKeeperServer zks;
     ZooKeeper zkc;
     int ZooKeeperDefaultPort = 2181;
+    static int zkSessionTimeOut = 5000;
     File ZkTmpDir;
 
     //BookKeeper variables
@@ -104,11 +102,14 @@ public class LocalBookKeeper {
         LOG.debug("ZooKeeper server up: " + b);
     }
 
-    private void initializeZookeper() {
+    private void initializeZookeper() throws IOException {
         LOG.info("Instantiate ZK Client");
         //initialize the zk client with values
         try {
-            zkc = new ZooKeeper("127.0.0.1", ZooKeeperDefaultPort, new emptyWatcher());
+            ZKConnectionWatcher zkConnectionWatcher = new ZKConnectionWatcher();
+            zkc = new ZooKeeper(HOSTPORT, zkSessionTimeOut,
+                    zkConnectionWatcher);
+            zkConnectionWatcher.waitForConnection();
             zkc.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             zkc.create("/ledgers/available", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             // No need to create an entry for each requested bookie anymore as the
@@ -119,9 +120,6 @@ public class LocalBookKeeper {
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             LOG.error("Interrupted while creating znodes", e);
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            LOG.error("Exception while creating znodes", e);
         }
     }
     private void runBookies(ServerConfiguration baseConf) 
@@ -184,9 +182,30 @@ public class LocalBookKeeper {
         System.err.println("Usage: LocalBookKeeper number-of-bookies");
     }
 
-    /*	User for testing purposes, void */
-    static class emptyWatcher implements Watcher {
-        public void process(WatchedEvent event) {}
+    /* Watching SyncConnected event from ZooKeeper */
+    static class ZKConnectionWatcher implements Watcher {
+        private CountDownLatch clientConnectLatch = new CountDownLatch(1);
+
+        @Override
+        public void process(WatchedEvent event) {
+            if (event.getState() == KeeperState.SyncConnected) {
+                clientConnectLatch.countDown();
+            }
+        }
+
+        // Waiting for the SyncConnected event from the ZooKeeper server
+        public void waitForConnection() throws IOException {
+            try {
+                if (!clientConnectLatch.await(zkSessionTimeOut,
+                        TimeUnit.MILLISECONDS)) {
+                    throw new IOException(
+                            "Couldn't connect to zookeeper server");
+                }
+            } catch (InterruptedException e) {
+                throw new IOException(
+                        "Interrupted when connecting to zookeeper server", e);
+            }
+        }
     }
 
     public static boolean waitForServerUp(String hp, long timeout) {

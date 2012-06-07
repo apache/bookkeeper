@@ -120,6 +120,14 @@ Release 4.1.0 - 2012-05-31
 
         BOOKKEEPER-273: LedgerHandle.deleteLedger() should be idempotent (Matteo Merli via ivank)
 
+        BOOKKEEPER-281: BKClient is failing when zkclient connection delays (ivank via sijie)
+
+        BOOKKEEPER-279: LocalBookKeeper is failing intermittently due to zkclient connection establishment delay (Rakesh R via sijie)
+
+        BOOKKEEPER-286: Compilation warning (ivank via sijie)
+
+        BOOKKEEPER-287: NoSuchElementException in LedgerCacheImpl (sijie)
+
       hedwig-client/
 
         BOOKKEEPER-217: NPE in hedwig client when enable DEBUG (sijie via ivank)
@@ -145,6 +153,8 @@ Release 4.1.0 - 2012-05-31
         BOOKKEEPER-209: Typo in ServerConfiguration for READAHEAD_ENABLED (ivank)
 
         BOOKKEEPER-146: TestConcurrentTopicAcquisition sometimes hangs (ivank)
+
+        BOOKKEEPER-285: TestZkSubscriptionManager quits due to NPE, so other tests are not run in hedwig server. (sijie)
 
       bookkeeper-benchmark/
 	

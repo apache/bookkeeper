@@ -30,6 +30,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
@@ -127,18 +129,25 @@ public class BookKeeperAdmin {
      */
     public BookKeeperAdmin(ClientConfiguration conf) throws IOException, InterruptedException, KeeperException {
         // Create the ZooKeeper client instance
+        final CountDownLatch latch = new CountDownLatch(1);
         zk = new ZooKeeper(conf.getZkServers(), conf.getZkTimeout(), new Watcher() {
             @Override
             public void process(WatchedEvent event) {
+                latch.countDown();
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Process: " + event.getType() + " " + event.getPath());
                 }
             }
         });
+        if (!latch.await(conf.getZkTimeout(), TimeUnit.MILLISECONDS)
+            || !zk.getState().isConnected()) {
+            throw KeeperException.create(KeeperException.Code.CONNECTIONLOSS);
+        }
         // Create the bookie path
         bookiesPath = conf.getZkAvailableBookiesPath();
         // Create the BookKeeper client instance
-        bkc = new BookKeeper(conf);
+        bkc = new BookKeeper(conf, zk);
+
         DIGEST_TYPE = conf.getBookieRecoveryDigestType();
         PASSWD = conf.getBookieRecoveryPasswd();
     }
