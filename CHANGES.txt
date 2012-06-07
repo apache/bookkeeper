@@ -1,4 +1,4 @@
-Release 4.1.0 - 2012-05-31
+Release 4.1.0 - 2012-06-07
 
   Non-backward compatible changes:
 
