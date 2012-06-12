@@ -12,6 +12,10 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-289: mvn clean doesn't remove test output files (sijie via ivank)
 
+      hedwig-client:
+
+        BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)
+
     IMPROVEMENTS:
 
 Release 4.1.0 - 2012-06-07

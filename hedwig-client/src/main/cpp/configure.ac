@@ -26,7 +26,7 @@ AC_LANG([C++])
 AC_CONFIG_FILES([Makefile lib/Makefile test/Makefile hedwig-0.1.pc])
 AC_PROG_LIBTOOL
 AC_CONFIG_MACRO_DIR([m4])
-PKG_CHECK_MODULES([DEPS], [liblog4cxx protobuf cppunit])
+PKG_CHECK_MODULES([DEPS], [liblog4cxx protobuf])
 PKG_CHECK_MODULES([TESTDEPS], [cppunit])
 
 AX_BOOST_BASE
