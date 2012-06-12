@@ -10,6 +10,8 @@ Trunk (unreleased changes)
 
     BUGFIXES:
 
+      BOOKKEEPER-289: mvn clean doesn't remove test output files (sijie via ivank)
+
     IMPROVEMENTS:
 
 Release 4.1.0 - 2012-06-07
