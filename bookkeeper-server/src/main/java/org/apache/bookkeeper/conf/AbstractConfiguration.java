@@ -65,6 +65,16 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     }
 
     /**
+     * Load configuration from other configuration object
+     *
+     * @param otherConf
+     *          Other configuration object
+     */
+    public void loadConf(Configuration otherConf) {
+        addConfiguration(otherConf);
+    }
+
+    /**
      * Set Ledger Manager Type.
      *
      * @param lmType

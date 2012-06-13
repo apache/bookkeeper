@@ -178,7 +178,7 @@ class InterleavedLedgerStorage implements LedgerStorage {
         }
 
         @Override
-        public void process(long ledgerId, ByteBuffer buffer)
+        public void process(long ledgerId, long offset, ByteBuffer buffer)
             throws IOException {
             addEntry(buffer);
         }

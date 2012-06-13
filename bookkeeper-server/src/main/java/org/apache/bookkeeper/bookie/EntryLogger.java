@@ -91,11 +91,13 @@ public class EntryLogger {
          *
          * @param ledgerId
          *          Ledger ID.
+         * @param offset
+         *          File offset of this entry.
          * @param entry
          *          Entry ByteBuffer
          * @throws IOException
          */
-        public void process(long ledgerId, ByteBuffer entry) throws IOException;
+        public void process(long ledgerId, long offset, ByteBuffer entry) throws IOException;
     }
 
     /**
@@ -125,7 +127,8 @@ public class EntryLogger {
                 logId = lastLogId;
             }
         }
-        createNewLog();
+
+        initialize();
     }
 
     /**
@@ -137,10 +140,15 @@ public class EntryLogger {
         return logId;
     }
 
+    protected void initialize() throws IOException {
+        // create a new log to write
+        createNewLog();
+    }
+
     /**
      * Creates a new log file
      */
-    private void createNewLog() throws IOException {
+    void createNewLog() throws IOException {
         List<File> list = Arrays.asList(dirs);
         Collections.shuffle(list);
         if (logChannel != null) {
@@ -416,6 +424,7 @@ public class EntryLogger {
             if (bc.read(sizeBuff, pos) != sizeBuff.capacity()) {
                 throw new IOException("Short read for entry size from entrylog " + entryLogId);
             }
+            long offset = pos;
             pos += 4;
             sizeBuff.flip();
             int entrySize = sizeBuff.getInt();
@@ -446,7 +455,7 @@ public class EntryLogger {
             }
             buff.flip();
             // process the entry
-            scanner.process(lid, buff);
+            scanner.process(lid, offset, buff);
             // Advance position to the next entry
             pos += entrySize;
         }

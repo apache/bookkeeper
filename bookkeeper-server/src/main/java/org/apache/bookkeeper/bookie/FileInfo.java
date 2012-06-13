@@ -68,10 +68,14 @@ class FileInfo {
     private int useCount;
     private boolean isClosed;
 
+    // file access mode
+    protected String mode;
+
     public FileInfo(File lf, byte[] masterKey) throws IOException {
         this.lf = lf;
 
         this.masterKey = masterKey;
+        mode = "rw";
     }
 
     synchronized public void readHeader() throws IOException {
@@ -80,7 +84,7 @@ class FileInfo {
                 return;
             }
 
-            fc = new RandomAccessFile(lf, "rw").getChannel();
+            fc = new RandomAccessFile(lf, mode).getChannel();
             size = fc.size();
 
             // avoid hang on reading partial index
@@ -122,7 +126,7 @@ class FileInfo {
             if (create) {
                 // delayed the creation of parents directories
                 checkParents(lf);
-                fc = new RandomAccessFile(lf, "rw").getChannel();
+                fc = new RandomAccessFile(lf, mode).getChannel();
                 size = fc.size();
                 if (size == 0) {
                     writeHeader();

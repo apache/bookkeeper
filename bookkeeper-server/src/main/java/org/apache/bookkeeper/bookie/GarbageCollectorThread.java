@@ -100,8 +100,9 @@ public class GarbageCollectorThread extends Thread {
         }
 
         @Override
-        public void process(long ledgerId, ByteBuffer entry) throws IOException {
-            scanner.process(ledgerId, entry);
+        public void process(long ledgerId, long offset, ByteBuffer entry)
+            throws IOException {
+            scanner.process(ledgerId, offset, entry);
         }
     }
 
@@ -442,7 +443,7 @@ public class GarbageCollectorThread extends Thread {
             return true;
         }
         @Override
-        public void process(long ledgerId, ByteBuffer entry) {
+        public void process(long ledgerId, long offset, ByteBuffer entry) {
             // add new entry size of a ledger to entry log meta
             meta.addLedgerSize(ledgerId, entry.limit() + 4);
         }

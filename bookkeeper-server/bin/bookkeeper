@@ -78,6 +78,7 @@ where command is one of:
     bookie              Run a bookie server
     localbookie <n>     Run a test ensemble of <n> bookies locally
     upgrade             Upgrade bookie filesystem
+    shell               Run admin shell to read/check bookie files
     help                This help message
 
 or command is the full name of a class with a defined main() method.
@@ -87,6 +88,7 @@ Environment variables:
    BOOKIE_CONF            Configuration file (default: $DEFAULT_CONF)
    BOOKIE_EXTRA_OPTS      Extra options to be passed to the jvm
    BOOKIE_EXTRA_CLASSPATH Add extra paths to the bookkeeper classpath
+   ENTRY_FORMATTER_CLASS  Entry formatter class to format entries.
 
 These variable can also be set in conf/bkenv.sh
 EOF
@@ -155,6 +157,9 @@ elif [ $COMMAND == "localbookie" ]; then
     exec java $OPTS $JMX_ARGS org.apache.bookkeeper.util.LocalBookKeeper $NUMBER $BOOKIE_CONF $@
 elif [ $COMMAND == "upgrade" ]; then
     exec java $OPTS org.apache.bookkeeper.bookie.FileSystemUpgrade --conf $BOOKIE_CONF $@
+elif [ $COMMAND == "shell" ]; then
+    ENTRY_FORMATTER_ARG="-DentryFormatterClass=${ENTRY_FORMATTER_CLASS:-org.apache.bookkeeper.util.StringEntryFormatter}"
+    exec java $OPTS $ENTRY_FORMATTER_ARG org.apache.bookkeeper.bookie.BookieShell -conf $BOOKIE_CONF $@
 elif [ $COMMAND == "help" ]; then
     bookkeeper_help;
 else
