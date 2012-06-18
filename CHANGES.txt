@@ -10,6 +10,8 @@ Release 4.1.1 - UNRELEASED
 
     BUGFIXES:
 
+      BOOKKEEPER-298: We run with preferIPv4Stack in the scripts but not in the tests (ivank)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-289: mvn clean doesn't remove test output files (sijie via ivank)
