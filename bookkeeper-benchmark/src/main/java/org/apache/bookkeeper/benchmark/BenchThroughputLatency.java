@@ -242,6 +242,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         options.addOption("sockettimeout", true, "Socket timeout for bookkeeper client. In seconds. Default 5");
         options.addOption("skipwarmup", false, "Skip warm up, default false");
         options.addOption("sendlimit", true, "Max number of entries to send. Default 20000000");
+        options.addOption("latencyFile", true, "File to dump latencies. Default is latencyDump.dat");
         options.addOption("help", false, "This message");
 
         CommandLineParser parser = new PosixParser();
@@ -268,6 +269,8 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         String coordinationZnode = cmd.getOptionValue("coordnode");
         final byte[] passwd = cmd.getOptionValue("password", "benchPasswd").getBytes();
 
+        String latencyFile = cmd.getOptionValue("latencyFile", "latencyDump.dat");
+
         Timer timeouter = new Timer();
         if (cmd.hasOption("timeout")) {
             final long timeout = Long.valueOf(cmd.getOptionValue("timeout", "360")) * 1000;
@@ -285,7 +288,8 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
                 ", quorum size: " + quorum +
                 ", throttle: " + throttle +
                 ", number of ledgers: " + ledgers +
-                ", zk servers: " + servers);
+                ", zk servers: " + servers +
+                ", latency file: " + latencyFile);
 
         long totalTime = runningTime*1000;
 
@@ -380,7 +384,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         }
 
         // dump the latencies for later debugging (it will be sorted by entryid)
-        OutputStream fos = new BufferedOutputStream(new FileOutputStream("latencyDump.dat"));
+        OutputStream fos = new BufferedOutputStream(new FileOutputStream(latencyFile));
 
         for(Long l: latency) {
             fos.write((Long.toString(l)+"\t"+(l/1000000)+ "ms\n").getBytes());

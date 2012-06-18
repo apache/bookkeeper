@@ -114,11 +114,13 @@ public class TestBenchmark {
 
     @Test
     public void testThroughputLatency() throws Exception {
+        String latencyFile = System.getProperty("test.latency.file", "latencyDump.dat");
         BenchThroughputLatency.main(new String[] {
                 "--time", "10",
                 "--skipwarmup",
                 "--throttle", "1",
-                "--sendlimit", "10000"
+                "--sendlimit", "10000",
+                "--latencyFile", latencyFile
             });
     }
 

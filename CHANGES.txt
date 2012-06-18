@@ -12,6 +12,8 @@ Release 4.1.1 - UNRELEASED
 
     IMPROVEMENTS:
 
+      BOOKKEEPER-289: mvn clean doesn't remove test output files (sijie via ivank)
+
 Release 4.1.0 - 2012-06-07
 
   Non-backward compatible changes:

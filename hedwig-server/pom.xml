@@ -148,23 +148,11 @@
         <artifactId>maven-antrun-plugin</artifactId>
         <executions>
           <execution>
-            <id>removebuilddir</id>
-            <phase>clean</phase>
-            <configuration>
-              <tasks>
-                <delete dir="build" />
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-          <execution>
             <id>createbuilddir</id>
             <phase>generate-test-resources</phase>
             <configuration>
               <tasks>
-                <mkdir dir="build" />
+                <mkdir dir="target/zk_clientbase_build" />
               </tasks>
             </configuration>
             <goals>
@@ -193,6 +181,10 @@
 	<version>2.9</version>
 	<configuration>
 	  <argLine>-Xmx1G</argLine>
+          <systemPropertyVariables>
+            <derby.stream.error.file>target/derby.log</derby.stream.error.file>
+            <build.test.dir>target/zk_clientbase_build</build.test.dir>
+          </systemPropertyVariables>
 	</configuration>
       </plugin>
     </plugins>
