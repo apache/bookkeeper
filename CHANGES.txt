@@ -16,6 +16,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-298: We run with preferIPv4Stack in the scripts but not in the tests (ivank)
 
+      BOOKKEEPER-292: Test backward compatibility automatically between versions. (ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-183: Provide tools to read/check data files in bookie server (sijie via ivank)
