@@ -48,7 +48,6 @@ import org.apache.bookkeeper.streaming.LedgerInputStream;
 import org.apache.bookkeeper.streaming.LedgerOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.junit.Assert;
@@ -62,7 +61,7 @@ import org.junit.Test;
  *
  */
 
-public class BookieReadWriteTest extends BaseTestCase
+public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
     implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
 
     // Depending on the taste, select the amount of logging
@@ -84,9 +83,12 @@ public class BookieReadWriteTest extends BaseTestCase
 
     DigestType digestType;
 
-    public BookieReadWriteTest(DigestType digestType) {
+    public BookieReadWriteTest(String ledgerManagerFactory, DigestType digestType) {
         super(3);
         this.digestType = digestType;
+        // set ledger manager
+        baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
+        baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
     }
     // Synchronization
     SyncObj sync;
@@ -105,7 +107,7 @@ public class BookieReadWriteTest extends BaseTestCase
     }
 
     @Test
-    public void testOpenException() throws KeeperException, IOException, InterruptedException {
+    public void testOpenException() throws IOException, InterruptedException {
         try {
             lh = bkc.openLedger(0, digestType, ledgerPassword);
             fail("Haven't thrown exception");
@@ -117,10 +119,10 @@ public class BookieReadWriteTest extends BaseTestCase
     /**
      * test the streaming api for reading and writing
      *
-     * @throws {@link IOException}, {@link KeeperException}
+     * @throws {@link IOException}
      */
     @Test
-    public void testStreamingClients() throws IOException, KeeperException, BKException, InterruptedException {
+    public void testStreamingClients() throws IOException, BKException, InterruptedException {
         lh = bkc.createLedger(digestType, ledgerPassword);
         // write a string so that we cna
         // create a buffer of a single bytes
@@ -205,7 +207,7 @@ public class BookieReadWriteTest extends BaseTestCase
             assertTrue("Verifying number of entries written", lh.getLastAddConfirmed() == (numEntriesToWrite - 1));
 
             // read entries
-            lh.asyncReadEntries(0, numEntriesToWrite - 1, this, (Object) sync);
+            lh.asyncReadEntries(0, numEntriesToWrite - 1, this, sync);
 
             synchronized (sync) {
                 while (sync.value == false) {
@@ -319,7 +321,7 @@ public class BookieReadWriteTest extends BaseTestCase
                        lh.getLastAddConfirmed() == (numEntries - 1));
 
             // read entries
-            lh.asyncReadEntries(0, numEntries - 1, this, (Object) sync);
+            lh.asyncReadEntries(0, numEntries - 1, this, sync);
 
             synchronized (sync) {
                 while (sync.value == false) {
@@ -378,6 +380,7 @@ public class BookieReadWriteTest extends BaseTestCase
             this.throttle = threshold;
         }
 
+        @Override
         public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
             if(rc != BKException.Code.OK) {
                 fail("Return code is not OK: " + rc);
@@ -478,7 +481,7 @@ public class BookieReadWriteTest extends BaseTestCase
             // read entries
             sync.counter = 0;
             for (int i = 0; i < numEntriesToWrite; i+=throttle) {
-                lh.asyncReadEntries(i, i + throttle - 1, tcb, (Object) sync);
+                lh.asyncReadEntries(i, i + throttle - 1, tcb, sync);
                 int testValue = getAvailablePermits(lh);
                 assertTrue("Difference is incorrect : " + i + ", " + sync.counter + ", " + testValue, testValue <= throttle);
             }
@@ -814,7 +817,7 @@ public class BookieReadWriteTest extends BaseTestCase
             fail("Test failed due to interruption");
         }
     }
-    
+
     @Test
     public void testReadFromOpenLedger() throws IOException {
         try {
@@ -904,7 +907,7 @@ public class BookieReadWriteTest extends BaseTestCase
             fail("Test failed due to interruption");
         }
     }
-    
+
     @Test
     public void testReadFromOpenLedgerOpenOnce() throws Exception {
         try {
@@ -918,7 +921,7 @@ public class BookieReadWriteTest extends BaseTestCase
                 ByteBuffer entry = ByteBuffer.allocate(4);
                 entry.putInt(rng.nextInt(maxInt));
                 entry.position(0);
-                
+
                 entries.add(entry.array());
                 entriesSize.add(entry.array().length);
                 lh.addEntry(entry.array());
@@ -927,7 +930,7 @@ public class BookieReadWriteTest extends BaseTestCase
                     // less than written
                     // and it just can read until (i-1)
                     int toRead = i - 1;
-                    
+
                     long readLastConfirmed = lhOpen.readLastConfirmed();
                     assertTrue(readLastConfirmed != 0);
                     Enumeration<LedgerEntry> readEntry = lhOpen.readEntries(toRead, toRead);
@@ -945,12 +948,12 @@ public class BookieReadWriteTest extends BaseTestCase
                         LOG.error("Unexpected exception", ex);
                         fail("Unexpected exception");
                     }
-                    
+
                 }
             }
             long last = lh.readLastConfirmed();
             assertTrue("Last confirmed add: " + last, last == (numEntriesToWrite - 2));
-    
+
             LOG.debug("*** WRITE COMPLETE ***");
             // close ledger
             lh.close();
@@ -962,9 +965,9 @@ public class BookieReadWriteTest extends BaseTestCase
         } catch (InterruptedException e) {
             LOG.error("Test failed", e);
             fail("Test failed due to interruption");
-        } 
+        }
     }
-    
+
     @Test
     public void testReadFromOpenLedgerZeroAndOne() throws Exception {
         try {
@@ -974,7 +977,7 @@ public class BookieReadWriteTest extends BaseTestCase
             ledgerId = lh.getId();
             LOG.info("Ledger ID: " + lh.getId());
             LedgerHandle lhOpen = bkc.openLedgerNoRecovery(ledgerId, digestType, ledgerPassword);
-            
+
             /*
              * We haven't written anything, so it should be empty.
              */
@@ -982,7 +985,7 @@ public class BookieReadWriteTest extends BaseTestCase
             long readLastConfirmed = lhOpen.readLastConfirmed();
             assertTrue("Last confirmed has the wrong value",
                        readLastConfirmed == LedgerHandle.INVALID_ENTRY_ID);
-            
+
             /*
              * Writing one entry.
              */
@@ -990,7 +993,7 @@ public class BookieReadWriteTest extends BaseTestCase
             ByteBuffer entry = ByteBuffer.allocate(4);
             entry.putInt(rng.nextInt(maxInt));
             entry.position(0);
-            
+
             entries.add(entry.array());
             entriesSize.add(entry.array().length);
             lh.addEntry(entry.array());
@@ -1004,13 +1007,13 @@ public class BookieReadWriteTest extends BaseTestCase
             assertTrue(readLastConfirmed == LedgerHandle.INVALID_ENTRY_ID);
 
             /*
-             * Adding one more, and this time we should expect to 
+             * Adding one more, and this time we should expect to
              * see one entry.
              */
             entry = ByteBuffer.allocate(4);
             entry.putInt(rng.nextInt(maxInt));
             entry.position(0);
-            
+
             entries.add(entry.array());
             entriesSize.add(entry.array().length);
             lh.addEntry(entry.array());
@@ -1018,7 +1021,7 @@ public class BookieReadWriteTest extends BaseTestCase
             LOG.info("Checking that it has an entry");
             readLastConfirmed = lhOpen.readLastConfirmed();
             assertTrue(readLastConfirmed == 0L);
-                        
+
             // close ledger
             lh.close();
             // close read only ledger should not change metadata
@@ -1029,9 +1032,9 @@ public class BookieReadWriteTest extends BaseTestCase
         } catch (InterruptedException e) {
             LOG.error("Test failed", e);
             fail("Test failed due to interruption");
-        } 
+        }
     }
-    
+
 
     @Test
     public void testLastConfirmedAdd() throws IOException {
@@ -1101,6 +1104,7 @@ public class BookieReadWriteTest extends BaseTestCase
     }
 
 
+    @Override
     public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
         if(rc != BKException.Code.OK) fail("Return code is not OK: " + rc);
 
@@ -1112,6 +1116,7 @@ public class BookieReadWriteTest extends BaseTestCase
         }
     }
 
+    @Override
     public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
         if(rc != BKException.Code.OK) fail("Return code is not OK: " + rc);
 
@@ -1123,6 +1128,7 @@ public class BookieReadWriteTest extends BaseTestCase
         }
     }
 
+    @Override
     public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
         SyncObj sync = (SyncObj) ctx;
 
@@ -1132,6 +1138,7 @@ public class BookieReadWriteTest extends BaseTestCase
         }
     }
 
+    @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
@@ -1160,6 +1167,7 @@ public class BookieReadWriteTest extends BaseTestCase
 
     /* User for testing purposes, void */
     class emptyWatcher implements Watcher {
+        @Override
         public void process(WatchedEvent event) {
         }
     }

@@ -36,7 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.ActiveLedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
@@ -66,9 +66,11 @@ public class Bookie extends Thread {
     final ServerConfiguration conf;
 
     final SyncThread syncThread;
-    final LedgerManager ledgerManager;
+    final LedgerManagerFactory activeLedgerManagerFactory;
+    final ActiveLedgerManager activeLedgerManager;
     final LedgerStorage ledgerStorage;
     final Journal journal;
+
     final HandleFactory handles;
 
     static final long METAENTRY_ID_LEDGER_KEY = -0x1000;
@@ -351,10 +353,11 @@ public class Bookie extends Thread {
         this.zk = instantiateZookeeperClient(conf);
         checkEnvironment(this.zk);
 
-        ledgerManager = LedgerManagerFactory.newLedgerManager(conf, this.zk);
+        activeLedgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, this.zk);
+        activeLedgerManager = activeLedgerManagerFactory.newActiveLedgerManager();
 
         syncThread = new SyncThread(conf);
-        ledgerStorage = new InterleavedLedgerStorage(conf, ledgerManager);
+        ledgerStorage = new InterleavedLedgerStorage(conf, activeLedgerManager);
         handles = new HandleFactoryImpl(ledgerStorage);
         // instantiate the journal
         journal = new Journal(conf);
@@ -603,7 +606,12 @@ public class Bookie extends Thread {
                 syncThread.shutdown();
 
                 // close Ledger Manager
-                ledgerManager.close();
+                try {
+                    activeLedgerManager.close();
+                    activeLedgerManagerFactory.uninitialize();
+                } catch (IOException ie) {
+                    LOG.error("Failed to close active ledger manager : ", ie);
+                }
                 // setting running to false here, so watch thread in bookie server know it only after bookie shut down
                 running = false;
             }

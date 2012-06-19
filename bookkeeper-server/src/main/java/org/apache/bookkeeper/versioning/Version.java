@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.meta;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,28 +18,15 @@ package org.apache.bookkeeper.meta;
  * under the License.
  *
  */
-
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.meta.HierarchicalLedgerManager;
-import org.apache.bookkeeper.test.AsyncLedgerOpsTest;
-
-import org.junit.Before;
+package org.apache.bookkeeper.versioning;
 
 /**
- * Test ledger delete using HierarchicalLedgerManager
+ * An interface that allows us to determine if a given version happened before or after another version.
  */
-public class HierarchicalAsyncLedgerOpsTest extends AsyncLedgerOpsTest {
-
-    public HierarchicalAsyncLedgerOpsTest(DigestType digestType) {
-        super(digestType);
+public interface Version {
+    public enum Occurred {
+        BEFORE, AFTER, CONCURRENTLY
     }
 
-    @Before
-    @Override
-    public void setUp() throws Exception {
-        baseConf.setLedgerManagerType(HierarchicalLedgerManager.NAME);
-        baseClientConf.setLedgerManagerType(HierarchicalLedgerManager.NAME);
-        super.setUp();
-    }
-
+    public Occurred compare(Version v);
 }

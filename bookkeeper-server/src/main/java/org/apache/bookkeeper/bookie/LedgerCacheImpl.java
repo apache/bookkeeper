@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Map.Entry;
 
-import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.ActiveLedgerManager;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +49,7 @@ public class LedgerCacheImpl implements LedgerCache {
 
     final File ledgerDirectories[];
 
-    public LedgerCacheImpl(ServerConfiguration conf, LedgerManager alm) {
+    public LedgerCacheImpl(ServerConfiguration conf, ActiveLedgerManager alm) {
         this.ledgerDirectories = Bookie.getCurrentDirectories(conf.getLedgerDirs());
         this.openFileLimit = conf.getOpenFileLimit();
         this.pageSize = conf.getPageSize();
@@ -83,7 +83,7 @@ public class LedgerCacheImpl implements LedgerCache {
 
     // Manage all active ledgers in LedgerManager
     // so LedgerManager has knowledge to garbage collect inactive/deleted ledgers
-    final LedgerManager activeLedgerManager;
+    final ActiveLedgerManager activeLedgerManager;
 
     final int openFileLimit;
     final int pageSize;

@@ -18,7 +18,7 @@ package org.apache.bookkeeper.meta;
  * limitations under the License.
  */
 
-import java.io.IOException;
+import java.io.Closeable;
 
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.bookkeeper.client.LedgerMetadata;
@@ -26,44 +26,55 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 
 /**
- * LedgerManager takes responsibility of ledger management
+ * LedgerManager takes responsibility of ledger management in client side.
  *
  * <ul>
  * <li>How to store ledger meta (e.g. in ZooKeeper or other key/value store)
- * <li>How to manager active ledgers (so know how to do garbage collection)
- * <li>How to garbage collect inactive/deleted ledgers
  * </ul>
  */
-public interface LedgerManager {
+public interface LedgerManager extends Closeable {
 
     /**
-     * Get the path that is used to store ledger metadata
+     * Create a new ledger with provided metadata
      *
-     * @param ledgerId
-     *          Ledger ID
-     * @return ledger node path
-     */
-    public String getLedgerPath(long ledgerId);
-
-    /**
-     * Get ledger id from its ledger path
-     *
-     * @param ledgerPath
-     *          Ledger path to store metadata
-     * @return ledger id
-     * @throws IOException when the ledger path is invalid
-     */
-    public long getLedgerId(String ledgerPath) throws IOException;
-
-    /**
-     * Create a new zk ledger path with provided metadata
-     *
-     * @param cb
-     *        Callback when getting new zk ledger path to create.
      * @param metadata
      *        Metadata provided when creating a new ledger
+     * @param cb
+     *        Callback when creating a new ledger.
      */
-    public abstract void newLedgerPath(GenericCallback<String> cb, LedgerMetadata metadata);
+    public abstract void createLedger(LedgerMetadata metadata, GenericCallback<Long> cb);
+
+    /**
+     * Delete a specified ledger by ledgerId.
+     *
+     * @param ledgerId
+     *          Ledger Id
+     * @param cb
+     *          Callback when deleted ledger.
+     */
+    public abstract void deleteLedger(long ledgerId, GenericCallback<Void> cb);
+
+    /**
+     * Read ledger metadata of a specified ledger.
+     *
+     * @param ledgerId
+     *          Ledger Id
+     * @param readCb
+     *          Callback when read ledger metadata.
+     */
+    public abstract void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> readCb);
+
+    /**
+     * Write ledger metadata.
+     *
+     * @param ledgerId
+     *          Ledger Id
+     * @param metadata
+     *          Ledger Metadata to write
+     * @param cb
+     *          Callback when finished writing ledger metadata.
+     */
+    public abstract void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<Void> cb);
 
     /**
      * Loop to process all ledgers.
@@ -88,60 +99,4 @@ public interface LedgerManager {
      */
     public void asyncProcessLedgers(Processor<Long> processor, AsyncCallback.VoidCallback finalCb,
                                     Object context, int successRc, int failureRc);
-
-    /**
-     * Add active ledger
-     *
-     * @param ledgerId
-     *          Ledger ID
-     * @param active
-     *          Status of ledger
-     */
-    public void addActiveLedger(long ledgerId, boolean active);
-
-    /**
-     * Remove active ledger
-     *
-     * @param ledgerId
-     *          Ledger ID
-     */
-    public void removeActiveLedger(long ledgerId);
-
-    /**
-     * Is Ledger ledgerId in active ledgers set
-     *
-     * @param ledgerId
-     *          Ledger ID
-     * @return true if the ledger is in active ledgers set, otherwise return false
-     */
-    public boolean containsActiveLedger(long ledgerId);
-
-    /**
-     * Garbage Collector which handles ledger deletion in server side
-     */
-    public static interface GarbageCollector {
-        /**
-         * garbage collecting a specific ledger
-         *
-         * @param ledgerId
-         *          Ledger ID to be garbage collected
-         */
-        public void gc(long ledgerId);
-    }
-
-    /**
-     * Garbage collecting all inactive/deleted ledgers
-     * <p>
-     * GarbageCollector#gc is triggered each time we found a ledger could be garbage collected.
-     * After method finished, all those inactive ledgers should be garbage collected.
-     * </p>
-     *
-     * @param gc garbage collector
-     */
-    public void garbageCollectLedgers(GarbageCollector gc);
-
-    /**
-     * Close ledger manager
-     */
-    public void close();
 }

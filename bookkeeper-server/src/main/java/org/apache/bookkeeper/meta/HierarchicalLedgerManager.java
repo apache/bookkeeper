@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Set;
 import java.util.Map;
 import java.util.NavigableMap;
-import java.util.HashSet;
 import java.util.List;
 
 import org.apache.bookkeeper.client.LedgerMetadata;
@@ -81,9 +80,6 @@ import org.slf4j.LoggerFactory;
 class HierarchicalLedgerManager extends AbstractZkLedgerManager {
 
     static final Logger LOG = LoggerFactory.getLogger(HierarchicalLedgerManager.class);
-    public static final String NAME = "hierarchical";
-
-    public static final int CUR_VERSION = 1;
 
     static final String IDGEN_ZNODE = "idgen";
     static final String IDGENERATION_PREFIX = "/" + IDGEN_ZNODE + "/ID-";
@@ -92,8 +88,6 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
 
     // Path to generate global id
     private final String idGenPath;
-    // A sorted map to stored all active ledger ids
-    private SnapshotMap<Long, Boolean> activeLedgers;
 
     // we use this to prevent long stack chains from building up in callbacks
     ScheduledExecutorService scheduler;
@@ -105,23 +99,11 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
      *          Configuration object
      * @param zk
      *          ZooKeeper Client Handle
-     * @param ledgerRootPath
-     *          ZooKeeper Path to store ledger metadata
-     * @throws IOException when version is not compatible
      */
-    public HierarchicalLedgerManager(AbstractConfiguration conf, ZooKeeper zk,
-                                     String ledgerRootPath, int layoutVersion)
-        throws IOException {
-        super(conf, zk, ledgerRootPath);
-
-        if (layoutVersion != CUR_VERSION) {
-            throw new IOException("Incompatible layout version found : " 
-                                  + layoutVersion);
-        }
+    public HierarchicalLedgerManager(AbstractConfiguration conf, ZooKeeper zk) {
+        super(conf, zk);
 
         this.idGenPath = ledgerRootPath + IDGENERATION_PREFIX;
-        activeLedgers = new SnapshotMap<Long, Boolean>();
-
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
         if (LOG.isDebugEnabled()) {
             LOG.debug("Using HierarchicalLedgerManager with root path : " + ledgerRootPath);
@@ -139,7 +121,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
     }
 
     @Override
-    public void newLedgerPath(final GenericCallback<String> ledgerCb, final LedgerMetadata metadata) {
+    public void createLedger(final LedgerMetadata metadata, final GenericCallback<Long> ledgerCb) {
         ZkUtils.createFullPathOptimistic(zk, idGenPath, new byte[0], Ids.OPEN_ACL_UNSAFE,
             CreateMode.EPHEMERAL_SEQUENTIAL, new StringCallback() {
             @Override
@@ -161,20 +143,23 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
                     ledgerCb.operationComplete(KeeperException.Code.SYSTEMERROR.intValue(), null);
                     return;
                 }
+                String ledgerPath = getLedgerPath(ledgerId);
+                final long lid = ledgerId;
                 StringCallback scb = new StringCallback() {
                     @Override
                     public void processResult(int rc, String path,
                             Object ctx, String name) {
                         if (rc != KeeperException.Code.OK.intValue()) {
+                            LOG.error("Could not create node for ledger",
+                                      KeeperException.create(KeeperException.Code.get(rc), path));
                             ledgerCb.operationComplete(rc, null);
                         } else {
-                            // update znode status
-                            metadata.updateZnodeStatus(0);
-                            ledgerCb.operationComplete(rc, name);
+                            // update version
+                            metadata.setVersion(new ZkVersion(0));
+                            ledgerCb.operationComplete(rc, lid);
                         }
                     }
                 };
-                String ledgerPath = getLedgerPath(ledgerId);
                 ZkUtils.createFullPathOptimistic(zk, ledgerPath, metadata.serialize(),
                     Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT, scb, null);
                 // delete the znode for id generation
@@ -348,21 +333,6 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
                 }, null);
             }
         }, null);
-    }
-
-    @Override
-    public void addActiveLedger(long ledgerId, boolean active) {
-        activeLedgers.put(ledgerId, active);
-    }
-
-    @Override
-    public void removeActiveLedger(long ledgerId) {
-        activeLedgers.remove(ledgerId);
-    }
-
-    @Override
-    public boolean containsActiveLedger(long ledgerId) {
-        return activeLedgers.containsKey(ledgerId);
     }
 
     @Override

@@ -45,7 +45,7 @@ public class LedgerLayoutTest extends BookKeeperClusterTestCase {
     @Test
     public void testLedgerLayout() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setLedgerManagerType(HierarchicalLedgerManager.NAME);
+        conf.setLedgerManagerFactoryClass(HierarchicalLedgerManagerFactory.class);
         String ledgerRootPath = "/testLedgerLayout";
 
         zkc.create(ledgerRootPath, new byte[0], 
@@ -83,8 +83,10 @@ public class LedgerLayoutTest extends BookKeeperClusterTestCase {
     public void testBadVersionLedgerLayout() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         // write bad version ledger layout
-        writeLedgerLayout(conf.getZkLedgersRootPath(), FlatLedgerManager.NAME,
-                FlatLedgerManager.CUR_VERSION, LedgerLayout.LAYOUT_FORMAT_VERSION + 1);
+        writeLedgerLayout(conf.getZkLedgersRootPath(),
+                          FlatLedgerManagerFactory.class.getName(),
+                          FlatLedgerManagerFactory.CUR_VERSION,
+                          LedgerLayout.LAYOUT_FORMAT_VERSION + 1);
         
         try {
             LedgerLayout.readLayout(zkc, conf.getZkLedgersRootPath());
@@ -120,7 +122,7 @@ public class LedgerLayoutTest extends BookKeeperClusterTestCase {
         // write bad format ledger layout
         StringBuilder sb = new StringBuilder();
         sb.append(LedgerLayout.LAYOUT_FORMAT_VERSION).append("\n")
-          .append(FlatLedgerManager.NAME);
+          .append(FlatLedgerManagerFactory.class.getName());
         zkc.create(ledgersLayout, sb.toString().getBytes(),
                                  Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 
@@ -130,5 +132,20 @@ public class LedgerLayoutTest extends BookKeeperClusterTestCase {
         } catch (IOException ie) {
             assertTrue("Invalid exception", ie.getMessage().contains("Invalid Ledger Manager"));
         }
+    }
+
+    @Test
+    public void testReadV1LedgerManagerLayout() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        // write v1 ledger layout
+        writeLedgerLayout(conf.getZkLedgersRootPath(),
+                          FlatLedgerManagerFactory.NAME,
+                          FlatLedgerManagerFactory.CUR_VERSION, 1);
+
+        LedgerLayout layout = LedgerLayout.readLayout(zkc, conf.getZkLedgersRootPath());
+        assertNotNull("Should not be null", layout);
+        assertEquals(FlatLedgerManagerFactory.NAME, layout.getManagerType());
+        assertEquals(FlatLedgerManagerFactory.CUR_VERSION, layout.getManagerVersion());
+        assertEquals(1, layout.getLayoutFormatVersion());
     }
 }

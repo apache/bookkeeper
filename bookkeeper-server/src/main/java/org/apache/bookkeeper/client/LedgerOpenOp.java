@@ -23,21 +23,20 @@ package org.apache.bookkeeper.client;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.AsyncCallback.DataCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.zookeeper.data.Stat;
 
 /**
  * Encapsulates the ledger open operation
  *
  */
-class LedgerOpenOp implements DataCallback {
+class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
     static final Logger LOG = LoggerFactory.getLogger(LedgerOpenOp.class);
 
     final BookKeeper bk;
@@ -78,8 +77,7 @@ class LedgerOpenOp implements DataCallback {
         /**
          * Asynchronously read the ledger metadata node.
          */
-
-        bk.getZkHandle().getData(bk.getLedgerManager().getLedgerPath(ledgerId), false, this, ctx);
+        bk.getLedgerManager().readLedgerMetadata(ledgerId, this);
     }
 
     /**
@@ -91,34 +89,15 @@ class LedgerOpenOp implements DataCallback {
     }
 
     /**
-     * Implements ZooKeeper data callback.
-     * @see org.apache.zookeeper.AsyncCallback.DataCallback#processResult(int, String, Object, byte[], Stat)
+     * Implements Open Ledger Callback.
      */
-    public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
-
-        if (rc == KeeperException.Code.NONODE.intValue()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("No such ledger: " + ledgerId, KeeperException.create(KeeperException.Code.get(rc), path));
-            }
-            cb.openComplete(BKException.Code.NoSuchLedgerExistsException, null, this.ctx);
+    public void operationComplete(int rc, LedgerMetadata metadata) {
+        if (BKException.Code.OK != rc) {
+            // open ledger failed.
+            cb.openComplete(rc, null, this.ctx);
             return;
         }
-        if (rc != KeeperException.Code.OK.intValue()) {
-            LOG.error("Could not read metadata for ledger: " + ledgerId, KeeperException.create(KeeperException.Code
-                      .get(rc), path));
-            cb.openComplete(BKException.Code.ZKException, null, this.ctx);
-            return;
-        }
-
-        LedgerMetadata metadata;
-        try {
-            metadata = LedgerMetadata.parseConfig(data, stat.getVersion());
-        } catch (IOException e) {
-            LOG.error("Could not parse ledger metadata for ledger: " + ledgerId, e);
-            cb.openComplete(BKException.Code.ZKException, null, this.ctx);
-            return;
-        }
-
+        // get the ledger metadata back
         try {
             lh = new ReadOnlyLedgerHandle(bk, ledgerId, metadata, digestType, passwd);
         } catch (GeneralSecurityException e) {

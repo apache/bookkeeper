@@ -81,6 +81,7 @@ public class BookKeeper {
     final OrderedSafeExecutor mainWorkerPool;
 
     // Ledger manager responsible for how to store ledger meta data
+    final LedgerManagerFactory ledgerManagerFactory;
     final LedgerManager ledgerManager;
 
     final ClientConfiguration conf;
@@ -148,7 +149,8 @@ public class BookKeeper {
         bookieWatcher = new BookieWatcher(conf, this);
         bookieWatcher.readBookiesBlocking();
 
-        ledgerManager = LedgerManagerFactory.newLedgerManager(conf, zk);
+        ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, zk);
+        ledgerManager = ledgerManagerFactory.newLedgerManager();
 
         ownChannelFactory = true;
         ownZKHandle = true;
@@ -210,7 +212,8 @@ public class BookKeeper {
         bookieWatcher = new BookieWatcher(conf, this);
         bookieWatcher.readBookiesBlocking();
 
-        ledgerManager = LedgerManagerFactory.newLedgerManager(conf, zk);
+        ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, zk);
+        ledgerManager = ledgerManagerFactory.newLedgerManager();
     }
 
     LedgerManager getLedgerManager() {
@@ -494,11 +497,8 @@ public class BookKeeper {
         asyncDeleteLedger(lId, new SyncDeleteCallback(), counter);
         // Wait
         counter.block(0);
-        if (counter.getrc() == KeeperException.Code.NONODE.intValue()) {
-            LOG.warn("Ledger node does not exist in ZooKeeper: ledgerId={}", lId);
-            throw BKException.create(Code.NoSuchLedgerExistsException);
-        } else if (counter.getrc() != KeeperException.Code.OK.intValue()) {
-            LOG.error("ZooKeeper error deleting ledger node: " + counter.getrc());
+        if (counter.getrc() != BKException.Code.OK) {
+            LOG.error("Error deleting ledger " + lId + " : " + counter.getrc());
             throw BKException.create(Code.ZKException);
         }
     }
@@ -509,7 +509,12 @@ public class BookKeeper {
      */
     public void close() throws InterruptedException, BKException {
         bookieClient.close();
-        ledgerManager.close();
+        try {
+            ledgerManager.close();
+            ledgerManagerFactory.uninitialize();
+        } catch (IOException ie) {
+            LOG.error("Failed to close ledger manager : ", ie);
+        }
         bookieWatcher.halt();
         if (ownChannelFactory) {
             channelFactory.releaseExternalResources();

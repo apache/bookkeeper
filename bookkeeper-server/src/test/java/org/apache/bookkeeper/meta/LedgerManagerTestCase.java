@@ -45,18 +45,34 @@ import junit.framework.TestCase;
 public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
     static final Logger LOG = LoggerFactory.getLogger(LedgerManagerTestCase.class);
 
-    LedgerManager ledgerManager;
+    LedgerManagerFactory ledgerManagerFactory;
+    LedgerManager ledgerManager = null;
+    ActiveLedgerManager activeLedgerManager = null;
 
-    public LedgerManagerTestCase(String ledgerManagerType) {
+    public LedgerManagerTestCase(Class<? extends LedgerManagerFactory> lmFactoryCls) {
         super(0);
-        baseConf.setLedgerManagerType(ledgerManagerType);
+        baseConf.setLedgerManagerFactoryClass(lmFactoryCls);
+    }
+
+    public LedgerManager getLedgerManager() {
+        if (null == ledgerManager) {
+            ledgerManager = ledgerManagerFactory.newLedgerManager();
+        }
+        return ledgerManager;
+    }
+
+    public ActiveLedgerManager getActiveLedgerManager() {
+        if (null == activeLedgerManager) {
+            activeLedgerManager = ledgerManagerFactory.newActiveLedgerManager();
+        }
+        return activeLedgerManager;
     }
 
     @Parameters
     public static Collection<Object[]> configs() {
         return Arrays.asList(new Object[][] {
-            { FlatLedgerManager.NAME },
-            { HierarchicalLedgerManager.NAME }
+            { FlatLedgerManagerFactory.class },
+            { HierarchicalLedgerManagerFactory.class }
         });
     }
 
@@ -64,13 +80,19 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        ledgerManager = LedgerManagerFactory.newLedgerManager(baseConf, zkc);
+        ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(baseConf, zkc);
     }
 
     @After
     @Override
     public void tearDown() throws Exception {
-        ledgerManager.close();
+        if (null != ledgerManager) {
+            ledgerManager.close();
+        }
+        if (null != activeLedgerManager) {
+            activeLedgerManager.close();
+        }
+        ledgerManagerFactory.uninitialize();
         super.tearDown();
     }
 

@@ -26,14 +26,29 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
 
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.util.ReflectionUtils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Abstract configuration
  */
 public abstract class AbstractConfiguration extends CompositeConfiguration {
 
+    static final Logger LOG = LoggerFactory.getLogger(AbstractConfiguration.class);
+
+    private static ClassLoader defaultLoader;
+    static {
+        defaultLoader = Thread.currentThread().getContextClassLoader();
+        if (null == defaultLoader) {
+            defaultLoader = AbstractConfiguration.class.getClassLoader();
+        }
+    }
+
     // Ledger Manager
     protected final static String LEDGER_MANAGER_TYPE = "ledgerManagerType";
+    protected final static String LEDGER_MANAGER_FACTORY_CLASS = "ledgerManagerFactoryClass";
     protected final static String ZK_LEDGERS_ROOT_PATH = "zkLedgersRootPath";
     protected final static String AVAILABLE_NODE = "available";
     protected AbstractConfiguration() {
@@ -79,7 +94,10 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *
      * @param lmType
      *          Ledger Manager Type
+     * @return void
+     * @deprecated replaced by {@link #setLedgerManagerFactoryClass()}
      */
+    @Deprecated
     public void setLedgerManagerType(String lmType) {
         setProperty(LEDGER_MANAGER_TYPE, lmType); 
     }
@@ -89,9 +107,45 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *
      * @return ledger manager type
      * @throws ConfigurationException
+     * @deprecated replaced by {@link #getLedgerManagerFactoryClass()}
      */
+    @Deprecated
     public String getLedgerManagerType() {
         return getString(LEDGER_MANAGER_TYPE);
+    }
+
+    /**
+     * Set Ledger Manager Factory Class Name.
+     *
+     * @param factoryClassName
+     *          Ledger Manager Factory Class Name
+     * @return void
+     */
+    public void setLedgerManagerFactoryClassName(String factoryClassName) {
+        setProperty(LEDGER_MANAGER_FACTORY_CLASS, factoryClassName);
+    }
+
+    /**
+     * Set Ledger Manager Factory Class.
+     *
+     * @param factoryClass
+     *          Ledger Manager Factory Class
+     * @return void
+     */
+    public void setLedgerManagerFactoryClass(Class<? extends LedgerManagerFactory> factoryClass) {
+        setProperty(LEDGER_MANAGER_FACTORY_CLASS, factoryClass.getName());
+    }
+
+    /**
+     * Get ledger manager factory class.
+     *
+     * @return ledger manager factory class
+     */
+    public Class<? extends LedgerManagerFactory> getLedgerManagerFactoryClass()
+        throws ConfigurationException {
+        return ReflectionUtils.getClass(this, LEDGER_MANAGER_FACTORY_CLASS,
+                                        null, LedgerManagerFactory.class,
+                                        defaultLoader);
     }
 
     /**

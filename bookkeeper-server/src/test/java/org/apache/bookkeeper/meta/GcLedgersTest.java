@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
-import org.apache.bookkeeper.meta.LedgerManager.GarbageCollector;
+import org.apache.bookkeeper.meta.ActiveLedgerManager.GarbageCollector;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,8 +46,8 @@ import org.junit.Test;
 public class GcLedgersTest extends LedgerManagerTestCase {
     static final Logger LOG = LoggerFactory.getLogger(GcLedgersTest.class);
 
-    public GcLedgersTest(String ledgerManagerType) {
-        super(ledgerManagerType);
+    public GcLedgersTest(Class<? extends LedgerManagerFactory> lmFactoryCls) {
+        super(lmFactoryCls);
     }
 
     /**
@@ -56,16 +56,12 @@ public class GcLedgersTest extends LedgerManagerTestCase {
     private void createLedgers(int numLedgers, final Set<Long> createdLedgers) {
         final AtomicInteger expected = new AtomicInteger(numLedgers);
         for (int i=0; i<numLedgers; i++) {
-            ledgerManager.newLedgerPath(new GenericCallback<String>() {
+            getLedgerManager().createLedger(new LedgerMetadata(1, 1), new GenericCallback<Long>() {
                 @Override
-                public void operationComplete(int rc, String ledgerPath) {
+                public void operationComplete(int rc, Long ledgerId) {
                     if (rc == BKException.Code.OK) {
-                        try {
-                            long ledgerId = ledgerManager.getLedgerId(ledgerPath);
-                            ledgerManager.addActiveLedger(ledgerId, true);
-                            createdLedgers.add(ledgerId);
-                        } catch (IOException ie) {
-                        }
+                        getActiveLedgerManager().addActiveLedger(ledgerId, true);
+                        createdLedgers.add(ledgerId);
                     }
                     synchronized (expected) {
                         int num = expected.decrementAndGet();
@@ -74,7 +70,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
                         }
                     }
                 }
-            }, new LedgerMetadata(1, 1));
+            });
         }
         synchronized (expected) {
             try {
@@ -104,7 +100,17 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         // random remove several ledgers
         for (int i=0; i<numRemovedLedgers; i++) {
             long ledgerId = tmpList.get(i);
-            zkc.delete(ledgerManager.getLedgerPath(ledgerId), -1);
+            getLedgerManager().deleteLedger(ledgerId, new GenericCallback<Void>() {
+                @Override
+                public void operationComplete(int rc, Void result) {
+                    synchronized (removedLedgers) {
+                        removedLedgers.notify();
+                    }
+                }
+            });
+            synchronized (removedLedgers) {
+                removedLedgers.wait();
+            }
             removedLedgers.add(ledgerId);
             createdLedgers.remove(ledgerId);
         }
@@ -115,7 +121,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         Thread gcThread = new Thread() {
             @Override
             public void run() {
-                ledgerManager.garbageCollectLedgers(new GarbageCollector() {
+                getActiveLedgerManager().garbageCollectLedgers(new GarbageCollector() {
                     boolean paused = false;
                     @Override
                     public void gc(long ledgerId) {
@@ -158,10 +164,10 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         // test ledgers
         for (Long ledger : removedLedgers) {
-            assertFalse(ledgerManager.containsActiveLedger(ledger));
+            assertFalse(getActiveLedgerManager().containsActiveLedger(ledger));
         }
         for (Long ledger : createdLedgers) {
-            assertTrue(ledgerManager.containsActiveLedger(ledger));
+            assertTrue(getActiveLedgerManager().containsActiveLedger(ledger));
         }
     }
 }

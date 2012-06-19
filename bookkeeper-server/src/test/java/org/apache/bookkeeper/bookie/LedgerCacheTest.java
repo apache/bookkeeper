@@ -26,7 +26,7 @@ import java.io.IOException;
 
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.ActiveLedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -44,7 +44,8 @@ import junit.framework.TestCase;
 public class LedgerCacheTest extends TestCase {
     static Logger LOG = LoggerFactory.getLogger(LedgerCacheTest.class);
 
-    LedgerManager ledgerManager;
+    ActiveLedgerManager activeLedgerManager;
+    LedgerManagerFactory ledgerManagerFactory;
     LedgerCache ledgerCache;
     ServerConfiguration conf;
     File txnDir, ledgerDir;
@@ -66,19 +67,22 @@ public class LedgerCacheTest extends TestCase {
         conf.setJournalDirName(txnDir.getPath());
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
-        ledgerManager = LedgerManagerFactory.newLedgerManager(conf, null);
+        ledgerManagerFactory =
+            LedgerManagerFactory.newLedgerManagerFactory(conf, null);
+        activeLedgerManager = ledgerManagerFactory.newActiveLedgerManager();
     }
 
     @Override
     @After
     public void tearDown() throws Exception {
-        ledgerManager.close();
+        activeLedgerManager.close();
+        ledgerManagerFactory.uninitialize();
         FileUtils.deleteDirectory(txnDir);
         FileUtils.deleteDirectory(ledgerDir);
     }
 
     private void newLedgerCache() {
-        ledgerCache = new LedgerCacheImpl(conf, ledgerManager);
+        ledgerCache = new LedgerCacheImpl(conf, activeLedgerManager);
     }
 
     @Test

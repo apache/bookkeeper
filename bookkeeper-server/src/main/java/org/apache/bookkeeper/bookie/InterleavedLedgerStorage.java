@@ -26,7 +26,7 @@ import java.io.IOException;
 
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.ActiveLedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
 
 import org.slf4j.Logger;
@@ -50,12 +50,12 @@ class InterleavedLedgerStorage implements LedgerStorage {
     // this indicates that a write has happened since the last flush
     private volatile boolean somethingWritten = false;
 
-    InterleavedLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager)
+    InterleavedLedgerStorage(ServerConfiguration conf, ActiveLedgerManager activeLedgerManager)
             throws IOException {
         entryLogger = new EntryLogger(conf);
-        ledgerCache = new LedgerCacheImpl(conf, ledgerManager);
+        ledgerCache = new LedgerCacheImpl(conf, activeLedgerManager);
         gcThread = new GarbageCollectorThread(conf, ledgerCache, entryLogger,
-                ledgerManager, new EntryLogCompactionScanner());
+                activeLedgerManager, new EntryLogCompactionScanner());
     }
 
     @Override    

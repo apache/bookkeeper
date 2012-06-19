@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
@@ -60,8 +61,8 @@ public class LedgerMetadata {
     long close;
     private SortedMap<Long, ArrayList<InetSocketAddress>> ensembles = new TreeMap<Long, ArrayList<InetSocketAddress>>();
     ArrayList<InetSocketAddress> currentEnsemble;
-    volatile int znodeVersion = -1;
-    
+    volatile Version version = null;
+
     public LedgerMetadata(int ensembleSize, int quorumSize) {
         this.ensembleSize = ensembleSize;
         this.quorumSize = quorumSize;
@@ -171,12 +172,13 @@ public class LedgerMetadata {
      *
      * @param array
      *            byte array to parse
+     * @param version
+     *            version of the ledger metadata
      * @return LedgerConfig
      * @throws IOException
      *             if the given byte[] cannot be parsed
      */
-
-    static LedgerMetadata parseConfig(byte[] bytes, int version) throws IOException {
+    public static LedgerMetadata parseConfig(byte[] bytes, Version version) throws IOException {
 
         LedgerMetadata lc = new LedgerMetadata();
         String config = new String(bytes);
@@ -207,7 +209,7 @@ public class LedgerMetadata {
                 throw new IOException("Quorum size or ensemble size absent from config: " + config);
             }
 
-            lc.znodeVersion = version;
+            lc.version = version;
             lc.quorumSize = new Integer(lines[i++]);
             lc.ensembleSize = new Integer(lines[i++]);
             lc.length = new Long(lines[i++]);
@@ -234,31 +236,21 @@ public class LedgerMetadata {
     
 
     /**
-     * Updates the status of this metadata in ZooKeeper.
+     * Updates the version of this metadata.
      * 
-     * @param stat
+     * @param v Version
      */
-    public void updateZnodeStatus(Stat stat) {
-        this.znodeVersion = stat.getVersion();
+    public void setVersion(Version v) {
+        this.version = v;
     }
 
     /**
-     * Update the znode version of this metadata
-     *
-     * @param znodeVersion
-     *        Znode version of this metadata
-     */
-    public void updateZnodeStatus(int znodeVersion) {
-        this.znodeVersion = znodeVersion;
-    }
-
-    /**
-     * Returns the last znode version.
+     * Returns the last version.
      * 
-     * @return int znode version
+     * @return version
      */
-    public int getZnodeVersion() {
-        return this.znodeVersion;
+    public Version getVersion() {
+        return this.version;
     }
 
     /**
@@ -282,7 +274,8 @@ public class LedgerMetadata {
             return false;
         }
         // new meta znode version should be larger than old one
-        if (znodeVersion > newMeta.znodeVersion) {
+        if (null != version &&
+            Version.Occurred.AFTER == version.compare(newMeta.version)) {
             return false;
         }
         // ensemble size should be same
@@ -306,7 +299,7 @@ public class LedgerMetadata {
          *  ensemble and znode version
          */
         ensembles = newMeta.ensembles;
-        znodeVersion = newMeta.znodeVersion;
+        version = newMeta.version;
         return true;
     }
 }

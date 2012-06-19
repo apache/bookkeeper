@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.ActiveLedgerManager;
 import org.apache.zookeeper.ZooKeeper;
 
 /**
@@ -73,7 +73,7 @@ public class GarbageCollectorThread extends Thread {
     // Ledger Cache Handle
     final LedgerCache ledgerCache;
 
-    final LedgerManager ledgerManager;
+    final ActiveLedgerManager activeLedgerManager;
 
     // flag to ensure gc thread will not be interrupted during compaction
     // to reduce the risk getting entry log corrupted
@@ -117,14 +117,14 @@ public class GarbageCollectorThread extends Thread {
     public GarbageCollectorThread(ServerConfiguration conf,
                                   LedgerCache ledgerCache,
                                   EntryLogger entryLogger,
-                                  LedgerManager ledgerManager,
+                                  ActiveLedgerManager activeLedgerManager,
                                   EntryLogScanner scanner)
         throws IOException {
         super("GarbageCollectorThread");
 
         this.ledgerCache = ledgerCache;
         this.entryLogger = entryLogger;
-        this.ledgerManager = ledgerManager;
+        this.activeLedgerManager = activeLedgerManager;
         this.scanner = scanner;
 
         this.gcWaitTime = conf.getGcWaitTime();
@@ -224,8 +224,8 @@ public class GarbageCollectorThread extends Thread {
      * Do garbage collection ledger index files
      */
     private void doGcLedgers() {
-        ledgerManager.garbageCollectLedgers(
-        new LedgerManager.GarbageCollector() {
+        activeLedgerManager.garbageCollectLedgers(
+        new ActiveLedgerManager.GarbageCollector() {
             @Override
             public void gc(long ledgerId) {
                 try {
@@ -246,7 +246,7 @@ public class GarbageCollectorThread extends Thread {
             EntryLogMetadata meta = entryLogMetaMap.get(entryLogId);
             for (Long entryLogLedger : meta.ledgersMap.keySet()) {
                 // Remove the entry log ledger from the set if it isn't active.
-                if (!ledgerManager.containsActiveLedger(entryLogLedger)) {
+                if (!activeLedgerManager.containsActiveLedger(entryLogLedger)) {
                     meta.removeLedger(entryLogLedger);
                 }
             }

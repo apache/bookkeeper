@@ -46,10 +46,6 @@ import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.AsyncCallback.StatCallback;
-import org.apache.zookeeper.AsyncCallback.DataCallback;
-import org.apache.zookeeper.data.Stat;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
@@ -205,14 +201,12 @@ public class LedgerHandle {
         return distributionSchedule;
     }
 
-    void writeLedgerConfig(StatCallback callback, Object ctx) {
+    void writeLedgerConfig(GenericCallback<Void> writeCb) {
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Writing metadata to ZooKeeper: " + this.ledgerId + ", " + metadata.getZnodeVersion());
+            LOG.debug("Writing metadata to ledger manager: " + this.ledgerId + ", " + metadata.getVersion());
         }
 
-        bk.getZkHandle().setData(bk.getLedgerManager().getLedgerPath(ledgerId),
-                                 metadata.serialize(), metadata.getZnodeVersion(),
-                                 callback, ctx);
+        bk.getLedgerManager().writeLedgerMetadata(ledgerId, metadata, writeCb);
     }
 
     /**
@@ -286,48 +280,44 @@ public class LedgerHandle {
                               + metadata.close + " with this many bytes: " + metadata.length);
                 }
 
-                final class CloseCb implements StatCallback {
+                final class CloseCb implements GenericCallback<Void> {
                     @Override
-                    public void processResult(final int rc, String path, Object subctx,
-                                              final Stat stat) {
-                        if (rc == KeeperException.Code.BadVersion) {
+                    public void operationComplete(final int rc, Void result) {
+                        if (rc == BKException.Code.MetadataVersionException) {
                             rereadMetadata(new GenericCallback<LedgerMetadata>() {
                                 @Override
                                 public void operationComplete(int newrc, LedgerMetadata newMeta) {
                                     if (newrc != BKException.Code.OK) {
                                         LOG.error("Error reading new metadata from ledger " + ledgerId
                                                   + " when closing, code=" + newrc);
-                                        cb.closeComplete(BKException.Code.ZKException, LedgerHandle.this, ctx);
+                                        cb.closeComplete(rc, LedgerHandle.this, ctx);
                                     } else {
                                         metadata.close(prevClose);
                                         metadata.length = prevLength;
                                         if (metadata.resolveConflict(newMeta)) {
                                             metadata.length = length;
                                             metadata.close(lastAddConfirmed);
-                                            writeLedgerConfig(new CloseCb(), null);
+                                            writeLedgerConfig(new CloseCb());
                                             return;
                                         } else {
                                             metadata.length = length;
                                             metadata.close(lastAddConfirmed);
-                                            LOG.warn("Conditional write failed: "
-                                                     + KeeperException.Code.get(KeeperException.Code.BadVersion));
-                                            cb.closeComplete(BKException.Code.ZKException, LedgerHandle.this, ctx);
+                                            LOG.warn("Conditional update ledger metadata for ledger " + ledgerId + " failed.");
+                                            cb.closeComplete(rc, LedgerHandle.this, ctx);
                                         }
                                     }
                                 }
                             });
-                        } else if (rc != KeeperException.Code.OK.intValue()) {
-                            LOG.warn("Conditional write failed: " + KeeperException.Code.get(rc));
-                            cb.closeComplete(BKException.Code.ZKException, LedgerHandle.this,
-                                             ctx);
+                        } else if (rc != BKException.Code.OK) {
+                            LOG.error("Error update ledger metadata for ledger " + ledgerId + " : " + rc);
+                            cb.closeComplete(rc, LedgerHandle.this, ctx);
                         } else {
-                            metadata.updateZnodeStatus(stat);
                             cb.closeComplete(BKException.Code.OK, LedgerHandle.this, ctx);
                         }
                     }
                 };
 
-                writeLedgerConfig(new CloseCb(), null);
+                writeLedgerConfig(new CloseCb());
 
             }
         });
@@ -687,20 +677,20 @@ public class LedgerHandle {
         final long newEnsembleStartEntry = lastAddConfirmed + 1;
         metadata.addEnsemble(newEnsembleStartEntry, newEnsemble);
 
-        final class ChangeEnsembleCb implements StatCallback {
+        final class ChangeEnsembleCb implements GenericCallback<Void> {
             @Override
-            public void processResult(final int rc, String path, Object ctx, final Stat stat) {
+            public void operationComplete(final int rc, Void result) {
 
                 bk.mainWorkerPool.submitOrdered(ledgerId, new SafeRunnable() {
                     @Override
                     public void safeRun() {
-                        if (rc == KeeperException.Code.BadVersion) {
+                        if (rc == BKException.Code.MetadataVersionException) {
                             rereadMetadata(new GenericCallback<LedgerMetadata>() {
                                 @Override
                                 public void operationComplete(int newrc, LedgerMetadata newMeta) {
                                     if (newrc != BKException.Code.OK) {
                                         LOG.error("Error reading new metadata from ledger after changing ensemble, code=" + newrc);
-                                        handleUnrecoverableErrorDuringAdd(BKException.Code.ZKException);
+                                        handleUnrecoverableErrorDuringAdd(rc);
                                     } else {
                                         // a new ensemble is added only when the start entry is larger than zero
                                         if (newEnsembleStartEntry > 0) {
@@ -708,27 +698,25 @@ public class LedgerHandle {
                                         }
                                         if (metadata.resolveConflict(newMeta)) {
                                             metadata.addEnsemble(newEnsembleStartEntry, newEnsemble);
-                                            writeLedgerConfig(new ChangeEnsembleCb(), null);
+                                            writeLedgerConfig(new ChangeEnsembleCb());
                                             return;
                                         } else {
                                             LOG.error("Could not resolve ledger metadata conflict while changing ensemble to: "
                                                       + newEnsemble + ", old meta data is \n" + new String(metadata.serialize())
                                                       + "\n, new meta data is \n" + new String(newMeta.serialize()) + "\n ,closing ledger");
-                                            handleUnrecoverableErrorDuringAdd(BKException.Code.ZKException);
+                                            handleUnrecoverableErrorDuringAdd(rc);
                                         }
                                     }
                                 }
                             });
                             return;
-                        } else if (rc != KeeperException.Code.OK.intValue()) {
-                            LOG
-                            .error("Could not persist ledger metadata while changing ensemble to: "
-                                   + newEnsemble + " , closing ledger");
-                            handleUnrecoverableErrorDuringAdd(BKException.Code.ZKException);
+                        } else if (rc != BKException.Code.OK) {
+                            LOG.error("Could not persist ledger metadata while changing ensemble to: "
+                                    + newEnsemble + " , closing ledger");
+                            handleUnrecoverableErrorDuringAdd(rc);
                             return;
                         }
 
-                        metadata.updateZnodeStatus(stat);
                         for (PendingAddOp pendingAddOp : pendingAddOps) {
                             pendingAddOp.unsetSuccessAndSendWriteRequest(bookieIndex);
                         }
@@ -738,31 +726,11 @@ public class LedgerHandle {
             }
         };
 
-        writeLedgerConfig(new ChangeEnsembleCb(), null);
-
+        writeLedgerConfig(new ChangeEnsembleCb());
     }
 
     void rereadMetadata(final GenericCallback<LedgerMetadata> cb) {
-        bk.getZkHandle().getData(bk.getLedgerManager().getLedgerPath(ledgerId), false,
-            new DataCallback() {
-                public void processResult(int rc, String path,
-                                          Object ctx, byte[] data, Stat stat) {
-                    if (rc != KeeperException.Code.OK.intValue()) {
-                        LOG.error("Error reading metadata from ledger, code =" + rc);
-                        cb.operationComplete(BKException.Code.ZKException, null);
-                        return;
-                    }
-
-                    try {
-                        LedgerMetadata newMeta = LedgerMetadata.parseConfig(data, stat.getVersion());
-                        cb.operationComplete(BKException.Code.OK, newMeta);
-                    } catch (IOException e) {
-                        LOG.error("Error parsing ledger metadata for ledger", e);
-                        cb.operationComplete(BKException.Code.ZKException, null);
-                        return;
-                    }
-                }
-        }, null);
+        bk.getLedgerManager().readLedgerMetadata(ledgerId, cb);
     }
 
     synchronized void recover(final GenericCallback<Void> cb) {
@@ -784,31 +752,29 @@ public class LedgerHandle {
 
         metadata.markLedgerInRecovery();
 
-        writeLedgerConfig(new StatCallback() {
+        writeLedgerConfig(new GenericCallback<Void>() {
             @Override
-            public void processResult(final int rc, String path, Object ctx, Stat stat) {
-                if (rc == KeeperException.Code.BadVersion) {
+            public void operationComplete(final int rc, Void result) {
+                if (rc == BKException.Code.MetadataVersionException) {
                     rereadMetadata(new GenericCallback<LedgerMetadata>() {
-                            @Override
-                            public void operationComplete(int rc, LedgerMetadata newMeta) {
-                                if (rc != BKException.Code.OK) {
-                                    cb.operationComplete(rc, null);
-                                } else {
-                                    metadata = newMeta;
-                                    recover(cb);
-                                }
+                        @Override
+                        public void operationComplete(int rc, LedgerMetadata newMeta) {
+                            if (rc != BKException.Code.OK) {
+                                cb.operationComplete(rc, null);
+                            } else {
+                                metadata = newMeta;
+                                recover(cb);
                             }
-                        });
-                } else if (rc == KeeperException.Code.OK.intValue()) {
-                    metadata.znodeVersion = stat.getVersion();
+                        }
+                    });
+                } else if (rc == BKException.Code.OK) {
                     new LedgerRecoveryOp(LedgerHandle.this, cb).initiate();
                 } else {
-                    LOG.error("Error writing ledger config " +  rc 
-                              + " path = " + path);
-                    cb.operationComplete(BKException.Code.ZKException, null);
+                    LOG.error("Error writing ledger config " + rc + " of ledger " + ledgerId);
+                    cb.operationComplete(rc, null);
                 }
             }
-        }, null);
+        });
     }
 
     static class NoopCloseCallback implements CloseCallback {
@@ -816,7 +782,7 @@ public class LedgerHandle {
 
         @Override
         public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
-            if (rc != KeeperException.Code.OK.intValue()) {
+            if (rc != BKException.Code.OK) {
                 LOG.warn("Close failed: " + BKException.getMessage(rc));
             }
             // noop

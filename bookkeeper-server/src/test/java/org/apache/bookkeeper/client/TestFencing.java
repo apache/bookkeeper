@@ -124,7 +124,7 @@ public class TestFencing extends BaseTestCase {
                         lastConfirmedEntry = lh.getLastAddConfirmed();
                         lh.close();
                         break;
-                    } catch (BKException.ZKException zke) {
+                    } catch (BKException.BKMetadataVersionException zke) {
                         LOG.info("Contention with someone else recovering");
                     } catch (BKException.BKLedgerRecoveryException bkre) {
                         LOG.info("Contention with someone else recovering");
@@ -295,7 +295,7 @@ public class TestFencing extends BaseTestCase {
         try {
             writelh.close();
             fail("Should fail trying to update metadata");
-        } catch (BKException.ZKException e) {
+        } catch (BKException.BKMetadataVersionException e) {
             // correct behaviour
         }
     }
@@ -342,7 +342,7 @@ public class TestFencing extends BaseTestCase {
         try {
             writelh.close();
             fail("Should fail trying to update metadata");
-        } catch (BKException.ZKException e) {
+        } catch (BKException.BKMetadataVersionException e) {
             // correct behaviour
         }
     }

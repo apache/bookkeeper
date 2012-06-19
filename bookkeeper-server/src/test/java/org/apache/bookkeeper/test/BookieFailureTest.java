@@ -21,7 +21,6 @@ package org.apache.bookkeeper.test;
  *
  */
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -29,7 +28,6 @@ import java.util.Enumeration;
 import java.util.Random;
 import java.util.Set;
 
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
@@ -41,8 +39,6 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -53,7 +49,8 @@ import org.junit.Test;
  *
  */
 
-public class BookieFailureTest extends BaseTestCase implements AddCallback, ReadCallback {
+public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
+    implements AddCallback, ReadCallback {
 
     // Depending on the taste, select the amount of logging
     // by decommenting one of the two lines below
@@ -87,9 +84,12 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
         }
     }
 
-    public BookieFailureTest(DigestType digestType) {
+    public BookieFailureTest(String ledgerManagerFactory, DigestType digestType) {
         super(4);
         this.digestType = digestType;
+        // set ledger manager
+        baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
+        baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
     }
 
     /**
@@ -244,6 +244,7 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
 
     }
 
+    @Override
     public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
         if (rc != 0)
             fail("Failed to write entry: " + entryId);
@@ -254,6 +255,7 @@ public class BookieFailureTest extends BaseTestCase implements AddCallback, Read
         }
     }
 
+    @Override
     public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
         if (rc != 0)
             fail("Failed to write entry");

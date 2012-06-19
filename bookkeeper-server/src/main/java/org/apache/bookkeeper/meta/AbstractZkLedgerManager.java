@@ -25,22 +25,29 @@ import java.util.Set;
 import java.util.Map;
 
 import org.apache.bookkeeper.conf.AbstractConfiguration;
+import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
+import org.apache.bookkeeper.versioning.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.zookeeper.AsyncCallback;
+import org.apache.zookeeper.AsyncCallback.DataCallback;
+import org.apache.zookeeper.AsyncCallback.VoidCallback;
+import org.apache.zookeeper.AsyncCallback.StatCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.Stat;
 
 /**
  * Abstract ledger manager based on zookeeper, which provides common methods such as query zk nodes.
  */
-abstract class AbstractZkLedgerManager implements LedgerManager {
+abstract class AbstractZkLedgerManager implements LedgerManager, ActiveLedgerManager {
 
     static Logger LOG = LoggerFactory.getLogger(AbstractZkLedgerManager.class);
 
@@ -53,6 +60,9 @@ abstract class AbstractZkLedgerManager implements LedgerManager {
     protected final ZooKeeper zk;
     protected final String ledgerRootPath;
 
+    // A sorted map to stored all active ledger ids
+    protected final SnapshotMap<Long, Boolean> activeLedgers;
+
     /**
      * ZooKeeper-based Ledger Manager Constructor
      *
@@ -60,14 +70,112 @@ abstract class AbstractZkLedgerManager implements LedgerManager {
      *          Configuration object
      * @param zk
      *          ZooKeeper Client Handle
-     * @param ledgerRootPath
-     *          ZooKeeper Path to store ledger metadata
      */
-    protected AbstractZkLedgerManager(AbstractConfiguration conf, ZooKeeper zk,
-                                      String ledgerRootPath) {
+    protected AbstractZkLedgerManager(AbstractConfiguration conf, ZooKeeper zk) {
         this.conf = conf;
         this.zk = zk;
-        this.ledgerRootPath = ledgerRootPath;
+        this.ledgerRootPath = conf.getZkLedgersRootPath();
+
+        activeLedgers = new SnapshotMap<Long, Boolean>();
+    }
+
+    /**
+     * Get the znode path that is used to store ledger metadata
+     *
+     * @param ledgerId
+     *          Ledger ID
+     * @return ledger node path
+     */
+    protected abstract String getLedgerPath(long ledgerId);
+
+    /**
+     * Get ledger id from its znode ledger path
+     *
+     * @param ledgerPath
+     *          Ledger path to store metadata
+     * @return ledger id
+     * @throws IOException when the ledger path is invalid
+     */
+    protected abstract long getLedgerId(String ledgerPath) throws IOException;
+
+    @Override
+    public void deleteLedger(final long ledgerId, final GenericCallback<Void> cb) {
+        zk.delete(getLedgerPath(ledgerId), -1, new VoidCallback() {
+            @Override
+            public void processResult(int rc, String path, Object ctx) {
+                int bkRc;
+                if (rc == KeeperException.Code.NONODE.intValue()) {
+                    LOG.warn("Ledger node does not exist in ZooKeeper: ledgerId={}", ledgerId);
+                    bkRc = BKException.Code.NoSuchLedgerExistsException;
+                } else if (rc == KeeperException.Code.OK.intValue()) {
+                    bkRc = BKException.Code.OK;
+                } else {
+                    bkRc = BKException.Code.ZKException;
+                }
+                cb.operationComplete(bkRc, (Void)null);
+            }
+        }, null);
+    }
+
+    @Override
+    public void readLedgerMetadata(final long ledgerId, final GenericCallback<LedgerMetadata> readCb) {
+        zk.getData(getLedgerPath(ledgerId), false, new DataCallback() {
+            @Override
+            public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
+                if (rc == KeeperException.Code.NONODE.intValue()) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("No such ledger: " + ledgerId,
+                                  KeeperException.create(KeeperException.Code.get(rc), path));
+                    }
+                    readCb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null);
+                    return;
+                }
+                if (rc != KeeperException.Code.OK.intValue()) {
+                    LOG.error("Could not read metadata for ledger: " + ledgerId,
+                              KeeperException.create(KeeperException.Code.get(rc), path));
+                    readCb.operationComplete(BKException.Code.ZKException, null);
+                    return;
+                }
+
+                LedgerMetadata metadata;
+                try {
+                    metadata = LedgerMetadata.parseConfig(data, new ZkVersion(stat.getVersion()));
+                } catch (IOException e) {
+                    LOG.error("Could not parse ledger metadata for ledger: " + ledgerId, e);
+                    readCb.operationComplete(BKException.Code.ZKException, null);
+                    return;
+                }
+                readCb.operationComplete(BKException.Code.OK, metadata);
+            }
+        }, null);
+    }
+
+    @Override
+    public void writeLedgerMetadata(final long ledgerId, final LedgerMetadata metadata,
+                                    final GenericCallback<Void> cb) {
+        Version v = metadata.getVersion();
+        if (null == v || !(v instanceof ZkVersion)) {
+            cb.operationComplete(BKException.Code.MetadataVersionException, null);
+            return;
+        }
+        final ZkVersion zv = (ZkVersion) v;
+        zk.setData(getLedgerPath(ledgerId),
+                   metadata.serialize(), zv.getZnodeVersion(),
+                   new StatCallback() {
+            @Override
+            public void processResult(int rc, String path, Object ctx, Stat stat) {
+                if (KeeperException.Code.BadVersion == rc) {
+                    cb.operationComplete(BKException.Code.MetadataVersionException, null);
+                } else if (KeeperException.Code.OK.intValue() == rc) {
+                    // update metadata version
+                    metadata.setVersion(zv.setZnodeVersion(stat.getVersion()));
+                    cb.operationComplete(BKException.Code.OK, null);
+                } else {
+                    LOG.warn("Conditional update ledger metadata failed: ", KeeperException.Code.get(rc));
+                    cb.operationComplete(BKException.Code.ZKException, null);
+                }
+            }
+        }, null);
     }
 
     /**
@@ -258,6 +366,21 @@ abstract class AbstractZkLedgerManager implements LedgerManager {
 
     @Override
     public void close() {
+    }
+
+    @Override
+    public void addActiveLedger(long ledgerId, boolean active) {
+        activeLedgers.put(ledgerId, active);
+    }
+
+    @Override
+    public void removeActiveLedger(long ledgerId) {
+        activeLedgers.remove(ledgerId);
+    }
+
+    @Override
+    public boolean containsActiveLedger(long ledgerId) {
+        return activeLedgers.containsKey(ledgerId);
     }
 
     /**

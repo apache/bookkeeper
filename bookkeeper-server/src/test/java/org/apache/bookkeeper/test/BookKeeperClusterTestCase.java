@@ -230,6 +230,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
         for (final Thread t : allthreads) {
             if (t.getName().equals(name)) {
                 Thread sleeper = new Thread() {
+                    @Override
                     public void run() {
                         try {
                             t.suspend();

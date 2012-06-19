@@ -22,15 +22,15 @@
 package org.apache.bookkeeper.client;
 
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.zookeeper.AsyncCallback.VoidCallback;
 
 /**
  * Encapsulates asynchronous ledger delete operation
  *
  */
-class LedgerDeleteOp implements VoidCallback {
+class LedgerDeleteOp implements GenericCallback<Void> {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerDeleteOp.class);
 
@@ -62,19 +62,15 @@ class LedgerDeleteOp implements VoidCallback {
      * Initiates the operation
      */
     public void initiate() {
-        // Asynchronously delete the ledger node in ZK.
+        // Asynchronously delete the ledger from meta manager
         // When this completes, it will invoke the callback method below.
-
-        bk.getZkHandle().delete(bk.getLedgerManager().getLedgerPath(ledgerId), -1, this, null);
+        bk.getLedgerManager().deleteLedger(ledgerId, this);
     }
 
     /**
-     * Implements ZooKeeper Void Callback.
-     *
-     * @see org.apache.zookeeper.AsyncCallback.VoidCallback#processResult(int,
-     *      java.lang.String, java.lang.Object)
+     * Implements Delete Callback.
      */
-    public void processResult(int rc, String path, Object ctx) {
+    public void operationComplete(int rc, Void result) {
         cb.deleteComplete(rc, this.ctx);
     }
 

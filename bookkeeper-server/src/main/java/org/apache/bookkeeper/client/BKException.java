@@ -76,6 +76,8 @@ public abstract class BKException extends Exception {
             return new BKInterruptedException();
         case Code.ProtocolVersionException:
             return new BKProtocolVersionException();
+        case Code.MetadataVersionException:
+            return new BKMetadataVersionException();
         case Code.LedgerFencedException:
             return new BKLedgerFencedException();
         case Code.UnauthorizedAccessException:
@@ -107,6 +109,7 @@ public abstract class BKException extends Exception {
         int IncorrectParameterException = -14;
         int InterruptedException = -15;
         int ProtocolVersionException = -16;
+        int MetadataVersionException = -17;
 
         int IllegalOpException = -100;
         int LedgerFencedException = -101;
@@ -157,6 +160,8 @@ public abstract class BKException extends Exception {
             return "Interrupted while waiting for permit";
         case Code.ProtocolVersionException:
             return "Bookie protocol version on server is incompatible with client";
+        case Code.MetadataVersionException:
+            return "Bad ledger metadata version";
         case Code.LedgerFencedException:
             return "Ledger has been fenced off. Some other client must have opened it to read";
         case Code.UnauthorizedAccessException:
@@ -223,6 +228,12 @@ public abstract class BKException extends Exception {
     public static class BKProtocolVersionException extends BKException {
         public BKProtocolVersionException() {
             super(Code.ProtocolVersionException);
+        }
+    }
+
+    public static class BKMetadataVersionException extends BKException {
+        public BKMetadataVersionException() {
+            super(Code.MetadataVersionException);
         }
     }
 

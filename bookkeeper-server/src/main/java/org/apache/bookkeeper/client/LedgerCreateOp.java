@@ -25,20 +25,20 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.data.Stat;
 
 /**
  * Encapsulates asynchronous ledger create operation
  *
  */
-class LedgerCreateOp implements GenericCallback<String> {
+class LedgerCreateOp implements GenericCallback<Long> {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerCreateOp.class);
 
@@ -102,32 +102,17 @@ class LedgerCreateOp implements GenericCallback<String> {
          */
         metadata.addEnsemble(0L, ensemble);
 
-        // create a ledger path with metadata
-        bk.getLedgerManager().newLedgerPath(this, metadata);
+        // create a ledger with metadata
+        bk.getLedgerManager().createLedger(metadata, this);
     }
 
     /**
-     * Callback when created ledger path.
+     * Callback when created ledger.
      */
     @Override
-    public void operationComplete(int rc, String ledgerPath) {
-
-        if (rc != KeeperException.Code.OK.intValue()) {
-            LOG.error("Could not create node for ledger",
-                      KeeperException.create(KeeperException.Code.get(rc), ledgerPath));
-            cb.createComplete(BKException.Code.ZKException, null, this.ctx);
-            return;
-        }
-
-        /*
-         * Extract ledger id.
-         */
-        long ledgerId;
-        try {
-            ledgerId = bk.getLedgerManager().getLedgerId(ledgerPath);
-        } catch (IOException e) {
-            LOG.error("Could not extract ledger-id from path:" + ledgerPath, e);
-            cb.createComplete(BKException.Code.ZKException, null, this.ctx);
+    public void operationComplete(int rc, Long ledgerId) {
+        if (BKException.Code.OK != rc) {
+            cb.createComplete(rc, null, this.ctx);
             return;
         }
 

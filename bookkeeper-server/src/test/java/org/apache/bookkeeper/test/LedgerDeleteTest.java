@@ -25,7 +25,6 @@ import java.io.File;
 
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.proto.BookieServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.junit.Before;
@@ -35,13 +34,17 @@ import org.junit.Test;
  * This class tests the ledger delete functionality both from the BookKeeper
  * client and the server side.
  */
-public class LedgerDeleteTest extends BookKeeperClusterTestCase {
+public class LedgerDeleteTest extends MultiLedgerManagerTestCase {
     static Logger LOG = LoggerFactory.getLogger(LedgerDeleteTest.class);
     DigestType digestType;
 
-    public LedgerDeleteTest() {
+    public LedgerDeleteTest(String ledgerManagerFactory) {
         super(3);
+        LOG.info("Running test case using ledger manager : " + ledgerManagerFactory);
         this.digestType = DigestType.CRC32;
+        // set ledger manager name
+        baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
+        baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
     }
 
     @Before

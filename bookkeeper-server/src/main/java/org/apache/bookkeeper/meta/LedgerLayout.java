@@ -44,8 +44,10 @@ class LedgerLayout {
 
     // Znode name to store layout information
     public static final String LAYOUT_ZNODE = "LAYOUT";
+    // version of compability layout version
+    public static final int LAYOUT_MIN_COMPAT_VERSION = 1;
     // version of ledger layout metadata
-    public static final int LAYOUT_FORMAT_VERSION = 1;
+    public static final int LAYOUT_FORMAT_VERSION = 2;
 
     /**
      * Read ledger layout from zookeeper
@@ -77,8 +79,8 @@ class LedgerLayout {
     static final String splitter = ":";
     static final String lSplitter = "\n";
 
-    // ledger manager class
-    private String managerType;
+    // ledger manager factory class
+    private String managerFactoryCls;
     // ledger manager version
     private int managerVersion;
 
@@ -88,24 +90,56 @@ class LedgerLayout {
     /**
      * Ledger Layout Constructor
      *
-     * @param type
-     *          Ledger Manager Type
+     * @param managerFactoryCls
+     *          Ledger Manager Factory Class
      * @param managerVersion
      *          Ledger Manager Version
      * @param layoutFormatVersion
      *          Ledger Layout Format Version
      */
-    public LedgerLayout(String managerType, int managerVersion) {
-        this.managerType = managerType;
-        this.managerVersion = managerVersion;
+    public LedgerLayout(String managerFactoryCls, int managerVersion) {
+        this(managerFactoryCls, managerVersion, LAYOUT_FORMAT_VERSION);
     }
 
+    LedgerLayout(String managerFactoryCls, int managerVersion,
+                 int layoutVersion) {
+        this.managerFactoryCls = managerFactoryCls;
+        this.managerVersion = managerVersion;
+        this.layoutFormatVersion = layoutVersion;
+    }
+
+    /**
+     * Get Ledger Manager Type
+     *
+     * @return ledger manager type
+     * @deprecated replaced by {@link #getManagerFactoryClass()}
+     */
+    @Deprecated
     public String getManagerType() {
-        return this.managerType;
+        // pre V2 layout store as manager type
+        return this.managerFactoryCls;
+    }
+
+    /**
+     * Get ledger manager factory class
+     *
+     * @return ledger manager factory class
+     */
+    public String getManagerFactoryClass() {
+        return this.managerFactoryCls;
     }
 
     public int getManagerVersion() {
         return this.managerVersion;
+    }
+
+    /**
+     * Return layout format version
+     *
+     * @return layout format version
+     */
+    public int getLayoutFormatVersion() {
+        return this.layoutFormatVersion;
     }
 
     /**
@@ -126,7 +160,7 @@ class LedgerLayout {
     private byte[] serialize() throws IOException {
         StringBuilder sb = new StringBuilder();
         sb.append(layoutFormatVersion).append(lSplitter)
-            .append(managerType).append(splitter).append(managerVersion);
+            .append(managerFactoryCls).append(splitter).append(managerVersion);
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Serialized layout info: " + sb.toString());
@@ -157,7 +191,8 @@ class LedgerLayout {
 
         try {
             int layoutFormatVersion = new Integer(lines[0]);
-            if (LAYOUT_FORMAT_VERSION != layoutFormatVersion) {
+            if (LAYOUT_FORMAT_VERSION < layoutFormatVersion ||
+                LAYOUT_MIN_COMPAT_VERSION > layoutFormatVersion) {
                 throw new IOException("Metadata version not compatible. Expected " 
                         + LAYOUT_FORMAT_VERSION + ", but got " + layoutFormatVersion);
             }
@@ -170,11 +205,11 @@ class LedgerLayout {
             if (parts.length != 2) {
                 throw new IOException("Invalid Ledger Manager defined in layout : " + layout);
             }
-            // ledger manager class
-            String managerType = parts[0];
+            // ledger manager factory class
+            String managerFactoryCls = parts[0];
             // ledger manager version
             int managerVersion = new Integer(parts[1]);
-            return new LedgerLayout(managerType, managerVersion);
+            return new LedgerLayout(managerFactoryCls, managerVersion, layoutFormatVersion);
         } catch (NumberFormatException e) {
             throw new IOException(e);
         }
@@ -189,20 +224,20 @@ class LedgerLayout {
             return false;
         }
         LedgerLayout other = (LedgerLayout)obj;
-        return managerType.equals(other.managerType) &&
-            managerVersion == other.managerVersion;
+        return managerFactoryCls.equals(other.managerFactoryCls)
+            && managerVersion == other.managerVersion;
     }
 
     @Override
     public int hashCode() {
-        return (managerType + managerVersion).hashCode();
+        return (managerFactoryCls + managerVersion).hashCode();
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("LV").append(layoutFormatVersion).append(":")
-            .append(",Type:").append(managerType).append(":")
+            .append(",Type:").append(managerFactoryCls).append(":")
             .append(managerVersion);
         return sb.toString();
     }

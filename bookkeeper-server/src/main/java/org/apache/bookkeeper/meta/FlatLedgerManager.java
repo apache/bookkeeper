@@ -19,10 +19,10 @@ package org.apache.bookkeeper.meta;
  */
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -32,6 +32,7 @@ import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.AsyncCallback.StringCallback;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
@@ -61,13 +62,8 @@ import org.slf4j.LoggerFactory;
 class FlatLedgerManager extends AbstractZkLedgerManager {
 
     static final Logger LOG = LoggerFactory.getLogger(FlatLedgerManager.class);
-    public static final String NAME = "flat";
-    public static final int CUR_VERSION = 1;
-
     // path prefix to store ledger znodes
     private final String ledgerPrefix;
-    // hash map to store all active ledger ids
-    private SnapshotMap<Long, Boolean> activeLedgers;
 
     /**
      * Constructor
@@ -80,32 +76,32 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
      *          ZooKeeper Path to store ledger metadata
      * @throws IOException when version is not compatible
      */
-    public FlatLedgerManager(AbstractConfiguration conf, ZooKeeper zk,
-                             String ledgerRootPath, int layoutVersion)
-        throws IOException {
-        super(conf, zk, ledgerRootPath);
-
-        if (layoutVersion != CUR_VERSION) {
-            throw new IOException("Incompatible layout version found : " 
-                                  + layoutVersion);
-        }
+    public FlatLedgerManager(AbstractConfiguration conf, ZooKeeper zk) {
+        super(conf, zk);
 
         ledgerPrefix = ledgerRootPath + "/" + LEDGER_NODE_PREFIX;
-        activeLedgers = new SnapshotMap<Long, Boolean>();
     }
 
     @Override
-    public void newLedgerPath(final GenericCallback<String> cb, final LedgerMetadata metadata) {
+    public void createLedger(final LedgerMetadata metadata, final GenericCallback<Long> cb) {
         StringCallback scb = new StringCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx,
                     String name) {
                 if (Code.OK.intValue() != rc) {
+                    LOG.error("Could not create node for ledger",
+                              KeeperException.create(KeeperException.Code.get(rc), path));
                     cb.operationComplete(rc, null);
                 } else {
                     // update znode status
-                    metadata.updateZnodeStatus(0);
-                    cb.operationComplete(rc, name);
+                    metadata.setVersion(new ZkVersion(0));
+                    try {
+                        long ledgerId = getLedgerId(name);
+                        cb.operationComplete(rc, ledgerId);
+                    } catch (IOException ie) {
+                        LOG.error("Could not extract ledger-id from path:" + name, ie);
+                        cb.operationComplete(BKException.Code.ZKException, null);
+                    }
                 }
             }
         };
@@ -138,21 +134,6 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
                                     final AsyncCallback.VoidCallback finalCb, final Object ctx,
                                     final int successRc, final int failureRc) {
         asyncProcessLedgersInSingleNode(ledgerRootPath, processor, finalCb, ctx, successRc, failureRc);
-    }
-
-    @Override
-    public void addActiveLedger(long ledgerId, boolean active) {
-        activeLedgers.put(ledgerId, active);
-    }
-
-    @Override
-    public void removeActiveLedger(long ledgerId) {
-        activeLedgers.remove(ledgerId);
-    }
-
-    @Override
-    public boolean containsActiveLedger(long ledgerId) {
-        return activeLedgers.containsKey(ledgerId);
     }
 
     @Override

@@ -24,8 +24,6 @@ package org.apache.bookkeeper.test;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Random;
 import java.util.Set;
@@ -43,7 +41,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runners.Parameterized.Parameters;
 
 /**
  * This test tests read and write, synchronous and asynchronous, strings and
@@ -51,22 +48,20 @@ import org.junit.runners.Parameterized.Parameters;
  * and three BookKeepers.
  *
  */
-public class AsyncLedgerOpsTest extends BaseTestCase implements AddCallback, ReadCallback, CreateCallback,
+public class AsyncLedgerOpsTest extends MultiLedgerManagerMultiDigestTestCase
+    implements AddCallback, ReadCallback, CreateCallback,
     CloseCallback, OpenCallback {
-    static Logger LOG = LoggerFactory.getLogger(BookieClientTest.class);
+    static Logger LOG = LoggerFactory.getLogger(AsyncLedgerOpsTest.class);
 
     DigestType digestType;
 
-    public AsyncLedgerOpsTest(DigestType digestType) {
+    public AsyncLedgerOpsTest(String ledgerManagerFactory, DigestType digestType) {
         super(3);
         this.digestType = digestType;
+        // set ledger manager type
+        baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
+        baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
     }
-
-    @Parameters
-    public static Collection<Object[]> configs() {
-        return Arrays.asList(new Object[][] { {DigestType.MAC }, {DigestType.CRC32}});
-    }
-
 
     byte[] ledgerPassword = "aaa".getBytes();
     LedgerHandle lh, lh2;
@@ -199,6 +194,7 @@ public class AsyncLedgerOpsTest extends BaseTestCase implements AddCallback, Rea
 
     }
 
+    @Override
     public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
         SyncObj x = (SyncObj) ctx;
         synchronized (x) {
@@ -207,6 +203,7 @@ public class AsyncLedgerOpsTest extends BaseTestCase implements AddCallback, Rea
         }
     }
 
+    @Override
     public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
         ls = seq;
         synchronized (sync) {
@@ -216,6 +213,7 @@ public class AsyncLedgerOpsTest extends BaseTestCase implements AddCallback, Rea
 
     }
 
+    @Override
     public void createComplete(int rc, LedgerHandle lh, Object ctx) {
         synchronized (ctx) {
             ControlObj cobj = (ControlObj) ctx;
@@ -224,6 +222,7 @@ public class AsyncLedgerOpsTest extends BaseTestCase implements AddCallback, Rea
         }
     }
 
+    @Override
     public void openComplete(int rc, LedgerHandle lh, Object ctx) {
         synchronized (ctx) {
             ControlObj cobj = (ControlObj) ctx;
@@ -232,6 +231,7 @@ public class AsyncLedgerOpsTest extends BaseTestCase implements AddCallback, Rea
         }
     }
 
+    @Override
     public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
         synchronized (ctx) {
             ControlObj cobj = (ControlObj) ctx;

@@ -752,14 +752,13 @@ public class BookKeeperAdmin {
             int deadBookieIndex = ensemble.indexOf(oldBookie);
             ensemble.remove(deadBookieIndex);
             ensemble.add(deadBookieIndex, newBookie);
-
-            lh.writeLedgerConfig(new WriteCb(), null);
+            lh.writeLedgerConfig(new WriteCb());
         }
         
-        private class WriteCb implements AsyncCallback.StatCallback {
+        private class WriteCb implements GenericCallback<Void> {
             @Override
-            public void processResult(int rc, final String path, Object ctx, Stat stat) {
-                if (rc == Code.BADVERSION.intValue()) {
+            public void operationComplete(int rc, Void result) {
+                if (rc == BKException.Code.MetadataVersionException) {
                     LOG.warn("Two fragments attempted update at once; ledger id: " + lh.getId() 
                              + " startid: " + fragmentStartId);
                     // try again, the previous success (with which this has conflicted)
@@ -769,8 +768,7 @@ public class BookKeeperAdmin {
                         @Override
                         public void operationComplete(int rc, LedgerMetadata newMeta) {
                             if (rc != BKException.Code.OK) {
-                                LOG.error("Error reading updated ledger metadata for ledger " + lh.getId(),
-                                          KeeperException.create(KeeperException.Code.get(rc), path));
+                                LOG.error("Error reading updated ledger metadata for ledger " + lh.getId());
                                 ledgerFragmentsMcb.processResult(rc, null, null);
                             } else {
                                 lh.metadata = newMeta;
@@ -779,11 +777,10 @@ public class BookKeeperAdmin {
                         }
                     });
                     return;
-                } else if (rc != Code.OK.intValue()) {
-                    LOG.error("ZK error updating ledger config metadata for ledgerId: " + lh.getId(),
-                              KeeperException.create(KeeperException.Code.get(rc), path));
+                } else if (rc != BKException.Code.OK) {
+                    LOG.error("Error updating ledger config metadata for ledgerId " + lh.getId() + " : "
+                            + BKException.getMessage(rc));
                 } else {
-                    lh.getLedgerMetadata().updateZnodeStatus(stat);
                     LOG.info("Updated ZK for ledgerId: (" + lh.getId() + " : " + fragmentStartId 
                              + ") to point ledger fragments from old dead bookie: (" + oldBookie
                              + ") to new bookie: (" + newBookie + ")");
