@@ -94,7 +94,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     }
 
     void sendRead(ArrayList<InetSocketAddress> ensemble, LedgerEntry entry, int lastErrorCode) {
-        if (entry.nextReplicaIndexToReadFrom >= lh.metadata.quorumSize) {
+        if (entry.nextReplicaIndexToReadFrom >= lh.metadata.getQuorumSize()) {
             // we are done, the read has failed from all replicas, just fail the
             // read
             lh.opCounterSem.release();

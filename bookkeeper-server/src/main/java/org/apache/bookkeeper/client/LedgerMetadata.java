@@ -18,6 +18,8 @@ package org.apache.bookkeeper.client;
  * limitations under the License.
  */
 
+import java.io.BufferedReader;
+import java.io.StringReader;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -27,6 +29,8 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.apache.bookkeeper.versioning.Version;
+import com.google.protobuf.TextFormat;
+import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
@@ -46,19 +50,21 @@ public class LedgerMetadata {
 
     // can't use -1 for NOTCLOSED because that is reserved for a closed, empty
     // ledger
-    public static final int NOTCLOSED = -101;
-    public static final int IN_RECOVERY = -102;
+    private static final int NOTCLOSED = -101;
+    private static final int IN_RECOVERY = -102;
 
     public static final int LOWEST_COMPAT_METADATA_FORMAT_VERSION = 0;
-    public static final int CURRENT_METADATA_FORMAT_VERSION = 1;
+    public static final int CURRENT_METADATA_FORMAT_VERSION = 2;
     public static final String VERSION_KEY = "BookieMetadataFormatVersion";
 
-    int metadataFormatVersion = 0;
+    private int metadataFormatVersion = 0;
 
-    int ensembleSize;
-    int quorumSize;
-    long length;
-    long close;
+    private int ensembleSize;
+    private int quorumSize;
+    private long length;
+    private long lastEntryId;
+
+    private LedgerMetadataFormat.State state;
     private SortedMap<Long, ArrayList<InetSocketAddress>> ensembles = new TreeMap<Long, ArrayList<InetSocketAddress>>();
     ArrayList<InetSocketAddress> currentEnsemble;
     volatile Version version = null;
@@ -72,7 +78,8 @@ public class LedgerMetadata {
          * we read it in LedgerRecoveryOp.readComplete.
          */
         this.length = 0;
-        this.close = NOTCLOSED;
+        this.state = LedgerMetadataFormat.State.OPEN;
+        this.lastEntryId = LedgerHandle.INVALID_ENTRY_ID;
         this.metadataFormatVersion = CURRENT_METADATA_FORMAT_VERSION;
     };
 
@@ -91,21 +98,49 @@ public class LedgerMetadata {
         return ensembles;
     }
 
-    boolean isClosed() {
-        return close != NOTCLOSED 
-            && close != IN_RECOVERY;
+    public int getEnsembleSize() {
+        return ensembleSize;
     }
 
-    boolean isInRecovery() {
-        return IN_RECOVERY == close;
+    public int getQuorumSize() {
+        return quorumSize;
     }
-    
+
+    public long getLastEntryId() {
+        return lastEntryId;
+    }
+
+    public long getLength() {
+        return length;
+    }
+
+    void setLength(long length) {
+        this.length = length;
+    }
+
+    public boolean isClosed() {
+        return state == LedgerMetadataFormat.State.CLOSED;
+    }
+
+    public boolean isInRecovery() {
+        return state == LedgerMetadataFormat.State.IN_RECOVERY;
+    }
+
+    LedgerMetadataFormat.State getState() {
+        return state;
+    }
+
+    void setState(LedgerMetadataFormat.State state) {
+        this.state = state;
+    }
+
     void markLedgerInRecovery() {
-        close = IN_RECOVERY;
+        state = LedgerMetadataFormat.State.IN_RECOVERY;
     }
 
     void close(long entryId) {
-        close = entryId;
+        lastEntryId = entryId;
+        state = LedgerMetadataFormat.State.CLOSED;
     }
 
     void addEnsemble(long startEntryId, ArrayList<InetSocketAddress> ensemble) {
@@ -144,6 +179,31 @@ public class LedgerMetadata {
      * @return the metadata serialized into a byte array
      */
     public byte[] serialize() {
+        if (metadataFormatVersion == 1) {
+            return serializeVersion1();
+        }
+        LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
+        builder.setQuorumSize(quorumSize).setEnsembleSize(ensembleSize).setLength(length)
+            .setState(state).setLastEntryId(lastEntryId);
+        for (Map.Entry<Long, ArrayList<InetSocketAddress>> entry : ensembles.entrySet()) {
+            LedgerMetadataFormat.Segment.Builder segmentBuilder = LedgerMetadataFormat.Segment.newBuilder();
+            segmentBuilder.setFirstEntryId(entry.getKey());
+            for (InetSocketAddress addr : entry.getValue()) {
+                segmentBuilder.addEnsembleMember(addr.getAddress().getHostAddress() + ":" + addr.getPort());
+            }
+            builder.addSegment(segmentBuilder.build());
+        }
+
+        StringBuilder s = new StringBuilder();
+        s.append(VERSION_KEY).append(tSplitter).append(CURRENT_METADATA_FORMAT_VERSION).append(lSplitter);
+        s.append(TextFormat.printToString(builder.build()));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Serialized config: " + s.toString());
+        }
+        return s.toString().getBytes();
+    }
+
+    private byte[] serializeVersion1() {
         StringBuilder s = new StringBuilder();
         s.append(VERSION_KEY).append(tSplitter).append(metadataFormatVersion).append(lSplitter);
         s.append(quorumSize).append(lSplitter).append(ensembleSize).append(lSplitter).append(length);
@@ -156,8 +216,10 @@ public class LedgerMetadata {
             }
         }
 
-        if (close != NOTCLOSED) {
-            s.append(lSplitter).append(close).append(tSplitter).append(closed);
+        if (state == LedgerMetadataFormat.State.IN_RECOVERY) {
+            s.append(lSplitter).append(IN_RECOVERY).append(tSplitter).append(closed);
+        } else if (state == LedgerMetadataFormat.State.CLOSED) {
+            s.append(lSplitter).append(getLastEntryId()).append(tSplitter).append(closed);
         }
 
         if (LOG.isDebugEnabled()) {
@@ -170,7 +232,7 @@ public class LedgerMetadata {
     /**
      * Parses a given byte array and transforms into a LedgerConfig object
      *
-     * @param array
+     * @param bytes
      *            byte array to parse
      * @param version
      *            version of the ledger metadata
@@ -179,47 +241,83 @@ public class LedgerMetadata {
      *             if the given byte[] cannot be parsed
      */
     public static LedgerMetadata parseConfig(byte[] bytes, Version version) throws IOException {
-
         LedgerMetadata lc = new LedgerMetadata();
+        lc.version = version;
+
         String config = new String(bytes);
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Parsing Config: " + config);
         }
-        
-        String lines[] = config.split(lSplitter);
-        
+        BufferedReader reader = new BufferedReader(new StringReader(config));
+        String versionLine = reader.readLine();
+
+        int i = 0;
+        if (versionLine.startsWith(VERSION_KEY)) {
+            String parts[] = versionLine.split(tSplitter);
+            lc.metadataFormatVersion = new Integer(parts[1]);
+        } else {
+            // if no version is set, take it to be version 1
+            // as the parsing is the same as what we had before
+            // we introduce versions
+            lc.metadataFormatVersion = 1;
+            // reset the reader
+            reader.close();
+            reader = new BufferedReader(new StringReader(config));
+        }
+
+        if (lc.metadataFormatVersion < LOWEST_COMPAT_METADATA_FORMAT_VERSION
+            || lc.metadataFormatVersion > CURRENT_METADATA_FORMAT_VERSION) {
+            throw new IOException("Metadata version not compatible. Expected between "
+                    + LOWEST_COMPAT_METADATA_FORMAT_VERSION + " and " + CURRENT_METADATA_FORMAT_VERSION
+                                  + ", but got " + lc.metadataFormatVersion);
+        }
+
+        if (lc.metadataFormatVersion == 1) {
+            return parseVersion1Config(lc, reader);
+        }
+
+        LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
+        TextFormat.merge(reader, builder);
+        LedgerMetadataFormat data = builder.build();
+        lc.quorumSize = data.getQuorumSize();
+        lc.ensembleSize = data.getEnsembleSize();
+        lc.length = data.getLength();
+        lc.state = data.getState();
+        lc.lastEntryId = data.getLastEntryId();
+
+        for (LedgerMetadataFormat.Segment s : data.getSegmentList()) {
+            ArrayList<InetSocketAddress> addrs = new ArrayList<InetSocketAddress>();
+            for (String member : s.getEnsembleMemberList()) {
+                addrs.add(StringUtils.parseAddr(member));
+            }
+            lc.addEnsemble(s.getFirstEntryId(), addrs);
+        }
+        return lc;
+    }
+
+    static LedgerMetadata parseVersion1Config(LedgerMetadata lc,
+                                              BufferedReader reader) throws IOException {
         try {
-            int i = 0;
-            if (lines[0].startsWith(VERSION_KEY)) {
-                String parts[] = lines[0].split(tSplitter);
-                lc.metadataFormatVersion = new Integer(parts[1]);
-                i++;
-            } else {
-                lc.metadataFormatVersion = 0;
-            }
-            
-            if (lc.metadataFormatVersion < LOWEST_COMPAT_METADATA_FORMAT_VERSION
-                || lc.metadataFormatVersion > CURRENT_METADATA_FORMAT_VERSION) {
-                throw new IOException("Metadata version not compatible. Expected between "
-                        + LOWEST_COMPAT_METADATA_FORMAT_VERSION + " and " + CURRENT_METADATA_FORMAT_VERSION
-                        + ", but got " + lc.metadataFormatVersion);
-            }
-            if ((lines.length+i) < 2) {
-                throw new IOException("Quorum size or ensemble size absent from config: " + config);
-            }
+            lc.quorumSize = new Integer(reader.readLine());
+            lc.ensembleSize = new Integer(reader.readLine());
+            lc.length = new Long(reader.readLine());
 
-            lc.version = version;
-            lc.quorumSize = new Integer(lines[i++]);
-            lc.ensembleSize = new Integer(lines[i++]);
-            lc.length = new Long(lines[i++]);
-
-            for (; i < lines.length; i++) {
-                String parts[] = lines[i].split(tSplitter);
+            String line = reader.readLine();
+            while (line != null) {
+                String parts[] = line.split(tSplitter);
 
                 if (parts[1].equals(closed)) {
-                    lc.close = new Long(parts[0]);
+                    Long l = new Long(parts[0]);
+                    if (l == IN_RECOVERY) {
+                        lc.state = LedgerMetadataFormat.State.IN_RECOVERY;
+                    } else {
+                        lc.state = LedgerMetadataFormat.State.CLOSED;
+                        lc.lastEntryId = l;
+                    }
                     break;
+                } else {
+                    lc.state = LedgerMetadataFormat.State.OPEN;
                 }
 
                 ArrayList<InetSocketAddress> addrs = new ArrayList<InetSocketAddress>();
@@ -227,13 +325,13 @@ public class LedgerMetadata {
                     addrs.add(StringUtils.parseAddr(parts[j]));
                 }
                 lc.addEnsemble(new Long(parts[0]), addrs);
+                line = reader.readLine();
             }
         } catch (NumberFormatException e) {
             throw new IOException(e);
         }
         return lc;
     }
-    
 
     /**
      * Updates the version of this metadata.
@@ -270,7 +368,11 @@ public class LedgerMetadata {
             ensembleSize != newMeta.ensembleSize ||
             quorumSize != newMeta.quorumSize ||
             length != newMeta.length ||
-            close != newMeta.close) {
+            state != newMeta.state) {
+            return false;
+        }
+        if (state == LedgerMetadataFormat.State.CLOSED
+            && lastEntryId != newMeta.lastEntryId) {
             return false;
         }
         // new meta znode version should be larger than old one

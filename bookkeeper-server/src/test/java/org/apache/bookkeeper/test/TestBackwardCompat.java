@@ -26,6 +26,9 @@ import java.util.Enumeration;
 import java.util.Arrays;
 import java.net.InetAddress;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.junit.Test;
 import org.junit.Before;
 import org.junit.After;
@@ -34,6 +37,8 @@ import static org.junit.Assert.*;
 import org.apache.bookkeeper.bookie.FileSystemUpgrade;
 
 public class TestBackwardCompat {
+    static Logger LOG = LoggerFactory.getLogger(TestBackwardCompat.class);
+
     private static ZooKeeperUtil zkUtil = new ZooKeeperUtil();;
     private static int nextPort = 3181;
     private static byte[] ENTRY_DATA = "ThisIsAnEntry".getBytes();
@@ -140,11 +145,14 @@ public class TestBackwardCompat {
         }
 
         void close() throws Exception {
-            if (lh != null) {
-                lh.close();
-            }
-            if (bk != null) {
-                bk.close();
+            try {
+                if (lh != null) {
+                    lh.close();
+                }
+            } finally {
+                if (bk != null) {
+                    bk.close();
+                }
             }
         }
     }
@@ -234,11 +242,14 @@ public class TestBackwardCompat {
         }
 
         void close() throws Exception {
-            if (lh != null) {
-                lh.close();
-            }
-            if (bk != null) {
-                bk.close();
+            try {
+                if (lh != null) {
+                    lh.close();
+                }
+            } finally {
+                if (bk != null) {
+                    bk.close();
+                }
             }
         }
     }
@@ -328,11 +339,14 @@ public class TestBackwardCompat {
         }
 
         void close() throws Exception {
-            if (lh != null) {
-                lh.close();
-            }
-            if (bk != null) {
-                bk.close();
+            try {
+                if (lh != null) {
+                    lh.close();
+                }
+            } finally {
+                if (bk != null) {
+                    bk.close();
+                }
             }
         }
     }
@@ -417,16 +431,8 @@ public class TestBackwardCompat {
             // correct behaviour
         }
         lcur.write100();
-        try {
-            // Unfortunately, as the 4.0.0 client doesn't know that it should
-            // be checking for a password. It puts the ledger metadata in recover
-            // mode. This means we're not able to close, as our metadata znode is
-            // out of date
-            lcur.close();
+        lcur.close();
 
-            fail("Shouldn't be able to close cleanly");
-        } catch (Exception e) {
-        }
         lcur = LedgerCurrent.openLedger(fenceLedgerId);
         assertEquals(200, lcur.readAll());
         lcur.close();
@@ -436,7 +442,9 @@ public class TestBackwardCompat {
 
     /**
      * Test compatability between version 4.1.0 and the current version.
-     * Should be 100% compatible.
+     *  - A 4.1.0 client is not able to open a ledger created by the current
+     *    version due to a change in the ledger metadata format.
+     *  - Otherwise, they should be compatible.
      */
     @Test
     public void testCompat410() throws Exception {
@@ -478,6 +486,51 @@ public class TestBackwardCompat {
         l410.write100();
         l410.close();
 
+        // check that an old client can fence an old client
+        l410 = Ledger410.newLedger();
+        l410.write100();
+
+        Ledger410 l410f = Ledger410.openLedger(l410.getId());
+        try {
+            l410.write100();
+            fail("Shouldn't be able to write");
+        } catch (Exception e) {
+            // correct behaviour
+        }
+        l410f.close();
+        try {
+            l410.close();
+            fail("Shouldn't be able to close");
+        } catch (Exception e) {
+            // correct
+        }
+
+        // check that a new client can fence an old client
+        // and the old client can continue to read that ledger
+        l410 = Ledger410.newLedger();
+        l410.write100();
+
+        oldLedgerId = l410.getId();
+        lcur = LedgerCurrent.openLedger(oldLedgerId);
+        try {
+            l410.write100();
+            fail("Shouldn't be able to write");
+        } catch (Exception e) {
+            // correct behaviour
+        }
+        try {
+            l410.close();
+            fail("Shouldn't be able to close");
+        } catch (Exception e) {
+            // correct
+        }
+        lcur.close();
+
+        l410 = Ledger410.openLedger(oldLedgerId);
+
+        assertEquals(100, l410.readAll());
+        l410.close();
+
         // check that current client can read old ledger
         lcur = LedgerCurrent.openLedger(oldLedgerId);
         assertEquals(100, lcur.readAll());
@@ -488,18 +541,19 @@ public class TestBackwardCompat {
         assertEquals(100, lcur.readAll());
         lcur.close();
 
-        // check that old client can fence a current client
-        // due to lack of password
+        // check that old client can not fence a current client
+        // since it cannot open a new ledger due to the format changes
         lcur = LedgerCurrent.newLedger();
         lcur.write100();
         long fenceLedgerId = lcur.getId();
-        l410 = Ledger410.openLedger(fenceLedgerId);
         try {
-            lcur.write100();
-            fail("Fencing should have prevented this write");
+            l410 = Ledger410.openLedger(fenceLedgerId);
+            fail("Shouldn't be able to open ledger");
         } catch (Exception e) {
+            // correct behaviour
         }
-        assertEquals(100, l410.readAll());
+        lcur.write100();
+        lcur.close();
 
         scur.stop();
     }

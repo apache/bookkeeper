@@ -32,7 +32,7 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>2.3.0</version>
+      <version>2.4.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -65,25 +65,37 @@
 	  </excludes>
 	</configuration>
       </plugin>
-      <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>default-cli</id>
-            <configuration>
-              <tasks>
-                <exec executable="protoc" failonerror="true">
-                  <arg value="--java_out=src/main/java" />
-                  <arg value="src/main/protobuf/PubSubProtocol.proto" />
-                </exec>
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>protobuf</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>generate-sources</phase>
+                <id>default-cli</id>
+                <configuration>
+                  <target>
+		    <echo message="foo" />
+                    <exec executable="protoc" failonerror="true">
+                      <arg value="--java_out=src/main/java" />
+                      <arg value="src/main/protobuf/PubSubProtocol.proto" />
+                    </exec>
+		    <echo message="bar" />
+                  </target>
+                </configuration>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

@@ -8,6 +8,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-203: improve ledger manager interface to remove zookeeper dependency on metadata operations. (sijie via ivank)
 
+      BOOKKEEPER-303: LedgerMetadata should serialized using protobufs (ivank)
+
   Backward compatible changes:
 
     BUGFIXES:

@@ -30,4 +30,4 @@ This project includes:
   SLF4J LOG4J-12 Binding under MIT License
   The Netty Project under Apache License, Version 2.0
   ZooKeeper under Apache License, Version 2.0
-
+  Protocol Buffer Java API under New BSD license

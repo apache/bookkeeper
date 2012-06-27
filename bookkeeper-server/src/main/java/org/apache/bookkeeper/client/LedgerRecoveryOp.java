@@ -57,7 +57,7 @@ class LedgerRecoveryOp implements ReadCallback, AddCallback {
     public LedgerRecoveryOp(LedgerHandle lh, GenericCallback<Void> cb) {
         this.cb = cb;
         this.lh = lh;
-        numResponsesPending = lh.metadata.ensembleSize;
+        numResponsesPending = lh.metadata.getEnsembleSize();
     }
 
     public void initiate() {

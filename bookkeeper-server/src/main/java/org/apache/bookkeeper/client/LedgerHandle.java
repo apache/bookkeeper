@@ -41,6 +41,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State;
 import org.apache.bookkeeper.util.SafeRunnable;
 
 import org.slf4j.Logger;
@@ -83,8 +84,8 @@ public class LedgerHandle {
         this.metadata = metadata;
 
         if (metadata.isClosed()) {
-            lastAddConfirmed = lastAddPushed = metadata.close;
-            length = metadata.length;
+            lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
+            length = metadata.getLength();
         } else {
             lastAddConfirmed = lastAddPushed = INVALID_ENTRY_ID;
             length = 0;
@@ -98,7 +99,7 @@ public class LedgerHandle {
         macManager = DigestManager.instantiate(ledgerId, password, digestType);
         this.ledgerKey = MacDigestManager.genDigest("ledger", password);
         distributionSchedule = new RoundRobinDistributionSchedule(
-            metadata.quorumSize, metadata.ensembleSize);
+                metadata.getQuorumSize(), metadata.getEnsembleSize());
     }
 
     /**
@@ -256,17 +257,19 @@ public class LedgerHandle {
         bk.mainWorkerPool.submitOrdered(ledgerId, new SafeRunnable() {
             @Override
             public void safeRun() {
-                final long prevClose;
+                final long prevLastEntryId;
                 final long prevLength;
+                final State prevState;
 
                 synchronized(LedgerHandle.this) {
-                    prevClose = metadata.close;
-                    prevLength = metadata.length;
+                    prevState = metadata.getState();
+                    prevLastEntryId = metadata.getLastEntryId();
+                    prevLength = metadata.getLength();
 
                     // synchronized on LedgerHandle.this to ensure that 
                     // lastAddPushed can not be updated after the metadata 
                     // is closed. 
-                    metadata.length = length;
+                    metadata.setLength(length);
 
                     // Close operation is idempotent, so no need to check if we are
                     // already closed
@@ -277,7 +280,7 @@ public class LedgerHandle {
 
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Closing ledger: " + ledgerId + " at entryId: "
-                              + metadata.close + " with this many bytes: " + metadata.length);
+                              + metadata.getLastEntryId() + " with this many bytes: " + metadata.getLength());
                 }
 
                 final class CloseCb implements GenericCallback<Void> {
@@ -292,15 +295,19 @@ public class LedgerHandle {
                                                   + " when closing, code=" + newrc);
                                         cb.closeComplete(rc, LedgerHandle.this, ctx);
                                     } else {
-                                        metadata.close(prevClose);
-                                        metadata.length = prevLength;
+                                        metadata.setState(prevState);
+                                        if (prevState.equals(State.CLOSED)) {
+                                            metadata.close(prevLastEntryId);
+                                        }
+
+                                        metadata.setLength(prevLength);
                                         if (metadata.resolveConflict(newMeta)) {
-                                            metadata.length = length;
+                                            metadata.setLength(length);
                                             metadata.close(lastAddConfirmed);
                                             writeLedgerConfig(new CloseCb());
                                             return;
                                         } else {
-                                            metadata.length = length;
+                                            metadata.setLength(length);
                                             metadata.close(lastAddConfirmed);
                                             LOG.warn("Conditional update ledger metadata for ledger " + ledgerId + " failed.");
                                             cb.closeComplete(rc, LedgerHandle.this, ctx);
@@ -735,8 +742,8 @@ public class LedgerHandle {
 
     synchronized void recover(final GenericCallback<Void> cb) {
         if (metadata.isClosed()) {
-            lastAddConfirmed = lastAddPushed = metadata.close;
-            length = metadata.length;
+            lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
+            length = metadata.getLength();
 
             // We are already closed, nothing to do
             cb.operationComplete(BKException.Code.OK, null);
