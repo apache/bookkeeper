@@ -85,9 +85,9 @@ class Journal extends Thread {
      * Last Log Mark
      */
     class LastLogMark {
-        long txnLogId;
-        long txnLogPosition;
-        LastLogMark lastMark;
+        private long txnLogId;
+        private long txnLogPosition;
+        private LastLogMark lastMark;
         LastLogMark(long logId, long logPosition) {
             this.txnLogId = logId;
             this.txnLogPosition = logPosition;

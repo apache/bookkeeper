@@ -22,6 +22,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-183: Provide tools to read/check data files in bookie server (sijie via ivank)
 
+        BOOKKEEPER-307: BookieShell introduces 4 findbugs warnings (ivank via sijie)
+
       hedwig-client:
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)

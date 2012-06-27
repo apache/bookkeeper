@@ -21,11 +21,9 @@ package org.apache.bookkeeper.bookie;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.Formatter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
@@ -35,7 +33,6 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.Tool;
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.cli.BasicParser;
@@ -473,10 +470,11 @@ public class BookieShell implements Tool {
         entryLogger.scanEntryLog(logId, scanner);
     }
 
-    private synchronized void initJournal() throws IOException {
+    private synchronized Journal getJournal() throws IOException {
         if (null == journal) {
             journal = new Journal(bkConf);
         }
+        return journal;
     }
 
     /**
@@ -488,8 +486,7 @@ public class BookieShell implements Tool {
      *          Journal File Scanner
      */
     protected void scanJournal(long journalId, JournalScanner scanner) throws IOException {
-        initJournal();
-        journal.scanJournal(journalId, 0L, scanner);
+        getJournal().scanJournal(journalId, 0L, scanner);
     }
 
     ///
@@ -617,11 +614,10 @@ public class BookieShell implements Tool {
      * Print last log mark
      */
     protected void printLastLogMark() throws IOException {
-        initJournal();
-        LastLogMark lastLogMark = journal.getLastLogMark();
-        System.out.println("LastLogMark: Journal Id - " + lastLogMark.txnLogId + "("
-                         + Long.toHexString(lastLogMark.txnLogId) + ".txn), Pos - "
-                         + lastLogMark.txnLogPosition);
+        LastLogMark lastLogMark = getJournal().getLastLogMark();
+        System.out.println("LastLogMark: Journal Id - " + lastLogMark.getTxnLogId() + "("
+                + Long.toHexString(lastLogMark.getTxnLogId()) + ".txn), Pos - "
+                + lastLogMark.getTxnLogPosition());
     }
 
     /**
@@ -652,7 +648,6 @@ public class BookieShell implements Tool {
         }
         // process a data entry
         long lastAddConfirmed = recBuff.getLong();
-        long length = recBuff.getLong();
         System.out.println("Type:           DATA");
         System.out.println("LastConfirmed:  " + lastAddConfirmed);
         if (!printMsg) {
