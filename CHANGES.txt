@@ -30,6 +30,10 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)
 
+      hedwig-server:
+
+        BOOKKEEPER-302: No more messages delivered when hub server scans messages over two ledgers. (sijie via ivank)
+
     IMPROVEMENTS:
 
 Release 4.1.0 - 2012-06-07

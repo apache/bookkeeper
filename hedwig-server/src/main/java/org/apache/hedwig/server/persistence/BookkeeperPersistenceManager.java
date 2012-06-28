@@ -173,13 +173,15 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
         long startSeqIdToScan;
 
         public RangeScanOp(RangeScanRequest request) {
-            this(request, -1L);
+            this(request, -1L, 0, 0L);
         }
 
-        public RangeScanOp(RangeScanRequest request, long startSeqId) {
+        public RangeScanOp(RangeScanRequest request, long startSeqId, int numMessagesRead, long totalSizeRead) {
             queuer.super(request.topic);
             this.request = request;
             this.startSeqIdToScan = startSeqId;
+            this.numMessagesRead = numMessagesRead;
+            this.totalSizeRead = totalSizeRead;
         }
 
         @Override
@@ -283,7 +285,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                     }
 
                     // continue scanning messages
-                    scanMessages(request, imlr.startSeqIdIncluded + entry.getEntryId() + 1);
+                    scanMessages(request, imlr.startSeqIdIncluded + entry.getEntryId() + 1, numMessagesRead, totalSizeRead);
                 }
             }, request.ctx);
         }
@@ -317,8 +319,8 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
         queuer.pushAndMaybeRun(request.topic, new RangeScanOp(request));
     }
 
-    protected void scanMessages(RangeScanRequest request, long scanSeqId) {
-        queuer.pushAndMaybeRun(request.topic, new RangeScanOp(request, scanSeqId));
+    protected void scanMessages(RangeScanRequest request, long scanSeqId, int numMsgsRead, long totalSizeRead) {
+        queuer.pushAndMaybeRun(request.topic, new RangeScanOp(request, scanSeqId, numMsgsRead, totalSizeRead));
     }
 
     public void deliveredUntil(ByteString topic, Long seqId) {
