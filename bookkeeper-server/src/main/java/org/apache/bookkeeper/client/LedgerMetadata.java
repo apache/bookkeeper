@@ -251,7 +251,9 @@ public class LedgerMetadata {
         }
         BufferedReader reader = new BufferedReader(new StringReader(config));
         String versionLine = reader.readLine();
-
+        if (versionLine == null) {
+            throw new IOException("Invalid metadata. Content missing");
+        }
         int i = 0;
         if (versionLine.startsWith(VERSION_KEY)) {
             String parts[] = versionLine.split(tSplitter);
