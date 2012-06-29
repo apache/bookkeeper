@@ -52,12 +52,12 @@ class ReadOnlyLedgerHandle extends LedgerHandle {
     }
     
     @Override
-    public void addEntry(byte[] data) throws InterruptedException, BKException {
-        addEntry(data, 0, data.length);
+    public long addEntry(byte[] data) throws InterruptedException, BKException {
+        return addEntry(data, 0, data.length);
     }
     
     @Override
-    public void addEntry(byte[] data, int offset, int length)
+    public long addEntry(byte[] data, int offset, int length)
             throws InterruptedException, BKException {
         LOG.error("Tried to add entry on a Read-Only ledger handle, ledgerid=" + ledgerId);        
         throw BKException.create(BKException.Code.IllegalOpException);

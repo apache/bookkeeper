@@ -387,9 +387,10 @@ public class LedgerHandle {
      *
      * @param data
      *         array of bytes to be written to the ledger
+     * @return the entryId of the new inserted entry
      */
-    public void addEntry(byte[] data) throws InterruptedException, BKException {
-        addEntry(data, 0, data.length);
+    public long addEntry(byte[] data) throws InterruptedException, BKException {
+        return addEntry(data, 0, data.length);
     }
 
     /**
@@ -401,24 +402,24 @@ public class LedgerHandle {
      *          offset from which to take bytes from data
      * @param length
      *          number of bytes to take from data
+     * @return the entryId of the new inserted entry
      */
-    public void addEntry(byte[] data, int offset, int length)
+    public long addEntry(byte[] data, int offset, int length)
             throws InterruptedException, BKException {
         LOG.debug("Adding entry {}", data);
 
         SyncCounter counter = new SyncCounter();
         counter.inc();
 
-        asyncAddEntry(data, offset, length, new SyncAddCallback(), counter);
+        SyncAddCallback callback = new SyncAddCallback();
+        asyncAddEntry(data, offset, length, callback, counter);
         counter.block(0);
         
         if (counter.getrc() != BKException.Code.OK) {
             throw BKException.create(counter.getrc());
         }
 
-        if(counter.getrc() != BKException.Code.OK) {
-            throw BKException.create(counter.getrc());
-        }
+        return callback.entryId;
     }
 
     /**
@@ -823,6 +824,8 @@ public class LedgerHandle {
     }
 
     private static class SyncAddCallback implements AddCallback {
+        long entryId = -1;
+
         /**
          * Implementation of callback interface for synchronous read method.
          *
@@ -837,7 +840,8 @@ public class LedgerHandle {
          */
         public void addComplete(int rc, LedgerHandle lh, long entry, Object ctx) {
             SyncCounter counter = (SyncCounter) ctx;
-            
+
+            this.entryId = entry;
             counter.setrc(rc);
             counter.dec();
         }

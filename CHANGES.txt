@@ -28,6 +28,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-322: New protobufs generates findbugs errors (ivank)
 
+        BOOKKEEPER-280: LedgerHandle.addEntry() should return an entryId (mmerli via ivank)
+
       hedwig-client:
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)
