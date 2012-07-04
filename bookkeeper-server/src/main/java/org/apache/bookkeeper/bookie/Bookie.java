@@ -410,9 +410,10 @@ public class Bookie extends Thread {
         LOG.debug("I'm starting a bookie with journal directory " + journalDirectory.getName());
         // start bookie thread
         super.start();
-        syncThread.start();
 
         ledgerStorage.start();
+
+        syncThread.start();
         // set running here.
         // since bookie server use running as a flag to tell bookie server whether it is alive
         // if setting it in bookie thread, the watcher might run before bookie thread.
@@ -595,15 +596,15 @@ public class Bookie extends Thread {
                 // mark bookie as in shutting down progress
                 shuttingdown = true;
 
-                // Shutdown the EntryLogger which has the GarbageCollector Thread running
-                ledgerStorage.shutdown();
-
                 // Shutdown the ZK client
                 if(zk != null) zk.close();
                 // Shutdown journal
                 journal.shutdown();
                 this.join();
                 syncThread.shutdown();
+
+                // Shutdown the EntryLogger which has the GarbageCollector Thread running
+                ledgerStorage.shutdown();
 
                 // close Ledger Manager
                 try {

@@ -692,11 +692,13 @@ public class LedgerCacheImpl implements LedgerCache {
 
     // evict file info if necessary
     private void evictFileInfoIfNecessary() throws IOException {
-        if (openLedgers.size() > openFileLimit) {
-            long ledgerToRemove = openLedgers.removeFirst();
-            LOG.info("Ledger {} is evicted from file info cache.",
-                     ledgerToRemove);
-            fileInfoCache.remove(ledgerToRemove).close(true);
+        synchronized (fileInfoCache) {
+            if (openLedgers.size() > openFileLimit) {
+                long ledgerToRemove = openLedgers.removeFirst();
+                LOG.info("Ledger {} is evicted from file info cache.",
+                         ledgerToRemove);
+                fileInfoCache.remove(ledgerToRemove).close(true);
+            }
         }
     }
 
@@ -778,11 +780,14 @@ public class LedgerCacheImpl implements LedgerCache {
 
     @Override
     public void close() throws IOException {
-        for (Entry<Long, FileInfo> fileInfo : fileInfoCache.entrySet()) {
-            FileInfo value = fileInfo.getValue();
-            if (value != null) {
-                value.close(true);
+        synchronized (fileInfoCache) {
+            for (Entry<Long, FileInfo> fileInfo : fileInfoCache.entrySet()) {
+                FileInfo value = fileInfo.getValue();
+                if (value != null) {
+                    value.close(true);
+                }
             }
+            fileInfoCache.clear();
         }
     }
 }
