@@ -44,7 +44,7 @@ PublisherImpl::PublisherImpl(const ClientImplPtr& client)
   : client(client) {
 }
 
-void PublisherImpl::publish(const std::string& topic, const std::string& message) {
+void PublisherImpl::publish(const std::string& topic, const Message& message) {
   SyncOperationCallback* cb = new SyncOperationCallback(client->getConfiguration().getInt(Configuration::SYNC_REQUEST_TIMEOUT, 
 											  DEFAULT_SYNC_REQUEST_TIMEOUT));
   OperationCallbackPtr callback(cb);
@@ -54,12 +54,24 @@ void PublisherImpl::publish(const std::string& topic, const std::string& message
   cb->throwExceptionIfNeeded();  
 }
 
-void PublisherImpl::asyncPublish(const std::string& topic, const std::string& message, const OperationCallbackPtr& callback) {
+void PublisherImpl::publish(const std::string& topic, const std::string& message) {
+  Message msg;
+  msg.set_body(message);
+  publish(topic, msg);
+}
+
+void PublisherImpl::asyncPublish(const std::string& topic, const Message& message, const OperationCallbackPtr& callback) {
   // use release after callback to release the channel after the callback is called
   PubSubDataPtr data = PubSubData::forPublishRequest(client->counter().next(), topic, message, callback);
   
   DuplexChannelPtr channel = client->getChannel(topic);
   doPublish(channel, data);
+}
+
+void PublisherImpl::asyncPublish(const std::string& topic, const std::string& message, const OperationCallbackPtr& callback) {
+  Message msg;
+  msg.set_body(message);
+  asyncPublish(topic, msg, callback);
 }
 
 void PublisherImpl::doPublish(const DuplexChannelPtr& channel, const PubSubDataPtr& data) {

@@ -40,6 +40,8 @@ namespace Hedwig {
     */
     virtual void publish(const std::string& topic, const std::string& message) = 0;
     
+    virtual void publish(const std::string& topic, const Message& message) = 0;
+
     /** 
 	Asynchronously publish message for topic. 
 	
@@ -54,6 +56,8 @@ namespace Hedwig {
     */
     virtual void asyncPublish(const std::string& topic, const std::string& message, const OperationCallbackPtr& callback) = 0;
     
+    virtual void asyncPublish(const std::string& topic, const Message& message, const OperationCallbackPtr& callback) = 0;
+
     virtual ~Publisher() {}
   };
 };

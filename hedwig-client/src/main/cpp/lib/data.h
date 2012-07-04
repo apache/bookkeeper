@@ -61,7 +61,7 @@ namespace Hedwig {
   class PubSubData {
   public:
     // to be used for publish
-    static PubSubDataPtr forPublishRequest(long txnid, const std::string& topic, const std::string& body, const OperationCallbackPtr& callback);
+    static PubSubDataPtr forPublishRequest(long txnid, const std::string& topic, const Message& body, const OperationCallbackPtr& callback);
     static PubSubDataPtr forSubscribeRequest(long txnid, const std::string& subscriberid, const std::string& topic,
 					     const OperationCallbackPtr& callback, const SubscriptionOptions& options);
     static PubSubDataPtr forUnsubscribeRequest(long txnid, const std::string& subscriberid, const std::string& topic, const OperationCallbackPtr& callback);
@@ -73,7 +73,7 @@ namespace Hedwig {
     long getTxnId() const;
     const std::string& getSubscriberId() const;
     const std::string& getTopic() const;
-    const std::string& getBody() const;
+    const Message& getBody() const;
     const MessageSeqId getMessageSeqId() const;
 
     void setShouldClaim(bool shouldClaim);
@@ -95,7 +95,7 @@ namespace Hedwig {
     long txnid;
     std::string subscriberid;
     std::string topic;
-    std::string body;
+    Message body;
     bool shouldClaim;
     int messageBound;
     OperationCallbackPtr callback;

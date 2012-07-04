@@ -28,12 +28,12 @@ static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("hedwig."__FILE__));
 
 using namespace Hedwig;
 
-PubSubDataPtr PubSubData::forPublishRequest(long txnid, const std::string& topic, const std::string& body, const OperationCallbackPtr& callback) {
+PubSubDataPtr PubSubData::forPublishRequest(long txnid, const std::string& topic, const Message& body, const OperationCallbackPtr& callback) {
   PubSubDataPtr ptr(new PubSubData());
   ptr->type = PUBLISH;
   ptr->txnid = txnid;
   ptr->topic = topic;
-  ptr->body = body;
+  ptr->body.CopyFrom(body);
   ptr->callback = callback;
   return ptr;
 }
@@ -87,7 +87,7 @@ const std::string& PubSubData::getTopic() const {
   return topic;
 }
 
-const std::string& PubSubData::getBody() const {
+const Message& PubSubData::getBody() const {
   return body;
 }
 
@@ -110,7 +110,7 @@ const PubSubRequestPtr PubSubData::getRequest() {
 
     Hedwig::PublishRequest* pubreq = request->mutable_publishrequest();
     Hedwig::Message* msg = pubreq->mutable_msg();
-    msg->set_body(body);
+    msg->CopyFrom(body);
   } else if (type == SUBSCRIBE) {
     LOG4CXX_DEBUG(logger, "Creating subscribe request");
 

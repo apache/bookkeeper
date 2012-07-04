@@ -34,6 +34,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)
 
+        BOOKKEEPER-320: Let hedwig cpp client could publish messages using Message object instead of string. (jiannan via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-302: No more messages delivered when hub server scans messages over two ledgers. (sijie via ivank)

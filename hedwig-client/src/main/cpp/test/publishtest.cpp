@@ -42,6 +42,7 @@ private:
   CPPUNIT_TEST_SUITE( PublishTestSuite );
   CPPUNIT_TEST(testSyncPublish);
   CPPUNIT_TEST(testAsyncPublish);
+  CPPUNIT_TEST(testPublishByMessage);
   CPPUNIT_TEST(testMultipleAsyncPublish);
   //  CPPUNIT_TEST(simplePublish);
   //CPPUNIT_TEST(simplePublishAndSubscribe);
@@ -61,6 +62,28 @@ public:
   
   void tearDown() 
   {
+  }
+
+  void testPublishByMessage() {
+    Hedwig::Configuration* conf = new TestServerConfiguration();
+    Hedwig::Client* client = new Hedwig::Client(*conf);
+    Hedwig::Publisher& pub = client->getPublisher();
+
+    Hedwig::Message syncMsg;
+    syncMsg.set_body("sync publish by Message");
+    pub.publish("testTopic", syncMsg);
+
+    SimpleWaitCondition* cond = new SimpleWaitCondition();
+    Hedwig::OperationCallbackPtr testcb(new TestCallback(cond));
+    Hedwig::Message asyncMsg;
+    asyncMsg.set_body("async publish by Message");
+    pub.asyncPublish("testTopic", asyncMsg, testcb);
+    cond->wait();
+    CPPUNIT_ASSERT(cond->wasSuccess());
+    delete cond;
+
+    delete client;
+    delete conf;
   }
 
   void testSyncPublish() {

@@ -39,7 +39,10 @@ namespace Hedwig {
     PublisherImpl(const ClientImplPtr& client);
 
     void publish(const std::string& topic, const std::string& message);
+    void publish(const std::string& topic, const Message& message);
+
     void asyncPublish(const std::string& topic, const std::string& message, const OperationCallbackPtr& callback);
+    void asyncPublish(const std::string& topic, const Message& message, const OperationCallbackPtr& callback);
     
     void messageHandler(const PubSubResponsePtr& m, const PubSubDataPtr& txn);
 
