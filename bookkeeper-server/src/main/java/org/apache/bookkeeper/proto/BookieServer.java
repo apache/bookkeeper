@@ -29,8 +29,6 @@ import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
-import javax.management.JMException;
-
 import org.apache.zookeeper.KeeperException;
 
 import org.apache.bookkeeper.bookie.Bookie;
@@ -83,9 +81,10 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     }
 
     public void start() throws IOException {
+        nioServerFactory = new NIOServerFactory(conf, this);
+
         this.bookie.start();
 
-        nioServerFactory = new NIOServerFactory(conf, this);
         nioServerFactory.start();
         running = true;
         deathWatcher = new DeathWatcher(conf);
