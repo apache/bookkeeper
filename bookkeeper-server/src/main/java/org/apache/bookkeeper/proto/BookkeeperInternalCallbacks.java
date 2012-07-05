@@ -106,7 +106,7 @@ public class BookkeeperInternalCallbacks {
         @Override
         public void processResult(int rc, String path, Object ctx) {
             if (rc != successRc) {
-                LOG.error("Error in mutil callback : " + rc);
+                LOG.error("Error in multi callback : " + rc);
                 exceptions.add(rc);
             }
             tick();
