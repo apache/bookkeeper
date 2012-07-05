@@ -34,6 +34,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-318: Spelling mistake in MultiCallback log message. (surendra via sijie)
 
+        BOOKKEEPER-296: It's better provide stop script for bookie (nijel via sijie)
+
       hedwig-client:
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)

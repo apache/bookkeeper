@@ -149,6 +149,18 @@ OPTS="$OPTS $BOOKIE_EXTRA_OPTS"
 # Disable ipv6 as it can cause issues
 OPTS="$OPTS -Djava.net.preferIPv4Stack=true"
 
+# log directory & file
+BOOKIE_ROOT_LOGGER=${BOOKIE_ROOT_LOGGER:-"INFO,CONSOLE"}
+BOOKIE_LOG_DIR=${BOOKIE_LOG_DIR:-"$BK_HOME/logs"}
+BOOKIE_LOG_FILE=${BOOKIE_LOG_FILE:-"bookkeeper-server.log"}
+
+#Configure log configuration system properties
+OPTS="$OPTS -Dbookkeeper.root.logger=$BOOKIE_ROOT_LOGGER"
+OPTS="$OPTS -Dbookkeeper.log.dir=$BOOKIE_LOG_DIR"
+OPTS="$OPTS -Dbookkeeper.log.file=$BOOKIE_LOG_FILE"
+
+#Change to BK_HOME to support relative paths
+cd "$BK_HOME"
 if [ $COMMAND == "bookie" ]; then
     exec java $OPTS $JMX_ARGS org.apache.bookkeeper.proto.BookieServer --conf $BOOKIE_CONF $@
 elif [ $COMMAND == "localbookie" ]; then
