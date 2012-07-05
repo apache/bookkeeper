@@ -34,6 +34,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -52,6 +54,7 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.Watcher.Event.EventType;
 
 /**
  * Implements a bookie.
@@ -358,12 +361,9 @@ public class Bookie extends Thread {
         handles = new HandleFactoryImpl(ledgerStorage);
         // instantiate the journal
         journal = new Journal(conf);
-
-        // replay journals
-        readJournal();
     }
 
-    private void readJournal() throws IOException, BookieException {
+    void readJournal() throws IOException, BookieException {
         journal.replay(new JournalScanner() {
             @Override
             public void process(int journalVersion, long offset, ByteBuffer recBuff) throws IOException {
@@ -405,6 +405,16 @@ public class Bookie extends Thread {
     synchronized public void start() {
         setDaemon(true);
         LOG.debug("I'm starting a bookie with journal directory " + journalDirectory.getName());
+        // replay journals
+        try {
+            readJournal();
+        } catch (IOException ioe) {
+            LOG.error("Exception while replaying journals, shutting down", ioe);
+            shutdown(ExitCode.BOOKIE_EXCEPTION);
+        } catch (BookieException be) {
+            LOG.error("Exception while replaying journals, shutting down", be);
+            shutdown(ExitCode.BOOKIE_EXCEPTION);
+        }
         // start bookie thread
         super.start();
         syncThread.start();
@@ -484,21 +494,56 @@ public class Bookie extends Thread {
     /**
      * Register as an available bookie
      */
-    private void registerBookie(int port) throws IOException {
+    protected void registerBookie(int port) throws IOException {
         if (null == zk) {
             // zookeeper instance is null, means not register itself to zk
             return;
         }
-        // Create the ZK ephemeral node for this Bookie.
-        try {
-            zk.create(this.bookieRegistrationPath + InetAddress.getLocalHost().getHostAddress() + ":" + port, new byte[0],
-                      Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
-        } catch (Exception e) {
-            LOG.error("ZK exception registering ephemeral Znode for Bookie!", e);
+        // ZK ephemeral node for this Bookie.
+        String zkBookieRegPath = this.bookieRegistrationPath
+                + InetAddress.getLocalHost().getHostAddress() + ":" + port;
+        final CountDownLatch prevNodeLatch = new CountDownLatch(1);
+        try{
+            Watcher zkPrevRegNodewatcher = new Watcher() {
+                @Override
+                public void process(WatchedEvent event) {
+                    // Check for prev znode deletion. Connection expiration is
+                    // not handling, since bookie has logic to shutdown.
+                    if (EventType.NodeDeleted == event.getType()) {
+                        prevNodeLatch.countDown();
+                    }
+                }
+            };
+            if (null != zk.exists(zkBookieRegPath, zkPrevRegNodewatcher)) {
+                LOG.info("Previous bookie registration znode: "
+                        + zkBookieRegPath
+                        + " exists, so waiting zk sessiontimeout: "
+                        + conf.getZkTimeout() + "ms for znode deletion");
+                // waiting for the previous bookie reg znode deletion
+                if (!prevNodeLatch.await(conf.getZkTimeout(),
+                        TimeUnit.MILLISECONDS)) {
+                    throw new KeeperException.NodeExistsException(
+                            zkBookieRegPath);
+                }
+            }
+
+            // Create the ZK ephemeral node for this Bookie.
+            zk.create(zkBookieRegPath, new byte[0], Ids.OPEN_ACL_UNSAFE,
+                    CreateMode.EPHEMERAL);
+        } catch (KeeperException ke) {
+            LOG.error("ZK exception registering ephemeral Znode for Bookie!",
+                    ke);
             // Throw an IOException back up. This will cause the Bookie
             // constructor to error out. Alternatively, we could do a System
             // exit here as this is a fatal error.
-            throw new IOException(e);
+            throw new IOException(ke);
+        } catch (InterruptedException ie) {
+            LOG.error("ZK exception registering ephemeral Znode for Bookie!",
+                    ie);
+            // Throw an IOException back up. This will cause the Bookie
+            // constructor to error out. Alternatively, we could do a System
+            // exit here as this is a fatal error.
+            throw new IOException(ie);
         }
     }
 

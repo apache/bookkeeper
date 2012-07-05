@@ -397,6 +397,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
         Bookie b = new Bookie(conf);
+        b.readJournal();
 
         b.readEntry(1, 99);
 
@@ -444,6 +445,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
         Bookie b = new Bookie(conf);
+        b.readJournal();
         b.readEntry(1, 99);
 
         // still able to read last entry, but it's junk
@@ -511,12 +513,13 @@ public class BookieJournalTest {
         if (truncateMasterKey) {
             try {
                 Bookie b = new Bookie(conf);
+                b.readJournal();
                 fail("Should not reach here!");
             } catch (IOException ie) {
             }
         } else {
             Bookie b = new Bookie(conf);
-
+            b.readJournal();
             b.readEntry(1, 100);
             try {
                 b.readEntry(1, 101);
@@ -570,7 +573,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
         Bookie b = new Bookie(conf);
-
+        b.readJournal();
         b.readEntry(1, 100);
         try {
             b.readEntry(1, 101);

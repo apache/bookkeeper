@@ -12,6 +12,10 @@ Release 4.1.1 - UNRELEASED
 
       BOOKKEEPER-298: We run with preferIPv4Stack in the scripts but not in the tests (ivank)
 
+      bookkeeper-server/
+
+        BOOKKEEPER-294: Not able to start the bookkeeper before the ZK session timeout. (rakeshr via ivank)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-289: mvn clean doesn't remove test output files (sijie via ivank)
