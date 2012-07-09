@@ -176,6 +176,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         final int watchInterval;
 
         DeathWatcher(ServerConfiguration conf) {
+            super("BookieDeathWatcher-" + conf.getBookiePort());
             watchInterval = conf.getDeathWatchInterval();
         }
 
