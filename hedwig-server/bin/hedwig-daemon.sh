@@ -18,37 +18,61 @@
 # * limitations under the License.
 # */
 
-usage="Usage: bookkeeper-daemon.sh (start|stop) <command> <args...>"
-supportedargs="Supported args : -force (accepted only with stop command) - Decides whether to stop the Bookie Server forcefully if not stopped by normal shutdown"
+usage() {
+    cat <<EOF
+Usage: hedwig-daemon.sh (start|stop) <command> <args...>
+where command is one of:
+    server           Run the hedwig server
+EOF
+}
+
 
 BINDIR=`dirname "$0"`
-BK_HOME=`cd $BINDIR/..;pwd`
+HEDWIG_HOME=`cd $BINDIR/..;pwd`
 
-if [ -f $BK_HOME/conf/bkenv.sh ]
+if [ -f $HEDWIG_HOME/conf/hwenv.sh ]
 then
- . $BK_HOME/conf/bkenv.sh
+ . $HEDWIG_HOME/conf/hwenv.sh
 fi
 
-BOOKIE_LOG_DIR=${BOOKIE_LOG_DIR:-"$BK_HOME/logs"}
+HEDWIG_LOG_DIR=${HEDWIG_LOG_DIR:-"$HEDWIG_HOME/logs"}
 
-BOOKIE_ROOT_LOGGER=${BOOKIE_ROOT_LOGGER:-'INFO,ROLLINGFILE'}
+HEDWIG_ROOT_LOGGER=${HEDWIG_ROOT_LOGGER:-'INFO,ROLLINGFILE'}
 
-BOOKIE_STOP_TIMEOUT=${BOOKIE_STOP_TIMEOUT:-30}
+HEDWIG_STOP_TIMEOUT=${HEDWIG_STOP_TIMEOUT:-30}
 
-BOOKIE_PID_DIR=${BOOKIE_PID_DIR:-$BK_HOME/bin}
+HEDWIG_PID_DIR=${HEDWIG_PID_DIR:-$HEDWIG_HOME/bin}
+
+if [ $# -lt 2 ]
+then
+    echo "Error: no enough arguments provided."
+    usage
+    exit 1
+fi
 
 startStop=$1
 shift
 command=$1
 shift
 
-export BOOKIE_LOG_DIR=$BOOKIE_LOG_DIR
-export BOOKIE_ROOT_LOGGER=$BOOKIE_ROOT_LOGGER
-export BOOKIE_LOG_FILE=bookkeeper-$command-$HOSTNAME.log
+case $command in
+    (server)
+        echo "doing $startStop $command ..."
+        ;;
+    (*)
+        echo "Error: unknown service name $command"
+        usage
+        exit 1
+        ;;
+esac
 
-pid=$BOOKIE_PID_DIR/bookkeeper-$command.pid
-out=$BOOKIE_LOG_DIR/bookkeeper-$command-$HOSTNAME.out
-logfile=$BOOKIE_LOG_DIR/$BOOKIE_LOG_FILE
+export HEDWIG_LOG_DIR=$HEDWIG_LOG_DIR
+export HEDWIG_ROOT_LOGGER=$HEDWIG_ROOT_LOGGER
+export HEDWIG_LOG_FILE=hedwig-$command-$HOSTNAME.log
+
+pid=$HEDWIG_PID_DIR/hedwig-$command.pid
+out=$HEDWIG_LOG_DIR/hedwig-$command-$HOSTNAME.out
+logfile=$HEDWIG_LOG_DIR/$HEDWIG_LOG_FILE
 
 rotate_out_log ()
 {
@@ -67,7 +91,7 @@ rotate_out_log ()
     fi
 }
 
-mkdir -p "$BOOKIE_LOG_DIR"
+mkdir -p "$HEDWIG_LOG_DIR"
 
 case $startStop in
   (start)
@@ -80,8 +104,8 @@ case $startStop in
 
     rotate_out_log $out
     echo starting $command, logging to $logfile
-    bookkeeper=$BK_HOME/bin/bookkeeper
-    nohup $bookkeeper $command "$@" > "$out" 2>&1 < /dev/null &
+    hedwig=$HEDWIG_HOME/bin/hedwig
+    nohup $hedwig $command "$@" > "$out" 2>&1 < /dev/null &
     echo $! > $pid
     sleep 1; head $out
     sleep 2;
@@ -98,19 +122,19 @@ case $startStop in
         kill $TARGET_PID
 
         count=0
-        location=$BOOKIE_LOG_DIR
+        location=$HEDWIG_LOG_DIR
         while ps -p $TARGET_PID > /dev/null;
          do
           echo "Shutdown is in progress... Please wait..."
           sleep 1
           count=`expr $count + 1`
          
-          if [ "$count" = "$BOOKIE_STOP_TIMEOUT" ]; then
+          if [ "$count" = "$HEDWIG_STOP_TIMEOUT" ]; then
                 break
           fi
          done
         
-        if [ "$count" != "$BOOKIE_STOP_TIMEOUT" ]; then
+        if [ "$count" != "$HEDWIG_STOP_TIMEOUT" ]; then
                  echo "Shutdown completed."
                 exit 0
         fi
@@ -119,15 +143,9 @@ case $startStop in
               fileName=$location/$command.out
               $JAVA_HOME/bin/jstack $TARGET_PID > $fileName
               echo Thread dumps are taken for analysis at $fileName
-              if [ "$1" == "-force" ]
-              then
-                 echo forcefully stopping $command
-                 kill -9 $TARGET_PID >/dev/null 2>&1
-                 echo Successfully stopped the process
-              else
-                 echo "WARNNING :  Bookie Server is not stopped completely."
-                 exit 1
-              fi
+              echo forcefully stopping $command
+              kill -9 $TARGET_PID >/dev/null 2>&1
+              echo Successfully stopped the process
         fi
       else
         echo no $command to stop
@@ -139,8 +157,7 @@ case $startStop in
     ;;
 
   (*)
-    echo $usage
-    echo $supportedargs
+    usage
     exit 1
     ;;
 esac

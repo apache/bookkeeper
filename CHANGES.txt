@@ -58,6 +58,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)
 
+        BOOKKEEPER-329: provide stop scripts for hub server (sijie via ivank)
+
 Release 4.1.0 - 2012-06-07
 
   Non-backward compatible changes:
