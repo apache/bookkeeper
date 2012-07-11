@@ -128,6 +128,11 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
         }
     }
 
+    @Override
+    public void stop() {
+        // do nothing
+    }
+
     /**
      * Ensures that at least the default seq-id exists in the map for the given
      * topic. Checks for race conditions (.e.g, another thread inserts the

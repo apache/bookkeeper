@@ -27,11 +27,14 @@ import org.junit.After;
 import org.junit.Before;
 
 import org.apache.hedwig.server.common.ServerConfiguration;
+import org.apache.hedwig.server.meta.MetadataManagerFactory;
 import org.apache.hedwig.server.topics.TrivialOwnAllTopicManager;
 
 public class TestBookKeeperPersistenceManagerBlackBox extends TestPersistenceManagerBlackBox {
     BookKeeperTestBase bktb;
     private final int numBookies = 3;
+
+    MetadataManagerFactory metadataManagerFactory = null;
 
     @Override
     @Before
@@ -48,6 +51,9 @@ public class TestBookKeeperPersistenceManagerBlackBox extends TestPersistenceMan
     protected void tearDown() throws Exception {
         bktb.tearDown();
         super.tearDown();
+        if (null != metadataManagerFactory) {
+            metadataManagerFactory.shutdown();
+        }
     }
 
     @Override
@@ -60,8 +66,12 @@ public class TestBookKeeperPersistenceManagerBlackBox extends TestPersistenceMan
         ServerConfiguration conf = new ServerConfiguration();
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-        return new BookkeeperPersistenceManager(bktb.bk, bktb.getZooKeeperClient(), new TrivialOwnAllTopicManager(conf,
-                                                scheduler), conf, scheduler);
+        metadataManagerFactory =
+            MetadataManagerFactory.newMetadataManagerFactory(conf, bktb.getZooKeeperClient());
+
+        return new BookkeeperPersistenceManager(bktb.bk, metadataManagerFactory,
+                                                new TrivialOwnAllTopicManager(conf, scheduler),
+                                                conf, scheduler);
     }
 
     @Override

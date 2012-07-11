@@ -121,4 +121,9 @@ public class StubPersistenceManager implements PersistenceManagerWithRangeScan {
         request.getCallback().scanFinished(request.getCtx(), ReasonForFinish.NUM_MESSAGES_LIMIT_EXCEEDED);
 
     }
+
+    @Override
+    public void stop() {
+        // do nothing
+    }
 }

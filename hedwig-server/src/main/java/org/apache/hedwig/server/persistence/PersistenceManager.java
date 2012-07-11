@@ -91,4 +91,9 @@ public interface PersistenceManager {
     public void setMessageBound(ByteString topic, Integer bound);
     public void clearMessageBound(ByteString topic);
     public void consumeToBound(ByteString topic);
+
+    /**
+     * Stop persistence manager.
+     */
+    public void stop();
 }

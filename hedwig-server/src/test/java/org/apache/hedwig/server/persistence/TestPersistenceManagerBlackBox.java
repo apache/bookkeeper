@@ -229,6 +229,7 @@ public abstract class TestPersistenceManagerBlackBox extends TestCase {
     @Override
     protected void tearDown() throws Exception {
         logger.info("tearDown starting");
+        persistenceManager.stop();
         super.tearDown();
         logger.info("FINISHED " + getName());
     }

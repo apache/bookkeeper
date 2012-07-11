@@ -35,6 +35,7 @@ import org.apache.hedwig.HelperMethods;
 import org.apache.hedwig.StubCallback;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.server.common.ServerConfiguration;
+import org.apache.hedwig.server.meta.MetadataManagerFactory;
 import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.server.topics.TrivialOwnAllTopicManager;
 import org.apache.hedwig.util.ConcurrencyUtils;
@@ -44,6 +45,7 @@ public class TestBookkeeperPersistenceManagerWhiteBox extends TestCase {
     BookKeeperTestBase bktb;
     private final int numBookies = 3;
     BookkeeperPersistenceManager bkpm;
+    MetadataManagerFactory mm;
     ServerConfiguration conf;
     ScheduledExecutorService scheduler;
     TopicManager tm;
@@ -60,12 +62,15 @@ public class TestBookkeeperPersistenceManagerWhiteBox extends TestCase {
         scheduler = Executors.newScheduledThreadPool(1);
         tm = new TrivialOwnAllTopicManager(conf, scheduler);
 
-        bkpm = new BookkeeperPersistenceManager(bktb.bk, bktb.getZooKeeperClient(), tm, conf, scheduler);
+        mm = MetadataManagerFactory.newMetadataManagerFactory(conf, bktb.getZooKeeperClient());
+
+        bkpm = new BookkeeperPersistenceManager(bktb.bk, mm, tm, conf, scheduler);
     }
 
     @Override
     @After
     protected void tearDown() throws Exception {
+        mm.shutdown();
         bktb.tearDown();
         super.tearDown();
     }
@@ -78,7 +83,7 @@ public class TestBookkeeperPersistenceManagerWhiteBox extends TestCase {
         assertNull(ConcurrencyUtils.take(stubCallback.queue).right());
         // now abandon, and try another time, the prev ledger should be dirty
 
-        bkpm = new BookkeeperPersistenceManager(new BookKeeper(bktb.getZkHostPort()), bktb.getZooKeeperClient(), tm,
+        bkpm = new BookkeeperPersistenceManager(new BookKeeper(bktb.getZkHostPort()), mm, tm,
                                                 conf, scheduler);
         bkpm.acquiredTopic(topic, stubCallback, null);
         assertNull(ConcurrencyUtils.take(stubCallback.queue).right());

@@ -30,7 +30,9 @@ import java.util.List;
 import org.apache.commons.configuration.ConfigurationException;
 
 import com.google.protobuf.ByteString;
+import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.hedwig.conf.AbstractConfiguration;
+import org.apache.hedwig.server.meta.MetadataManagerFactory;
 import org.apache.hedwig.util.HedwigSocketAddress;
 
 public class ServerConfiguration extends AbstractConfiguration {
@@ -59,6 +61,17 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String BK_ENSEMBLE_SIZE = "bk_ensemble_size";
     protected final static String BK_QUORUM_SIZE = "bk_quorum_size";
     protected final static String RETRY_REMOTE_SUBSCRIBE_THREAD_RUN_INTERVAL = "retry_remote_subscribe_thread_run_interval";
+
+    // manager related settings
+    protected final static String METADATA_MANAGER_FACTORY_CLASS = "metadata_manager_factory_class";
+
+    private static ClassLoader defaultLoader;
+    static {
+        defaultLoader = Thread.currentThread().getContextClassLoader();
+        if (null == defaultLoader) {
+            defaultLoader = ServerConfiguration.class.getClassLoader();
+        }
+    }
 
     // these are the derived attributes
     protected ByteString myRegionByteString = null;
@@ -151,6 +164,17 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     public StringBuilder getZkRegionPrefix(StringBuilder sb) {
         return sb.append(getZkPrefix()).append("/").append(getMyRegion());
+    }
+
+    /**
+     * Get znode path to store manager layouts.
+     *
+     * @param sb
+     *          StringBuilder to store znode path to store manager layouts.
+     * @return znode path to store manager layouts.
+     */
+    public StringBuilder getZkManagersPrefix(StringBuilder sb) {
+        return getZkRegionPrefix(sb).append("/managers");
     }
 
     public StringBuilder getZkTopicsPrefix(StringBuilder sb) {
@@ -295,5 +319,29 @@ public class ServerConfiguration extends AbstractConfiguration {
         }
 
         // add other checks here
+    }
+
+    /**
+     * Get metadata manager factory class.
+     *
+     * @return manager class
+     */
+    public Class<? extends MetadataManagerFactory> getMetadataManagerFactoryClass()
+    throws ConfigurationException {
+        return ReflectionUtils.getClass(conf, METADATA_MANAGER_FACTORY_CLASS,
+                                        null, MetadataManagerFactory.class,
+                                        defaultLoader);
+    }
+
+    /**
+     * Set metadata manager factory class name
+     *
+     * @param managerClsName
+     *          Manager Class Name
+     * @return server configuration
+     */
+    public ServerConfiguration setMetadataManagerFactoryName(String managerClsName) {
+        conf.setProperty(METADATA_MANAGER_FACTORY_CLASS, managerClsName);
+        return this;
     }
 }

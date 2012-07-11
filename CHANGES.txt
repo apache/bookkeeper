@@ -54,6 +54,10 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-328: Bookie DeathWatcher is missing thread name (Rakesh via sijie)
 
+      hedwig-server:
+
+        BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)
+
 Release 4.1.0 - 2012-06-07
 
   Non-backward compatible changes:

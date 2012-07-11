@@ -17,6 +17,7 @@
  */
 package org.apache.hedwig.zookeeper;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -33,6 +34,43 @@ import org.apache.hedwig.util.PathUtils;
 public class ZkUtils {
 
     static Logger logger = LoggerFactory.getLogger(ZkUtils.class);
+
+    static class SyncObject {
+        int rc;
+        String path;
+        boolean called = false;
+    }
+
+    public static void createFullPathOptimistic(final ZooKeeper zk, final String originalPath, final byte[] data,
+            final List<ACL> acl, final CreateMode createMode)
+    throws KeeperException, IOException, InterruptedException {
+        final SyncObject syncObj = new SyncObject();
+
+        createFullPathOptimistic(
+            zk, originalPath, data, acl, createMode,
+            new SafeAsyncZKCallback.StringCallback() {
+                @Override
+                public void safeProcessResult(final int rc, String path, Object ctx, String name) {
+                    synchronized (syncObj) {
+                        syncObj.rc = rc;
+                        syncObj.path = path;
+                        syncObj.called = true;
+                        syncObj.notify();
+                    }
+                }
+            }, syncObj
+        );
+
+        synchronized (syncObj) {
+            while (!syncObj.called) {
+                syncObj.wait();
+            }
+        }
+
+        if (Code.OK.intValue() != syncObj.rc) {
+            throw KeeperException.create(syncObj.rc, syncObj.path);
+        }
+    }
 
     public static void createFullPathOptimistic(final ZooKeeper zk, final String originalPath, final byte[] data,
             final List<ACL> acl, final CreateMode createMode, final AsyncCallback.StringCallback callback,

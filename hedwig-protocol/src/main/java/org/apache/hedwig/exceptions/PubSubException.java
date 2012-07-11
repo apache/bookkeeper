@@ -50,6 +50,18 @@ public abstract class PubSubException extends Exception {
             return new ServiceDownException(msg);
         } else if (code == StatusCode.COULD_NOT_CONNECT) {
             return new CouldNotConnectException(msg);
+        } else if (code == StatusCode.TOPIC_BUSY) {
+            return new TopicBusyException(msg);
+        } else if (code == StatusCode.BAD_VERSION) {
+            return new BadVersionException(msg);
+        } else if (code == StatusCode.NO_TOPIC_PERSISTENCE_INFO) {
+            return new NoTopicPersistenceInfoException(msg);
+        } else if (code == StatusCode.TOPIC_PERSISTENCE_INFO_EXISTS) {
+            return new TopicPersistenceInfoExistsException(msg);
+        } else if (code == StatusCode.NO_SUBSCRIPTION_STATE) {
+            return new NoSubscriptionStateException(msg);
+        } else if (code == StatusCode.SUBSCRIPTION_STATE_EXISTS) {
+            return new SubscriptionStateExistsException(msg);
         }
         /*
          * Insert new ones here
@@ -117,6 +129,36 @@ public abstract class PubSubException extends Exception {
     public static class CouldNotConnectException extends PubSubException {
         public CouldNotConnectException(String msg) {
             super(StatusCode.COULD_NOT_CONNECT, msg);
+        }
+    }
+
+    public static class BadVersionException extends PubSubException {
+        public BadVersionException(String msg) {
+            super(StatusCode.BAD_VERSION, msg);
+        }
+    }
+
+    public static class NoTopicPersistenceInfoException extends PubSubException {
+        public NoTopicPersistenceInfoException(String msg) {
+            super(StatusCode.NO_TOPIC_PERSISTENCE_INFO, msg);
+        }
+    }
+
+    public static class TopicPersistenceInfoExistsException extends PubSubException {
+        public TopicPersistenceInfoExistsException(String msg) {
+            super(StatusCode.TOPIC_PERSISTENCE_INFO_EXISTS, msg);
+        }
+    }
+
+    public static class NoSubscriptionStateException extends PubSubException {
+        public NoSubscriptionStateException(String msg) {
+            super(StatusCode.NO_SUBSCRIPTION_STATE, msg);
+        }
+    }
+
+    public static class SubscriptionStateExistsException extends PubSubException {
+        public SubscriptionStateExistsException(String msg) {
+            super(StatusCode.SUBSCRIPTION_STATE_EXISTS, msg);
         }
     }
 

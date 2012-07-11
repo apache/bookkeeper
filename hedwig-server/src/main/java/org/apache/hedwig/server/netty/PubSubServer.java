@@ -63,6 +63,7 @@ import org.apache.hedwig.server.handlers.PublishHandler;
 import org.apache.hedwig.server.handlers.SubscribeHandler;
 import org.apache.hedwig.server.handlers.UnsubscribeHandler;
 import org.apache.hedwig.server.jmx.HedwigMBeanRegistry;
+import org.apache.hedwig.server.meta.MetadataManagerFactory;
 import org.apache.hedwig.server.persistence.BookkeeperPersistenceManager;
 import org.apache.hedwig.server.persistence.LocalDBPersistenceManager;
 import org.apache.hedwig.server.persistence.PersistenceManager;
@@ -73,7 +74,7 @@ import org.apache.hedwig.server.regions.RegionManager;
 import org.apache.hedwig.server.ssl.SslServerContextFactory;
 import org.apache.hedwig.server.subscriptions.InMemorySubscriptionManager;
 import org.apache.hedwig.server.subscriptions.SubscriptionManager;
-import org.apache.hedwig.server.subscriptions.ZkSubscriptionManager;
+import org.apache.hedwig.server.subscriptions.MMSubscriptionManager;
 import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.server.topics.TrivialOwnAllTopicManager;
 import org.apache.hedwig.server.topics.ZkTopicManager;
@@ -97,6 +98,9 @@ public class PubSubServer {
     TopicManager tm;
     SubscriptionManager sm;
     RegionManager rm;
+
+    // Metadata Manager Factory
+    MetadataManagerFactory mm;
 
     ZooKeeper zk; // null if we are in standalone mode
     BookKeeper bk; // null if we are in standalone mode
@@ -127,7 +131,7 @@ public class PubSubServer {
                 logger.error("Could not instantiate bookkeeper client", e);
                 throw new IOException(e);
             }
-            underlyingPM = new BookkeeperPersistenceManager(bk, zk, topicMgr, conf, scheduler);
+            underlyingPM = new BookkeeperPersistenceManager(bk, mm, topicMgr, conf, scheduler);
 
         }
 
@@ -144,7 +148,7 @@ public class PubSubServer {
         if (conf.isStandalone()) {
             return new InMemorySubscriptionManager(tm, pm, conf, scheduler);
         } else {
-            return new ZkSubscriptionManager(zk, tm, pm, conf, scheduler);
+            return new MMSubscriptionManager(mm, tm, pm, conf, scheduler);
         }
 
     }
@@ -173,6 +177,13 @@ public class PubSubServer {
                                     conf.getZkTimeout()*2 + " ms. (Default value for zk_timeout is 2000).");
             }
         }
+    }
+
+    protected void instantiateMetadataManagerFactory() throws Exception {
+        if (conf.isStandalone()) {
+            return;
+        }
+        mm = MetadataManagerFactory.newMetadataManagerFactory(conf, zk);
     }
 
     protected TopicManager instantiateTopicManager() throws IOException {
@@ -233,9 +244,19 @@ public class PubSubServer {
         // Stop the DeliveryManager and ReadAheadCache threads (if
         // applicable).
         dm.stop();
+        pm.stop();
 
         // Stop the SubscriptionManager if needed.
         sm.stop();
+
+        // Shutdown metadata manager if needed
+        if (null != mm) {
+            try {
+                mm.shutdown();
+            } catch (IOException ie) {
+                logger.error("Error while shutdown metadata manager factory!", ie);
+            }
+        }
 
         // Shutdown the ZooKeeper and BookKeeper clients only if we are
         // not in stand-alone mode.
@@ -245,9 +266,9 @@ public class PubSubServer {
             if (zk != null)
                 zk.close();
         } catch (InterruptedException e) {
-            logger.error("Error while closing ZooKeeper client!");
+            logger.error("Error while closing ZooKeeper client : ", e);
         } catch (BKException bke) {
-            logger.error("Error while closing BookKeeper client");
+            logger.error("Error while closing BookKeeper client : ", bke);
         }
 
         // Close and release the Netty channels and resources
@@ -350,6 +371,7 @@ public class PubSubServer {
                             .newCachedThreadPool());
 
                     instantiateZookeeperClient();
+                    instantiateMetadataManagerFactory();
                     tm = instantiateTopicManager();
                     pm = instantiatePersistenceManager(tm);
                     dm = new FIFODeliveryManager(pm, conf);

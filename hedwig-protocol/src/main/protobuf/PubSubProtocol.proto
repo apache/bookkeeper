@@ -156,7 +156,14 @@ enum StatusCode{
     NOT_RESPONSIBLE_FOR_TOPIC = 501;
     SERVICE_DOWN = 502;
     UNCERTAIN_STATE = 503;
-    
+
+    //server-side meta manager errors (52x)
+    BAD_VERSION = 520;
+    NO_TOPIC_PERSISTENCE_INFO = 521;
+    TOPIC_PERSISTENCE_INFO_EXISTS = 522;
+    NO_SUBSCRIPTION_STATE = 523;
+    SUBSCRIPTION_STATE_EXISTS = 524;
+
     //For all unexpected error conditions
     UNEXPECTED_CONDITION = 600;
     
@@ -180,3 +187,7 @@ message LedgerRanges{
     repeated LedgerRange ranges = 1;
 }
 
+message ManagerMeta {
+    required string managerImpl = 2;
+    required uint32 managerVersion = 3;
+}

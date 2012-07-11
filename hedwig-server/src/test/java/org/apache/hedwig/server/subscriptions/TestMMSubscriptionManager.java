@@ -23,6 +23,7 @@ import java.util.concurrent.SynchronousQueue;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.Before;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.exceptions.PubSubException;
@@ -30,15 +31,17 @@ import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.server.common.ServerConfiguration;
-import org.apache.hedwig.server.topics.TrivialOwnAllTopicManager;
 import org.apache.hedwig.server.persistence.LocalDBPersistenceManager;
+import org.apache.hedwig.server.topics.TrivialOwnAllTopicManager;
+import org.apache.hedwig.server.meta.MetadataManagerFactory;
 import org.apache.hedwig.util.ConcurrencyUtils;
 import org.apache.hedwig.util.Either;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.zookeeper.ZooKeeperTestBase;
 
-public class TestZkSubscriptionManager extends ZooKeeperTestBase {
-    ZkSubscriptionManager sm;
+public class TestMMSubscriptionManager extends ZooKeeperTestBase {
+    MetadataManagerFactory mm;
+    MMSubscriptionManager sm;
     ServerConfiguration cfg = new ServerConfiguration();
     SynchronousQueue<Either<MessageSeqId, PubSubException>> msgIdCallbackQueue = new SynchronousQueue<Either<MessageSeqId, PubSubException>>();
     SynchronousQueue<Either<Boolean, PubSubException>> BooleanCallbackQueue = new SynchronousQueue<Either<Boolean, PubSubException>>();
@@ -46,12 +49,14 @@ public class TestZkSubscriptionManager extends ZooKeeperTestBase {
     Callback<Void> voidCallback;
     Callback<MessageSeqId> msgIdCallback;
 
+    @Before
     @Override
     public void setUp() throws Exception {
         super.setUp();
         cfg = new ServerConfiguration();
         final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        sm = new ZkSubscriptionManager(zk, new TrivialOwnAllTopicManager(cfg, scheduler),
+        mm = MetadataManagerFactory.newMetadataManagerFactory(cfg, zk);
+        sm = new MMSubscriptionManager(mm, new TrivialOwnAllTopicManager(cfg, scheduler),
                                        LocalDBPersistenceManager.instance(), cfg, scheduler);
         msgIdCallback = new Callback<MessageSeqId>() {
             @Override

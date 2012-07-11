@@ -33,14 +33,10 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.KeeperException.Code;
-import org.apache.zookeeper.data.Stat;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -54,13 +50,13 @@ import org.apache.hedwig.protoextensions.MessageIdUtils;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.common.TopicOpQueuer;
 import org.apache.hedwig.server.common.UnexpectedError;
+import org.apache.hedwig.server.meta.MetadataManagerFactory;
+import org.apache.hedwig.server.meta.TopicPersistenceManager;
 import org.apache.hedwig.server.persistence.ScanCallback.ReasonForFinish;
 import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.server.topics.TopicOwnershipChangeListener;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.zookeeper.SafeAsynBKCallback;
-import org.apache.hedwig.zookeeper.SafeAsyncZKCallback;
-import org.apache.hedwig.zookeeper.ZkUtils;
 
 /**
  * This persistence manager uses zookeeper and bookkeeper to store messages.
@@ -78,7 +74,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
     static Logger logger = LoggerFactory.getLogger(BookkeeperPersistenceManager.class);
     static byte[] passwd = "sillysecret".getBytes();
     private BookKeeper bk;
-    private ZooKeeper zk;
+    private TopicPersistenceManager tpManager;
     private ServerConfiguration cfg;
     private TopicManager tm;
 
@@ -122,7 +118,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
          * include the current ledger
          */
         TreeMap<Long, InMemoryLedgerRange> ledgerRanges = new TreeMap<Long, InMemoryLedgerRange>();
-        int ledgerRangesZnodeVersion = -1;
+        Version ledgerRangesVersion = null;
 
         /**
          * This is the handle of the current ledger that is being used to write
@@ -148,17 +144,20 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
      *
      * @param bk
      *            a reference to bookkeeper to use.
-     * @param zk
-     *            a zookeeper handle to use.
-     * @param zkPrefix
-     *            the zookeeper subtree that stores the topic to ledger
-     *            information. if this prefix does not exist, it will be
-     *            created.
+     * @param metaManagerFactory
+     *            a metadata manager factory handle to use.
+     * @param tm
+     *            a reference to topic manager.
+     * @param cfg
+     *            Server configuration object
+     * @param executor
+     *            A executor
      */
-    public BookkeeperPersistenceManager(BookKeeper bk, ZooKeeper zk, TopicManager tm, ServerConfiguration cfg,
+    public BookkeeperPersistenceManager(BookKeeper bk, MetadataManagerFactory metaManagerFactory,
+                                        TopicManager tm, ServerConfiguration cfg,
                                         ScheduledExecutorService executor) {
         this.bk = bk;
-        this.zk = zk;
+        this.tpManager = metaManagerFactory.newTopicPersistenceManager();
         this.cfg = cfg;
         this.tm = tm;
         queuer = new TopicOpQueuer(executor);
@@ -357,20 +356,20 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
 
             if (needsUpdate) {
                 final LedgerRanges newRanges = builder.build();
-                updateLedgerRangesNode(topic, newRanges, topicInfo.ledgerRangesZnodeVersion,
-                                       new Callback<Integer>() {
-                                           public void operationFinished(Object ctx, Integer newVersion) {
-                                               // Finally, all done
-                                               for (Long k : keysToRemove) {
-                                                   topicInfo.ledgerRanges.remove(k);
-                                               }
-                                               topicInfo.ledgerRangesZnodeVersion = newVersion;
-                                               cb.operationFinished(ctx, null);
-                                           }
-                                           public void operationFailed(Object ctx, PubSubException exception) {
-                                               cb.operationFailed(ctx, exception);
-                                           }
-                                       }, ctx);
+                tpManager.writeTopicPersistenceInfo(
+                topic, newRanges, topicInfo.ledgerRangesVersion, new Callback<Version>() {
+                    public void operationFinished(Object ctx, Version newVersion) {
+                        // Finally, all done
+                        for (Long k : keysToRemove) {
+                            topicInfo.ledgerRanges.remove(k);
+                        }
+                        topicInfo.ledgerRangesVersion = newVersion;
+                        cb.operationFinished(ctx, null);
+                    }
+                    public void operationFailed(Object ctx, PubSubException exception) {
+                        cb.operationFailed(ctx, exception);
+                    }
+                }, ctx);
             } else {
                 cb.operationFinished(ctx, null);
             }
@@ -558,10 +557,6 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
         };
     };
 
-    String ledgersPath(ByteString topic) {
-        return cfg.getZkTopicPath(new StringBuilder(), topic).append("/ledgers").toString();
-    }
-
     class AcquireOp extends TopicOpQueuer.AsynchronousOp<Void> {
         public AcquireOp(ByteString topic, Callback<Void> cb, Object ctx) {
             queuer.super(topic, cb, ctx);
@@ -574,60 +569,25 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                 cb.operationFinished(ctx, null);
                 return;
             }
-            // read topic ledgers node data
-            final String zNodePath = ledgersPath(topic);
 
-            zk.getData(zNodePath, false, new SafeAsyncZKCallback.DataCallback() {
+            // read persistence info
+            tpManager.readTopicPersistenceInfo(topic, new Callback<Versioned<LedgerRanges>>() {
                 @Override
-                public void safeProcessResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
-                    if (rc == Code.OK.intValue()) {
-                        processTopicLedgersNodeData(data, stat.getVersion());
-                        return;
+                public void operationFinished(Object ctx, Versioned<LedgerRanges> ranges) {
+                    if (null != ranges) {
+                        processTopicLedgerRanges(ranges.getValue(), ranges.getVersion());
+                    } else {
+                        processTopicLedgerRanges(LedgerRanges.getDefaultInstance(), null);
                     }
-
-                    if (rc == Code.NONODE.intValue()) {
-                        // create it
-                        final byte[] initialData = LedgerRanges.getDefaultInstance().toByteArray();
-                        ZkUtils.createFullPathOptimistic(zk, zNodePath, initialData, ZooDefs.Ids.OPEN_ACL_UNSAFE,
-                        CreateMode.PERSISTENT, new SafeAsyncZKCallback.StringCallback() {
-                            @Override
-                            public void safeProcessResult(int rc, String path, Object ctx, String name) {
-                                if (rc != Code.OK.intValue()) {
-                                    KeeperException ke = ZkUtils.logErrorAndCreateZKException(
-                                                             "Could not create ledgers node for topic: " + topic.toStringUtf8(),
-                                                             path, rc);
-                                    cb.operationFailed(ctx, new PubSubException.ServiceDownException(ke));
-                                    return;
-                                }
-                                // initial version is version 1
-                                // (guessing)
-                                processTopicLedgersNodeData(initialData, 0);
-                            }
-                        }, ctx);
-                        return;
-                    }
-
-                    // otherwise some other error
-                    KeeperException ke = ZkUtils.logErrorAndCreateZKException("Could not read ledgers node for topic: "
-                                         + topic.toStringUtf8(), path, rc);
-                    cb.operationFailed(ctx, new PubSubException.ServiceDownException(ke));
-
+                }
+                @Override
+                public void operationFailed(Object ctx, PubSubException exception) {
+                    cb.operationFailed(ctx, exception);
                 }
             }, ctx);
         }
 
-        void processTopicLedgersNodeData(byte[] data, int version) {
-
-            final LedgerRanges ranges;
-            try {
-                ranges = LedgerRanges.parseFrom(data);
-            } catch (InvalidProtocolBufferException e) {
-                String msg = "Ledger ranges for topic:" + topic.toStringUtf8() + " could not be deserialized";
-                logger.error(msg, e);
-                cb.operationFailed(ctx, new PubSubException.UnexpectedConditionException(msg));
-                return;
-            }
-
+        void processTopicLedgerRanges(final LedgerRanges ranges, final Version version) {
             Iterator<LedgerRange> lrIterator = ranges.getRangesList().iterator();
             TopicInfo topicInfo = new TopicInfo();
 
@@ -670,7 +630,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
          * @param ledgerId
          *            Ledger to be recovered
          */
-        private void recoverLastTopicLedgerAndOpenNewOne(final long ledgerId, final int expectedVersionOfLedgerNode,
+        private void recoverLastTopicLedgerAndOpenNewOne(final long ledgerId, final Version expectedVersionOfLedgerNode,
                 final TopicInfo topicInfo) {
 
             bk.asyncOpenLedger(ledgerId, DigestType.CRC32, passwd, new SafeAsynBKCallback.OpenCallback() {
@@ -748,7 +708,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
          *            The version of the ledgers node when we read it, should be
          *            the same when we try to write
          */
-        private void openNewTopicLedger(final int expectedVersionOfLedgersNode, final TopicInfo topicInfo) {
+        private void openNewTopicLedger(final Version expectedVersionOfLedgersNode, final TopicInfo topicInfo) {
             bk.asyncCreateLedger(cfg.getBkEnsembleSize(), cfg.getBkQuorumSize(), DigestType.CRC32, passwd,
             new SafeAsynBKCallback.CreateCallback() {
                 boolean processed = false;
@@ -786,40 +746,24 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                     }
                     builder.addRanges(lastRange);
 
-                    updateLedgerRangesNode(topic, builder.build(), expectedVersionOfLedgersNode,
-                                           new Callback<Integer>() {
-                                               public void operationFinished(Object ctx, Integer newVersion) {
-                                                   // Finally, all done
-                                                   topicInfo.ledgerRangesZnodeVersion = newVersion;
-                                                   topicInfos.put(topic, topicInfo);
-                                                   cb.operationFinished(ctx, null);
-                                               }
-                                               public void operationFailed(Object ctx, PubSubException exception) {
-                                                   cb.operationFailed(ctx, exception);
-                                               }
-                                           }, ctx);
+                    tpManager.writeTopicPersistenceInfo(
+                    topic, builder.build(), expectedVersionOfLedgersNode, new Callback<Version>() {
+                        @Override
+                        public void operationFinished(Object ctx, Version newVersion) {
+                            // Finally, all done
+                            topicInfo.ledgerRangesVersion = newVersion;
+                            topicInfos.put(topic, topicInfo);
+                            cb.operationFinished(ctx, null);
+                        }
+                        @Override
+                        public void operationFailed(Object ctx, PubSubException exception) {
+                            cb.operationFailed(ctx, exception);
+                        }
+                    }, ctx);
                     return;
                 }
             }, ctx);
         }
-    }
-
-    public void updateLedgerRangesNode(final ByteString topic, LedgerRanges ranges,
-                                       int version, final Callback<Integer> callback, Object ctx) {
-        final String zNodePath = ledgersPath(topic);
-
-        zk.setData(zNodePath, ranges.toByteArray(), version, new SafeAsyncZKCallback.StatCallback() {
-                @Override
-                public void safeProcessResult(int rc, String path, Object ctx, Stat stat) {
-                    if (rc != KeeperException.Code.OK.intValue()) {
-                        KeeperException ke = ZkUtils.logErrorAndCreateZKException(
-                                "Could not write ledgers node for topic: " + topic.toStringUtf8(), path, rc);
-                        callback.operationFailed(ctx, new PubSubException.ServiceDownException(ke));
-                        return;
-                    }
-                    callback.operationFinished(ctx, stat.getVersion());
-                }
-            }, ctx);
     }
 
     /**
@@ -904,5 +848,14 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
 
     public void clearMessageBound(ByteString topic) {
         queuer.pushAndMaybeRun(topic, new SetMessageBoundOp(topic, TopicInfo.UNLIMITED));
+    }
+
+    @Override
+    public void stop() {
+        try {
+            tpManager.close();
+        } catch (IOException ioe) {
+            logger.warn("Exception closing topic persistence manager : ", ioe);
+        }
     }
 }
