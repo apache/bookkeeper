@@ -32,13 +32,7 @@
 
 #include "util.h"
 
-#include <cppunit/extensions/TestFactoryRegistry.h>
-#include <cppunit/ui/text/TextTestRunner.h>
-
-#include <cppunit/TextTestProgressListener.h>
-#include <cppunit/TestResult.h>
-
-HedwigCppTextTestProgressListener gprogress;
+#include "gtest/gtest.h"
 
 int main( int argc, char **argv)
 {
@@ -54,29 +48,10 @@ int main( int argc, char **argv)
   } catch (...) {
     std::cerr << "unknown exception while configuring log4cpp vi'." << std::endl;
   }
-  std::string testPath = (argc > 2) ? std::string(argv[2]) : "";
-
-  CppUnit::TextTestRunner runner;
-
-  if (argc > 1) {
-    CppUnit::TestFactoryRegistry &registry = CppUnit::TestFactoryRegistry::getRegistry(argv[1]);
-    
-    runner.addTest( registry.makeTest() );
-  } else {
-    CppUnit::TestFactoryRegistry &registry = CppUnit::TestFactoryRegistry::getRegistry("*");
-    registry.addRegistry("Util");
-    registry.addRegistry("Subscribe");
-    registry.addRegistry("Publish"); 
-    registry.addRegistry("PubSub");
-    registry.addRegistry("MessageBound");
-    
-    runner.addTest( registry.makeTest() );
-  }
   
-  runner.eventManager().addListener( &gprogress );
-
-  bool ret = runner.run(testPath);
+  ::testing::InitGoogleTest(&argc, argv);
+  int ret = RUN_ALL_TESTS();
   google::protobuf::ShutdownProtobufLibrary();
-  
-  return (ret == true) ? 0 : 1;
+
+  return ret;
 }

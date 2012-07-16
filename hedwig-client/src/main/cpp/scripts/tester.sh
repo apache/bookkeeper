@@ -67,7 +67,7 @@ singletest() {
     stop_cluster;
     start_cluster;
 
-    ../test/hedwigtest $1
+    ../test/hedwigtest --gtest_filter=$1
     RESULT=$?
     stop_cluster;
 

@@ -19,9 +19,7 @@
 #include <config.h>
 #endif
 
-#include <cppunit/Test.h>
-#include <cppunit/TestSuite.h>
-#include <cppunit/extensions/HelperMacros.h>
+#include "gtest/gtest.h"
 
 #include "../lib/clientimpl.h"
 #include <hedwig/exceptions.h>
@@ -35,165 +33,134 @@
 
 static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("hedwig."__FILE__));
 
-class SubscribeTestSuite : public CppUnit::TestFixture {
-private:
-  CPPUNIT_TEST_SUITE( SubscribeTestSuite );
-  CPPUNIT_TEST(testSyncSubscribe);
-  CPPUNIT_TEST(testSyncSubscribeAttach);
-  CPPUNIT_TEST(testAsyncSubscribe);
-  CPPUNIT_TEST(testAsyncSubcribeAndUnsubscribe);
-  CPPUNIT_TEST(testAsyncSubcribeAndSyncUnsubscribe);
-  CPPUNIT_TEST(testAsyncSubcribeCloseSubscriptionAndThenResubscribe);
-  CPPUNIT_TEST(testUnsubscribeWithoutSubscribe);
-  CPPUNIT_TEST(testSubscribeTwice);      
-  CPPUNIT_TEST_SUITE_END();
-
-public:
-  SubscribeTestSuite() {
+TEST(SubscribeTest, testSyncSubscribe) {
+  Hedwig::Configuration* conf = new TestServerConfiguration();
+  std::auto_ptr<Hedwig::Configuration> confptr(conf);
     
-  }
+  Hedwig::Client* client = new Hedwig::Client(*conf);
+  std::auto_ptr<Hedwig::Client> clientptr(client);
 
-  ~SubscribeTestSuite() {
-  }
+  Hedwig::Subscriber& sub = client->getSubscriber();
+    
+  sub.subscribe("testTopic", "mySubscriberId-1", Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
+}
 
-  void setUp()
-  {
-  }
+TEST(SubscribeTest, testSyncSubscribeAttach) {
+  Hedwig::Configuration* conf = new TestServerConfiguration();
+  std::auto_ptr<Hedwig::Configuration> confptr(conf);
+
+  Hedwig::Client* client = new Hedwig::Client(*conf);
+  std::auto_ptr<Hedwig::Client> clientptr(client);
+
+  Hedwig::Subscriber& sub = client->getSubscriber();
+    
+  ASSERT_THROW(sub.subscribe("iAmATopicWhoDoesNotExist", "mySubscriberId-2", Hedwig::SubscribeRequest::ATTACH), Hedwig::ClientException);
+}
+
+TEST(SubscribeTest, testAsyncSubscribe) {
+  SimpleWaitCondition* cond1 = new SimpleWaitCondition();
+  std::auto_ptr<SimpleWaitCondition> cond1ptr(cond1);
+
+  Hedwig::Configuration* conf = new TestServerConfiguration();
+  std::auto_ptr<Hedwig::Configuration> confptr(conf);
+
+  Hedwig::Client* client = new Hedwig::Client(*conf);
+  std::auto_ptr<Hedwig::Client> clientptr(client);
+
+  Hedwig::Subscriber& sub = client->getSubscriber();
+   
+  Hedwig::OperationCallbackPtr testcb1(new TestCallback(cond1));
+
+  sub.asyncSubscribe("testTopic", "mySubscriberId-3", Hedwig::SubscribeRequest::CREATE_OR_ATTACH, testcb1);
+    
+  cond1->wait();
+  ASSERT_TRUE(cond1->wasSuccess());
+}
   
-  void tearDown() 
-  {
-  }
+TEST(SubscribeTest, testAsyncSubcribeAndUnsubscribe) {
+  SimpleWaitCondition* cond1 = new SimpleWaitCondition();
+  std::auto_ptr<SimpleWaitCondition> cond1ptr(cond1);
+  SimpleWaitCondition* cond2 = new SimpleWaitCondition();
+  std::auto_ptr<SimpleWaitCondition> cond2ptr(cond2);
 
-  void testSyncSubscribe() {
-    Hedwig::Configuration* conf = new TestServerConfiguration();
-    std::auto_ptr<Hedwig::Configuration> confptr(conf);
-    
-    Hedwig::Client* client = new Hedwig::Client(*conf);
-    std::auto_ptr<Hedwig::Client> clientptr(client);
+  Hedwig::Configuration* conf = new TestServerConfiguration();
+  std::auto_ptr<Hedwig::Configuration> confptr(conf);
 
-    Hedwig::Subscriber& sub = client->getSubscriber();
-    
-    sub.subscribe("testTopic", "mySubscriberId-1", Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
-  }
+  Hedwig::Client* client = new Hedwig::Client(*conf);
+  std::auto_ptr<Hedwig::Client> clientptr(client);
 
-  void testSyncSubscribeAttach() {
-    Hedwig::Configuration* conf = new TestServerConfiguration();
-    std::auto_ptr<Hedwig::Configuration> confptr(conf);
-
-    Hedwig::Client* client = new Hedwig::Client(*conf);
-    std::auto_ptr<Hedwig::Client> clientptr(client);
-
-    Hedwig::Subscriber& sub = client->getSubscriber();
-    
-    CPPUNIT_ASSERT_THROW(sub.subscribe("iAmATopicWhoDoesNotExist", "mySubscriberId-2", Hedwig::SubscribeRequest::ATTACH), Hedwig::ClientException);
-  }
-
-  void testAsyncSubscribe() {
-    SimpleWaitCondition* cond1 = new SimpleWaitCondition();
-    std::auto_ptr<SimpleWaitCondition> cond1ptr(cond1);
-
-    Hedwig::Configuration* conf = new TestServerConfiguration();
-    std::auto_ptr<Hedwig::Configuration> confptr(conf);
-
-    Hedwig::Client* client = new Hedwig::Client(*conf);
-    std::auto_ptr<Hedwig::Client> clientptr(client);
-
-    Hedwig::Subscriber& sub = client->getSubscriber();
+  Hedwig::Subscriber& sub = client->getSubscriber();
    
-    Hedwig::OperationCallbackPtr testcb1(new TestCallback(cond1));
+  Hedwig::OperationCallbackPtr testcb1(new TestCallback(cond1));
+  Hedwig::OperationCallbackPtr testcb2(new TestCallback(cond2));
 
-    sub.asyncSubscribe("testTopic", "mySubscriberId-3", Hedwig::SubscribeRequest::CREATE_OR_ATTACH, testcb1);
+  sub.asyncSubscribe("testTopic", "mySubscriberId-4", Hedwig::SubscribeRequest::CREATE_OR_ATTACH, testcb1);
+  cond1->wait();
+  ASSERT_TRUE(cond1->wasSuccess());
     
-    cond1->wait();
-    CPPUNIT_ASSERT(cond1->wasSuccess());
-  }
-  
-  void testAsyncSubcribeAndUnsubscribe() {
-    SimpleWaitCondition* cond1 = new SimpleWaitCondition();
-    std::auto_ptr<SimpleWaitCondition> cond1ptr(cond1);
-    SimpleWaitCondition* cond2 = new SimpleWaitCondition();
-    std::auto_ptr<SimpleWaitCondition> cond2ptr(cond2);
+  sub.asyncUnsubscribe("testTopic", "mySubscriberId-4", testcb2);
+  cond2->wait();
+  ASSERT_TRUE(cond2->wasSuccess());
+}
 
-    Hedwig::Configuration* conf = new TestServerConfiguration();
-    std::auto_ptr<Hedwig::Configuration> confptr(conf);
+TEST(SubscribeTest, testAsyncSubcribeAndSyncUnsubscribe) {
+  SimpleWaitCondition* cond1 = new SimpleWaitCondition();
+  std::auto_ptr<SimpleWaitCondition> cond1ptr(cond1);
 
-    Hedwig::Client* client = new Hedwig::Client(*conf);
-    std::auto_ptr<Hedwig::Client> clientptr(client);
+  Hedwig::Configuration* conf = new TestServerConfiguration();
+  std::auto_ptr<Hedwig::Configuration> confptr(conf);
 
-    Hedwig::Subscriber& sub = client->getSubscriber();
+  Hedwig::Client* client = new Hedwig::Client(*conf);
+  std::auto_ptr<Hedwig::Client> clientptr(client);
+
+  Hedwig::Subscriber& sub = client->getSubscriber();
    
-    Hedwig::OperationCallbackPtr testcb1(new TestCallback(cond1));
-    Hedwig::OperationCallbackPtr testcb2(new TestCallback(cond2));
-
-    sub.asyncSubscribe("testTopic", "mySubscriberId-4", Hedwig::SubscribeRequest::CREATE_OR_ATTACH, testcb1);
-    cond1->wait();
-    CPPUNIT_ASSERT(cond1->wasSuccess());
+  Hedwig::OperationCallbackPtr testcb1(new TestCallback(cond1));
     
-    sub.asyncUnsubscribe("testTopic", "mySubscriberId-4", testcb2);
-    cond2->wait();
-    CPPUNIT_ASSERT(cond2->wasSuccess());
-  }
+  sub.asyncSubscribe("testTopic", "mySubscriberId-5", Hedwig::SubscribeRequest::CREATE_OR_ATTACH, testcb1);
+  cond1->wait();
+  ASSERT_TRUE(cond1->wasSuccess());
 
-  void testAsyncSubcribeAndSyncUnsubscribe() {
-    SimpleWaitCondition* cond1 = new SimpleWaitCondition();
-    std::auto_ptr<SimpleWaitCondition> cond1ptr(cond1);
+  sub.unsubscribe("testTopic", "mySubscriberId-5");
+}
 
-    Hedwig::Configuration* conf = new TestServerConfiguration();
-    std::auto_ptr<Hedwig::Configuration> confptr(conf);
+TEST(SubscribeTest, testAsyncSubcribeCloseSubscriptionAndThenResubscribe) {
+  Hedwig::Configuration* conf = new TestServerConfiguration();
+  std::auto_ptr<Hedwig::Configuration> confptr(conf);
 
-    Hedwig::Client* client = new Hedwig::Client(*conf);
-    std::auto_ptr<Hedwig::Client> clientptr(client);
+  Hedwig::Client* client = new Hedwig::Client(*conf);
+  std::auto_ptr<Hedwig::Client> clientptr(client);
 
-    Hedwig::Subscriber& sub = client->getSubscriber();
+  Hedwig::Subscriber& sub = client->getSubscriber();
    
-    Hedwig::OperationCallbackPtr testcb1(new TestCallback(cond1));
+  sub.subscribe("testTopic", "mySubscriberId-6", Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
+  sub.closeSubscription("testTopic", "mySubscriberId-6");
+  sub.subscribe("testTopic", "mySubscriberId-6", Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
+  sub.unsubscribe("testTopic", "mySubscriberId-6");
+}
+
+TEST(SubscribeTest, testUnsubscribeWithoutSubscribe) {
+  Hedwig::Configuration* conf = new TestServerConfiguration();
+  std::auto_ptr<Hedwig::Configuration> confptr(conf);
     
-    sub.asyncSubscribe("testTopic", "mySubscriberId-5", Hedwig::SubscribeRequest::CREATE_OR_ATTACH, testcb1);
-    cond1->wait();
-    CPPUNIT_ASSERT(cond1->wasSuccess());
+  Hedwig::Client* client = new Hedwig::Client(*conf);
+  std::auto_ptr<Hedwig::Client> clientptr(client);
 
-    sub.unsubscribe("testTopic", "mySubscriberId-5");
-  }
-
-  void testAsyncSubcribeCloseSubscriptionAndThenResubscribe() {
-    Hedwig::Configuration* conf = new TestServerConfiguration();
-    std::auto_ptr<Hedwig::Configuration> confptr(conf);
-
-    Hedwig::Client* client = new Hedwig::Client(*conf);
-    std::auto_ptr<Hedwig::Client> clientptr(client);
-
-    Hedwig::Subscriber& sub = client->getSubscriber();
-   
-    sub.subscribe("testTopic", "mySubscriberId-6", Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
-    sub.closeSubscription("testTopic", "mySubscriberId-6");
-    sub.subscribe("testTopic", "mySubscriberId-6", Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
-    sub.unsubscribe("testTopic", "mySubscriberId-6");
-  }
-
-  void testUnsubscribeWithoutSubscribe() {
-    Hedwig::Configuration* conf = new TestServerConfiguration();
-    std::auto_ptr<Hedwig::Configuration> confptr(conf);
+  Hedwig::Subscriber& sub = client->getSubscriber();
     
-    Hedwig::Client* client = new Hedwig::Client(*conf);
-    std::auto_ptr<Hedwig::Client> clientptr(client);
+  ASSERT_THROW(sub.unsubscribe("testTopic", "mySubscriberId-7"), Hedwig::NotSubscribedException);
+}
 
-    Hedwig::Subscriber& sub = client->getSubscriber();
+TEST(SubscribeTest, testSubscribeTwice) {
+  Hedwig::Configuration* conf = new TestServerConfiguration();
+  std::auto_ptr<Hedwig::Configuration> confptr(conf);
     
-    CPPUNIT_ASSERT_THROW(sub.unsubscribe("testTopic", "mySubscriberId-7"), Hedwig::NotSubscribedException);
-  }
+  Hedwig::Client* client = new Hedwig::Client(*conf);
+  std::auto_ptr<Hedwig::Client> clientptr(client);
 
-  void testSubscribeTwice() {
-    Hedwig::Configuration* conf = new TestServerConfiguration();
-    std::auto_ptr<Hedwig::Configuration> confptr(conf);
+  Hedwig::Subscriber& sub = client->getSubscriber();
     
-    Hedwig::Client* client = new Hedwig::Client(*conf);
-    std::auto_ptr<Hedwig::Client> clientptr(client);
+  sub.subscribe("testTopic", "mySubscriberId-8", Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
+  ASSERT_THROW(sub.subscribe("testTopic", "mySubscriberId-8", Hedwig::SubscribeRequest::CREATE_OR_ATTACH), Hedwig::AlreadySubscribedException);
+}
 
-    Hedwig::Subscriber& sub = client->getSubscriber();
-    
-    sub.subscribe("testTopic", "mySubscriberId-8", Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
-    CPPUNIT_ASSERT_THROW(sub.subscribe("testTopic", "mySubscriberId-8", Hedwig::SubscribeRequest::CREATE_OR_ATTACH), Hedwig::AlreadySubscribedException);
-  }
-};
-
-CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( SubscribeTestSuite, "Subscribe" );

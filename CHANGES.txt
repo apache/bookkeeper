@@ -60,6 +60,10 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-329: provide stop scripts for hub server (sijie via ivank)
 
+      hedwig-client:
+
+        BOOKKEEPER-310: Changes in hedwig server to support JMS spec (ivank via sijie)
+
 Release 4.1.0 - 2012-06-07
 
   Non-backward compatible changes:

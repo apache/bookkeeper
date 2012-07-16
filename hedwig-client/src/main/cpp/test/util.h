@@ -23,11 +23,6 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
 
-
-#include <cppunit/TextTestProgressListener.h>
-#include <cppunit/TestResult.h>
-#include <cppunit/Test.h>
-
 #include <log4cxx/logger.h>
 
 static log4cxx::LoggerPtr utillogger(log4cxx::Logger::getLogger("hedwig."__FILE__));
@@ -126,28 +121,3 @@ private:
   const int numThreads;
 };
 
-
-class HedwigCppTextTestProgressListener : public CppUnit::TextTestProgressListener 
-{
- public:
-  void startTest( CppUnit::Test *test ) {
-    std::cout << "\n****\n\nStarting " << test->getName() << "\n\n****" << std::endl;
-    current_test = test->getName();
-  }
-  
-  void addFailure( const CppUnit::TestFailure &failure ) {
-    std::cout << "\n!!!!!\n\nFailed\n\n!!!!!" << std::endl;
-
-  }
-
-  void endTestRun( CppUnit::Test *test, 
-		   CppUnit::TestResult *eventManager ) {
-  }
-
-  std::string& getTestName() {
-    return current_test;
-  }
-
-private:
-  std::string current_test;
-};

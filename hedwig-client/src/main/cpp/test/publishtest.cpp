@@ -19,9 +19,7 @@
 #include <config.h>
 #endif
 
-#include <cppunit/Test.h>
-#include <cppunit/TestSuite.h>
-#include <cppunit/extensions/HelperMacros.h>
+#include "gtest/gtest.h"
 
 #include "../lib/clientimpl.h"
 #include <hedwig/exceptions.h>
@@ -35,116 +33,87 @@
 
 static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("hedwig."__FILE__));
 
-using namespace CppUnit;
+TEST(PublishTest, testPublishByMessage) {
+  Hedwig::Configuration* conf = new TestServerConfiguration();
+  Hedwig::Client* client = new Hedwig::Client(*conf);
+  Hedwig::Publisher& pub = client->getPublisher();
 
-class PublishTestSuite : public CppUnit::TestFixture {
-private:
-  CPPUNIT_TEST_SUITE( PublishTestSuite );
-  CPPUNIT_TEST(testSyncPublish);
-  CPPUNIT_TEST(testAsyncPublish);
-  CPPUNIT_TEST(testPublishByMessage);
-  CPPUNIT_TEST(testMultipleAsyncPublish);
-  //  CPPUNIT_TEST(simplePublish);
-  //CPPUNIT_TEST(simplePublishAndSubscribe);
-  //CPPUNIT_TEST(publishAndSubscribeWithRedirect);
-  CPPUNIT_TEST_SUITE_END();
+  Hedwig::Message syncMsg;
+  syncMsg.set_body("sync publish by Message");
+  pub.publish("testTopic", syncMsg);
 
-public:
-  PublishTestSuite() {
-  }
+  SimpleWaitCondition* cond = new SimpleWaitCondition();
+  Hedwig::OperationCallbackPtr testcb(new TestCallback(cond));
+  Hedwig::Message asyncMsg;
+  asyncMsg.set_body("async publish by Message");
+  pub.asyncPublish("testTopic", asyncMsg, testcb);
+  cond->wait();
+  ASSERT_TRUE(cond->wasSuccess());
+  delete cond;
 
-  ~PublishTestSuite() {
-  }
+  delete client;
+  delete conf;
+}
 
-  void setUp()
-  {
-  }
-  
-  void tearDown() 
-  {
-  }
-
-  void testPublishByMessage() {
-    Hedwig::Configuration* conf = new TestServerConfiguration();
-    Hedwig::Client* client = new Hedwig::Client(*conf);
-    Hedwig::Publisher& pub = client->getPublisher();
-
-    Hedwig::Message syncMsg;
-    syncMsg.set_body("sync publish by Message");
-    pub.publish("testTopic", syncMsg);
-
-    SimpleWaitCondition* cond = new SimpleWaitCondition();
-    Hedwig::OperationCallbackPtr testcb(new TestCallback(cond));
-    Hedwig::Message asyncMsg;
-    asyncMsg.set_body("async publish by Message");
-    pub.asyncPublish("testTopic", asyncMsg, testcb);
-    cond->wait();
-    CPPUNIT_ASSERT(cond->wasSuccess());
-    delete cond;
-
-    delete client;
-    delete conf;
-  }
-
-  void testSyncPublish() {
-    Hedwig::Configuration* conf = new TestServerConfiguration();
+TEST(PublishTest, testSyncPublish) {
+  Hedwig::Configuration* conf = new TestServerConfiguration();
     
-    Hedwig::Client* client = new Hedwig::Client(*conf);
-    Hedwig::Publisher& pub = client->getPublisher();
+  Hedwig::Client* client = new Hedwig::Client(*conf);
+  Hedwig::Publisher& pub = client->getPublisher();
     
-    pub.publish("testTopic", "testMessage 1");
+  pub.publish("testTopic", "testMessage 1");
     
-    delete client;
-    delete conf;
-  }
+  delete client;
+  delete conf;
+}
 
-  void testAsyncPublish() {
-    SimpleWaitCondition* cond = new SimpleWaitCondition();
+TEST(PublishTest, testAsyncPublish) {
+  SimpleWaitCondition* cond = new SimpleWaitCondition();
 
-    Hedwig::Configuration* conf = new TestServerConfiguration();
-    Hedwig::Client* client = new Hedwig::Client(*conf);
-    Hedwig::Publisher& pub = client->getPublisher();
+  Hedwig::Configuration* conf = new TestServerConfiguration();
+  Hedwig::Client* client = new Hedwig::Client(*conf);
+  Hedwig::Publisher& pub = client->getPublisher();
     
-    Hedwig::OperationCallbackPtr testcb(new TestCallback(cond));
-    pub.asyncPublish("testTopic", "async test message", testcb);
+  Hedwig::OperationCallbackPtr testcb(new TestCallback(cond));
+  pub.asyncPublish("testTopic", "async test message", testcb);
     
-    cond->wait();
+  cond->wait();
 
-    CPPUNIT_ASSERT(cond->wasSuccess());
+  ASSERT_TRUE(cond->wasSuccess());
 
-    delete cond;
-    delete client;
-    delete conf;
-  }
+  delete cond;
+  delete client;
+  delete conf;
+}
 
-  void testMultipleAsyncPublish() {
-    SimpleWaitCondition* cond1 = new SimpleWaitCondition();
-    SimpleWaitCondition* cond2 = new SimpleWaitCondition();
-    SimpleWaitCondition* cond3 = new SimpleWaitCondition();
+TEST(PublishTest, testMultipleAsyncPublish) {
+  SimpleWaitCondition* cond1 = new SimpleWaitCondition();
+  SimpleWaitCondition* cond2 = new SimpleWaitCondition();
+  SimpleWaitCondition* cond3 = new SimpleWaitCondition();
 
-    Hedwig::Configuration* conf = new TestServerConfiguration();
-    Hedwig::Client* client = new Hedwig::Client(*conf);
-    Hedwig::Publisher& pub = client->getPublisher();
+  Hedwig::Configuration* conf = new TestServerConfiguration();
+  Hedwig::Client* client = new Hedwig::Client(*conf);
+  Hedwig::Publisher& pub = client->getPublisher();
    
-    Hedwig::OperationCallbackPtr testcb1(new TestCallback(cond1));
-    Hedwig::OperationCallbackPtr testcb2(new TestCallback(cond2));
-    Hedwig::OperationCallbackPtr testcb3(new TestCallback(cond3));
+  Hedwig::OperationCallbackPtr testcb1(new TestCallback(cond1));
+  Hedwig::OperationCallbackPtr testcb2(new TestCallback(cond2));
+  Hedwig::OperationCallbackPtr testcb3(new TestCallback(cond3));
 
-    pub.asyncPublish("testTopic", "async test message #1", testcb1);
-    pub.asyncPublish("testTopic", "async test message #2", testcb2);
-    pub.asyncPublish("testTopic", "async test message #3", testcb3);
+  pub.asyncPublish("testTopic", "async test message #1", testcb1);
+  pub.asyncPublish("testTopic", "async test message #2", testcb2);
+  pub.asyncPublish("testTopic", "async test message #3", testcb3);
     
-    cond3->wait();
-    CPPUNIT_ASSERT(cond3->wasSuccess());
-    cond2->wait();
-    CPPUNIT_ASSERT(cond2->wasSuccess());
-    cond1->wait();
-    CPPUNIT_ASSERT(cond1->wasSuccess());
+  cond3->wait();
+  ASSERT_TRUE(cond3->wasSuccess());
+  cond2->wait();
+  ASSERT_TRUE(cond2->wasSuccess());
+  cond1->wait();
+  ASSERT_TRUE(cond1->wasSuccess());
     
-    delete cond3; delete cond2; delete cond1;
-    delete client;
-    delete conf;
-  }
+  delete cond3; delete cond2; delete cond1;
+  delete client;
+  delete conf;
+}
   /*  void simplePublish() {
     LOG4CXX_DEBUG(logger, ">>> simplePublish");
     SimpleWaitCondition* cond = new SimpleWaitCondition();
@@ -267,6 +236,3 @@ public:
     delete publishconf;
     delete subscribeconf;
     }*/
-};
-
-CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( PublishTestSuite, "Publish");

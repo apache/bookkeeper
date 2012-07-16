@@ -19,76 +19,56 @@
 #include <config.h>
 #endif
 
-#include <cppunit/Test.h>
-#include <cppunit/TestSuite.h>
-#include <cppunit/extensions/HelperMacros.h>
+#include "gtest/gtest.h"
 
 #include "../lib/util.h"
 #include <hedwig/exceptions.h>
 #include <stdexcept>
 
-using namespace CppUnit;
+TEST(UtilTest, testHostAddress) {
+  // good address (no ports)
+  Hedwig::HostAddress a1 = Hedwig::HostAddress::fromString("www.yahoo.com");
+  ASSERT_TRUE(a1.port() == 4080);
 
-class UtilTestSuite : public CppUnit::TestFixture {
-  CPPUNIT_TEST_SUITE( UtilTestSuite );
-  CPPUNIT_TEST(testHostAddress);
-  CPPUNIT_TEST_SUITE_END();
+  // good address with ip (no ports)
+  Hedwig::HostAddress a2 = Hedwig::HostAddress::fromString("127.0.0.1");
+  ASSERT_TRUE(a2.port() == 4080);
+  ASSERT_TRUE(a2.ip() == ((127 << 24) | 1));
 
-public:
-  void setUp()
-  {
-  }
+  // good address
+  Hedwig::HostAddress a3 = Hedwig::HostAddress::fromString("www.yahoo.com:80");
+  ASSERT_TRUE(a3.port() == 80);
 
-  void tearDown() 
-  {
-  }
+  // good address with ip
+  Hedwig::HostAddress a4 = Hedwig::HostAddress::fromString("127.0.0.1:80");
+  ASSERT_TRUE(a4.port() == 80);
+  ASSERT_TRUE(a4.ip() == ((127 << 24) | 1));
 
-  void testHostAddress() {
-    // good address (no ports)
-    Hedwig::HostAddress a1 = Hedwig::HostAddress::fromString("www.yahoo.com");
-    CPPUNIT_ASSERT(a1.port() == 4080);
+  // good address (with ssl)
+  Hedwig::HostAddress a5 = Hedwig::HostAddress::fromString("www.yahoo.com:80:443");
+  ASSERT_TRUE(a5.port() == 80);
 
-    // good address with ip (no ports)
-    Hedwig::HostAddress a2 = Hedwig::HostAddress::fromString("127.0.0.1");
-    CPPUNIT_ASSERT(a2.port() == 4080);
-    CPPUNIT_ASSERT(a2.ip() == ((127 << 24) | 1));
+  // good address with ip
+  Hedwig::HostAddress a6 = Hedwig::HostAddress::fromString("127.0.0.1:80:443");
+  ASSERT_TRUE(a6.port() == 80);
+  ASSERT_TRUE(a6.ip() == ((127 << 24) | 1));
 
-    // good address
-    Hedwig::HostAddress a3 = Hedwig::HostAddress::fromString("www.yahoo.com:80");
-    CPPUNIT_ASSERT(a3.port() == 80);
-
-    // good address with ip
-    Hedwig::HostAddress a4 = Hedwig::HostAddress::fromString("127.0.0.1:80");
-    CPPUNIT_ASSERT(a4.port() == 80);
-    CPPUNIT_ASSERT(a4.ip() == ((127 << 24) | 1));
-
-    // good address (with ssl)
-    Hedwig::HostAddress a5 = Hedwig::HostAddress::fromString("www.yahoo.com:80:443");
-    CPPUNIT_ASSERT(a5.port() == 80);
-
-    // good address with ip
-    Hedwig::HostAddress a6 = Hedwig::HostAddress::fromString("127.0.0.1:80:443");
-    CPPUNIT_ASSERT(a6.port() == 80);
-    CPPUNIT_ASSERT(a6.ip() == ((127 << 24) | 1));
-
-    // nothing
-    CPPUNIT_ASSERT_THROW(Hedwig::HostAddress::fromString(""), Hedwig::HostResolutionException);
+  // nothing
+  ASSERT_THROW(Hedwig::HostAddress::fromString(""), Hedwig::HostResolutionException);
     
-    // nothing but colons
-    CPPUNIT_ASSERT_THROW(Hedwig::HostAddress::fromString("::::::::::::::::"), Hedwig::ConfigurationException);
+  // nothing but colons
+  ASSERT_THROW(Hedwig::HostAddress::fromString("::::::::::::::::"), Hedwig::ConfigurationException);
     
-    // only port number
-    CPPUNIT_ASSERT_THROW(Hedwig::HostAddress::fromString(":80"), Hedwig::HostResolutionException);
+  // only port number
+  ASSERT_THROW(Hedwig::HostAddress::fromString(":80"), Hedwig::HostResolutionException);
  
-    // text after colon (isn't supported)
-    CPPUNIT_ASSERT_THROW(Hedwig::HostAddress::fromString("www.yahoo.com:http"), Hedwig::ConfigurationException);
+  // text after colon (isn't supported)
+  ASSERT_THROW(Hedwig::HostAddress::fromString("www.yahoo.com:http"), Hedwig::ConfigurationException);
     
-    // invalid hostname
-    CPPUNIT_ASSERT_THROW(Hedwig::HostAddress::fromString("com.oohay.www:80"), Hedwig::HostResolutionException);
+  // invalid hostname
+  ASSERT_THROW(Hedwig::HostAddress::fromString("com.oohay.www:80"), Hedwig::HostResolutionException);
     
-    // null
-    CPPUNIT_ASSERT_THROW(Hedwig::HostAddress::fromString(NULL), std::logic_error);
-  }
-};
+  // null
+  ASSERT_THROW(Hedwig::HostAddress::fromString(NULL), std::logic_error);
+}
 
-CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( UtilTestSuite, "Util" );

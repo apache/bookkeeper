@@ -16,11 +16,19 @@
 # limitations under the License.
 #
 
+if HAVE_GTEST
 bin_PROGRAMS = hedwigtest
-hedwigtest_SOURCES = main.cpp utiltest.cpp pubsubdatatest.cpp publishtest.cpp subscribetest.cpp pubsubtest.cpp messageboundtest.cpp
-hedwigtest_CPPFLAGS = -I$(top_srcdir)/inc $(DEPS_CFLAGS) $(TESTDEPS_CFLAGS) $(BOOST_CPPFLAGS) 
-hedwigtest_LDADD = $(DEPS_LIBS) $(TESTDEPS_LIBS) -L$(top_builddir)/lib -lhedwig01 
-hedwigtest_LDFLAGS = -no-undefined $(BOOST_ASIO_LIB) $(BOOST_LDFLAGS) $(BOOST_THREAD_LIB)
+hedwigtest_SOURCES = main.cpp utiltest.cpp publishtest.cpp subscribetest.cpp pubsubtest.cpp messageboundtest.cpp
+hedwigtest_CPPFLAGS = -I$(top_srcdir)/inc $(DEPS_CFLAGS) $(GTEST_CPPFLAGS) $(BOOST_CPPFLAGS)
+hedwigtest_CXXFLAGS = $(GTEST_CXXFLAGS)
+hedwigtest_LDADD = $(DEPS_LIBS) $(GTEST_LIBS) -L$(top_builddir)/lib -lhedwig01
+hedwigtest_LDFLAGS = -no-undefined $(BOOST_ASIO_LIB) $(BOOST_LDFLAGS) $(BOOST_THREAD_LIB) $(GTEST_LDFLAGS)
 
 check: hedwigtest
 	bash ../scripts/tester.sh all
+else
+check:
+	@echo "\n\nYou haven't configured with gtest. Run the ./configure command with --enable-gtest=<path_to_gtest>"
+	@echo "i.e. ./configure --enable-gtest=/home/user/src/gtest-1.6.0"
+	@echo "See the README for more info\n\n\b"
+endif
