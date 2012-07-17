@@ -62,7 +62,7 @@ Trunk (unreleased changes)
 
       hedwig-client:
 
-        BOOKKEEPER-310: Changes in hedwig server to support JMS spec (ivank via sijie)
+        BOOKKEEPER-306: Change C++ client to use gtest for testing (ivank via sijie)
 
 Release 4.1.0 - 2012-06-07
 
