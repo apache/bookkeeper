@@ -54,6 +54,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-328: Bookie DeathWatcher is missing thread name (Rakesh via sijie)
 
+        BOOKKEEPER-2: bookkeeper does not put enough meta-data in to do recovery properly (ivank via sijie)
+
       hedwig-server:
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)

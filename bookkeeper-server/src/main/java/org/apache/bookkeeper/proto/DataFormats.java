@@ -40,6 +40,14 @@ public final class DataFormats {
         getSegmentOrBuilderList();
     org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.SegmentOrBuilder getSegmentOrBuilder(
         int index);
+    
+    // optional .LedgerMetadataFormat.DigestType digestType = 7;
+    boolean hasDigestType();
+    org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType getDigestType();
+    
+    // optional bytes password = 8;
+    boolean hasPassword();
+    com.google.protobuf.ByteString getPassword();
   }
   public static final class LedgerMetadataFormat extends
       com.google.protobuf.GeneratedMessage
@@ -139,6 +147,75 @@ public final class DataFormats {
       }
       
       // @@protoc_insertion_point(enum_scope:LedgerMetadataFormat.State)
+    }
+    
+    public enum DigestType
+        implements com.google.protobuf.ProtocolMessageEnum {
+      CRC32(0, 1),
+      HMAC(1, 2),
+      ;
+      
+      public static final int CRC32_VALUE = 1;
+      public static final int HMAC_VALUE = 2;
+      
+      
+      public final int getNumber() { return value; }
+      
+      public static DigestType valueOf(int value) {
+        switch (value) {
+          case 1: return CRC32;
+          case 2: return HMAC;
+          default: return null;
+        }
+      }
+      
+      public static com.google.protobuf.Internal.EnumLiteMap<DigestType>
+          internalGetValueMap() {
+        return internalValueMap;
+      }
+      private static com.google.protobuf.Internal.EnumLiteMap<DigestType>
+          internalValueMap =
+            new com.google.protobuf.Internal.EnumLiteMap<DigestType>() {
+              public DigestType findValueByNumber(int number) {
+                return DigestType.valueOf(number);
+              }
+            };
+      
+      public final com.google.protobuf.Descriptors.EnumValueDescriptor
+          getValueDescriptor() {
+        return getDescriptor().getValues().get(index);
+      }
+      public final com.google.protobuf.Descriptors.EnumDescriptor
+          getDescriptorForType() {
+        return getDescriptor();
+      }
+      public static final com.google.protobuf.Descriptors.EnumDescriptor
+          getDescriptor() {
+        return org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.getDescriptor().getEnumTypes().get(1);
+      }
+      
+      private static final DigestType[] VALUES = {
+        CRC32, HMAC, 
+      };
+      
+      public static DigestType valueOf(
+          com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+        if (desc.getType() != getDescriptor()) {
+          throw new java.lang.IllegalArgumentException(
+            "EnumValueDescriptor is not for this type.");
+        }
+        return VALUES[desc.getIndex()];
+      }
+      
+      private final int index;
+      private final int value;
+      
+      private DigestType(int index, int value) {
+        this.index = index;
+        this.value = value;
+      }
+      
+      // @@protoc_insertion_point(enum_scope:LedgerMetadataFormat.DigestType)
     }
     
     public interface SegmentOrBuilder
@@ -670,6 +747,26 @@ public final class DataFormats {
       return segment_.get(index);
     }
     
+    // optional .LedgerMetadataFormat.DigestType digestType = 7;
+    public static final int DIGESTTYPE_FIELD_NUMBER = 7;
+    private org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType digestType_;
+    public boolean hasDigestType() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    public org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType getDigestType() {
+      return digestType_;
+    }
+    
+    // optional bytes password = 8;
+    public static final int PASSWORD_FIELD_NUMBER = 8;
+    private com.google.protobuf.ByteString password_;
+    public boolean hasPassword() {
+      return ((bitField0_ & 0x00000040) == 0x00000040);
+    }
+    public com.google.protobuf.ByteString getPassword() {
+      return password_;
+    }
+    
     private void initFields() {
       quorumSize_ = 0;
       ensembleSize_ = 0;
@@ -677,6 +774,8 @@ public final class DataFormats {
       lastEntryId_ = 0L;
       state_ = org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State.OPEN;
       segment_ = java.util.Collections.emptyList();
+      digestType_ = org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType.CRC32;
+      password_ = com.google.protobuf.ByteString.EMPTY;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -730,6 +829,12 @@ public final class DataFormats {
       for (int i = 0; i < segment_.size(); i++) {
         output.writeMessage(6, segment_.get(i));
       }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeEnum(7, digestType_.getNumber());
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        output.writeBytes(8, password_);
+      }
       getUnknownFields().writeTo(output);
     }
     
@@ -762,6 +867,14 @@ public final class DataFormats {
       for (int i = 0; i < segment_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(6, segment_.get(i));
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(7, digestType_.getNumber());
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(8, password_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -904,6 +1017,10 @@ public final class DataFormats {
         } else {
           segmentBuilder_.clear();
         }
+        digestType_ = org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType.CRC32;
+        bitField0_ = (bitField0_ & ~0x00000040);
+        password_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000080);
         return this;
       }
       
@@ -971,6 +1088,14 @@ public final class DataFormats {
         } else {
           result.segment_ = segmentBuilder_.build();
         }
+        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.digestType_ = digestType_;
+        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+          to_bitField0_ |= 0x00000040;
+        }
+        result.password_ = password_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1027,6 +1152,12 @@ public final class DataFormats {
               segmentBuilder_.addAllMessages(other.segment_);
             }
           }
+        }
+        if (other.hasDigestType()) {
+          setDigestType(other.getDigestType());
+        }
+        if (other.hasPassword()) {
+          setPassword(other.getPassword());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -1116,6 +1247,22 @@ public final class DataFormats {
               org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.Segment.Builder subBuilder = org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.Segment.newBuilder();
               input.readMessage(subBuilder, extensionRegistry);
               addSegment(subBuilder.buildPartial());
+              break;
+            }
+            case 56: {
+              int rawValue = input.readEnum();
+              org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType value = org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType.valueOf(rawValue);
+              if (value == null) {
+                unknownFields.mergeVarintField(7, rawValue);
+              } else {
+                bitField0_ |= 0x00000040;
+                digestType_ = value;
+              }
+              break;
+            }
+            case 66: {
+              bitField0_ |= 0x00000080;
+              password_ = input.readBytes();
               break;
             }
           }
@@ -1418,6 +1565,54 @@ public final class DataFormats {
         return segmentBuilder_;
       }
       
+      // optional .LedgerMetadataFormat.DigestType digestType = 7;
+      private org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType digestType_ = org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType.CRC32;
+      public boolean hasDigestType() {
+        return ((bitField0_ & 0x00000040) == 0x00000040);
+      }
+      public org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType getDigestType() {
+        return digestType_;
+      }
+      public Builder setDigestType(org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        bitField0_ |= 0x00000040;
+        digestType_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearDigestType() {
+        bitField0_ = (bitField0_ & ~0x00000040);
+        digestType_ = org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType.CRC32;
+        onChanged();
+        return this;
+      }
+      
+      // optional bytes password = 8;
+      private com.google.protobuf.ByteString password_ = com.google.protobuf.ByteString.EMPTY;
+      public boolean hasPassword() {
+        return ((bitField0_ & 0x00000080) == 0x00000080);
+      }
+      public com.google.protobuf.ByteString getPassword() {
+        return password_;
+      }
+      public Builder setPassword(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000080;
+        password_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearPassword() {
+        bitField0_ = (bitField0_ & ~0x00000080);
+        password_ = getDefaultInstance().getPassword();
+        onChanged();
+        return this;
+      }
+      
       // @@protoc_insertion_point(builder_scope:LedgerMetadataFormat)
     }
     
@@ -1448,16 +1643,19 @@ public final class DataFormats {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n src/main/proto/DataFormats.proto\"\260\002\n\024L" +
+      "\n src/main/proto/DataFormats.proto\"\233\003\n\024L" +
       "edgerMetadataFormat\022\022\n\nquorumSize\030\001 \002(\005\022" +
       "\024\n\014ensembleSize\030\002 \002(\005\022\016\n\006length\030\003 \002(\003\022\023\n" +
       "\013lastEntryId\030\004 \001(\003\0220\n\005state\030\005 \002(\0162\033.Ledg" +
       "erMetadataFormat.State:\004OPEN\022.\n\007segment\030" +
-      "\006 \003(\0132\035.LedgerMetadataFormat.Segment\0327\n\007" +
-      "Segment\022\026\n\016ensembleMember\030\001 \003(\t\022\024\n\014first" +
-      "EntryId\030\002 \002(\003\".\n\005State\022\010\n\004OPEN\020\001\022\017\n\013IN_R" +
-      "ECOVERY\020\002\022\n\n\006CLOSED\020\003B\037\n\033org.apache.book" +
-      "keeper.protoH\001"
+      "\006 \003(\0132\035.LedgerMetadataFormat.Segment\0224\n\n" +
+      "digestType\030\007 \001(\0162 .LedgerMetadataFormat." +
+      "DigestType\022\020\n\010password\030\010 \001(\014\0327\n\007Segment\022" +
+      "\026\n\016ensembleMember\030\001 \003(\t\022\024\n\014firstEntryId\030" +
+      "\002 \002(\003\".\n\005State\022\010\n\004OPEN\020\001\022\017\n\013IN_RECOVERY\020",
+      "\002\022\n\n\006CLOSED\020\003\"!\n\nDigestType\022\t\n\005CRC32\020\001\022\010" +
+      "\n\004HMAC\020\002B\037\n\033org.apache.bookkeeper.protoH" +
+      "\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -1469,7 +1667,7 @@ public final class DataFormats {
           internal_static_LedgerMetadataFormat_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_LedgerMetadataFormat_descriptor,
-              new java.lang.String[] { "QuorumSize", "EnsembleSize", "Length", "LastEntryId", "State", "Segment", },
+              new java.lang.String[] { "QuorumSize", "EnsembleSize", "Length", "LastEntryId", "State", "Segment", "DigestType", "Password", },
               org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.class,
               org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.Builder.class);
           internal_static_LedgerMetadataFormat_Segment_descriptor =

@@ -21,7 +21,7 @@
 
 package org.apache.bookkeeper.client;
 
-import java.io.IOException;
+import java.util.Arrays;
 import java.security.GeneralSecurityException;
 
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
@@ -46,7 +46,8 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
     LedgerHandle lh;
     final byte[] passwd;
     final DigestType digestType;
-    boolean doRecovery;
+    boolean doRecovery = true;
+    boolean administrativeOpen = false;
 
     /**
      * Constructor.
@@ -58,7 +59,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
      * @param cb
      * @param ctx
      */
-    public LedgerOpenOp(BookKeeper bk, long ledgerId, DigestType digestType, byte[] passwd, 
+    public LedgerOpenOp(BookKeeper bk, long ledgerId, DigestType digestType, byte[] passwd,
                         OpenCallback cb, Object ctx) {
         this.bk = bk;
         this.ledgerId = ledgerId;
@@ -66,8 +67,17 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         this.cb = cb;
         this.ctx = ctx;
         this.digestType = digestType;
+    }
 
-        this.doRecovery = true;
+    public LedgerOpenOp(BookKeeper bk, long ledgerId, OpenCallback cb, Object ctx) {
+        this.bk = bk;
+        this.ledgerId = ledgerId;
+        this.cb = cb;
+        this.ctx = ctx;
+
+        this.passwd = bk.getConf().getBookieRecoveryPasswd();
+        this.digestType = bk.getConf().getBookieRecoveryDigestType();
+        this.administrativeOpen = true;
     }
 
     /**
@@ -97,6 +107,34 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
             cb.openComplete(rc, null, this.ctx);
             return;
         }
+
+        final byte[] passwd;
+        final DigestType digestType;
+
+        /* For an administrative open, the default passwords
+         * are read from the configuration, but if the metadata
+         * already contains passwords, use these instead. */
+        if (administrativeOpen && metadata.hasPassword()) {
+            passwd = metadata.getPassword();
+            digestType = metadata.getDigestType();
+        } else {
+            passwd = this.passwd;
+            digestType = this.digestType;
+
+            if (metadata.hasPassword()) {
+                if (!Arrays.equals(passwd, metadata.getPassword())) {
+                    LOG.error("Provided passwd does not match that in metadata");
+                    cb.openComplete(BKException.Code.UnauthorizedAccessException, null, this.ctx);
+                    return;
+                }
+                if (digestType != metadata.getDigestType()) {
+                    LOG.error("Provided digest does not match that in metadata");
+                    cb.openComplete(BKException.Code.DigestMatchException, null, this.ctx);
+                    return;
+                }
+            }
+        }
+
         // get the ledger metadata back
         try {
             lh = new ReadOnlyLedgerHandle(bk, ledgerId, metadata, digestType, passwd);

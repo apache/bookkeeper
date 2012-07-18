@@ -116,6 +116,13 @@ abstract class DigestManager {
         ByteBuffer dataReceivedBuffer = dataReceived.toByteBuffer();
         byte[] digest;
 
+        if ((METADATA_LENGTH + macCodeLength) > dataReceived.readableBytes()) {
+            logger.error("Data received is smaller than the minimum for this digest type. "
+                    + " Either the packet it corrupt, or the wrong digest is configured. "
+                    + " Digest type: {}, Packet Length: {}",
+                    this.getClass().getName(), dataReceived.readableBytes());
+            throw new BKDigestMatchException();
+        }
         update(dataReceivedBuffer.array(), dataReceivedBuffer.position(), METADATA_LENGTH);
 
         int offset = METADATA_LENGTH + macCodeLength;

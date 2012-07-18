@@ -27,12 +27,13 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.Arrays;
 
 import org.apache.bookkeeper.versioning.Version;
 import com.google.protobuf.TextFormat;
+import com.google.protobuf.ByteString;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
 import org.apache.bookkeeper.util.StringUtils;
-import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +70,12 @@ public class LedgerMetadata {
     ArrayList<InetSocketAddress> currentEnsemble;
     volatile Version version = null;
 
-    public LedgerMetadata(int ensembleSize, int quorumSize) {
+    private boolean hasPassword = false;
+    private LedgerMetadataFormat.DigestType digestType;
+    private byte[] password;
+
+    public LedgerMetadata(int ensembleSize, int quorumSize,
+                          BookKeeper.DigestType digestType, byte[] password) {
         this.ensembleSize = ensembleSize;
         this.quorumSize = quorumSize;
 
@@ -81,10 +87,16 @@ public class LedgerMetadata {
         this.state = LedgerMetadataFormat.State.OPEN;
         this.lastEntryId = LedgerHandle.INVALID_ENTRY_ID;
         this.metadataFormatVersion = CURRENT_METADATA_FORMAT_VERSION;
-    };
+
+        this.digestType = digestType.equals(BookKeeper.DigestType.MAC) ?
+            LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.CRC32;
+        this.password = Arrays.copyOf(password, password.length);
+        this.hasPassword = true;
+    }
 
     private LedgerMetadata() {
-        this(0, 0);
+        this(0, 0, BookKeeper.DigestType.MAC, new byte[] {});
+        this.hasPassword = false;
     }
 
     /**
@@ -104,6 +116,28 @@ public class LedgerMetadata {
 
     public int getQuorumSize() {
         return quorumSize;
+    }
+
+    /**
+     * In versions 4.1.0 and below, the digest type and password were not
+     * stored in the metadata.
+     *
+     * @return whether the password has been stored in the metadata
+     */
+    boolean hasPassword() {
+        return hasPassword;
+    }
+
+    byte[] getPassword() {
+        return Arrays.copyOf(password, password.length);
+    }
+
+    BookKeeper.DigestType getDigestType() {
+        if (digestType.equals(LedgerMetadataFormat.DigestType.HMAC)) {
+            return BookKeeper.DigestType.MAC;
+        } else {
+            return BookKeeper.DigestType.CRC32;
+        }
     }
 
     public long getLastEntryId() {
@@ -185,6 +219,11 @@ public class LedgerMetadata {
         LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
         builder.setQuorumSize(quorumSize).setEnsembleSize(ensembleSize).setLength(length)
             .setState(state).setLastEntryId(lastEntryId);
+
+        if (hasPassword) {
+            builder.setDigestType(digestType).setPassword(ByteString.copyFrom(password));
+        }
+
         for (Map.Entry<Long, ArrayList<InetSocketAddress>> entry : ensembles.entrySet()) {
             LedgerMetadataFormat.Segment.Builder segmentBuilder = LedgerMetadataFormat.Segment.newBuilder();
             segmentBuilder.setFirstEntryId(entry.getKey());
@@ -288,6 +327,12 @@ public class LedgerMetadata {
         lc.state = data.getState();
         lc.lastEntryId = data.getLastEntryId();
 
+        if (data.hasPassword()) {
+            lc.digestType = data.getDigestType();
+            lc.password = data.getPassword().toByteArray();
+            lc.hasPassword = true;
+        }
+
         for (LedgerMetadataFormat.Segment s : data.getSegmentList()) {
             ArrayList<InetSocketAddress> addrs = new ArrayList<InetSocketAddress>();
             for (String member : s.getEnsembleMemberList()) {
@@ -370,7 +415,9 @@ public class LedgerMetadata {
             ensembleSize != newMeta.ensembleSize ||
             quorumSize != newMeta.quorumSize ||
             length != newMeta.length ||
-            state != newMeta.state) {
+            state != newMeta.state ||
+            !digestType.equals(newMeta.digestType) ||
+            !Arrays.equals(password, newMeta.password)) {
             return false;
         }
         if (state == LedgerMetadataFormat.State.CLOSED

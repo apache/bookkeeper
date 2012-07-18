@@ -36,7 +36,14 @@ message LedgerMetadataFormat {
 
     message Segment {
         repeated string ensembleMember = 1;
-        required int64 firstEntryId = 2; 
+        required int64 firstEntryId = 2;
     }
     repeated Segment segment = 6;
+
+    enum DigestType {
+        CRC32 = 1;
+        HMAC = 2;
+    }
+    optional DigestType digestType = 7;
+    optional bytes password = 8;
 }

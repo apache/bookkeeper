@@ -37,7 +37,6 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
@@ -51,7 +50,6 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.KeeperException.Code;
-import org.apache.zookeeper.data.Stat;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
@@ -75,16 +73,6 @@ public class BookKeeperAdmin {
      * replicate data from a dead bookie.
      */
     private Random rand = new Random();
-
-    /*
-     * For now, assume that all ledgers were created with the same DigestType
-     * and password. In the future, this admin tool will need to know for each
-     * ledger, what was the DigestType and password used to create it before it
-     * can open it. These values will come from System properties, though hard
-     * coded defaults are defined here.
-     */
-    private DigestType DIGEST_TYPE;
-    private byte[] PASSWD;
 
     /**
      * Constructor that takes in a ZooKeeper servers connect string so we know
@@ -147,9 +135,6 @@ public class BookKeeperAdmin {
         bookiesPath = conf.getZkAvailableBookiesPath();
         // Create the BookKeeper client instance
         bkc = new BookKeeper(conf, zk);
-
-        DIGEST_TYPE = conf.getBookieRecoveryDigestType();
-        PASSWD = conf.getBookieRecoveryPasswd();
     }
 
     /**
@@ -165,31 +150,38 @@ public class BookKeeperAdmin {
     }
 
     /**
-     * Method to get the input ledger's digest type. For now, this is just a
-     * placeholder function since there is no way we can get this information
-     * easily. In the future, BookKeeper should store this ledger metadata
-     * somewhere such that an admin tool can access it.
+     * Open a ledger as an administrator. This means that no digest password
+     * checks are done. Otherwise, the call is identical to BookKeeper#asyncOpenLedger
      *
-     * @param ledgerId
-     *            LedgerId we are retrieving the digestType for.
-     * @return DigestType for the input ledger
+     * @param lId
+     *          ledger identifier
+     * @param cb
+     *          Callback which will receive a LedgerHandle object
+     * @param ctx
+     *          optional context object, to be passwd to the callback (can be null)
+     *
+     * @see BookKeeper#asyncOpenLedger
      */
-    private DigestType getLedgerDigestType(long ledgerId) {
-        return DIGEST_TYPE;
+    public void asyncOpenLedger(final long lId, final OpenCallback cb, final Object ctx) {
+        new LedgerOpenOp(bkc, lId, cb, ctx).initiate();
     }
 
     /**
-     * Method to get the input ledger's password. For now, this is just a
-     * placeholder function since there is no way we can get this information
-     * easily. In the future, BookKeeper should store this ledger metadata
-     * somewhere such that an admin tool can access it.
+     * Open a ledger as an administrator without recovering the ledger. This means
+     * that no digest password  checks are done. Otherwise, the call is identical
+     * to BookKeeper#asyncOpenLedgerNoRecovery
      *
-     * @param ledgerId
-     *            LedgerId we are retrieving the password for.
-     * @return Password for the input ledger
+     * @param lId
+     *          ledger identifier
+     * @param cb
+     *          Callback which will receive a LedgerHandle object
+     * @param ctx
+     *          optional context object, to be passwd to the callback (can be null)
+     *
+     * @see BookKeeper#asyncOpenLedgerNoRecovery
      */
-    private byte[] getLedgerPasswd(long ledgerId) {
-        return PASSWD;
+    public void asyncOpenLedgerNoRecovery(final long lId, final OpenCallback cb, final Object ctx) {
+        new LedgerOpenOp(bkc, lId, cb, ctx).initiateWithoutRecovery();
     }
 
     // Object used for calling async methods and waiting for them to complete.
@@ -430,15 +422,8 @@ public class BookKeeperAdmin {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Recovering ledger : " + lId);
         }
-        /*
-         * For the current ledger, open it to retrieve the LedgerHandle. This
-         * will contain the LedgerMetadata indicating which bookie servers the
-         * ledger fragments are stored on. Check if any of the ledger fragments
-         * for the current ledger are stored on the input dead bookie.
-         */
-        final DigestType digestType = getLedgerDigestType(lId);
-        final byte[] passwd = getLedgerPasswd(lId);
-        bkc.asyncOpenLedgerNoRecovery(lId, digestType, passwd, new OpenCallback() {
+
+        asyncOpenLedgerNoRecovery(lId, new OpenCallback() {
             @Override
             public void openComplete(int rc, final LedgerHandle lh, Object ctx) {
                 if (rc != Code.OK.intValue()) {
@@ -463,7 +448,7 @@ public class BookKeeperAdmin {
                         } catch (Exception ie) {
                             LOG.warn("Error closing non recovery ledger handle for ledger " + lId, ie);
                         }
-                        bkc.asyncOpenLedger(lId, digestType, passwd, new OpenCallback() {
+                        asyncOpenLedger(lId, new OpenCallback() {
                             @Override
                             public void openComplete(int newrc, final LedgerHandle newlh, Object newctx) {
                                 if (newrc != Code.OK.intValue()) {

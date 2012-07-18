@@ -21,14 +21,11 @@ package org.apache.bookkeeper.client;
 *
 */
 
-import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.BaseTestCase;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.WatchedEvent;
@@ -41,9 +38,15 @@ import org.slf4j.LoggerFactory;
 /**
  * Tests of the main BookKeeper client
  */
-public class BookKeeperTest extends BookKeeperClusterTestCase {
-    public BookKeeperTest() {
+public class BookKeeperTest extends BaseTestCase {
+    static Logger LOG = LoggerFactory.getLogger(BookKeeperTest.class);
+
+    DigestType digestType;
+
+    public BookKeeperTest(DigestType digestType) {
         super(4);
+
+        this.digestType = digestType;
     }
 
     @Test
@@ -57,7 +60,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         l.await();
 
         BookKeeper bkc = new BookKeeper(conf);
-        bkc.createLedger(DigestType.CRC32, "testPasswd".getBytes()).close();
+        bkc.createLedger(digestType, "testPasswd".getBytes()).close();
         bkc.close();
     }
 
@@ -83,6 +86,65 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             fail("Shouldn't be able to construct with unconnected zk");
         } catch (KeeperException.ConnectionLossException cle) {
             // correct behaviour
+        }
+    }
+
+    /**
+     * Test that bookkeeper is not able to open ledgers if
+     * it provides the wrong password or wrong digest
+     */
+    @Test
+    public void testBookkeeperPassword() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString());
+        BookKeeper bkc = new BookKeeper(conf);
+
+        DigestType digestCorrect = digestType;
+        byte[] passwdCorrect = "AAAAAAA".getBytes();
+        DigestType digestBad = digestType == DigestType.MAC ? DigestType.CRC32 : DigestType.MAC;
+        byte[] passwdBad = "BBBBBBB".getBytes();
+
+
+        LedgerHandle lh = null;
+        try {
+            lh = bkc.createLedger(digestCorrect, passwdCorrect);
+            long id = lh.getId();
+            for (int i = 0; i < 100; i++) {
+                lh.addEntry("foobar".getBytes());
+            }
+            lh.close();
+
+            // try open with bad passwd
+            try {
+                bkc.openLedger(id, digestCorrect, passwdBad);
+                fail("Shouldn't be able to open with bad passwd");
+            } catch (BKException.BKUnauthorizedAccessException bke) {
+                // correct behaviour
+            }
+
+            // try open with bad digest
+            try {
+                bkc.openLedger(id, digestBad, passwdCorrect);
+                fail("Shouldn't be able to open with bad digest");
+            } catch (BKException.BKDigestMatchException bke) {
+                // correct behaviour
+            }
+
+            // try open with both bad
+            try {
+                bkc.openLedger(id, digestBad, passwdBad);
+                fail("Shouldn't be able to open with bad passwd and digest");
+            } catch (BKException.BKUnauthorizedAccessException bke) {
+                // correct behaviour
+            }
+
+            // try open with both correct
+            bkc.openLedger(id, digestCorrect, passwdCorrect).close();
+        } finally {
+            if (lh != null) {
+                lh.close();
+            }
+            bkc.close();
         }
     }
 }
