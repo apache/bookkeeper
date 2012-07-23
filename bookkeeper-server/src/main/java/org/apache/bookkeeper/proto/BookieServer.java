@@ -1,6 +1,4 @@
-package org.apache.bookkeeper.proto;
-
-/*
+/**
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -20,6 +18,7 @@ package org.apache.bookkeeper.proto;
  * under the License.
  *
  */
+package org.apache.bookkeeper.proto;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,6 +36,8 @@ import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.jmx.BKMBeanRegistry;
 import org.apache.bookkeeper.proto.NIOServerFactory.Cnxn;
+import org.apache.bookkeeper.util.MathUtils;
+
 import static org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.cli.BasicParser;
@@ -323,7 +324,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         int statType = BKStats.STATS_UNKNOWN;
         long startTime = 0;
         if (isStatsEnabled) {
-            startTime = System.currentTimeMillis();
+            startTime = MathUtils.now();
         }
 
         // packet format is different between ADDENTRY and READENTRY
@@ -443,7 +444,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
             if (success) {
                 // for add operations, we compute latency in writeComplete callbacks.
                 if (statType != BKStats.STATS_ADD) {
-                    long elapsedTime = System.currentTimeMillis() - startTime;
+                    long elapsedTime = MathUtils.now() - startTime;
                     bkStats.getOpStats(statType).updateLatency(elapsedTime);
                 }
             } else {
@@ -483,7 +484,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
             // compute the latency
             if (0 == rc) {
                 // for add operations, we compute latency in writeComplete callbacks.
-                long elapsedTime = System.currentTimeMillis() - startTime;
+                long elapsedTime = MathUtils.now() - startTime;
                 bkStats.getOpStats(BKStats.STATS_ADD).updateLatency(elapsedTime);
             } else {
                 bkStats.getOpStats(BKStats.STATS_ADD).incrementFailedOps();                

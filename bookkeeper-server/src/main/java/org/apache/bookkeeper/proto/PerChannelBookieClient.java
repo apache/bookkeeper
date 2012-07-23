@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.proto;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,6 +15,7 @@ package org.apache.bookkeeper.proto;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.proto;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -26,23 +25,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import static org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.jboss.netty.util.Timer;
-import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -58,8 +53,12 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.CorruptedFrameException;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.TooLongFrameException;
-import org.jboss.netty.handler.timeout.ReadTimeoutHandler;
 import org.jboss.netty.handler.timeout.ReadTimeoutException;
+import org.jboss.netty.handler.timeout.ReadTimeoutHandler;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class manages all details of connection to a particular bookie. It also
@@ -503,7 +502,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         }
 
         final ChannelBuffer buffer = (ChannelBuffer) e.getMessage();
-        final int type, rc;
+        final int rc;
         final long ledgerId, entryId;
         final PacketHeader header;
 
@@ -665,7 +664,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         CompletionKey(long ledgerId, long entryId) {
             this.ledgerId = ledgerId;
             this.entryId = entryId;
-            this.timeoutAt = System.currentTimeMillis() + (conf.getReadTimeout()*1000);
+            this.timeoutAt = MathUtils.now() + (conf.getReadTimeout()*1000);
         }
 
         @Override
@@ -687,7 +686,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         }
 
         public boolean shouldTimeout() {
-            return this.timeoutAt <= System.currentTimeMillis();
+            return this.timeoutAt <= MathUtils.now();
         }
     }
 

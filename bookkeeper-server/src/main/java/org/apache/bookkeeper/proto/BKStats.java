@@ -1,4 +1,4 @@
-/*
+/**
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -23,10 +23,14 @@ package org.apache.bookkeeper.proto;
 
 import java.beans.ConstructorProperties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Bookie Server Stats
  */
 public class BKStats {
+    private static final Logger LOG = LoggerFactory.getLogger(BKStats.class);
     private static BKStats instance = new BKStats();
 
     public static BKStats getInstance() {
@@ -105,6 +109,14 @@ public class BKStats {
          * Update Latency
          */
         synchronized public void updateLatency(long latency) {
+            if (latency < 0) {
+                // less than 0ms . Ideally this should not happen.
+                // We have seen this latency negative in some cases due to the
+                // behaviors of JVM. Ignoring the statistics updation for such
+                // cases.
+                LOG.warn("Latency time coming negative");
+                return;
+            }
             totalLatency += latency;
             ++numSuccessOps;
             if (latency < minLatency) {

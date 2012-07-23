@@ -38,6 +38,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-294: Not able to start the bookkeeper before the ZK session timeout. (rakeshr via ivank)
 
+	BOOKKEEPER-327: System.currentTimeMillis usage in BookKeeper (uma via fpj)
+
       hedwig-client:
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)

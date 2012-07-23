@@ -1,6 +1,3 @@
-package org.apache.bookkeeper.util;
-
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,12 +15,13 @@ package org.apache.bookkeeper.util;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.util;
 
 /**
- * Provides misc math functions that dont come standard
+ * Provides misc math functions that don't come standard
  */
 public class MathUtils {
-
+    private static final long NANOSECONDS_PER_MILLISECOND = 1000000;
     public static int signSafeMod(long dividend, int divisor) {
         int mod = (int) (dividend % divisor);
 
@@ -33,6 +31,18 @@ public class MathUtils {
 
         return mod;
 
+    }
+    
+    /**
+     * Current time from some arbitrary time base in the past, counting in
+     * milliseconds, and not affected by settimeofday or similar system clock
+     * changes. This is appropriate to use when computing how much longer to
+     * wait for an interval to expire.
+     * 
+     * @return current time in milliseconds.
+     */
+    public static long now() {
+        return System.nanoTime() / NANOSECONDS_PER_MILLISECOND;
     }
 
 }

@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.util;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,6 +15,7 @@ package org.apache.bookkeeper.util;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.util;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -209,7 +208,7 @@ public class LocalBookKeeper {
     }
 
     public static boolean waitForServerUp(String hp, long timeout) {
-        long start = System.currentTimeMillis();
+        long start = MathUtils.now();
         String split[] = hp.split(":");
         String host = split[0];
         int port = Integer.parseInt(split[1]);
@@ -241,7 +240,7 @@ public class LocalBookKeeper {
                 LOG.info("server " + hp + " not up " + e);
             }
 
-            if (System.currentTimeMillis() > start + timeout) {
+            if (MathUtils.now() > start + timeout) {
                 break;
             }
             try {
