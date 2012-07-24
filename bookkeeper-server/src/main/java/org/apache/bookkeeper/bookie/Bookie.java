@@ -1,4 +1,4 @@
-/*
+/**
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -46,6 +46,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.jmx.BKMBeanRegistry;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.KeeperException;
@@ -792,7 +793,7 @@ public class Bookie extends Thread {
         Bookie b = new Bookie(new ServerConfiguration());
         b.start();
         CounterCallback cb = new CounterCallback();
-        long start = System.currentTimeMillis();
+        long start = MathUtils.now();
         for (int i = 0; i < 100000; i++) {
             ByteBuffer buff = ByteBuffer.allocate(1024);
             buff.putLong(1);
@@ -803,7 +804,7 @@ public class Bookie extends Thread {
             b.addEntry(buff, cb, null, new byte[0]);
         }
         cb.waitZero();
-        long end = System.currentTimeMillis();
+        long end = MathUtils.now();
         System.out.println("Took " + (end-start) + "ms");
     }
 }

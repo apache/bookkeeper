@@ -1,4 +1,4 @@
-/*
+/**
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -35,6 +35,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -480,7 +481,7 @@ class Journal extends Thread {
             while (true) {
                 // new journal file to write
                 if (null == logFile) {
-                    logId = System.currentTimeMillis();
+                    logId = MathUtils.now();
                     logFile = new JournalChannel(journalDirectory, logId);
                     bc = logFile.getBufferedChannel();
 

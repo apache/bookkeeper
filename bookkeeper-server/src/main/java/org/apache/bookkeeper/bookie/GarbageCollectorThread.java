@@ -1,4 +1,4 @@
-/*
+/**
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -23,21 +23,21 @@ package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Comparator;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Map;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.bookkeeper.util.MathUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is the garbage collector thread that runs in the background to
@@ -172,7 +172,7 @@ public class GarbageCollectorThread extends Thread {
         LOG.info("Major Compaction : enabled=" + enableMajorCompaction + ", threshold="
                + majorCompactionThreshold + ", interval=" + majorCompactionInterval);
 
-        lastMinorCompactionTime = lastMajorCompactionTime = System.currentTimeMillis();
+        lastMinorCompactionTime = lastMajorCompactionTime = MathUtils.now();
     }
 
     @Override
@@ -197,13 +197,13 @@ public class GarbageCollectorThread extends Thread {
             // gc entry logs
             doGcEntryLogs();
 
-            long curTime = System.currentTimeMillis();
+            long curTime = MathUtils.now();
             if (enableMajorCompaction &&
                 curTime - lastMajorCompactionTime > majorCompactionInterval) {
                 // enter major compaction
                 LOG.info("Enter major compaction");
                 doCompactEntryLogs(majorCompactionThreshold);
-                lastMajorCompactionTime = System.currentTimeMillis();
+                lastMajorCompactionTime = MathUtils.now();
                 // also move minor compaction time
                 lastMinorCompactionTime = lastMajorCompactionTime;
                 continue;
@@ -214,7 +214,7 @@ public class GarbageCollectorThread extends Thread {
                 // enter minor compaction
                 LOG.info("Enter minor compaction");
                 doCompactEntryLogs(minorCompactionThreshold);
-                lastMinorCompactionTime = System.currentTimeMillis();
+                lastMinorCompactionTime = MathUtils.now();
             }
         }
     }
@@ -284,7 +284,7 @@ public class GarbageCollectorThread extends Thread {
                 }
             }
         };
-        List<EntryLogMetadata> logsToCompact = new ArrayList();
+        List<EntryLogMetadata> logsToCompact = new ArrayList<EntryLogMetadata>();
         logsToCompact.addAll(entryLogMetaMap.values());
         Collections.sort(logsToCompact, sizeComparator);
         for (EntryLogMetadata meta : logsToCompact) {
