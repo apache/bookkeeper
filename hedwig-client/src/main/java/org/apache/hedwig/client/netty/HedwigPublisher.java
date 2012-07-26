@@ -27,6 +27,8 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 
 import com.google.protobuf.ByteString;
+
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.client.api.Publisher;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.data.PubSubData;
@@ -175,7 +177,7 @@ public class HedwigPublisher implements Publisher {
 
         // Update the PubSubData with the txnId and the requestWriteTime
         pubSubData.txnId = txnId;
-        pubSubData.requestWriteTime = System.currentTimeMillis();
+        pubSubData.requestWriteTime = MathUtils.now();
 
         // Before we do the write, store this information into the
         // ResponseHandler so when the server responds, we know what

@@ -27,6 +27,7 @@ import org.apache.bookkeeper.proto.BookieClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -83,7 +84,7 @@ public class BookieBenchmark extends AbstractBenchmark {
             buffer.put(passwd);
             buffer.rewind();
             ChannelBuffer toSend = ChannelBuffers.wrappedBuffer(ChannelBuffers.wrappedBuffer(buffer.slice()), ChannelBuffers.wrappedBuffer(data));
-            bkc.addEntry(addr, ledgerId, passwd, i, toSend, callback, System.currentTimeMillis(), 0);
+            bkc.addEntry(addr, ledgerId, passwd, i, toSend, callback, MathUtils.now(), 0);
         }
 
     }

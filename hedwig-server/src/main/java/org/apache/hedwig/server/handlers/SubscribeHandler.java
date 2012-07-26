@@ -25,6 +25,8 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFutureListener;
 
 import com.google.protobuf.ByteString;
+
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.client.data.TopicSubscriber;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.exceptions.PubSubException.ServerNotResponsibleForTopicException;
@@ -108,7 +110,7 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
 
         MessageSeqId lastSeqIdPublished = MessageSeqId.newBuilder(seqId).setLocalComponent(seqId.getLocalComponent()).build();
 
-        final long requestTime = System.currentTimeMillis();
+        final long requestTime = MathUtils.now();
         subMgr.serveSubscribeRequest(topic, subRequest, lastSeqIdPublished, new Callback<MessageSeqId>() {
 
             @Override
@@ -152,7 +154,7 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
                 // otherwise the first message might go out before the response
                 // to the subscribe
                 channel.write(PubSubResponseUtils.getSuccessResponse(request.getTxnId()));
-                subStats.updateLatency(System.currentTimeMillis() - requestTime);
+                subStats.updateLatency(MathUtils.now() - requestTime);
 
                 // want to start 1 ahead of the consume ptr
                 MessageSeqId seqIdToStartFrom = MessageSeqId.newBuilder(resultOfOperation).setLocalComponent(

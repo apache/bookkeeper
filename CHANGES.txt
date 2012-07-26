@@ -52,6 +52,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-302: No more messages delivered when hub server scans messages over two ledgers. (sijie via ivank)
 
+        BOOKKEEPER-330: System.currentTimeMillis usage in Hedwig (uma via sijie)
+
     IMPROVEMENTS:
 
       bookkeeper-server:

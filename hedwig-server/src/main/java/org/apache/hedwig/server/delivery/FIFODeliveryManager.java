@@ -33,6 +33,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
+
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.client.data.TopicSubscriber;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
@@ -173,7 +175,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
 
     public void retryErroredSubscriberAfterDelay(ActiveSubscriberState subscriber) {
 
-        subscriber.setLastScanErrorTime(System.currentTimeMillis());
+        subscriber.setLastScanErrorTime(MathUtils.now());
 
         if (!retryQueue.offer(subscriber)) {
             throw new UnexpectedError("Could not enqueue to delivery manager retry queue");
@@ -228,7 +230,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
     }
 
     protected void retryErroredSubscribers() {
-        long lastInterestingFailureTime = System.currentTimeMillis() - cfg.getScanBackoffPeriodMs();
+        long lastInterestingFailureTime = MathUtils.now() - cfg.getScanBackoffPeriodMs();
         ActiveSubscriberState subscriber;
 
         while ((subscriber = retryQueue.peek()) != null) {

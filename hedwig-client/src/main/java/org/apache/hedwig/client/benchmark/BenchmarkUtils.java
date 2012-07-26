@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.util.Callback;
 
@@ -32,7 +33,7 @@ public class BenchmarkUtils {
     static final Logger logger = LoggerFactory.getLogger(BenchmarkUtils.class);
 
     public static double calcTp(final int count, long startTime) {
-        return 1000. * count / (System.currentTimeMillis() - startTime);
+        return 1000. * count / (MathUtils.now() - startTime);
     }
 
     /**
@@ -142,7 +143,7 @@ public class BenchmarkUtils {
 
         public void ding(boolean failed) {
             int snapDone = done.incrementAndGet();
-            earliest.compareAndSet(0, System.currentTimeMillis());
+            earliest.compareAndSet(0, MathUtils.now());
             if (failed)
                 numFailed.incrementAndGet();
             if (logger.isDebugEnabled())
@@ -167,11 +168,11 @@ public class BenchmarkUtils {
             this.agg = agg;
             agg.outstanding.acquire();
             // Must set the start time *after* taking acquiring on outstanding.
-            startTime = System.currentTimeMillis();
+            startTime = MathUtils.now();
         }
 
         private void finish(boolean failed) {
-            agg.reportLatency(System.currentTimeMillis() - startTime);
+            agg.reportLatency(MathUtils.now() - startTime);
             agg.tpAgg.ding(failed);
             agg.outstanding.release();
         }

@@ -37,6 +37,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.hedwig.admin.HedwigAdmin;
 import org.apache.hedwig.client.api.MessageHandler;
@@ -422,7 +423,7 @@ public class HedwigConsole {
             if (args.length < 5) {
                 return false;
             }
-            final long startTime = System.currentTimeMillis();
+            final long startTime = MathUtils.now();
 
             final ByteString topic = ByteString.copyFromUtf8(args[1]);
             final ByteString subId = ByteString.copyFromUtf8(args[2] + "-" + startTime);
@@ -481,7 +482,7 @@ public class HedwigConsole {
 
                 // wait for the message
                 success = isDone.await(timeoutSecs, TimeUnit.SECONDS);
-                elapsedTime = System.currentTimeMillis() - startTime;
+                elapsedTime = MathUtils.now() - startTime;
             } finally {
                 try {
                     if (subscribed) {
@@ -879,7 +880,7 @@ public class HedwigConsole {
             return false;
         }
 
-        long startTime = System.currentTimeMillis();
+        long startTime = MathUtils.now();
         boolean success = false;
         try {
             success = myCommand.runCmd(args);
@@ -887,7 +888,7 @@ public class HedwigConsole {
             e.printStackTrace();
             success = false;
         }
-        long elapsedTime = System.currentTimeMillis() - startTime;
+        long elapsedTime = MathUtils.now() - startTime;
         if (inConsole) {
             if (success) {
                 System.out.println("Finished " + ((double)elapsedTime / 1000) + " s.");

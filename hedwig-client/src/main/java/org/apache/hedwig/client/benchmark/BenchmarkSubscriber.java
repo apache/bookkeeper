@@ -25,6 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
+
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.client.api.MessageHandler;
 import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.client.benchmark.BenchmarkUtils.BenchmarkCallback;
@@ -120,7 +122,7 @@ public class BenchmarkSubscriber extends BenchmarkWorker implements Callable<Voi
 
     void multiSub(String label, String topicPrefix, int start, final int npar, final int count)
             throws InterruptedException {
-        long startTime = System.currentTimeMillis();
+        long startTime = MathUtils.now();
         ThroughputLatencyAggregator agg = new ThroughputLatencyAggregator(label, count / numPartitions, npar);
         agg.startProgress();
 
