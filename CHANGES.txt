@@ -40,6 +40,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-327: System.currentTimeMillis usage in BookKeeper (uma via fpj)
 
+        BOOKKEEPER-349: Entry logger should close all the chennels which are there in Map, instead of closing only current channel. (umamaheswararao via sijie)
+
       hedwig-client:
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)

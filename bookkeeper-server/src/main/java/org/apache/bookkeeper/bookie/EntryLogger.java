@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
@@ -468,13 +469,21 @@ public class EntryLogger {
         // since logChannel is buffered channel, do flush when shutting down
         try {
             flush();
-            logChannel.getFileChannel().close();
+            for (Entry<Long, BufferedChannel> channelEntry : channels
+                    .entrySet()) {
+                channelEntry.getValue().getFileChannel().close();
+            }
         } catch (IOException ie) {
             // we have no idea how to avoid io exception during shutting down, so just ignore it
             LOG.error("Error flush entry log during shutting down, which may cause entry log corrupted.", ie);
         } finally {
-            if (logChannel.getFileChannel().isOpen()) {
-                IOUtils.close(LOG, logChannel.getFileChannel());
+            for (Entry<Long, BufferedChannel> channelEntry : channels
+                    .entrySet()) {
+                FileChannel fileChannel = channelEntry.getValue()
+                        .getFileChannel();
+                if (fileChannel.isOpen()) {
+                    IOUtils.close(LOG, fileChannel);
+                }
             }
         }
     }
