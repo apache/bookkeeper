@@ -18,6 +18,8 @@
 package org.apache.hedwig.client.benchmark;
 
 import com.google.protobuf.ByteString;
+
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.client.api.MessageHandler;
 import org.apache.hedwig.client.api.Publisher;
 import org.apache.hedwig.client.api.Subscriber;
@@ -98,7 +100,7 @@ public class BenchmarkPublisher extends BenchmarkWorker {
             myPublishCount++;
         }
 
-        long startTime = System.currentTimeMillis();
+        long startTime = MathUtils.now();
         int myPublishLimit = numMessages / numRegions / numPartitions - myPublishCount;
         myPublishCount = 0;
         ThroughputLatencyAggregator agg = new ThroughputLatencyAggregator("acked pubs", myPublishLimit, nParallel);
@@ -117,7 +119,7 @@ public class BenchmarkPublisher extends BenchmarkWorker {
             ByteString topic = ByteString.copyFromUtf8(HedwigBenchmark.TOPIC_PREFIX + topicNum);
 
             if (rate > 0) {
-                long delay = startTime + (long) (1000 * myPublishCount / rate) - System.currentTimeMillis();
+                long delay = startTime + (long) (1000 * myPublishCount / rate) - MathUtils.now();
                 if (delay > 0)
                     Thread.sleep(delay);
             }

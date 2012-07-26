@@ -21,11 +21,14 @@ import java.beans.ConstructorProperties;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Server Stats
  */
 public class ServerStats {
+    private static final Logger LOG = LoggerFactory.getLogger(ServerStats.class);
     static ServerStats instance = new ServerStats();
 
     /**
@@ -100,6 +103,14 @@ public class ServerStats {
          * Update Latency
          */
         synchronized public void updateLatency(long latency) {
+            if (latency < 0) {
+                // less than 0ms . Ideally this should not happen.
+                // We have seen this latency negative in some cases due to the
+                // behaviors of JVM. Ignoring the statistics updation for such
+                // cases.
+                LOG.warn("Latency time coming negative");
+                return;
+            }
             totalLatency += latency;
             ++numSuccessOps;
             if (latency < minLatency) {

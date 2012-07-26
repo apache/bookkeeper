@@ -19,6 +19,8 @@ package org.apache.hedwig.server.handlers;
 
 import org.jboss.netty.channel.Channel;
 import com.google.protobuf.ByteString;
+
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubRequest;
@@ -60,7 +62,7 @@ public class UnsubscribeHandler extends BaseHandler {
         final ByteString topic = request.getTopic();
         final ByteString subscriberId = unsubRequest.getSubscriberId();
 
-        final long requestTime = System.currentTimeMillis();
+        final long requestTime = MathUtils.now();
         subMgr.unsubscribe(topic, subscriberId, new Callback<Void>() {
             @Override
             public void operationFailed(Object ctx, PubSubException exception) {
@@ -72,7 +74,7 @@ public class UnsubscribeHandler extends BaseHandler {
             public void operationFinished(Object ctx, Void resultOfOperation) {
                 deliveryMgr.stopServingSubscriber(topic, subscriberId);
                 channel.write(PubSubResponseUtils.getSuccessResponse(request.getTxnId()));
-                unsubStats.updateLatency(System.currentTimeMillis() - requestTime);
+                unsubStats.updateLatency(MathUtils.now() - requestTime);
             }
         }, null);
 

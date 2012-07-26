@@ -29,6 +29,8 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 
 import com.google.protobuf.ByteString;
+
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.client.api.MessageHandler;
 import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.client.conf.ClientConfiguration;
@@ -395,7 +397,7 @@ public class HedwigSubscriber implements Subscriber {
 
         // Update the PubSubData with the txnId and the requestWriteTime
         pubSubData.txnId = txnId;
-        pubSubData.requestWriteTime = System.currentTimeMillis();
+        pubSubData.requestWriteTime = MathUtils.now();
 
         // Before we do the write, store this information into the
         // ResponseHandler so when the server responds, we know what

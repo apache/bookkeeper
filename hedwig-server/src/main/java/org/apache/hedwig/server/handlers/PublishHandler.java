@@ -18,6 +18,7 @@
 package org.apache.hedwig.server.handlers;
 
 import org.jboss.netty.channel.Channel;
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
@@ -55,7 +56,7 @@ public class PublishHandler extends BaseHandler {
         Message msgToSerialize = Message.newBuilder(request.getPublishRequest().getMsg()).setSrcRegion(
                                      cfg.getMyRegionByteString()).build();
 
-        final long requestTime = System.currentTimeMillis();
+        final long requestTime = MathUtils.now();
         PersistRequest persistRequest = new PersistRequest(request.getTopic(), msgToSerialize,
         new Callback<Long>() {
             @Override
@@ -67,7 +68,7 @@ public class PublishHandler extends BaseHandler {
             @Override
             public void operationFinished(Object ctx, Long resultOfOperation) {
                 channel.write(PubSubResponseUtils.getSuccessResponse(request.getTxnId()));
-                pubStats.updateLatency(System.currentTimeMillis() - requestTime);
+                pubStats.updateLatency(MathUtils.now() - requestTime);
             }
         }, null);
 

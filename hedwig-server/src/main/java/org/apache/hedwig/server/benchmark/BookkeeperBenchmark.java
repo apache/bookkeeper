@@ -24,6 +24,7 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +74,7 @@ public class BookkeeperBenchmark extends AbstractBenchmark {
 
         for (int i=0; i<numOps; i++) {
             outstanding.acquire();
-            lh[rand.nextInt(lh.length)].asyncAddEntry(msg, callback, System.currentTimeMillis());
+            lh[rand.nextInt(lh.length)].asyncAddEntry(msg, callback, MathUtils.now());
         }
 
 

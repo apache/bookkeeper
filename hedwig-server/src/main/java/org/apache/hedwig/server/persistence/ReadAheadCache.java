@@ -35,6 +35,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
+
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.exceptions.PubSubException.ServerNotResponsibleForTopicException;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
@@ -628,7 +630,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
         }
 
         public void performRequest() {
-            addMessageToCache(cacheKey, message, System.currentTimeMillis());
+            addMessageToCache(cacheKey, message, MathUtils.now());
         }
 
     }

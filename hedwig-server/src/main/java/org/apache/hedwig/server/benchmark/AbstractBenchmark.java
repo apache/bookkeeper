@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.util.ConcurrencyUtils;
 
 public abstract class AbstractBenchmark {
@@ -57,7 +58,7 @@ public abstract class AbstractBenchmark {
                 return;
             }
 
-            totalLatency.addAndGet(System.currentTimeMillis() - (Long)ctx);
+            totalLatency.addAndGet(MathUtils.now() - (Long)ctx);
             int numDoneInt = numDone.incrementAndGet();
 
             if (logging && numDoneInt % 10000 == 0) {
@@ -71,7 +72,7 @@ public abstract class AbstractBenchmark {
     }
 
     public void runPhase(String phase, int numOps) throws Exception {
-        long startTime = System.currentTimeMillis();
+        long startTime = MathUtils.now();
 
         doOps(numOps);
 
@@ -79,7 +80,7 @@ public abstract class AbstractBenchmark {
             logger.error("One or more operations failed in phase: " + phase);
             throw new RuntimeException();
         } else {
-            logger.info("Phase: " + phase + " Avg latency : " + totalLatency.get() / numOps + ", tput = " + (numOps * 1000/ (System.currentTimeMillis() - startTime)));
+            logger.info("Phase: " + phase + " Avg latency : " + totalLatency.get() / numOps + ", tput = " + (numOps * 1000/ (MathUtils.now() - startTime)));
         }
     }
 

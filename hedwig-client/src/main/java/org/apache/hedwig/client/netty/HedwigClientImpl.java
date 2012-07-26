@@ -36,6 +36,8 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
 import com.google.protobuf.ByteString;
+
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.client.api.Client;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.data.PubSubData;
@@ -168,7 +170,7 @@ public class HedwigClientImpl implements Client {
                 logger.debug("Running the PubSubRequest Timeout Task");
             // Loop through all outstanding PubSubData requests and check if
             // the requestWriteTime has timed out compared to the current time.
-            long curTime = System.currentTimeMillis();
+            long curTime = MathUtils.now();
             long timeoutInterval = cfg.getServerAckResponseTimeout();
 
             // First check the ResponseHandlers associated with cached

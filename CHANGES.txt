@@ -16,6 +16,10 @@ Release 4.1.1 - UNRELEASED
 
         BOOKKEEPER-294: Not able to start the bookkeeper before the ZK session timeout. (rakeshr via ivank)
 
+      hedwig-server/
+
+        BOOKKEEPER-330: System.currentTimeMillis usage in Hedwig (uma via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-289: mvn clean doesn't remove test output files (sijie via ivank)
