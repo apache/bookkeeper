@@ -10,7 +10,9 @@ Release 4.1.1 - UNRELEASED
 
     BUGFIXES:
 
-      BOOKKEEPER-298: We run with preferIPv4Stack in the scripts but not in the tests (ivank)
+      BOOKKEEPER-298: We run with preferIPv4Stack in the scripts but not in the tests (ivank)Q
+
+      BOOKKEEPER-352: Should not use static ServerStats/BKStats instance in TestServerStats/TestBKStats (sijie via fpj)
 
       bookkeeper-server/
 
