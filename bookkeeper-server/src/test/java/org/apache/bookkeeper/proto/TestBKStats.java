@@ -35,11 +35,9 @@ public class TestBKStats {
     @Test
     public void testUpdateLatencyShouldNotFailWithAIOBEWithNegativeLatency()
             throws Exception {
-        BKStats stats = BKStats.getInstance();
-        OpStats opStat = stats.getOpStats(0);
+        OpStats opStat = new OpStats();
         opStat.updateLatency(-10);
         assertEquals("Should not update any latency metrics", 0,
                 opStat.numSuccessOps);
-
     }
 }

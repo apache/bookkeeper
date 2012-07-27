@@ -20,6 +20,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-292: Test backward compatibility automatically between versions. (ivank)
 
+      BOOKKEEPER-352: Should not use static ServerStats/BKStats instance in TestServerStats/TestBKStats (sijie via fpj)
+
       bookkeeper-server:
 
         BOOKKEEPER-183: Provide tools to read/check data files in bookie server (sijie via ivank)
