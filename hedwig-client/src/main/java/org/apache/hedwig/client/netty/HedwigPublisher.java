@@ -21,6 +21,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.apache.hedwig.protocol.PubSubProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
@@ -67,13 +68,15 @@ public class HedwigPublisher implements Publisher {
         this.cfg = client.getConfiguration();
     }
 
-    public void publish(ByteString topic, Message msg) throws CouldNotConnectException, ServiceDownException {
+    public PubSubProtocol.PublishResponse publish(ByteString topic, Message msg)
+        throws CouldNotConnectException, ServiceDownException {
+
         if (logger.isDebugEnabled())
             logger.debug("Calling a sync publish for topic: " + topic.toStringUtf8() + ", msg: " + msg);
         PubSubData pubSubData = new PubSubData(topic, msg, null, OperationType.PUBLISH, null, null, null);
         synchronized (pubSubData) {
             PubSubCallback pubSubCallback = new PubSubCallback(pubSubData);
-            asyncPublish(topic, msg, pubSubCallback, null);
+            asyncPublishWithResponseImpl(topic, msg, pubSubCallback, null);
             try {
                 while (!pubSubData.isDone)
                     pubSubData.wait();
@@ -105,10 +108,27 @@ public class HedwigPublisher implements Publisher {
                     throw new ServiceDownException("Server ack response to publish request is not successful");
                 }
             }
+
+            PubSubProtocol.ResponseBody respBody = pubSubCallback.getResponseBody();
+            if (null == respBody) return null;
+            return respBody.hasPublishResponse() ? respBody.getPublishResponse() : null;
         }
     }
 
-    public void asyncPublish(ByteString topic, Message msg, Callback<Void> callback, Object context) {
+    public void asyncPublish(ByteString topic, Message msg, final Callback<Void> callback, Object context) {
+        asyncPublishWithResponseImpl(topic, msg,
+            new VoidCallbackAdapter<PubSubProtocol.ResponseBody>(callback), context);
+    }
+
+    public void asyncPublishWithResponse(ByteString topic, Message msg,
+                                         Callback<PubSubProtocol.PublishResponse> _callback, Object context) {
+        // adapt the callback.
+        asyncPublishWithResponseImpl(topic, msg, new PublishResponseCallbackAdapter(_callback), context);
+    }
+
+    private void asyncPublishWithResponseImpl(ByteString topic, Message msg,
+                                              Callback<PubSubProtocol.ResponseBody> callback, Object context) {
+
         if (logger.isDebugEnabled())
             logger.debug("Calling an async publish for topic: " + topic.toStringUtf8() + ", msg: " + msg);
         // Check if we already have a Channel connection set up to the server
@@ -219,7 +239,7 @@ public class HedwigPublisher implements Publisher {
             // topic. Close these redundant channels as they won't be used.
             if (logger.isDebugEnabled())
                 logger.debug("Channel mapping to host: " + host + " already exists so no need to store it.");
-            HedwigClientImpl.getResponseHandlerFromChannel(channel).channelClosedExplicitly = true;
+            HedwigClientImpl.getResponseHandlerFromChannel(channel).handleChannelClosedExplicitly();
             channel.close();
         }
     }
@@ -236,9 +256,29 @@ public class HedwigPublisher implements Publisher {
             closed = true;
         }
         for (Channel channel : host2Channel.values()) {
-            client.getResponseHandlerFromChannel(channel).channelClosedExplicitly = true;
+            client.getResponseHandlerFromChannel(channel).handleChannelClosedExplicitly();
             channel.close().awaitUninterruptibly();
         }
         host2Channel.clear();
+    }
+
+    private static class PublishResponseCallbackAdapter implements Callback<PubSubProtocol.ResponseBody>{
+
+        private final Callback<PubSubProtocol.PublishResponse> delegate;
+
+        private PublishResponseCallbackAdapter(Callback<PubSubProtocol.PublishResponse> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void operationFinished(Object ctx, PubSubProtocol.ResponseBody resultOfOperation) {
+            if (null == resultOfOperation) delegate.operationFinished(ctx, null);
+            else delegate.operationFinished(ctx, resultOfOperation.getPublishResponse());
+        }
+
+        @Override
+        public void operationFailed(Object ctx, PubSubException exception) {
+            delegate.operationFailed(ctx, exception);
+        }
     }
 }

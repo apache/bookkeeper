@@ -17,6 +17,7 @@
  */
 package org.apache.hedwig.client.handlers;
 
+import org.apache.hedwig.protocol.PubSubProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
@@ -46,12 +47,13 @@ public class PublishResponseHandler {
         case SUCCESS:
             // Response was success so invoke the callback's operationFinished
             // method.
-            pubSubData.callback.operationFinished(pubSubData.context, null);
+            pubSubData.operationFinishedToCallback(pubSubData.context,
+                response.hasResponseBody() ? response.getResponseBody() : null);
             break;
         case SERVICE_DOWN:
             // Response was service down failure so just invoke the callback's
             // operationFailed method.
-            pubSubData.callback.operationFailed(pubSubData.context, new ServiceDownException(
+            pubSubData.getCallback().operationFailed(pubSubData.context, new ServiceDownException(
                                                     "Server responded with a SERVICE_DOWN status"));
             break;
         case NOT_RESPONSIBLE_FOR_TOPIC:
@@ -63,8 +65,9 @@ public class PublishResponseHandler {
             // Consider all other status codes as errors, operation failed
             // cases.
             logger.error("Unexpected error response from server for PubSubResponse: " + response);
-            pubSubData.callback.operationFailed(pubSubData.context, new ServiceDownException(
-                                                    "Server responded with a status code of: " + response.getStatusCode()));
+            pubSubData.getCallback().operationFailed(pubSubData.context, new ServiceDownException(
+                                                    "Server responded with a status code of: " +
+                                                        response.getStatusCode()));
             break;
         }
     }

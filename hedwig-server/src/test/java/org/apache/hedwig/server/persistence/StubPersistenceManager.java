@@ -73,12 +73,13 @@ public class StubPersistenceManager implements PersistenceManagerWithRangeScan {
 
     public void persistMessage(PersistRequest request) {
         if (failure) {
-            request.callback.operationFailed(request.getCtx(), exception);
+            request.getCallback().operationFailed(request.getCtx(), exception);
             return;
         }
 
         MapMethods.addToMultiMap(messages, request.getTopic(), request.getMessage(), ArrayListMessageFactory.instance);
-        request.callback.operationFinished(request.getCtx(), (long) messages.get(request.getTopic()).size());
+        request.getCallback().operationFinished(request.getCtx(), MessageIdUtils.mergeLocalSeqId(request.getMessage(),
+                (long) messages.get(request.getTopic()).size()).getMsgId());
     }
 
     public void scanSingleMessage(ScanRequest request) {

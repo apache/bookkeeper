@@ -19,6 +19,7 @@ package org.apache.hedwig.client.handlers;
 
 import java.util.TimerTask;
 
+import org.apache.hedwig.protocol.PubSubProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +42,7 @@ import org.apache.hedwig.util.Callback;
  * callback will be the hook for this.
  *
  */
-public class SubscribeReconnectCallback implements Callback<Void> {
+public class SubscribeReconnectCallback implements Callback<PubSubProtocol.ResponseBody> {
 
     private static Logger logger = LoggerFactory.getLogger(SubscribeReconnectCallback.class);
 
@@ -71,7 +72,7 @@ public class SubscribeReconnectCallback implements Callback<Void> {
         }
     }
 
-    public void operationFinished(Object ctx, Void resultOfOperation) {
+    public void operationFinished(Object ctx, PubSubProtocol.ResponseBody resultOfOperation) {
         if (logger.isDebugEnabled())
             logger.debug("Subscribe reconnect succeeded for origSubData: " + origSubData);
         // Now we want to restart delivery for the subscription channel only

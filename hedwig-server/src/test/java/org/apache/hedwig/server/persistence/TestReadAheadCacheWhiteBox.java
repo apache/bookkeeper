@@ -21,6 +21,7 @@ import static org.junit.Assert.*;
 
 import java.util.List;
 
+import org.apache.hedwig.protocol.PubSubProtocol;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -91,7 +92,7 @@ public class TestReadAheadCacheWhiteBox {
 
     @Test
     public void testPersistMessage() throws Exception {
-        StubCallback<Long> callback = new StubCallback<Long>();
+        StubCallback<PubSubProtocol.MessageSeqId> callback = new StubCallback<PubSubProtocol.MessageSeqId>();
         PersistRequest request = new PersistRequest(topic, messages.get(0), callback, null);
 
         stubPersistenceManager.failure = true;
@@ -107,7 +108,7 @@ public class TestReadAheadCacheWhiteBox {
     }
 
     private void persistMessage(Message msg) throws Exception {
-        StubCallback<Long> callback = new StubCallback<Long>();
+        StubCallback<PubSubProtocol.MessageSeqId> callback = new StubCallback<PubSubProtocol.MessageSeqId>();
         PersistRequest request = new PersistRequest(topic, msg, callback, null);
         cacheBasedPersistenceManager.persistMessage(request);
         assertNotNull(ConcurrencyUtils.take(callback.queue).left());

@@ -209,9 +209,9 @@ public class RegionManager implements SubscriptionEventListener {
                                             msg.getSrcRegion()).setSeqId(
                                             msg.getMsgId().getLocalComponent())));
                             }
-                            pm.persistMessage(new PersistRequest(topic, msg, new Callback<Long>() {
+                            pm.persistMessage(new PersistRequest(topic, msg, new Callback<MessageSeqId>() {
                                 @Override
-                                public void operationFinished(Object ctx, Long resultOfOperation) {
+                                public void operationFinished(Object ctx, MessageSeqId resultOfOperation) {
                                     if (LOGGER.isDebugEnabled())
                                         LOGGER.debug("[" + myRegion.toStringUtf8() + "] cross-region recv-fwd succeeded for topic "
                                                      + topic.toStringUtf8());

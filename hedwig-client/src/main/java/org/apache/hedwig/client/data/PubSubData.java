@@ -20,6 +20,7 @@ package org.apache.hedwig.client.data;
 import java.util.List;
 
 import com.google.protobuf.ByteString;
+import org.apache.hedwig.protocol.PubSubProtocol;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
@@ -47,9 +48,11 @@ public class PubSubData {
     public final OperationType operationType;
     // Options for the subscription
     public final SubscriptionOptions options;
+
     // These two variables are not final since we might override them
     // in the case of a Subscribe reconnect.
-    public Callback<Void> callback;
+    private Callback<PubSubProtocol.ResponseBody> callback;
+
     public Object context;
 
     // Member variables used after object has been constructed.
@@ -83,7 +86,8 @@ public class PubSubData {
     // Constructor for all types of PubSub request data to send to the server
     public PubSubData(final ByteString topic, final Message msg, final ByteString subscriberId,
                       final OperationType operationType, final SubscriptionOptions options,
-                      final Callback<Void> callback, final Object context) {
+                      final Callback<PubSubProtocol.ResponseBody> callback,
+                      final Object context) {
         this.topic = topic;
         this.msg = msg;
         this.subscriberId = subscriberId;
@@ -92,6 +96,20 @@ public class PubSubData {
         this.callback = callback;
         this.context = context;
     }
+
+    public void setCallback(Callback<PubSubProtocol.ResponseBody> callback) {
+        this.callback = callback;
+    }
+
+    public Callback<?> getCallback() {
+        return callback;
+    }
+
+    public void operationFinishedToCallback(Object context, PubSubProtocol.ResponseBody response){
+
+        callback.operationFinished(context, response);
+    }
+
 
     // Clear all of the stored servers we've contacted or attempted to in this
     // request.

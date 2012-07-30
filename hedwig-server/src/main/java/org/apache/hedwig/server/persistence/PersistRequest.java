@@ -18,6 +18,7 @@
 package org.apache.hedwig.server.persistence;
 
 import com.google.protobuf.ByteString;
+import org.apache.hedwig.protocol.PubSubProtocol;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.util.Callback;
 
@@ -29,10 +30,10 @@ import org.apache.hedwig.util.Callback;
 public class PersistRequest {
     ByteString topic;
     Message message;
-    Callback<Long> callback;
+    private Callback<PubSubProtocol.MessageSeqId> callback;
     Object ctx;
 
-    public PersistRequest(ByteString topic, Message message, Callback<Long> callback, Object ctx) {
+    public PersistRequest(ByteString topic, Message message, Callback<PubSubProtocol.MessageSeqId> callback, Object ctx) {
         this.topic = topic;
         this.message = message;
         this.callback = callback;
@@ -47,7 +48,7 @@ public class PersistRequest {
         return message;
     }
 
-    public Callback<Long> getCallback() {
+    public Callback<PubSubProtocol.MessageSeqId> getCallback() {
         return callback;
     }
 

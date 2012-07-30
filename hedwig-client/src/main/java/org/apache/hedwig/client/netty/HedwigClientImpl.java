@@ -201,8 +201,8 @@ public class HedwigClientImpl implements Client {
                 // operationFailed method.
                 logger.error("Current PubSubRequest has timed out for pubSubData: " + pubSubData);
                 responseHandler.txn2PubSubData.remove(pubSubData.txnId);
-                pubSubData.callback.operationFailed(pubSubData.context, new UncertainStateException(
-                                                        "Server ack response never received so PubSubRequest has timed out!"));
+                pubSubData.getCallback().operationFailed(pubSubData.context,
+                    new UncertainStateException("Server ack response never received so PubSubRequest has timed out!"));
             }
         }
     }

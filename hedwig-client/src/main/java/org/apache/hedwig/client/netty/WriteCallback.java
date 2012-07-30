@@ -77,7 +77,7 @@ public class WriteCallback implements ChannelFutureListener {
                 // We've already tried to write to this server previously and
                 // failed, so invoke the operationFailed callback.
                 logger.error("Error writing to host more than once so just invoke the operationFailed callback!");
-                pubSubData.callback.operationFailed(pubSubData.context, new ServiceDownException(
+                pubSubData.getCallback().operationFailed(pubSubData.context, new ServiceDownException(
                                                         "Error while writing message to server: " + hostString));
             } else {
                 if (logger.isDebugEnabled())

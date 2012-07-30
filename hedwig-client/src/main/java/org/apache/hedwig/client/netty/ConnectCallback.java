@@ -75,7 +75,7 @@ public class ConnectCallback implements ChannelFutureListener {
                 // We've already tried to connect to this host before so just
                 // invoke the operationFailed callback.
                 logger.error("Error connecting to host more than once so just invoke the operationFailed callback!");
-                pubSubData.callback.operationFailed(pubSubData.context, new CouldNotConnectException(
+                pubSubData.getCallback().operationFailed(pubSubData.context, new CouldNotConnectException(
                                                         "Could not connect to host: " + host));
             } else {
                 if (logger.isDebugEnabled())

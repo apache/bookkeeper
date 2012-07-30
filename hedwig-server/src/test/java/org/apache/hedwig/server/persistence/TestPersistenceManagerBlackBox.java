@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import junit.framework.TestCase;
 
+import org.apache.hedwig.protocol.PubSubProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.junit.Test;
@@ -45,14 +46,14 @@ public abstract class TestPersistenceManagerBlackBox extends TestCase {
 
     RuntimeException failureException;
 
-    class TestCallback implements Callback<Long> {
+    class TestCallback implements Callback<PubSubProtocol.MessageSeqId> {
 
         public void operationFailed(Object ctx, PubSubException exception) {
             throw (failureException = new RuntimeException(exception));
         }
 
         @SuppressWarnings("unchecked")
-        public void operationFinished(Object ctx, Long resultOfOperation) {
+        public void operationFinished(Object ctx, PubSubProtocol.MessageSeqId resultOfOperation) {
             LinkedBlockingQueue<Boolean> statusQueue = (LinkedBlockingQueue<Boolean>) ctx;
             try {
                 statusQueue.put(true);

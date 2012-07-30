@@ -27,7 +27,7 @@ public class PubSubResponseUtils {
     /**
      * Change here if bumping up the version number that the server sends back
      */
-    protected final static ProtocolVersion serverVersion = ProtocolVersion.VERSION_ONE;
+    public final static ProtocolVersion serverVersion = ProtocolVersion.VERSION_ONE;
 
     static PubSubResponse.Builder getBasicBuilder(StatusCode status) {
         return PubSubResponse.newBuilder().setProtocolVersion(serverVersion).setStatusCode(status);

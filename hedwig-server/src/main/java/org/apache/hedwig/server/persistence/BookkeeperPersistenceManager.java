@@ -473,13 +473,13 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
             final TopicInfo topicInfo = topicInfos.get(topic);
 
             if (topicInfo == null) {
-                request.callback.operationFailed(request.ctx,
+                request.getCallback().operationFailed(request.ctx,
                                                  new PubSubException.ServerNotResponsibleForTopicException(""));
                 return;
             }
 
             if (topicInfo.doRelease.get()) {
-                request.callback.operationFailed(request.ctx, new PubSubException.ServiceDownException(
+                request.getCallback().operationFailed(request.ctx, new PubSubException.ServiceDownException(
                     "The ownership of the topic is releasing due to unrecoverable issue."));
                 return;
             }
@@ -495,6 +495,8 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
 
             topicInfo.lastSeqIdPushed = builder.build();
             Message msgToSerialize = Message.newBuilder(request.message).setMsgId(topicInfo.lastSeqIdPushed).build();
+
+            final MessageSeqId responseSeqId = msgToSerialize.getMsgId();
 
             topicInfo.currentLedgerRange.handle.asyncAddEntry(msgToSerialize.toByteArray(),
             new SafeAsynBKCallback.AddCallback() {
@@ -522,7 +524,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                                 }
                             }, null);
                         }
-                        request.callback.operationFailed(ctx, new PubSubException.ServiceDownException(bke));
+                        request.getCallback().operationFailed(ctx, new PubSubException.ServiceDownException(bke));
                         return;
                     }
 
@@ -536,7 +538,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                     }
 
                     topicInfo.lastEntryIdAckedInCurrentLedger = entryId;
-                    request.callback.operationFinished(ctx, localSeqId);
+                    request.getCallback().operationFinished(ctx, responseSeqId);
                 }
             }, request.ctx);
 

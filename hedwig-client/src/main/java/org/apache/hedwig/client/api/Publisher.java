@@ -20,6 +20,7 @@ package org.apache.hedwig.client.api;
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.exceptions.PubSubException.CouldNotConnectException;
 import org.apache.hedwig.exceptions.PubSubException.ServiceDownException;
+import org.apache.hedwig.protocol.PubSubProtocol;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.util.Callback;
 
@@ -40,8 +41,10 @@ public interface Publisher {
      *             If we are not able to connect to the server host
      * @throws ServiceDownException
      *             If we are unable to publish the message to the topic.
+     * @return The PubSubProtocol.PublishResponse of the publish ... can be used to pick seq-id.
      */
-    public void publish(ByteString topic, Message msg) throws CouldNotConnectException, ServiceDownException;
+    public PubSubProtocol.PublishResponse publish(ByteString topic, Message msg)
+        throws CouldNotConnectException, ServiceDownException;
 
     /**
      * Publishes a message asynchronously on the given topic.
@@ -60,4 +63,26 @@ public interface Publisher {
      */
     public void asyncPublish(ByteString topic, Message msg, Callback<Void> callback, Object context);
 
+
+  /**
+   * Publishes a message asynchronously on the given topic.
+   * This method, unlike {@link #asyncPublish(ByteString, PubSubProtocol.Message, Callback, Object)},
+   * allows for the callback to retrieve {@link PubSubProtocol.PublishResponse} which was returned by the server.
+   *
+   *
+   *
+   * @param topic
+   *            Topic name to publish on
+   * @param msg
+   *            Message object to serialize and publish
+   * @param callback
+   *            Callback to invoke when the publish to the server has actually
+   *            gone through. This will have to deal with error conditions on
+   *            the async publish request.
+   * @param context
+   *            Calling context that the Callback needs since this is done
+   *            asynchronously.
+   */
+    public void asyncPublishWithResponse(ByteString topic, Message msg,
+                                         Callback<PubSubProtocol.PublishResponse> callback, Object context);
 }

@@ -31,6 +31,7 @@ import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.hedwig.protocol.PubSubProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -170,7 +171,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
      * the request queue to be handled serially by the cache maintainer thread.
      *
      */
-    public class PersistCallback implements Callback<Long> {
+    public class PersistCallback implements Callback<PubSubProtocol.MessageSeqId> {
 
         /**
          * In case there is a failure in persisting, just pass it to the
@@ -178,7 +179,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
          */
         public void operationFailed(Object ctx, PubSubException exception) {
             PersistRequest originalRequest = (PersistRequest) ctx;
-            Callback<Long> originalCallback = originalRequest.getCallback();
+            Callback<PubSubProtocol.MessageSeqId> originalCallback = originalRequest.getCallback();
             Object originalContext = originalRequest.getCtx();
             originalCallback.operationFailed(originalContext, exception);
         }
@@ -188,7 +189,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
          * success, and then opportunistically treat the message as if it just
          * came in through a scan
          */
-        public void operationFinished(Object ctx, Long resultOfOperation) {
+        public void operationFinished(Object ctx, PubSubProtocol.MessageSeqId resultOfOperation) {
             PersistRequest originalRequest = (PersistRequest) ctx;
 
             // Lets call the original callback first so that the publisher can
@@ -198,11 +199,11 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
             // Original message that was persisted didn't have the local seq-id.
             // Lets add that in
             Message messageWithLocalSeqId = MessageIdUtils.mergeLocalSeqId(originalRequest.getMessage(),
-                                            resultOfOperation);
+                                            resultOfOperation.getLocalComponent());
 
             // Now enqueue a request to add this newly persisted message to our
             // cache
-            CacheKey cacheKey = new CacheKey(originalRequest.getTopic(), resultOfOperation);
+            CacheKey cacheKey = new CacheKey(originalRequest.getTopic(), resultOfOperation.getLocalComponent());
 
             enqueueWithoutFailure(new ScanResponse(cacheKey, messageWithLocalSeqId));
         }

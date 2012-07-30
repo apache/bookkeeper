@@ -210,7 +210,7 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
 
         Connection conn = threadLocalConnection.get();
 
-        Callback<Long> callback = request.getCallback();
+        Callback<MessageSeqId> callback = request.getCallback();
         Object ctx = request.getCtx();
         ByteString topic = request.getTopic();
         Message message = request.getMessage();
@@ -259,7 +259,7 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
                 return;
             }
         }
-        callback.operationFinished(ctx, seqId);
+        callback.operationFinished(ctx, MessageIdUtils.mergeLocalSeqId(message, seqId).getMsgId());
     }
 
     /*

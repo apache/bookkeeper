@@ -138,6 +138,18 @@ message PubSubResponse{
     optional Message message = 5;
     optional bytes topic = 6;
     optional bytes subscriberId = 7;
+
+    // the following fields are sent by other requests
+    optional ResponseBody responseBody = 8;
+}
+
+message PublishResponse {
+    // If the request was a publish request, this was the message Id of the published message.
+    required MessageSeqId publishedMsgId = 1;
+}
+
+message ResponseBody {
+    optional PublishResponse publishResponse = 1;
 }
 
 

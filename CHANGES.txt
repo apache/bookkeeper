@@ -72,6 +72,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-329: provide stop scripts for hub server (sijie via ivank)
 
+        BOOKKEEPER-331: Let hedwig support returning message seq id for publish requests. (Mridul via sijie)
+
       hedwig-client:
 
         BOOKKEEPER-306: Change C++ client to use gtest for testing (ivank via sijie)

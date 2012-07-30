@@ -64,7 +64,7 @@ public class ResponseHandler extends SimpleChannelHandler {
     // Boolean indicating if we closed the channel this ResponseHandler is
     // attached to explicitly or not. If so, we do not need to do the
     // channel disconnected logic here.
-    public boolean channelClosedExplicitly = false;
+    private boolean channelClosedExplicitly = false;
 
     private final HedwigClientImpl client;
     private final HedwigPublisher pub;
@@ -197,7 +197,7 @@ public class ResponseHandler extends SimpleChannelHandler {
             // Invoke the operationFailed callback and just return.
             if (logger.isDebugEnabled())
                 logger.debug("Exceeded the number of server redirects (" + curNumServerRedirects + ") so error out.");
-            pubSubData.callback.operationFailed(pubSubData.context, new ServiceDownException(
+            pubSubData.getCallback().operationFailed(pubSubData.context, new ServiceDownException(
                                                     new TooManyServerRedirectsException("Already reached max number of redirects: "
                                                             + curNumServerRedirects)));
             return;
@@ -234,7 +234,7 @@ public class ResponseHandler extends SimpleChannelHandler {
         if (pubSubData.triedServers.contains(ByteString.copyFromUtf8(HedwigSocketAddress.sockAddrStr(redirectedHost)))) {
             logger.error("We've already sent this PubSubRequest before to redirectedHost: " + redirectedHost
                          + ", pubSubData: " + pubSubData);
-            pubSubData.callback.operationFailed(pubSubData.context, new ServiceDownException(
+            pubSubData.getCallback().operationFailed(pubSubData.context, new ServiceDownException(
                                                     new ServerRedirectLoopException("Already made the request before to redirected host: "
                                                             + redirectedHost)));
             return;
@@ -318,7 +318,7 @@ public class ResponseHandler extends SimpleChannelHandler {
             // hook so after the subscribe reconnect has completed, delivery for
             // that topic subscriber should also be restarted (if it was that
             // case before the channel disconnect).
-            origSubData.callback = new SubscribeReconnectCallback(origSubData, client);
+            origSubData.setCallback(new SubscribeReconnectCallback(origSubData, client));
             origSubData.context = null;
             if (logger.isDebugEnabled())
                 logger.debug("Disconnected subscribe channel so reconnect with origSubData: " + origSubData);
@@ -335,7 +335,7 @@ public class ResponseHandler extends SimpleChannelHandler {
             if (logger.isDebugEnabled())
                 logger.debug("Channel disconnected so invoking the operationFailed callback for pubSubData: "
                              + pubSubData);
-            pubSubData.callback.operationFailed(pubSubData.context, new UncertainStateException(
+            pubSubData.getCallback().operationFailed(pubSubData.context, new UncertainStateException(
                                                     "Server ack response never received before server connection disconnected!"));
         }
         txn2PubSubData.clear();
@@ -355,6 +355,11 @@ public class ResponseHandler extends SimpleChannelHandler {
             }
             ctx.getPipeline().get(SslHandler.class).handshake(e.getChannel());
         }
+    }
+
+    public void handleChannelClosedExplicitly(){
+        // TODO: BOOKKEEPER-350 : Handle consume buffering, etc here - in a different patch
+        channelClosedExplicitly = true;
     }
 
     @Override

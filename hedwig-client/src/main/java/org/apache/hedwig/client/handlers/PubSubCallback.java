@@ -17,6 +17,7 @@
  */
 package org.apache.hedwig.client.handlers;
 
+import org.apache.hedwig.protocol.PubSubProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,12 +31,12 @@ import org.apache.hedwig.util.Callback;
  * async calls synchronous.
  *
  */
-public class PubSubCallback implements Callback<Void> {
+public class PubSubCallback implements Callback<PubSubProtocol.ResponseBody> {
 
     private static Logger logger = LoggerFactory.getLogger(PubSubCallback.class);
 
     // Private member variables
-    private PubSubData pubSubData;
+    private final PubSubData pubSubData;
     // Boolean indicator to see if the sync PubSub call was successful or not.
     private boolean isCallSuccessful;
     // For sync callbacks, we'd like to know what the PubSubException is thrown
@@ -43,17 +44,20 @@ public class PubSubCallback implements Callback<Void> {
     // it later.
     private PubSubException failureException;
 
+    private PubSubProtocol.ResponseBody responseBody;
+
     // Constructor
     public PubSubCallback(PubSubData pubSubData) {
         this.pubSubData = pubSubData;
     }
 
-    public void operationFinished(Object ctx, Void resultOfOperation) {
+    public void operationFinished(Object ctx, PubSubProtocol.ResponseBody resultOfOperation) {
         if (logger.isDebugEnabled())
             logger.debug("PubSub call succeeded for pubSubData: " + pubSubData);
         // Wake up the main sync PubSub thread that is waiting for us to
         // complete.
         synchronized (pubSubData) {
+            this.responseBody = resultOfOperation;
             isCallSuccessful = true;
             pubSubData.isDone = true;
             pubSubData.notify();
@@ -85,4 +89,8 @@ public class PubSubCallback implements Callback<Void> {
         return failureException;
     }
 
+
+    public PubSubProtocol.ResponseBody getResponseBody() {
+        return responseBody;
+    }
 }

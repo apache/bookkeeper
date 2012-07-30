@@ -17,6 +17,7 @@
  */
 package org.apache.hedwig.server.handlers;
 
+import org.apache.hedwig.protocol.PubSubProtocol;
 import org.jboss.netty.channel.Channel;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.exceptions.PubSubException;
@@ -58,7 +59,7 @@ public class PublishHandler extends BaseHandler {
 
         final long requestTime = MathUtils.now();
         PersistRequest persistRequest = new PersistRequest(request.getTopic(), msgToSerialize,
-        new Callback<Long>() {
+        new Callback<PubSubProtocol.MessageSeqId>() {
             @Override
             public void operationFailed(Object ctx, PubSubException exception) {
                 channel.write(PubSubResponseUtils.getResponseForException(exception, request.getTxnId()));
@@ -66,8 +67,8 @@ public class PublishHandler extends BaseHandler {
             }
 
             @Override
-            public void operationFinished(Object ctx, Long resultOfOperation) {
-                channel.write(PubSubResponseUtils.getSuccessResponse(request.getTxnId()));
+            public void operationFinished(Object ctx, PubSubProtocol.MessageSeqId resultOfOperation) {
+                channel.write(getSuccessResponse(request.getTxnId(), resultOfOperation));
                 pubStats.updateLatency(MathUtils.now() - requestTime);
             }
         }, null);
@@ -75,4 +76,15 @@ public class PublishHandler extends BaseHandler {
         persistenceMgr.persistMessage(persistRequest);
     }
 
+    private static PubSubProtocol.PubSubResponse getSuccessResponse(long txnId, PubSubProtocol.MessageSeqId publishedMessageSeqId) {
+        if (null == publishedMessageSeqId) {
+            return PubSubResponseUtils.getSuccessResponse(txnId);
+        }
+        PubSubProtocol.PublishResponse publishResponse = PubSubProtocol.PublishResponse.newBuilder().setPublishedMsgId(publishedMessageSeqId).build();
+        PubSubProtocol.ResponseBody responseBody = PubSubProtocol.ResponseBody.newBuilder().setPublishResponse(publishResponse).build();
+        return PubSubProtocol.PubSubResponse.newBuilder().
+            setProtocolVersion(PubSubResponseUtils.serverVersion).
+            setStatusCode(PubSubProtocol.StatusCode.SUCCESS).setTxnId(txnId).
+            setResponseBody(responseBody).build();
+    }
 }

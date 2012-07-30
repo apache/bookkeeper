@@ -17,7 +17,12 @@
  */
 package org.apache.hedwig.client;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
 import org.junit.Before;
@@ -32,6 +37,8 @@ import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
+import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
+import org.apache.hedwig.protocol.PubSubProtocol.PublishResponse;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.server.PubSubServerStandAloneTestBase;
 import org.apache.hedwig.util.Callback;
@@ -120,10 +127,138 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
     }
 
     @Test
+    public void testSyncPublishWithResponse() throws Exception {
+        ByteString topic = ByteString.copyFromUtf8("testSyncPublishWithResponse");
+        ByteString subid = ByteString.copyFromUtf8("mysubid");
+
+        final String prefix = "SyncMessage-";
+        final int numMessages = 30;
+
+        final Map<String, MessageSeqId> publishedMsgs =
+            new HashMap<String, MessageSeqId>();
+
+        final AtomicInteger numReceived = new AtomicInteger(0);
+        final CountDownLatch receiveLatch = new CountDownLatch(1);
+        final Map<String, MessageSeqId> receivedMsgs =
+            new HashMap<String, MessageSeqId>();
+
+        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        subscriber.startDelivery(topic, subid, new MessageHandler() {
+            synchronized public void deliver(ByteString topic, ByteString subscriberId,
+                                             Message msg, Callback<Void> callback,
+                                             Object context) {
+                String str = msg.getBody().toStringUtf8();
+                receivedMsgs.put(str, msg.getMsgId()); 
+                if (numMessages == numReceived.incrementAndGet()) {
+                    receiveLatch.countDown();
+                }
+                callback.operationFinished(context, null);
+            }
+        });
+
+        for (int i=0; i<numMessages; i++) {
+            String str = prefix + i;
+            ByteString data = ByteString.copyFromUtf8(str);
+            Message msg = Message.newBuilder().setBody(data).build();
+            PublishResponse response = publisher.publish(topic, msg);
+            assertNotNull(response);
+            publishedMsgs.put(str, response.getPublishedMsgId());
+        }
+
+        assertTrue("Timed out waiting on callback for messages.",
+                   receiveLatch.await(30, TimeUnit.SECONDS));
+        assertEquals("Should be expected " + numMessages + " messages.",
+                     numMessages, numReceived.get());
+        assertEquals("Should be expected " + numMessages + " messages in map.",
+                     numMessages, receivedMsgs.size());
+
+        for (int i=0; i<numMessages; i++) {
+            final String str = prefix + i;
+            MessageSeqId pubId = publishedMsgs.get(str);
+            MessageSeqId revId = receivedMsgs.get(str);
+            assertTrue("Doesn't receive same message seq id for " + str,
+                       pubId.equals(revId));
+        }
+    }
+
+    @Test
     public void testAsyncPublish() throws Exception {
         publisher.asyncPublish(ByteString.copyFromUtf8("myAsyncTopic"), Message.newBuilder().setBody(
                                    ByteString.copyFromUtf8("Hello Async World!")).build(), new TestCallback(), null);
         assertTrue(queue.take());
+    }
+
+    @Test
+    public void testAsyncPublishWithResponse() throws Exception {
+        ByteString topic = ByteString.copyFromUtf8("testAsyncPublishWithResponse");
+        ByteString subid = ByteString.copyFromUtf8("mysubid");
+
+        final String prefix = "AsyncMessage-";
+        final int numMessages = 30;
+
+        final AtomicInteger numPublished = new AtomicInteger(0);
+        final CountDownLatch publishLatch = new CountDownLatch(1);
+        final Map<String, MessageSeqId> publishedMsgs =
+            new HashMap<String, MessageSeqId>();
+
+        final AtomicInteger numReceived = new AtomicInteger(0);
+        final CountDownLatch receiveLatch = new CountDownLatch(1);
+        final Map<String, MessageSeqId> receivedMsgs =
+            new HashMap<String, MessageSeqId>();
+
+        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        subscriber.startDelivery(topic, subid, new MessageHandler() {
+            synchronized public void deliver(ByteString topic, ByteString subscriberId,
+                                             Message msg, Callback<Void> callback,
+                                             Object context) {
+                String str = msg.getBody().toStringUtf8();
+                receivedMsgs.put(str, msg.getMsgId()); 
+                if (numMessages == numReceived.incrementAndGet()) {
+                    receiveLatch.countDown();
+                }
+                callback.operationFinished(context, null);
+            }
+        });
+
+        for (int i=0; i<numMessages; i++) {
+            final String str = prefix + i;
+            ByteString data = ByteString.copyFromUtf8(str);
+            Message msg = Message.newBuilder().setBody(data).build();
+            publisher.asyncPublishWithResponse(topic, msg, new Callback<PublishResponse>() {
+                @Override
+                public void operationFinished(Object ctx, PublishResponse response) {
+                    publishedMsgs.put(str, response.getPublishedMsgId());
+                    if (numMessages == numPublished.incrementAndGet()) {
+                        publishLatch.countDown();
+                    }
+                }
+                @Override
+                public void operationFailed(Object ctx, final PubSubException exception) {
+                    publishLatch.countDown();
+                }
+            }, null);
+        }
+        assertTrue("Timed out waiting on callback for publish requests.",
+                   publishLatch.await(10, TimeUnit.SECONDS));
+        assertEquals("Should be expected " + numMessages + " publishes.",
+                     numMessages, numPublished.get());
+        assertEquals("Should be expected " + numMessages + " publishe responses.",
+                     numMessages, publishedMsgs.size());
+
+        assertTrue("Timed out waiting on callback for messages.",
+                   receiveLatch.await(30, TimeUnit.SECONDS));
+        assertEquals("Should be expected " + numMessages + " messages.",
+                     numMessages, numReceived.get());
+        assertEquals("Should be expected " + numMessages + " messages in map.",
+                     numMessages, receivedMsgs.size());
+
+        for (int i=0; i<numMessages; i++) {
+            final String str = prefix + i;
+            MessageSeqId pubId = publishedMsgs.get(str);
+            MessageSeqId revId = receivedMsgs.get(str);
+            assertTrue("Doesn't receive same message seq id for " + str,
+                       pubId.equals(revId));
+        }
     }
 
     @Test

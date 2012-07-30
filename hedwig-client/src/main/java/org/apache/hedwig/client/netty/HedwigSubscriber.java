@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.apache.hedwig.protocol.PubSubProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
@@ -151,7 +152,8 @@ public class HedwigSubscriber implements Subscriber {
     // Subscribe or Unsubscribe requests. This is for code reuse since these two
     // flows are very similar. The assumption is that the input OperationType is
     // either SUBSCRIBE or UNSUBSCRIBE.
-    private void asyncSubUnsub(ByteString topic, ByteString subscriberId, Callback<Void> callback, Object context,
+    private void asyncSubUnsub(ByteString topic, ByteString subscriberId,
+                               Callback<PubSubProtocol.ResponseBody> callback, Object context,
                                OperationType operationType, SubscriptionOptions options) {
         if (logger.isDebugEnabled()) {
             StringBuilder debugMsg = new StringBuilder().append("Calling a async subUnsub request for topic: ")
@@ -252,7 +254,8 @@ public class HedwigSubscriber implements Subscriber {
                                          "SubscriberId passed is not valid: " + subscriberId.toStringUtf8() + ", isHub: " + isHub)));
             return;
         }
-        asyncSubUnsub(topic, subscriberId, callback, context, OperationType.SUBSCRIBE, options);
+        asyncSubUnsub(topic, subscriberId, new VoidCallbackAdapter<PubSubProtocol.ResponseBody>(callback),
+            context, OperationType.SUBSCRIBE, options);
     }
 
     public void unsubscribe(ByteString topic, ByteString subscriberId) throws CouldNotConnectException,
@@ -288,11 +291,19 @@ public class HedwigSubscriber implements Subscriber {
 
     public void asyncUnsubscribe(final ByteString topic, final ByteString subscriberId, final Callback<Void> callback,
                                  final Object context) {
-        asyncUnsubscribe(topic, subscriberId, callback, context, false);
+        doAsyncUnsubscribe(topic, subscriberId,
+            new VoidCallbackAdapter<PubSubProtocol.ResponseBody>(callback), context, false);
     }
 
     protected void asyncUnsubscribe(final ByteString topic, final ByteString subscriberId,
                                     final Callback<Void> callback, final Object context, boolean isHub) {
+        doAsyncUnsubscribe(topic, subscriberId,
+            new VoidCallbackAdapter<PubSubProtocol.ResponseBody>(callback), context, isHub);
+    }
+
+    private void doAsyncUnsubscribe(final ByteString topic, final ByteString subscriberId,
+                                    final Callback<PubSubProtocol.ResponseBody> callback,
+                                    final Object context, boolean isHub) {
         // Validate that the format of the subscriberId is valid either as a
         // local or hub subscriber.
         if (!isValidSubscriberId(subscriberId, isHub)) {
@@ -302,9 +313,9 @@ public class HedwigSubscriber implements Subscriber {
         }
         // Asynchronously close the subscription. On the callback to that
         // operation once it completes, post the async unsubscribe request.
-        asyncCloseSubscription(topic, subscriberId, new Callback<Void>() {
+        doAsyncCloseSubscription(topic, subscriberId, new Callback<PubSubProtocol.ResponseBody>() {
             @Override
-            public void operationFinished(Object ctx, Void resultOfOperation) {
+            public void operationFinished(Object ctx, PubSubProtocol.ResponseBody resultOfOperation) {
                 asyncSubUnsub(topic, subscriberId, callback, context, OperationType.UNSUBSCRIBE, null);
             }
 
@@ -463,7 +474,6 @@ public class HedwigSubscriber implements Subscriber {
                 }
             }
         });
-
     }
 
     public boolean hasSubscription(ByteString topic, ByteString subscriberId) throws CouldNotConnectException,
@@ -596,7 +606,7 @@ public class HedwigSubscriber implements Subscriber {
         PubSubData pubSubData = new PubSubData(topic, null, subscriberId, null, null, null, null);
         synchronized (pubSubData) {
             PubSubCallback pubSubCallback = new PubSubCallback(pubSubData);
-            asyncCloseSubscription(topic, subscriberId, pubSubCallback, null);
+            doAsyncCloseSubscription(topic, subscriberId, pubSubCallback, null);
             try {
                 while (!pubSubData.isDone)
                     pubSubData.wait();
@@ -613,6 +623,12 @@ public class HedwigSubscriber implements Subscriber {
 
     public void asyncCloseSubscription(final ByteString topic, final ByteString subscriberId,
                                        final Callback<Void> callback, final Object context) {
+        doAsyncCloseSubscription(topic, subscriberId,
+            new VoidCallbackAdapter<PubSubProtocol.ResponseBody> (callback), context);
+    }
+
+    private void doAsyncCloseSubscription(final ByteString topic, final ByteString subscriberId,
+                                       final Callback<PubSubProtocol.ResponseBody> callback, final Object context) {
         if (logger.isDebugEnabled())
             logger.debug("Closing subscription asynchronously for topic: " + topic.toStringUtf8() + ", subscriberId: "
                          + subscriberId.toStringUtf8());
@@ -622,7 +638,7 @@ public class HedwigSubscriber implements Subscriber {
             Channel channel = topicSubscriber2Channel.get(topicSubscriber);
             topicSubscriber2Channel.remove(topicSubscriber);
             // Close the subscribe channel asynchronously.
-            HedwigClientImpl.getResponseHandlerFromChannel(channel).channelClosedExplicitly = true;
+            HedwigClientImpl.getResponseHandlerFromChannel(channel).handleChannelClosedExplicitly();
             ChannelFuture future = channel.close();
             future.addListener(new ChannelFutureListener() {
                 @Override
@@ -676,7 +692,7 @@ public class HedwigSubscriber implements Subscriber {
 
         // Close all of the open Channels.
         for (Channel channel : topicSubscriber2Channel.values()) {
-            client.getResponseHandlerFromChannel(channel).channelClosedExplicitly = true;
+            client.getResponseHandlerFromChannel(channel).handleChannelClosedExplicitly();
             channel.close().awaitUninterruptibly();
         }
         topicSubscriber2Channel.clear();

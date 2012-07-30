@@ -51,19 +51,20 @@ public class UnsubscribeResponseHandler {
             responseHandler.getSubscriber().closeSubscription(pubSubData.topic, pubSubData.subscriberId);
             // Response was success so invoke the callback's operationFinished
             // method.
-            pubSubData.callback.operationFinished(pubSubData.context, null);
+            pubSubData.getCallback().operationFinished(pubSubData.context, null);
             break;
         case CLIENT_NOT_SUBSCRIBED:
             // For Unsubscribe requests, the server says that the client was
             // never subscribed to the topic.
-            pubSubData.callback.operationFailed(pubSubData.context, new ClientNotSubscribedException(
-                                                    "Client was never subscribed to topic: " + pubSubData.topic.toStringUtf8() + ", subscriberId: "
-                                                    + pubSubData.subscriberId.toStringUtf8()));
+            pubSubData.getCallback().operationFailed(pubSubData.context, new ClientNotSubscribedException(
+                                                    "Client was never subscribed to topic: " +
+                                                        pubSubData.topic.toStringUtf8() + ", subscriberId: " +
+                                                        pubSubData.subscriberId.toStringUtf8()));
             break;
         case SERVICE_DOWN:
             // Response was service down failure so just invoke the callback's
             // operationFailed method.
-            pubSubData.callback.operationFailed(pubSubData.context, new ServiceDownException(
+            pubSubData.getCallback().operationFailed(pubSubData.context, new ServiceDownException(
                                                     "Server responded with a SERVICE_DOWN status"));
             break;
         case NOT_RESPONSIBLE_FOR_TOPIC:
@@ -75,8 +76,9 @@ public class UnsubscribeResponseHandler {
             // Consider all other status codes as errors, operation failed
             // cases.
             logger.error("Unexpected error response from server for PubSubResponse: " + response);
-            pubSubData.callback.operationFailed(pubSubData.context, new ServiceDownException(
-                                                    "Server responded with a status code of: " + response.getStatusCode()));
+            pubSubData.getCallback().operationFailed(pubSubData.context, new ServiceDownException(
+                                                    "Server responded with a status code of: " +
+                                                        response.getStatusCode()));
             break;
         }
     }

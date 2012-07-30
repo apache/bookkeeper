@@ -30,6 +30,7 @@ import junit.framework.TestCase;
 
 import org.apache.hedwig.HelperMethods;
 import org.apache.hedwig.exceptions.PubSubException;
+import org.apache.hedwig.protocol.PubSubProtocol;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.meta.MetadataManagerFactory;
@@ -178,7 +179,7 @@ public class TestBookKeeperPersistenceManager extends TestCase {
         }
     }
 
-    class TestCallback implements Callback<Long> {
+    class TestCallback implements Callback<PubSubProtocol.MessageSeqId> {
 
         @Override
         @SuppressWarnings("unchecked")
@@ -193,7 +194,7 @@ public class TestBookKeeperPersistenceManager extends TestCase {
 
         @Override
         @SuppressWarnings("unchecked")
-        public void operationFinished(Object ctx, Long resultOfOperation) {
+        public void operationFinished(Object ctx, PubSubProtocol.MessageSeqId resultOfOperation) {
             LinkedBlockingQueue<Boolean> statusQueue = (LinkedBlockingQueue<Boolean>) ctx;
             try {
                 statusQueue.put(true);

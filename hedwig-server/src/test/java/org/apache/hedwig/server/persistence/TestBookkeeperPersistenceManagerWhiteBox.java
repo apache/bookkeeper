@@ -25,6 +25,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import junit.framework.TestCase;
 
 import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.hedwig.protocol.PubSubProtocol;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -107,9 +108,9 @@ public class TestBookkeeperPersistenceManagerWhiteBox extends TestCase {
             assertNull(ConcurrencyUtils.take(stubCallback.queue).right());
             assertEquals(numPrevLedgers, bkpm.topicInfos.get(topic).ledgerRanges.size());
 
-            StubCallback<Long> persistCallback = new StubCallback<Long>();
+            StubCallback<PubSubProtocol.MessageSeqId> persistCallback = new StubCallback<PubSubProtocol.MessageSeqId>();
             bkpm.persistMessage(new PersistRequest(topic, messages.get(index), persistCallback, null));
-            assertEquals(new Long(index + 1), ConcurrencyUtils.take(persistCallback.queue).left());
+            assertEquals(index + 1, ConcurrencyUtils.take(persistCallback.queue).left().getLocalComponent());
 
             // once in every 10 times, give up ledger
             if (r.nextInt(10) == 9) {
