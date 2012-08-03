@@ -56,6 +56,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-330: System.currentTimeMillis usage in Hedwig (uma via sijie)
 
+        BOOKKEEPER-343: Failed to register hedwig JMX beans in test cases (sijie via ivank)
+
     IMPROVEMENTS:
 
       bookkeeper-server:

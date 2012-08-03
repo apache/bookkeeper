@@ -727,7 +727,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
     public void registerJMX(HedwigMBeanInfo parent) {
         try {
             jmxCacheBean = new ReadAheadCacheBean(this);
-            HedwigMBeanRegistry.getInstance().register(jmxCacheBean, null);
+            HedwigMBeanRegistry.getInstance().register(jmxCacheBean, parent);
         } catch (Exception e) {
             logger.warn("Failed to register readahead cache with JMX", e);
             jmxCacheBean = null;

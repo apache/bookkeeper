@@ -28,9 +28,15 @@ import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
  */
 public class PubSubServerBean implements PubSubServerMXBean, HedwigMBeanInfo {
 
+    private final String name;
+
+    public PubSubServerBean(String jmxName) {
+        this.name = jmxName;
+    }
+
     @Override
     public String getName() {
-        return "PubSubServer";
+        return name;
     }
 
     @Override

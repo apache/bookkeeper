@@ -86,6 +86,8 @@ public class PubSubServer {
 
     static Logger logger = LoggerFactory.getLogger(PubSubServer.class);
 
+    private static final String JMXNAME_PREFIX = "PubSubServer_";
+
     // Netty related variables
     ServerSocketChannelFactory serverChannelFactory;
     ClientSocketChannelFactory clientChannelFactory;
@@ -283,7 +285,9 @@ public class PubSubServer {
 
     protected void registerJMX(Map<OperationType, Handler> handlers) {
         try {
-            jmxServerBean = new PubSubServerBean();
+            String jmxName = JMXNAME_PREFIX + conf.getServerPort() + "_"
+                                            + conf.getSSLServerPort();
+            jmxServerBean = new PubSubServerBean(jmxName);
             HedwigMBeanRegistry.getInstance().register(jmxServerBean, null);
             try {
                 jmxNettyBean = new NettyHandlerBean(handlers);
