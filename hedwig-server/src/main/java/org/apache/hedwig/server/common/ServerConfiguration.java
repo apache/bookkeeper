@@ -63,6 +63,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String RETRY_REMOTE_SUBSCRIBE_THREAD_RUN_INTERVAL = "retry_remote_subscribe_thread_run_interval";
 
     // manager related settings
+    protected final static String METADATA_MANAGER_BASED_TOPIC_MANAGER_ENABLED = "metadata_manager_based_topic_manager_enabled";
     protected final static String METADATA_MANAGER_FACTORY_CLASS = "metadata_manager_factory_class";
 
     private static ClassLoader defaultLoader;
@@ -319,6 +320,15 @@ public class ServerConfiguration extends AbstractConfiguration {
         }
 
         // add other checks here
+    }
+
+    /**
+     * Whether enable metadata manager based topic manager.
+     *
+     * @return true if enabled metadata manager based topic manager.
+     */
+    public boolean isMetadataManagerBasedTopicManagerEnabled() {
+        return conf.getBoolean(METADATA_MANAGER_BASED_TOPIC_MANAGER_ENABLED, false);
     }
 
     /**

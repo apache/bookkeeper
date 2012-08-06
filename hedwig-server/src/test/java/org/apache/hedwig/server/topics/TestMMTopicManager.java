@@ -28,9 +28,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.protobuf.ByteString;
+import org.apache.hedwig.StubCallback;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.exceptions.PubSubException.CompositeException;
 import org.apache.hedwig.server.common.ServerConfiguration;
+import org.apache.hedwig.server.meta.MetadataManagerFactoryTestCase;
+import org.apache.hedwig.server.meta.TopicOwnershipManager;
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.ConcurrencyUtils;
 import org.apache.hedwig.util.Either;
@@ -40,11 +45,12 @@ import org.apache.hedwig.zookeeper.ZooKeeperTestBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TestZkTopicManager extends ZooKeeperTestBase {
+public class TestMMTopicManager extends MetadataManagerFactoryTestCase {
 
-    static Logger LOG = LoggerFactory.getLogger(TestZkTopicManager.class);
+    static Logger LOG = LoggerFactory.getLogger(TestMMTopicManager.class);
 
-    protected ZkTopicManager tm;
+    protected MMTopicManager tm;
+    protected TopicOwnershipManager tom;
 
     protected class CallbackQueue<T> implements Callback<T> {
         SynchronousQueue<Either<T, Exception>> q = new SynchronousQueue<Either<T, Exception>>();
@@ -84,23 +90,27 @@ public class TestZkTopicManager extends ZooKeeperTestBase {
     protected CallbackQueue<Void> voidCbq = new CallbackQueue<Void>();
 
     protected ByteString topic = ByteString.copyFromUtf8("topic");
-    protected ServerConfiguration cfg;
     protected HedwigSocketAddress me;
     protected ScheduledExecutorService scheduler;
+
+    public TestMMTopicManager(String metaManagerCls) {
+        super(metaManagerCls);
+    }
 
     @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        cfg = new ServerConfiguration();
-        me = cfg.getServerAddr();
+        me = conf.getServerAddr();
         scheduler = Executors.newSingleThreadScheduledExecutor();
-        tm = new ZkTopicManager(zk, cfg, scheduler);
+        tom = metadataManagerFactory.newTopicOwnershipManager();
+        tm = new MMTopicManager(conf, zk, metadataManagerFactory, scheduler);
     }
 
     @Override
     @After
     public void tearDown() throws Exception {
+        tom.close();
         tm.stop();
         super.tearDown();
     }
@@ -137,23 +147,13 @@ public class TestZkTopicManager extends ZooKeeperTestBase {
 
     @Test
     public void testGetOwnerMulti() throws Exception {
-        ServerConfiguration cfg1 = new CustomServerConfiguration(cfg.getServerPort() + 1), cfg2 = new CustomServerConfiguration(
-            cfg.getServerPort() + 2);
-        // TODO change cfg1 cfg2 params
-        ZkTopicManager tm1 = new ZkTopicManager(zk, cfg1, scheduler),
-                       tm2 = new ZkTopicManager(zk, cfg2, scheduler);
+        ServerConfiguration conf1 = new CustomServerConfiguration(conf.getServerPort() + 1),
+                            conf2 = new CustomServerConfiguration(conf.getServerPort() + 2);
+        MMTopicManager tm1 = new MMTopicManager(conf1, zk, metadataManagerFactory, scheduler),
+                       tm2 = new MMTopicManager(conf2, zk, metadataManagerFactory, scheduler);
 
         tm.getOwner(topic, false, addrCbq, null);
         HedwigSocketAddress owner = check(addrCbq.take());
-
-        // If we were told to have another person claim the topic, make them
-        // claim the topic.
-        if (owner.getPort() == cfg1.getServerPort())
-            tm1.getOwner(topic, true, addrCbq, null);
-        else if (owner.getPort() == cfg2.getServerPort())
-            tm2.getOwner(topic, true, addrCbq, null);
-        if (owner.getPort() != cfg.getServerPort())
-            Assert.assertEquals(owner, check(addrCbq.take()));
 
         for (int i = 0; i < 100; ++i) {
             tm.getOwner(topic, false, addrCbq, null);
@@ -166,7 +166,6 @@ public class TestZkTopicManager extends ZooKeeperTestBase {
             Assert.assertEquals(owner, check(addrCbq.take()));
         }
 
-        // Give us 100 chances to choose another owner if not shouldClaim.
         for (int i = 0; i < 100; ++i) {
             if (!owner.equals(me))
                 break;
@@ -174,12 +173,6 @@ public class TestZkTopicManager extends ZooKeeperTestBase {
             owner = check(addrCbq.take());
             if (i == 99)
                 Assert.fail("Never chose another owner");
-        }
-
-        // Make sure we always choose ourselves if shouldClaim.
-        for (int i = 0; i < 100; ++i) {
-            tm.getOwner(mkTopic(100), true, addrCbq, null);
-            Assert.assertEquals(me, check(addrCbq.take()));
         }
 
         tm1.stop();
@@ -192,12 +185,12 @@ public class TestZkTopicManager extends ZooKeeperTestBase {
 
         Assert.assertEquals(me, check(addrCbq.take()));
 
-        ServerConfiguration cfg1 = new CustomServerConfiguration(cfg.getServerPort() + 1);
-        TopicManager tm1 = new ZkTopicManager(zk, cfg1, scheduler);
+        ServerConfiguration conf1 = new CustomServerConfiguration(conf.getServerPort() + 1);
+        TopicManager tm1 = new MMTopicManager(conf1, zk, metadataManagerFactory, scheduler);
 
         ByteString topic1 = mkTopic(1);
         tm.getOwner(topic1, false, addrCbq, null);
-        Assert.assertEquals(cfg1.getServerAddr(), check(addrCbq.take()));
+        Assert.assertEquals(conf1.getServerAddr(), check(addrCbq.take()));
 
         tm1.stop();
     }
@@ -290,18 +283,17 @@ public class TestZkTopicManager extends ZooKeeperTestBase {
     }
 
     public void assertOwnershipNodeExists() throws Exception {
-        byte[] data = zk.getData(tm.hubPath(topic), false, null);
-        Assert.assertEquals(HubInfo.parse(new String(data)).getAddress(),
-                            tm.addr);
+        StubCallback<Versioned<HubInfo>> callback = new StubCallback<Versioned<HubInfo>>();
+        tom.readOwnerInfo(topic, callback, null);
+        Versioned<HubInfo> hubInfo = callback.queue.take().left();
+        Assert.assertEquals(tm.addr, hubInfo.getValue().getAddress());
     }
 
     public void assertOwnershipNodeDoesntExist() throws Exception {
-        try {
-            zk.getData(tm.hubPath(topic), false, null);
-            Assert.assertTrue(false);
-        } catch (KeeperException e) {
-            Assert.assertEquals(e.code(), KeeperException.Code.NONODE);
-        }
+        StubCallback<Versioned<HubInfo>> callback = new StubCallback<Versioned<HubInfo>>();
+        tom.readOwnerInfo(topic, callback, null);
+        Versioned<HubInfo> hubInfo = callback.queue.take().left();
+        Assert.assertEquals(null, hubInfo);
     }
 
     @Test

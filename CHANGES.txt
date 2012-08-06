@@ -64,6 +64,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-343: Failed to register hedwig JMX beans in test cases (sijie via ivank)
 
+        BOOKKEEPER-259: Create a topic manager using versioned write for leader election (sijie via ivank)
+
     IMPROVEMENTS:
 
       bookkeeper-server:

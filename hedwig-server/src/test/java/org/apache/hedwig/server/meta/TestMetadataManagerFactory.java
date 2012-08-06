@@ -85,6 +85,10 @@ public class TestMetadataManagerFactory extends ZooKeeperTestBase {
         public SubscriptionDataManager newSubscriptionDataManager() {
             return null;
         }
+
+        public TopicOwnershipManager newTopicOwnershipManager() {
+            return null;
+        }
     }
 
     private void writeFactoryLayout(ServerConfiguration conf,

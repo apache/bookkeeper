@@ -62,6 +62,10 @@ public abstract class PubSubException extends Exception {
             return new NoSubscriptionStateException(msg);
         } else if (code == StatusCode.SUBSCRIPTION_STATE_EXISTS) {
             return new SubscriptionStateExistsException(msg);
+        } else if (code == StatusCode.NO_TOPIC_OWNER_INFO) {
+            return new NoTopicOwnerInfoException(msg);
+        } else if (code == StatusCode.TOPIC_OWNER_INFO_EXISTS) {
+            return new TopicOwnerInfoExistsException(msg);
         }
         /*
          * Insert new ones here
@@ -159,6 +163,18 @@ public abstract class PubSubException extends Exception {
     public static class SubscriptionStateExistsException extends PubSubException {
         public SubscriptionStateExistsException(String msg) {
             super(StatusCode.SUBSCRIPTION_STATE_EXISTS, msg);
+        }
+    }
+
+    public static class NoTopicOwnerInfoException extends PubSubException {
+        public NoTopicOwnerInfoException(String msg) {
+            super(StatusCode.NO_TOPIC_OWNER_INFO, msg);
+        }
+    }
+
+    public static class TopicOwnerInfoExistsException extends PubSubException {
+        public TopicOwnerInfoExistsException(String msg) {
+            super(StatusCode.TOPIC_OWNER_INFO_EXISTS, msg);
         }
     }
 

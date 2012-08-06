@@ -18,8 +18,7 @@
 package org.apache.hedwig.server.topics;
 
 import java.net.UnknownHostException;
-import java.util.List;
-import java.util.Random;
+import java.io.IOException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 
@@ -27,10 +26,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.KeeperException.Code;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.data.Stat;
 
@@ -53,22 +50,17 @@ import org.apache.hedwig.zookeeper.SafeAsyncZKCallback.StatCallback;
 public class ZkTopicManager extends AbstractTopicManager implements TopicManager {
 
     static Logger logger = LoggerFactory.getLogger(ZkTopicManager.class);
-    Random rand = new Random();
 
     /**
      * Persistent storage for topic metadata.
      */
     private ZooKeeper zk;
-    String ephemeralNodePath;
 
-    StatCallback loadReportingStatCallback = new StatCallback() {
-        @Override
-        public void safeProcessResult(int rc, String path, Object ctx, Stat stat) {
-            if (rc != KeeperException.Code.OK.intValue()) {
-                logger.warn("Failed to update load information in zk");
-            }
-        }
-    };
+    // hub server manager
+    private final HubServerManager hubManager;
+
+    private final HubInfo myHubInfo;
+    private final HubLoad myHubLoad;
 
     // Boolean flag indicating if we should suspend activity. If this is true,
     // all of the Ops put into the queuer will fail automatically.
@@ -84,94 +76,46 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
 
         super(cfg, scheduler);
         this.zk = zk;
-        this.ephemeralNodePath = cfg.getZkHostsPrefix(new StringBuilder()).append("/").append(addr).toString();
+        this.hubManager = new ZkHubServerManager(cfg, zk, addr);
 
-        zk.register(new Watcher() {
+        myHubLoad = new HubLoad(topics.size());
+        this.hubManager.registerListener(new HubServerManager.ManagerListener() {
             @Override
-            public void process(WatchedEvent event) {
-                if (event.getType().equals(Watcher.Event.EventType.None)) {
-                    if (event.getState().equals(Watcher.Event.KeeperState.Disconnected)) {
-                        logger.warn("ZK client has been disconnected to the ZK server!");
-                        isSuspended = true;
-                    } else if (event.getState().equals(Watcher.Event.KeeperState.SyncConnected)) {
-                        if (isSuspended) {
-                            logger.info("ZK client has been reconnected to the ZK server!");
-                        }
-                        isSuspended = false;
-                    }
-                }
-                // Check for expired connection.
-                if (event.getState().equals(Watcher.Event.KeeperState.Expired)) {
-                    logger.error("ZK client connection to the ZK server has expired!");
-                    Runtime.getRuntime().exit(1);
-                }
+            public void onSuspend() {
+                isSuspended = true;
+            }
+            @Override
+            public void onResume() {
+                isSuspended = false;
+            }
+            @Override
+            public void onShutdown() {
+                // if hub server manager can't work, we had to quit
+                Runtime.getRuntime().exit(1);
             }
         });
-        final SynchronousQueue<Either<Void, PubSubException>> queue = new SynchronousQueue<Either<Void, PubSubException>>();
 
-        registerWithZookeeper(new Callback<Void>() {
+        final SynchronousQueue<Either<HubInfo, PubSubException>> queue =
+            new SynchronousQueue<Either<HubInfo, PubSubException>>();
+        this.hubManager.registerSelf(myHubLoad, new Callback<HubInfo>() {
+            @Override
+            public void operationFinished(final Object ctx, final HubInfo resultOfOperation) {
+                logger.info("Successfully registered hub {} with zookeeper", resultOfOperation);
+                ConcurrencyUtils.put(queue, Either.of(resultOfOperation, (PubSubException) null));
+            }
             @Override
             public void operationFailed(Object ctx, PubSubException exception) {
                 logger.error("Failed to register hub with zookeeper", exception);
-                ConcurrencyUtils.put(queue, Either.of((Void) null, exception));
-            }
-
-            @Override
-            public void operationFinished(Object ctx, Void resultOfOperation) {
-                logger.info("Successfully registered hub with zookeeper");
-                ConcurrencyUtils.put(queue, Either.of(resultOfOperation, (PubSubException) null));
+                ConcurrencyUtils.put(queue, Either.of((HubInfo)null, exception));
             }
         }, null);
 
-        PubSubException pse = ConcurrencyUtils.take(queue).right();
-
+        Either<HubInfo, PubSubException> result = ConcurrencyUtils.take(queue);
+        PubSubException pse = result.right();
         if (pse != null) {
             throw pse;
         }
-    }
-
-    void registerWithZookeeper(final Callback<Void> callback, Object ctx) {
-
-        ZkUtils.createFullPathOptimistic(zk, ephemeralNodePath, getCurrentLoadData(), Ids.OPEN_ACL_UNSAFE,
-        CreateMode.EPHEMERAL, new SafeAsyncZKCallback.StringCallback() {
-
-            @Override
-            public void safeProcessResult(int rc, String path, Object ctx, String name) {
-                if (rc == Code.OK.intValue()) {
-                    callback.operationFinished(ctx, null);
-                    return;
-                }
-                if (rc != Code.NODEEXISTS.intValue()) {
-                    KeeperException ke = ZkUtils.logErrorAndCreateZKException(
-                                             "Could not create ephemeral node to register hub", ephemeralNodePath, rc);
-                    callback.operationFailed(ctx, new PubSubException.ServiceDownException(ke));
-                    return;
-                }
-
-                logger.info("Found stale ephemeral node while registering hub with ZK, deleting it");
-
-                // Node exists, lets try to delete it and retry
-                zk.delete(ephemeralNodePath, -1, new SafeAsyncZKCallback.VoidCallback() {
-                    @Override
-                    public void safeProcessResult(int rc, String path, Object ctx) {
-                        if (rc == Code.OK.intValue() || rc == Code.NONODE.intValue()) {
-                            registerWithZookeeper(callback, ctx);
-                            return;
-                        }
-                        KeeperException ke = ZkUtils.logErrorAndCreateZKException(
-                                                 "Could not delete stale ephemeral node to register hub", ephemeralNodePath, rc);
-                        callback.operationFailed(ctx, new PubSubException.ServiceDownException(ke));
-                        return;
-
-                    }
-                }, ctx);
-
-            }
-        }, null);
-    }
-
-    void unregisterWithZookeeper() throws InterruptedException, KeeperException {
-        zk.delete(ephemeralNodePath, -1);
+        myHubInfo = result.left();
     }
 
     String hubPath(ByteString topic) {
@@ -215,71 +159,24 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
         }
 
         public void choose() {
-            // Get the list of existing hosts
-            String registeredHostsPath = cfg.getZkHostsPrefix(new StringBuilder()).toString();
-            zk.getChildren(registeredHostsPath, false, new SafeAsyncZKCallback.ChildrenCallback() {
+            hubManager.chooseLeastLoadedHub(new Callback<HubInfo>() {
                 @Override
-                public void safeProcessResult(int rc, String path, Object ctx, List<String> children) {
-                    if (rc != Code.OK.intValue()) {
-                        KeeperException e = ZkUtils.logErrorAndCreateZKException(
-                                                "Could not get list of available hubs", path, rc);
-                        cb.operationFailed(ctx, new PubSubException.ServiceDownException(e));
-                        return;
+                public void operationFinished(Object ctx, HubInfo owner) {
+                    logger.info("{} : Least loaded owner {} is chosen for topic {}",
+                                new Object[] { addr, owner, topic.toStringUtf8() });
+                    if (owner.getAddress().equals(addr)) {
+                        claim();
+                    } else {
+                        cb.operationFinished(ZkGetOwnerOp.this.ctx, owner.getAddress());
                     }
-                    chooseLeastLoadedNode(children);
+                }
+                @Override
+                public void operationFailed(Object ctx, PubSubException pse) {
+                    logger.error("Failed to choose least loaded hub server for topic "
+                               + topic.toStringUtf8() + " : ", pse);
+                    cb.operationFailed(ctx, pse);
                 }
             }, null);
-        }
-
-        public void chooseLeastLoadedNode(final List<String> children) {
-            DataCallback dataCallback = new DataCallback() {
-                int numResponses = 0;
-                int minLoad = Integer.MAX_VALUE;
-                String leastLoaded = null;
-
-                @Override
-                public void safeProcessResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
-                    synchronized (this) {
-                        if (rc == KeeperException.Code.OK.intValue()) {
-                            try {
-                                int load = Integer.parseInt(new String(data));
-                                if (logger.isDebugEnabled()) {
-                                    logger.debug("Found server: " + ctx + " with load: " + load);
-                                }
-                                if (load < minLoad  || (load == minLoad && rand.nextBoolean())) {
-                                    minLoad = load;
-                                    leastLoaded = (String) ctx;
-                                }
-                            } catch (NumberFormatException e) {
-                                logger.warn("Corrupted load information from hub:" + ctx);
-                                // some corrupted data, we'll just ignore this
-                                // hub
-                            }
-                        }
-                        numResponses++;
-
-                        if (numResponses == children.size()) {
-                            if (leastLoaded == null) {
-                                cb.operationFailed(ZkGetOwnerOp.this.ctx, new PubSubException.ServiceDownException(
-                                                       "No hub available"));
-                                return;
-                            }
-                            HedwigSocketAddress owner = new HedwigSocketAddress(leastLoaded);
-                            if (owner.equals(addr)) {
-                                claim();
-                            } else {
-                                cb.operationFinished(ZkGetOwnerOp.this.ctx, owner);
-                            }
-                        }
-                    }
-
-                }
-            };
-
-            for (String child : children) {
-                zk.getData(cfg.getZkHostsPrefix(new StringBuilder()).append("/").append(child).toString(), false,
-                           dataCallback, child);
-            }
         }
 
         public void claimOrChoose() {
@@ -307,16 +204,20 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
                     }
 
                     // successfully did a read
-                    HedwigSocketAddress owner = new HedwigSocketAddress(new String(data));
-                    if (!owner.equals(addr)) {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("topic: " + topic.toStringUtf8() + " belongs to someone else: " + owner);
+                    try {
+                        HubInfo ownerHubInfo = HubInfo.parse(new String(data));
+                        HedwigSocketAddress owner = ownerHubInfo.getAddress();
+                        if (!owner.equals(addr)) {
+                            if (logger.isDebugEnabled()) {
+                                logger.debug("topic: " + topic.toStringUtf8() + " belongs to someone else: " + owner);
+                            }
+                            cb.operationFinished(ctx, owner);
+                            return;
                         }
-                        cb.operationFinished(ctx, owner);
-                        return;
+                        logger.info("Discovered stale self-node for topic: " + topic.toStringUtf8() + ", will delete it");
+                    } catch (HubInfo.InvalidHubInfoException ihie) {
+                        logger.info("Discovered invalid hub info for topic: " + topic.toStringUtf8() + ", will delete it : ", ihie);
                     }
-
-                    logger.info("Discovered stale self-node for topic: " + topic.toStringUtf8() + ", will delete it");
 
                     // we must have previously failed and left a
                     // residual ephemeral node here, so we must
@@ -343,7 +244,7 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
                 logger.debug("claiming topic: " + topic.toStringUtf8());
             }
 
-            ZkUtils.createFullPathOptimistic(zk, hubPath, addr.toString().getBytes(), Ids.OPEN_ACL_UNSAFE,
+            ZkUtils.createFullPathOptimistic(zk, hubPath, myHubInfo.toString().getBytes(), Ids.OPEN_ACL_UNSAFE,
             CreateMode.EPHEMERAL, new SafeAsyncZKCallback.StringCallback() {
 
                 @Override
@@ -353,7 +254,7 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
                             logger.debug("claimed topic: " + topic.toStringUtf8());
                         }
                         notifyListenersAndAddToOwnedTopics(topic, cb, ctx);
-                        updateLoadInformation();
+                        hubManager.uploadSelfLoadData(myHubLoad.setNumTopics(topics.size()));
                     } else if (rc == Code.NODEEXISTS.intValue()) {
                         read();
                     } else {
@@ -366,20 +267,6 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
             }, ctx);
         }
 
-    }
-
-    byte[] getCurrentLoadData() {
-        // For now, using the number of topics as an indicator of load
-        // information
-        return (topics.size() + "").getBytes();
-    }
-
-    void updateLoadInformation() {
-        byte[] currentLoad = getCurrentLoadData();
-        if (logger.isDebugEnabled()) {
-            logger.debug("Reporting load of " + new String(currentLoad));
-        }
-        zk.setData(ephemeralNodePath, currentLoad, -1, loadReportingStatCallback, null);
     }
 
     @Override
@@ -403,11 +290,20 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
                     return;
                 }
 
-                HedwigSocketAddress owner = new HedwigSocketAddress(new String(data));
-                if (!owner.equals(addr)) {
-                    logger.warn("Wanted to delete self-node for topic: " + topic.toStringUtf8() + " but node for "
-                                + owner + " found, leaving untouched");
-                    // Not our node, someone else's, leave it alone
+                String hubInfoStr = new String(data);
+                try {
+                    HubInfo ownerHubInfo = HubInfo.parse(hubInfoStr);
+                    HedwigSocketAddress owner = ownerHubInfo.getAddress();
+                    if (!owner.equals(addr)) {
+                        logger.warn("Wanted to delete self-node for topic: " + topic.toStringUtf8() + " but node for "
+                                    + owner + " found, leaving untouched");
+                        // Not our node, someone else's, leave it alone
+                        cb.operationFinished(ctx, null);
+                        return;
+                    }
+                } catch (HubInfo.InvalidHubInfoException ihie) {
+                    logger.info("Invalid hub info " + hubInfoStr + " found when release topic "
+                              + topic.toStringUtf8() + ". Leaving untouched until next acquire action.");
                     cb.operationFinished(ctx, null);
                     return;
                 }
@@ -434,10 +330,8 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
     public void stop() {
         // we just unregister it with zookeeper to make it unavailable from hub servers list
         try {
-            unregisterWithZookeeper();
-        } catch (InterruptedException e) {
-            logger.error("Error unregistering hub server :", e);
-        } catch (KeeperException e) {
+            hubManager.unregisterSelf();
+        } catch (IOException e) {
             logger.error("Error unregistering hub server :", e);
         }
         super.stop();

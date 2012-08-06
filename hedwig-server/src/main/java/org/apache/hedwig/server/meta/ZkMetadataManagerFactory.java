@@ -44,6 +44,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionState;
 import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.subscriptions.InMemorySubscriptionState;
+import org.apache.hedwig.server.topics.HubInfo;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.zookeeper.SafeAsyncZKCallback;
 import org.apache.hedwig.zookeeper.ZkUtils;
@@ -92,6 +93,11 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
     @Override
     public SubscriptionDataManager newSubscriptionDataManager() {
         return new ZkSubscriptionDataManagerImpl(cfg, zk);
+    }
+
+    @Override
+    public TopicOwnershipManager newTopicOwnershipManager() {
+        return new ZkTopicOwnershipManagerImpl(cfg, zk);
     }
 
     /**
@@ -551,6 +557,179 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                                     cb.operationFailed(ctx, e);
                             }
                         }, ctx);
+                    }
+                }
+            }, ctx);
+        }
+    }
+
+    /**
+     * ZooKeeper base topic ownership manager.
+     */
+    static class ZkTopicOwnershipManagerImpl implements TopicOwnershipManager {
+
+        ZooKeeper zk;
+        ServerConfiguration cfg;
+
+        ZkTopicOwnershipManagerImpl(ServerConfiguration conf, ZooKeeper zk) {
+            this.cfg = conf;
+            this.zk = zk;
+        }
+
+        @Override
+        public void close() throws IOException {
+            // do nothing in zookeeper based impl
+        }
+
+        /**
+         * Return znode path to store topic owner.
+         *
+         * @param topic
+         *          Topic Name
+         * @return znode path to store topic owner.
+         */
+        String hubPath(ByteString topic) {
+            return cfg.getZkTopicPath(new StringBuilder(), topic).append("/hub").toString();
+        }
+
+        @Override
+        public void readOwnerInfo(final ByteString topic, final Callback<Versioned<HubInfo>> callback, Object ctx) {
+            String ownerPath = hubPath(topic);
+            zk.getData(ownerPath, false, new SafeAsyncZKCallback.DataCallback() {
+                @Override
+                public void safeProcessResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
+                    if (Code.NONODE.intValue() == rc) {
+                        callback.operationFinished(ctx, null);
+                        return;
+                    }
+
+                    if (Code.OK.intValue() != rc) {
+                        KeeperException e = ZkUtils.logErrorAndCreateZKException("Could not read ownership for topic: "
+                                            + topic.toStringUtf8(), path, rc);
+                        callback.operationFailed(ctx, new PubSubException.ServiceDownException(e));
+                        return;
+                    }
+                    HubInfo owner = null;
+                    try {
+                        owner = HubInfo.parse(new String(data));
+                    } catch (HubInfo.InvalidHubInfoException ihie) {
+                        logger.warn("Failed to parse hub info for topic " + topic.toStringUtf8() + " : ", ihie);
+                    }
+                    int version = stat.getVersion();
+                    callback.operationFinished(ctx, new Versioned<HubInfo>(owner, new ZkVersion(version)));
+                    return;
+                }
+            }, ctx);
+        }
+
+        @Override
+        public void writeOwnerInfo(final ByteString topic, final HubInfo owner, final Version version,
+                                   final Callback<Version> callback, Object ctx) {
+            if (null == version) {
+                createOwnerInfo(topic, owner, callback, ctx);
+                return;
+            }
+
+            if (!(version instanceof ZkVersion)) {
+                callback.operationFailed(ctx, new PubSubException.UnexpectedConditionException(
+                                              "Invalid version provided to update owner info for topic " + topic.toStringUtf8()));
+                return;
+            }
+
+            int znodeVersion = ((ZkVersion)version).getZnodeVersion();
+            zk.setData(hubPath(topic), owner.toString().getBytes(), znodeVersion,
+                       new SafeAsyncZKCallback.StatCallback() {
+                @Override
+                public void safeProcessResult(int rc, String path, Object ctx, Stat stat) {
+                    if (rc == Code.NONODE.intValue()) {
+                        // no node
+                        callback.operationFailed(ctx, PubSubException.create(StatusCode.NO_TOPIC_OWNER_INFO,
+                                                      "No owner info found for topic " + topic.toStringUtf8()));
+                        return;
+                    } else if (rc == Code.BadVersion) {
+                        // bad version
+                        callback.operationFailed(ctx, PubSubException.create(StatusCode.BAD_VERSION,
+                                                      "Bad version provided to update owner info of topic " + topic.toStringUtf8()));
+                        return;
+                    } else if (Code.OK.intValue() == rc) {
+                        callback.operationFinished(ctx, new ZkVersion(stat.getVersion()));
+                        return;
+                    } else {
+                        KeeperException e = ZkUtils.logErrorAndCreateZKException(
+                            "Failed to update ownership of topic " + topic.toStringUtf8() +
+                            " to " + owner, path, rc);
+                        callback.operationFailed(ctx, new PubSubException.ServiceDownException(e));
+                        return;
+                    }
+                }
+            }, ctx);
+        }
+
+        protected void createOwnerInfo(final ByteString topic, final HubInfo owner,
+                                       final Callback<Version> callback, Object ctx) {
+            String ownerPath = hubPath(topic);
+            ZkUtils.createFullPathOptimistic(zk, ownerPath, owner.toString().getBytes(), Ids.OPEN_ACL_UNSAFE,
+                                             CreateMode.PERSISTENT, new SafeAsyncZKCallback.StringCallback() {
+                @Override
+                public void safeProcessResult(int rc, String path, Object ctx, String name) {
+                    if (Code.OK.intValue() == rc) {
+                        // assume the initial version is 0
+                        callback.operationFinished(ctx, new ZkVersion(0));
+                        return;
+                    } else if (Code.NODEEXISTS.intValue() == rc) {
+                        // node existed
+                        callback.operationFailed(ctx, PubSubException.create(StatusCode.TOPIC_OWNER_INFO_EXISTS,
+                                                      "Owner info of topic " + topic.toStringUtf8() + " existed."));
+                        return;
+                    } else {
+                        KeeperException e = ZkUtils.logErrorAndCreateZKException(
+                                                "Failed to create znode for ownership of topic: "
+                                                + topic.toStringUtf8(), path, rc);
+                        callback.operationFailed(ctx, new PubSubException.ServiceDownException(e));
+                        return;
+                    }
+                }
+            }, ctx);
+        }
+
+        @Override
+        public void deleteOwnerInfo(final ByteString topic, final Version version,
+                                    final Callback<Void> callback, Object ctx) {
+            int znodeVersion = -1;
+            if (null != version) {
+                if (!(version instanceof ZkVersion)) {
+                    callback.operationFailed(ctx, new PubSubException.UnexpectedConditionException(
+                                                  "Invalid version provided to delete owner info for topic " + topic.toStringUtf8()));
+                    return;
+                } else {
+                    znodeVersion = ((ZkVersion)version).getZnodeVersion();
+                }
+            }
+
+            zk.delete(hubPath(topic), znodeVersion, new SafeAsyncZKCallback.VoidCallback() {
+                @Override
+                public void safeProcessResult(int rc, String path, Object ctx) {
+                    if (Code.OK.intValue() == rc) {
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Successfully deleted owner info for topic " + topic.toStringUtf8() + ".");
+                        }
+                        callback.operationFinished(ctx, null);
+                        return;
+                    } else if (Code.NONODE.intValue() == rc) {
+                        // no node
+                        callback.operationFailed(ctx, PubSubException.create(StatusCode.NO_TOPIC_OWNER_INFO,
+                                                      "No owner info found for topic " + topic.toStringUtf8()));
+                        return;
+                    } else if (Code.BadVersion == rc) {
+                        // bad version
+                        callback.operationFailed(ctx, PubSubException.create(StatusCode.BAD_VERSION,
+                                                      "Bad version provided to delete owner info of topic " + topic.toStringUtf8()));
+                        return;
+                    } else {
+                        KeeperException e = ZkUtils.logErrorAndCreateZKException(
+                                                "Failed to delete owner info for topic "
+                                                + topic.toStringUtf8(), path, rc);
+                        callback.operationFailed(ctx, new PubSubException.ServiceDownException(e));
                     }
                 }
             }, ctx);

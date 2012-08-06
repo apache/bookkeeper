@@ -34,8 +34,10 @@ import org.apache.hedwig.protocol.PubSubProtocol.LedgerRange;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionState;
 import org.apache.hedwig.server.subscriptions.InMemorySubscriptionState;
+import org.apache.hedwig.server.topics.HubInfo;
 import org.apache.hedwig.server.meta.MetadataManagerFactory;
 import org.apache.hedwig.util.Either;
+import org.apache.hedwig.util.HedwigSocketAddress;
 
 import org.junit.Test;
 import org.junit.Assert;
@@ -44,6 +46,92 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
 
     public TestMetadataManager(String metadataManagerFactoryCls) {
         super(metadataManagerFactoryCls);
+    }
+
+    @Test
+    public void testOwnerInfo() throws Exception {
+        TopicOwnershipManager toManager = metadataManagerFactory.newTopicOwnershipManager();
+
+        ByteString topic = ByteString.copyFromUtf8("testOwnerInfo");
+        StubCallback<Versioned<HubInfo>> readCallback = new StubCallback<Versioned<HubInfo>>();
+        StubCallback<Version> writeCallback = new StubCallback<Version>();
+        StubCallback<Void> deleteCallback = new StubCallback<Void>();
+
+        Either<Version, PubSubException> res;
+        HubInfo owner = new HubInfo(new HedwigSocketAddress("127.0.0.1", 8008), 999);
+
+        // Write non-existed owner info
+        toManager.writeOwnerInfo(topic, owner, null, writeCallback, null);
+        res = writeCallback.queue.take();
+        Assert.assertEquals(null, res.right());
+        Version v1 = res.left();
+
+        // read owner info
+        toManager.readOwnerInfo(topic, readCallback, null);
+        Versioned<HubInfo> hubInfo = readCallback.queue.take().left();
+        Assert.assertEquals(Version.Occurred.CONCURRENTLY, v1.compare(hubInfo.getVersion()));
+        Assert.assertEquals(owner, hubInfo.getValue());
+
+        HubInfo newOwner = new HubInfo(new HedwigSocketAddress("127.0.0.1", 8008), 1000);
+
+        // write exsited owner info with null version
+        toManager.writeOwnerInfo(topic, newOwner, null, writeCallback, null);
+        res = writeCallback.queue.take();
+        Assert.assertNotNull(res.right());
+        Assert.assertTrue(res.right() instanceof PubSubException.TopicOwnerInfoExistsException);
+
+        // write existed owner info with right version
+        toManager.writeOwnerInfo(topic, newOwner, v1, writeCallback, null);
+        res = writeCallback.queue.take();
+        Assert.assertEquals(null, res.right());
+        Version v2 = res.left();
+        Assert.assertEquals(Version.Occurred.AFTER, v2.compare(v1));
+
+        // read owner info
+        toManager.readOwnerInfo(topic, readCallback, null);
+        hubInfo = readCallback.queue.take().left();
+        Assert.assertEquals(Version.Occurred.CONCURRENTLY, v2.compare(hubInfo.getVersion()));
+        Assert.assertEquals(newOwner, hubInfo.getValue());
+
+        HubInfo newOwner2 = new HubInfo(new HedwigSocketAddress("127.0.0.1", 8008), 1001);
+
+        // write existed owner info with bad version
+        toManager.writeOwnerInfo(topic, newOwner2, v1,
+                                 writeCallback, null);
+        res = writeCallback.queue.take();
+        Assert.assertNotNull(res.right());
+        Assert.assertTrue(res.right() instanceof PubSubException.BadVersionException);
+
+        // read owner info
+        toManager.readOwnerInfo(topic, readCallback, null);
+        hubInfo = readCallback.queue.take().left();
+        Assert.assertEquals(Version.Occurred.CONCURRENTLY, v2.compare(hubInfo.getVersion()));
+        Assert.assertEquals(newOwner, hubInfo.getValue());
+
+        // delete existed owner info with bad version
+        toManager.deleteOwnerInfo(topic, v1, deleteCallback, null);
+        Assert.assertTrue(deleteCallback.queue.take().right() instanceof
+                          PubSubException.BadVersionException);
+
+        // read owner info
+        toManager.readOwnerInfo(topic, readCallback, null);
+        hubInfo = readCallback.queue.take().left();
+        Assert.assertEquals(Version.Occurred.CONCURRENTLY, v2.compare(hubInfo.getVersion()));
+
+        // delete existed owner info with right version
+        toManager.deleteOwnerInfo(topic, v2, deleteCallback, null);
+        Assert.assertEquals(null, deleteCallback.queue.take().right());
+
+        // Empty owner info
+        toManager.readOwnerInfo(topic, readCallback, null);
+        Assert.assertEquals(null, readCallback.queue.take().left());
+
+        // delete non-existed owner info
+        toManager.deleteOwnerInfo(topic, null, deleteCallback, null);
+        Assert.assertTrue(deleteCallback.queue.take().right() instanceof
+                          PubSubException.NoTopicOwnerInfoException);
+
+        toManager.close();
     }
 
     @Test

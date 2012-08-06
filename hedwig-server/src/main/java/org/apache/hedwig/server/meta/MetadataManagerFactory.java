@@ -81,6 +81,13 @@ public abstract class MetadataManagerFactory {
     public abstract SubscriptionDataManager newSubscriptionDataManager();
 
     /**
+     * Create topic ownership manager.
+     *
+     * @return topic ownership manager.
+     */
+    public abstract TopicOwnershipManager newTopicOwnershipManager();
+
+    /**
      * Create new Metadata Manager Factory.
      *
      * @param conf

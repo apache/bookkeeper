@@ -175,6 +175,8 @@ enum StatusCode{
     TOPIC_PERSISTENCE_INFO_EXISTS = 522;
     NO_SUBSCRIPTION_STATE = 523;
     SUBSCRIPTION_STATE_EXISTS = 524;
+    NO_TOPIC_OWNER_INFO = 525;
+    TOPIC_OWNER_INFO_EXISTS = 526;
 
     //For all unexpected error conditions
     UNEXPECTED_CONDITION = 600;
@@ -202,4 +204,13 @@ message LedgerRanges{
 message ManagerMeta {
     required string managerImpl = 2;
     required uint32 managerVersion = 3;
+}
+
+message HubInfoData {
+    required string hostname = 2;
+    required uint64 czxid = 3;
+}
+
+message HubLoadData {
+    required uint64 numTopics = 2;
 }

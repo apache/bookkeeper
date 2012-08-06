@@ -64,6 +64,7 @@ import org.apache.hedwig.server.handlers.SubscribeHandler;
 import org.apache.hedwig.server.handlers.UnsubscribeHandler;
 import org.apache.hedwig.server.jmx.HedwigMBeanRegistry;
 import org.apache.hedwig.server.meta.MetadataManagerFactory;
+import org.apache.hedwig.server.meta.ZkMetadataManagerFactory;
 import org.apache.hedwig.server.persistence.BookkeeperPersistenceManager;
 import org.apache.hedwig.server.persistence.LocalDBPersistenceManager;
 import org.apache.hedwig.server.persistence.PersistenceManager;
@@ -75,6 +76,7 @@ import org.apache.hedwig.server.ssl.SslServerContextFactory;
 import org.apache.hedwig.server.subscriptions.InMemorySubscriptionManager;
 import org.apache.hedwig.server.subscriptions.SubscriptionManager;
 import org.apache.hedwig.server.subscriptions.MMSubscriptionManager;
+import org.apache.hedwig.server.topics.MMTopicManager;
 import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.server.topics.TrivialOwnAllTopicManager;
 import org.apache.hedwig.server.topics.ZkTopicManager;
@@ -195,9 +197,18 @@ public class PubSubServer {
             tm = new TrivialOwnAllTopicManager(conf, scheduler);
         } else {
             try {
-                tm = new ZkTopicManager(zk, conf, scheduler);
+                if (conf.isMetadataManagerBasedTopicManagerEnabled()) {
+                    tm = new MMTopicManager(conf, zk, mm, scheduler);
+                } else {
+                    if (!(mm instanceof ZkMetadataManagerFactory)) {
+                        throw new IOException("Uses " + mm.getClass().getName() + " to store hedwig metadata, "
+                                            + "but uses zookeeper ephemeral znodes to store topic ownership. "
+                                            + "Check your configuration as this could lead to scalability issues.");
+                    }
+                    tm = new ZkTopicManager(zk, conf, scheduler);
+                }
             } catch (PubSubException e) {
-                logger.error("Could not instantiate zk-topic manager", e);
+                logger.error("Could not instantiate TopicOwnershipManager based topic manager", e);
                 throw new IOException(e);
             }
         }
