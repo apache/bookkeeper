@@ -143,3 +143,14 @@ HostAddress HostAddress::fromString(std::string str) {
   return h;
 }
 
+ResponseCallbackAdaptor::ResponseCallbackAdaptor(const OperationCallbackPtr& opCallbackPtr)
+  : opCallbackPtr(opCallbackPtr) {
+}
+
+void ResponseCallbackAdaptor::operationComplete(const ResponseBody& response) {
+  opCallbackPtr->operationComplete();
+}
+
+void ResponseCallbackAdaptor::operationFailed(const std::exception& exception) {
+  opCallbackPtr->operationFailed(exception);
+}

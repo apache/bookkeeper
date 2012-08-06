@@ -27,6 +27,10 @@
 
 namespace Hedwig {
 
+  typedef std::tr1::shared_ptr<PublishResponse> PublishResponsePtr;
+  typedef Callback<PublishResponsePtr> PublishResponseCallback;
+  typedef std::tr1::shared_ptr<PublishResponseCallback> PublishResponseCallbackPtr;
+
   /**
      Interface for publishing to a hedwig instance.
   */
@@ -38,9 +42,9 @@ namespace Hedwig {
        @param topic Topic to publish to.
        @param message Data to publish for topic.
     */
-    virtual void publish(const std::string& topic, const std::string& message) = 0;
+    virtual PublishResponsePtr publish(const std::string& topic, const std::string& message) = 0;
     
-    virtual void publish(const std::string& topic, const Message& message) = 0;
+    virtual PublishResponsePtr publish(const std::string& topic, const Message& message) = 0;
 
     /** 
 	Asynchronously publish message for topic. 
@@ -57,6 +61,9 @@ namespace Hedwig {
     virtual void asyncPublish(const std::string& topic, const std::string& message, const OperationCallbackPtr& callback) = 0;
     
     virtual void asyncPublish(const std::string& topic, const Message& message, const OperationCallbackPtr& callback) = 0;
+
+    virtual void asyncPublishWithResponse(const std::string& topic, const Message& messsage,
+                                          const PublishResponseCallbackPtr& callback) = 0;
 
     virtual ~Publisher() {}
   };

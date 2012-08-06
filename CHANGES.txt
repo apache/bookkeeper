@@ -6,9 +6,15 @@ Trunk (unreleased changes)
 
     IMPROVEMENTS:
 
-      BOOKKEEPER-203: improve ledger manager interface to remove zookeeper dependency on metadata operations. (sijie via ivank)
+      bookkeeper-server:
 
-      BOOKKEEPER-303: LedgerMetadata should serialized using protobufs (ivank)
+        BOOKKEEPER-203: improve ledger manager interface to remove zookeeper dependency on metadata operations. (sijie via ivank)
+
+        BOOKKEEPER-303: LedgerMetadata should serialized using protobufs (ivank)
+
+      hedwig-client:
+
+        BOOKKEEPER-339: Let hedwig cpp client support returning message seq id for publish requests. (sijie via ivank)
 
   Backward compatible changes:
 

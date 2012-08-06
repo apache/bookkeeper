@@ -21,8 +21,19 @@
 #include <hedwig/publish.h>
 #include <hedwig/callback.h>
 #include "clientimpl.h"
+#include "data.h"
 
 namespace Hedwig {
+  class PublishResponseAdaptor : public ResponseCallback {
+  public:
+    PublishResponseAdaptor(const PublishResponseCallbackPtr& pubCallback);
+
+    void operationComplete(const ResponseBody & result);
+    void operationFailed(const std::exception& exception);
+  private:
+    PublishResponseCallbackPtr pubCallback;
+  };
+
   class PublishWriteCallback : public OperationCallback {
   public:
     PublishWriteCallback(const ClientImplPtr& client, const PubSubDataPtr& data);
@@ -38,14 +49,17 @@ namespace Hedwig {
   public:
     PublisherImpl(const ClientImplPtr& client);
 
-    void publish(const std::string& topic, const std::string& message);
-    void publish(const std::string& topic, const Message& message);
+    PublishResponsePtr publish(const std::string& topic, const std::string& message);
+    PublishResponsePtr publish(const std::string& topic, const Message& message);
 
     void asyncPublish(const std::string& topic, const std::string& message, const OperationCallbackPtr& callback);
     void asyncPublish(const std::string& topic, const Message& message, const OperationCallbackPtr& callback);
+    void asyncPublishWithResponse(const std::string& topic, const Message& messsage,
+                                  const PublishResponseCallbackPtr& callback);
     
     void messageHandler(const PubSubResponsePtr& m, const PubSubDataPtr& txn);
 
+    void doPublish(const std::string& topic, const Message& message, const ResponseCallbackPtr& callback);
     void doPublish(const DuplexChannelPtr& channel, const PubSubDataPtr& data);
 
   private:

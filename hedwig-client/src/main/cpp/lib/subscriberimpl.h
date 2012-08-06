@@ -72,11 +72,11 @@ namespace Hedwig {
     const PubSubDataPtr data;
     };
 
-  class SubscriberReconnectCallback : public OperationCallback {
+  class SubscriberReconnectCallback : public ResponseCallback {
   public: 
     SubscriberReconnectCallback(const ClientImplPtr& client, const PubSubDataPtr& origData);
 
-    void operationComplete();
+    void operationComplete(const ResponseBody & resp);
     void operationFailed(const std::exception& exception);
   private:
     const ClientImplPtr client;

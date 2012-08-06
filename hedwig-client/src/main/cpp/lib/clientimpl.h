@@ -44,9 +44,103 @@
 namespace Hedwig {
   const int DEFAULT_SYNC_REQUEST_TIMEOUT = 5000;
 
+  template<class R>
+  class SyncCallback : public Callback<R> {
+  public:
+    SyncCallback(int timeout) : response(PENDING), timeout(timeout) {}
+    virtual void operationComplete(const R& r) {
+      if (response == TIMEOUT) {
+        return;
+      }
+
+      {
+        boost::lock_guard<boost::mutex> lock(mut);
+        response = SUCCESS;
+        result = r;
+      }
+      cond.notify_all();
+    }
+
+    virtual void operationFailed(const std::exception& exception) {
+      if (response == TIMEOUT) {
+        return;
+      }
+
+      {
+        boost::lock_guard<boost::mutex> lock(mut);
+
+        if (typeid(exception) == typeid(ChannelConnectException)) {
+          response = NOCONNECT;
+        } else if (typeid(exception) == typeid(ServiceDownException)) {
+          response = SERVICEDOWN;
+        } else if (typeid(exception) == typeid(AlreadySubscribedException)) {
+          response = ALREADY_SUBSCRIBED;
+        } else if (typeid(exception) == typeid(NotSubscribedException)) {
+          response = NOT_SUBSCRIBED;
+        } else {
+          response = UNKNOWN;
+        }
+      }
+      cond.notify_all();
+    }
+
+    void wait() {
+      boost::unique_lock<boost::mutex> lock(mut);
+      while(response==PENDING) {
+        if (cond.timed_wait(lock, boost::posix_time::milliseconds(timeout)) == false) {
+          response = TIMEOUT;
+        }
+      }
+    }
+
+    void throwExceptionIfNeeded() {
+      switch (response) {
+        case SUCCESS:
+          break;
+        case NOCONNECT:
+          throw CannotConnectException();
+          break;
+        case SERVICEDOWN:
+          throw ServiceDownException();
+          break;
+        case ALREADY_SUBSCRIBED:
+          throw AlreadySubscribedException();
+          break;
+        case NOT_SUBSCRIBED:
+          throw NotSubscribedException();
+          break;
+        case TIMEOUT:
+          throw ClientTimeoutException();
+          break;
+        default:
+          throw ClientException();
+          break;
+      }
+    }
+
+    R getResult() { return result; }
+    
+  private:
+    enum { 
+      PENDING, 
+      SUCCESS,
+      NOCONNECT,
+      SERVICEDOWN,
+      NOT_SUBSCRIBED,
+      ALREADY_SUBSCRIBED,
+      TIMEOUT,
+      UNKNOWN
+    } response;
+
+    boost::condition_variable cond;
+    boost::mutex mut;
+    int timeout;
+    R result;
+  };
+
   class SyncOperationCallback : public OperationCallback {
   public:
-  SyncOperationCallback(int timeout) : response(PENDING), timeout(timeout) {}
+    SyncOperationCallback(int timeout) : response(PENDING), timeout(timeout) {}
     virtual void operationComplete();
     virtual void operationFailed(const std::exception& exception);
     
@@ -64,7 +158,7 @@ namespace Hedwig {
       TIMEOUT,
       UNKNOWN
     } response;
-    
+
     boost::condition_variable cond;
     boost::mutex mut;
     int timeout;

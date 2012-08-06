@@ -137,7 +137,7 @@ SubscriberReconnectCallback::SubscriberReconnectCallback(const ClientImplPtr& cl
   : client(client), origData(origData) {
 }
 
-void SubscriberReconnectCallback::operationComplete() {
+void SubscriberReconnectCallback::operationComplete(const ResponseBody & resp) {
 }
 
 void SubscriberReconnectCallback::operationFailed(const std::exception& exception) {
@@ -217,7 +217,7 @@ void SubscriberClientChannelHandler::channelDisconnected(const DuplexChannelPtr&
 
   // setup pubsub data for reconnection attempt
   origData->clearTriedServers();
-  OperationCallbackPtr newcallback(new SubscriberReconnectCallback(client, origData));
+  ResponseCallbackPtr newcallback(new SubscriberReconnectCallback(client, origData));
   origData->setCallback(newcallback);
 
   // Create a new handler for the new channel
@@ -329,7 +329,9 @@ void SubscriberImpl::asyncSubscribe(const std::string& topic, const std::string&
     options2.set_messagebound(messageBound);
   }
 
-  PubSubDataPtr data = PubSubData::forSubscribeRequest(client->counter().next(), subscriberId, topic, callback, options2);
+  ResponseCallbackPtr respCallback(new ResponseCallbackAdaptor(callback));
+  PubSubDataPtr data = PubSubData::forSubscribeRequest(client->counter().next(), subscriberId, topic,
+                                                       respCallback, options2);
 
   SubscriberClientChannelHandlerPtr handler(new SubscriberClientChannelHandler(client, *this, data));
   ChannelHandlerPtr baseptr = handler;
@@ -369,7 +371,8 @@ void SubscriberImpl::unsubscribe(const std::string& topic, const std::string& su
 void SubscriberImpl::asyncUnsubscribe(const std::string& topic, const std::string& subscriberId, const OperationCallbackPtr& callback) {
   closeSubscription(topic, subscriberId);
 
-  PubSubDataPtr data = PubSubData::forUnsubscribeRequest(client->counter().next(), subscriberId, topic, callback);
+  ResponseCallbackPtr respCallback(new ResponseCallbackAdaptor(callback));
+  PubSubDataPtr data = PubSubData::forUnsubscribeRequest(client->counter().next(), subscriberId, topic, respCallback);
   
   DuplexChannelPtr channel = client->getChannel(topic);
   doUnsubscribe(channel, data);
@@ -456,7 +459,11 @@ void SubscriberImpl::messageHandler(const PubSubResponsePtr& m, const PubSubData
 
   switch (m->statuscode()) {
   case SUCCESS:
-    txn->getCallback()->operationComplete();
+    if (m->has_responsebody()) {
+      txn->getCallback()->operationComplete(m->responsebody());
+    } else {
+      txn->getCallback()->operationComplete(ResponseBody());
+    }
     break;
   case SERVICE_DOWN:
     txn->getCallback()->operationFailed(ServiceDownException());

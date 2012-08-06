@@ -67,6 +67,19 @@ namespace Hedwig {
   };
 
   /**
+   * An adaptor for OperationCallback
+   */
+  class ResponseCallbackAdaptor : public Callback<ResponseBody> {
+  public:
+    ResponseCallbackAdaptor(const OperationCallbackPtr& opCallbackPtr);
+
+    virtual void operationComplete(const ResponseBody& response);
+    virtual void operationFailed(const std::exception& exception);
+  private:
+    OperationCallbackPtr opCallbackPtr;
+  };
+
+  /**
      Hash a host address. Takes the least significant 16-bits of the address and the 16-bits of the
      port and packs them into one 32-bit number. While collisons are theoretically very possible, they
      shouldn't happen as the hedwig servers should be in the same subnet.

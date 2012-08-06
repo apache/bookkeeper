@@ -67,6 +67,22 @@ TEST(PublishTest, testSyncPublish) {
   delete conf;
 }
 
+TEST(PublishTest, testSyncPublishWithResponse) {
+  Hedwig::Configuration* conf = new TestServerConfiguration();
+  
+  Hedwig::Client* client = new Hedwig::Client(*conf);
+  Hedwig::Publisher& pub = client->getPublisher();
+
+  int numMsgs = 20;
+  for(int i=1; i<=numMsgs; i++) {
+    Hedwig::PublishResponsePtr pubResponse = pub.publish("testSyncPublishWithResponse", "testMessage " + i);
+    ASSERT_EQ(i, (int)pubResponse->publishedmsgid().localcomponent());
+  }
+  
+  delete client;
+  delete conf;
+}
+
 TEST(PublishTest, testAsyncPublish) {
   SimpleWaitCondition* cond = new SimpleWaitCondition();
 
@@ -82,6 +98,32 @@ TEST(PublishTest, testAsyncPublish) {
   ASSERT_TRUE(cond->wasSuccess());
 
   delete cond;
+  delete client;
+  delete conf;
+}
+
+TEST(PublishTest, testAsyncPublishWithResponse) {
+  Hedwig::Configuration* conf = new TestServerConfiguration();
+  Hedwig::Client* client = new Hedwig::Client(*conf);
+  Hedwig::Publisher& pub = client->getPublisher();
+
+  int numMsgs = 20;
+  for (int i=1; i<=numMsgs; i++) {
+    SimpleWaitCondition* cond = new SimpleWaitCondition();
+    TestPublishResponseCallback* callback =
+      new TestPublishResponseCallback(cond);
+    Hedwig::PublishResponseCallbackPtr testcb(callback);
+    Hedwig::Message asyncMsg;
+    asyncMsg.set_body("testAsyncPublishWithResponse-" + i);
+    pub.asyncPublishWithResponse("testAsyncPublishWithResponse", asyncMsg, testcb);
+    
+    cond->wait();
+
+    ASSERT_TRUE(cond->wasSuccess());
+    ASSERT_EQ(i, (int)callback->getResponse()->publishedmsgid().localcomponent());
+
+    delete cond;
+  }
   delete client;
   delete conf;
 }

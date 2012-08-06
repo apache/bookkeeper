@@ -29,6 +29,16 @@
 #endif
 
 namespace Hedwig {
+
+  template<class R>
+  class Callback {
+  public:
+    virtual void operationComplete(const R& result) = 0;
+    virtual void operationFailed(const std::exception& exception) = 0;
+
+    virtual ~Callback() {};
+  };
+
   class OperationCallback {
   public:
     virtual void operationComplete() = 0;

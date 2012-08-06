@@ -28,6 +28,26 @@ static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("hedwig."__FILE__));
 
 using namespace Hedwig;
 
+PublishResponseAdaptor::PublishResponseAdaptor(const PublishResponseCallbackPtr& pubCallback)
+  : pubCallback(pubCallback) {
+}
+
+void PublishResponseAdaptor::operationComplete(const ResponseBody& result) {
+  if (result.has_publishresponse()) {
+    PublishResponse *resp = new PublishResponse();
+    resp->CopyFrom(result.publishresponse());
+    PublishResponsePtr respPtr(resp);
+    pubCallback->operationComplete(respPtr);
+  } else {
+    // return empty response
+    pubCallback->operationComplete(PublishResponsePtr());
+  }
+}
+
+void PublishResponseAdaptor::operationFailed(const std::exception& exception) {
+  pubCallback->operationFailed(exception);
+}
+
 PublishWriteCallback::PublishWriteCallback(const ClientImplPtr& client, const PubSubDataPtr& data) : client(client), data(data) {}
 
 void PublishWriteCallback::operationComplete() {
@@ -44,34 +64,48 @@ PublisherImpl::PublisherImpl(const ClientImplPtr& client)
   : client(client) {
 }
 
-void PublisherImpl::publish(const std::string& topic, const Message& message) {
-  SyncOperationCallback* cb = new SyncOperationCallback(client->getConfiguration().getInt(Configuration::SYNC_REQUEST_TIMEOUT, 
-											  DEFAULT_SYNC_REQUEST_TIMEOUT));
-  OperationCallbackPtr callback(cb);
-  asyncPublish(topic, message, callback);
+PublishResponsePtr PublisherImpl::publish(const std::string& topic, const Message& message) {
+  SyncCallback<PublishResponsePtr>* cb =
+    new SyncCallback<PublishResponsePtr>(client->getConfiguration().getInt(Configuration::SYNC_REQUEST_TIMEOUT, 
+											                                                     DEFAULT_SYNC_REQUEST_TIMEOUT));
+  PublishResponseCallbackPtr callback(cb);
+  asyncPublishWithResponse(topic, message, callback);
   cb->wait();
   
   cb->throwExceptionIfNeeded();  
+  return cb->getResult();
 }
 
-void PublisherImpl::publish(const std::string& topic, const std::string& message) {
+PublishResponsePtr PublisherImpl::publish(const std::string& topic, const std::string& message) {
   Message msg;
   msg.set_body(message);
-  publish(topic, msg);
+  return publish(topic, msg);
 }
 
 void PublisherImpl::asyncPublish(const std::string& topic, const Message& message, const OperationCallbackPtr& callback) {
   // use release after callback to release the channel after the callback is called
-  PubSubDataPtr data = PubSubData::forPublishRequest(client->counter().next(), topic, message, callback);
-  
-  DuplexChannelPtr channel = client->getChannel(topic);
-  doPublish(channel, data);
+  ResponseCallbackPtr respCallback(new ResponseCallbackAdaptor(callback));
+  doPublish(topic, message, respCallback);
 }
 
 void PublisherImpl::asyncPublish(const std::string& topic, const std::string& message, const OperationCallbackPtr& callback) {
   Message msg;
   msg.set_body(message);
   asyncPublish(topic, msg, callback);
+}
+
+void PublisherImpl::asyncPublishWithResponse(const std::string& topic, const Message& message,
+                                             const PublishResponseCallbackPtr& callback) {
+  ResponseCallbackPtr respCallback(new PublishResponseAdaptor(callback));
+  doPublish(topic, message, respCallback);
+}
+
+void PublisherImpl::doPublish(const std::string& topic, const Message& message, const ResponseCallbackPtr& callback) {
+  PubSubDataPtr data = PubSubData::forPublishRequest(client->counter().next(), topic, message, callback);
+  
+  DuplexChannelPtr channel = client->getChannel(topic);
+
+  doPublish(channel, data);
 }
 
 void PublisherImpl::doPublish(const DuplexChannelPtr& channel, const PubSubDataPtr& data) {
@@ -84,7 +118,11 @@ void PublisherImpl::doPublish(const DuplexChannelPtr& channel, const PubSubDataP
 void PublisherImpl::messageHandler(const PubSubResponsePtr& m, const PubSubDataPtr& txn) {
   switch (m->statuscode()) {
   case SUCCESS:
-    txn->getCallback()->operationComplete();
+    if (m->has_responsebody()) {
+      txn->getCallback()->operationComplete(m->responsebody());
+    } else {
+      txn->getCallback()->operationComplete(ResponseBody());
+    }
     break;
   case SERVICE_DOWN:
     LOG4CXX_ERROR(logger, "Server responsed with SERVICE_DOWN for " << txn->getTxnId());

@@ -28,7 +28,8 @@ static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("hedwig."__FILE__));
 
 using namespace Hedwig;
 
-PubSubDataPtr PubSubData::forPublishRequest(long txnid, const std::string& topic, const Message& body, const OperationCallbackPtr& callback) {
+PubSubDataPtr PubSubData::forPublishRequest(long txnid, const std::string& topic, const Message& body,
+                                            const ResponseCallbackPtr& callback) {
   PubSubDataPtr ptr(new PubSubData());
   ptr->type = PUBLISH;
   ptr->txnid = txnid;
@@ -38,7 +39,8 @@ PubSubDataPtr PubSubData::forPublishRequest(long txnid, const std::string& topic
   return ptr;
 }
 
-PubSubDataPtr PubSubData::forSubscribeRequest(long txnid, const std::string& subscriberid, const std::string& topic, const OperationCallbackPtr& callback, const SubscriptionOptions& options) {
+PubSubDataPtr PubSubData::forSubscribeRequest(long txnid, const std::string& subscriberid, const std::string& topic,
+                                              const ResponseCallbackPtr& callback, const SubscriptionOptions& options) {
   PubSubDataPtr ptr(new PubSubData());
   ptr->type = SUBSCRIBE;
   ptr->txnid = txnid;
@@ -49,7 +51,8 @@ PubSubDataPtr PubSubData::forSubscribeRequest(long txnid, const std::string& sub
   return ptr;  
 }
 
-PubSubDataPtr PubSubData::forUnsubscribeRequest(long txnid, const std::string& subscriberid, const std::string& topic, const OperationCallbackPtr& callback) {
+PubSubDataPtr PubSubData::forUnsubscribeRequest(long txnid, const std::string& subscriberid, const std::string& topic,
+                                                const ResponseCallbackPtr& callback) {
   PubSubDataPtr ptr(new PubSubData());
   ptr->type = UNSUBSCRIBE;
   ptr->txnid = txnid;
@@ -155,11 +158,11 @@ void PubSubData::clearTriedServers() {
   triedservers.clear();
 }
 
-OperationCallbackPtr& PubSubData::getCallback() {
+ResponseCallbackPtr& PubSubData::getCallback() {
   return callback;
 }
 
-void PubSubData::setCallback(const OperationCallbackPtr& callback) {
+void PubSubData::setCallback(const ResponseCallbackPtr& callback) {
   this->callback = callback;
 }
 

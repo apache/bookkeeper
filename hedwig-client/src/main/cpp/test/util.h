@@ -63,6 +63,32 @@ private:
   bool success;
 };
 
+class TestPublishResponseCallback : public Hedwig::PublishResponseCallback {
+public:
+  TestPublishResponseCallback(SimpleWaitCondition* cond) : cond(cond) {
+  }
+
+  virtual void operationComplete(const Hedwig::PublishResponsePtr & resp) {
+    LOG4CXX_DEBUG(utillogger, "operationComplete");
+    pubResp = resp;
+    cond->setSuccess(true);
+    cond->notify();
+  }
+  
+  virtual void operationFailed(const std::exception& exception) {
+    LOG4CXX_DEBUG(utillogger, "operationFailed: " << exception.what());
+    cond->setSuccess(false);
+    cond->notify();
+  }    
+
+  Hedwig::PublishResponsePtr getResponse() {
+    return pubResp;
+  }
+private:
+  SimpleWaitCondition *cond;
+  Hedwig::PublishResponsePtr pubResp;
+};
+
 class TestCallback : public Hedwig::OperationCallback {
 public:
   TestCallback(SimpleWaitCondition* cond) 

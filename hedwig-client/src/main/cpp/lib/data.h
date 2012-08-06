@@ -49,6 +49,9 @@ namespace Hedwig {
     boost::mutex mutex;
   };
 
+  typedef Callback<ResponseBody> ResponseCallback;
+  typedef std::tr1::shared_ptr<ResponseCallback> ResponseCallbackPtr;
+
   class PubSubData;
   typedef boost::shared_ptr<PubSubData> PubSubDataPtr;
   typedef boost::shared_ptr<PubSubRequest> PubSubRequestPtr;
@@ -61,10 +64,12 @@ namespace Hedwig {
   class PubSubData {
   public:
     // to be used for publish
-    static PubSubDataPtr forPublishRequest(long txnid, const std::string& topic, const Message& body, const OperationCallbackPtr& callback);
+    static PubSubDataPtr forPublishRequest(long txnid, const std::string& topic, const Message& body,
+                                           const ResponseCallbackPtr& callback);
     static PubSubDataPtr forSubscribeRequest(long txnid, const std::string& subscriberid, const std::string& topic,
-					     const OperationCallbackPtr& callback, const SubscriptionOptions& options);
-    static PubSubDataPtr forUnsubscribeRequest(long txnid, const std::string& subscriberid, const std::string& topic, const OperationCallbackPtr& callback);
+                                             const ResponseCallbackPtr& callback, const SubscriptionOptions& options);
+    static PubSubDataPtr forUnsubscribeRequest(long txnid, const std::string& subscriberid, const std::string& topic,
+                                               const ResponseCallbackPtr& callback);
     static PubSubDataPtr forConsumeRequest(long txnid, const std::string& subscriberid, const std::string& topic, const MessageSeqId msgid);
 
     ~PubSubData();
@@ -80,8 +85,8 @@ namespace Hedwig {
     void setMessageBound(int messageBound);
 
     const PubSubRequestPtr getRequest();
-    void setCallback(const OperationCallbackPtr& callback);
-    OperationCallbackPtr& getCallback();
+    void setCallback(const ResponseCallbackPtr& callback);
+    ResponseCallbackPtr& getCallback();
     const SubscriptionOptions& getSubscriptionOptions() const;
 
     void addTriedServer(HostAddress& h);
@@ -98,7 +103,7 @@ namespace Hedwig {
     Message body;
     bool shouldClaim;
     int messageBound;
-    OperationCallbackPtr callback;
+    ResponseCallbackPtr callback;
     SubscriptionOptions options;
     MessageSeqId msgid;
     std::tr1::unordered_set<HostAddress, HostAddressHash > triedservers;
