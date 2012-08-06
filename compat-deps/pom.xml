@@ -33,6 +33,8 @@
   <modules>
     <module>bookkeeper-server-compat-4.0.0</module>
     <module>bookkeeper-server-compat-4.1.0</module>
+    <module>hedwig-server-compat-4.0.0</module>
+    <module>hedwig-server-compat-4.1.0</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

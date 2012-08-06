@@ -84,6 +84,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-331: Let hedwig support returning message seq id for publish requests. (Mridul via sijie)
 
+        BOOKKEEPER-340: Test backward compatibility for hedwig between different versions. (sijie via ivank)
+
       hedwig-client:
 
         BOOKKEEPER-306: Change C++ client to use gtest for testing (ivank via sijie)

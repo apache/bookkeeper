@@ -56,10 +56,10 @@
       <type>jar</type>
     </dependency>
     <dependency>
-    	<groupId>org.apache.derby</groupId>
-    	<artifactId>derby</artifactId>
-    	<version>10.8.2.2</version>
-    	<scope>runtime</scope>
+        <groupId>org.apache.derby</groupId>
+        <artifactId>derby</artifactId>
+        <version>10.8.2.2</version>
+        <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
@@ -81,33 +81,40 @@
       <scope>compile</scope>
       <type>jar</type>
     </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>bookkeeper-server</artifactId>
+      <version>${project.parent.version}</version>
+      <scope>test</scope>
+      <type>test-jar</type>
+    </dependency>
     <!--
-	Annoying dependency we need to include because
-	zookeeper uses log4j and so we transatively do, but
-	log4j has some dependencies which aren't in the 
-	default maven repositories
+        Annoying dependency we need to include because
+        zookeeper uses log4j and so we transatively do, but
+        log4j has some dependencies which aren't in the 
+        default maven repositories
     //-->
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
       <version>1.2.15</version>
       <exclusions>
-	<exclusion>
-	  <groupId>javax.mail</groupId>
-	  <artifactId>mail</artifactId>
-	</exclusion>
-	<exclusion>
-	  <groupId>javax.jms</groupId>
-	  <artifactId>jms</artifactId>
-	</exclusion>
-	<exclusion>
-	  <groupId>com.sun.jdmk</groupId>
-	  <artifactId>jmxtools</artifactId>
-	</exclusion>
-	<exclusion>
-	  <groupId>com.sun.jmx</groupId>
-	  <artifactId>jmxri</artifactId>
-	</exclusion>
+        <exclusion>
+          <groupId>javax.mail</groupId>
+          <artifactId>mail</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>javax.jms</groupId>
+          <artifactId>jms</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jdmk</groupId>
+          <artifactId>jmxtools</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jmx</groupId>
+          <artifactId>jmxri</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -115,25 +122,73 @@
       <artifactId>jline</artifactId>
       <version>0.9.94</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>hedwig-server-compat410</artifactId>
+      <version>4.1.0</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>bookkeeper-server</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>hedwig-server</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>hedwig-protocol</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>hedwig-client</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>hedwig-server-compat400</artifactId>
+      <version>4.0.0</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>bookkeeper-server</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>hedwig-server</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>hedwig-protocol</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>hedwig-client</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
       <plugin>
-	<groupId>org.apache.rat</groupId>
-	<artifactId>apache-rat-plugin</artifactId>
-	<version>0.7</version>
-	<configuration>
-	  <excludes>
-	    <exclude>**/p12.pass</exclude>
-	  </excludes>
-	</configuration>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <version>0.7</version>
+        <configuration>
+          <excludes>
+            <exclude>**/p12.pass</exclude>
+          </excludes>
+        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <version>2.2.1</version>
         <configuration>
           <descriptors>
-	    <descriptor>../src/assemble/bin.xml</descriptor>
+            <descriptor>../src/assemble/bin.xml</descriptor>
           </descriptors>
         </configuration>
       </plugin>
@@ -162,30 +217,30 @@
         </executions>
       </plugin>
       <plugin>
-	<artifactId>maven-dependency-plugin</artifactId>
-	<executions>
-	  <execution>
-	    <phase>package</phase>
-	    <goals>
-	      <goal>copy-dependencies</goal>
-	    </goals>
-	    <configuration>
-	      <outputDirectory>${basedir}/lib</outputDirectory>
-	    </configuration>
-	  </execution>
-	</executions>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/lib</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
-      	<groupId>org.apache.maven.plugins</groupId>
-	<artifactId>maven-surefire-plugin</artifactId>
-	<version>2.9</version>
-	<configuration>
-	  <argLine>-Xmx1G -Djava.net.preferIPv4Stack=true</argLine>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.9</version>
+        <configuration>
+          <argLine>-Xmx1G -Djava.net.preferIPv4Stack=true</argLine>
           <systemPropertyVariables>
             <derby.stream.error.file>target/derby.log</derby.stream.error.file>
             <build.test.dir>target/zk_clientbase_build</build.test.dir>
           </systemPropertyVariables>
-	</configuration>
+        </configuration>
       </plugin>
     </plugins>
   </build>

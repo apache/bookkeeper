@@ -57,12 +57,14 @@ DEFAULT_LOG_CONF=$BK_HOME/conf/log4j.properties
 
 source $BK_HOME/conf/bkenv.sh
 
-RELEASE_JAR=`ls $BK_HOME/bookkeeper-server-*.jar 2> /dev/null | tail -1` 
+# exclude tests jar
+RELEASE_JAR=`ls $BK_HOME/bookkeeper-server-*.jar 2> /dev/null | grep -v tests | tail -1` 
 if [ $? == 0 ]; then
     BOOKIE_JAR=$RELEASE_JAR
 fi
 
-BUILT_JAR=`ls $BK_HOME/target/bookkeeper-server-*.jar 2> /dev/null | tail -1`
+# exclude tests jar
+BUILT_JAR=`ls $BK_HOME/target/bookkeeper-server-*.jar 2> /dev/null | grep -v tests | tail -1`
 if [ $? != 0 ] && [ ! -e "$BOOKIE_JAR" ]; then 
     echo "\nCouldn't find bookkeeper jar.";
     echo "Make sure you've run 'mvn package'\n";
