@@ -66,6 +66,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-259: Create a topic manager using versioned write for leader election (sijie via ivank)
 
+        BOOKKEEPER-191: Hub server should change ledger to write, so consumed messages have chance to be garbage collected. (sijie via ivank)
+
     IMPROVEMENTS:
 
       bookkeeper-server:

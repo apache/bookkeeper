@@ -20,14 +20,16 @@ package org.apache.hedwig.server.persistence;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
@@ -77,6 +79,10 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
     private TopicPersistenceManager tpManager;
     private ServerConfiguration cfg;
     private TopicManager tm;
+
+    // max number of entries allowed in a ledger
+    private static final long UNLIMITED_ENTRIES = 0L;
+    private final long maxEntriesPerLedger;
 
     static class InMemoryLedgerRange {
         LedgerRange range;
@@ -131,6 +137,19 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
          */
         AtomicBoolean doRelease = new AtomicBoolean(false);
 
+        /**
+         * Flag indicats the topic is changing ledger
+         */
+        AtomicBoolean doChangeLedger = new AtomicBoolean(false);
+        /**
+         * Last seq id to change ledger.
+         */
+        long lastSeqIdBeforeLedgerChange = -1;
+        /**
+         * List to buffer all persist requests during changing ledger.
+         */
+        LinkedList<PersistRequest> deferredRequests = null;
+
         final static int UNLIMITED = 0;
         int messageBound = UNLIMITED;
     }
@@ -160,6 +179,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
         this.tpManager = metaManagerFactory.newTopicPersistenceManager();
         this.cfg = cfg;
         this.tm = tm;
+        this.maxEntriesPerLedger = cfg.getMaxEntriesPerLedger();
         queuer = new TopicOpQueuer(executor);
         tm.addTopicOwnershipChangeListener(this);
     }
@@ -460,6 +480,51 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
         return Math.max(seqId + skipAmount, getMinSeqIdForTopic(topic));
     }
 
+    /**
+     * Release topic on failure
+     *
+     * @param topic
+     *          Topic Name
+     * @param e
+     *          Failure Exception
+     * @param ctx
+     *          Callback context
+     */
+    protected void releaseTopicIfRequested(final ByteString topic, Exception e, Object ctx) {
+        TopicInfo topicInfo = topicInfos.get(topic);
+        if (topicInfo == null) {
+            logger.warn("No topic found when trying to release ownership of topic " + topic.toStringUtf8()
+                      + " on failure.");
+            return;
+        }
+        // do release owner ship of topic
+        if (topicInfo.doRelease.compareAndSet(false, true)) {
+            logger.info("Release topic " + topic.toStringUtf8() + " when bookkeeper persistence mananger encounters failure :",
+                        e);
+            tm.releaseTopic(topic, new Callback<Void>() {
+                @Override
+                public void operationFailed(Object ctx, PubSubException exception) {
+                    logger.error("Exception found on releasing topic " + topic.toStringUtf8()
+                               + " when encountering exception from bookkeeper:", exception);
+                }
+                @Override
+                public void operationFinished(Object ctx, Void resultOfOperation) {
+                    logger.info("successfully releasing topic {} when encountering"
+                              + " exception from bookkeeper", topic.toStringUtf8());
+                }
+            }, null);
+        }
+        // if release happens when the topic is changing ledger
+        // we need to fail all queued persist requests
+        if (topicInfo.doChangeLedger.get()) {
+            for (PersistRequest pr : topicInfo.deferredRequests) {
+                pr.getCallback().operationFailed(ctx, new PubSubException.ServiceDownException(e));
+            }
+            topicInfo.deferredRequests.clear();
+            topicInfo.lastSeqIdBeforeLedgerChange = -1;
+        }
+    }
+
     public class PersistOp extends TopicOpQueuer.SynchronousOp {
         PersistRequest request;
 
@@ -470,79 +535,134 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
 
         @Override
         public void runInternal() {
-            final TopicInfo topicInfo = topicInfos.get(topic);
-
-            if (topicInfo == null) {
-                request.getCallback().operationFailed(request.ctx,
-                                                 new PubSubException.ServerNotResponsibleForTopicException(""));
-                return;
-            }
-
-            if (topicInfo.doRelease.get()) {
-                request.getCallback().operationFailed(request.ctx, new PubSubException.ServiceDownException(
-                    "The ownership of the topic is releasing due to unrecoverable issue."));
-                return;
-            }
-
-            final long localSeqId = topicInfo.lastSeqIdPushed.getLocalComponent() + 1;
-            MessageSeqId.Builder builder = MessageSeqId.newBuilder();
-            if (request.message.hasMsgId()) {
-                MessageIdUtils.takeRegionMaximum(builder, topicInfo.lastSeqIdPushed, request.message.getMsgId());
-            } else {
-                builder.addAllRemoteComponents(topicInfo.lastSeqIdPushed.getRemoteComponentsList());
-            }
-            builder.setLocalComponent(localSeqId);
-
-            topicInfo.lastSeqIdPushed = builder.build();
-            Message msgToSerialize = Message.newBuilder(request.message).setMsgId(topicInfo.lastSeqIdPushed).build();
-
-            final MessageSeqId responseSeqId = msgToSerialize.getMsgId();
-
-            topicInfo.currentLedgerRange.handle.asyncAddEntry(msgToSerialize.toByteArray(),
-            new SafeAsynBKCallback.AddCallback() {
-                @Override
-                public void safeAddComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                    if (rc != BKException.Code.OK) {
-                        BKException bke = BKException.create(rc);
-                        logger.error("Error while persisting entry to ledger: " + lh.getId() + " for topic: "
-                                     + topic.toStringUtf8(), bke);
-
-                        // To preserve ordering guarantees, we
-                        // should give up the topic and not let
-                        // other operations through
-                        if (topicInfo.doRelease.compareAndSet(false, true)) {
-                            tm.releaseTopic(request.topic, new Callback<Void>() {
-                                @Override
-                                public void operationFailed(Object ctx, PubSubException exception) {
-                                    logger.error("Exception found on releasing topic " + request.topic.toStringUtf8()
-                                               + " when encountering exception from bookkeeper:", exception);
-                                }
-                                @Override
-                                public void operationFinished(Object ctx, Void resultOfOperation) {
-                                    logger.debug("successfully releasing topic {} when encountering"
-                                                 + " exception from bookkeeper", request.topic.toStringUtf8());
-                                }
-                            }, null);
-                        }
-                        request.getCallback().operationFailed(ctx, new PubSubException.ServiceDownException(bke));
-                        return;
-                    }
-
-                    if (entryId + topicInfo.currentLedgerRange.startSeqIdIncluded != localSeqId) {
-                        String msg = "Expected BK to assign entry-id: "
-                                     + (localSeqId - topicInfo.currentLedgerRange.startSeqIdIncluded)
-                                     + " but it instead assigned entry-id: " + entryId + " topic: "
-                                     + topic.toStringUtf8() + "ledger: " + lh.getId();
-                        logger.error(msg);
-                        throw new UnexpectedError(msg);
-                    }
-
-                    topicInfo.lastEntryIdAckedInCurrentLedger = entryId;
-                    request.getCallback().operationFinished(ctx, responseSeqId);
-                }
-            }, request.ctx);
-
+            doPersistMessage(request);
         }
+    }
+
+    /**
+     * Persist a message by executing a persist request.
+     */
+    protected void doPersistMessage(final PersistRequest request) {
+        final ByteString topic = request.topic;
+        final TopicInfo topicInfo = topicInfos.get(topic);
+
+        if (topicInfo == null) {
+            request.getCallback().operationFailed(request.ctx,
+                                             new PubSubException.ServerNotResponsibleForTopicException(""));
+            return;
+        }
+
+        if (topicInfo.doRelease.get()) {
+            request.getCallback().operationFailed(request.ctx, new PubSubException.ServiceDownException(
+                "The ownership of the topic is releasing due to unrecoverable issue."));
+            return;
+        }
+
+        // if the topic is changing ledger, queue following persist requests until ledger is changed
+        if (topicInfo.doChangeLedger.get()) {
+            logger.info("Topic {} is changing ledger, so queue persist request for message.",
+                        topic.toStringUtf8());
+            topicInfo.deferredRequests.add(request);
+            return;
+        }
+
+        final long localSeqId = topicInfo.lastSeqIdPushed.getLocalComponent() + 1;
+        MessageSeqId.Builder builder = MessageSeqId.newBuilder();
+        if (request.message.hasMsgId()) {
+            MessageIdUtils.takeRegionMaximum(builder, topicInfo.lastSeqIdPushed, request.message.getMsgId());
+        } else {
+            builder.addAllRemoteComponents(topicInfo.lastSeqIdPushed.getRemoteComponentsList());
+        }
+        builder.setLocalComponent(localSeqId);
+
+        // check whether reach the threshold of a ledger, if it does,
+        // open a ledger to write
+        long entriesInThisLedger = localSeqId - topicInfo.currentLedgerRange.startSeqIdIncluded + 1;
+        if (UNLIMITED_ENTRIES != maxEntriesPerLedger &&
+            entriesInThisLedger >= maxEntriesPerLedger) {
+            if (topicInfo.doChangeLedger.compareAndSet(false, true)) {
+                // for order guarantees, we should wait until all the adding operations for current ledger
+                // are succeed. so we just mark it as lastSeqIdBeforeLedgerChange
+                // when the lastSeqIdBeforeLedgerChange acked, we do changing the ledger
+                if (null == topicInfo.deferredRequests) {
+                    topicInfo.deferredRequests = new LinkedList<PersistRequest>();
+                }
+                topicInfo.lastSeqIdBeforeLedgerChange = localSeqId;
+            }
+        }
+
+        topicInfo.lastSeqIdPushed = builder.build();
+        Message msgToSerialize = Message.newBuilder(request.message).setMsgId(topicInfo.lastSeqIdPushed).build();
+
+        final MessageSeqId responseSeqId = msgToSerialize.getMsgId();
+        topicInfo.currentLedgerRange.handle.asyncAddEntry(msgToSerialize.toByteArray(),
+        new SafeAsynBKCallback.AddCallback() {
+            AtomicBoolean processed = new AtomicBoolean(false);
+            @Override
+            public void safeAddComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+
+                // avoid double callback by mistake, since we may do change ledger in this callback.
+                if (!processed.compareAndSet(false, true)) {
+                    return;
+                }
+                if (rc != BKException.Code.OK) {
+                    BKException bke = BKException.create(rc);
+                    logger.error("Error while persisting entry to ledger: " + lh.getId() + " for topic: "
+                                 + topic.toStringUtf8(), bke);
+                    request.getCallback().operationFailed(ctx, new PubSubException.ServiceDownException(bke));
+
+                    // To preserve ordering guarantees, we
+                    // should give up the topic and not let
+                    // other operations through
+                    releaseTopicIfRequested(request.topic, bke, ctx);
+                    return;
+                }
+
+                if (entryId + topicInfo.currentLedgerRange.startSeqIdIncluded != localSeqId) {
+                    String msg = "Expected BK to assign entry-id: "
+                                 + (localSeqId - topicInfo.currentLedgerRange.startSeqIdIncluded)
+                                 + " but it instead assigned entry-id: " + entryId + " topic: "
+                                 + topic.toStringUtf8() + "ledger: " + lh.getId();
+                    logger.error(msg);
+                    throw new UnexpectedError(msg);
+                }
+
+                topicInfo.lastEntryIdAckedInCurrentLedger = entryId;
+                request.getCallback().operationFinished(ctx, responseSeqId);
+                // if this acked entry is the last entry of current ledger
+                // we can add a ChangeLedgerOp to execute to change ledger
+                if (topicInfo.doChangeLedger.get() &&
+                    entryId + topicInfo.currentLedgerRange.startSeqIdIncluded == topicInfo.lastSeqIdBeforeLedgerChange) {
+                    // change ledger
+                    changeLedger(topic, new Callback<Void>() {
+                        @Override
+                        public void operationFailed(Object ctx, PubSubException exception) {
+                            logger.error("Failed to change ledger for topic " + topic.toStringUtf8(), exception);
+                            // change ledger failed, we should give up topic
+                            releaseTopicIfRequested(request.topic, exception, ctx);
+                        }
+                        @Override
+                        public void operationFinished(Object ctx, Void resultOfOperation) {
+                            topicInfo.doChangeLedger.set(false);
+                            topicInfo.lastSeqIdBeforeLedgerChange = -1;
+                            // the ledger is changed, persist queued requests
+                            // if the number of queued persist requests is more than maxEntriesPerLedger
+                            // we just persist maxEntriesPerLedger requests, other requests are still queued
+                            // until next ledger changed.
+                            int numRequests = 0;
+                            while (!topicInfo.deferredRequests.isEmpty() &&
+                                   numRequests < maxEntriesPerLedger) {
+                                PersistRequest pr = topicInfo.deferredRequests.removeFirst();
+                                doPersistMessage(pr);
+                                ++numRequests;
+                            }
+                            logger.debug("Finished persisting {} queued requests, but there are still {} requests in queue.",
+                                         numRequests, topicInfo.deferredRequests.size());
+                        }
+                    }, ctx);
+                }
+            }
+        }, request.ctx);
     }
 
     public void persistMessage(PersistRequest request) {
@@ -622,7 +742,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
             }
 
             // All ledgers were found properly closed, just start a new one
-            openNewTopicLedger(version, topicInfo);
+            openNewTopicLedger(topic, version, topicInfo, false, cb, ctx);
         }
 
         /**
@@ -654,7 +774,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                         // couldn't write to, so just ignore it
                         logger.info("Pruning empty ledger: " + ledgerId + " for topic: " + topic.toStringUtf8());
                         closeLedger(ledgerHandle);
-                        openNewTopicLedger(expectedVersionOfLedgerNode, topicInfo);
+                        openNewTopicLedger(topic, expectedVersionOfLedgerNode, topicInfo, false, cb, ctx);
                         return;
                     }
 
@@ -695,7 +815,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                             logger.info("Recovered unclosed ledger: " + ledgerId + " for topic: "
                                         + topic.toStringUtf8() + " with " + numEntriesInLastLedger + " entries");
 
-                            openNewTopicLedger(expectedVersionOfLedgerNode, topicInfo);
+                            openNewTopicLedger(topic, expectedVersionOfLedgerNode, topicInfo, false, cb, ctx);
                         }
                     }, ctx);
 
@@ -703,69 +823,83 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
 
             }, ctx);
         }
+    }
 
-        /**
-         *
-         * @param requiredVersionOfLedgersNode
-         *            The version of the ledgers node when we read it, should be
-         *            the same when we try to write
-         */
-        private void openNewTopicLedger(final Version expectedVersionOfLedgersNode, final TopicInfo topicInfo) {
-            bk.asyncCreateLedger(cfg.getBkEnsembleSize(), cfg.getBkQuorumSize(), DigestType.CRC32, passwd,
-            new SafeAsynBKCallback.CreateCallback() {
-                boolean processed = false;
+    /**
+     * Open New Ledger to write for a topic.
+     *
+     * @param topic
+     *          Topic Name
+     * @param expectedVersionOfLedgersNode
+     *          Expected Version to Update Ledgers Node.
+     * @param topicInfo
+     *          Topic Information
+     * @param changeLedger
+     *          Whether is it called when changing ledger
+     * @param cb
+     *          Callback to trigger after opening new ledger.
+     * @param ctx
+     *          Callback context.
+     */
+    void openNewTopicLedger(final ByteString topic,
+                            final Version expectedVersionOfLedgersNode, final TopicInfo topicInfo,
+                            final boolean changeLedger,
+                            final Callback<Void> cb, final Object ctx) {
+        bk.asyncCreateLedger(cfg.getBkEnsembleSize(), cfg.getBkQuorumSize(), DigestType.CRC32, passwd,
+        new SafeAsynBKCallback.CreateCallback() {
+            AtomicBoolean processed = new AtomicBoolean(false);
 
-                @Override
-                public void safeCreateComplete(int rc, LedgerHandle lh, Object ctx) {
-                    if (processed) {
-                        return;
-                    } else {
-                        processed = true;
-                    }
+            @Override
+            public void safeCreateComplete(int rc, LedgerHandle lh, Object ctx) {
+                if (!processed.compareAndSet(false, true)) {
+                    return;
+                }
 
-                    if (rc != BKException.Code.OK) {
-                        BKException bke = BKException.create(rc);
-                        logger.error("Could not create new ledger while acquiring topic: "
-                                     + topic.toStringUtf8(), bke);
-                        cb.operationFailed(ctx, new PubSubException.ServiceDownException(bke));
-                        return;
-                    }
+                if (rc != BKException.Code.OK) {
+                    BKException bke = BKException.create(rc);
+                    logger.error("Could not create new ledger while acquiring topic: "
+                                 + topic.toStringUtf8(), bke);
+                    cb.operationFailed(ctx, new PubSubException.ServiceDownException(bke));
+                    return;
+                }
 
+                // compute last seq id
+                if (!changeLedger) {
                     topicInfo.lastSeqIdPushed = topicInfo.ledgerRanges.isEmpty() ? MessageSeqId.newBuilder()
                                                 .setLocalComponent(0).build() : topicInfo.ledgerRanges.lastEntry().getValue().range
                                                 .getEndSeqIdIncluded();
-
-                    LedgerRange lastRange = LedgerRange.newBuilder().setLedgerId(lh.getId()).build();
-                    topicInfo.currentLedgerRange = new InMemoryLedgerRange(lastRange, topicInfo.lastSeqIdPushed
-                            .getLocalComponent() + 1, lh);
-
-                    // Persist the fact that we started this new
-                    // ledger to ZK
-
-                    LedgerRanges.Builder builder = LedgerRanges.newBuilder();
-                    for (InMemoryLedgerRange imlr : topicInfo.ledgerRanges.values()) {
-                        builder.addRanges(imlr.range);
-                    }
-                    builder.addRanges(lastRange);
-
-                    tpManager.writeTopicPersistenceInfo(
-                    topic, builder.build(), expectedVersionOfLedgersNode, new Callback<Version>() {
-                        @Override
-                        public void operationFinished(Object ctx, Version newVersion) {
-                            // Finally, all done
-                            topicInfo.ledgerRangesVersion = newVersion;
-                            topicInfos.put(topic, topicInfo);
-                            cb.operationFinished(ctx, null);
-                        }
-                        @Override
-                        public void operationFailed(Object ctx, PubSubException exception) {
-                            cb.operationFailed(ctx, exception);
-                        }
-                    }, ctx);
-                    return;
                 }
-            }, ctx);
-        }
+
+                LedgerRange lastRange = LedgerRange.newBuilder().setLedgerId(lh.getId()).build();
+                topicInfo.currentLedgerRange = new InMemoryLedgerRange(lastRange, topicInfo.lastSeqIdPushed
+                        .getLocalComponent() + 1, lh);
+
+                // Persist the fact that we started this new
+                // ledger to ZK
+
+                LedgerRanges.Builder builder = LedgerRanges.newBuilder();
+                for (InMemoryLedgerRange imlr : topicInfo.ledgerRanges.values()) {
+                    builder.addRanges(imlr.range);
+                }
+                builder.addRanges(lastRange);
+
+                tpManager.writeTopicPersistenceInfo(
+                topic, builder.build(), expectedVersionOfLedgersNode, new Callback<Version>() {
+                    @Override
+                    public void operationFinished(Object ctx, Version newVersion) {
+                        // Finally, all done
+                        topicInfo.ledgerRangesVersion = newVersion;
+                        topicInfos.put(topic, topicInfo);
+                        cb.operationFinished(ctx, null);
+                    }
+                    @Override
+                    public void operationFailed(Object ctx, PubSubException exception) {
+                        cb.operationFailed(ctx, exception);
+                    }
+                }, ctx);
+                return;
+            }
+        }, ctx);
     }
 
     /**
@@ -779,6 +913,71 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
     @Override
     public void acquiredTopic(ByteString topic, Callback<Void> callback, Object ctx) {
         queuer.pushAndMaybeRun(topic, new AcquireOp(topic, callback, ctx));
+    }
+
+    /**
+     * Change ledger to write for a topic.
+     */
+    class ChangeLedgerOp extends TopicOpQueuer.AsynchronousOp<Void> {
+
+        public ChangeLedgerOp(ByteString topic, Callback<Void> cb, Object ctx) {
+            queuer.super(topic, cb, ctx);
+        }
+
+        @Override
+        public void run() {
+            TopicInfo topicInfo = topicInfos.get(topic);
+            if (null == topicInfo) {
+                logger.error("Weired! hub server doesn't own topic " + topic.toStringUtf8()
+                           + " when changing ledger to write.");
+                cb.operationFailed(ctx, new PubSubException.ServerNotResponsibleForTopicException(""));
+                return;
+            }
+            closeLastTopicLedgerAndOpenNewOne(topicInfo);
+        }
+
+        private void closeLastTopicLedgerAndOpenNewOne(final TopicInfo topicInfo) {
+            final long ledgerId = topicInfo.currentLedgerRange.handle.getId();
+            topicInfo.currentLedgerRange.handle.asyncClose(new CloseCallback() {
+                AtomicBoolean processed = new AtomicBoolean(false);
+                @Override
+                public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
+                    if (!processed.compareAndSet(false, true)) {
+                        return;
+                    }
+                    if (BKException.Code.OK != rc) {
+                        BKException bke = BKException.create(rc);
+                        logger.error("Could not close ledger " + ledgerId
+                                   + " while changing ledger of topic " + topic.toStringUtf8(), bke);
+                        cb.operationFailed(ctx, new PubSubException.ServiceDownException(bke));
+                        return;
+                    }
+                    // update last range
+                    LedgerRange lastRange = LedgerRange.newBuilder().setLedgerId(ledgerId)
+                                            .setEndSeqIdIncluded(topicInfo.lastSeqIdPushed).build();
+
+                    topicInfo.currentLedgerRange.range = lastRange;
+                    // put current ledger to ledger ranges
+                    topicInfo.ledgerRanges.put(topicInfo.lastSeqIdPushed.getLocalComponent(),
+                                               topicInfo.currentLedgerRange);
+                    logger.info("Closed written ledger " + ledgerId + " for topic "
+                              + topic.toStringUtf8() + " to change ledger.");
+                    openNewTopicLedger(topic, topicInfo.ledgerRangesVersion,
+                                       topicInfo, true, cb, ctx);
+                }
+            }, ctx);
+        }
+
+    }
+
+    /**
+     * Change ledger to write for a topic.
+     *
+     * @param topic
+     *          Topic Name
+     */
+    protected void changeLedger(ByteString topic, Callback<Void> cb, Object ctx) {
+        queuer.pushAndMaybeRun(topic, new ChangeLedgerOp(topic, cb, ctx));
     }
 
     public void closeLedger(LedgerHandle lh) {

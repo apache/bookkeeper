@@ -61,6 +61,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String BK_ENSEMBLE_SIZE = "bk_ensemble_size";
     protected final static String BK_QUORUM_SIZE = "bk_quorum_size";
     protected final static String RETRY_REMOTE_SUBSCRIBE_THREAD_RUN_INTERVAL = "retry_remote_subscribe_thread_run_interval";
+    protected final static String MAX_ENTRIES_PER_LEDGER = "max_entries_per_ledger";
 
     // manager related settings
     protected final static String METADATA_MANAGER_BASED_TOPIC_MANAGER_ENABLED = "metadata_manager_based_topic_manager_enabled";
@@ -293,6 +294,17 @@ public class ServerConfiguration extends AbstractConfiguration {
     // copies of each ledger entry is written).
     public int getBkQuorumSize() {
         return conf.getInt(BK_QUORUM_SIZE, 2);
+    }
+
+    /**
+     * This parameter is used when BookKeeper is the persistence storage,
+     * and indicates when the number of entries stored in a ledger reach
+     * the threshold, hub server will open a new ledger to write.
+     *
+     * @return max entries per ledger
+     */
+    public long getMaxEntriesPerLedger() {
+        return conf.getLong(MAX_ENTRIES_PER_LEDGER, 0L);
     }
 
     /*
