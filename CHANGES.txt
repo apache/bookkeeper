@@ -50,6 +50,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-349: Entry logger should close all the chennels which are there in Map, instead of closing only current channel. (umamaheswararao via sijie)
 
+        BOOKKEEPER-326: DeadLock during ledger recovery (rakeshr via ivank)
+
       hedwig-client:
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)

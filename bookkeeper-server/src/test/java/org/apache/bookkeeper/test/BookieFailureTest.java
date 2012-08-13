@@ -357,4 +357,43 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
         }
     }
 
+    /**
+     * Verify read last confirmed op, it shouldn't cause any deadlock as new
+     * bookie connection is being established and returning the connection
+     * notification in the same caller thread. It would be simulated by delaying
+     * the future.addlistener() in PerChannelBookieClient after the connection
+     * establishment. Now the future.addlistener() will notify back in the same
+     * thread and simultaneously invoke the pendingOp.operationComplete() event.
+     * 
+     * BOOKKEEPER-326
+     */
+    @Test
+    public void testReadLastConfirmedOp() throws Exception {
+        startNewBookie();
+        startNewBookie();
+        // Create a ledger
+        LedgerHandle beforelh = bkc.createLedger(numBookies + 2,
+                numBookies + 2, digestType, "".getBytes());
+
+        int numEntries = 10;
+        String tmp = "BookKeeper is cool!";
+        for (int i = 0; i < numEntries; i++) {
+            beforelh.addEntry(tmp.getBytes());
+        }
+
+        // shutdown first bookie server
+        killBookie(0);
+        startNewBookie();
+
+        // create new bookie client, and forcing to establish new
+        // PerChannelBookieClient connections for recovery flows.
+        BookKeeperTestClient bkc1 = new BookKeeperTestClient(baseClientConf);
+        // try to open ledger with recovery
+        LedgerHandle afterlh = bkc1.openLedger(beforelh.getId(), digestType, ""
+                .getBytes());
+
+        assertEquals("Entries got missed", beforelh.getLastAddPushed(), afterlh
+                .getLastAddConfirmed());
+        bkc1.close();
+    }
 }
