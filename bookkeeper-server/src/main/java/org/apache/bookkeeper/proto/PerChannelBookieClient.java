@@ -114,13 +114,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         this.readTimeoutTimer = null;
     }
 
-    synchronized private void connect() {
-        if (state == ConnectionState.CONNECTING) {
-            return;
-        } 
-        // Start the connection attempt to the input server host.
-        state = ConnectionState.CONNECTING;
-
+    private void connect() {
         if (LOG.isDebugEnabled())
             LOG.debug("Connecting to bookie: " + addr);
 
@@ -153,8 +147,6 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                         state = ConnectionState.DISCONNECTED;
                     }
 
-                    PerChannelBookieClient.this.channel = channel;
-
                     // trick to not do operations under the lock, take the list
                     // of pending ops and assign it to a new variable, while
                     // emptying the pending ops by just assigning it to a new
@@ -171,7 +163,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     }
 
     void connectIfNeededAndDoOp(GenericCallback<Void> op) {
-        boolean doOpNow;
+        boolean doOpNow = false;
 
         // common case without lock first
         if (channel != null && state == ConnectionState.CONNECTED) {
@@ -179,25 +171,28 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         } else {
 
             synchronized (this) {
-                // check again under lock
+                // check the channel status again under lock
                 if (channel != null && state == ConnectionState.CONNECTED) {
                     doOpNow = true;
                 } else {
-
-                    // if reached here, channel is either null (first connection
-                    // attempt),
-                    // or the channel is disconnected
-                    doOpNow = false;
-
-                    // connection attempt is still in progress, queue up this
-                    // op. Op will be executed when connection attempt either
-                    // fails
-                    // or
-                    // succeeds
+                    // channel is either null (first connection attempt), or the
+                    // channel is disconnected. Connection attempt is still in
+                    // progress, queue up this op. Op will be executed when
+                    // connection attempt either fails or succeeds
                     pendingOps.add(op);
 
-                    connect();
+                    if (state == ConnectionState.CONNECTING) {
+                        // just return as connection request has already send
+                        // and waiting for the response.
+                        return;
+                    }
+                    // switch state to connecting and do connection attempt
+                    state = ConnectionState.CONNECTING;
                 }
+            }
+            if (!doOpNow) {
+                // Start connection attempt to the input server host.
+                connect();
             }
         }
 
