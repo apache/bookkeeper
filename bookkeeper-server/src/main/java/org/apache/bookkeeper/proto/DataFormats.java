@@ -1624,6 +1624,843 @@ public final class DataFormats {
     // @@protoc_insertion_point(class_scope:LedgerMetadataFormat)
   }
   
+  public interface LedgerRereplicationLayoutFormatOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required string type = 1;
+    boolean hasType();
+    String getType();
+    
+    // required int32 version = 2;
+    boolean hasVersion();
+    int getVersion();
+  }
+  public static final class LedgerRereplicationLayoutFormat extends
+      com.google.protobuf.GeneratedMessage
+      implements LedgerRereplicationLayoutFormatOrBuilder {
+    // Use LedgerRereplicationLayoutFormat.newBuilder() to construct.
+    private LedgerRereplicationLayoutFormat(Builder builder) {
+      super(builder);
+    }
+    private LedgerRereplicationLayoutFormat(boolean noInit) {}
+    
+    private static final LedgerRereplicationLayoutFormat defaultInstance;
+    public static LedgerRereplicationLayoutFormat getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public LedgerRereplicationLayoutFormat getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.bookkeeper.proto.DataFormats.internal_static_LedgerRereplicationLayoutFormat_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.bookkeeper.proto.DataFormats.internal_static_LedgerRereplicationLayoutFormat_fieldAccessorTable;
+    }
+    
+    private int bitField0_;
+    // required string type = 1;
+    public static final int TYPE_FIELD_NUMBER = 1;
+    private java.lang.Object type_;
+    public boolean hasType() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public String getType() {
+      java.lang.Object ref = type_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          type_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getTypeBytes() {
+      java.lang.Object ref = type_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        type_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    
+    // required int32 version = 2;
+    public static final int VERSION_FIELD_NUMBER = 2;
+    private int version_;
+    public boolean hasVersion() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public int getVersion() {
+      return version_;
+    }
+    
+    private void initFields() {
+      type_ = "";
+      version_ = 0;
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasType()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasVersion()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+    
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getTypeBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeInt32(2, version_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+    
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+    
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, getTypeBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(2, version_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+    
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+    
+    public static org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+    
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormatOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.bookkeeper.proto.DataFormats.internal_static_LedgerRereplicationLayoutFormat_descriptor;
+      }
+      
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.bookkeeper.proto.DataFormats.internal_static_LedgerRereplicationLayoutFormat_fieldAccessorTable;
+      }
+      
+      // Construct using org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+      
+      public Builder clear() {
+        super.clear();
+        type_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
+        version_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        return this;
+      }
+      
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat.getDescriptor();
+      }
+      
+      public org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat getDefaultInstanceForType() {
+        return org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat.getDefaultInstance();
+      }
+      
+      public org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat build() {
+        org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+      
+      private org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return result;
+      }
+      
+      public org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat buildPartial() {
+        org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat result = new org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.type_ = type_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.version_ = version_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+      
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat) {
+          return mergeFrom((org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+      
+      public Builder mergeFrom(org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat other) {
+        if (other == org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat.getDefaultInstance()) return this;
+        if (other.hasType()) {
+          setType(other.getType());
+        }
+        if (other.hasVersion()) {
+          setVersion(other.getVersion());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+      
+      public final boolean isInitialized() {
+        if (!hasType()) {
+          
+          return false;
+        }
+        if (!hasVersion()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder(
+            this.getUnknownFields());
+        while (true) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              this.setUnknownFields(unknownFields.build());
+              onChanged();
+              return this;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                this.setUnknownFields(unknownFields.build());
+                onChanged();
+                return this;
+              }
+              break;
+            }
+            case 10: {
+              bitField0_ |= 0x00000001;
+              type_ = input.readBytes();
+              break;
+            }
+            case 16: {
+              bitField0_ |= 0x00000002;
+              version_ = input.readInt32();
+              break;
+            }
+          }
+        }
+      }
+      
+      private int bitField0_;
+      
+      // required string type = 1;
+      private java.lang.Object type_ = "";
+      public boolean hasType() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      public String getType() {
+        java.lang.Object ref = type_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          type_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
+      }
+      public Builder setType(String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        type_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearType() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        type_ = getDefaultInstance().getType();
+        onChanged();
+        return this;
+      }
+      void setType(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000001;
+        type_ = value;
+        onChanged();
+      }
+      
+      // required int32 version = 2;
+      private int version_ ;
+      public boolean hasVersion() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      public int getVersion() {
+        return version_;
+      }
+      public Builder setVersion(int value) {
+        bitField0_ |= 0x00000002;
+        version_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearVersion() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        version_ = 0;
+        onChanged();
+        return this;
+      }
+      
+      // @@protoc_insertion_point(builder_scope:LedgerRereplicationLayoutFormat)
+    }
+    
+    static {
+      defaultInstance = new LedgerRereplicationLayoutFormat(true);
+      defaultInstance.initFields();
+    }
+    
+    // @@protoc_insertion_point(class_scope:LedgerRereplicationLayoutFormat)
+  }
+  
+  public interface UnderreplicatedLedgerFormatOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // repeated string replica = 1;
+    java.util.List<String> getReplicaList();
+    int getReplicaCount();
+    String getReplica(int index);
+  }
+  public static final class UnderreplicatedLedgerFormat extends
+      com.google.protobuf.GeneratedMessage
+      implements UnderreplicatedLedgerFormatOrBuilder {
+    // Use UnderreplicatedLedgerFormat.newBuilder() to construct.
+    private UnderreplicatedLedgerFormat(Builder builder) {
+      super(builder);
+    }
+    private UnderreplicatedLedgerFormat(boolean noInit) {}
+    
+    private static final UnderreplicatedLedgerFormat defaultInstance;
+    public static UnderreplicatedLedgerFormat getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public UnderreplicatedLedgerFormat getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.bookkeeper.proto.DataFormats.internal_static_UnderreplicatedLedgerFormat_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.bookkeeper.proto.DataFormats.internal_static_UnderreplicatedLedgerFormat_fieldAccessorTable;
+    }
+    
+    // repeated string replica = 1;
+    public static final int REPLICA_FIELD_NUMBER = 1;
+    private com.google.protobuf.LazyStringList replica_;
+    public java.util.List<String>
+        getReplicaList() {
+      return replica_;
+    }
+    public int getReplicaCount() {
+      return replica_.size();
+    }
+    public String getReplica(int index) {
+      return replica_.get(index);
+    }
+    
+    private void initFields() {
+      replica_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      memoizedIsInitialized = 1;
+      return true;
+    }
+    
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      for (int i = 0; i < replica_.size(); i++) {
+        output.writeBytes(1, replica_.getByteString(i));
+      }
+      getUnknownFields().writeTo(output);
+    }
+    
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+    
+      size = 0;
+      {
+        int dataSize = 0;
+        for (int i = 0; i < replica_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeBytesSizeNoTag(replica_.getByteString(i));
+        }
+        size += dataSize;
+        size += 1 * getReplicaList().size();
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+    
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+    
+    public static org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+    
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormatOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.bookkeeper.proto.DataFormats.internal_static_UnderreplicatedLedgerFormat_descriptor;
+      }
+      
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.bookkeeper.proto.DataFormats.internal_static_UnderreplicatedLedgerFormat_fieldAccessorTable;
+      }
+      
+      // Construct using org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+      
+      public Builder clear() {
+        super.clear();
+        replica_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        return this;
+      }
+      
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat.getDescriptor();
+      }
+      
+      public org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat getDefaultInstanceForType() {
+        return org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat.getDefaultInstance();
+      }
+      
+      public org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat build() {
+        org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+      
+      private org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return result;
+      }
+      
+      public org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat buildPartial() {
+        org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat result = new org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat(this);
+        int from_bitField0_ = bitField0_;
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          replica_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              replica_);
+          bitField0_ = (bitField0_ & ~0x00000001);
+        }
+        result.replica_ = replica_;
+        onBuilt();
+        return result;
+      }
+      
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat) {
+          return mergeFrom((org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+      
+      public Builder mergeFrom(org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat other) {
+        if (other == org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat.getDefaultInstance()) return this;
+        if (!other.replica_.isEmpty()) {
+          if (replica_.isEmpty()) {
+            replica_ = other.replica_;
+            bitField0_ = (bitField0_ & ~0x00000001);
+          } else {
+            ensureReplicaIsMutable();
+            replica_.addAll(other.replica_);
+          }
+          onChanged();
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+      
+      public final boolean isInitialized() {
+        return true;
+      }
+      
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder(
+            this.getUnknownFields());
+        while (true) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              this.setUnknownFields(unknownFields.build());
+              onChanged();
+              return this;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                this.setUnknownFields(unknownFields.build());
+                onChanged();
+                return this;
+              }
+              break;
+            }
+            case 10: {
+              ensureReplicaIsMutable();
+              replica_.add(input.readBytes());
+              break;
+            }
+          }
+        }
+      }
+      
+      private int bitField0_;
+      
+      // repeated string replica = 1;
+      private com.google.protobuf.LazyStringList replica_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      private void ensureReplicaIsMutable() {
+        if (!((bitField0_ & 0x00000001) == 0x00000001)) {
+          replica_ = new com.google.protobuf.LazyStringArrayList(replica_);
+          bitField0_ |= 0x00000001;
+         }
+      }
+      public java.util.List<String>
+          getReplicaList() {
+        return java.util.Collections.unmodifiableList(replica_);
+      }
+      public int getReplicaCount() {
+        return replica_.size();
+      }
+      public String getReplica(int index) {
+        return replica_.get(index);
+      }
+      public Builder setReplica(
+          int index, String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureReplicaIsMutable();
+        replica_.set(index, value);
+        onChanged();
+        return this;
+      }
+      public Builder addReplica(String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureReplicaIsMutable();
+        replica_.add(value);
+        onChanged();
+        return this;
+      }
+      public Builder addAllReplica(
+          java.lang.Iterable<String> values) {
+        ensureReplicaIsMutable();
+        super.addAll(values, replica_);
+        onChanged();
+        return this;
+      }
+      public Builder clearReplica() {
+        replica_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        onChanged();
+        return this;
+      }
+      void addReplica(com.google.protobuf.ByteString value) {
+        ensureReplicaIsMutable();
+        replica_.add(value);
+        onChanged();
+      }
+      
+      // @@protoc_insertion_point(builder_scope:UnderreplicatedLedgerFormat)
+    }
+    
+    static {
+      defaultInstance = new UnderreplicatedLedgerFormat(true);
+      defaultInstance.initFields();
+    }
+    
+    // @@protoc_insertion_point(class_scope:UnderreplicatedLedgerFormat)
+  }
+  
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_LedgerMetadataFormat_descriptor;
   private static
@@ -1634,6 +2471,16 @@ public final class DataFormats {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_LedgerMetadataFormat_Segment_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_LedgerRereplicationLayoutFormat_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_LedgerRereplicationLayoutFormat_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_UnderreplicatedLedgerFormat_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_UnderreplicatedLedgerFormat_fieldAccessorTable;
   
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -1654,8 +2501,10 @@ public final class DataFormats {
       "\026\n\016ensembleMember\030\001 \003(\t\022\024\n\014firstEntryId\030" +
       "\002 \002(\003\".\n\005State\022\010\n\004OPEN\020\001\022\017\n\013IN_RECOVERY\020",
       "\002\022\n\n\006CLOSED\020\003\"!\n\nDigestType\022\t\n\005CRC32\020\001\022\010" +
-      "\n\004HMAC\020\002B\037\n\033org.apache.bookkeeper.protoH" +
-      "\001"
+      "\n\004HMAC\020\002\"@\n\037LedgerRereplicationLayoutFor" +
+      "mat\022\014\n\004type\030\001 \002(\t\022\017\n\007version\030\002 \002(\005\".\n\033Un" +
+      "derreplicatedLedgerFormat\022\017\n\007replica\030\001 \003" +
+      "(\tB\037\n\033org.apache.bookkeeper.protoH\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -1678,6 +2527,22 @@ public final class DataFormats {
               new java.lang.String[] { "EnsembleMember", "FirstEntryId", },
               org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.Segment.class,
               org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.Segment.Builder.class);
+          internal_static_LedgerRereplicationLayoutFormat_descriptor =
+            getDescriptor().getMessageTypes().get(1);
+          internal_static_LedgerRereplicationLayoutFormat_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_LedgerRereplicationLayoutFormat_descriptor,
+              new java.lang.String[] { "Type", "Version", },
+              org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat.class,
+              org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat.Builder.class);
+          internal_static_UnderreplicatedLedgerFormat_descriptor =
+            getDescriptor().getMessageTypes().get(2);
+          internal_static_UnderreplicatedLedgerFormat_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_UnderreplicatedLedgerFormat_descriptor,
+              new java.lang.String[] { "Replica", },
+              org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat.class,
+              org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat.Builder.class);
           return null;
         }
       };

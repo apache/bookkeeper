@@ -47,3 +47,12 @@ message LedgerMetadataFormat {
     optional DigestType digestType = 7;
     optional bytes password = 8;
 }
+
+message LedgerRereplicationLayoutFormat {
+    required string type = 1;
+    required int32 version = 2;
+}
+ 
+message UnderreplicatedLedgerFormat {
+    repeated string replica = 1;
+}

@@ -21,7 +21,7 @@ package org.apache.bookkeeper.replication;
 /**
  * Exceptions for use within the replication service
  */
-abstract class ReplicationException extends Exception {
+public abstract class ReplicationException extends Exception {
     protected ReplicationException(String message, Throwable cause) {
         super(message, cause);
     }
@@ -33,14 +33,14 @@ abstract class ReplicationException extends Exception {
     /**
      * The replication service has become unavailable
      */
-    static class UnavailableException extends ReplicationException {
+    public static class UnavailableException extends ReplicationException {
         private static final long serialVersionUID = 31872209L;
 
-        UnavailableException(String message, Throwable cause) {
+        public UnavailableException(String message, Throwable cause) {
             super(message, cause);
         }
 
-        UnavailableException(String message) {
+        public UnavailableException(String message) {
             super(message);
         }
     }
@@ -49,14 +49,14 @@ abstract class ReplicationException extends Exception {
      * Compatibility error. This version of the code, doesn't know how to
      * deal with the metadata it has found.
      */
-    static class CompatibilityException extends ReplicationException {
+    public static class CompatibilityException extends ReplicationException {
         private static final long serialVersionUID = 98551903L;
 
-        CompatibilityException(String message, Throwable cause) {
+        public CompatibilityException(String message, Throwable cause) {
             super(message, cause);
         }
 
-        CompatibilityException(String message) {
+        public CompatibilityException(String message) {
             super(message);
         }
     }

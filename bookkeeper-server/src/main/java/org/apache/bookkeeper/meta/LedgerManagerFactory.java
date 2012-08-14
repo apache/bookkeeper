@@ -23,6 +23,7 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.zookeeper.KeeperException;
@@ -80,6 +81,17 @@ public abstract class LedgerManagerFactory {
      * @see ActiveLedgerManager
      */
     public abstract ActiveLedgerManager newActiveLedgerManager();
+
+    /**
+     * Return a ledger underreplication manager, which is used to 
+     * mark ledgers as unreplicated, and to retrieve a ledger which
+     * is underreplicated so that it can be rereplicated.
+     *
+     * @return ledger underreplication manager
+     * @see LedgerUnderreplicationManager
+     */
+    public abstract LedgerUnderreplicationManager newLedgerUnderreplicationManager()
+            throws KeeperException, InterruptedException, ReplicationException.CompatibilityException;
 
     /**
      * Create new Ledger Manager Factory.

@@ -80,6 +80,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-317: Exceptions for replication (ivank via sijie)
 
+        BOOKKEEPER-246: Recording of underreplication of ledger entries (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)

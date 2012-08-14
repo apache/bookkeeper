@@ -20,6 +20,8 @@ package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
 
+import org.apache.zookeeper.KeeperException;
+import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.zookeeper.ZooKeeper;
 
@@ -69,4 +71,9 @@ class FlatLedgerManagerFactory extends LedgerManagerFactory {
         return new FlatLedgerManager(conf, zk);
     }
 
+    @Override
+    public LedgerUnderreplicationManager newLedgerUnderreplicationManager()
+            throws KeeperException, InterruptedException, ReplicationException.CompatibilityException {
+        return new ZkLedgerUnderreplicationManager(conf, zk);
+    }
 }

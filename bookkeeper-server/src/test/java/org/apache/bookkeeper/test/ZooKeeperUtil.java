@@ -72,6 +72,25 @@ public class ZooKeeperUtil {
         return zkc;
     }
 
+    public ZooKeeper getNewZooKeeperClient() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ZooKeeper zkc = new ZooKeeper(getZooKeeperConnectString(), 10000,
+                new Watcher() {
+                    @Override
+                    public void process(WatchedEvent event) {
+                        // handle session disconnects and expires
+                        if (event.getState().equals(Watcher.Event.KeeperState.SyncConnected)) {
+                            latch.countDown();
+                        }
+                    }
+                });
+        if (!latch.await(10000, TimeUnit.MILLISECONDS)) {
+            zkc.close();
+            fail("Could not connect to zookeeper server");
+        }
+        return zkc;
+    }
+
     public String getZooKeeperConnectString() {
         return connectString;
     }
@@ -97,20 +116,7 @@ public class ZooKeeperUtil {
         // create a zookeeper client
         LOG.debug("Instantiate ZK Client");
         final CountDownLatch latch = new CountDownLatch(1);
-        zkc = new ZooKeeper(getZooKeeperConnectString(), 10000,
-                            new Watcher() {
-                                @Override
-                                public void process(WatchedEvent event) {
-                                    // handle session disconnects and expires
-                                    if (event.getState().equals(Watcher.Event.KeeperState.SyncConnected)) {
-                                        latch.countDown();
-                                    }
-                                }
-                            });
-        if (!latch.await(10000, TimeUnit.MILLISECONDS)) {
-            zkc.close();
-            fail("Could not connect to zookeeper server");
-        }
+        zkc = getNewZooKeeperClient();
 
         // initialize the zk client with values
         zkc.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
