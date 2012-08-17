@@ -54,6 +54,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-326: DeadLock during ledger recovery (rakeshr via ivank)
 
+        BOOKKEEPER-372: Check service name in bookie start/stop script. (nijel via ivank)
+
       hedwig-client:
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)

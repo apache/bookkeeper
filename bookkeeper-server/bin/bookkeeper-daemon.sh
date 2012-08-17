@@ -18,8 +18,16 @@
 # * limitations under the License.
 # */
 
-usage="Usage: bookkeeper-daemon.sh (start|stop) <command> <args...>"
-supportedargs="Supported args : -force (accepted only with stop command) - Decides whether to stop the Bookie Server forcefully if not stopped by normal shutdown"
+usage() {
+    cat <<EOF
+Usage: bookkeeper-daemon.sh (start|stop) <command> <args...>
+where command is one of:
+    bookie           Run the bookie server
+
+where argument is one of:
+    -force (accepted only with stop command): Decides whether to stop the Bookie Server forcefully if not stopped by normal shutdown
+EOF
+}
 
 BINDIR=`dirname "$0"`
 BK_HOME=`cd $BINDIR/..;pwd`
@@ -37,10 +45,28 @@ BOOKIE_STOP_TIMEOUT=${BOOKIE_STOP_TIMEOUT:-30}
 
 BOOKIE_PID_DIR=${BOOKIE_PID_DIR:-$BK_HOME/bin}
 
+if [ $# -lt 2 ]
+then
+    echo "Error: no enough arguments provided."
+    usage
+    exit 1
+fi
+
 startStop=$1
 shift
 command=$1
 shift
+
+case $command in
+    (bookie)
+        echo "doing $startStop $command ..."
+        ;;
+    (*)
+        echo "Error: unknown service name $command"
+        usage
+        exit 1
+        ;;
+esac
 
 export BOOKIE_LOG_DIR=$BOOKIE_LOG_DIR
 export BOOKIE_ROOT_LOGGER=$BOOKIE_ROOT_LOGGER
@@ -139,7 +165,7 @@ case $startStop in
     ;;
 
   (*)
-    echo $usage
+    usage
     echo $supportedargs
     exit 1
     ;;
