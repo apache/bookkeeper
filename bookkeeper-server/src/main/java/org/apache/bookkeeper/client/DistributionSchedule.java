@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.client;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,6 +15,7 @@ package org.apache.bookkeeper.client;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.client;
 
 /**
  * This interface determins how entries are distributed among bookies.
@@ -62,4 +61,16 @@ interface DistributionSchedule {
     }
 
     public QuorumCoverageSet getCoverageSet();
+    
+    /**
+     * Whether entry presents on given bookie index
+     * 
+     * @param entryId
+     *            - entryId to check the presence on given bookie index
+     * @param bookieIndex
+     *            - bookie index on which it need to check the possible presence
+     *            of the entry
+     * @return true if it has entry otherwise false.
+     */
+    public boolean hasEntry(long entryId, int bookieIndex);
 }

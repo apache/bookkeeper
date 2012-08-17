@@ -84,6 +84,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-246: Recording of underreplication of ledger entries (ivank)
 
+        BOOKKEEPER-247: Detection of under replication (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)

@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.client;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,6 +15,7 @@ package org.apache.bookkeeper.client;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.client;
 
 import org.apache.bookkeeper.util.MathUtils;
 
@@ -86,5 +85,10 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
 
     public QuorumCoverageSet getCoverageSet() {
         return new RRQuorumCoverageSet();
+    }
+    
+    @Override
+    public boolean hasEntry(long entryId, int bookieIndex) {
+        return getReplicaIndex(entryId, bookieIndex) != -1;
     }
 }
