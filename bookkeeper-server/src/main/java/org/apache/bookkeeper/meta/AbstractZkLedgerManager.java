@@ -154,7 +154,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager, ActiveLedgerMan
     public void writeLedgerMetadata(final long ledgerId, final LedgerMetadata metadata,
                                     final GenericCallback<Void> cb) {
         Version v = metadata.getVersion();
-        if (null == v || !(v instanceof ZkVersion)) {
+        if (Version.NEW == v || !(v instanceof ZkVersion)) {
             cb.operationComplete(BKException.Code.MetadataVersionException, null);
             return;
         }

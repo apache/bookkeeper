@@ -124,7 +124,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
          * include the current ledger
          */
         TreeMap<Long, InMemoryLedgerRange> ledgerRanges = new TreeMap<Long, InMemoryLedgerRange>();
-        Version ledgerRangesVersion = null;
+        Version ledgerRangesVersion = Version.NEW;
 
         /**
          * This is the handle of the current ledger that is being used to write
@@ -699,7 +699,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                     if (null != ranges) {
                         processTopicLedgerRanges(ranges.getValue(), ranges.getVersion());
                     } else {
-                        processTopicLedgerRanges(LedgerRanges.getDefaultInstance(), null);
+                        processTopicLedgerRanges(LedgerRanges.getDefaultInstance(), Version.NEW);
                     }
                 }
                 @Override

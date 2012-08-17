@@ -28,6 +28,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-352: Should not use static ServerStats/BKStats instance in TestServerStats/TestBKStats (sijie via fpj)
 
+      BOOKKEEPER-338: Create Version.NEW and Version.ANY static instances of Version so that were not passing around nulls (sijie via ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-183: Provide tools to read/check data files in bookie server (sijie via ivank)

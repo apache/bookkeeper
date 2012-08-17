@@ -219,7 +219,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
         @Override
         public void writeTopicPersistenceInfo(final ByteString topic, LedgerRanges ranges, final Version version,
                                               final Callback<Version> callback, Object ctx) {
-            if (null == version) {
+            if (Version.NEW == version) {
                 createTopicPersistenceInfo(topic, ranges, callback, ctx);
                 return;
             }
@@ -266,7 +266,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
             final String zNodePath = ledgersPath(topic);
 
             int znodeVersion = -1;
-            if (null != version) {
+            if (Version.ANY != version) {
                 if (!(version instanceof ZkVersion)) {
                     callback.operationFailed(ctx, new PubSubException.UnexpectedConditionException(
                                                   "Invalid version provided to delete persistence info for topic " + topic.toStringUtf8()));
@@ -625,7 +625,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
         @Override
         public void writeOwnerInfo(final ByteString topic, final HubInfo owner, final Version version,
                                    final Callback<Version> callback, Object ctx) {
-            if (null == version) {
+            if (Version.NEW == version) {
                 createOwnerInfo(topic, owner, callback, ctx);
                 return;
             }
@@ -696,7 +696,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
         public void deleteOwnerInfo(final ByteString topic, final Version version,
                                     final Callback<Void> callback, Object ctx) {
             int znodeVersion = -1;
-            if (null != version) {
+            if (Version.ANY != version) {
                 if (!(version instanceof ZkVersion)) {
                     callback.operationFailed(ctx, new PubSubException.UnexpectedConditionException(
                                                   "Invalid version provided to delete owner info for topic " + topic.toStringUtf8()));

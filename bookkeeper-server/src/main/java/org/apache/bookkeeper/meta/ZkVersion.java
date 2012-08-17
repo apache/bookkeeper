@@ -32,10 +32,14 @@ public class ZkVersion implements Version {
 
     @Override
     public Occurred compare(Version v) {
-        if (v == null) {
-            return Occurred.AFTER;
+        if (null == v) {
+            throw new NullPointerException("Version is not allowed to be null.");
         }
-        if (!(v instanceof ZkVersion)) {
+        if (v == Version.NEW) {
+            return Occurred.AFTER;
+        } else if (v == Version.ANY) {
+            return Occurred.CONCURRENTLY;
+        } else if (!(v instanceof ZkVersion)) {
             throw new IllegalArgumentException("Invalid version type");
         }
         ZkVersion zv = (ZkVersion)v;

@@ -61,7 +61,7 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
         HubInfo owner = new HubInfo(new HedwigSocketAddress("127.0.0.1", 8008), 999);
 
         // Write non-existed owner info
-        toManager.writeOwnerInfo(topic, owner, null, writeCallback, null);
+        toManager.writeOwnerInfo(topic, owner, Version.NEW, writeCallback, null);
         res = writeCallback.queue.take();
         Assert.assertEquals(null, res.right());
         Version v1 = res.left();
@@ -75,7 +75,7 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
         HubInfo newOwner = new HubInfo(new HedwigSocketAddress("127.0.0.1", 8008), 1000);
 
         // write exsited owner info with null version
-        toManager.writeOwnerInfo(topic, newOwner, null, writeCallback, null);
+        toManager.writeOwnerInfo(topic, newOwner, Version.NEW, writeCallback, null);
         res = writeCallback.queue.take();
         Assert.assertNotNull(res.right());
         Assert.assertTrue(res.right() instanceof PubSubException.TopicOwnerInfoExistsException);
@@ -127,7 +127,7 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
         Assert.assertEquals(null, readCallback.queue.take().left());
 
         // delete non-existed owner info
-        toManager.deleteOwnerInfo(topic, null, deleteCallback, null);
+        toManager.deleteOwnerInfo(topic, Version.ANY, deleteCallback, null);
         Assert.assertTrue(deleteCallback.queue.take().right() instanceof
                           PubSubException.NoTopicOwnerInfoException);
 
@@ -144,8 +144,8 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
         StubCallback<Void> deleteCallback = new StubCallback<Void>();
 
         // Write non-existed persistence info
-        tpManager.writeTopicPersistenceInfo(topic, LedgerRanges.getDefaultInstance(), null,
-                                            writeCallback, null);
+        tpManager.writeTopicPersistenceInfo(topic, LedgerRanges.getDefaultInstance(),
+                                            Version.NEW, writeCallback, null);
         Either<Version, PubSubException> res = writeCallback.queue.take();
         Assert.assertEquals(null, res.right());
         Version v1 = res.left();
@@ -162,7 +162,8 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
         LedgerRanges newRanges = builder.build();
 
         // write existed persistence info with null version
-        tpManager.writeTopicPersistenceInfo(topic, newRanges, null, writeCallback, null);
+        tpManager.writeTopicPersistenceInfo(topic, newRanges, Version.NEW,
+                                            writeCallback, null);
         res = writeCallback.queue.take();
         Assert.assertNotNull(res.right());
         Assert.assertTrue(res.right() instanceof PubSubException.TopicPersistenceInfoExistsException);
@@ -219,7 +220,7 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
         Assert.assertEquals(null, readCallback.queue.take().left());
 
         // delete non-existed persistence info
-        tpManager.deleteTopicPersistenceInfo(topic, null, deleteCallback, null);
+        tpManager.deleteTopicPersistenceInfo(topic, Version.ANY, deleteCallback, null);
         Assert.assertTrue(deleteCallback.queue.take().right() instanceof
                           PubSubException.NoTopicPersistenceInfoException);
 

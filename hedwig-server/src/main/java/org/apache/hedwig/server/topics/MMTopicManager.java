@@ -151,7 +151,7 @@ public class MMTopicManager extends AbstractTopicManager implements TopicManager
                         logger.info("{} : No owner found for topic {}",
                                     new Object[] { addr, topic.toStringUtf8() });
                         // no data found
-                        choose(null);
+                        choose(Version.NEW);
                         return;
                     }
                     final Version ownerVersion = owner.getVersion();

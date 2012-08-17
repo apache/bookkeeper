@@ -24,7 +24,37 @@ package org.apache.bookkeeper.versioning;
  * An interface that allows us to determine if a given version happened before or after another version.
  */
 public interface Version {
-    public enum Occurred {
+
+    /**
+     * Initial version.
+     */
+    public static final Version NEW = new Version() {
+        @Override
+        public Occurred compare(Version v) {
+            if (null == v) {
+                throw new NullPointerException("Version is not allowed to be null.");
+            }
+            if (this == v) {
+                return Occurred.CONCURRENTLY;
+            }
+            return Occurred.BEFORE;
+        }
+    };
+
+    /**
+     * Match any version.
+     */
+    public static final Version ANY = new Version() {
+        @Override
+        public Occurred compare(Version v) {
+            if (null == v) {
+                throw new NullPointerException("Version is not allowed to be null.");
+            }
+            return Occurred.CONCURRENTLY;
+        }
+    };
+
+    public static enum Occurred {
         BEFORE, AFTER, CONCURRENTLY
     }
 

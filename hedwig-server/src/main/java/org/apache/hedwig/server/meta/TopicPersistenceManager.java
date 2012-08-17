@@ -55,10 +55,10 @@ public interface TopicPersistenceManager extends Closeable {
      *          Persistence info
      * @param version
      *          Current version of persistence info.
-     *          If <code>version</code> is null, create persistence info;
+     *          If <code>version</code> is {@link Version.NEW}, create persistence info;
      *          {@link PubSubException.TopicPersistenceInfoExistsException} is returned when
      *          persistence info existed before.
-     *          If <code>version</code> is not null, the persitence info is updated only when
+     *          Otherwise, the persitence info is updated only when
      *          provided version equals to its current version.
      *          {@link PubSubException.BadVersionException} is returned when version doesn't match,
      *          {@link PubSubException.NoTopicPersistenceInfoException} is returned when no
@@ -79,8 +79,8 @@ public interface TopicPersistenceManager extends Closeable {
      *          Topic name
      * @param version
      *          Current version of persistence info
-     *          If <code>version</code> is null, delete persistence info no matter its current version.
-     *          If <code>version</code> is not null, the persitence info is deleted only when
+     *          If <code>version</code> is {@link Version.ANY}, delete persistence info no matter its current version.
+     *          Otherwise, the persitence info is deleted only when
      *          provided version equals to its current version.
      * @param callback
      *          Callback return whether the deletion succeed.

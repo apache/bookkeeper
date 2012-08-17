@@ -68,7 +68,7 @@ public class LedgerMetadata {
     private LedgerMetadataFormat.State state;
     private SortedMap<Long, ArrayList<InetSocketAddress>> ensembles = new TreeMap<Long, ArrayList<InetSocketAddress>>();
     ArrayList<InetSocketAddress> currentEnsemble;
-    volatile Version version = null;
+    volatile Version version = Version.NEW;
 
     private boolean hasPassword = false;
     private LedgerMetadataFormat.DigestType digestType;

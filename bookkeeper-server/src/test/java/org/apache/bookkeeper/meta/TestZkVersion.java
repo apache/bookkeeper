@@ -31,7 +31,11 @@ public class TestZkVersion {
     @Test
     public void testNullZkVersion() {
         ZkVersion zkVersion = new ZkVersion(99);
-        Assert.assertEquals(Version.Occurred.AFTER, zkVersion.compare(null));
+        try {
+            zkVersion.compare(null);
+            Assert.fail("Should fail comparing with null version.");
+        } catch (NullPointerException npe) {
+        }
     }
 
     @Test
@@ -55,5 +59,7 @@ public class TestZkVersion {
         Assert.assertEquals(Occurred.AFTER, zv.compare(new ZkVersion(98)));
         Assert.assertEquals(Occurred.BEFORE, zv.compare(new ZkVersion(100)));
         Assert.assertEquals(Occurred.CONCURRENTLY, zv.compare(new ZkVersion(99)));
+        Assert.assertEquals(Occurred.CONCURRENTLY, zv.compare(Version.ANY));
+        Assert.assertEquals(Occurred.AFTER, zv.compare(Version.NEW));
     }
 }
