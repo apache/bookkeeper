@@ -29,8 +29,11 @@ import java.io.IOException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.CountDownLatch;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import com.google.protobuf.ByteString;
 
 import org.apache.hedwig.protocol.PubSubProtocol.ManagerMeta;
 import org.apache.hedwig.server.common.ServerConfiguration;
@@ -77,6 +80,10 @@ public class TestMetadataManagerFactory extends ZooKeeperTestBase {
         }
 
         public void shutdown() {}
+
+        public Iterator<ByteString> getTopics() {
+            return null;
+        }
 
         public TopicPersistenceManager newTopicPersistenceManager() {
             return null;

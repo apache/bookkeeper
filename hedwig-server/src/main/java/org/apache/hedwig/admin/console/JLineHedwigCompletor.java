@@ -18,10 +18,13 @@
 
 package org.apache.hedwig.admin.console;
 
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.zookeeper.KeeperException;
 import org.apache.hedwig.admin.HedwigAdmin;
+
+import com.google.protobuf.ByteString;
 
 import jline.Completor;
 
@@ -31,6 +34,9 @@ import static org.apache.hedwig.admin.console.HedwigCommands.*;
  * A jline completor for hedwig console
  */
 public class JLineHedwigCompletor implements Completor {
+    // for topic completion
+    static final int MAX_TOPICS_TO_SEARCH = 1000;
+
     private HedwigAdmin admin;
 
     public JLineHedwigCompletor(HedwigAdmin admin) {
@@ -78,11 +84,14 @@ public class JLineHedwigCompletor implements Completor {
 
     private int completeTopic(String buffer, String token, List<String> candidates) {
         try {
-            List<String> children = admin.getTopics();
-            for (String child : children) {
+            Iterator<ByteString> children = admin.getTopics();
+            int i = 0;
+            while (children.hasNext() && i <= MAX_TOPICS_TO_SEARCH) {
+                String child = children.next().toStringUtf8();
                 if (child.startsWith(token)) {
                     candidates.add(child);
                 }
+                ++i;
             }
         } catch (Exception e) {
             return buffer.length();

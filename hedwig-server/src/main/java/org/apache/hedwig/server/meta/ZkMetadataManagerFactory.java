@@ -20,6 +20,7 @@ package org.apache.hedwig.server.meta;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -83,6 +84,34 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
     public void shutdown() {
         // do nothing here, because zookeeper handle is passed from outside
         // we don't need to stop it.
+    }
+
+    @Override
+    public Iterator<ByteString> getTopics() throws IOException {
+        List<String> topics;
+        try {
+            topics = zk.getChildren(cfg.getZkTopicsPrefix(new StringBuilder()).toString(), false);
+        } catch (KeeperException ke) {
+            throw new IOException("Failed to get topics list : ", ke);
+        } catch (InterruptedException ie) {
+            throw new IOException("Interrupted on getting topics list : ", ie);
+        }
+        final Iterator<String> iter = topics.iterator();
+        return new Iterator<ByteString>() {
+            @Override
+            public boolean hasNext() {
+                return iter.hasNext();
+            }
+            @Override
+            public ByteString next() {
+                String t = iter.next();
+                return ByteString.copyFromUtf8(t);
+            }
+            @Override
+            public void remove() {
+                iter.remove();
+            }
+        };
     }
 
     @Override

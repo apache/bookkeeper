@@ -18,19 +18,19 @@
 
 package org.apache.hedwig.admin.console;
 
+import jline.ConsoleReader;
+import jline.History;
+import jline.Terminal;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -46,26 +46,22 @@ import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.HedwigClient;
 import org.apache.hedwig.protocol.PubSubProtocol.LedgerRange;
-import org.apache.hedwig.protocol.PubSubProtocol.LedgerRanges;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionState;
 import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 import org.apache.hedwig.server.common.ServerConfiguration;
+import org.apache.hedwig.server.topics.HubInfo;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.HedwigSocketAddress;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.Stat;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
 
 import static org.apache.hedwig.admin.console.HedwigCommands.*;
 import static org.apache.hedwig.admin.console.HedwigCommands.COMMAND.*;
@@ -81,6 +77,8 @@ public class HedwigConsole {
     // history file name
     static final String HW_HISTORY_FILE = ".hw_history";
 
+    static final char[] CONTINUE_OR_QUIT = new char[] { 'Q', 'q', '\n' };
+
     protected MyCommandOptions cl = new MyCommandOptions();
     protected HashMap<Integer, String> history = new LinkedHashMap<Integer, String>();
     protected int commandCount = 0;
@@ -88,6 +86,7 @@ public class HedwigConsole {
     protected Map<String, MyCommand> myCommands;
 
     protected boolean inConsole = true;
+    protected ConsoleReader console = null;
 
     protected HedwigAdmin admin;
     protected HedwigClient hubClient;
@@ -95,6 +94,7 @@ public class HedwigConsole {
     protected Subscriber subscriber;
     protected ConsoleMessageHandler consoleHandler =
             new ConsoleMessageHandler();
+    protected Terminal terminal;
 
     protected String myRegion;
 
@@ -524,6 +524,8 @@ public class HedwigConsole {
 
     class ShowCmd implements MyCommand {
 
+        static final int MAX_TOPICS_PER_SHOW = 100;
+
         @Override
         public boolean runCmd(String[] args) throws Exception {
             if (args.length < 2) {
@@ -551,18 +553,37 @@ public class HedwigConsole {
         }
 
         protected void showHubs() throws Exception {
-            Map<HedwigSocketAddress, Integer> hubs = admin.getAvailableHubs();
+            Map<HedwigSocketAddress, HedwigAdmin.HubStats> hubs = admin.getAvailableHubs();
             System.out.println("Available Hub Servers:");
-            for (Map.Entry<HedwigSocketAddress, Integer> entry : hubs.entrySet()) {
+            for (Map.Entry<HedwigSocketAddress, HedwigAdmin.HubStats> entry : hubs.entrySet()) {
                 System.out.println("\t" + entry.getKey() + " :\t" + entry.getValue());
             }
         }
 
         protected void showTopics() throws Exception {
-            List<String> topics = admin.getTopics();
+            List<String> topics = new ArrayList<String>();
+            Iterator<ByteString> iter = admin.getTopics();
+
             System.out.println("Topic List:");
-            System.out.println(topics);
+            boolean stop = false;
+            while (iter.hasNext()) {
+                if (topics.size() >= MAX_TOPICS_PER_SHOW) {
+                    System.out.println(topics);
+                    topics.clear();
+                    stop = !continueOrQuit();
+                    if (stop) {
+                        break;
+                    }
+                }
+                ByteString t = iter.next();
+                topics.add(t.toStringUtf8());
+            }
+            if (!stop) {
+                System.out.println(topics);
+            }
         }
+
+        
         
     }
 
@@ -582,13 +603,14 @@ public class HedwigConsole {
 
         protected boolean describeTopic(String topic) throws Exception {
             ByteString btopic = ByteString.copyFromUtf8(topic);
-            HedwigSocketAddress owner = admin.getTopicOwner(btopic);
+            HubInfo owner = admin.getTopicOwner(btopic);
             List<LedgerRange> ranges = admin.getTopicLedgers(btopic);
             Map<ByteString, SubscriptionState> states = admin.getTopicSubscriptions(btopic);
 
             System.out.println("===== Topic Information : " + topic + " =====");
             System.out.println();
-            System.out.println("Owner : " + (owner == null ? "NULL" : owner));
+            System.out.println("Owner : " + (owner == null ? "NULL" :
+                               owner.toString().trim().replaceAll("\n", ", ")));
             System.out.println();
 
             // print ledgers
@@ -779,6 +801,8 @@ public class HedwigConsole {
      * @throws InterruptedException 
      */
     public HedwigConsole(String[] args) throws IOException, InterruptedException {
+        // Setup Terminal
+        terminal = Terminal.setupTerminal();
         HedwigCommands.init();
         cl.parseOptions(args);
 
@@ -815,8 +839,6 @@ public class HedwigConsole {
             }
         }
 
-
-
         printMessage("Connecting to zookeeper/bookkeeper using HedwigAdmin");
         try {
             admin = new HedwigAdmin(bkClientConf, hubServerConf);
@@ -842,6 +864,23 @@ public class HedwigConsole {
         StringBuilder sb = new StringBuilder();
         sb.append("[hedwig: (").append(myRegion).append(") ").append(commandCount).append("] ");
         return sb.toString();
+    }
+
+    protected boolean continueOrQuit() throws IOException {
+        System.out.println("Press <Return> for more, or Q to cancel ...");
+        int ch;
+        if (null != console) {
+            ch = console.readCharacter(CONTINUE_OR_QUIT);
+        } else {
+            do {
+                ch = terminal.readCharacter(System.in);
+            } while (ch != 'q' && ch != 'Q' && ch != '\n');
+        }
+        if (ch == 'q' ||
+            ch == 'Q') {
+            return false;
+        }
+        return true;
     }
 
     protected void addToHistory(int i, String cmd) {
@@ -908,122 +947,38 @@ public class HedwigConsole {
         myCommands = buildMyCommands();
         if (cl.getCommand() == null) {
             System.out.println("Welcome to Hedwig!");
+            System.out.println("JLine support is enabled");
 
-            boolean jlinemissing = false;
-            // only use jline if it's in the classpath
-            try {
-                Class consoleC = Class.forName("jline.ConsoleReader");
-                Class completorC =
-                    Class.forName("org.apache.hedwig.admin.console.JLineHedwigCompletor");
+            console = new ConsoleReader();
+            JLineHedwigCompletor completor = new JLineHedwigCompletor(admin);
+            console.addCompletor(completor);
 
-                System.out.println("JLine support is enabled");
-
-                Object console =
-                    consoleC.getConstructor().newInstance();
-
-                Object completor =
-                    completorC.getConstructor(HedwigAdmin.class).newInstance(admin);
-                Method addCompletor = consoleC.getMethod("addCompletor",
-                        Class.forName("jline.Completor"));
-                addCompletor.invoke(console, completor);
-
-                // load history file
-                boolean historyEnabled = false;
-                Object history = null;
-                Method addHistory = null;
-                // Method flushHistory = null;
-                try {
-                    Class historyC = Class.forName("jline.History");
-                    history = historyC.getConstructor().newInstance();
-
-                    File file = new File(System.getProperty("hw.history",
-                                         new File(System.getProperty("user.home"), HW_HISTORY_FILE).toString()));
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("History file is " + file.toString());
-                    }
-                    Method setHistoryFile = historyC.getMethod("setHistoryFile", File.class);
-                    setHistoryFile.invoke(history, file);
-
-                    // set history to console reader
-                    Method setHistory = consoleC.getMethod("setHistory", historyC);
-                    setHistory.invoke(console, history);
-
-                    // load history from history file
-                    Method moveToFirstEntry = historyC.getMethod("moveToFirstEntry");
-                    moveToFirstEntry.invoke(history);
-
-                    addHistory = historyC.getMethod("addToHistory", String.class);
-                    // flushHistory = historyC.getMethod("flushBuffer");
-
-                    Method nextEntry = historyC.getMethod("next");
-                    Method current = historyC.getMethod("current");
-                    while ((Boolean)(nextEntry.invoke(history))) {
-                        String entry = (String)current.invoke(history);
-                        if (!entry.equals("")) {
-                            addToHistory(commandCount, entry);
-                        }
-                        commandCount++;
-                    }
-
-                    historyEnabled = true;
-                    System.out.println("JLine history support is enabled");
-                } catch (ClassNotFoundException e) {
-                    System.out.println("JLine history support is disabled");
-                    LOG.debug("JLine history disabled with exception", e);
-                    historyEnabled = false;
-                } catch (NoSuchMethodException e) {
-                    System.out.println("JLine history support is disabled");
-                    LOG.debug("JLine history disabled with exception", e);
-                    historyEnabled = false;
-                } catch (InvocationTargetException e) {
-                    System.out.println("JLine history support is disabled");
-                    LOG.debug("JLine history disabled with exception", e);
-                    historyEnabled = false;
-                } catch (IllegalAccessException e) {
-                    System.out.println("JLine history support is disabled");
-                    LOG.debug("JLine history disabled with exception", e);
-                    historyEnabled = false;
-                } catch (InstantiationException e) {
-                    System.out.println("JLine history support is disabled");
-                    LOG.debug("JLine history disabled with exception", e);
-                    historyEnabled = false;
-                }
-
-                String line;
-                Method readLine = consoleC.getMethod("readLine", String.class);
-                while ((line = (String)readLine.invoke(console, getPrompt())) != null) {
-                    executeLine(line);
-                    if (historyEnabled) {
-                        addHistory.invoke(history, line);
-                        // flushHistory.invoke(history);
-                    }
-                }
-            } catch (ClassNotFoundException e) {
-                LOG.debug("Unable to start jline", e);
-                jlinemissing = true;
-            } catch (NoSuchMethodException e) {
-                LOG.debug("Unable to start jline", e);
-                jlinemissing = true;
-            } catch (InvocationTargetException e) {
-                LOG.debug("Unable to start jline", e);
-                jlinemissing = true;
-            } catch (IllegalAccessException e) {
-                LOG.debug("Unable to start jline", e);
-                jlinemissing = true;
-            } catch (InstantiationException e) {
-                LOG.debug("Unable to start jline", e);
-                jlinemissing = true;
+            // load history file
+            History history = new History();
+            File file = new File(System.getProperty("hw.history",
+                                 new File(System.getProperty("user.home"), HW_HISTORY_FILE).toString()));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("History file is " + file.toString());
             }
+            history.setHistoryFile(file);
+            // set history to console reader
+            console.setHistory(history);
+            // load history from history file
+            history.moveToFirstEntry();
 
-            if (jlinemissing) {
-                System.out.println("JLine support is disabled");
-                BufferedReader br =
-                    new BufferedReader(new InputStreamReader(System.in));
-
-                String line;
-                while ((line = br.readLine()) != null) {
-                    executeLine(line);
+            while (history.next()) {
+                String entry = history.current();
+                if (!entry.equals("")) {
+                    addToHistory(commandCount, entry);
                 }
+                commandCount++;
+            }
+            System.out.println("JLine history support is enabled");
+
+            String line;
+            while ((line = console.readLine(getPrompt())) != null) {
+                executeLine(line);
+                history.addToHistory(line);
             }
         }
 

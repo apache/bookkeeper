@@ -32,7 +32,7 @@ import com.google.protobuf.TextFormat;
 /**
  * This class encapsulates metrics for determining the load on a hub server.
  */
-class HubLoad implements Comparable<HubLoad> {
+public class HubLoad implements Comparable<HubLoad> {
 
     public static final HubLoad MAX_LOAD = new HubLoad(Long.MAX_VALUE);
     public static final HubLoad MIN_LOAD = new HubLoad(0);

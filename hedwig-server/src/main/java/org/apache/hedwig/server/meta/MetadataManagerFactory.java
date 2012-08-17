@@ -18,6 +18,7 @@
 package org.apache.hedwig.server.meta;
 
 import java.io.IOException;
+import java.util.Iterator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,8 @@ import org.apache.hedwig.protocol.PubSubProtocol.ManagerMeta;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
+
+import com.google.protobuf.ByteString;
 
 /**
  * Metadata Manager used to manage metadata used by hedwig.
@@ -65,6 +68,15 @@ public abstract class MetadataManagerFactory {
      * @throws IOException when fail to shutdown the factory.
      */
     public abstract void shutdown() throws IOException;
+
+    /**
+     * Iterate over the topics list.
+     * Used by HedwigConsole to list available topics.
+     *
+     * @return iterator of the topics list.
+     * @throws IOException
+     */
+    public abstract Iterator<ByteString> getTopics() throws IOException;
 
     /**
      * Create topic persistence manager.

@@ -24,12 +24,16 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.LedgerRange;
 import org.apache.hedwig.protocol.PubSubProtocol.LedgerRanges;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
@@ -37,6 +41,14 @@ import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionState;
 import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 import org.apache.hedwig.server.common.ServerConfiguration;
+import org.apache.hedwig.server.meta.MetadataManagerFactory;
+import org.apache.hedwig.server.meta.SubscriptionDataManager;
+import org.apache.hedwig.server.meta.TopicOwnershipManager;
+import org.apache.hedwig.server.meta.TopicPersistenceManager;
+import org.apache.hedwig.server.subscriptions.InMemorySubscriptionState;
+import org.apache.hedwig.server.topics.HubInfo;
+import org.apache.hedwig.server.topics.HubLoad;
+import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.HedwigSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,16 +70,82 @@ public class HedwigAdmin {
     // NOTE: now it is fixed passwd used in hedwig
     static byte[] passwd = "sillysecret".getBytes();
 
-    protected ZooKeeper zk;
-    protected BookKeeper bk;
+    protected final ZooKeeper zk;
+    protected final BookKeeper bk;
+    protected final MetadataManagerFactory mmFactory;
+    protected final SubscriptionDataManager sdm;
+    protected final TopicOwnershipManager tom;
+    protected final TopicPersistenceManager tpm;
+
     // hub configurations
-    protected ServerConfiguration serverConf;
+    protected final ServerConfiguration serverConf;
     // bookkeeper configurations
-    protected ClientConfiguration bkClientConf;
+    protected final ClientConfiguration bkClientConf;
+
+    protected final CountDownLatch zkReadyLatch = new CountDownLatch(1);
 
     // Empty watcher
-    private static class MyWatcher implements Watcher {
+    private class MyWatcher implements Watcher {
         public void process(WatchedEvent event) {
+            if (Event.KeeperState.SyncConnected.equals(event.getState())) {
+                zkReadyLatch.countDown();
+            }
+        }
+    }
+
+    static class SyncObj<T> {
+        boolean finished = false;
+        boolean success = false;
+        T value = null;
+        PubSubException exception = null;
+
+        synchronized void success(T v) {
+            finished = true;
+            success = true;
+            value = v;
+            notify();
+        }
+
+        synchronized void fail(PubSubException pse) {
+            finished = true;
+            success = false;
+            exception = pse;
+            notify();
+        }
+
+        synchronized void block() {
+            try {
+                while (!finished) {
+                    wait();
+                }
+            } catch (InterruptedException ie) {
+            }
+        }
+
+        synchronized boolean isSuccess() {
+            return success;
+        }
+    }
+
+    /**
+     * Stats of a hub
+     */
+    public static class HubStats {
+        HubInfo hubInfo;
+        HubLoad hubLoad;
+
+        public HubStats(HubInfo info, HubLoad load) {
+            this.hubInfo = info;
+            this.hubLoad = load;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("info : [").append(hubInfo.toString().trim().replaceAll("\n", ", "))
+              .append("], load : [").append(hubLoad.toString().trim().replaceAll("\n", ", "))
+              .append("]");
+            return sb.toString();
         }
     }
 
@@ -90,6 +168,16 @@ public class HedwigAdmin {
             LOG.debug("Connecting to zookeeper " + hubConf.getZkHost() + ", timeout = "
                     + hubConf.getZkTimeout());
         }
+        // wait until connection is ready
+        if (!zkReadyLatch.await(hubConf.getZkTimeout() * 2, TimeUnit.MILLISECONDS)) {
+            throw new Exception("Count not establish connection with ZooKeeper after " + hubConf.getZkTimeout() * 2 + " ms.");
+        }
+
+        // construct the metadata manager factory
+        mmFactory = MetadataManagerFactory.newMetadataManagerFactory(hubConf, zk);
+        tpm = mmFactory.newTopicPersistenceManager();
+        tom = mmFactory.newTopicOwnershipManager();
+        sdm = mmFactory.newSubscriptionDataManager();
 
         // connect to bookkeeper
         bk = new BookKeeper(bkClientConf, zk);
@@ -104,6 +192,10 @@ public class HedwigAdmin {
      * @throws Exception
      */
     public void close() throws Exception {
+        tpm.close();
+        tom.close();
+        sdm.close();
+        mmFactory.shutdown();
         bk.close();
         zk.close();
     }
@@ -162,9 +254,31 @@ public class HedwigAdmin {
      * @throws Exception
      */
     public boolean hasTopic(ByteString topic) throws Exception {
-        String topicPath = serverConf.getZkTopicPath(new StringBuilder(), topic).toString();
-        Stat stat = zk.exists(topicPath, false);
-        return null != stat;
+        // current persistence info is bound with a topic, so if there is persistence info
+        // there is topic.
+        final SyncObj<Boolean> syncObj = new SyncObj<Boolean>();
+        tpm.readTopicPersistenceInfo(topic, new Callback<Versioned<LedgerRanges>>() {
+            @Override
+            public void operationFinished(Object ctx, Versioned<LedgerRanges> result) {
+                if (null == result) {
+                    syncObj.success(false);
+                } else {
+                    syncObj.success(true);
+                }
+            }
+            @Override
+            public void operationFailed(Object ctx, PubSubException pse) {
+                syncObj.fail(pse);
+            }
+        }, syncObj);
+
+        syncObj.block();
+
+        if (!syncObj.isSuccess()) {
+            throw syncObj.exception;
+        }
+
+        return syncObj.value;
     }
 
     /**
@@ -173,27 +287,29 @@ public class HedwigAdmin {
      * @return available hubs and their loads
      * @throws Exception
      */
-    public Map<HedwigSocketAddress, Integer> getAvailableHubs() throws Exception {
+    public Map<HedwigSocketAddress, HubStats> getAvailableHubs() throws Exception {
         String zkHubsPath = serverConf.getZkHostsPrefix(new StringBuilder()).toString();
-        Map<HedwigSocketAddress, Integer> hubs =
-            new HashMap<HedwigSocketAddress, Integer>();
+        Map<HedwigSocketAddress, HubStats> hubs =
+            new HashMap<HedwigSocketAddress, HubStats>();
         List<String> hosts = zk.getChildren(zkHubsPath, false);
         for (String host : hosts) {
             String zkHubPath = serverConf.getZkHostsPrefix(new StringBuilder())
                                          .append("/").append(host).toString();
-            int load = 0;
+            HedwigSocketAddress addr = new HedwigSocketAddress(host);
             try {
                 Stat stat = new Stat();
                 byte[] data = zk.getData(zkHubPath, false, stat);
-                if (data != null) {
-                    load = Integer.parseInt(new String(data));
+                if (data == null) {
+                    continue;
                 }
+                HubLoad load = HubLoad.parse(new String(data));
+                HubInfo info = new HubInfo(addr, stat.getCzxid());
+                hubs.put(addr, new HubStats(info, load));
             } catch (KeeperException ke) {
                 LOG.warn("Couldn't read hub data from ZooKeeper", ke);
             } catch (InterruptedException ie) {
                 LOG.warn("Interrupted during read", ie);
             }
-            hubs.put(new HedwigSocketAddress(host), load);
         }
         return hubs;
     }
@@ -204,19 +320,8 @@ public class HedwigAdmin {
      * @return list of topics
      * @throws Exception
      */
-    public List<String> getTopics() throws Exception {
-        return zk.getChildren(serverConf.getZkTopicsPrefix(new StringBuilder()).toString(), false);
-    }
-
-    /**
-     * Return the znode path of owner of a topic
-     *
-     * @param topic
-     *            Topic name
-     * @return znode path of owner of a topic
-     */
-    String hubPath(ByteString topic) {
-        return serverConf.getZkTopicPath(new StringBuilder(), topic).append("/hub").toString();
+    public Iterator<ByteString> getTopics() throws Exception {
+        return mmFactory.getTopics();
     }
 
     /**
@@ -227,28 +332,30 @@ public class HedwigAdmin {
      * @return the address of the owner of a topic
      * @throws Exception
      */
-    public HedwigSocketAddress getTopicOwner(ByteString topic) throws Exception {
-        Stat stat = new Stat();
-        byte[] owner = null;
-        try {
-            owner = zk.getData(hubPath(topic), false, stat);
-        } catch (KeeperException.NoNodeException nne) {
-        }
-        if (null == owner) {
-            return null;
-        }
-        return new HedwigSocketAddress(new String(owner));
-    }
+    public HubInfo getTopicOwner(ByteString topic) throws Exception {
+        final SyncObj<HubInfo> syncObj = new SyncObj<HubInfo>();
+        tom.readOwnerInfo(topic, new Callback<Versioned<HubInfo>>() {
+            @Override
+            public void operationFinished(Object ctx, Versioned<HubInfo> result) {
+                if (null == result) {
+                    syncObj.success(null);
+                } else {
+                    syncObj.success(result.getValue());
+                }
+            }
+            @Override
+            public void operationFailed(Object ctx, PubSubException pse) {
+                syncObj.fail(pse);
+            }
+        }, syncObj);
 
-    /**
-     * Return the znode path to store ledgers info of a topic
-     *
-     * @param topic
-     *          Topic name
-     * @return znode path to store ledgers info of a topic
-     */
-    String ledgersPath(ByteString topic) {
-        return serverConf.getZkTopicPath(new StringBuilder(), topic).append("/ledgers").toString();
+        syncObj.block();
+
+        if (!syncObj.isSuccess()) {
+            throw syncObj.exception;
+        }
+
+        return syncObj.value;
     }
 
     /**
@@ -260,15 +367,29 @@ public class HedwigAdmin {
      * @throws Exception
      */
     public List<LedgerRange> getTopicLedgers(ByteString topic) throws Exception {
-        LedgerRanges ranges = null;
-        try {
-            Stat stat = new Stat();
-            byte[] ledgersData = zk.getData(ledgersPath(topic), false, stat);
-            if (null != ledgersData) {
-                ranges = LedgerRanges.parseFrom(ledgersData);
+        final SyncObj<LedgerRanges> syncObj = new SyncObj<LedgerRanges>();
+        tpm.readTopicPersistenceInfo(topic, new Callback<Versioned<LedgerRanges>>() {
+            @Override
+            public void operationFinished(Object ctx, Versioned<LedgerRanges> result) {
+                if (null == result) {
+                    syncObj.success(null);
+                } else {
+                    syncObj.success(result.getValue());
+                }
             }
-        } catch (KeeperException.NoNodeException nne) {
+            @Override
+            public void operationFailed(Object ctx, PubSubException pse) {
+                syncObj.fail(pse);
+            }
+        }, syncObj);
+
+        syncObj.block();
+
+        if (!syncObj.isSuccess()) {
+            throw syncObj.exception;
         }
+
+        LedgerRanges ranges = syncObj.value;
         if (null == ranges) {
             return null;
         }
@@ -318,32 +439,6 @@ public class HedwigAdmin {
     }
 
     /**
-     * Return the znode path store all the subscribers of a topic.
-     *
-     * @param sb
-     *          String builder to hold the znode path
-     * @param topic
-     *          Topic name
-     */
-    private StringBuilder topicSubscribersPath(StringBuilder sb, ByteString topic) {
-        return serverConf.getZkTopicPath(sb, topic).append("/subscribers");
-    }
-
-    /**
-     * Return the znode path of a subscriber of a topic.
-     *
-     * @param topic
-     *          Topic name
-     * @param subscriber
-     *          Subscriber name
-     */
-
-    private String topicSubscriberPath(ByteString topic, ByteString subscriber) {
-        return topicSubscribersPath(new StringBuilder(), topic).append("/")
-               .append(subscriber.toStringUtf8()).toString();
-    }
-
-    /**
      * Return subscriptions of a topic
      *
      * @param topic
@@ -355,22 +450,36 @@ public class HedwigAdmin {
         throws Exception {
         Map<ByteString, SubscriptionState> states =
             new HashMap<ByteString, SubscriptionState>();
-        try {
-            String subsPath = topicSubscribersPath(new StringBuilder(), topic).toString();
-            List<String> children = zk.getChildren(subsPath, false);
-            for (String child : children) {
-                ByteString subscriberId = ByteString.copyFromUtf8(child);
-                String subPath = topicSubscriberPath(topic, subscriberId);
-                Stat stat = new Stat();
-                byte[] subData = zk.getData(subPath, false, stat);
-                if (null == subData) {
-                    continue;
-                }
-                SubscriptionState state = SubscriptionState.parseFrom(subData);
-                states.put(subscriberId, state);
+
+        final SyncObj<Map<ByteString, InMemorySubscriptionState>> syncObj =
+            new SyncObj<Map<ByteString, InMemorySubscriptionState>>();
+        sdm.readSubscriptions(topic, new Callback<Map<ByteString, InMemorySubscriptionState>>() {
+            @Override
+            public void operationFinished(Object ctx, Map<ByteString, InMemorySubscriptionState> result) {
+                syncObj.success(result);
             }
-        } catch (KeeperException.NoNodeException nne) {
+            @Override
+            public void operationFailed(Object ctx, PubSubException pse) {
+                syncObj.fail(pse);
+            }
+        }, syncObj);
+
+        syncObj.block();
+
+        if (!syncObj.isSuccess()) {
+            throw syncObj.exception;
         }
+
+        Map<ByteString, InMemorySubscriptionState> subStats = syncObj.value;
+
+        if (null == subStats) {
+            return states;
+        }
+
+        for (Map.Entry<ByteString, InMemorySubscriptionState> entry : subStats.entrySet()) {
+            states.put(entry.getKey(), entry.getValue().getSubscriptionState());
+        }
+
         return states;
     }
 
@@ -385,16 +494,24 @@ public class HedwigAdmin {
      * @throws Exception
      */
     public SubscriptionState getSubscription(ByteString topic, ByteString subscriber) throws Exception {
-        String subPath = topicSubscriberPath(topic, subscriber);
-        Stat stat = new Stat();
-        byte[] subData = null;
-        try {
-            subData = zk.getData(subPath, false, stat);
-        } catch (KeeperException.NoNodeException nne) {
+        final SyncObj<SubscriptionState> syncObj = new SyncObj<SubscriptionState>();
+        sdm.readSubscriptionState(topic, subscriber, new Callback<SubscriptionState>() {
+            @Override
+            public void operationFinished(Object ctx, SubscriptionState result) {
+                syncObj.success(result);
+            }
+            @Override
+            public void operationFailed(Object ctx, PubSubException pse) {
+                syncObj.fail(pse);
+            }
+        }, syncObj);
+
+        syncObj.block();
+
+        if (!syncObj.isSuccess()) {
+            throw syncObj.exception;
         }
-        if (null == subData) {
-            return null;
-        }
-        return SubscriptionState.parseFrom(subData);
+
+        return syncObj.value;
     }
 }

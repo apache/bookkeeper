@@ -96,6 +96,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-340: Test backward compatibility for hedwig between different versions. (sijie via ivank)
 
+        BOOKKEEPER-283: Improve Hedwig Console to use Hedwig Metadata Manager. (sijie via ivank)
+
       hedwig-client:
 
         BOOKKEEPER-306: Change C++ client to use gtest for testing (ivank via sijie)
