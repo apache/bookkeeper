@@ -191,6 +191,45 @@ public class MessageBoundedPersistenceTest extends HedwigHubTestBase {
     }
 
     @Test
+    public void testUpdateMessageBound() throws Exception {
+        ByteString topic = ByteString.copyFromUtf8("UpdateMessageBound");
+
+        Client client = new HedwigClient(new ClientConfiguration());
+        Publisher pub = client.getPublisher();
+        Subscriber sub = client.getSubscriber();
+
+        SubscriptionOptions options5 = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).setMessageBound(5).build();
+        SubscriptionOptions options20 = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).setMessageBound(20).build();
+        SubscriptionOptions options10 = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).setMessageBound(10).build();
+
+        ByteString subid = ByteString.copyFromUtf8("updateSubId");
+
+        sub.subscribe(topic, subid, options5);
+        sub.closeSubscription(topic, subid);
+        sendXExpectLastY(pub, sub, topic, subid, 50, 5);
+
+        // update bound to 20
+        sub.subscribe(topic, subid, options20);
+        sub.closeSubscription(topic, subid);
+        sendXExpectLastY(pub, sub, topic, subid, 50, 20);
+
+        // update bound to 10
+        sub.subscribe(topic, subid, options10);
+        sub.closeSubscription(topic, subid);
+        sendXExpectLastY(pub, sub, topic, subid, 50, 10);
+
+        // message bound is not provided, no update
+        sub.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        sub.closeSubscription(topic, subid);
+        sendXExpectLastY(pub, sub, topic, subid, 50, 10);
+
+        client.close();
+    }
+
+    @Test
     public void testLedgerGC() throws Exception {
         Client client = new HedwigClient(new MessageBoundClientConfiguration());
         Publisher pub = client.getPublisher();

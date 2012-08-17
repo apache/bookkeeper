@@ -19,10 +19,12 @@ package org.apache.hedwig.server.subscriptions;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
 import com.google.protobuf.ByteString;
-import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionState;
+import org.apache.hedwig.exceptions.PubSubException;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.delivery.DeliveryManager;
 import org.apache.hedwig.server.meta.MetadataManagerFactory;
@@ -49,25 +51,49 @@ public class MMSubscriptionManager extends AbstractSubscriptionManager {
     @Override
     protected void readSubscriptions(final ByteString topic,
                                      final Callback<Map<ByteString, InMemorySubscriptionState>> cb, final Object ctx) {
-        subManager.readSubscriptions(topic, cb, ctx);
+        subManager.readSubscriptions(topic, new Callback<Map<ByteString, SubscriptionData>>() {
+            @Override
+            public void operationFailed(Object ctx, PubSubException pse) {
+                cb.operationFailed(ctx, pse);
+            }
+            @Override
+            public void operationFinished(Object ctx, Map<ByteString, SubscriptionData> subs) {
+                Map<ByteString, InMemorySubscriptionState> results = new ConcurrentHashMap<ByteString, InMemorySubscriptionState>();
+                for (Map.Entry<ByteString, SubscriptionData> subEntry : subs.entrySet()) {
+                    results.put(subEntry.getKey(), new InMemorySubscriptionState(subEntry.getValue()));
+                }
+                cb.operationFinished(ctx, results);
+            }
+        }, ctx);
     }
 
     @Override
-    protected void createSubscriptionState(final ByteString topic, final ByteString subscriberId,
-                                           final SubscriptionState state, final Callback<Void> callback, final Object ctx) {
-        subManager.createSubscriptionState(topic, subscriberId, state, callback, ctx);
+    protected boolean isPartialUpdateSupported() {
+        return subManager.isPartialUpdateSupported();
     }
 
     @Override
-    protected void updateSubscriptionState(final ByteString topic, final ByteString subscriberId,
-                                           final SubscriptionState state, final Callback<Void> callback, final Object ctx) {
-        subManager.updateSubscriptionState(topic, subscriberId, state, callback, ctx);
+    protected void createSubscriptionData(final ByteString topic, final ByteString subscriberId,
+                                          final SubscriptionData subData, final Callback<Void> callback, final Object ctx) {
+        subManager.createSubscriptionData(topic, subscriberId, subData, callback, ctx);
     }
 
     @Override
-    protected void deleteSubscriptionState(final ByteString topic, final ByteString subscriberId,
-                                           final Callback<Void> callback, final Object ctx) {
-        subManager.deleteSubscriptionState(topic, subscriberId, callback, ctx);
+    protected void replaceSubscriptionData(final ByteString topic, final ByteString subscriberId,
+                                           final SubscriptionData subData, final Callback<Void> callback, final Object ctx) {
+        subManager.replaceSubscriptionData(topic, subscriberId, subData, callback, ctx);
+    }
+
+    @Override
+    protected void updateSubscriptionData(final ByteString topic, final ByteString subscriberId,
+                                          final SubscriptionData subData, final Callback<Void> callback, final Object ctx) {
+        subManager.updateSubscriptionData(topic, subscriberId, subData, callback, ctx);
+    }
+
+    @Override
+    protected void deleteSubscriptionData(final ByteString topic, final ByteString subscriberId,
+                                          final Callback<Void> callback, final Object ctx) {
+        subManager.deleteSubscriptionData(topic, subscriberId, callback, ctx);
     }
 
     @Override

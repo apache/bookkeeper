@@ -49,7 +49,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.LedgerRange;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
-import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionState;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.topics.HubInfo;
@@ -393,8 +393,9 @@ public class HedwigConsole {
                 return false;
             }
             long lastConsumedId = 0;
-            SubscriptionState state = admin.getSubscription(ByteString.copyFromUtf8(args[1]), ByteString.copyFromUtf8(args[2]));
-            if (null == state) {
+            SubscriptionData subData = admin.getSubscription(ByteString.copyFromUtf8(args[1]),
+                                                             ByteString.copyFromUtf8(args[2]));
+            if (null == subData) {
                 System.err.println("Failed to read subscription for topic: " + args[1]
                                  + " subscriber: " + args[2]);
                 return true;
@@ -605,7 +606,7 @@ public class HedwigConsole {
             ByteString btopic = ByteString.copyFromUtf8(topic);
             HubInfo owner = admin.getTopicOwner(btopic);
             List<LedgerRange> ranges = admin.getTopicLedgers(btopic);
-            Map<ByteString, SubscriptionState> states = admin.getTopicSubscriptions(btopic);
+            Map<ByteString, SubscriptionData> states = admin.getTopicSubscriptions(btopic);
 
             System.out.println("===== Topic Information : " + topic + " =====");
             System.out.println();
@@ -646,13 +647,13 @@ public class HedwigConsole {
             System.out.println();
         }
 
-        private void printTopicSubscriptions(Map<ByteString, SubscriptionState> states) {
+        private void printTopicSubscriptions(Map<ByteString, SubscriptionData> states) {
             System.out.println(">>> Subscription Info <<<");
             if (0 == states.size()) {
                 System.out.println("No subscriber.");
                 return;
             }
-            for (Map.Entry<ByteString, SubscriptionState> entry : states.entrySet()) {
+            for (Map.Entry<ByteString, SubscriptionData> entry : states.entrySet()) {
                 System.out.println("Subscriber " + entry.getKey().toStringUtf8() + " : "
                                  + SubscriptionStateUtils.toString(entry.getValue()));
             }

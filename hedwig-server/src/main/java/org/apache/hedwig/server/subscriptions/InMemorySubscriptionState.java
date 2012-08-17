@@ -17,24 +17,54 @@
  */
 package org.apache.hedwig.server.subscriptions;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import com.google.protobuf.ByteString;
+
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionState;
+import org.apache.hedwig.protoextensions.MapUtils;
+import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 
 public class InMemorySubscriptionState {
     SubscriptionState subscriptionState;
+    SubscriptionPreferences subscriptionPreferences;
     MessageSeqId lastConsumeSeqId;
 
-    public InMemorySubscriptionState(SubscriptionState subscriptionState, MessageSeqId lastConsumeSeqId) {
-        this.subscriptionState = subscriptionState;
+    public InMemorySubscriptionState(SubscriptionData subscriptionData, MessageSeqId lastConsumeSeqId) {
+        this.subscriptionState = subscriptionData.getState();
+        if (subscriptionData.hasPreferences()) {
+            this.subscriptionPreferences = subscriptionData.getPreferences();
+        } else {
+            // set initial subscription preferences
+            SubscriptionPreferences.Builder prefsBuilder = SubscriptionPreferences.newBuilder();
+            // progate the old system preferences from subscription state to preferences
+            prefsBuilder.setMessageBound(subscriptionState.getMessageBound());
+            this.subscriptionPreferences = prefsBuilder.build();
+
+        }
         this.lastConsumeSeqId = lastConsumeSeqId;
     }
 
-    public InMemorySubscriptionState(SubscriptionState subscriptionState) {
-        this(subscriptionState, subscriptionState.getMsgId());
+    public InMemorySubscriptionState(SubscriptionData subscriptionData) {
+        this(subscriptionData, subscriptionData.getState().getMsgId());
+    }
+
+    public SubscriptionData toSubscriptionData() {
+        return SubscriptionData.newBuilder().setState(subscriptionState)
+                                            .setPreferences(subscriptionPreferences)
+                                            .build();
     }
 
     public SubscriptionState getSubscriptionState() {
         return subscriptionState;
+    }
+
+    public SubscriptionPreferences getSubscriptionPreferences() {
+        return subscriptionPreferences;
     }
 
     public MessageSeqId getLastConsumeSeqId() {
@@ -80,6 +110,53 @@ public class InMemorySubscriptionState {
         }
         subscriptionState = SubscriptionState.newBuilder(subscriptionState).setMsgId(lastConsumeSeqId).build();
         return true;
+    }
+
+    /**
+     * Update preferences.
+     *
+     * @return true if preferences is updated, which needs to be persisted, false otherwise.
+     */
+    public boolean updatePreferences(SubscriptionPreferences preferences) {
+        boolean changed = false;
+        SubscriptionPreferences.Builder newPreferencesBuilder = SubscriptionPreferences.newBuilder(subscriptionPreferences);
+        if (preferences.hasMessageBound()) {
+            if (!subscriptionPreferences.hasMessageBound() ||
+                subscriptionPreferences.getMessageBound() != preferences.getMessageBound()) {
+                newPreferencesBuilder.setMessageBound(preferences.getMessageBound());
+                changed = true;
+            }
+        }
+        if (preferences.hasOptions()) {
+            Map<String, ByteString> userOptions = SubscriptionStateUtils.buildUserOptions(subscriptionPreferences);
+            Map<String, ByteString> optUpdates = SubscriptionStateUtils.buildUserOptions(preferences);
+            boolean optChanged = false;
+            for (Map.Entry<String, ByteString> entry : optUpdates.entrySet()) {
+                String key = entry.getKey();
+                if (userOptions.containsKey(key)) {
+                    if (null == entry.getValue()) {
+                        userOptions.remove(key);
+                        optChanged = true;
+                    } else {
+                        if (!entry.getValue().equals(userOptions.get(key))) {
+                            userOptions.put(key, entry.getValue());
+                            optChanged = true;
+                        }
+                    }
+                } else {
+                    userOptions.put(key, entry.getValue());
+                    optChanged = true;
+                }
+            }
+            if (optChanged) {
+                changed = true;
+                newPreferencesBuilder.setOptions(MapUtils.buildMapBuilder(userOptions));
+            }
+        }
+        if (changed) {
+            subscriptionPreferences = newPreferencesBuilder.build();
+        }
+        return changed;
     }
 
 }

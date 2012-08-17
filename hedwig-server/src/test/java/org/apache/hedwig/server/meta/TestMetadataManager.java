@@ -32,8 +32,8 @@ import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.LedgerRanges;
 import org.apache.hedwig.protocol.PubSubProtocol.LedgerRange;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionState;
-import org.apache.hedwig.server.subscriptions.InMemorySubscriptionState;
 import org.apache.hedwig.server.topics.HubInfo;
 import org.apache.hedwig.server.meta.MetadataManagerFactory;
 import org.apache.hedwig.util.Either;
@@ -228,36 +228,41 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
     }
 
     @Test
-    public void testSubscriptionState() throws Exception {
+    public void testSubscriptionData() throws Exception {
         SubscriptionDataManager subManager = metadataManagerFactory.newSubscriptionDataManager();
 
-        ByteString topic = ByteString.copyFromUtf8("testSubscriptionState");
+        ByteString topic = ByteString.copyFromUtf8("testSubscriptionData");
         ByteString subid = ByteString.copyFromUtf8("mysub");
 
         StubCallback<Void> callback = new StubCallback<Void>();
-        StubCallback<SubscriptionState> readCallback = new StubCallback<SubscriptionState>();
-        StubCallback<Map<ByteString, InMemorySubscriptionState>> subsCallback
-            = new StubCallback<Map<ByteString, InMemorySubscriptionState>>();
+        StubCallback<SubscriptionData> readCallback = new StubCallback<SubscriptionData>();
+        StubCallback<Map<ByteString, SubscriptionData>> subsCallback
+            = new StubCallback<Map<ByteString, SubscriptionData>>();
 
-        subManager.readSubscriptionState(topic, subid, readCallback, null);
-        Either<SubscriptionState, PubSubException> readRes = readCallback.queue.take();
+        subManager.readSubscriptionData(topic, subid, readCallback, null);
+        Either<SubscriptionData, PubSubException> readRes = readCallback.queue.take();
         Assert.assertEquals("Found inconsistent subscription state", null, readRes.left());
         Assert.assertEquals("Should not fail with PubSubException", null, readRes.right());
 
         // read non-existed subscription state
         subManager.readSubscriptions(topic, subsCallback, null);
-        Either<Map<ByteString, InMemorySubscriptionState>, PubSubException> res = subsCallback.queue.take();
+        Either<Map<ByteString, SubscriptionData>, PubSubException> res = subsCallback.queue.take();
         Assert.assertEquals("Found more than 0 subscribers", 0, res.left().size());
         Assert.assertEquals("Should not fail with PubSubException", null, res.right());
 
         // update non-existed subscription state
-        subManager.updateSubscriptionState(topic, subid, SubscriptionState.getDefaultInstance(),
-                                            callback, null);
+        if (subManager.isPartialUpdateSupported()) {
+            subManager.updateSubscriptionData(topic, subid, SubscriptionData.getDefaultInstance(),
+                                              callback, null);
+        } else {
+            subManager.replaceSubscriptionData(topic, subid, SubscriptionData.getDefaultInstance(),
+                                               callback, null);
+        }
         Assert.assertTrue("Should fail to update a non-existed subscriber with PubSubException",
                           callback.queue.take().right() instanceof PubSubException.NoSubscriptionStateException);
 
         // delete non-existed subscription state
-        subManager.deleteSubscriptionState(topic, subid, callback, null);
+        subManager.deleteSubscriptionData(topic, subid, callback, null);
         Assert.assertTrue("Should fail to delete a non-existed subscriber with PubSubException",
                           callback.queue.take().right() instanceof PubSubException.NoSubscriptionStateException);
 
@@ -266,10 +271,11 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
         builder.setLocalComponent(seqId);
         MessageSeqId msgId = builder.build();
 
-        SubscriptionState state = SubscriptionState.newBuilder(SubscriptionState.getDefaultInstance()).setMsgId(msgId).build();
+        SubscriptionState.Builder stateBuilder = SubscriptionState.newBuilder(SubscriptionState.getDefaultInstance()).setMsgId(msgId);
+        SubscriptionData data = SubscriptionData.newBuilder().setState(stateBuilder).build();
 
         // create a subscription state
-        subManager.createSubscriptionState(topic, subid, state, callback, null);
+        subManager.createSubscriptionData(topic, subid, data, callback, null);
         Assert.assertEquals("Should not fail with PubSubException",
                             null, callback.queue.take().right());
 
@@ -278,11 +284,11 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
         res = subsCallback.queue.take();
         Assert.assertEquals("Should find just 1 subscriber", 1, res.left().size());
         Assert.assertEquals("Should not fail with PubSubException", null, res.right());
-        InMemorySubscriptionState imss = res.left().get(subid);
+        SubscriptionData imss = res.left().get(subid);
         Assert.assertEquals("Found inconsistent subscription state",
-                            state, imss.getSubscriptionState());
+                            data, imss);
         Assert.assertEquals("Found inconsistent last consumed seq id",
-                            seqId, imss.getLastConsumeSeqId().getLocalComponent());
+                            seqId, imss.getState().getMsgId().getLocalComponent());
 
         // move consume seq id
         seqId = 99;
@@ -290,16 +296,21 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
         builder.setLocalComponent(seqId);
         msgId = builder.build();
 
-        state = SubscriptionState.newBuilder(state).setMsgId(msgId).build();
+        stateBuilder = SubscriptionState.newBuilder(data.getState()).setMsgId(msgId);
+        data = SubscriptionData.newBuilder().setState(stateBuilder).build();
 
         // update subscription state
-        subManager.updateSubscriptionState(topic, subid, state, callback, null);
+        if (subManager.isPartialUpdateSupported()) {
+            subManager.updateSubscriptionData(topic, subid, data, callback, null);
+        } else {
+            subManager.replaceSubscriptionData(topic, subid, data, callback, null);
+        }
         Assert.assertEquals("Fail to update a subscription state", null, callback.queue.take().right());
 
         // read subscription state
-        subManager.readSubscriptionState(topic, subid, readCallback, null);
+        subManager.readSubscriptionData(topic, subid, readCallback, null);
         Assert.assertEquals("Found inconsistent subscription state",
-                            state, readCallback.queue.take().left());
+                            data, readCallback.queue.take().left());
 
         // read subscriptions again
         subManager.readSubscriptions(topic, subsCallback, null);
@@ -308,11 +319,11 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
         Assert.assertEquals("Should not fail with PubSubException", null, res.right());
         imss = res.left().get(subid);
         Assert.assertEquals("Found inconsistent subscription state",
-                            state, imss.getSubscriptionState());
+                            data, imss);
         Assert.assertEquals("Found inconsistent last consumed seq id",
-                            seqId, imss.getLastConsumeSeqId().getLocalComponent());
+                            seqId, imss.getState().getMsgId().getLocalComponent());
 
-        subManager.deleteSubscriptionState(topic, subid, callback, null);
+        subManager.deleteSubscriptionData(topic, subid, callback, null);
         Assert.assertEquals("Fail to delete an existed subscriber", null, callback.queue.take().right());
 
         // read subscription states again

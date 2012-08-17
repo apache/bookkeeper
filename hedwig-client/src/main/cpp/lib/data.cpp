@@ -98,6 +98,17 @@ const MessageSeqId PubSubData::getMessageSeqId() const {
   return msgid;
 }
 
+void PubSubData::setPreferencesForSubRequest(SubscribeRequest * subreq,
+                                             const SubscriptionOptions &options) {
+  Hedwig::SubscriptionPreferences* preferences = subreq->mutable_preferences();
+  if (options.messagebound() > 0) {
+    preferences->set_messagebound(options.messagebound());
+  }
+  if (options.has_options()) {
+    preferences->mutable_options()->CopyFrom(options.options());
+  }
+}
+
 const PubSubRequestPtr PubSubData::getRequest() {
   PubSubRequestPtr request(new Hedwig::PubSubRequest());
   request->set_protocolversion(Hedwig::VERSION_ONE);
@@ -120,9 +131,7 @@ const PubSubRequestPtr PubSubData::getRequest() {
     Hedwig::SubscribeRequest* subreq = request->mutable_subscriberequest();
     subreq->set_subscriberid(subscriberid);
     subreq->set_createorattach(options.createorattach());
-    if (options.messagebound() > 0) {
-      subreq->set_messagebound(options.messagebound());
-    }
+    setPreferencesForSubRequest(subreq, options);
   } else if (type == CONSUME) {
     LOG4CXX_DEBUG(logger, "Creating consume request");
 

@@ -34,6 +34,8 @@ import com.google.protobuf.ByteString;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionState;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.protoextensions.MessageIdUtils;
@@ -124,7 +126,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                 for (InMemorySubscriptionState curSubscription : topicSubscriptions.values()) {
                     if (curSubscription.getSubscriptionState().getMsgId().getLocalComponent() < minConsumedMessage)
                         minConsumedMessage = curSubscription.getSubscriptionState().getMsgId().getLocalComponent();
-                    hasBound = hasBound && curSubscription.getSubscriptionState().hasMessageBound();
+                    hasBound = hasBound && curSubscription.getSubscriptionPreferences().hasMessageBound();
                 }
                 boolean callPersistenceManager = true;
                 // Don't call the PersistenceManager if nobody is subscribed to
@@ -286,8 +288,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
             for (Entry<ByteString, InMemorySubscriptionState> entry : states.entrySet()) {
                 InMemorySubscriptionState memState = entry.getValue();
                 if (memState.setLastConsumeSeqIdImmediately()) {
-                    updateSubscriptionState(topic, entry.getKey(), memState.getSubscriptionState(),
-                                            mcb, ctx);
+                    updateSubscriptionState(topic, entry.getKey(), memState, mcb, ctx);
                 } else {
                     mcb.operationFinished(ctx, null);
                 }
@@ -332,7 +333,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
             }
 
             final ByteString subscriberId = subRequest.getSubscriberId();
-            InMemorySubscriptionState subscriptionState = topicSubscriptions.get(subscriberId);
+            final InMemorySubscriptionState subscriptionState = topicSubscriptions.get(subscriberId);
             CreateOrAttach createOrAttach = subRequest.getCreateOrAttach();
 
             if (subscriptionState != null) {
@@ -346,11 +347,41 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                     return;
                 }
 
+                // Subscription existed before, check whether new preferences provided
+                // if new preferences provided, merged the subscription data and updated them
+                // TODO: needs ACL mechanism when changing preferences
+                if (subRequest.hasPreferences() &&
+                    subscriptionState.updatePreferences(subRequest.getPreferences())) {
+                    updateSubscriptionPreferences(topic, subscriberId, subscriptionState, new Callback<Void>() {
+                        @Override
+                        public void operationFailed(Object ctx, PubSubException exception) {
+                            cb.operationFailed(ctx, exception);
+                        }
+
+                        @Override
+                        public void operationFinished(Object ctx, Void resultOfOperation) {
+                            if (logger.isDebugEnabled()) {
+                                logger.debug("Topic: " + topic.toStringUtf8() + " subscriberId: " + subscriberId.toStringUtf8()
+                                             + " attaching to subscription with state: "
+                                             + SubscriptionStateUtils.toString(subscriptionState.getSubscriptionState())
+                                             + ", with preferences: "
+                                             + SubscriptionStateUtils.toString(subscriptionState.getSubscriptionPreferences()));
+                            }
+                            // update message bound if necessary
+                            updateMessageBound(topic);
+                            cb.operationFinished(ctx, subscriptionState.getLastConsumeSeqId());
+                        }
+                    }, ctx);
+                    return;
+                }
+
                 // otherwise just attach
                 if (logger.isDebugEnabled()) {
                     logger.debug("Topic: " + topic.toStringUtf8() + " subscriberId: " + subscriberId.toStringUtf8()
                                  + " attaching to subscription with state: "
-                                 + SubscriptionStateUtils.toString(subscriptionState.getSubscriptionState()));
+                                 + SubscriptionStateUtils.toString(subscriptionState.getSubscriptionState())
+                                 + ", with preferences: "
+                                 + SubscriptionStateUtils.toString(subscriptionState.getSubscriptionPreferences()));
                 }
 
                 cb.operationFinished(ctx, subscriptionState.getLastConsumeSeqId());
@@ -368,12 +399,24 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
 
             // now the hard case, this is a brand new subscription, must record
             SubscriptionState.Builder stateBuilder = SubscriptionState.newBuilder().setMsgId(consumeSeqId);
-            if (subRequest.hasMessageBound()) {
-                stateBuilder = stateBuilder.setMessageBound(subRequest.getMessageBound());
-            }
-            final SubscriptionState newState = stateBuilder.build();
 
-            createSubscriptionState(topic, subscriberId, newState, new Callback<Void>() {
+            SubscriptionPreferences.Builder preferencesBuilder;
+            if (subRequest.hasPreferences()) {
+                preferencesBuilder = SubscriptionPreferences.newBuilder(subRequest.getPreferences());
+            } else {
+                preferencesBuilder = SubscriptionPreferences.newBuilder();
+            }
+
+            // backward compability
+            if (subRequest.hasMessageBound()) {
+                preferencesBuilder = preferencesBuilder.setMessageBound(subRequest.getMessageBound());
+            }
+
+            SubscriptionData.Builder subDataBuilder =
+                SubscriptionData.newBuilder().setState(stateBuilder).setPreferences(preferencesBuilder);
+            final SubscriptionData subData = subDataBuilder.build();
+
+            createSubscriptionData(topic, subscriberId, subData, new Callback<Void>() {
                 @Override
                 public void operationFailed(Object ctx, PubSubException exception) {
                     cb.operationFailed(ctx, exception);
@@ -388,7 +431,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                             logger.error("subscription for subscriber " + subscriberId.toStringUtf8() + " to topic "
                                          + topic.toStringUtf8() + " failed due to failed listener callback", exception);
                             // should remove subscription when synchronized cross-region subscription failed
-                            deleteSubscriptionState(topic, subscriberId, new Callback<Void>() {
+                            deleteSubscriptionData(topic, subscriberId, new Callback<Void>() {
                                 @Override
                                 public void operationFinished(Object context,
                                         Void resultOfOperation) {
@@ -418,7 +461,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
 
                         @Override
                         public void operationFinished(Object ctx, Void resultOfOperation) {
-                            topicSubscriptions.put(subscriberId, new InMemorySubscriptionState(newState));
+                            topicSubscriptions.put(subscriberId, new InMemorySubscriptionState(subData));
 
                             updateMessageBound(topic);
 
@@ -446,11 +489,11 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
         }
         int maxBound = Integer.MIN_VALUE;
         for (Map.Entry<ByteString, InMemorySubscriptionState> e : topicSubscriptions.entrySet()) {
-            if (!e.getValue().getSubscriptionState().hasMessageBound()) {
+            if (!e.getValue().getSubscriptionPreferences().hasMessageBound()) {
                 maxBound = Integer.MIN_VALUE;
                 break;
             } else {
-                maxBound = Math.max(maxBound, e.getValue().getSubscriptionState().getMessageBound());
+                maxBound = Math.max(maxBound, e.getValue().getSubscriptionPreferences().getMessageBound());
             }
         }
         if (maxBound == Integer.MIN_VALUE) {
@@ -492,7 +535,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
             }
 
             if (subState.setLastConsumeSeqId(consumeSeqId, cfg.getConsumeInterval())) {
-                updateSubscriptionState(topic, subscriberId, subState.getSubscriptionState(), cb, ctx);
+                updateSubscriptionState(topic, subscriberId, subState, cb, ctx);
             } else {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Only advanced consume pointer in memory, will persist later, topic: "
@@ -534,7 +577,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                 return;
             }
 
-            deleteSubscriptionState(topic, subscriberId, new Callback<Void>() {
+            deleteSubscriptionData(topic, subscriberId, new Callback<Void>() {
                 @Override
                 public void operationFailed(Object ctx, PubSubException exception) {
                     cb.operationFailed(ctx, exception);
@@ -600,13 +643,44 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
         }
     }
 
-    protected abstract void createSubscriptionState(final ByteString topic, ByteString subscriberId,
-            SubscriptionState state, Callback<Void> callback, Object ctx);
+    private void updateSubscriptionState(ByteString topic, ByteString subscriberId,
+                                         InMemorySubscriptionState state,
+                                         Callback<Void> callback, Object ctx) {
+        SubscriptionData subData;
+        if (isPartialUpdateSupported()) {
+            subData = SubscriptionData.newBuilder().setState(state.getSubscriptionState()).build();
+            updateSubscriptionData(topic, subscriberId, subData, callback, ctx);
+        } else {
+            subData = state.toSubscriptionData();
+            replaceSubscriptionData(topic, subscriberId, subData, callback, ctx);
+        }
+    }
 
-    protected abstract void updateSubscriptionState(ByteString topic, ByteString subscriberId, SubscriptionState state,
+    private void updateSubscriptionPreferences(ByteString topic, ByteString subscriberId,
+                                               InMemorySubscriptionState state,
+                                               Callback<Void> callback, Object ctx) {
+        SubscriptionData subData;
+        if (isPartialUpdateSupported()) {
+            subData = SubscriptionData.newBuilder().setPreferences(state.getSubscriptionPreferences()).build();
+            updateSubscriptionData(topic, subscriberId, subData, callback, ctx);
+        } else {
+            subData = state.toSubscriptionData();
+            replaceSubscriptionData(topic, subscriberId, subData, callback, ctx);
+        }
+    }
+
+    protected abstract boolean isPartialUpdateSupported();
+
+    protected abstract void createSubscriptionData(final ByteString topic, ByteString subscriberId,
+            SubscriptionData data, Callback<Void> callback, Object ctx);
+
+    protected abstract void updateSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData data,
             Callback<Void> callback, Object ctx);
 
-    protected abstract void deleteSubscriptionState(ByteString topic, ByteString subscriberId, Callback<Void> callback,
+    protected abstract void replaceSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData data,
+            Callback<Void> callback, Object ctx);
+
+    protected abstract void deleteSubscriptionData(ByteString topic, ByteString subscriberId, Callback<Void> callback,
             Object ctx);
 
 }

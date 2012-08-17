@@ -23,6 +23,15 @@ enum ProtocolVersion{
     VERSION_ONE = 1;
 }
 
+// common structure to store header or properties
+message Map {
+    message Entry {
+        optional string key  = 1;
+        optional bytes value = 2;
+    }
+    repeated Entry entries = 1;
+}
+
 /*
  * this is the structure that will be serialized
  */
@@ -84,24 +93,46 @@ message PublishRequest{
     required Message msg = 2;
 }
 
-message SubscribeRequest{
-    required bytes subscriberId = 2;
-	
-	enum CreateOrAttach{
-	    CREATE = 0;
-	    ATTACH = 1;
-	    CREATE_OR_ATTACH = 2;
-	};
-	optional CreateOrAttach createOrAttach = 3 [default = CREATE_OR_ATTACH];
-	
-	// wait for cross-regional subscriptions to be established before returning
-	optional bool synchronous = 4 [default = false];
-	optional uint32 messageBound = 5;
+// record all preferences for a subscription,
+// would be serialized to be stored in meta store
+message SubscriptionPreferences {
+    // user customized subscription options
+    optional Map options = 1;
+
+    ///
+    /// system defined options
+    ///
+
+    // message bound
+    optional uint32 messageBound = 2;
 }
 
+message SubscribeRequest{
+    required bytes subscriberId = 2;
+
+    enum CreateOrAttach{
+        CREATE = 0;
+        ATTACH = 1;
+        CREATE_OR_ATTACH = 2;
+    };
+    optional CreateOrAttach createOrAttach = 3 [default = CREATE_OR_ATTACH];
+
+    // wait for cross-regional subscriptions to be established before returning
+    optional bool synchronous = 4 [default = false];
+    // @Deprecated. set message bound in SubscriptionPreferences
+    optional uint32 messageBound = 5;
+
+    // subscription options
+    optional SubscriptionPreferences preferences = 6;
+}
+
+// used in client only
+// options are stored in SubscriptionPreferences structure
 message SubscriptionOptions {
     optional SubscribeRequest.CreateOrAttach createOrAttach = 2 [default = CREATE_OR_ATTACH];
     optional uint32 messageBound = 3 [default = 0];
+    // user customized subscription options
+    optional Map options = 4;
 }
 
 message ConsumeRequest{
@@ -189,7 +220,16 @@ enum StatusCode{
     
 message SubscriptionState {
     required MessageSeqId msgId = 1;
+    // @Deprecated.
+    // It is a bad idea to put fields that don't change frequently
+    // together with fields that change frequently
+    // so move it to subscription preferences structure
     optional uint32 messageBound = 2;
+}
+
+message SubscriptionData {
+    optional SubscriptionState state = 1;
+    optional SubscriptionPreferences preferences = 2;
 }
 
 message LedgerRange{

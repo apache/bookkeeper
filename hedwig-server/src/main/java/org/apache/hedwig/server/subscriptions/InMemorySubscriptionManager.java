@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
 import com.google.protobuf.ByteString;
-import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionState;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.persistence.PersistenceManager;
 import org.apache.hedwig.server.topics.TopicManager;
@@ -35,21 +35,32 @@ public class InMemorySubscriptionManager extends AbstractSubscriptionManager {
     }
 
     @Override
-    protected void createSubscriptionState(ByteString topic, ByteString subscriberId, SubscriptionState state,
+    protected void createSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData subData,
                                            Callback<Void> callback, Object ctx) {
         // nothing to do, in-memory info is already recorded by base class
         callback.operationFinished(ctx, null);
     }
 
     @Override
-    protected void deleteSubscriptionState(ByteString topic, ByteString subscriberId, Callback<Void> callback,
-                                           Object ctx) {
+    protected void deleteSubscriptionData(ByteString topic, ByteString subscriberId, Callback<Void> callback,
+                                          Object ctx) {
         // nothing to do, in-memory info is already deleted by base class
         callback.operationFinished(ctx, null);
     }
 
     @Override
-    protected void updateSubscriptionState(ByteString topic, ByteString subscriberId, SubscriptionState state,
+    protected boolean isPartialUpdateSupported() {
+        return false;
+    }
+
+    @Override
+    protected void updateSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData data,
+                                          Callback<Void> callback, Object ctx) {
+        throw new UnsupportedOperationException("Doesn't support partial update");
+    }
+
+    @Override
+    protected void replaceSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData data,
                                            Callback<Void> callback, Object ctx) {
         // nothing to do, in-memory info is already updated by base class
         callback.operationFinished(ctx, null);

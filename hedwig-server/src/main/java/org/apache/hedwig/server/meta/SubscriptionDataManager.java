@@ -23,7 +23,7 @@ import java.util.Map;
 import com.google.protobuf.ByteString;
 
 import org.apache.hedwig.exceptions.PubSubException;
-import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionState;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.server.subscriptions.InMemorySubscriptionState;
 import org.apache.hedwig.util.Callback;
 
@@ -33,14 +33,14 @@ import org.apache.hedwig.util.Callback;
 public interface SubscriptionDataManager extends Closeable {
 
     /**
-     * Create subscription state.
+     * Create subscription data.
      *
      * @param topic
      *          Topic name
      * @param subscriberId
      *          Subscriber id
-     * @param state
-     *          Subscription state
+     * @param data 
+     *          Subscription data
      * @param callback
      *          Callback when subscription state created.
      *          {@link PubSubException.SubscriptionStateExistsException} is returned when subscription state
@@ -48,18 +48,29 @@ public interface SubscriptionDataManager extends Closeable {
      * @param ctx
      *          Context of the callback
      */
-    public void createSubscriptionState(ByteString topic, ByteString subscriberId, SubscriptionState state,
-                                        Callback<Void> callback, Object ctx);
+    public void createSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData data,
+                                       Callback<Void> callback, Object ctx);
 
     /**
-     * Update subscription state.
+     * Whether the metadata manager supports partial update.
+     *
+     * @return true if the metadata manager supports partial update.
+     *         otherwise, return false.
+     */
+    public boolean isPartialUpdateSupported();
+
+    /**
+     * Update subscription data.
      *
      * @param topic
      *          Topic name
      * @param subscriberId
      *          Subscriber id
-     * @param state
-     *          Subscription state
+     * @param dataToUpdate
+     *          Subscription data to update. So it is a partial data, which contains
+     *          the part of data to update. The implementation should not replace
+     *          existing subscription data with <i>dataToUpdate</i> directly.
+     *          E.g. if there is only state in it, you should update state only.
      * @param callback
      *          Callback when subscription state updated.
      *          {@link PubSubException.NoSubscriptionStateException} is returned when no subscription state
@@ -67,11 +78,28 @@ public interface SubscriptionDataManager extends Closeable {
      * @param ctx
      *          Context of the callback
      */
-    public void updateSubscriptionState(ByteString topic, ByteString subscriberId, SubscriptionState state,
+    public void updateSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData dataToUpdate,
+                                       Callback<Void> callback, Object ctx);
+
+    /**
+     * Replace subscription data.
+     *
+     * @param topic
+     *          Topic name
+     * @param subscriberId
+     *          Subscriber id
+     * @param dataToReplace
+     *          Subscription data to replace.
+     * @param callback
+     *          Callback when subscription state updated.
+     * @param ctx
+     *          Context of the callback
+     */
+    public void replaceSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData dataToReplace,
                                         Callback<Void> callback, Object ctx);
 
     /**
-     * Remove subscription state.
+     * Remove subscription data.
      *
      * @param topic
      *          Topic name
@@ -84,24 +112,24 @@ public interface SubscriptionDataManager extends Closeable {
      * @param ctx
      *          Context of the callback
      */
-    public void deleteSubscriptionState(ByteString topic, ByteString subscriberId,
-                                        Callback<Void> callback, Object ctx);
+    public void deleteSubscriptionData(ByteString topic, ByteString subscriberId,
+                                       Callback<Void> callback, Object ctx);
 
     /**
-     * Read subscription state.
+     * Read subscription data.
      *
      * @param topic
      *          Topic Name
      * @param subscriberId
      *          Subscriber id
      * @param callback
-     *          Callback when subscription state read.
-     *          Null is returned when no subscription state is found.
+     *          Callback when subscription data read.
+     *          Null is returned when no subscription data is found.
      * @param ctx
      *          Context of the callback
      */
-    public void readSubscriptionState(ByteString topic, ByteString subscriberId,
-                                      Callback<SubscriptionState> callback, Object ctx);
+    public void readSubscriptionData(ByteString topic, ByteString subscriberId,
+                                     Callback<SubscriptionData> callback, Object ctx);
 
     /**
      * Read all subscriptions of a topic.
@@ -113,6 +141,6 @@ public interface SubscriptionDataManager extends Closeable {
      * @param ctx
      *          Contxt of the callback
      */
-    public void readSubscriptions(ByteString topic, Callback<Map<ByteString, InMemorySubscriptionState>> cb,
+    public void readSubscriptions(ByteString topic, Callback<Map<ByteString, SubscriptionData>> cb,
                                   Object ctx);
 }

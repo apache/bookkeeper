@@ -95,6 +95,9 @@ namespace Hedwig {
   private:
 
     PubSubData();
+
+    void setPreferencesForSubRequest(SubscribeRequest * subreq,
+                                     const SubscriptionOptions &options);
     
     OperationType type;
     long txnid;

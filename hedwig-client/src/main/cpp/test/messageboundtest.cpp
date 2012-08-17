@@ -182,3 +182,45 @@ TEST(MessageBoundTest, testMultipleSubscribers) {
   sub.unsubscribe(topic, subid5);
 }
 
+TEST(MessageBoundTest, testUpdateMessageBound) {
+  Hedwig::Configuration* conf = new TestServerConfiguration();
+  std::auto_ptr<Hedwig::Configuration> confptr(conf);
+
+  Hedwig::Client* client = new Hedwig::Client(*conf);
+  std::auto_ptr<Hedwig::Client> clientptr(client);
+
+  Hedwig::Subscriber& sub = client->getSubscriber();
+  Hedwig::Publisher& pub = client->getPublisher();
+
+  Hedwig::SubscriptionOptions options5;
+  options5.set_messagebound(5);
+  options5.set_createorattach(Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
+  Hedwig::SubscriptionOptions options20;
+  options20.set_messagebound(20);
+  options20.set_createorattach(Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
+  Hedwig::SubscriptionOptions options10;
+  options10.set_messagebound(10);
+  options10.set_createorattach(Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
+
+  std::string topic = "testUpdateMessageBound";
+  std::string subid = "updateSubId";
+
+  sub.subscribe(topic, subid, options5);
+  sub.closeSubscription(topic, subid);
+  sendXExpectLastY(pub, sub, topic, subid, 50, 5);
+
+  // update bound to 20
+  sub.subscribe(topic, subid, options20);
+  sub.closeSubscription(topic, subid);
+  sendXExpectLastY(pub, sub, topic, subid, 50, 20);
+
+  // update bound to 10
+  sub.subscribe(topic, subid, options10);
+  sub.closeSubscription(topic, subid);
+  sendXExpectLastY(pub, sub, topic, subid, 50, 10);
+
+  // message bound is not provided, no update
+  sub.subscribe(topic, subid, Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
+  sub.closeSubscription(topic, subid);
+  sendXExpectLastY(pub, sub, topic, subid, 50, 10);
+}

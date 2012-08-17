@@ -43,6 +43,7 @@ public class TestBackwardCompat extends TestCase {
 
     private static Logger logger = LoggerFactory.getLogger(TestBackwardCompat.class);
 
+    static final int CONSUMEINTERVAL = 5;
     static ZooKeeperUtil zkUtil = new ZooKeeperUtil();
 
     static class BookKeeperCluster400 {
@@ -257,6 +258,10 @@ public class TestBackwardCompat extends TestCase {
         Server410(final String zkHosts) {
             conf = new org.apache.hw_v4_1_0.hedwig.server.common.ServerConfiguration() {
                 @Override
+                public int getConsumeInterval() {
+                    return CONSUMEINTERVAL;
+                }
+                @Override
                 public String getZkHost() {
                     return zkHosts;
                 }
@@ -281,8 +286,52 @@ public class TestBackwardCompat extends TestCase {
         org.apache.hw_v4_1_0.hedwig.client.api.Publisher publisher;
         org.apache.hw_v4_1_0.hedwig.client.api.Subscriber subscriber;
 
+        class IntMessageHandler implements org.apache.hw_v4_1_0.hedwig.client.api.MessageHandler {
+            ByteString topic;
+            ByteString subId;
+            int next;
+
+            CountDownLatch latch;
+
+            IntMessageHandler(ByteString t, ByteString s, int start, int num) {
+                this.topic = t;
+                this.subId = s;
+                this.next = start;
+                this.latch = new CountDownLatch(num);
+            }
+
+            @Override
+            public void deliver(ByteString t, ByteString s,
+                                org.apache.hw_v4_1_0.hedwig.protocol.PubSubProtocol.Message msg,
+                                org.apache.hw_v4_1_0.hedwig.util.Callback<Void> callback, Object context) {
+                if (!t.equals(topic) || !s.equals(subId)) {
+                    return;
+                }
+                int num = Integer.parseInt(msg.getBody().toStringUtf8());
+                if (num == next) {
+                    latch.countDown();
+                    ++next;
+                }
+                callback.operationFinished(context, null);
+            }
+
+            public boolean await(long timeout, TimeUnit unit)
+            throws InterruptedException {
+                return latch.await(timeout, unit);
+            }
+        }
+
         Client410() {
-            conf = new org.apache.hw_v4_1_0.hedwig.client.conf.ClientConfiguration();
+            conf = new org.apache.hw_v4_1_0.hedwig.client.conf.ClientConfiguration() {
+                @Override
+                public boolean isAutoSendConsumeMessageEnabled() {
+                    return true;
+                }
+                @Override
+                public int getConsumedMessagesBufferSize() {
+                    return 1;
+                }
+            };
             client = new org.apache.hw_v4_1_0.hedwig.client.HedwigClient(conf);
             publisher = client.getPublisher();
             subscriber = client.getSubscriber();
@@ -301,6 +350,79 @@ public class TestBackwardCompat extends TestCase {
                     .setBody(data).build();
             publisher.publish(topic, message);
             return null;
+        }
+
+        void publishInts(ByteString topic, int start, int num) throws Exception {
+            for (int i=0; i<num; i++) {
+                org.apache.hw_v4_1_0.hedwig.protocol.PubSubProtocol.Message msg =
+                    org.apache.hw_v4_1_0.hedwig.protocol.PubSubProtocol.Message.newBuilder().setBody(ByteString.copyFromUtf8("" + (start+i))).build();
+                publisher.publish(topic, msg);
+            }
+        }
+
+        void sendXExpectLastY(ByteString topic, ByteString subid, final int x, final int y)
+        throws Exception {
+            for (int i=0; i<x; i++) {
+                publisher.publish(topic, org.apache.hw_v4_1_0.hedwig.protocol.PubSubProtocol.Message.newBuilder().setBody(
+                                         ByteString.copyFromUtf8(String.valueOf(i))).build());
+            }
+            subscriber.subscribe(topic, subid, org.apache.hw_v4_1_0.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach.ATTACH);
+
+            final AtomicInteger expected = new AtomicInteger(x - y);
+            final CountDownLatch latch = new CountDownLatch(1);
+            subscriber.startDelivery(topic, subid, new org.apache.hw_v4_1_0.hedwig.client.api.MessageHandler() {
+                @Override
+                synchronized public void deliver(ByteString topic, ByteString subscriberId,
+                                                 org.apache.hw_v4_1_0.hedwig.protocol.PubSubProtocol.Message msg,
+                                                 org.apache.hw_v4_1_0.hedwig.util.Callback<Void> callback, Object context) {
+                    try {
+                        int value = Integer.valueOf(msg.getBody().toStringUtf8());
+                        if (value == expected.get()) {
+                            expected.incrementAndGet();
+                        } else {
+                            logger.error("Did not receive expected value, expected {}, got {}",
+                                         expected.get(), value);
+                            expected.set(0);
+                            latch.countDown();
+                        }
+                        if (expected.get() == x) {
+                            latch.countDown();
+                        }
+                        callback.operationFinished(context, null);
+                    } catch (Exception e) {
+                        logger.error("Received bad message", e);
+                        latch.countDown();
+                    }
+                }
+            });
+            assertTrue("Timed out waiting for messages Y is " + y + " expected is currently "
+                       + expected.get(), latch.await(10, TimeUnit.SECONDS));
+            assertEquals("Should be expected message with " + x, x, expected.get());
+            subscriber.stopDelivery(topic, subid);
+            subscriber.closeSubscription(topic, subid);
+        }
+
+        void subscribe(ByteString topic, ByteString subscriberId) throws Exception {
+            org.apache.hw_v4_1_0.hedwig.protocol.PubSubProtocol.SubscriptionOptions options =
+                org.apache.hw_v4_1_0.hedwig.protocol.PubSubProtocol.SubscriptionOptions.newBuilder()
+                .setCreateOrAttach(org.apache.hw_v4_1_0.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach.CREATE_OR_ATTACH).build();
+            subscribe(topic, subscriberId, options);
+        }
+
+        void subscribe(ByteString topic, ByteString subscriberId,
+                       org.apache.hw_v4_1_0.hedwig.protocol.PubSubProtocol.SubscriptionOptions options) throws Exception {
+            subscriber.subscribe(topic, subscriberId, options);
+        }
+
+        void closeSubscription(ByteString topic, ByteString subscriberId) throws Exception {
+            subscriber.closeSubscription(topic, subscriberId);
+        }
+
+        void receiveInts(ByteString topic, ByteString subscriberId, int start, int num) throws Exception {
+            IntMessageHandler msgHandler = new IntMessageHandler(topic, subscriberId, start, num);
+            subscriber.startDelivery(topic, subscriberId, msgHandler);
+            msgHandler.await(num, TimeUnit.SECONDS);
+            subscriber.stopDelivery(topic, subscriberId);
         }
     }
 
@@ -386,6 +508,11 @@ public class TestBackwardCompat extends TestCase {
 
         ServerCurrent(final String zkHosts) {
             conf = new org.apache.hedwig.server.common.ServerConfiguration() {
+                @Override
+                public int getConsumeInterval() {
+                    return CONSUMEINTERVAL;
+                }
+
                 @Override
                 public String getZkHost() {
                     return zkHosts;
@@ -674,6 +801,121 @@ public class TestBackwardCompat extends TestCase {
         // stop current server
         scur.stop();
         bkc410.stop();
+    }
+
+    /**
+     * Test compatability between version 4.1.0 and the current version.
+     *
+     * A current server could read subscription data recorded by 4.1.0 server.
+     */
+    @Test
+    public void testSubscriptionDataCompat410() throws Exception {
+        ByteString topic = ByteString.copyFromUtf8("TestCompat410");
+        ByteString sub410 = ByteString.copyFromUtf8("sub410");
+        ByteString subcur = ByteString.copyFromUtf8("subcur");
+
+        // start bookkeeper 410
+        BookKeeperCluster410 bkc410 = new BookKeeperCluster410(3);
+        bkc410.start();
+
+        // start 410 server
+        Server410 s410 = new Server410(zkUtil.getZooKeeperConnectString());
+        s410.start();
+
+        Client410 c410 = new Client410();
+        c410.subscribe(topic, sub410);
+        c410.closeSubscription(topic, sub410);
+
+        ClientCurrent ccur = new ClientCurrent();
+        ccur.subscribe(topic, subcur);
+        ccur.closeSubscription(topic, subcur);
+
+        // publish messages using old client
+        c410.publishInts(topic, 0, 10);
+        // stop 410 server
+        s410.stop();
+
+        // start current server
+        ServerCurrent scur = new ServerCurrent(zkUtil.getZooKeeperConnectString());
+        scur.start();
+
+        c410.subscribe(topic, sub410);
+        c410.receiveInts(topic, sub410, 0, 10);
+
+        ccur.subscribe(topic, subcur);
+        ccur.receiveInts(topic, subcur, 0, 10);
+
+        // publish messages using current client
+        ccur.publishInts(topic, 10, 10);
+
+        c410.receiveInts(topic, sub410, 10, 10);
+        ccur.receiveInts(topic, subcur, 10, 10);
+
+        // stop current server
+        scur.stop();
+
+        c410.close();
+        ccur.close();
+
+        // stop bookkeeper cluster
+        bkc410.stop();
+    }
+
+    /**
+     * Test compatability between version 4.1.0 and the current version.
+     *
+     * A 4.1.0 client could not update message bound, while current could do it.
+     */
+    @Test
+    public void testUpdateMessageBoundCompat410() throws Exception {
+        ByteString topic = ByteString.copyFromUtf8("TestUpdateMessageBoundCompat410");
+        ByteString subid = ByteString.copyFromUtf8("mysub");
+
+        // start bookkeeper
+        BookKeeperClusterCurrent bkccur= new BookKeeperClusterCurrent(3);
+        bkccur.start();
+
+        // start hub server
+        ServerCurrent scur = new ServerCurrent(zkUtil.getZooKeeperConnectString());
+        scur.start();
+
+        org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions options5cur =
+            org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach.CREATE_OR_ATTACH)
+            .setMessageBound(5).build();
+        org.apache.hw_v4_1_0.hedwig.protocol.PubSubProtocol.SubscriptionOptions options5v410 =
+            org.apache.hw_v4_1_0.hedwig.protocol.PubSubProtocol.SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(org.apache.hw_v4_1_0.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach.CREATE_OR_ATTACH)
+            .setMessageBound(5).build();
+        org.apache.hw_v4_1_0.hedwig.protocol.PubSubProtocol.SubscriptionOptions options20v410 =
+            org.apache.hw_v4_1_0.hedwig.protocol.PubSubProtocol.SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(org.apache.hw_v4_1_0.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach.CREATE_OR_ATTACH)
+            .setMessageBound(20).build();
+
+        Client410 c410 = new Client410();
+        c410.subscribe(topic, subid, options20v410);
+        c410.closeSubscription(topic, subid);
+        c410.sendXExpectLastY(topic, subid, 50, 20);
+
+        c410.subscribe(topic, subid, options5v410);
+        c410.closeSubscription(topic, subid);
+        // the message bound isn't updated.
+        c410.sendXExpectLastY(topic, subid, 50, 20);
+
+        ClientCurrent ccur = new ClientCurrent();
+        ccur.subscribe(topic, subid, options5cur);
+        ccur.closeSubscription(topic, subid);
+        // the message bound should be updated.
+        c410.sendXExpectLastY(topic, subid, 50, 5);
+
+        // stop current server
+        scur.stop();
+
+        c410.close();
+        ccur.close();
+
+        // stop bookkeeper cluster
+        bkccur.stop();
     }
 
 }

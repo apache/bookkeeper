@@ -88,32 +88,32 @@
       <version>2.1</version>
     </dependency>
     <!--
-	Annoying dependency we need to include because
-	zookeeper uses log4j and so we transatively do, but
-	log4j has some dependencies which aren't in the 
-	default maven repositories
+        Annoying dependency we need to include because
+        zookeeper uses log4j and so we transatively do, but
+        log4j has some dependencies which aren't in the 
+        default maven repositories
     //-->
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
       <version>1.2.15</version>
       <exclusions>
-	<exclusion>
-	  <groupId>javax.mail</groupId>
-	  <artifactId>mail</artifactId>
-	</exclusion>
-	<exclusion>
-	  <groupId>javax.jms</groupId>
-	  <artifactId>jms</artifactId>
-	</exclusion>
-	<exclusion>
-	  <groupId>com.sun.jdmk</groupId>
-	  <artifactId>jmxtools</artifactId>
-	</exclusion>
-	<exclusion>
-	  <groupId>com.sun.jmx</groupId>
-	  <artifactId>jmxri</artifactId>
-	</exclusion>
+        <exclusion>
+          <groupId>javax.mail</groupId>
+          <artifactId>mail</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>javax.jms</groupId>
+          <artifactId>jms</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jdmk</groupId>
+          <artifactId>jmxtools</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jmx</groupId>
+          <artifactId>jmxri</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -165,11 +165,23 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.2</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <version>2.2.1</version>
         <configuration>
           <descriptors>
-	    <descriptor>../src/assemble/bin.xml</descriptor>
+            <descriptor>../src/assemble/bin.xml</descriptor>
           </descriptors>
         </configuration>
       </plugin>
@@ -192,18 +204,18 @@
         </configuration>
       </plugin>
       <plugin>
-	<artifactId>maven-dependency-plugin</artifactId>
-	<executions>
-	  <execution>
-	    <phase>package</phase>
-	    <goals>
-	      <goal>copy-dependencies</goal>
-	    </goals>
-	    <configuration>
-	      <outputDirectory>${basedir}/lib</outputDirectory>
-	    </configuration>
-	  </execution>
-	</executions>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/lib</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

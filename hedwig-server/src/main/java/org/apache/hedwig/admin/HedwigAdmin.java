@@ -38,14 +38,12 @@ import org.apache.hedwig.protocol.PubSubProtocol.LedgerRange;
 import org.apache.hedwig.protocol.PubSubProtocol.LedgerRanges;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
-import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionState;
-import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.meta.MetadataManagerFactory;
 import org.apache.hedwig.server.meta.SubscriptionDataManager;
 import org.apache.hedwig.server.meta.TopicOwnershipManager;
 import org.apache.hedwig.server.meta.TopicPersistenceManager;
-import org.apache.hedwig.server.subscriptions.InMemorySubscriptionState;
 import org.apache.hedwig.server.topics.HubInfo;
 import org.apache.hedwig.server.topics.HubLoad;
 import org.apache.hedwig.util.Callback;
@@ -446,16 +444,14 @@ public class HedwigAdmin {
      * @return subscriptions of a topic
      * @throws Exception
      */
-    public Map<ByteString, SubscriptionState> getTopicSubscriptions(ByteString topic)
+    public Map<ByteString, SubscriptionData> getTopicSubscriptions(ByteString topic)
         throws Exception {
-        Map<ByteString, SubscriptionState> states =
-            new HashMap<ByteString, SubscriptionState>();
 
-        final SyncObj<Map<ByteString, InMemorySubscriptionState>> syncObj =
-            new SyncObj<Map<ByteString, InMemorySubscriptionState>>();
-        sdm.readSubscriptions(topic, new Callback<Map<ByteString, InMemorySubscriptionState>>() {
+        final SyncObj<Map<ByteString, SubscriptionData>> syncObj =
+            new SyncObj<Map<ByteString, SubscriptionData>>();
+        sdm.readSubscriptions(topic, new Callback<Map<ByteString, SubscriptionData>>() {
             @Override
-            public void operationFinished(Object ctx, Map<ByteString, InMemorySubscriptionState> result) {
+            public void operationFinished(Object ctx, Map<ByteString, SubscriptionData> result) {
                 syncObj.success(result);
             }
             @Override
@@ -470,17 +466,7 @@ public class HedwigAdmin {
             throw syncObj.exception;
         }
 
-        Map<ByteString, InMemorySubscriptionState> subStats = syncObj.value;
-
-        if (null == subStats) {
-            return states;
-        }
-
-        for (Map.Entry<ByteString, InMemorySubscriptionState> entry : subStats.entrySet()) {
-            states.put(entry.getKey(), entry.getValue().getSubscriptionState());
-        }
-
-        return states;
+        return syncObj.value;
     }
 
     /**
@@ -493,11 +479,11 @@ public class HedwigAdmin {
      * @return subscription state
      * @throws Exception
      */
-    public SubscriptionState getSubscription(ByteString topic, ByteString subscriber) throws Exception {
-        final SyncObj<SubscriptionState> syncObj = new SyncObj<SubscriptionState>();
-        sdm.readSubscriptionState(topic, subscriber, new Callback<SubscriptionState>() {
+    public SubscriptionData getSubscription(ByteString topic, ByteString subscriber) throws Exception {
+        final SyncObj<SubscriptionData> syncObj = new SyncObj<SubscriptionData>();
+        sdm.readSubscriptionData(topic, subscriber, new Callback<SubscriptionData>() {
             @Override
-            public void operationFinished(Object ctx, SubscriptionState result) {
+            public void operationFinished(Object ctx, SubscriptionData result) {
                 syncObj.success(result);
             }
             @Override

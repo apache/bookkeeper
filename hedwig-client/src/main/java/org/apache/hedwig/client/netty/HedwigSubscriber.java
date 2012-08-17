@@ -53,6 +53,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.PubSubRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.UnsubscribeRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 import org.apache.hedwig.util.Callback;
@@ -355,6 +356,31 @@ public class HedwigSubscriber implements Subscriber {
     }
 
     /**
+     * Convert client-side subscription options to subscription preferences
+     *
+     * @param options
+     *          Client-Side subscription options
+     */
+    protected SubscriptionPreferences.Builder options2Preferences(SubscriptionOptions options) {
+        // prepare subscription preferences
+        SubscriptionPreferences.Builder preferencesBuilder = SubscriptionPreferences.newBuilder();
+
+        // set message bound
+        if (options.getMessageBound() > 0) {
+            preferencesBuilder.setMessageBound(options.getMessageBound());
+        } else if (cfg.getSubscriptionMessageBound() > 0) {
+            preferencesBuilder.setMessageBound(cfg.getSubscriptionMessageBound());
+        }
+
+        // set user options
+        if (options.hasOptions()) {
+            preferencesBuilder.setOptions(options.getOptions());
+        }
+
+        return preferencesBuilder;
+    }
+
+    /**
      * This is a helper method to write the actual subscribe/unsubscribe message
      * once the client is connected to the server and a Channel is available.
      *
@@ -388,12 +414,14 @@ public class HedwigSubscriber implements Subscriber {
             // For now, all subscribes should wait for all cross-regional
             // subscriptions to be established before returning.
             subscribeRequestBuilder.setSynchronous(true);
-
-            if (pubSubData.options.getMessageBound() > 0) {
-                subscribeRequestBuilder.setMessageBound(pubSubData.options.getMessageBound());
-            } else if (cfg.getSubscriptionMessageBound() > 0) {
-                subscribeRequestBuilder.setMessageBound(cfg.getSubscriptionMessageBound());
+            // set subscription preferences
+            SubscriptionPreferences.Builder preferencesBuilder =
+                options2Preferences(pubSubData.options);
+            // backward compatable with 4.1.0
+            if (preferencesBuilder.hasMessageBound()) {
+                subscribeRequestBuilder.setMessageBound(preferencesBuilder.getMessageBound());
             }
+            subscribeRequestBuilder.setPreferences(preferencesBuilder);
 
             // Set the SubscribeRequest into the outer PubSubRequest
             pubsubRequestBuilder.setSubscribeRequest(subscribeRequestBuilder);

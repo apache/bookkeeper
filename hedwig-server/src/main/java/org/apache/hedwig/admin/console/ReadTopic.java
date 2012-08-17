@@ -39,7 +39,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.LedgerRanges;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.RegionSpecificSeqId;
-import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionState;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
@@ -142,13 +142,13 @@ public class ReadTopic {
     }
     
     protected int getLeastSubscription() throws Exception {
-        Map<ByteString, SubscriptionState> states = admin.getTopicSubscriptions(topic); 
+        Map<ByteString, SubscriptionData> states = admin.getTopicSubscriptions(topic); 
         if (states.isEmpty()) {
             return RC_NOSUBSCRIBERS;
         }
-        for (Map.Entry<ByteString, SubscriptionState> entry : states.entrySet()) {
-            SubscriptionState state = entry.getValue();
-            long localMsgId = state.getMsgId().getLocalComponent();
+        for (Map.Entry<ByteString, SubscriptionData> entry : states.entrySet()) {
+            SubscriptionData state = entry.getValue();
+            long localMsgId = state.getState().getMsgId().getLocalComponent();
             if (localMsgId < leastConsumedSeqId) {
                 leastConsumedSeqId = localMsgId;
             }
