@@ -88,6 +88,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-247: Detection of under replication (ivank)
 
+        BOOKKEEPER-299: Provide LedgerFragmentReplicator which should replicate the fragments found from LedgerChecker (umamahesh via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)
