@@ -56,6 +56,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-372: Check service name in bookie start/stop script. (nijel via ivank)
 
+ 	BOOKKEEPER-354: [BOOKKEEPER-296] [Documentation] Modify the bookkeeper start script and document the bookkeeper stop command in bookkeeperConfig.xml (Kiran BC via ivank)
+ 
       hedwig-client:
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)
