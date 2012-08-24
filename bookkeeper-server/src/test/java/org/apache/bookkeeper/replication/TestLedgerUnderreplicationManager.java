@@ -21,37 +21,34 @@
 
 package org.apache.bookkeeper.replication;
 
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.ZooDefs.Ids;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.LedgerManagerFactory;
-import org.apache.bookkeeper.test.ZooKeeperUtil;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.junit.Test;
-import org.junit.Before;
-import org.junit.After;
-import static org.junit.Assert.*;
-
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Set;
-import java.util.HashSet;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.test.ZooKeeperUtil;
+import org.apache.zookeeper.ZooKeeper;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test the zookeeper implementation of the ledger replication manager
@@ -157,7 +154,7 @@ public class TestLedgerUnderreplicationManager {
             assertTrue(ledgers.remove(l));
         }
 
-        Future f = getLedgerToReplicate(m);
+        Future<Long> f = getLedgerToReplicate(m);
         try {
             f.get(5, TimeUnit.SECONDS);
             fail("Shouldn't be able to find a ledger to replicate");
@@ -305,7 +302,6 @@ public class TestLedgerUnderreplicationManager {
         String missingReplica2 = "localhost:3182";
 
         LedgerUnderreplicationManager m1 = lmf1.newLedgerUnderreplicationManager();
-        LedgerUnderreplicationManager m2 = lmf2.newLedgerUnderreplicationManager();
 
         Long ledgerA = 0xfeadeefdacL;
         m1.markLedgerUnderreplicated(ledgerA, missingReplica1);
@@ -354,6 +350,68 @@ public class TestLedgerUnderreplicationManager {
             fail("Shouldn't be able to find a ledger to replicate");
         } catch (TimeoutException te) {
             // correct behaviour
+        }
+    }
+
+    /**
+     * Test that multiple LedgerUnderreplicationManagers should be able to take
+     * lock and release for same ledger
+     */
+    @Test(timeout = 30000)
+    public void testMultipleManagersShouldBeAbleToTakeAndReleaseLock()
+            throws Exception {
+        String missingReplica1 = "localhost:3181";
+        final LedgerUnderreplicationManager m1 = lmf1
+                .newLedgerUnderreplicationManager();
+        final LedgerUnderreplicationManager m2 = lmf2
+                .newLedgerUnderreplicationManager();
+        Long ledgerA = 0xfeadeefdacL;
+        m1.markLedgerUnderreplicated(ledgerA, missingReplica1);
+        final int iterationCount = 100;
+        final CountDownLatch latch1 = new CountDownLatch(iterationCount);
+        final CountDownLatch latch2 = new CountDownLatch(iterationCount);
+        Thread thread1 = new Thread() {
+            @Override
+            public void run() {
+                takeLedgerAndRelease(m1, latch1, iterationCount);
+            }
+        };
+
+        Thread thread2 = new Thread() {
+            @Override
+            public void run() {
+                takeLedgerAndRelease(m2, latch2, iterationCount);
+            }
+        };
+        thread1.start();
+        thread2.start();
+
+        // wait until at least one thread completed
+        while (!latch1.await(50, TimeUnit.MILLISECONDS)
+                && !latch2.await(50, TimeUnit.MILLISECONDS)) {
+            Thread.sleep(50);
+        }
+
+        m1.close();
+        m2.close();
+
+        // After completing 'lock acquire,release' job, it should notify below
+        // wait
+        latch1.await();
+        latch2.await();
+    }
+
+    private void takeLedgerAndRelease(final LedgerUnderreplicationManager m,
+            final CountDownLatch latch, int numberOfIterations) {
+        for (int i = 0; i < numberOfIterations; i++) {
+            try {
+                long ledgerToRereplicate = m.getLedgerToRereplicate();
+                m.releaseUnderreplicatedLedger(ledgerToRereplicate);
+            } catch (UnavailableException e) {
+                LOG.error("UnavailableException when "
+                        + "taking or releasing lock", e);
+            }
+            latch.countDown();
         }
     }
 }

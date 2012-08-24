@@ -58,6 +58,8 @@ Trunk (unreleased changes)
 
  	BOOKKEEPER-354: [BOOKKEEPER-296] [Documentation] Modify the bookkeeper start script and document the bookkeeper stop command in bookkeeperConfig.xml (Kiran BC via ivank)
  
+        BOOKKEEPER-378: ReplicationWorker may not get ZK watcher notification on UnderReplication ledger lock deletion. (umamaheswararao & ivank via ivank)
+
       hedwig-client:
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)
