@@ -541,7 +541,7 @@ public class BookKeeper {
         }
     }
 
-    private static class SyncOpenCallback implements OpenCallback {
+    static class SyncOpenCallback implements OpenCallback {
         /**
          * Callback method for synchronous open operation
          *

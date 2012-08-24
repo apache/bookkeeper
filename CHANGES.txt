@@ -94,6 +94,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-299: Provide LedgerFragmentReplicator which should replicate the fragments found from LedgerChecker (umamahesh via ivank)
 
+        BOOKKEEPER-248: Rereplicating of under replicated data (umamahesh via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)
