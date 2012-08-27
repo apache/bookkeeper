@@ -25,7 +25,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -41,14 +43,19 @@ import java.util.concurrent.TimeoutException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
+import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.protobuf.TextFormat;
 
 /**
  * Test the zookeeper implementation of the ledger replication manager
@@ -65,6 +72,9 @@ public class TestLedgerUnderreplicationManager {
     ZooKeeper zkc1 = null;
     ZooKeeper zkc2 = null;
 
+    String basePath;
+    String urLedgerPath;
+
     @Before
     public void setupZooKeeper() throws Exception {
         zkUtil = new ZooKeeperUtil();
@@ -78,6 +88,8 @@ public class TestLedgerUnderreplicationManager {
         zkc2 = zkUtil.getNewZooKeeperClient();
         lmf1 = LedgerManagerFactory.newLedgerManagerFactory(conf, zkc1);
         lmf2 = LedgerManagerFactory.newLedgerManagerFactory(conf, zkc2);
+        basePath = conf.getZkLedgersRootPath() + "/underreplication";
+        urLedgerPath = basePath + "/ledgers";
     }
 
     @After
@@ -337,6 +349,18 @@ public class TestLedgerUnderreplicationManager {
         m1.markLedgerUnderreplicated(ledgerA, missingReplica1);
         m2.markLedgerUnderreplicated(ledgerA, missingReplica1);
 
+        // verify duplicate missing replica
+        UnderreplicatedLedgerFormat.Builder builderA = UnderreplicatedLedgerFormat
+                .newBuilder();
+        String znode = getUrLedgerZnode(ledgerA);
+        byte[] data = zkc1.getData(znode, false, null);
+        TextFormat.merge(new String(data, Charset.forName("UTF-8")), builderA);
+        List<String> replicaList = builderA.getReplicaList();
+        assertEquals("Published duplicate missing replica : " + replicaList, 1,
+                replicaList.size());
+        assertTrue("Published duplicate missing replica : " + replicaList,
+                replicaList.contains(missingReplica1));
+
         Future<Long> fA = getLedgerToReplicate(m1);
         Long lA = fA.get(5, TimeUnit.SECONDS);
 
@@ -399,6 +423,96 @@ public class TestLedgerUnderreplicationManager {
         // wait
         latch1.await();
         latch2.await();
+    }
+
+    /**
+     * Test verifies failures of bookies which are resembling each other.
+     *
+     * BK servers named like*********************************************
+     * 1.cluster.com, 2.cluster.com, 11.cluster.com, 12.cluster.com
+     * *******************************************************************
+     *
+     * BKserver IP:HOST like*********************************************
+     * localhost:3181, localhost:318, localhost:31812
+     * *******************************************************************
+     */
+    @Test
+    public void testMarkSimilarMissingReplica() throws Exception {
+        List<String> missingReplica = new ArrayList<String>();
+        missingReplica.add("localhost:3181");
+        missingReplica.add("localhost:318");
+        missingReplica.add("localhost:31812");
+        missingReplica.add("1.cluster.com");
+        missingReplica.add("2.cluster.com");
+        missingReplica.add("11.cluster.com");
+        missingReplica.add("12.cluster.com");
+        verifyMarkLedgerUnderreplicated(missingReplica);
+    }
+
+    /**
+     * Test multiple bookie failures for a ledger and marked as underreplicated
+     * one after another.
+     */
+    @Test
+    public void testManyFailuresInAnEnsemble() throws Exception {
+        List<String> missingReplica = new ArrayList<String>();
+        missingReplica.add("localhost:3181");
+        missingReplica.add("localhost:3182");
+        verifyMarkLedgerUnderreplicated(missingReplica);
+    }
+
+    private void verifyMarkLedgerUnderreplicated(Collection<String> missingReplica)
+            throws KeeperException, InterruptedException,
+            CompatibilityException, UnavailableException {
+        Long ledgerA = 0xfeadeefdacL;
+        String znodeA = getUrLedgerZnode(ledgerA);
+        LedgerUnderreplicationManager replicaMgr = lmf1
+                .newLedgerUnderreplicationManager();
+        for (String replica : missingReplica) {
+            replicaMgr.markLedgerUnderreplicated(ledgerA, replica);
+        }
+
+        String urLedgerA = getData(znodeA);
+        UnderreplicatedLedgerFormat.Builder builderA = UnderreplicatedLedgerFormat
+                .newBuilder();
+        for (String replica : missingReplica) {
+            builderA.addReplica(replica);
+        }
+        List<String> replicaList = builderA.getReplicaList();
+
+        for (String replica : missingReplica) {
+            assertTrue("UrLedger:" + urLedgerA
+                    + " doesn't contain failed bookie :" + replica, replicaList
+                    .contains(replica));
+        }
+    }
+
+    private String getData(String znode) {
+        try {
+            byte[] data = zkc1.getData(znode, false, null);
+            return new String(data);
+        } catch (KeeperException e) {
+            LOG.error("Exception while reading data from znode :" + znode);
+        } catch (InterruptedException e) {
+            LOG.error("Exception while reading data from znode :" + znode);
+        }
+        return "";
+
+    }
+
+    private String getParentZnodePath(String base, long ledgerId) {
+        String subdir1 = String.format("%04x", ledgerId >> 48 & 0xffff);
+        String subdir2 = String.format("%04x", ledgerId >> 32 & 0xffff);
+        String subdir3 = String.format("%04x", ledgerId >> 16 & 0xffff);
+        String subdir4 = String.format("%04x", ledgerId & 0xffff);
+
+        return String.format("%s/%s/%s/%s/%s", base, subdir1, subdir2, subdir3,
+                subdir4);
+    }
+
+    private String getUrLedgerZnode(long ledgerId) {
+        return String.format("%s/urL%010d", getParentZnodePath(urLedgerPath,
+                ledgerId), ledgerId);
     }
 
     private void takeLedgerAndRelease(final LedgerUnderreplicationManager m,

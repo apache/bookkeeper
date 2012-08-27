@@ -204,7 +204,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     @Override
     public void markLedgerUnderreplicated(long ledgerId, String missingReplica)
             throws ReplicationException.UnavailableException {
-        LOG.debug("markLedgerUnderreplicated {} {}", ledgerId, missingReplica);
+        LOG.debug("markLedgerUnderreplicated(ledgerId={}, missingReplica={})", ledgerId, missingReplica);
         try {
             String znode = getUrLedgerZnode(ledgerId);
             while (true) {
@@ -220,12 +220,11 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                     }
                     try {
                         byte[] bytes = zkc.getData(znode, false, s);
+                        builder.clear();
                         TextFormat.merge(new String(bytes, UTF8), builder);
                         UnderreplicatedLedgerFormat data = builder.build();
-                        for (String r : data.getReplicaList()) {
-                            if (r.equals(missingReplica)) {
-                                break; // nothing to add
-                            }
+                        if (data.getReplicaList().contains(missingReplica)) {
+                            return; // nothing to add
                         }
                         builder.addReplica(missingReplica);
                         zkc.setData(znode,

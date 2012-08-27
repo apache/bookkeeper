@@ -60,6 +60,8 @@ Trunk (unreleased changes)
  
         BOOKKEEPER-378: ReplicationWorker may not get ZK watcher notification on UnderReplication ledger lock deletion. (umamaheswararao & ivank via ivank)
 
+        BOOKKEEPER-380: ZkLedgerUnderreplicationManager.markLedgerUnderreplicated() is adding duplicate missingReplicas while multiple bk failed for the same ledger (rakeshr via ivank)
+
       hedwig-client:
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)
