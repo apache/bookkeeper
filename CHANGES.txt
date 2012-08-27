@@ -20,6 +20,8 @@ Release 4.1.1 - UNRELEASED
 
         BOOKKEEPER-326: DeadLock during ledger recovery (rakeshr via ivank)
 
+        BOOKKEEPER-382: space missed at concatenations in GarbageCollectorThread logging (Brahma via sijie)
+
       hedwig-server/
 
         BOOKKEEPER-330: System.currentTimeMillis usage in Hedwig (uma via sijie)

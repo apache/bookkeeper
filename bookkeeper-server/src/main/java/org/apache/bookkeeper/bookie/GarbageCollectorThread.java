@@ -483,7 +483,7 @@ public class GarbageCollectorThread extends Thread {
             } catch (IOException e) {
                 hasExceptionWhenScan = true;
                 LOG.warn("Premature exception when processing " + entryLogId +
-                         "recovery will take care of the problem", e);
+                         " recovery will take care of the problem", e);
             }
 
             // if scan failed on some entry log, we don't move 'scannedLogId' to next id
