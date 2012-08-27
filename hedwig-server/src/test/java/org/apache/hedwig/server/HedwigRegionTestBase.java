@@ -82,6 +82,7 @@ public abstract class HedwigRegionTestBase extends TestCase {
             this.serverPort = serverPort;
             this.sslServerPort = sslServerPort;
             this.regionName = regionName;
+            conf.setProperty(REGION, regionName);
             setRegionList();
         }
 

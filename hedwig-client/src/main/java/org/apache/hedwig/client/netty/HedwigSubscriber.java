@@ -372,6 +372,11 @@ public class HedwigSubscriber implements Subscriber {
             preferencesBuilder.setMessageBound(cfg.getSubscriptionMessageBound());
         }
 
+        // set message filter
+        if (options.hasMessageFilter()) {
+            preferencesBuilder.setMessageFilter(options.getMessageFilter());
+        }
+
         // set user options
         if (options.hasOptions()) {
             preferencesBuilder.setOptions(options.getOptions());

@@ -22,8 +22,8 @@ import java.util.Queue;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.data.TopicSubscriber;
+import org.apache.hedwig.filter.MessageFilter;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
-import org.apache.hedwig.server.subscriptions.MessageFilter;
 
 public class StubDeliveryManager implements DeliveryManager {
 
@@ -33,16 +33,14 @@ public class StubDeliveryManager implements DeliveryManager {
         public MessageSeqId seqIdToStartFrom;
         public DeliveryEndPoint endPoint;
         public MessageFilter filter;
-        public boolean isHubSubscriber;
 
         public StartServingRequest(ByteString topic, ByteString subscriberId, MessageSeqId seqIdToStartFrom,
-                                   DeliveryEndPoint endPoint, MessageFilter filter, boolean isHubSubscriber) {
+                                   DeliveryEndPoint endPoint, MessageFilter filter) {
             this.topic = topic;
             this.subscriberId = subscriberId;
             this.seqIdToStartFrom = seqIdToStartFrom;
             this.endPoint = endPoint;
             this.filter = filter;
-            this.isHubSubscriber = isHubSubscriber;
         }
 
     }
@@ -51,11 +49,8 @@ public class StubDeliveryManager implements DeliveryManager {
 
     @Override
     public void startServingSubscription(ByteString topic, ByteString subscriberId, MessageSeqId seqIdToStartFrom,
-                                         DeliveryEndPoint endPoint, MessageFilter filter, boolean isHubSubscriber) {
-
-        lastRequest.add(new StartServingRequest(topic, subscriberId, seqIdToStartFrom, endPoint, filter,
-                                                isHubSubscriber));
-
+                                         DeliveryEndPoint endPoint, MessageFilter filter) {
+        lastRequest.add(new StartServingRequest(topic, subscriberId, seqIdToStartFrom, endPoint, filter));
     }
 
     @Override

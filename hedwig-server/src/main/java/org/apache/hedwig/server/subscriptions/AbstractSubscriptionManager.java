@@ -312,12 +312,12 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
     protected abstract void readSubscriptions(final ByteString topic,
             final Callback<Map<ByteString, InMemorySubscriptionState>> cb, final Object ctx);
 
-    private class SubscribeOp extends TopicOpQueuer.AsynchronousOp<MessageSeqId> {
+    private class SubscribeOp extends TopicOpQueuer.AsynchronousOp<SubscriptionData> {
         SubscribeRequest subRequest;
         MessageSeqId consumeSeqId;
 
         public SubscribeOp(ByteString topic, SubscribeRequest subRequest, MessageSeqId consumeSeqId,
-                           Callback<MessageSeqId> callback, Object ctx) {
+                           Callback<SubscriptionData> callback, Object ctx) {
             queuer.super(topic, callback, ctx);
             this.subRequest = subRequest;
             this.consumeSeqId = consumeSeqId;
@@ -369,7 +369,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                             }
                             // update message bound if necessary
                             updateMessageBound(topic);
-                            cb.operationFinished(ctx, subscriptionState.getLastConsumeSeqId());
+                            cb.operationFinished(ctx, subscriptionState.toSubscriptionData());
                         }
                     }, ctx);
                     return;
@@ -384,7 +384,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                                  + SubscriptionStateUtils.toString(subscriptionState.getSubscriptionPreferences()));
                 }
 
-                cb.operationFinished(ctx, subscriptionState.getLastConsumeSeqId());
+                cb.operationFinished(ctx, subscriptionState.toSubscriptionData());
                 return;
             }
 
@@ -465,7 +465,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
 
                             updateMessageBound(topic);
 
-                            cb.operationFinished(ctx, consumeSeqId);
+                            cb.operationFinished(ctx, subData);
                         }
 
                     };
@@ -505,7 +505,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
 
     @Override
     public void serveSubscribeRequest(ByteString topic, SubscribeRequest subRequest, MessageSeqId consumeSeqId,
-                                      Callback<MessageSeqId> callback, Object ctx) {
+                                      Callback<SubscriptionData> callback, Object ctx) {
         queuer.pushAndMaybeRun(topic, new SubscribeOp(topic, subRequest, consumeSeqId, callback, ctx));
     }
 

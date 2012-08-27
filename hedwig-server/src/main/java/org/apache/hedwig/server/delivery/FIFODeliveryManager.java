@@ -36,6 +36,7 @@ import com.google.protobuf.ByteString;
 
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.client.data.TopicSubscriber;
+import org.apache.hedwig.filter.MessageFilter;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.ProtocolVersion;
@@ -49,7 +50,6 @@ import org.apache.hedwig.server.persistence.MapMethods;
 import org.apache.hedwig.server.persistence.PersistenceManager;
 import org.apache.hedwig.server.persistence.ScanCallback;
 import org.apache.hedwig.server.persistence.ScanRequest;
-import org.apache.hedwig.server.subscriptions.MessageFilter;
 
 public class FIFODeliveryManager implements Runnable, DeliveryManager {
 
@@ -135,15 +135,12 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
      * @param filter
      *            Only messages passing this filter should be sent to this
      *            subscriber
-     * @param isHubSubscriber
-     *            There are some seq-id intricacies. To a hub subscriber, we
-     *            should send only a subset of the seq-id vector
      */
     public void startServingSubscription(ByteString topic, ByteString subscriberId, MessageSeqId seqIdToStartFrom,
-                                         DeliveryEndPoint endPoint, MessageFilter filter, boolean isHubSubscriber) {
+                                         DeliveryEndPoint endPoint, MessageFilter filter) {
 
         ActiveSubscriberState subscriber = new ActiveSubscriberState(topic, subscriberId, seqIdToStartFrom
-                .getLocalComponent() - 1, endPoint, filter, isHubSubscriber);
+                .getLocalComponent() - 1, endPoint, filter);
 
         enqueueWithoutFailure(subscriber);
     }
@@ -302,19 +299,18 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
         long lastScanErrorTime = -1;
         long localSeqIdDeliveringNow;
         long lastSeqIdCommunicatedExternally;
+        MessageFilter filter;
         // TODO make use of these variables
 
-        boolean isHubSubscriber;
         final static int SEQ_ID_SLACK = 10;
 
         public ActiveSubscriberState(ByteString topic, ByteString subscriberId, long lastLocalSeqIdDelivered,
-                                     DeliveryEndPoint deliveryEndPoint, MessageFilter filter, boolean isHubSubscriber) {
+                                     DeliveryEndPoint deliveryEndPoint, MessageFilter filter) {
             this.topic = topic;
             this.subscriberId = subscriberId;
             this.lastLocalSeqIdDelivered = lastLocalSeqIdDelivered;
             this.deliveryEndPoint = deliveryEndPoint;
-
-            this.isHubSubscriber = isHubSubscriber;
+            this.filter = filter;
         }
 
         public void setNotConnected() {
@@ -366,13 +362,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
                 return;
             }
 
-            // We're using a simple all-to-all network topology, so no region
-            // should ever need to forward messages to any other region.
-            // Otherwise, with the current logic, messages will end up
-            // ping-pong-ing back and forth between regions with subscriptions
-            // to each other without termination (or in any other cyclic
-            // configuration).
-            if (isHubSubscriber && !message.getSrcRegion().equals(cfg.getMyRegionByteString())) {
+            if (!filter.testMessage(message)) {
                 sendingFinished();
                 return;
             }

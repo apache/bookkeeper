@@ -30,8 +30,13 @@ public abstract class PubSubException extends Exception {
         this.code = code;
     }
 
-    protected PubSubException(StatusCode code, Exception e) {
-        super(e);
+    protected PubSubException(StatusCode code, Throwable t) {
+        super(t);
+        this.code = code;
+    }
+
+    protected PubSubException(StatusCode code, String msg, Throwable t) {
+        super(msg, t);
         this.code = code;
     }
 
@@ -66,6 +71,8 @@ public abstract class PubSubException extends Exception {
             return new NoTopicOwnerInfoException(msg);
         } else if (code == StatusCode.TOPIC_OWNER_INFO_EXISTS) {
             return new TopicOwnerInfoExistsException(msg);
+        } else if (code == StatusCode.INVALID_MESSAGE_FILTER) {
+            return new InvalidMessageFilterException(msg);
         }
         /*
          * Insert new ones here
@@ -178,6 +185,16 @@ public abstract class PubSubException extends Exception {
         }
     }
 
+    public static class InvalidMessageFilterException extends PubSubException {
+        public InvalidMessageFilterException(String msg) {
+            super(StatusCode.INVALID_MESSAGE_FILTER, msg);
+        }
+
+        public InvalidMessageFilterException(String msg, Throwable t) {
+            super(StatusCode.INVALID_MESSAGE_FILTER, msg, t);
+        }
+    }
+
     /*
      * Insert new ones here
      */
@@ -191,6 +208,9 @@ public abstract class PubSubException extends Exception {
     public static class UnexpectedConditionException extends PubSubException {
         public UnexpectedConditionException(String msg) {
             super(StatusCode.UNEXPECTED_CONDITION, msg);
+        }
+        public UnexpectedConditionException(String msg, Throwable t) {
+            super(StatusCode.UNEXPECTED_CONDITION, msg, t);
         }
     }
 

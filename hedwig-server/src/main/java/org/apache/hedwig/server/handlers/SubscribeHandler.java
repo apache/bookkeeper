@@ -27,13 +27,17 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import com.google.protobuf.ByteString;
 
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.hedwig.client.data.TopicSubscriber;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.exceptions.PubSubException.ServerNotResponsibleForTopicException;
+import org.apache.hedwig.filter.MessageFilter;
+import org.apache.hedwig.filter.PipelineFilter;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.protoextensions.PubSubResponseUtils;
 import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 import org.apache.hedwig.server.common.ServerConfiguration;
@@ -44,7 +48,7 @@ import org.apache.hedwig.server.netty.ServerStats.OpStats;
 import org.apache.hedwig.server.netty.UmbrellaHandler;
 import org.apache.hedwig.server.persistence.PersistenceManager;
 import org.apache.hedwig.server.subscriptions.SubscriptionManager;
-import org.apache.hedwig.server.subscriptions.TrueFilter;
+import org.apache.hedwig.server.subscriptions.AllToAllTopologyFilter;
 import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.util.Callback;
 
@@ -111,7 +115,7 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
         MessageSeqId lastSeqIdPublished = MessageSeqId.newBuilder(seqId).setLocalComponent(seqId.getLocalComponent()).build();
 
         final long requestTime = MathUtils.now();
-        subMgr.serveSubscribeRequest(topic, subRequest, lastSeqIdPublished, new Callback<MessageSeqId>() {
+        subMgr.serveSubscribeRequest(topic, subRequest, lastSeqIdPublished, new Callback<SubscriptionData>() {
 
             @Override
             public void operationFailed(Object ctx, PubSubException exception) {
@@ -121,7 +125,7 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
             }
 
             @Override
-            public void operationFinished(Object ctx, MessageSeqId resultOfOperation) {
+            public void operationFinished(Object ctx, SubscriptionData subData) {
 
                 TopicSubscriber topicSub = new TopicSubscriber(topic, subscriberId);
 
@@ -150,6 +154,43 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
                         channel2sub.put(channel, topicSub);
                     }
                 }
+                // initialize the message filter
+                PipelineFilter filter = new PipelineFilter();
+                try {
+                    // the filter pipeline should be
+                    // 1) AllToAllTopologyFilter to filter cross-region messages
+                    filter.addLast(new AllToAllTopologyFilter());
+                    // 2) User-Customized MessageFilter
+                    if (subData.hasPreferences() &&
+                        subData.getPreferences().hasMessageFilter()) {
+                        String messageFilterName = subData.getPreferences().getMessageFilter();
+                        filter.addLast(ReflectionUtils.newInstance(messageFilterName, MessageFilter.class));
+                    }
+                    // initialize the filter
+                    filter.initialize(cfg.getConf());
+                    filter.setSubscriptionPreferences(topic, subscriberId,
+                                                      subData.getPreferences());
+                } catch (RuntimeException re) {
+                    String errMsg = "RuntimeException caught when instantiating message filter for (topic:"
+                                  + topic.toStringUtf8() + ", subscriber:" + subscriberId.toStringUtf8() + ")."
+                                  + "It might be introduced by programming error in message filter.";
+                    logger.error(errMsg, re);
+                    PubSubException pse = new PubSubException.InvalidMessageFilterException(errMsg, re);
+                    subStats.incrementFailedOps();
+                    channel.write(PubSubResponseUtils.getResponseForException(pse, request.getTxnId()))
+                    .addListener(ChannelFutureListener.CLOSE);
+                    return;
+                } catch (Throwable t) {
+                    String errMsg = "Failed to instantiate message filter for (topic:" + topic.toStringUtf8()
+                                  + ", subscriber:" + subscriberId.toStringUtf8() + ").";
+                    logger.error(errMsg, t);
+                    PubSubException pse = new PubSubException.InvalidMessageFilterException(errMsg, t);
+                    subStats.incrementFailedOps();
+                    channel.write(PubSubResponseUtils.getResponseForException(pse, request.getTxnId()))
+                    .addListener(ChannelFutureListener.CLOSE);
+                    return;
+                }
+
                 // First write success and then tell the delivery manager,
                 // otherwise the first message might go out before the response
                 // to the subscribe
@@ -157,11 +198,11 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
                 subStats.updateLatency(MathUtils.now() - requestTime);
 
                 // want to start 1 ahead of the consume ptr
-                MessageSeqId seqIdToStartFrom = MessageSeqId.newBuilder(resultOfOperation).setLocalComponent(
-                                                    resultOfOperation.getLocalComponent() + 1).build();
+                MessageSeqId lastConsumedSeqId = subData.getState().getMsgId();
+                MessageSeqId seqIdToStartFrom = MessageSeqId.newBuilder(lastConsumedSeqId).setLocalComponent(
+                                                    lastConsumedSeqId.getLocalComponent() + 1).build();
                 deliveryMgr.startServingSubscription(topic, subscriberId, seqIdToStartFrom,
-                                                     new ChannelEndPoint(channel), TrueFilter.instance(), SubscriptionStateUtils
-                                                     .isHubSubscriber(subRequest.getSubscriberId()));
+                                                     new ChannelEndPoint(channel), filter);
             }
         }, null);
 

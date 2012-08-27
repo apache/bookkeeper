@@ -19,13 +19,13 @@ package org.apache.hedwig.server.delivery;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
-import org.apache.hedwig.server.subscriptions.MessageFilter;
+import org.apache.hedwig.filter.MessageFilter;
 
 public interface DeliveryManager {
     public void start();
 
     public void startServingSubscription(ByteString topic, ByteString subscriberId, MessageSeqId seqIdToStartFrom,
-                                         DeliveryEndPoint endPoint, MessageFilter filter, boolean isHubSubscriber);
+                                         DeliveryEndPoint endPoint, MessageFilter filter);
 
     public void stopServingSubscriber(ByteString topic, ByteString subscriberId);
 

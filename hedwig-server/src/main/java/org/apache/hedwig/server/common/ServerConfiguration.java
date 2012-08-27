@@ -36,7 +36,7 @@ import org.apache.hedwig.server.meta.MetadataManagerFactory;
 import org.apache.hedwig.util.HedwigSocketAddress;
 
 public class ServerConfiguration extends AbstractConfiguration {
-    protected final static String REGION = "region";
+    public final static String REGION = "region";
     protected final static String MAX_MESSAGE_SIZE = "max_message_size";
     protected final static String READAHEAD_COUNT = "readahead_count";
     protected final static String READAHEAD_SIZE = "readahead_size";

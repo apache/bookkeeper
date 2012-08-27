@@ -15,9 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hedwig.server.subscriptions;
+package org.apache.hedwig.filter;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.LinkedList;
 
 import com.google.protobuf.ByteString;
 import org.apache.commons.configuration.Configuration;
@@ -25,50 +27,46 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.hedwig.filter.MessageFilter;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
-import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
-import org.apache.hedwig.server.common.ServerConfiguration;
 
-public class AllToAllTopologyFilter implements MessageFilter {
-
-    ByteString subscriberRegion;
-    boolean isHubSubscriber;
+/**
+ * A filter filters messages in pipeline.
+ */
+public class PipelineFilter extends LinkedList<MessageFilter> implements MessageFilter {
 
     @Override
     public MessageFilter initialize(Configuration conf)
     throws ConfigurationException, IOException {
-        String region = conf.getString(ServerConfiguration.REGION, "standalone");
-        if (null == region) {
-            throw new IOException("No region found to run " + getClass().getName());
+        for (MessageFilter filter : this) {
+            filter.initialize(conf);
         }
-        subscriberRegion = ByteString.copyFromUtf8(region);
         return this;
     }
 
     @Override
     public void uninitialize() {
-        // do nothing now
+        while (!isEmpty()) {
+            MessageFilter filter = removeLast();
+            filter.uninitialize();
+        }
     }
 
     @Override
     public MessageFilter setSubscriptionPreferences(ByteString topic, ByteString subscriberId,
                                                     SubscriptionPreferences preferences) {
-        isHubSubscriber = SubscriptionStateUtils.isHubSubscriber(subscriberId);
+        for (MessageFilter filter : this) {
+            filter.setSubscriptionPreferences(topic, subscriberId, preferences);
+        }
         return this;
     }
 
     @Override
     public boolean testMessage(Message message) {
-        // We're using a simple all-to-all network topology, so no region
-        // should ever need to forward messages to any other region.
-        // Otherwise, with the current logic, messages will end up
-        // ping-pong-ing back and forth between regions with subscriptions
-        // to each other without termination (or in any other cyclic
-        // configuration).
-        if (isHubSubscriber && !message.getSrcRegion().equals(subscriberRegion)) {
-            return false;
-        } else {
-            return true;
+        for (MessageFilter filter : this) {
+            if (!filter.testMessage(message)) {
+                return false;
+            }
         }
+        return true;
     }
 
 }

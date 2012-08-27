@@ -20,6 +20,7 @@ package org.apache.hedwig.server.subscriptions;
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.util.Callback;
 
 /**
@@ -43,12 +44,11 @@ public interface SubscriptionManager {
      *            The seqId to start serving the subscription from, if this is a
      *            brand new subscription
      * @param callback
-     *            The seq id returned by the callback is where serving should
-     *            start from
+     *            The subscription data returned by the callback.
      * @param ctx
      */
     public void serveSubscribeRequest(ByteString topic, SubscribeRequest subRequest, MessageSeqId consumeSeqId,
-                                      Callback<MessageSeqId> callback, Object ctx);
+                                      Callback<SubscriptionData> callback, Object ctx);
 
     /**
      * Set the consume position of a given subscriber on a given topic. Note

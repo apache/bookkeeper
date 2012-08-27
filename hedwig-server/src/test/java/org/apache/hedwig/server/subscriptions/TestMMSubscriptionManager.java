@@ -30,6 +30,7 @@ import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.persistence.LocalDBPersistenceManager;
 import org.apache.hedwig.server.topics.TrivialOwnAllTopicManager;
@@ -43,11 +44,11 @@ public class TestMMSubscriptionManager extends ZooKeeperTestBase {
     MetadataManagerFactory mm;
     MMSubscriptionManager sm;
     ServerConfiguration cfg = new ServerConfiguration();
-    SynchronousQueue<Either<MessageSeqId, PubSubException>> msgIdCallbackQueue = new SynchronousQueue<Either<MessageSeqId, PubSubException>>();
+    SynchronousQueue<Either<SubscriptionData, PubSubException>> subDataCallbackQueue = new SynchronousQueue<Either<SubscriptionData, PubSubException>>();
     SynchronousQueue<Either<Boolean, PubSubException>> BooleanCallbackQueue = new SynchronousQueue<Either<Boolean, PubSubException>>();
 
     Callback<Void> voidCallback;
-    Callback<MessageSeqId> msgIdCallback;
+    Callback<SubscriptionData> subDataCallback;
 
     @Before
     @Override
@@ -58,21 +59,21 @@ public class TestMMSubscriptionManager extends ZooKeeperTestBase {
         mm = MetadataManagerFactory.newMetadataManagerFactory(cfg, zk);
         sm = new MMSubscriptionManager(mm, new TrivialOwnAllTopicManager(cfg, scheduler),
                                        LocalDBPersistenceManager.instance(), cfg, scheduler);
-        msgIdCallback = new Callback<MessageSeqId>() {
+        subDataCallback = new Callback<SubscriptionData>() {
             @Override
             public void operationFailed(Object ctx, final PubSubException exception) {
                 scheduler.execute(new Runnable() {
                     public void run() {
-                        ConcurrencyUtils.put(msgIdCallbackQueue, Either.of((MessageSeqId) null, exception));
+                        ConcurrencyUtils.put(subDataCallbackQueue, Either.of((SubscriptionData) null, exception));
                     }
                 });
             }
 
             @Override
-            public void operationFinished(Object ctx, final MessageSeqId resultOfOperation) {
+            public void operationFinished(Object ctx, final SubscriptionData resultOfOperation) {
                 scheduler.execute(new Runnable() {
                     public void run() {
-                        ConcurrencyUtils.put(msgIdCallbackQueue, Either.of(resultOfOperation, (PubSubException) null));
+                        ConcurrencyUtils.put(subDataCallbackQueue, Either.of(resultOfOperation, (PubSubException) null));
                     }
                 });
             }
@@ -112,9 +113,9 @@ public class TestMMSubscriptionManager extends ZooKeeperTestBase {
         SubscribeRequest subRequest = SubscribeRequest.newBuilder().setSubscriberId(sub1).build();
         MessageSeqId msgId = MessageSeqId.newBuilder().setLocalComponent(100).build();
 
-        sm.serveSubscribeRequest(topic1, subRequest, msgId, msgIdCallback, null);
+        sm.serveSubscribeRequest(topic1, subRequest, msgId, subDataCallback, null);
 
-        Assert.assertEquals(ConcurrencyUtils.take(msgIdCallbackQueue).right().getClass(),
+        Assert.assertEquals(ConcurrencyUtils.take(subDataCallbackQueue).right().getClass(),
                             PubSubException.ServerNotResponsibleForTopicException.class);
 
         sm.unsubscribe(topic1, sub1, voidCallback, null);
@@ -141,21 +142,21 @@ public class TestMMSubscriptionManager extends ZooKeeperTestBase {
         subRequest = SubscribeRequest.newBuilder().setCreateOrAttach(CreateOrAttach.ATTACH).setSubscriberId(sub1)
                      .build();
 
-        sm.serveSubscribeRequest(topic1, subRequest, msgId, msgIdCallback, null);
-        Assert.assertEquals(ConcurrencyUtils.take(msgIdCallbackQueue).right().getClass(),
+        sm.serveSubscribeRequest(topic1, subRequest, msgId, subDataCallback, null);
+        Assert.assertEquals(ConcurrencyUtils.take(subDataCallbackQueue).right().getClass(),
                             PubSubException.ClientNotSubscribedException.class);
 
         // now create
         subRequest = SubscribeRequest.newBuilder().setCreateOrAttach(CreateOrAttach.CREATE).setSubscriberId(sub1)
                      .build();
-        sm.serveSubscribeRequest(topic1, subRequest, msgId, msgIdCallback, null);
-        Assert.assertEquals(msgId.getLocalComponent(), ConcurrencyUtils.take(msgIdCallbackQueue).left().getLocalComponent());
+        sm.serveSubscribeRequest(topic1, subRequest, msgId, subDataCallback, null);
+        Assert.assertEquals(msgId.getLocalComponent(), ConcurrencyUtils.take(subDataCallbackQueue).left().getState().getMsgId().getLocalComponent());
         Assert.assertEquals(msgId.getLocalComponent(), sm.top2sub2seq.get(topic1).get(sub1).getLastConsumeSeqId()
                             .getLocalComponent());
 
         // try to create again
-        sm.serveSubscribeRequest(topic1, subRequest, msgId, msgIdCallback, null);
-        Assert.assertEquals(ConcurrencyUtils.take(msgIdCallbackQueue).right().getClass(),
+        sm.serveSubscribeRequest(topic1, subRequest, msgId, subDataCallback, null);
+        Assert.assertEquals(ConcurrencyUtils.take(subDataCallbackQueue).right().getClass(),
                             PubSubException.ClientAlreadySubscribedException.class);
         Assert.assertEquals(msgId.getLocalComponent(), sm.top2sub2seq.get(topic1).get(sub1).getLastConsumeSeqId()
                             .getLocalComponent());
@@ -168,8 +169,8 @@ public class TestMMSubscriptionManager extends ZooKeeperTestBase {
         subRequest = SubscribeRequest.newBuilder().setCreateOrAttach(CreateOrAttach.ATTACH).setSubscriberId(sub1)
                      .build();
         MessageSeqId msgId1 = MessageSeqId.newBuilder().setLocalComponent(msgId.getLocalComponent() + 10).build();
-        sm.serveSubscribeRequest(topic1, subRequest, msgId1, msgIdCallback, null);
-        Assert.assertEquals(msgId.getLocalComponent(), msgIdCallbackQueue.take().left().getLocalComponent());
+        sm.serveSubscribeRequest(topic1, subRequest, msgId1, subDataCallback, null);
+        Assert.assertEquals(msgId.getLocalComponent(), subDataCallbackQueue.take().left().getState().getMsgId().getLocalComponent());
         Assert.assertEquals(msgId.getLocalComponent(), sm.top2sub2seq.get(topic1).get(sub1).getLastConsumeSeqId()
                             .getLocalComponent());
 

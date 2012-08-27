@@ -54,7 +54,9 @@ public class InMemorySubscriptionState {
     }
 
     public SubscriptionData toSubscriptionData() {
-        return SubscriptionData.newBuilder().setState(subscriptionState)
+        SubscriptionState.Builder stateBuilder =
+            SubscriptionState.newBuilder(subscriptionState).setMsgId(lastConsumeSeqId);
+        return SubscriptionData.newBuilder().setState(stateBuilder)
                                             .setPreferences(subscriptionPreferences)
                                             .build();
     }
@@ -124,6 +126,13 @@ public class InMemorySubscriptionState {
             if (!subscriptionPreferences.hasMessageBound() ||
                 subscriptionPreferences.getMessageBound() != preferences.getMessageBound()) {
                 newPreferencesBuilder.setMessageBound(preferences.getMessageBound());
+                changed = true;
+            }
+        }
+        if (preferences.hasMessageFilter()) {
+            if (!subscriptionPreferences.hasMessageFilter() ||
+                !subscriptionPreferences.getMessageFilter().equals(preferences.getMessageFilter())) {
+                newPreferencesBuilder.setMessageFilter(preferences.getMessageFilter());
                 changed = true;
             }
         }

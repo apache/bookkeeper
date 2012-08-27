@@ -104,6 +104,9 @@ void PubSubData::setPreferencesForSubRequest(SubscribeRequest * subreq,
   if (options.messagebound() > 0) {
     preferences->set_messagebound(options.messagebound());
   }
+  if (options.has_messagefilter()) {
+    preferences->set_messagefilter(options.messagefilter());
+  }
   if (options.has_options()) {
     preferences->mutable_options()->CopyFrom(options.options());
   }

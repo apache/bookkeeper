@@ -126,4 +126,27 @@ public class ReflectionUtils {
         }
         return result;
     }
+
+    /**
+     * Create an object using the given class name.
+     *
+     * @param clsName
+     *          class name of which an object is created.
+     * @param xface
+     *          The interface implemented by the named class.
+     * @return a new object
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T newInstance(String clsName, Class<T> xface) {
+        Class<?> theCls;
+        try {
+            theCls = Class.forName(clsName);
+        } catch (ClassNotFoundException cnfe) {
+            throw new RuntimeException(cnfe);
+        }
+        if (!xface.isAssignableFrom(theCls)) {
+            throw new RuntimeException(clsName + " not " + xface.getName());
+        }
+        return newInstance(theCls.asSubclass(xface));
+    }
 }

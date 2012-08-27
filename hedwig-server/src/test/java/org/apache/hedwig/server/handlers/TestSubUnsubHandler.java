@@ -25,6 +25,7 @@ import com.google.protobuf.ByteString;
 import org.apache.hedwig.StubCallback;
 import org.apache.hedwig.client.data.TopicSubscriber;
 import org.apache.hedwig.exceptions.PubSubException;
+import org.apache.hedwig.filter.PipelineFilter;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
 import org.apache.hedwig.protocol.PubSubProtocol.ProtocolVersion;
@@ -32,6 +33,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.PubSubRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
 import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.protocol.PubSubProtocol.UnsubscribeRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.server.common.ServerConfiguration;
@@ -41,8 +43,8 @@ import org.apache.hedwig.server.delivery.StubDeliveryManager.StartServingRequest
 import org.apache.hedwig.server.netty.WriteRecordingChannel;
 import org.apache.hedwig.server.persistence.LocalDBPersistenceManager;
 import org.apache.hedwig.server.persistence.PersistenceManager;
+import org.apache.hedwig.server.subscriptions.AllToAllTopologyFilter;
 import org.apache.hedwig.server.subscriptions.StubSubscriptionManager;
-import org.apache.hedwig.server.subscriptions.TrueFilter;
 import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.server.topics.TrivialOwnAllTopicManager;
 import org.apache.hedwig.util.ConcurrencyUtils;
@@ -109,14 +111,16 @@ public class TestSubUnsubHandler extends TestCase {
         // make sure delivery was started
         StartServingRequest startRequest = (StartServingRequest) dm.lastRequest.poll();
         assertEquals(channel, ((ChannelEndPoint) startRequest.endPoint).getChannel());
-        assertEquals(false, startRequest.isHubSubscriber);
-        assertEquals(TrueFilter.class, startRequest.filter.getClass());
+        assertEquals(PipelineFilter.class, startRequest.filter.getClass());
+        PipelineFilter pfilter = (PipelineFilter)(startRequest.filter);
+        assertEquals(1, pfilter.size());
+        assertEquals(AllToAllTopologyFilter.class, pfilter.getFirst().getClass());
         assertEquals(1, startRequest.seqIdToStartFrom.getLocalComponent());
         assertEquals(subscriberId, startRequest.subscriberId);
         assertEquals(topic, startRequest.topic);
 
         // make sure subscription was registered
-        StubCallback<MessageSeqId> callback1 = new StubCallback<MessageSeqId>();
+        StubCallback<SubscriptionData> callback1 = new StubCallback<SubscriptionData>();
         sm.serveSubscribeRequest(topic, SubscribeRequest.newBuilder(subRequestPrototype).setCreateOrAttach(
                                      CreateOrAttach.CREATE).build(), MessageSeqId.newBuilder().setLocalComponent(10).build(), callback1,
                                  null);
@@ -154,7 +158,7 @@ public class TestSubUnsubHandler extends TestCase {
         assertEquals(new TopicSubscriber(topic, subscriberId), dm.lastRequest.poll());
 
         // make sure the info is gone from the sm
-        StubCallback<MessageSeqId> callback2 = new StubCallback<MessageSeqId>();
+        StubCallback<SubscriptionData> callback2 = new StubCallback<SubscriptionData>();
         sm.serveSubscribeRequest(topic, SubscribeRequest.newBuilder(subRequestPrototype).setCreateOrAttach(
                                      CreateOrAttach.ATTACH).build(), MessageSeqId.newBuilder().setLocalComponent(10).build(), callback2,
                                  null);

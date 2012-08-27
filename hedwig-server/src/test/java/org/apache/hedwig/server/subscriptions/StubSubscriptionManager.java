@@ -23,6 +23,7 @@ import com.google.protobuf.ByteString;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.persistence.PersistenceManager;
 import org.apache.hedwig.server.topics.TopicManager;
@@ -41,7 +42,7 @@ public class StubSubscriptionManager extends InMemorySubscriptionManager {
 
     @Override
     public void serveSubscribeRequest(ByteString topic, SubscribeRequest subRequest, MessageSeqId consumeSeqId,
-                                      Callback<MessageSeqId> callback, Object ctx) {
+                                      Callback<SubscriptionData> callback, Object ctx) {
         if (fail) {
             callback.operationFailed(ctx, new PubSubException.ServiceDownException("Asked to fail"));
             return;

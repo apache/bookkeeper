@@ -32,6 +32,14 @@ message Map {
     repeated Entry entries = 1;
 }
 
+// message header
+message MessageHeader {
+    // user customized fields used for message filter
+    optional Map properties = 1;
+    // following are system properties in message header
+    optional string messageType = 2;
+}
+
 /*
  * this is the structure that will be serialized
  */
@@ -39,6 +47,8 @@ message Message {
     required bytes body = 1;
     optional bytes srcRegion = 2;
     optional MessageSeqId msgId = 3;
+    // message header
+    optional MessageHeader header = 4;
 }
 
 message RegionSpecificSeqId {
@@ -105,6 +115,8 @@ message SubscriptionPreferences {
 
     // message bound
     optional uint32 messageBound = 2;
+    // server-side message filter
+    optional string messageFilter = 3;
 }
 
 message SubscribeRequest{
@@ -133,6 +145,8 @@ message SubscriptionOptions {
     optional uint32 messageBound = 3 [default = 0];
     // user customized subscription options
     optional Map options = 4;
+    // server-side message filter
+    optional string messageFilter = 5;
 }
 
 message ConsumeRequest{
@@ -199,6 +213,7 @@ enum StatusCode{
     NOT_RESPONSIBLE_FOR_TOPIC = 501;
     SERVICE_DOWN = 502;
     UNCERTAIN_STATE = 503;
+    INVALID_MESSAGE_FILTER = 504;
 
     //server-side meta manager errors (52x)
     BAD_VERSION = 520;
