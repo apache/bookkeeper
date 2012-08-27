@@ -1,5 +1,5 @@
-package org.apache.bookkeeper.client;
-/* Licensed to the Apache Software Foundation (ASF) under one
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -15,9 +15,8 @@ package org.apache.bookkeeper.client;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.client;
 
-import java.util.EnumSet;
-import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.DigestManager.RecoveryData;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
@@ -31,7 +30,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
  *
  */
 class ReadLastConfirmedOp implements ReadEntryCallback {
-    static final Logger LOG = LoggerFactory.getLogger(LedgerRecoveryOp.class);
+    static final Logger LOG = LoggerFactory.getLogger(ReadLastConfirmedOp.class);
     LedgerHandle lh;
     int numResponsesPending;
     RecoveryData maxRecoveredData;
