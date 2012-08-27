@@ -64,6 +64,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-381: ReadLastConfirmedOp's Logger class name is wrong (surendra via sijie)
 
+        BOOKKEEPER-382: space missed at concatenations in GarbageCollectorThread logging (Brahma via sijie)
+
       hedwig-client:
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)
