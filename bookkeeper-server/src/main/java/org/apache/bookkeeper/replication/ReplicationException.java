@@ -60,4 +60,15 @@ public abstract class ReplicationException extends Exception {
             super(message);
         }
     }
+
+    /**
+     * Exception while auditing bookie-ledgers
+    */
+    static class BKAuditException extends ReplicationException {
+        private static final long serialVersionUID = 95551905L;
+
+        BKAuditException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
 }
