@@ -35,6 +35,7 @@ import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.test.MultiLedgerManagerTestCase;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
@@ -50,6 +51,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
 
     private static Logger LOG = LoggerFactory
             .getLogger(TestReplicationWorker.class);
+    private String basePath = "";
 
     public TestReplicationWorker(String ledgerManagerFactory) {
         super(3);
@@ -58,6 +60,9 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
         // set ledger manager name
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
+        basePath = baseClientConf.getZkLedgersRootPath() + '/'
+                + ZkLedgerUnderreplicationManager.UNDER_REPLICATION_NODE
+                + "/ledgers";
     }
 
     /**
@@ -101,8 +106,6 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
 
             underReplicationManager.markLedgerUnderreplicated(lh.getId(),
                     replicaToKill.toString());
-            String basePath = baseClientConf.getZkLedgersRootPath()
-                    + "/underreplication/ledgers";
 
             while (isLedgerInUnderReplication(lh.getId(), basePath)) {
                 Thread.sleep(100);
@@ -156,8 +159,6 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
         try {
             underReplicationManager.markLedgerUnderreplicated(lh.getId(),
                     replicaToKill.toString());
-            String basePath = baseClientConf.getZkLedgersRootPath()
-                    + "/underreplication/ledgers";
             int counter = 100;
             while (counter-- > 0) {
                 assertTrue("Expecting that replication should not complete",
@@ -225,8 +226,6 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
         try {
             underReplicationManager.markLedgerUnderreplicated(lh.getId(),
                     replicaToKill.toString());
-            String basePath = baseClientConf.getZkLedgersRootPath()
-                    + "/underreplication/ledgers";
             int counter = 10;
             while (counter-- > 0) {
                 assertTrue("Expecting that replication should not complete",
@@ -286,8 +285,6 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
             // Also mark ledger as in UnderReplication
             underReplicationManager.markLedgerUnderreplicated(lh.getId(),
                     replicaToKill.toString());
-            String basePath = baseClientConf.getZkLedgersRootPath()
-                    + "/underreplication/ledgers";
             while (isLedgerInUnderReplication(lh.getId(), basePath)) {
                 Thread.sleep(100);
             }
@@ -357,8 +354,6 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
                     replicaToKillFromFirstLedger.toString());
             underReplicationManager.markLedgerUnderreplicated(lh2.getId(),
                     replicaToKillFromSecondLedger.toString());
-            String basePath = baseClientConf.getZkLedgersRootPath()
-                    + "/underreplication/ledgers";
 
             while (isLedgerInUnderReplication(lh1.getId(), basePath)) {
                 Thread.sleep(100);
@@ -405,7 +400,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
                 isMatched = true;
                 break;
             } else {
-                String path = basePath + "/" + child;
+                String path = basePath + '/' + child;
                 if (zkc.getChildren(path, false).size() > 0) {
                     isMatched = isLedgerInUnderReplication(id, path);
                 }

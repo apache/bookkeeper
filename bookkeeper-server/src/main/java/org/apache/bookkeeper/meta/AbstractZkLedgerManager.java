@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.meta;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,6 +15,7 @@ package org.apache.bookkeeper.meta;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -357,8 +356,10 @@ abstract class AbstractZkLedgerManager implements LedgerManager, ActiveLedgerMan
      */
     protected boolean isSpecialZnode(String znode) {
         if (AVAILABLE_NODE.equals(znode)
-            || COOKIES_NODE.equals(znode)
-            || LedgerLayout.LAYOUT_ZNODE.equals(znode)) {
+                || COOKIES_NODE.equals(znode)
+                || LedgerLayout.LAYOUT_ZNODE.equals(znode)
+                || ZkLedgerUnderreplicationManager.UNDER_REPLICATION_NODE
+                        .equals(znode)) {
             return true;
         }
         return false;

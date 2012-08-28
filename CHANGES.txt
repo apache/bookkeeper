@@ -68,6 +68,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-337: Add entry fails with MetadataVersionException when last ensemble has morethan one bookie failures (rakeshr via ivank)
 
+        BOOKKEEPER-376: LedgerManagers should consider 'underreplication' node as a special Znode (Uma via sijie)
+
       hedwig-client:
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)

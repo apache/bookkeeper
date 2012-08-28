@@ -64,7 +64,7 @@ import org.slf4j.LoggerFactory;
 public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationManager {
     static final Logger LOG = LoggerFactory.getLogger(ZkLedgerUnderreplicationManager.class);
     static final Charset UTF8 = Charset.forName("UTF-8");
-
+    public static final String UNDER_REPLICATION_NODE = "underreplication";
     static final String LAYOUT="BASIC";
     static final int LAYOUT_VERSION=1;
 
@@ -92,8 +92,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     public ZkLedgerUnderreplicationManager(AbstractConfiguration conf, ZooKeeper zkc)
             throws KeeperException, InterruptedException, ReplicationException.CompatibilityException {
-        basePath = conf.getZkLedgersRootPath() + "/underreplication";
-        layoutZNode = basePath + "/LAYOUT";
+        basePath = conf.getZkLedgersRootPath() + '/'
+                + ZkLedgerUnderreplicationManager.UNDER_REPLICATION_NODE;
+        layoutZNode = basePath + '/' + LedgerLayout.LAYOUT_ZNODE;
         urLedgerPath = basePath + "/ledgers";
         urLockPath = basePath + "/locks";
 

@@ -1,4 +1,4 @@
-/*
+/**
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -43,6 +43,7 @@ import java.util.concurrent.TimeoutException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -88,7 +89,8 @@ public class TestLedgerUnderreplicationManager {
         zkc2 = zkUtil.getNewZooKeeperClient();
         lmf1 = LedgerManagerFactory.newLedgerManagerFactory(conf, zkc1);
         lmf2 = LedgerManagerFactory.newLedgerManagerFactory(conf, zkc2);
-        basePath = conf.getZkLedgersRootPath() + "/underreplication";
+        basePath = conf.getZkLedgersRootPath() + '/'
+                + ZkLedgerUnderreplicationManager.UNDER_REPLICATION_NODE;
         urLedgerPath = basePath + "/ledgers";
     }
 

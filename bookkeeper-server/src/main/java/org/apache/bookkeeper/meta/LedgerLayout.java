@@ -23,16 +23,10 @@ import java.io.IOException;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.Ids;
-import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.ZooKeeper;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.commons.configuration.ConfigurationException;
-
-import org.apache.bookkeeper.conf.AbstractConfiguration;
-import org.apache.bookkeeper.meta.FlatLedgerManager;
 
 /**
  * This class encapsulates ledger layout information that is persistently stored
