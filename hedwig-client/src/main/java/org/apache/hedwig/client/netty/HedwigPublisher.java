@@ -21,6 +21,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.apache.hedwig.client.exceptions.NoResponseHandlerException;
 import org.apache.hedwig.protocol.PubSubProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -202,7 +203,15 @@ public class HedwigPublisher implements Publisher {
         // Before we do the write, store this information into the
         // ResponseHandler so when the server responds, we know what
         // appropriate Callback Data to invoke for the given txn ID.
-        HedwigClientImpl.getResponseHandlerFromChannel(channel).txn2PubSubData.put(txnId, pubSubData);
+        try {
+            HedwigClientImpl.getResponseHandlerFromChannel(channel).txn2PubSubData.put(txnId, pubSubData);
+        } catch (NoResponseHandlerException e) {
+            logger.error("No response handler found while storing the publish callback.");
+            // Callback on pubsubdata indicating failure.
+            pubSubData.getCallback().operationFailed(pubSubData.context, new CouldNotConnectException("No response " +
+                    "handler found while attempting to publish. So could not connect."));
+            return;
+        }
 
         // Finally, write the Publish request through the Channel.
         if (logger.isDebugEnabled())
@@ -239,7 +248,11 @@ public class HedwigPublisher implements Publisher {
             // topic. Close these redundant channels as they won't be used.
             if (logger.isDebugEnabled())
                 logger.debug("Channel mapping to host: " + host + " already exists so no need to store it.");
-            HedwigClientImpl.getResponseHandlerFromChannel(channel).handleChannelClosedExplicitly();
+            try {
+                HedwigClientImpl.getResponseHandlerFromChannel(channel).handleChannelClosedExplicitly();
+            } catch (NoResponseHandlerException e) {
+                logger.error("Could not get response handler while closing channel.");
+            }
             channel.close();
         }
     }
@@ -256,7 +269,11 @@ public class HedwigPublisher implements Publisher {
             closed = true;
         }
         for (Channel channel : host2Channel.values()) {
-            client.getResponseHandlerFromChannel(channel).handleChannelClosedExplicitly();
+            try {
+                client.getResponseHandlerFromChannel(channel).handleChannelClosedExplicitly();
+            } catch (NoResponseHandlerException e) {
+                logger.error("No response handler while trying explicitly close Publisher channel " + channel);
+            }
             channel.close().awaitUninterruptibly();
         }
         host2Channel.clear();

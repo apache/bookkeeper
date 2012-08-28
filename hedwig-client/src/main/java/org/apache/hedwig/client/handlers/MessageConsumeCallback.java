@@ -19,6 +19,8 @@ package org.apache.hedwig.client.handlers;
 
 import java.util.TimerTask;
 
+import org.apache.hedwig.client.exceptions.NoResponseHandlerException;
+import org.apache.hedwig.client.netty.ResponseHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
@@ -61,8 +63,21 @@ public class MessageConsumeCallback implements Callback<Void> {
         public void run() {
             // Try to consume the message again
             Channel topicSubscriberChannel = client.getSubscriber().getChannelForTopic(topicSubscriber);
-            HedwigClientImpl.getResponseHandlerFromChannel(topicSubscriberChannel).getSubscribeResponseHandler()
-            .asyncMessageConsume(messageConsumeData.msg);
+            ResponseHandler handler = null;
+            try {
+                handler = HedwigClientImpl.getResponseHandlerFromChannel(topicSubscriberChannel);
+            } catch (NoResponseHandlerException e) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("No response handler found while invoking asyncMessageConsumed in the Message" +
+                    " consume retry task ." , e);
+                }
+                // Explicitly close the channel
+                if (null != topicSubscriberChannel) {
+                    topicSubscriberChannel.close();
+                }
+                return;
+            }
+            handler.getSubscribeResponseHandler().asyncMessageConsume(messageConsumeData.msg);
         }
     }
 
@@ -72,8 +87,20 @@ public class MessageConsumeCallback implements Callback<Void> {
         // Message has been successfully consumed by the client app so callback
         // to the ResponseHandler indicating that the message is consumed.
         Channel topicSubscriberChannel = client.getSubscriber().getChannelForTopic(topicSubscriber);
-        HedwigClientImpl.getResponseHandlerFromChannel(topicSubscriberChannel).getSubscribeResponseHandler()
-        .messageConsumed(messageConsumeData.msg);
+        ResponseHandler handler = null;
+        try {
+            handler = HedwigClientImpl.getResponseHandlerFromChannel(topicSubscriberChannel);
+        } catch (NoResponseHandlerException e) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("No response handler found while invoking messageConsumed." , e);
+            }
+            // Explicitly close the channel
+            if (null != topicSubscriberChannel) {
+                topicSubscriberChannel.close();
+            }
+            return;
+        }
+        handler.getSubscribeResponseHandler().messageConsumed(messageConsumeData.msg);
     }
 
     public void operationFailed(Object ctx, PubSubException exception) {

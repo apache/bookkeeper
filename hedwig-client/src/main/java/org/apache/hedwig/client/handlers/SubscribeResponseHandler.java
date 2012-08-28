@@ -23,7 +23,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
-import org.jboss.netty.channel.ChannelFuture;
+import org.apache.hedwig.client.exceptions.NoResponseHandlerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
@@ -90,7 +90,14 @@ public class SubscribeResponseHandler {
         // If this was not a successful response to the Subscribe request, we
         // won't be using the Netty Channel created so just close it.
         if (!response.getStatusCode().equals(StatusCode.SUCCESS)) {
-            HedwigClientImpl.getResponseHandlerFromChannel(channel).handleChannelClosedExplicitly();
+            try {
+                HedwigClientImpl.getResponseHandlerFromChannel(channel).handleChannelClosedExplicitly();
+            } catch (NoResponseHandlerException e) {
+                // Log an error. But should we also return and not process anything further?
+                logger.error("No response handler found while trying to close channel explicitly while handling a " +
+                        "failed subscription response.", e);
+                // Continue closing the channel because this is an unexpected event and state should be reset.
+            }
             channel.close();
         }
 

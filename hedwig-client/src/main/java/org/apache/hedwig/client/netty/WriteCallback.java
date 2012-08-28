@@ -20,6 +20,7 @@ package org.apache.hedwig.client.netty;
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
 
+import org.apache.hedwig.client.exceptions.NoResponseHandlerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.ChannelFuture;
@@ -65,7 +66,12 @@ public class WriteCallback implements ChannelFutureListener {
             // the saved txnId to PubSubData in the ResponseHandler. These
             // requests will not receive an ack response from the server
             // so there is no point storing that information there anymore.
-            HedwigClientImpl.getResponseHandlerFromChannel(future.getChannel()).txn2PubSubData.remove(pubSubData.txnId);
+            try {
+                HedwigClientImpl.getResponseHandlerFromChannel(future.getChannel()).txn2PubSubData.remove(pubSubData.txnId);
+            } catch (NoResponseHandlerException e) {
+                // We just couldn't remove the transaction ID's mapping. The handler was null, so this has been reset anyway.
+                logger.warn("Could not find response handler to remove txnId mapping to pubsub data. Ignoring.");
+            }
 
             future.getChannel().close();
 

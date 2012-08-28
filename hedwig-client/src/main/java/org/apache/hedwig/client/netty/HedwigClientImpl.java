@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.hedwig.client.exceptions.NoResponseHandlerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -177,7 +178,13 @@ public class HedwigClientImpl implements Client {
             // channels in HedwigPublisher.host2Channel. This stores the
             // channels used for Publish and Unsubscribe requests.
             for (Channel channel : pub.host2Channel.values()) {
-                ResponseHandler responseHandler = getResponseHandlerFromChannel(channel);
+                ResponseHandler responseHandler = null;
+                try {
+                    responseHandler = getResponseHandlerFromChannel(channel);
+                } catch (NoResponseHandlerException e) {
+                    logger.warn("No response handler found for channel" + channel + " in the retry timeout task.", e);
+                    continue;
+                }
                 for (PubSubData pubSubData : responseHandler.txn2PubSubData.values()) {
                     checkPubSubDataToTimeOut(pubSubData, responseHandler, curTime, timeoutInterval);
                 }
@@ -186,7 +193,13 @@ public class HedwigClientImpl implements Client {
             // HedwigSubscriber.topicSubscriber2Channel. This stores the
             // channels used exclusively for Subscribe requests.
             for (Channel channel : sub.topicSubscriber2Channel.values()) {
-                ResponseHandler responseHandler = getResponseHandlerFromChannel(channel);
+                ResponseHandler responseHandler = null;
+                try {
+                    responseHandler = getResponseHandlerFromChannel(channel);
+                } catch (NoResponseHandlerException e) {
+                    logger.warn("No response handler found for channel" + channel + " in the retry timeout task.", e);
+                    continue;
+                }
                 for (PubSubData pubSubData : responseHandler.txn2PubSubData.values()) {
                     checkPubSubDataToTimeOut(pubSubData, responseHandler, curTime, timeoutInterval);
                 }
@@ -320,9 +333,17 @@ public class HedwigClientImpl implements Client {
      * @param channel
      *            Channel we are retrieving the ResponseHandler instance for
      * @return ResponseHandler Instance tied to the Channel's Pipeline
+     * @throws NoResponseHandlerException if the response handler found for the channel is null.
      */
-    public static ResponseHandler getResponseHandlerFromChannel(Channel channel) {
-        return (ResponseHandler) channel.getPipeline().getLast();
+    public static ResponseHandler getResponseHandlerFromChannel(Channel channel) throws NoResponseHandlerException {
+        if (null == channel) {
+            throw new NoResponseHandlerException("Received a null value for the channel. Cannot retrieve the response handler");
+        }
+        ResponseHandler handler = (ResponseHandler) channel.getPipeline().getLast();
+        if (null == handler) {
+            throw new NoResponseHandlerException("Could not retrieve the response handler from the channel's pipeline.");
+        }
+        return handler;
     }
 
     // Public getter for entries in the topic2Host Map.
