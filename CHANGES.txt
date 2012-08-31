@@ -70,13 +70,15 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-376: LedgerManagers should consider 'underreplication' node as a special Znode (Uma via sijie)
 
-        BOOKKEEPER-371: NPE in hedwig hub client causes hedwig hub to shut down. (Aniruddha via sijie)
+        BOOKKEEPER-384: Clean up LedgerManagerFactory and LedgerManager usage in tests (rakeshr via ivank)
 
       hedwig-client:
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)
 
         BOOKKEEPER-320: Let hedwig cpp client could publish messages using Message object instead of string. (jiannan via ivank)
+
+        BOOKKEEPER-371: NPE in hedwig hub client causes hedwig hub to shut down. (Aniruddha via sijie)
 
       hedwig-server:
 

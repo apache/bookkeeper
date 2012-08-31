@@ -35,6 +35,8 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.test.MultiLedgerManagerTestCase;
 import org.apache.commons.io.FileUtils;
+import org.apache.zookeeper.KeeperException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -51,16 +53,19 @@ public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
     private static final Logger LOG = LoggerFactory
             .getLogger(BookieLedgerIndexTest.class);
 
-    private byte[] ledgerPassword = "admin".getBytes();
     private Random rng; // Random Number Generator
     private ArrayList<byte[]> entries; // generated entries
-    private DigestType digestType;
+    private final DigestType digestType = DigestType.CRC32;
+    private int numberOfLedgers = 3;
+    private List<Long> ledgerList;
+    private LedgerManagerFactory newLedgerManagerFactory;
+    private LedgerManager ledgerManager;
 
-    public BookieLedgerIndexTest(String ledgerManagerFactory) {
+    public BookieLedgerIndexTest(String ledgerManagerFactory)
+            throws IOException, KeeperException, InterruptedException {
         super(3);
         LOG.info("Running test case using ledger manager : "
                 + ledgerManagerFactory);
-        this.digestType = DigestType.CRC32;
         // set ledger manager name
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
@@ -72,6 +77,24 @@ public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
         rng = new Random(System.currentTimeMillis()); // Initialize the Random
         // Number Generator
         entries = new ArrayList<byte[]>(); // initialize the entries list
+        ledgerList = new ArrayList<Long>(3);
+        // initialize ledger manager
+        newLedgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(
+                baseConf, zkc);
+        ledgerManager = newLedgerManagerFactory.newLedgerManager();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        super.tearDown();
+        if (null != newLedgerManagerFactory) {
+            newLedgerManagerFactory.uninitialize();
+            newLedgerManagerFactory = null;
+        }
+        if (null != ledgerManager) {
+            ledgerManager.close();
+            ledgerManager = null;
+        }
     }
 
     /**
@@ -80,23 +103,10 @@ public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
      */
     @Test
     public void testSimpleBookieLedgerMapping() throws Exception {
-        LedgerManagerFactory newLedgerManagerFactory = LedgerManagerFactory
-                .newLedgerManagerFactory(baseConf, zkc);
-        LedgerManager ledgerManager = newLedgerManagerFactory
-                .newLedgerManager();
 
-        List<Long> ledgerList = new ArrayList<Long>(3);
-        LedgerHandle lh = createAndAddEntriesToLedger();
-        lh.close();
-        ledgerList.add(lh.getId());
-
-        lh = createAndAddEntriesToLedger();
-        lh.close();
-        ledgerList.add(lh.getId());
-
-        lh = createAndAddEntriesToLedger();
-        lh.close();
-        ledgerList.add(lh.getId());
+        for (int i = 0; i < numberOfLedgers; i++) {
+            createAndAddEntriesToLedger().close();
+        }
 
         BookieLedgerIndexer bookieLedgerIndex = new BookieLedgerIndexer(
                 ledgerManager);
@@ -122,23 +132,9 @@ public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
      */
     @Test
     public void testWithoutZookeeper() throws Exception {
-        LedgerManagerFactory newLedgerManagerFactory = LedgerManagerFactory
-                .newLedgerManagerFactory(baseConf, zkc);
-        LedgerManager ledgerManager = newLedgerManagerFactory
-                .newLedgerManager();
-
-        List<Long> ledgerList = new ArrayList<Long>(3);
-        LedgerHandle lh = createAndAddEntriesToLedger();
-        lh.close();
-        ledgerList.add(lh.getId());
-
-        lh = createAndAddEntriesToLedger();
-        lh.close();
-        ledgerList.add(lh.getId());
-
-        lh = createAndAddEntriesToLedger();
-        lh.close();
-        ledgerList.add(lh.getId());
+        for (int i = 0; i < numberOfLedgers; i++) {
+            createAndAddEntriesToLedger().close();
+        }
 
         BookieLedgerIndexer bookieLedgerIndex = new BookieLedgerIndexer(
                 ledgerManager);
@@ -157,16 +153,8 @@ public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
     @Test
     public void testEnsembleReformation() throws Exception {
         try {
-            LedgerManagerFactory newLedgerManagerFactory = LedgerManagerFactory
-                    .newLedgerManagerFactory(baseConf, zkc);
-            LedgerManager ledgerManager = newLedgerManagerFactory
-                    .newLedgerManager();
-
-            List<Long> ledgerList = new ArrayList<Long>(3);
             LedgerHandle lh1 = createAndAddEntriesToLedger();
-            ledgerList.add(lh1.getId());
             LedgerHandle lh2 = createAndAddEntriesToLedger();
-            ledgerList.add(lh2.getId());
 
             startNewBookie();
             shutdownBookie(bs.size() - 2);
@@ -218,7 +206,7 @@ public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
             InterruptedException {
         int numEntriesToWrite = 20;
         // Create a ledger
-        LedgerHandle lh = bkc.createLedger(digestType, ledgerPassword);
+        LedgerHandle lh = bkc.createLedger(digestType, "admin".getBytes());
         LOG.info("Ledger ID: " + lh.getId());
         for (int i = 0; i < numEntriesToWrite; i++) {
             ByteBuffer entry = ByteBuffer.allocate(4);
@@ -228,6 +216,7 @@ public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
             entries.add(entry.array());
             lh.addEntry(entry.array());
         }
+        ledgerList.add(lh.getId());
         return lh;
     }
 }

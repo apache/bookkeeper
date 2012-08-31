@@ -49,9 +49,11 @@ import org.slf4j.LoggerFactory;
  */
 public class TestReplicationWorker extends MultiLedgerManagerTestCase {
 
-    private static Logger LOG = LoggerFactory
+    private static final Logger LOG = LoggerFactory
             .getLogger(TestReplicationWorker.class);
     private String basePath = "";
+    private LedgerManagerFactory mFactory;
+    private LedgerUnderreplicationManager underReplicationManager;
 
     public TestReplicationWorker(String ledgerManagerFactory) {
         super(3);
@@ -65,6 +67,28 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
                 + "/ledgers";
     }
 
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        // initialize urReplicationManager
+        mFactory = LedgerManagerFactory.newLedgerManagerFactory(baseClientConf,
+                zkc);
+        underReplicationManager = mFactory.newLedgerUnderreplicationManager();
+    }
+
+    @Override
+    public void tearDown() throws Exception {
+        super.tearDown();
+        if(null != mFactory){
+            mFactory.uninitialize();
+            mFactory = null;
+        }
+        if(null != underReplicationManager){
+            underReplicationManager.close();
+            underReplicationManager = null;
+        }
+    }
+    
     /**
      * Tests that replication worker should replicate the failed bookie
      * fragments to target bookie given to the worker.
@@ -96,11 +120,6 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
         ReplicationWorker rw = new ReplicationWorker(zkc, baseClientConf,
                 newBkAddr);
 
-        LedgerManagerFactory mFactory = LedgerManagerFactory
-                .newLedgerManagerFactory(baseClientConf, zkc);
-        LedgerUnderreplicationManager underReplicationManager = mFactory
-                .newLedgerUnderreplicationManager();
-
         rw.start();
         try {
 
@@ -117,7 +136,6 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
             verifyRecoveredLedgers(lh, 0, 9);
         } finally {
             rw.shutdown();
-            underReplicationManager.close();
         }
     }
 
@@ -150,11 +168,6 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
         ReplicationWorker rw = new ReplicationWorker(zkc, baseClientConf,
                 newBkAddr);
 
-        LedgerManagerFactory mFactory = LedgerManagerFactory
-                .newLedgerManagerFactory(baseClientConf, zkc);
-        LedgerUnderreplicationManager underReplicationManager = mFactory
-                .newLedgerUnderreplicationManager();
-
         rw.start();
         try {
             underReplicationManager.markLedgerUnderreplicated(lh.getId(),
@@ -175,7 +188,6 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
             verifyRecoveredLedgers(lh, 0, 9);
         } finally {
             rw.shutdown();
-            underReplicationManager.close();
         }
     }
 
@@ -219,10 +231,6 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
         rw1.start();
         rw2.start();
 
-        LedgerManagerFactory mFactory = LedgerManagerFactory
-                .newLedgerManagerFactory(baseClientConf, zkc);
-        LedgerUnderreplicationManager underReplicationManager = mFactory
-                .newLedgerUnderreplicationManager();
         try {
             underReplicationManager.markLedgerUnderreplicated(lh.getId(),
                     replicaToKill.toString());
@@ -244,7 +252,6 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
             rw1.shutdown();
             rw2.shutdown();
             zkc1.close();
-            underReplicationManager.close();
         }
     }
 
@@ -276,10 +283,6 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
                 newBkAddr);
         rw.start();
 
-        LedgerManagerFactory mFactory = LedgerManagerFactory
-                .newLedgerManagerFactory(baseClientConf, zkc);
-        LedgerUnderreplicationManager underReplicationManager = mFactory
-                .newLedgerUnderreplicationManager();
         try {
             bkc.deleteLedger(lh.getId()); // Deleting the ledger
             // Also mark ledger as in UnderReplication
@@ -290,7 +293,6 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
             }
         } finally {
             rw.shutdown();
-            underReplicationManager.close();
         }
 
     }
@@ -341,11 +343,6 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
         ReplicationWorker rw = new ReplicationWorker(zkc, baseClientConf,
                 newBkAddr);
 
-        LedgerManagerFactory mFactory = LedgerManagerFactory
-                .newLedgerManagerFactory(baseClientConf, zkc);
-        LedgerUnderreplicationManager underReplicationManager = mFactory
-                .newLedgerUnderreplicationManager();
-
         rw.start();
         try {
 
@@ -370,7 +367,6 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
             verifyRecoveredLedgers(lh2, 0, 9);
         } finally {
             rw.shutdown();
-            underReplicationManager.close();
         }
 
     }
