@@ -42,7 +42,13 @@ namespace Hedwig {
 
     virtual void consume(const std::string& topic, const std::string& subscriberId, const MessageSeqId& messageSeqId) = 0;
 
-    virtual void startDelivery(const std::string& topic, const std::string& subscriberId, const MessageHandlerCallbackPtr& callback) = 0;
+    virtual void startDelivery(const std::string& topic, const std::string& subscriberId,
+                               const MessageHandlerCallbackPtr& callback) = 0;
+    virtual void startDeliveryWithFilter(const std::string& topic,
+                                         const std::string& subscriberId,
+                                         const MessageHandlerCallbackPtr& callback,
+                                         const ClientMessageFilterPtr& filter) = 0;
+
     virtual void stopDelivery(const std::string& topic, const std::string& subscriberId) = 0;
 
     virtual void closeSubscription(const std::string& topic, const std::string& subscriberId) = 0;

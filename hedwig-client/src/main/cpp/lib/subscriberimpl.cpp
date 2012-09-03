@@ -22,6 +22,7 @@
 #include "subscriberimpl.h"
 #include "util.h"
 #include "channel.h"
+#include "filterablemessagehandler.h"
 
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -405,7 +406,28 @@ void SubscriberImpl::consume(const std::string& topic, const std::string& subscr
   channel->writeRequest(data->getRequest(), writecb);
 }
 
-void SubscriberImpl::startDelivery(const std::string& topic, const std::string& subscriberId, const MessageHandlerCallbackPtr& callback) {
+void SubscriberImpl::startDeliveryWithFilter(const std::string& topic,
+                                             const std::string& subscriberId,
+                                             const MessageHandlerCallbackPtr& callback,
+                                             const ClientMessageFilterPtr& filter) {
+  if (0 == filter.get()) {
+    throw NullMessageFilterException();
+  }
+  if (0 == callback.get()) {
+    throw NullMessageHandlerException();
+  }
+  const SubscriptionPreferencesPtr& preferences =
+    getSubscriptionPreferences(topic, subscriberId);
+  if (0 == preferences.get()) {
+    throw NotSubscribedException();
+  }
+  filter->setSubscriptionPreferences(topic, subscriberId, preferences);
+  MessageHandlerCallbackPtr filterableHandler(new FilterableMessageHandler(callback, filter));
+  startDelivery(topic, subscriberId, filterableHandler);
+}
+
+void SubscriberImpl::startDelivery(const std::string& topic, const std::string& subscriberId,
+                                   const MessageHandlerCallbackPtr& callback) {
   TopicSubscriber t(topic, subscriberId);
 
   boost::shared_lock<boost::shared_mutex> lock(topicsubscriber2handler_lock);
@@ -446,6 +468,22 @@ void SubscriberImpl::closeSubscription(const std::string& topic, const std::stri
   }
 }
 
+void SubscriberImpl::setSubscriptionPreferences(const std::string& topic, const std::string& subscriberId,
+                                                const SubscriptionPreferences& preferences) {
+  boost::lock_guard<boost::shared_mutex> lock(topicsubscriber2preferences_lock);
+  TopicSubscriber t(topic, subscriberId);
+  SubscriptionPreferencesPtr newPreferences(new SubscriptionPreferences(preferences));
+  topicsubscriber2preferences[t] = newPreferences;
+}
+
+const SubscriptionPreferencesPtr& SubscriberImpl::getSubscriptionPreferences(
+    const std::string& topic, const std::string& subscriberId) {
+  boost::lock_guard<boost::shared_mutex> lock(topicsubscriber2preferences_lock);
+  TopicSubscriber t(topic, subscriberId);
+  const SubscriptionPreferencesPtr &preferences = topicsubscriber2preferences[t];
+  return preferences;
+}
+
 /**
    takes ownership of txn
 */
@@ -459,6 +497,19 @@ void SubscriberImpl::messageHandler(const PubSubResponsePtr& m, const PubSubData
 
   switch (m->statuscode()) {
   case SUCCESS:
+    // for subscribe request, check whether is any subscription preferences received
+    if (SUBSCRIBE == txn->getType()) {
+      if (m->has_responsebody()) {
+        const ResponseBody& respBody = m->responsebody();
+        if (respBody.has_subscriberesponse()) {
+          const SubscribeResponse& resp = respBody.subscriberesponse();
+          if (resp.has_preferences()) {
+            setSubscriptionPreferences(txn->getTopic(), txn->getSubscriberId(),
+                                       resp.preferences());
+          }
+        }
+      }
+    }
     if (m->has_responsebody()) {
       txn->getCallback()->operationComplete(m->responsebody());
     } else {

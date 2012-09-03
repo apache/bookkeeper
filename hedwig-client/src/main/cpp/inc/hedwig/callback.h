@@ -55,6 +55,18 @@ namespace Hedwig {
     virtual ~MessageHandlerCallback() {};
   };
   typedef std::tr1::shared_ptr<MessageHandlerCallback> MessageHandlerCallbackPtr;
+
+  typedef std::tr1::shared_ptr<SubscriptionPreferences> SubscriptionPreferencesPtr;
+
+  class ClientMessageFilter {
+  public:
+    virtual void setSubscriptionPreferences(const std::string& topic, const std::string& subscriberId,
+                                            const SubscriptionPreferencesPtr& preferences) = 0;
+    virtual bool testMessage(const Message& message) = 0;
+
+    virtual ~ClientMessageFilter() {};
+  };
+  typedef std::tr1::shared_ptr<ClientMessageFilter> ClientMessageFilterPtr;
 }
 
 #endif

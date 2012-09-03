@@ -153,7 +153,11 @@ namespace Hedwig {
 
     void consume(const std::string& topic, const std::string& subscriberId, const MessageSeqId& messageSeqId);
 
-    void startDelivery(const std::string& topic, const std::string& subscriberId, const MessageHandlerCallbackPtr& callback);
+    void startDelivery(const std::string& topic, const std::string& subscriberId,
+                       const MessageHandlerCallbackPtr& callback);
+    void startDeliveryWithFilter(const std::string& topic, const std::string& subscriberId,
+                                 const MessageHandlerCallbackPtr& callback,
+                                 const ClientMessageFilterPtr& filter);
     void stopDelivery(const std::string& topic, const std::string& subscriberId);
 
     void closeSubscription(const std::string& topic, const std::string& subscriberId);
@@ -164,10 +168,18 @@ namespace Hedwig {
     void doUnsubscribe(const DuplexChannelPtr& channel, const PubSubDataPtr& data);
 
   private:
+    void setSubscriptionPreferences(const std::string& topic, const std::string& subscriberId,
+                                    const SubscriptionPreferences& preferences);
+    const SubscriptionPreferencesPtr& getSubscriptionPreferences(
+                                    const std::string& topic, const std::string& subscriberId);
+
+  private:
     const ClientImplPtr client;
-    
+
     std::tr1::unordered_map<TopicSubscriber, SubscriberClientChannelHandlerPtr, TopicSubscriberHash > topicsubscriber2handler;
     boost::shared_mutex topicsubscriber2handler_lock;	    
+    std::tr1::unordered_map<TopicSubscriber, SubscriptionPreferencesPtr, TopicSubscriberHash> topicsubscriber2preferences;
+    boost::shared_mutex topicsubscriber2preferences_lock;	    
   };
 
 };

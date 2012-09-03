@@ -39,6 +39,8 @@ namespace Hedwig {
   class SubscriberException : public ClientException { };
   class AlreadySubscribedException : public SubscriberException {};
   class NotSubscribedException : public SubscriberException {};
+  class NullMessageHandlerException : public SubscriberException {};
+  class NullMessageFilterException : public SubscriberException {};
 
   class ConfigurationException : public ClientException { };
   class InvalidPortException : public ConfigurationException {};
