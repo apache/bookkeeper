@@ -19,6 +19,7 @@ package org.apache.hedwig.server;
 
 import java.net.InetAddress;
 import java.io.File;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -33,6 +34,8 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import org.apache.bookkeeper.test.ZooKeeperUtil;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -658,6 +661,78 @@ public class TestBackwardCompat extends TestCase {
             subscriber.closeSubscription(topic, subid);
         }
 
+        void receiveNumModM(final ByteString topic, final ByteString subid,
+                            final int start, final int num, final int M) throws Exception {
+            org.apache.hedwig.filter.ServerMessageFilter filter =
+                new org.apache.hedwig.filter.ServerMessageFilter() {
+
+                @Override
+                public org.apache.hedwig.filter.ServerMessageFilter
+                    initialize(Configuration conf) {
+                    // do nothing
+                    return this;
+                }
+
+                @Override
+                public void uninitialize() {
+                    // do nothing;
+                }
+
+                @Override
+                public org.apache.hedwig.filter.MessageFilterBase
+                    setSubscriptionPreferences(ByteString topic, ByteString subscriberId,
+                    org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences preferences) {
+                    // do nothing;
+                    return this;
+                }
+
+                @Override
+                public boolean testMessage(org.apache.hedwig.protocol.PubSubProtocol.Message msg) {
+                    int value = Integer.valueOf(msg.getBody().toStringUtf8());
+                    return 0 == value % M;
+                }
+            };
+            filter.initialize(conf.getConf());
+
+            subscriber.subscribe(topic, subid, org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach.ATTACH);
+            final int base = start + M - start % M;
+            final AtomicInteger expected = new AtomicInteger(base);
+            final CountDownLatch latch = new CountDownLatch(1);
+            subscriber.startDeliveryWithFilter(topic, subid, new org.apache.hedwig.client.api.MessageHandler() {
+                synchronized public void deliver(ByteString topic, ByteString subscriberId,
+                                                 org.apache.hedwig.protocol.PubSubProtocol.Message msg,
+                                                 org.apache.hedwig.util.Callback<Void> callback, Object context) {
+                    try {
+                        int value = Integer.valueOf(msg.getBody().toStringUtf8());
+                        // duplicated messages received, ignore them
+                        if (value > start) {
+                            if (value == expected.get()) {
+                                expected.addAndGet(M);
+                            } else {
+                                logger.error("Did not receive expected value, expected {}, got {}",
+                                             expected.get(), value);
+                                expected.set(0);
+                                latch.countDown();
+                            }
+                            if (expected.get() == (base + num * M)) {
+                                latch.countDown();
+                            }
+                        }
+                        callback.operationFinished(context, null);
+                    } catch (Exception e) {
+                        logger.error("Received bad message", e);
+                        latch.countDown();
+                    }
+                }
+            }, (org.apache.hedwig.filter.ClientMessageFilter) filter);
+            assertTrue("Timed out waiting for messages mod " + M + " expected is " + expected.get(),
+                       latch.await(10, TimeUnit.SECONDS));
+            assertEquals("Should be expected message with " + (base + num * M), (base + num*M), expected.get());
+            subscriber.stopDelivery(topic, subid);
+            filter.uninitialize();
+            subscriber.closeSubscription(topic, subid);
+        }
+
         void subscribe(ByteString topic, ByteString subscriberId) throws Exception {
             org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions options =
                 org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions.newBuilder()
@@ -918,4 +993,40 @@ public class TestBackwardCompat extends TestCase {
         bkccur.stop();
     }
 
+    /**
+     * Test compatability between version 4.1.0 and the current version.
+     *
+     * A current client running message filter would fail on 4.1.0 hub servers.
+     */
+    @Test
+    public void testClientMessageFilterCompat410() throws Exception {
+        ByteString topic = ByteString.copyFromUtf8("TestUpdateMessageBoundCompat410");
+        ByteString subid = ByteString.copyFromUtf8("mysub");
+
+        // start bookkeeper
+        BookKeeperCluster410 bkc410 = new BookKeeperCluster410(3);
+        bkc410.start();
+
+        // start hub server 410
+        Server410 s410 = new Server410(zkUtil.getZooKeeperConnectString());
+        s410.start();
+
+        ClientCurrent ccur = new ClientCurrent();
+        ccur.subscribe(topic, subid);
+        ccur.closeSubscription(topic, subid);
+
+        ccur.publishInts(topic, 0, 100);
+        try {
+            ccur.receiveNumModM(topic, subid, 0, 50, 2);
+            fail("client-side filter could not run on 4.1.0 hub server");
+        } catch (Exception e) {
+            logger.info("Should fail to run client-side message filter on 4.1.0 hub server.", e);
+            ccur.closeSubscription(topic, subid);
+        }
+
+        // stop 410 server
+        s410.stop();
+        // stop bookkeeper cluster
+        bkc410.stop();
+    }
 }

@@ -26,6 +26,7 @@ import org.apache.hedwig.exceptions.PubSubException.ClientAlreadySubscribedExcep
 import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException;
 import org.apache.hedwig.exceptions.PubSubException.CouldNotConnectException;
 import org.apache.hedwig.exceptions.PubSubException.ServiceDownException;
+import org.apache.hedwig.filter.ClientMessageFilter;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
@@ -118,7 +119,7 @@ public interface Subscriber {
      * <p>Subscribe to the given topic asynchronously for the inputted subscriberId.</p>
      *
      * <p>SubscriptionOptions contains parameters for how the hub should make the subscription.
-     * The two options are the createorattach mode and message bound.</p>
+     * The options includes createorattach mode, message bound and message filter.</p>
      *
      * <p>The createorattach mode defines whether the subscription should create a new subscription, or
      * just attach to a preexisting subscription. If it tries to create the subscription, and the
@@ -130,6 +131,14 @@ public interface Subscriber {
      * will be stored for the subscription. Note that if one subscription on a topic has a infinite
      * message bound, the message bound for all other subscriptions on that topic will effectively be
      * infinite as the messages have to be stored for the first subscription in any case. </p>
+     *
+     * <p>The message filter defines a {@link org.apache.hedwig.filter.ServerMessageFilter}
+     * run in hub server to filter messages delivered to the subscription. The server message
+     * filter should be placed in the classpath of hub server before using it.</p>
+     *
+     * All these subscription options would be stored as SubscriptionPreferences in metadata
+     * manager. The next time subscriber attached with difference options, the new options would
+     * overwrite the old options.
      *
      * Usage is as follows:
      * <pre>
@@ -268,6 +277,31 @@ public interface Subscriber {
      *             If someone started delivery a message handler before stopping existed one.
      */
     public void startDelivery(ByteString topic, ByteString subscriberId, MessageHandler messageHandler)
+            throws ClientNotSubscribedException, AlreadyStartDeliveryException;
+
+    /**
+     * Begin delivery of messages from the server to us for this topic and
+     * subscriberId.
+     *
+     * Only the messages passed <code>messageFilter</code> could be delivered to
+     * <code>messageHandler</code>.
+     *
+     * @param topic
+     *            Topic name of the subscription
+     * @param subscriberId
+     *            ID of the subscriber
+     * @param messageHandler
+     *            Message Handler that will consume the subscribed messages
+     * @throws ClientNotSubscribedException
+     *             If the client is not currently subscribed to the topic
+     * @throws AlreadyStartDeliveryException
+     *             If someone started delivery a message handler before stopping existed one.
+     * @throws NullPointerException
+     *             If either <code>messageHandler</code> or <code>messageFilter</code> is null.
+     */
+    public void startDeliveryWithFilter(ByteString topic, ByteString subscriberId,
+                                        MessageHandler messageHandler,
+                                        ClientMessageFilter messageFilter)
             throws ClientNotSubscribedException, AlreadyStartDeliveryException;
 
     /**

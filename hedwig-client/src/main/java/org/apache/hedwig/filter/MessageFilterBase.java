@@ -17,31 +17,11 @@
  */
 package org.apache.hedwig.filter;
 
-import java.io.IOException;
-
 import com.google.protobuf.ByteString;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
 
-public interface MessageFilter {
-
-    /**
-     * Initialize the message filter.
-     *
-     * @param conf
-     *          Configuration Object. An <i>MessageFilter</i> might read settings from it.
-     * @return message filter
-     * @throws IOException when failed to initialize message filter
-     */
-    public MessageFilter initialize(Configuration conf)
-    throws ConfigurationException, IOException;
-
-    /**
-     * Uninitialize the message filter.
-     */
-    public void uninitialize();
+public interface MessageFilterBase {
 
     /**
      * Set subscription preferences.
@@ -57,8 +37,8 @@ public interface MessageFilter {
      *          Subscription Preferences.
      * @return message filter
      */
-    public MessageFilter setSubscriptionPreferences(ByteString topic, ByteString subscriberId,
-                                                    SubscriptionPreferences preferences);
+    public MessageFilterBase setSubscriptionPreferences(ByteString topic, ByteString subscriberId,
+                                                        SubscriptionPreferences preferences);
 
     /**
      * Tests whether a particular message passes the filter or not

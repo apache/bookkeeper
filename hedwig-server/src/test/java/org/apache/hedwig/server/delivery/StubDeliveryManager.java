@@ -22,7 +22,7 @@ import java.util.Queue;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.data.TopicSubscriber;
-import org.apache.hedwig.filter.MessageFilter;
+import org.apache.hedwig.filter.ServerMessageFilter;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 
 public class StubDeliveryManager implements DeliveryManager {
@@ -32,10 +32,10 @@ public class StubDeliveryManager implements DeliveryManager {
         public ByteString subscriberId;
         public MessageSeqId seqIdToStartFrom;
         public DeliveryEndPoint endPoint;
-        public MessageFilter filter;
+        public ServerMessageFilter filter;
 
         public StartServingRequest(ByteString topic, ByteString subscriberId, MessageSeqId seqIdToStartFrom,
-                                   DeliveryEndPoint endPoint, MessageFilter filter) {
+                                   DeliveryEndPoint endPoint, ServerMessageFilter filter) {
             this.topic = topic;
             this.subscriberId = subscriberId;
             this.seqIdToStartFrom = seqIdToStartFrom;
@@ -49,7 +49,7 @@ public class StubDeliveryManager implements DeliveryManager {
 
     @Override
     public void startServingSubscription(ByteString topic, ByteString subscriberId, MessageSeqId seqIdToStartFrom,
-                                         DeliveryEndPoint endPoint, MessageFilter filter) {
+                                         DeliveryEndPoint endPoint, ServerMessageFilter filter) {
         lastRequest.add(new StartServingRequest(topic, subscriberId, seqIdToStartFrom, endPoint, filter));
     }
 

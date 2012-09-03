@@ -15,22 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hedwig.server.delivery;
+package org.apache.hedwig.filter;
 
-import com.google.protobuf.ByteString;
-import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
-import org.apache.hedwig.filter.ServerMessageFilter;
+import java.io.IOException;
 
-public interface DeliveryManager {
-    public void start();
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 
-    public void startServingSubscription(ByteString topic, ByteString subscriberId, MessageSeqId seqIdToStartFrom,
-                                         DeliveryEndPoint endPoint, ServerMessageFilter filter);
-
-    public void stopServingSubscriber(ByteString topic, ByteString subscriberId);
+/**
+ * Message Filter running in server-side. Hub server uses reflection to
+ * instantiate a message filter to filter messages.
+ */
+public interface ServerMessageFilter extends MessageFilterBase {
 
     /**
-     * Stop delivery manager
+     * Initialize the message filter.
+     *
+     * @param conf
+     *          Configuration Object. An <i>MessageFilter</i> might read settings from it.
+     * @return message filter
+     * @throws IOException when failed to initialize message filter
      */
-    public void stop();
+    public ServerMessageFilter initialize(Configuration conf)
+    throws ConfigurationException, IOException;
+
+    /**
+     * Uninitialize the message filter.
+     */
+    public void uninitialize();
+
 }

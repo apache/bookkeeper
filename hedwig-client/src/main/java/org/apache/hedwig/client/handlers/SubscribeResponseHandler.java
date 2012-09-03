@@ -39,7 +39,11 @@ import org.apache.hedwig.exceptions.PubSubException.ServiceDownException;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
+import org.apache.hedwig.protocol.PubSubProtocol.ResponseBody;
 import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscribeResponse;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
+import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 
 public class SubscribeResponseHandler {
 
@@ -117,12 +121,28 @@ public class SubscribeResponseHandler {
                 // Subscribe request.
                 origSubData = pubSubData;
 
+                SubscriptionPreferences preferences = null;
+                if (response.hasResponseBody()) {
+                    ResponseBody respBody = response.getResponseBody();
+                    if (respBody.hasSubscribeResponse()) {
+                        SubscribeResponse resp = respBody.getSubscribeResponse();
+                        if (resp.hasPreferences()) {
+                            preferences = resp.getPreferences();
+                            if (logger.isDebugEnabled()) {
+                                logger.debug("Receive subscription preferences for (topic:" + pubSubData.topic.toStringUtf8()
+                                           + ", subscriber:" + pubSubData.subscriberId.toStringUtf8() + ") :"
+                                           + SubscriptionStateUtils.toString(preferences));
+                            }
+                        }
+                    }
+                }
+
                 // Store the mapping for the TopicSubscriber to the Channel.
                 // This is so we can control the starting and stopping of
                 // message deliveries from the server on that Channel. Store
                 // this only on a successful ack response from the server.
                 TopicSubscriber topicSubscriber = new TopicSubscriber(pubSubData.topic, pubSubData.subscriberId);
-                responseHandler.getSubscriber().setChannelForTopic(topicSubscriber, channel);
+                responseHandler.getSubscriber().setChannelAndPreferencesForTopic(topicSubscriber, channel, preferences);
                 // Lazily create the Set (from a concurrent hashmap) to keep track
                 // of outstanding Messages to be consumed by the client app. At this
                 // stage, delivery for that topic hasn't started yet so creation of

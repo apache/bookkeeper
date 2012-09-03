@@ -20,6 +20,7 @@ package org.apache.hedwig.protoextensions;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.ProtocolVersion;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
+import org.apache.hedwig.protocol.PubSubProtocol.ResponseBody;
 import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
 
 public class PubSubResponseUtils {
@@ -37,7 +38,13 @@ public class PubSubResponseUtils {
         return getBasicBuilder(StatusCode.SUCCESS).setTxnId(txnId).build();
     }
 
+    public static PubSubResponse getSuccessResponse(long txnId, ResponseBody respBody) {
+        return getBasicBuilder(StatusCode.SUCCESS).setTxnId(txnId)
+               .setResponseBody(respBody).build();
+    }
+
     public static PubSubResponse getResponseForException(PubSubException e, long txnId) {
         return getBasicBuilder(e.getCode()).setStatusMsg(e.getMessage()).setTxnId(txnId).build();
     }
+
 }

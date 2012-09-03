@@ -193,8 +193,13 @@ message PublishResponse {
     required MessageSeqId publishedMsgId = 1;
 }
 
+message SubscribeResponse {
+    optional SubscriptionPreferences preferences = 2;
+}
+
 message ResponseBody {
     optional PublishResponse publishResponse = 1;
+    optional SubscribeResponse subscribeResponse = 2;
 }
 
 

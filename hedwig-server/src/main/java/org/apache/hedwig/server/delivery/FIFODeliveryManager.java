@@ -36,7 +36,7 @@ import com.google.protobuf.ByteString;
 
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.client.data.TopicSubscriber;
-import org.apache.hedwig.filter.MessageFilter;
+import org.apache.hedwig.filter.ServerMessageFilter;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.ProtocolVersion;
@@ -137,7 +137,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
      *            subscriber
      */
     public void startServingSubscription(ByteString topic, ByteString subscriberId, MessageSeqId seqIdToStartFrom,
-                                         DeliveryEndPoint endPoint, MessageFilter filter) {
+                                         DeliveryEndPoint endPoint, ServerMessageFilter filter) {
 
         ActiveSubscriberState subscriber = new ActiveSubscriberState(topic, subscriberId, seqIdToStartFrom
                 .getLocalComponent() - 1, endPoint, filter);
@@ -299,13 +299,13 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
         long lastScanErrorTime = -1;
         long localSeqIdDeliveringNow;
         long lastSeqIdCommunicatedExternally;
-        MessageFilter filter;
+        ServerMessageFilter filter;
         // TODO make use of these variables
 
         final static int SEQ_ID_SLACK = 10;
 
         public ActiveSubscriberState(ByteString topic, ByteString subscriberId, long lastLocalSeqIdDelivered,
-                                     DeliveryEndPoint deliveryEndPoint, MessageFilter filter) {
+                                     DeliveryEndPoint deliveryEndPoint, ServerMessageFilter filter) {
             this.topic = topic;
             this.subscriberId = subscriberId;
             this.lastLocalSeqIdDelivered = lastLocalSeqIdDelivered;
@@ -316,6 +316,8 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
         public void setNotConnected() {
             this.connected = false;
             deliveryEndPoint.close();
+            // uninitialize filter
+            this.filter.uninitialize();
         }
 
         public ByteString getTopic() {

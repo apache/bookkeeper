@@ -24,19 +24,19 @@ import java.util.LinkedList;
 import com.google.protobuf.ByteString;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.hedwig.filter.MessageFilter;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
 
 /**
  * A filter filters messages in pipeline.
  */
-public class PipelineFilter extends LinkedList<MessageFilter> implements MessageFilter {
+public class PipelineFilter extends LinkedList<ServerMessageFilter>
+implements ServerMessageFilter {
 
     @Override
-    public MessageFilter initialize(Configuration conf)
+    public ServerMessageFilter initialize(Configuration conf)
     throws ConfigurationException, IOException {
-        for (MessageFilter filter : this) {
+        for (ServerMessageFilter filter : this) {
             filter.initialize(conf);
         }
         return this;
@@ -45,15 +45,15 @@ public class PipelineFilter extends LinkedList<MessageFilter> implements Message
     @Override
     public void uninitialize() {
         while (!isEmpty()) {
-            MessageFilter filter = removeLast();
+            ServerMessageFilter filter = removeLast();
             filter.uninitialize();
         }
     }
 
     @Override
-    public MessageFilter setSubscriptionPreferences(ByteString topic, ByteString subscriberId,
-                                                    SubscriptionPreferences preferences) {
-        for (MessageFilter filter : this) {
+    public MessageFilterBase setSubscriptionPreferences(ByteString topic, ByteString subscriberId,
+                                                        SubscriptionPreferences preferences) {
+        for (ServerMessageFilter filter : this) {
             filter.setSubscriptionPreferences(topic, subscriberId, preferences);
         }
         return this;
@@ -61,7 +61,7 @@ public class PipelineFilter extends LinkedList<MessageFilter> implements Message
 
     @Override
     public boolean testMessage(Message message) {
-        for (MessageFilter filter : this) {
+        for (ServerMessageFilter filter : this) {
             if (!filter.testMessage(message)) {
                 return false;
             }

@@ -134,6 +134,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-306: Change C++ client to use gtest for testing (ivank via sijie)
 
+        BOOKKEEPER-334: client-side message filter for java client. (sijie via ivank)
+
 Release 4.1.0 - 2012-06-07
 
   Non-backward compatible changes:

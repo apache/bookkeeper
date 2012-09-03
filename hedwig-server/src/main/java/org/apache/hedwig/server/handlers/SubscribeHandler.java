@@ -31,12 +31,14 @@ import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.hedwig.client.data.TopicSubscriber;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.exceptions.PubSubException.ServerNotResponsibleForTopicException;
-import org.apache.hedwig.filter.MessageFilter;
 import org.apache.hedwig.filter.PipelineFilter;
+import org.apache.hedwig.filter.ServerMessageFilter;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubRequest;
+import org.apache.hedwig.protocol.PubSubProtocol.ResponseBody;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscribeResponse;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.protoextensions.PubSubResponseUtils;
 import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
@@ -164,7 +166,7 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
                     if (subData.hasPreferences() &&
                         subData.getPreferences().hasMessageFilter()) {
                         String messageFilterName = subData.getPreferences().getMessageFilter();
-                        filter.addLast(ReflectionUtils.newInstance(messageFilterName, MessageFilter.class));
+                        filter.addLast(ReflectionUtils.newInstance(messageFilterName, ServerMessageFilter.class));
                     }
                     // initialize the filter
                     filter.initialize(cfg.getConf());
@@ -194,7 +196,14 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
                 // First write success and then tell the delivery manager,
                 // otherwise the first message might go out before the response
                 // to the subscribe
-                channel.write(PubSubResponseUtils.getSuccessResponse(request.getTxnId()));
+                SubscribeResponse.Builder subRespBuilder = SubscribeResponse.newBuilder()
+                    .setPreferences(subData.getPreferences());
+                ResponseBody respBody = ResponseBody.newBuilder()
+                    .setSubscribeResponse(subRespBuilder).build();
+                channel.write(PubSubResponseUtils.getSuccessResponse(request.getTxnId(), respBody));
+                logger.info("Subscribe request (" + request.getTxnId() + ") for (topic:" + topic.toStringUtf8()
+                          + ", subscriber:" + subscriberId.toStringUtf8() + ") from channel " + channel.getRemoteAddress()
+                          + " succeed - its subscription data is " + SubscriptionStateUtils.toString(subData));
                 subStats.updateLatency(MathUtils.now() - requestTime);
 
                 // want to start 1 ahead of the consume ptr

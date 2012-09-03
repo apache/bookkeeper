@@ -41,6 +41,7 @@ import org.apache.hedwig.client.data.TopicSubscriber;
 import org.apache.hedwig.client.exceptions.AlreadyStartDeliveryException;
 import org.apache.hedwig.client.exceptions.InvalidSubscriberIdException;
 import org.apache.hedwig.client.handlers.PubSubCallback;
+import org.apache.hedwig.filter.ClientMessageFilter;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.exceptions.PubSubException.ClientAlreadySubscribedException;
 import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException;
@@ -73,6 +74,8 @@ public class HedwigSubscriber implements Subscriber {
     // it. We can also get the ResponseHandler tied to the Channel via the
     // Channel Pipeline.
     protected final ConcurrentMap<TopicSubscriber, Channel> topicSubscriber2Channel = new ConcurrentHashMap<TopicSubscriber, Channel>();
+    protected final ConcurrentMap<TopicSubscriber, SubscriptionPreferences> topicSubscriber2Preferences =
+        new ConcurrentHashMap<TopicSubscriber, SubscriptionPreferences>();
 
     // Concurrent Map to store Message handler for each topic + sub id combination.
     // Store it here instead of in SubscriberResponseHandler as we don't want to lose the handler
@@ -543,6 +546,30 @@ public class HedwigSubscriber implements Subscriber {
         startDelivery(topic, subscriberId, messageHandler, false);
     }
 
+    public void startDeliveryWithFilter(final ByteString topic, final ByteString subscriberId,
+                                        MessageHandler messageHandler,
+                                        ClientMessageFilter messageFilter)
+            throws ClientNotSubscribedException, AlreadyStartDeliveryException {
+        if (null == messageHandler || null == messageFilter) {
+            throw new NullPointerException("Null message handler or message filter is provided.");
+        }
+        TopicSubscriber topicSubscriber = new TopicSubscriber(topic, subscriberId);
+        SubscriptionPreferences preferences = topicSubscriber2Preferences.get(topicSubscriber);
+        if (null == preferences) {
+            throw new ClientNotSubscribedException("No subscription preferences found to filter messages for topic: "
+                    + topic.toStringUtf8() + ", subscriberId: " + subscriberId.toStringUtf8());
+        }
+        // pass subscription preferences to message filter
+        if (logger.isDebugEnabled()) {
+            logger.debug("Start delivering messages with filter on topic: " + topic.toStringUtf8()
+                         + ", subscriberId: " + subscriberId.toStringUtf8() + ", preferences: "
+                         + SubscriptionStateUtils.toString(preferences));
+        }
+        messageFilter.setSubscriptionPreferences(topic, subscriberId, preferences);
+        messageHandler = new FilterableMessageHandler(messageHandler, messageFilter);
+        startDelivery(topic, subscriberId, messageHandler, false);
+    }
+
     public void restartDelivery(final ByteString topic, final ByteString subscriberId)
         throws ClientNotSubscribedException, AlreadyStartDeliveryException {
         startDelivery(topic, subscriberId, null, true);
@@ -743,7 +770,8 @@ public class HedwigSubscriber implements Subscriber {
         return topicSubscriber2Channel.get(topic);
     }
 
-    public void setChannelForTopic(TopicSubscriber topic, Channel channel) {
+    public void setChannelAndPreferencesForTopic(TopicSubscriber topic, Channel channel,
+                                                 SubscriptionPreferences preferences) {
         synchronized (closeLock) {
             if (closed) {
                 channel.close();
@@ -753,11 +781,17 @@ public class HedwigSubscriber implements Subscriber {
             if (oldc != null) {
                 channel.close();
             }
+            if (null != preferences) {
+                topicSubscriber2Preferences.put(topic, preferences);
+            }
         }
     }
 
-    public void removeChannelForTopic(TopicSubscriber topic) {
-        topicSubscriber2Channel.remove(topic);
+    public void removeTopicSubscriber(TopicSubscriber topic) {
+        synchronized (topic) {
+            topicSubscriber2Preferences.remove(topic);
+            topicSubscriber2Channel.remove(topic);
+        }
     }
 
     void close() {

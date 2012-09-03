@@ -15,22 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hedwig.server.delivery;
+package org.apache.hedwig.filter;
 
-import com.google.protobuf.ByteString;
-import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
-import org.apache.hedwig.filter.ServerMessageFilter;
-
-public interface DeliveryManager {
-    public void start();
-
-    public void startServingSubscription(ByteString topic, ByteString subscriberId, MessageSeqId seqIdToStartFrom,
-                                         DeliveryEndPoint endPoint, ServerMessageFilter filter);
-
-    public void stopServingSubscriber(ByteString topic, ByteString subscriberId);
-
-    /**
-     * Stop delivery manager
-     */
-    public void stop();
+/**
+ * Message Filter running in client-side.
+ */
+public interface ClientMessageFilter extends MessageFilterBase {
 }

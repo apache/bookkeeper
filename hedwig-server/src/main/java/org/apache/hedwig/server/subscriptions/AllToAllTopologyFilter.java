@@ -22,19 +22,20 @@ import java.io.IOException;
 import com.google.protobuf.ByteString;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.hedwig.filter.MessageFilter;
+import org.apache.hedwig.filter.MessageFilterBase;
+import org.apache.hedwig.filter.ServerMessageFilter;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
 import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 import org.apache.hedwig.server.common.ServerConfiguration;
 
-public class AllToAllTopologyFilter implements MessageFilter {
+public class AllToAllTopologyFilter implements ServerMessageFilter {
 
     ByteString subscriberRegion;
     boolean isHubSubscriber;
 
     @Override
-    public MessageFilter initialize(Configuration conf)
+    public ServerMessageFilter initialize(Configuration conf)
     throws ConfigurationException, IOException {
         String region = conf.getString(ServerConfiguration.REGION, "standalone");
         if (null == region) {
@@ -50,8 +51,8 @@ public class AllToAllTopologyFilter implements MessageFilter {
     }
 
     @Override
-    public MessageFilter setSubscriptionPreferences(ByteString topic, ByteString subscriberId,
-                                                    SubscriptionPreferences preferences) {
+    public MessageFilterBase setSubscriptionPreferences(ByteString topic, ByteString subscriberId,
+                                                        SubscriptionPreferences preferences) {
         isHubSubscriber = SubscriptionStateUtils.isHubSubscriber(subscriberId);
         return this;
     }
