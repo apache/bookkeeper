@@ -72,6 +72,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-384: Clean up LedgerManagerFactory and LedgerManager usage in tests (rakeshr via ivank)
 
+        BOOKKEEPER-385: replicateLedgerFragment should throw Exceptions in error conditions (umamahesh via ivank)
+
       hedwig-client:
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)

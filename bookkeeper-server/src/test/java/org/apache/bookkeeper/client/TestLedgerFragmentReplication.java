@@ -99,7 +99,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         // 0-9 entries should be copy to new bookie
         
         for (LedgerFragment lf : result) {
-            assertTrue(admin.replicateLedgerFragment(lh, lf, newBkAddr));
+            admin.replicateLedgerFragment(lh, lf, newBkAddr);
         }
 
         // Killing all bookies except newly replicated bookie
@@ -157,8 +157,11 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         InetSocketAddress additionalBK = new InetSocketAddress(InetAddress
                 .getLocalHost().getHostAddress(), startNewBookie);
         for (LedgerFragment lf : fragments) {
-            assertFalse("Replication should fail", admin
-                    .replicateLedgerFragment(lh, lf, additionalBK));
+            try {
+                admin.replicateLedgerFragment(lh, lf, additionalBK);
+            } catch (BKException.BKLedgerRecoveryException e) {
+                // expected
+            }
         }
     }
 

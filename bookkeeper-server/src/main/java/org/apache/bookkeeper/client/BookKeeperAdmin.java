@@ -659,11 +659,11 @@ public class BookKeeperAdmin {
      *            - LedgerFragment to replicate
      * @param targetBookieAddress
      *            - target Bookie, to where entries should be replicated.
-     * @return true - if replication success, false if fails to replicate.
      */
-    public boolean replicateLedgerFragment(LedgerHandle lh,
+    public void replicateLedgerFragment(LedgerHandle lh,
             final LedgerFragment ledgerFragment,
-            InetSocketAddress targetBookieAddress) throws InterruptedException {
+            InetSocketAddress targetBookieAddress) throws InterruptedException,
+            BKException {
         final SyncCounter syncCounter = new SyncCounter();
         ResultCallBack resultCallBack = new ResultCallBack(syncCounter);
         SingleFragmentCallback sfcb = new SingleFragmentCallback(
@@ -672,18 +672,14 @@ public class BookKeeperAdmin {
         syncCounter.inc();
         lfr.replicate(lh, ledgerFragment, sfcb, targetBookieAddress);
         syncCounter.block(0);
-        return resultCallBack.getResult();
+        if (syncCounter.getrc() != BKException.Code.OK) {
+            throw BKException.create(syncCounter.getrc());
+        }
     }
 
     /** This is the class for getting the replication result */
     static class ResultCallBack implements AsyncCallback.VoidCallback {
-
-        private boolean result;
         private SyncCounter sync;
-
-        public boolean getResult() {
-            return this.result;
-        }
 
         public ResultCallBack(SyncCounter sync) {
             this.sync = sync;
@@ -691,12 +687,7 @@ public class BookKeeperAdmin {
 
         @Override
         public void processResult(int rc, String s, Object obj) {
-
-            if (rc != BKException.Code.OK) {
-                this.result = false;
-            } else {
-                this.result = true;
-            }
+            sync.setrc(rc);
             sync.dec();
         }
     }

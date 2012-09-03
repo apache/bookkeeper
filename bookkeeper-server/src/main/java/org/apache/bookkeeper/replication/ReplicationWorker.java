@@ -180,9 +180,10 @@ public class ReplicationWorker implements Runnable {
      *         ensemble, it will skip replication for that particular
      *         fragments). Returns true if all fragments replicated
      *         successfully.
+     * @throws BKException 
      */
     private boolean doReplicateFragments(long ledgerIdToReplicate,
-            LedgerHandle lh) throws InterruptedException {
+            LedgerHandle lh) throws InterruptedException, BKException {
         CheckerCallback checkerCb = new CheckerCallback();
         ledgerChecker.checkLedger(lh, checkerCb);
         Set<LedgerFragment> fragments = checkerCb.waitAndGetResult();
@@ -198,11 +199,18 @@ public class ReplicationWorker implements Runnable {
                 isTargetBookieExistsInFragmentEnsemble = true;
                 continue;
             }
-            boolean isFragmentReplicated = admin.replicateLedgerFragment(lh,
-                    ledgerFragment, targetBookie);
-            if (!isFragmentReplicated) {
+            try {
+                admin.replicateLedgerFragment(lh, ledgerFragment, targetBookie);
+            } catch (BKException.BKBookieHandleNotAvailableException e) {
+                LOG.warn("BKBookieHandleNotAvailableException "
+                        + "while replicating the fragment", e);
+                isAllFragmentsReplicated = false;
+            } catch (BKException.BKLedgerRecoveryException e) {
+                LOG.warn("BKLedgerRecoveryException "
+                        + "while replicating the fragment", e);
                 isAllFragmentsReplicated = false;
             }
+
         }
         if (isTargetBookieExistsInFragmentEnsemble) {
             LOG.info("Releasing the lock, as target Bookie found"
