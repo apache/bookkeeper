@@ -19,7 +19,6 @@
  */
 package org.apache.bookkeeper.client;
 
-import java.util.Enumeration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -183,9 +182,8 @@ public class LedgerChecker {
                 .getLedgerMetadata().getEnsembles().entrySet()) {
             if (curEntryId != null) {
                 for (int i = 0; i < curEnsemble.size(); i++) {
-                    fragments.add(new LedgerFragment(lh.getId(), curEntryId, e
-                            .getKey() - 1, i, curEnsemble, lh
-                            .getDistributionSchedule()));
+                    fragments.add(new LedgerFragment(lh, curEntryId,
+                            e.getKey() - 1, i));
                 }
             }
             curEntryId = e.getKey();
@@ -214,9 +212,8 @@ public class LedgerChecker {
 
             final Set<LedgerFragment> finalSegmentFragments = new HashSet<LedgerFragment>();
             for (int i = 0; i < curEnsemble.size(); i++) {
-                finalSegmentFragments.add(new LedgerFragment(lh.getId(), curEntryId,
-                                                  lastEntry, i, curEnsemble,
-                                                  lh.getDistributionSchedule()));
+                finalSegmentFragments.add(new LedgerFragment(lh, curEntryId,
+                        lastEntry, i));
             }
 
             // Check for the case that no last confirmed entry has

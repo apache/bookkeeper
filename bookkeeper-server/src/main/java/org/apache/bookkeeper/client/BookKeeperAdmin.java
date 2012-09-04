@@ -614,9 +614,8 @@ public class BookKeeperAdmin {
                                 }
                             }
                         }
-                        LedgerFragment ledgerFragment = new LedgerFragment(lh.ledgerId,
-                        startEntryId, endEntryId, bookieIndex,
-                        currentEnsemble, lh.distributionSchedule);
+                        LedgerFragment ledgerFragment = new LedgerFragment(lh,
+                                startEntryId, endEntryId, bookieIndex);
                         asyncRecoverLedgerFragment(lh, ledgerFragment, cb, newBookie);
                     } catch(InterruptedException e) {
                         Thread.currentThread().interrupt();

@@ -82,6 +82,8 @@ public abstract class BKException extends Exception {
             return new BKLedgerFencedException();
         case Code.UnauthorizedAccessException:
             return new BKUnauthorizedAccessException();
+        case Code.UnclosedFragmentException:
+            return new BKUnclosedFragmentException();
         default:
             return new BKIllegalOpException();
         }
@@ -114,6 +116,7 @@ public abstract class BKException extends Exception {
         int IllegalOpException = -100;
         int LedgerFencedException = -101;
         int UnauthorizedAccessException = -102;
+        int UnclosedFragmentException = -103;
     }
 
     public void setCode(int code) {
@@ -166,6 +169,8 @@ public abstract class BKException extends Exception {
             return "Ledger has been fenced off. Some other client must have opened it to read";
         case Code.UnauthorizedAccessException:
             return "Attempted to access ledger using the wrong password";
+        case Code.UnclosedFragmentException:
+            return "Attempting to use an unclosed fragment; This is not safe";
         default:
             return "Invalid operation";
         }
@@ -288,6 +293,12 @@ public abstract class BKException extends Exception {
     public static class BKUnauthorizedAccessException extends BKException {
         public BKUnauthorizedAccessException() {
             super(Code.UnauthorizedAccessException);
+        }
+    }
+
+    public static class BKUnclosedFragmentException extends BKException {
+        public BKUnclosedFragmentException() {
+            super(Code.UnclosedFragmentException);
         }
     }
 }

@@ -68,10 +68,18 @@ public class LedgerFragmentReplicator {
      *            entries that were stored on the failed bookie.
      */
     void replicate(final LedgerHandle lh, final LedgerFragment lf,
-            final SingleFragmentCallback ledgerFragmentMcb,
-            final InetSocketAddress newBookie) throws InterruptedException {
-        Long startEntryId = lf.firstEntryId;
-        Long endEntryId = lf.lastEntryId;
+                   final SingleFragmentCallback ledgerFragmentMcb,
+                   final InetSocketAddress newBookie)
+            throws InterruptedException {
+        if (!lf.isClosed()) {
+            LOG.error("Trying to replicate an unclosed fragment;"
+                      + " This is not safe {}", lf);
+            ledgerFragmentMcb.processResult(BKException.Code.UnclosedFragmentException,
+                                            null, null);
+            return;
+        }
+        Long startEntryId = lf.getFirstStoredEntryId();
+        Long endEntryId = lf.getLastStoredEntryId();
         if (endEntryId == null) {
             /*
              * Ideally this should never happen if bookie failure is taken care

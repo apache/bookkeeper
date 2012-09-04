@@ -19,8 +19,10 @@
  */
 package org.apache.bookkeeper.client;
 
-import java.util.List;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.SortedMap;
 
 /**
  * Represents the entries of a segment of a ledger which are stored on a single
@@ -29,26 +31,52 @@ import java.net.InetSocketAddress;
  * Used for checking and recovery
  */
 public class LedgerFragment {
-    final int bookieIndex;
-    final List<InetSocketAddress> ensemble;
-    final long firstEntryId;
-    final long lastEntryId;
-    final long ledgerId;
-    final DistributionSchedule schedule;
+    private final int bookieIndex;
+    private final List<InetSocketAddress> ensemble;
+    private final long firstEntryId;
+    private final long lastKnownEntryId;
+    private final long ledgerId;
+    private final DistributionSchedule schedule;
+    private final boolean isLedgerClosed;
 
-    LedgerFragment(long ledgerId, long firstEntryId, long lastEntryId,
-            int bookieIndex, List<InetSocketAddress> ensemble,
-            DistributionSchedule schedule) {
-        this.ledgerId = ledgerId;
+    LedgerFragment(LedgerHandle lh, long firstEntryId,
+            long lastKnownEntryId, int bookieIndex) {
+        this.ledgerId = lh.getId();
         this.firstEntryId = firstEntryId;
-        this.lastEntryId = lastEntryId;
+        this.lastKnownEntryId = lastKnownEntryId;
         this.bookieIndex = bookieIndex;
-        this.ensemble = ensemble;
-        this.schedule = schedule;
+        this.ensemble = lh.getLedgerMetadata().getEnsemble(firstEntryId);
+        this.schedule = lh.getDistributionSchedule();
+        SortedMap<Long, ArrayList<InetSocketAddress>> ensembles = lh
+                .getLedgerMetadata().getEnsembles();
+        this.isLedgerClosed = lh.getLedgerMetadata().isClosed()
+                || !ensemble.equals(ensembles.get(ensembles.lastKey()));
+    }
+
+    /**
+     * Returns true, if and only if the ledger fragment will never be modified
+     * by any of the clients in future, otherwise false. i.e,
+     * <ol>
+     * <li>If ledger is in closed state, then no other clients can modify this
+     * fragment.</li>
+     * <li>If ledger is not in closed state and the current fragment is not a
+     * last fragment, then no one will modify this fragment.</li>
+     * </ol>
+     */
+    boolean isClosed() {
+        return isLedgerClosed;
     }
 
     long getLedgerId() {
         return ledgerId;
+    }
+
+    long getFirstEntryId() {
+        return firstEntryId;
+    }
+
+    long getLastKnownEntryId() {
+        return lastKnownEntryId;
     }
 
     /**
@@ -66,7 +94,7 @@ public class LedgerFragment {
     public long getFirstStoredEntryId() {
         long firstEntry = firstEntryId;
 
-        for (int i = 0; i < ensemble.size() && firstEntry <= lastEntryId; i++) {
+        for (int i = 0; i < ensemble.size() && firstEntry <= lastKnownEntryId; i++) {
             if (schedule.hasEntry(firstEntry, bookieIndex)) {
                 return firstEntry;
             } else {
@@ -82,7 +110,7 @@ public class LedgerFragment {
      * @return entryId
      */
     public long getLastStoredEntryId() {
-        long lastEntry = lastEntryId;
+        long lastEntry = lastKnownEntryId;
         for (int i = 0; i < ensemble.size() && lastEntry >= firstEntryId; i++) {
             if (schedule.hasEntry(lastEntry, bookieIndex)) {
                 return lastEntry;
@@ -105,8 +133,8 @@ public class LedgerFragment {
     @Override
     public String toString() {
         return String.format("Fragment(LedgerID: %d, FirstEntryID: %d[%d], "
-                + "LastEntryID: %d[%d], Host: %s)", ledgerId, firstEntryId,
-                getFirstStoredEntryId(), lastEntryId, getLastStoredEntryId(),
-                getAddress());
+                + "LastKnownEntryID: %d[%d], Host: %s, Closed: %s)", ledgerId, firstEntryId,
+                getFirstStoredEntryId(), lastKnownEntryId, getLastStoredEntryId(),
+                getAddress(), isLedgerClosed);
     }
 }
