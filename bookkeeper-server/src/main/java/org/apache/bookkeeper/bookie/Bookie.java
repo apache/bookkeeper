@@ -46,7 +46,9 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.jmx.BKMBeanRegistry;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.KeeperException;
@@ -63,6 +65,8 @@ import org.apache.zookeeper.Watcher.Event.EventType;
  */
 
 public class Bookie extends Thread {
+    public static final String INSTANCEID = "INSTANCEID";
+
     static Logger LOG = LoggerFactory.getLogger(Bookie.class);
 
     final File journalDirectory;
@@ -274,8 +278,12 @@ public class Bookie extends Thread {
             return;
         }
         try {
+            String instanceId = getInstanceId(zk);
             boolean newEnv = false;
             Cookie masterCookie = Cookie.generateCookie(conf);
+            if (null != instanceId) {
+                masterCookie.setInstanceId(instanceId);
+            }
             try {
                 Cookie zkCookie = Cookie.readFromZooKeeper(zk, conf);
                 masterCookie.verify(zkCookie);
@@ -330,6 +338,19 @@ public class Bookie extends Thread {
             LOG.error("Thread interrupted while checking cookies, exiting", ie);
             throw new BookieException.InvalidCookieException(ie);
         }
+    }
+
+    private String getInstanceId(ZooKeeper zk) throws KeeperException,
+            InterruptedException {
+        String instanceId = null;
+        try {
+            byte[] data = zk.getData(conf.getZkLedgersRootPath() + "/"
+                    + INSTANCEID, false, null);
+            instanceId = new String(data);
+        } catch (KeeperException.NoNodeException e) {
+            LOG.warn("INSTANCEID not exists in zookeeper. Not considering it for data verification");
+        }
+        return instanceId;
     }
 
     public static File getCurrentDirectory(File dir) {
@@ -790,6 +811,80 @@ public class Bookie extends Thread {
                 wait();
             }
         }
+    }
+
+    /**
+     * Format the bookie server data
+     * 
+     * @param conf
+     *            ServerConfiguration
+     * @param isInteractive
+     *            Whether format should ask prompt for confirmation if old data
+     *            exists or not.
+     * @param force
+     *            If non interactive and force is true, then old data will be
+     *            removed without confirm prompt.
+     * @return Returns true if the format is success else returns false
+     */
+    public static boolean format(ServerConfiguration conf,
+            boolean isInteractive, boolean force) {
+        File journalDir = conf.getJournalDir();
+        if (journalDir.exists() && journalDir.isDirectory()
+                && journalDir.list().length != 0) {
+            try {
+                boolean confirm = false;
+                if (!isInteractive) {
+                    // If non interactive and force is set, then delete old
+                    // data.
+                    if (force) {
+                        confirm = true;
+                    } else {
+                        confirm = false;
+                    }
+                } else {
+                    confirm = IOUtils
+                            .confirmPrompt("Are you sure to format Bookie data..?");
+                }
+
+                if (!confirm) {
+                    LOG.error("Bookie format aborted!!");
+                    return false;
+                }
+            } catch (IOException e) {
+                LOG.error("Error during bookie format", e);
+                return false;
+            }
+        }
+        if (!cleanDir(journalDir)) {
+            LOG.error("Formatting journal directory failed");
+            return false;
+        }
+
+        File[] ledgerDirs = conf.getLedgerDirs();
+        for (File dir : ledgerDirs) {
+            if (!cleanDir(dir)) {
+                LOG.error("Formatting ledger directory " + dir + " failed");
+                return false;
+            }
+        }
+        LOG.info("Bookie format completed successfully");
+        return true;
+    }
+
+    private static boolean cleanDir(File dir) {
+        if (dir.exists()) {
+            for (File child : dir.listFiles()) {
+                boolean delete = FileUtils.deleteQuietly(child);
+                if (!delete) {
+                    LOG.error("Not able to delete " + child);
+                    return false;
+                }
+            }
+        } else if (!dir.mkdirs()) {
+            LOG.error("Not able to create the directory " + dir);
+            return false;
+        }
+        return true;
     }
 
     /**

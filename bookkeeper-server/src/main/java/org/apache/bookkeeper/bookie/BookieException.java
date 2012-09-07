@@ -126,7 +126,11 @@ public abstract class BookieException extends Exception {
 
     public static class InvalidCookieException extends BookieException {
         public InvalidCookieException() {
-            this(null);
+            this("");
+        }
+
+        public InvalidCookieException(String reason) {
+            super(Code.InvalidCookieException, reason);
         }
 
         public InvalidCookieException(Throwable cause) {

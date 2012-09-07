@@ -48,6 +48,7 @@ import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
@@ -85,8 +86,10 @@ public class TestLedgerUnderreplicationManager {
 
         executor = Executors.newCachedThreadPool();
 
-        zkc1 = zkUtil.getNewZooKeeperClient();
-        zkc2 = zkUtil.getNewZooKeeperClient();
+        zkc1 = ZkUtils.createConnectedZookeeperClient(
+                zkUtil.getZooKeeperConnectString(), 10000);
+        zkc2 = ZkUtils.createConnectedZookeeperClient(
+                zkUtil.getZooKeeperConnectString(), 10000);
         lmf1 = LedgerManagerFactory.newLedgerManagerFactory(conf, zkc1);
         lmf2 = LedgerManagerFactory.newLedgerManagerFactory(conf, zkc2);
         basePath = conf.getZkLedgersRootPath() + '/'

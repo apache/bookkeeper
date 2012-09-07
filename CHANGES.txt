@@ -122,6 +122,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-272: Provide automatic mechanism to know bookie failures (rakeshr via ivank)
 
+        BOOKKEEPER-300: Create Bookie format command (Vinay via sijie)
+
       hedwig-server:
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)

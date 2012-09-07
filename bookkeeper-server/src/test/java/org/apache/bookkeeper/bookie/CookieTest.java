@@ -22,13 +22,11 @@
 package org.apache.bookkeeper.bookie;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.zookeeper.ZooKeeper;
-
-import java.io.FileOutputStream;
-import java.io.BufferedWriter;
-import java.io.OutputStreamWriter;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,9 +37,6 @@ import org.junit.Before;
 import static org.junit.Assert.*;
 
 import static org.apache.bookkeeper.bookie.UpgradeTest.*;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class CookieTest {
     ZooKeeperUtil zkutil;
@@ -277,6 +272,41 @@ public class CookieTest {
         } catch (BookieException.InvalidCookieException ice) {
             // correct behaviour
         }
+    }
+
+    /*
+     * Test Cookie verification with format.
+     */
+    @Test
+    public void testVerifyCookieWithFormat() throws Exception {
+        ClientConfiguration adminConf = new ClientConfiguration();
+        adminConf.setProperty("bookkeeper.format", true);
+        // Format the BK Metadata and generate INSTANCEID
+        BookKeeperAdmin.format(adminConf, false, true);
+
+        ServerConfiguration bookieConf = new ServerConfiguration()
+                .setZkServers(zkutil.getZooKeeperConnectString())
+                .setJournalDirName(newDirectory(false))
+                .setLedgerDirNames(new String[] { newDirectory(false) })
+                .setBookiePort(3181);
+        // Bookie should start successfully for fresh env.
+        new Bookie(bookieConf);
+
+        // Format metadata one more time.
+        BookKeeperAdmin.format(adminConf, false, true);
+        try {
+            new Bookie(bookieConf);
+            fail("Bookie should not start with previous instance id.");
+        } catch (BookieException.InvalidCookieException e) {
+            assertTrue(
+                    "Bookie startup should fail because of invalid instance id",
+                    e.getMessage().contains("instanceId"));
+        }
+
+        // Now format the Bookie and restart.
+        Bookie.format(bookieConf, false, true);
+        // After bookie format bookie should be able to start again.
+        new Bookie(bookieConf);
     }
 
     /**

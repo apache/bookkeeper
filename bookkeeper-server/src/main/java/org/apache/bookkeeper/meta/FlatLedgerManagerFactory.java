@@ -19,8 +19,10 @@ package org.apache.bookkeeper.meta;
  */
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZKUtil;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.zookeeper.ZooKeeper;
@@ -75,5 +77,21 @@ class FlatLedgerManagerFactory extends LedgerManagerFactory {
     public LedgerUnderreplicationManager newLedgerUnderreplicationManager()
             throws KeeperException, InterruptedException, ReplicationException.CompatibilityException {
         return new ZkLedgerUnderreplicationManager(conf, zk);
+    }
+
+    @Override
+    public void format(AbstractConfiguration conf, ZooKeeper zk)
+            throws InterruptedException, KeeperException, IOException {
+        FlatLedgerManager ledgerManager = (FlatLedgerManager) newLedgerManager();
+        String ledgersRootPath = conf.getZkLedgersRootPath();
+        List<String> children = zk.getChildren(ledgersRootPath, false);
+        for (String child : children) {
+            if (ledgerManager.isSpecialZnode(child)) {
+                continue;
+            }
+            ZKUtil.deleteRecursive(zk, ledgersRootPath + "/" + child);
+        }
+        // Delete and recreate the LAYOUT information.
+        super.format(conf, zk);
     }
 }

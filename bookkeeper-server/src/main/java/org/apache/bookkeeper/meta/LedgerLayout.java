@@ -147,6 +147,15 @@ class LedgerLayout {
     }
 
     /**
+     * Delete the LAYOUT from zookeeper
+     */
+    public void delete(final ZooKeeper zk, String ledgersRoot)
+            throws KeeperException, InterruptedException {
+        String ledgersLayout = ledgersRoot + "/" + LAYOUT_ZNODE;
+        zk.delete(ledgersLayout, -1);
+    }
+
+    /**
      * Generates a byte array based on the LedgerLayout object.
      *
      * @return byte[]

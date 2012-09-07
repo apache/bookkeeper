@@ -28,9 +28,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.UUID;
 
+import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.BookKeeper.SyncOpenCallback;
@@ -38,10 +38,13 @@ import org.apache.bookkeeper.client.LedgerFragmentReplicator.SingleFragmentCallb
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
+import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.AsyncCallback;
+import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZKUtil;
+import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.KeeperException.Code;
 import org.slf4j.Logger;
@@ -115,20 +118,8 @@ public class BookKeeperAdmin {
      */
     public BookKeeperAdmin(ClientConfiguration conf) throws IOException, InterruptedException, KeeperException {
         // Create the ZooKeeper client instance
-        final CountDownLatch latch = new CountDownLatch(1);
-        zk = new ZooKeeper(conf.getZkServers(), conf.getZkTimeout(), new Watcher() {
-            @Override
-            public void process(WatchedEvent event) {
-                latch.countDown();
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Process: " + event.getType() + " " + event.getPath());
-                }
-            }
-        });
-        if (!latch.await(conf.getZkTimeout(), TimeUnit.MILLISECONDS)
-            || !zk.getState().isConnected()) {
-            throw KeeperException.create(KeeperException.Code.CONNECTIONLOSS);
-        }
+        zk = ZkUtils.createConnectedZookeeperClient(conf.getZkServers(),
+                conf.getZkTimeout());
         // Create the bookie path
         bookiesPath = conf.getZkAvailableBookiesPath();
         // Create the BookKeeper client instance
@@ -689,5 +680,97 @@ public class BookKeeperAdmin {
             sync.setrc(rc);
             sync.dec();
         }
+    }
+
+    /**
+     * Format the BookKeeper metadata in zookeeper
+     * 
+     * @param isInteractive
+     *            Whether format should ask prompt for confirmation if old data
+     *            exists or not.
+     * @param force
+     *            If non interactive and force is true, then old data will be
+     *            removed without prompt.
+     * @return Returns true if format succeeds else false.
+     */
+    public static boolean format(ClientConfiguration conf,
+            boolean isInteractive, boolean force) throws Exception {
+
+        ZooKeeper zkc = ZkUtils.createConnectedZookeeperClient(conf.getZkServers(),
+                conf.getZkTimeout());
+        BookKeeper bkc = null;
+        try {
+            boolean ledgerRootExists = null != zkc.exists(
+                    conf.getZkLedgersRootPath(), false);
+            boolean availableNodeExists = null != zkc.exists(
+                    conf.getZkAvailableBookiesPath(), false);
+
+            // Create ledgers root node if not exists
+            if (!ledgerRootExists) {
+                zkc.create(conf.getZkLedgersRootPath(), "".getBytes(),
+                        Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            }
+            // create available bookies node if not exists
+            if (!availableNodeExists) {
+                zkc.create(conf.getZkAvailableBookiesPath(), "".getBytes(),
+                        Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            }
+
+            // If old data was there then confirm with admin.
+            if (ledgerRootExists) {
+                boolean confirm = false;
+                if (!isInteractive) {
+                    // If non interactive and force is set, then delete old
+                    // data.
+                    if (force) {
+                        confirm = true;
+                    } else {
+                        confirm = false;
+                    }
+                } else {
+                    // Confirm with the admin.
+                    confirm = IOUtils
+                            .confirmPrompt("Are you sure to format bookkeeper metadata ?");
+                }
+                if (!confirm) {
+                    LOG.error("BookKeeper metadata Format aborted!!");
+                    return false;
+                }
+            }
+            bkc = new BookKeeper(conf, zkc);
+            // Format all ledger metadata layout
+            bkc.ledgerManagerFactory.format(conf, zkc);
+
+            // Clear the cookies
+            try {
+                ZKUtil.deleteRecursive(zkc, conf.getZkLedgersRootPath()
+                        + "/cookies");
+            } catch (KeeperException.NoNodeException e) {
+                LOG.debug("cookies node not exists in zookeeper to delete");
+            }
+
+            // Clear the INSTANCEID
+            try {
+                zkc.delete(conf.getZkLedgersRootPath() + "/" + Bookie.INSTANCEID, -1);
+            } catch (KeeperException.NoNodeException e) {
+                LOG.debug("INSTANCEID not exists in zookeeper to delete");
+            }
+
+            // create INSTANCEID
+            String instanceId = UUID.randomUUID().toString();
+            zkc.create(conf.getZkLedgersRootPath() + "/" + Bookie.INSTANCEID,
+                    instanceId.getBytes(), Ids.OPEN_ACL_UNSAFE,
+                    CreateMode.PERSISTENT);
+
+            LOG.info("Successfully formatted BookKeeper metadata");
+        } finally {
+            if (null != bkc) {
+                bkc.close();
+            }
+            if (null != zkc) {
+                zkc.close();
+            }
+        }
+        return true;
     }
 }

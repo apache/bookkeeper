@@ -80,7 +80,7 @@ where command is one of:
     bookie              Run a bookie server
     localbookie <n>     Run a test ensemble of <n> bookies locally
     upgrade             Upgrade bookie filesystem
-    shell               Run admin shell to read/check bookie files
+    shell               Run shell for admin commands
     help                This help message
 
 or command is the full name of a class with a defined main() method.

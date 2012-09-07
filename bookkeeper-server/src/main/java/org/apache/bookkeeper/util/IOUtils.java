@@ -52,4 +52,37 @@ public class IOUtils {
         }
     }
 
+    /**
+     * Confirm prompt for the console operations.
+     * 
+     * @param prompt
+     *            Prompt message to be displayed on console
+     * @return Returns true if confirmed as 'Y', returns false if confirmed as
+     *         'N'
+     * @throws IOException
+     */
+    public static boolean confirmPrompt(String prompt) throws IOException {
+        while (true) {
+            System.out.print(prompt + " (Y or N) ");
+            StringBuilder responseBuilder = new StringBuilder();
+            while (true) {
+                int c = System.in.read();
+                if (c == -1 || c == '\r' || c == '\n') {
+                    break;
+                }
+                responseBuilder.append((char) c);
+            }
+
+            String response = responseBuilder.toString();
+            if (response.equalsIgnoreCase("y")
+                    || response.equalsIgnoreCase("yes")) {
+                return true;
+            } else if (response.equalsIgnoreCase("n")
+                    || response.equalsIgnoreCase("no")) {
+                return false;
+            }
+            System.out.println("Invalid input: " + response);
+            // else ask them again
+        }
+    }
 }

@@ -20,17 +20,18 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.OutputStreamWriter;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.Scanner;
+import java.io.StringReader;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
-import java.nio.ByteBuffer;
 
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
@@ -39,9 +40,12 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.proto.DataFormats.CookieFormat;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.protobuf.TextFormat;
 
 /**
  * When a bookie starts for the first time it generates  a cookie, and stores
@@ -59,7 +63,7 @@ import org.slf4j.LoggerFactory;
 class Cookie {
     static Logger LOG = LoggerFactory.getLogger(Cookie.class);
 
-    static final int CURRENT_COOKIE_LAYOUT_VERSION = 3;
+    static final int CURRENT_COOKIE_LAYOUT_VERSION = 4;
     static final String COOKIE_NODE = "cookies";
     static final String VERSION_FILENAME = "VERSION";
     private int layoutVersion = 0;
@@ -67,22 +71,49 @@ class Cookie {
     private String journalDir = null;
     private String ledgerDirs = null;
     private int znodeVersion = -1;
+    private String instanceId = null;
 
     private Cookie() {
     }
 
-    public void verify(Cookie c)
-            throws BookieException.InvalidCookieException {
-        if (!(c.layoutVersion == layoutVersion
-              && c.layoutVersion >= 3
-              && c.bookieHost.equals(bookieHost)
-              && c.journalDir.equals(journalDir)
-              && c.ledgerDirs.equals(ledgerDirs))) {
-            throw new BookieException.InvalidCookieException();
+    public void verify(Cookie c) throws BookieException.InvalidCookieException {
+        String errMsg;
+        if (c.layoutVersion < 3 && c.layoutVersion != layoutVersion) {
+            errMsg = "Cookie is of too old version " + c.layoutVersion;
+            LOG.error(errMsg);
+            throw new BookieException.InvalidCookieException(errMsg);
+        } else if (!(c.layoutVersion >= 3 && c.bookieHost.equals(bookieHost)
+                && c.journalDir.equals(journalDir) && c.ledgerDirs
+                    .equals(ledgerDirs))) {
+            errMsg = "Cookie [" + this + "] is not matching with [" + c + "]";
+            throw new BookieException.InvalidCookieException(errMsg);
+        } else if ((instanceId == null && c.instanceId != null)
+                || (instanceId != null && !instanceId.equals(c.instanceId))) {
+            // instanceId should be same in both cookies
+            errMsg = "instanceId " + instanceId
+                    + " is not matching with " + c.instanceId;
+            throw new BookieException.InvalidCookieException(errMsg);
         }
     }
 
     public String toString() {
+        if (layoutVersion <= 3) {
+            return toStringVersion3();
+        }
+        CookieFormat.Builder builder = CookieFormat.newBuilder();
+        builder.setBookieHost(bookieHost);
+        builder.setJournalDir(journalDir);
+        builder.setLedgerDirs(ledgerDirs);
+        if (null != instanceId) {
+            builder.setInstanceId(instanceId);
+        }
+        StringBuilder b = new StringBuilder();
+        b.append(CURRENT_COOKIE_LAYOUT_VERSION).append("\n");
+        b.append(TextFormat.printToString(builder.build()));
+        return b.toString();
+    }
+
+    private String toStringVersion3() {
         StringBuilder b = new StringBuilder();
         b.append(CURRENT_COOKIE_LAYOUT_VERSION).append("\n")
             .append(bookieHost).append("\n")
@@ -91,19 +122,34 @@ class Cookie {
         return b.toString();
     }
 
-    private static Cookie parse(Scanner s) throws IOException {
-        Cookie c  = new Cookie();
-        if (!s.hasNextInt()) {
-            throw new IOException("Invalid string, cannot parse cookie.");
+    private static Cookie parse(BufferedReader reader) throws IOException {
+        Cookie c = new Cookie();
+        String line = reader.readLine();
+        if (null == line) {
+            throw new EOFException("Exception in parsing cookie");
         }
-        c.layoutVersion = s.nextInt();
-        if (c.layoutVersion >= 3) {
-            s.nextLine();
-            c.bookieHost = s.nextLine();
-            c.journalDir = s.nextLine();
-            c.ledgerDirs = s.nextLine();
+        try {
+            c.layoutVersion = Integer.parseInt(line.trim());
+        } catch (NumberFormatException e) {
+            throw new IOException("Invalid string '" + line.trim()
+                    + "', cannot parse cookie.");
         }
-        s.close();
+        if (c.layoutVersion == 3) {
+            c.bookieHost = reader.readLine();
+            c.journalDir = reader.readLine();
+            c.ledgerDirs = reader.readLine();
+        } else if (c.layoutVersion >= 4) {
+            CookieFormat.Builder builder = CookieFormat.newBuilder();
+            TextFormat.merge(reader, builder);
+            CookieFormat data = builder.build();
+            c.bookieHost = data.getBookieHost();
+            c.journalDir = data.getJournalDir();
+            c.ledgerDirs = data.getLedgerDirs();
+            // Since InstanceId is optional
+            if (null != data.getInstanceId() && !data.getInstanceId().isEmpty()) {
+                c.instanceId = data.getInstanceId();
+            }
+        }
         return c;
     }
 
@@ -178,14 +224,29 @@ class Cookie {
 
         Stat stat = zk.exists(zkPath, false);
         byte[] data = zk.getData(zkPath, false, stat);
-        Cookie c = parse(new Scanner(new String(data)));
-        c.znodeVersion = stat.getVersion();
-        return c;
+        BufferedReader reader = new BufferedReader(new StringReader(new String(
+                data)));
+        try {
+            Cookie c = parse(reader);
+            c.znodeVersion = stat.getVersion();
+            return c;
+        } finally {
+            reader.close();
+        }
     }
 
     static Cookie readFromDirectory(File directory) throws IOException {
         File versionFile = new File(directory, VERSION_FILENAME);
-        return parse(new Scanner(versionFile));
+        BufferedReader reader = new BufferedReader(new FileReader(versionFile));
+        try {
+            return parse(reader);
+        } finally {
+            reader.close();
+        }
+    }
+
+    public void setInstanceId(String instanceId) {
+        this.instanceId = instanceId;
     }
 
     private static String getZkPath(ServerConfiguration conf)

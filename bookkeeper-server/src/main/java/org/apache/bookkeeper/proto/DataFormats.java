@@ -2461,6 +2461,687 @@ public final class DataFormats {
     // @@protoc_insertion_point(class_scope:UnderreplicatedLedgerFormat)
   }
   
+  public interface CookieFormatOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required string bookieHost = 1;
+    boolean hasBookieHost();
+    String getBookieHost();
+    
+    // required string journalDir = 2;
+    boolean hasJournalDir();
+    String getJournalDir();
+    
+    // required string ledgerDirs = 3;
+    boolean hasLedgerDirs();
+    String getLedgerDirs();
+    
+    // optional string instanceId = 4;
+    boolean hasInstanceId();
+    String getInstanceId();
+  }
+  public static final class CookieFormat extends
+      com.google.protobuf.GeneratedMessage
+      implements CookieFormatOrBuilder {
+    // Use CookieFormat.newBuilder() to construct.
+    private CookieFormat(Builder builder) {
+      super(builder);
+    }
+    private CookieFormat(boolean noInit) {}
+    
+    private static final CookieFormat defaultInstance;
+    public static CookieFormat getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public CookieFormat getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.bookkeeper.proto.DataFormats.internal_static_CookieFormat_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.bookkeeper.proto.DataFormats.internal_static_CookieFormat_fieldAccessorTable;
+    }
+    
+    private int bitField0_;
+    // required string bookieHost = 1;
+    public static final int BOOKIEHOST_FIELD_NUMBER = 1;
+    private java.lang.Object bookieHost_;
+    public boolean hasBookieHost() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public String getBookieHost() {
+      java.lang.Object ref = bookieHost_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          bookieHost_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getBookieHostBytes() {
+      java.lang.Object ref = bookieHost_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        bookieHost_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    
+    // required string journalDir = 2;
+    public static final int JOURNALDIR_FIELD_NUMBER = 2;
+    private java.lang.Object journalDir_;
+    public boolean hasJournalDir() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getJournalDir() {
+      java.lang.Object ref = journalDir_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          journalDir_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getJournalDirBytes() {
+      java.lang.Object ref = journalDir_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        journalDir_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    
+    // required string ledgerDirs = 3;
+    public static final int LEDGERDIRS_FIELD_NUMBER = 3;
+    private java.lang.Object ledgerDirs_;
+    public boolean hasLedgerDirs() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public String getLedgerDirs() {
+      java.lang.Object ref = ledgerDirs_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          ledgerDirs_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getLedgerDirsBytes() {
+      java.lang.Object ref = ledgerDirs_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        ledgerDirs_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    
+    // optional string instanceId = 4;
+    public static final int INSTANCEID_FIELD_NUMBER = 4;
+    private java.lang.Object instanceId_;
+    public boolean hasInstanceId() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    public String getInstanceId() {
+      java.lang.Object ref = instanceId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          instanceId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getInstanceIdBytes() {
+      java.lang.Object ref = instanceId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        instanceId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    
+    private void initFields() {
+      bookieHost_ = "";
+      journalDir_ = "";
+      ledgerDirs_ = "";
+      instanceId_ = "";
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasBookieHost()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasJournalDir()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasLedgerDirs()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+    
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getBookieHostBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getJournalDirBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBytes(3, getLedgerDirsBytes());
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeBytes(4, getInstanceIdBytes());
+      }
+      getUnknownFields().writeTo(output);
+    }
+    
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+    
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, getBookieHostBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(2, getJournalDirBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(3, getLedgerDirsBytes());
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(4, getInstanceIdBytes());
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+    
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+    
+    public static org.apache.bookkeeper.proto.DataFormats.CookieFormat parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.CookieFormat parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.CookieFormat parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.CookieFormat parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.CookieFormat parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.CookieFormat parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.CookieFormat parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.CookieFormat parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.CookieFormat parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.DataFormats.CookieFormat parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.bookkeeper.proto.DataFormats.CookieFormat prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+    
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.apache.bookkeeper.proto.DataFormats.CookieFormatOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.bookkeeper.proto.DataFormats.internal_static_CookieFormat_descriptor;
+      }
+      
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.bookkeeper.proto.DataFormats.internal_static_CookieFormat_fieldAccessorTable;
+      }
+      
+      // Construct using org.apache.bookkeeper.proto.DataFormats.CookieFormat.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+      
+      public Builder clear() {
+        super.clear();
+        bookieHost_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
+        journalDir_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        ledgerDirs_ = "";
+        bitField0_ = (bitField0_ & ~0x00000004);
+        instanceId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000008);
+        return this;
+      }
+      
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.bookkeeper.proto.DataFormats.CookieFormat.getDescriptor();
+      }
+      
+      public org.apache.bookkeeper.proto.DataFormats.CookieFormat getDefaultInstanceForType() {
+        return org.apache.bookkeeper.proto.DataFormats.CookieFormat.getDefaultInstance();
+      }
+      
+      public org.apache.bookkeeper.proto.DataFormats.CookieFormat build() {
+        org.apache.bookkeeper.proto.DataFormats.CookieFormat result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+      
+      private org.apache.bookkeeper.proto.DataFormats.CookieFormat buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        org.apache.bookkeeper.proto.DataFormats.CookieFormat result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return result;
+      }
+      
+      public org.apache.bookkeeper.proto.DataFormats.CookieFormat buildPartial() {
+        org.apache.bookkeeper.proto.DataFormats.CookieFormat result = new org.apache.bookkeeper.proto.DataFormats.CookieFormat(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.bookieHost_ = bookieHost_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.journalDir_ = journalDir_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.ledgerDirs_ = ledgerDirs_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.instanceId_ = instanceId_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+      
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.bookkeeper.proto.DataFormats.CookieFormat) {
+          return mergeFrom((org.apache.bookkeeper.proto.DataFormats.CookieFormat)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+      
+      public Builder mergeFrom(org.apache.bookkeeper.proto.DataFormats.CookieFormat other) {
+        if (other == org.apache.bookkeeper.proto.DataFormats.CookieFormat.getDefaultInstance()) return this;
+        if (other.hasBookieHost()) {
+          setBookieHost(other.getBookieHost());
+        }
+        if (other.hasJournalDir()) {
+          setJournalDir(other.getJournalDir());
+        }
+        if (other.hasLedgerDirs()) {
+          setLedgerDirs(other.getLedgerDirs());
+        }
+        if (other.hasInstanceId()) {
+          setInstanceId(other.getInstanceId());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+      
+      public final boolean isInitialized() {
+        if (!hasBookieHost()) {
+          
+          return false;
+        }
+        if (!hasJournalDir()) {
+          
+          return false;
+        }
+        if (!hasLedgerDirs()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder(
+            this.getUnknownFields());
+        while (true) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              this.setUnknownFields(unknownFields.build());
+              onChanged();
+              return this;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                this.setUnknownFields(unknownFields.build());
+                onChanged();
+                return this;
+              }
+              break;
+            }
+            case 10: {
+              bitField0_ |= 0x00000001;
+              bookieHost_ = input.readBytes();
+              break;
+            }
+            case 18: {
+              bitField0_ |= 0x00000002;
+              journalDir_ = input.readBytes();
+              break;
+            }
+            case 26: {
+              bitField0_ |= 0x00000004;
+              ledgerDirs_ = input.readBytes();
+              break;
+            }
+            case 34: {
+              bitField0_ |= 0x00000008;
+              instanceId_ = input.readBytes();
+              break;
+            }
+          }
+        }
+      }
+      
+      private int bitField0_;
+      
+      // required string bookieHost = 1;
+      private java.lang.Object bookieHost_ = "";
+      public boolean hasBookieHost() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      public String getBookieHost() {
+        java.lang.Object ref = bookieHost_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          bookieHost_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
+      }
+      public Builder setBookieHost(String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        bookieHost_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearBookieHost() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        bookieHost_ = getDefaultInstance().getBookieHost();
+        onChanged();
+        return this;
+      }
+      void setBookieHost(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000001;
+        bookieHost_ = value;
+        onChanged();
+      }
+      
+      // required string journalDir = 2;
+      private java.lang.Object journalDir_ = "";
+      public boolean hasJournalDir() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      public String getJournalDir() {
+        java.lang.Object ref = journalDir_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          journalDir_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
+      }
+      public Builder setJournalDir(String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        journalDir_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearJournalDir() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        journalDir_ = getDefaultInstance().getJournalDir();
+        onChanged();
+        return this;
+      }
+      void setJournalDir(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        journalDir_ = value;
+        onChanged();
+      }
+      
+      // required string ledgerDirs = 3;
+      private java.lang.Object ledgerDirs_ = "";
+      public boolean hasLedgerDirs() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      public String getLedgerDirs() {
+        java.lang.Object ref = ledgerDirs_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          ledgerDirs_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
+      }
+      public Builder setLedgerDirs(String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        ledgerDirs_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearLedgerDirs() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        ledgerDirs_ = getDefaultInstance().getLedgerDirs();
+        onChanged();
+        return this;
+      }
+      void setLedgerDirs(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000004;
+        ledgerDirs_ = value;
+        onChanged();
+      }
+      
+      // optional string instanceId = 4;
+      private java.lang.Object instanceId_ = "";
+      public boolean hasInstanceId() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      public String getInstanceId() {
+        java.lang.Object ref = instanceId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          instanceId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
+      }
+      public Builder setInstanceId(String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000008;
+        instanceId_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearInstanceId() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        instanceId_ = getDefaultInstance().getInstanceId();
+        onChanged();
+        return this;
+      }
+      void setInstanceId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000008;
+        instanceId_ = value;
+        onChanged();
+      }
+      
+      // @@protoc_insertion_point(builder_scope:CookieFormat)
+    }
+    
+    static {
+      defaultInstance = new CookieFormat(true);
+      defaultInstance.initFields();
+    }
+    
+    // @@protoc_insertion_point(class_scope:CookieFormat)
+  }
+  
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_LedgerMetadataFormat_descriptor;
   private static
@@ -2481,6 +3162,11 @@ public final class DataFormats {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_UnderreplicatedLedgerFormat_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_CookieFormat_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_CookieFormat_fieldAccessorTable;
   
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -2504,7 +3190,10 @@ public final class DataFormats {
       "\n\004HMAC\020\002\"@\n\037LedgerRereplicationLayoutFor" +
       "mat\022\014\n\004type\030\001 \002(\t\022\017\n\007version\030\002 \002(\005\".\n\033Un" +
       "derreplicatedLedgerFormat\022\017\n\007replica\030\001 \003" +
-      "(\tB\037\n\033org.apache.bookkeeper.protoH\001"
+      "(\t\"^\n\014CookieFormat\022\022\n\nbookieHost\030\001 \002(\t\022\022" +
+      "\n\njournalDir\030\002 \002(\t\022\022\n\nledgerDirs\030\003 \002(\t\022\022" +
+      "\n\ninstanceId\030\004 \001(\tB\037\n\033org.apache.bookkee" +
+      "per.protoH\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -2543,6 +3232,14 @@ public final class DataFormats {
               new java.lang.String[] { "Replica", },
               org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat.class,
               org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat.Builder.class);
+          internal_static_CookieFormat_descriptor =
+            getDescriptor().getMessageTypes().get(3);
+          internal_static_CookieFormat_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_CookieFormat_descriptor,
+              new java.lang.String[] { "BookieHost", "JournalDir", "LedgerDirs", "InstanceId", },
+              org.apache.bookkeeper.proto.DataFormats.CookieFormat.class,
+              org.apache.bookkeeper.proto.DataFormats.CookieFormat.Builder.class);
           return null;
         }
       };

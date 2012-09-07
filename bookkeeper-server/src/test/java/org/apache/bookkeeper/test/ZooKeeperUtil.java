@@ -26,17 +26,11 @@ import java.io.IOException;
 
 import java.net.InetSocketAddress;
 
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.commons.io.FileUtils;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
@@ -72,25 +66,6 @@ public class ZooKeeperUtil {
         return zkc;
     }
 
-    public ZooKeeper getNewZooKeeperClient() throws Exception {
-        final CountDownLatch latch = new CountDownLatch(1);
-        ZooKeeper zkc = new ZooKeeper(getZooKeeperConnectString(), 10000,
-                new Watcher() {
-                    @Override
-                    public void process(WatchedEvent event) {
-                        // handle session disconnects and expires
-                        if (event.getState().equals(Watcher.Event.KeeperState.SyncConnected)) {
-                            latch.countDown();
-                        }
-                    }
-                });
-        if (!latch.await(10000, TimeUnit.MILLISECONDS)) {
-            zkc.close();
-            fail("Could not connect to zookeeper server");
-        }
-        return zkc;
-    }
-
     public String getZooKeeperConnectString() {
         return connectString;
     }
@@ -115,8 +90,8 @@ public class ZooKeeperUtil {
 
         // create a zookeeper client
         LOG.debug("Instantiate ZK Client");
-        final CountDownLatch latch = new CountDownLatch(1);
-        zkc = getNewZooKeeperClient();
+        zkc = ZkUtils.createConnectedZookeeperClient(
+                getZooKeeperConnectString(), 10000);
 
         // initialize the zk client with values
         zkc.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);

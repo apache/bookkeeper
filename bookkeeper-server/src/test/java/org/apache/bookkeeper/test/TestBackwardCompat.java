@@ -34,7 +34,11 @@ import org.junit.Before;
 import org.junit.After;
 import static org.junit.Assert.*;
 
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.FileSystemUpgrade;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 
 public class TestBackwardCompat {
     static Logger LOG = LoggerFactory.getLogger(TestBackwardCompat.class);
@@ -347,6 +351,60 @@ public class TestBackwardCompat {
                 if (bk != null) {
                     bk.close();
                 }
+            }
+        }
+    }
+
+    /*
+     * Test old cookie accessing the new version formatted cluster.
+     */
+    @Test
+    public void testOldCookieAccessingNewCluster() throws Exception {
+        File journalDir = File.createTempFile("bookie", "journal");
+        journalDir.delete();
+        journalDir.mkdir();
+        File ledgerDir = File.createTempFile("bookie", "ledger");
+        ledgerDir.delete();
+        ledgerDir.mkdir();
+
+        int port = nextPort++;
+
+        // start old server
+        Server410 s410 = new Server410(journalDir, ledgerDir, port);
+        s410.start();
+
+        Ledger410 l410 = Ledger410.newLedger();
+        l410.write100();
+        l410.getId();
+        l410.close();
+        s410.stop();
+
+        // Format the metadata using current version
+        ServerCurrent currentServer = new ServerCurrent(journalDir, ledgerDir,
+                port);
+        BookKeeperAdmin.format(new ClientConfiguration(currentServer.conf),
+                false, true);
+        // start the current version server with old version cookie
+        try {
+            currentServer.start();
+            fail("Bookie should not start with old cookie");
+        } catch (BookieException e) {
+            assertTrue("Old Cookie should not be able to access", e
+                    .getMessage().contains("instanceId"));
+        } finally {
+            currentServer.stop();
+        }
+
+        // Format the bookie also and restart
+        assertTrue("Format should be success",
+                Bookie.format(currentServer.conf, false, true));
+        try {
+            currentServer = null;
+            currentServer = new ServerCurrent(journalDir, ledgerDir, port);
+            currentServer.start();
+        } finally {
+            if (null != currentServer) {
+                currentServer.stop();
             }
         }
     }

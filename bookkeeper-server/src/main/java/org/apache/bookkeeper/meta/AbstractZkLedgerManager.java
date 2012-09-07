@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Map;
 
+import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.BKException;
@@ -358,6 +359,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager, ActiveLedgerMan
         if (AVAILABLE_NODE.equals(znode)
                 || COOKIES_NODE.equals(znode)
                 || LedgerLayout.LAYOUT_ZNODE.equals(znode)
+                || Bookie.INSTANCEID.equals(znode)
                 || ZkLedgerUnderreplicationManager.UNDER_REPLICATION_NODE
                         .equals(znode)) {
             return true;

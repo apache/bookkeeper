@@ -21,6 +21,7 @@ package org.apache.bookkeeper.bookie;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Formatter;
 import java.util.HashMap;
@@ -29,6 +30,9 @@ import java.util.Map;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.Journal.LastLogMark;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.Tool;
@@ -36,6 +40,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -45,7 +50,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Bookie Shell to read/check bookie files.
+ * Bookie Shell is to provide utilities for users to administer a bookkeeper cluster.
  */
 public class BookieShell implements Tool {
 
@@ -53,6 +58,9 @@ public class BookieShell implements Tool {
 
     static final String ENTRY_FORMATTER_CLASS = "entryFormatterClass";
 
+    static final String CMD_METAFORMAT = "metaformat";
+    static final String CMD_BOOKIEFORMAT = "bookieformat";
+    static final String CMD_RECOVER = "recover";
     static final String CMD_LEDGER = "ledger";
     static final String CMD_READLOG = "readlog";
     static final String CMD_READJOURNAL = "readjournal";
@@ -105,6 +113,160 @@ public class BookieShell implements Tool {
             HelpFormatter hf = new HelpFormatter();
             System.err.println(cmdName + ": " + getDescription());
             hf.printHelp(getUsage(), getOptions());
+        }
+    }
+
+    /**
+     * Format the bookkeeper metadata present in zookeeper
+     */
+    class MetaFormatCmd extends MyCommand {
+        Options opts = new Options();
+
+        MetaFormatCmd() {
+            super(CMD_METAFORMAT);
+            opts.addOption("n", "nonInteractive", false,
+                    "Whether to confirm if old data exists..?");
+            opts.addOption("f", "force", false,
+                    "If [nonInteractive] is specified, then whether"
+                            + " to force delete the old data without prompt.");
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Format bookkeeper metadata in zookeeper";
+        }
+
+        @Override
+        String getUsage() {
+            return "metaformat [-nonInteractive] [-force]";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            boolean interactive = (!cmdLine.hasOption("n"));
+            boolean force = cmdLine.hasOption("f");
+
+            ClientConfiguration adminConf = new ClientConfiguration(bkConf);
+            boolean result = BookKeeperAdmin.format(adminConf, interactive,
+                    force);
+            return (result) ? 0 : 1;
+        }
+    }
+
+    /**
+     * Formats the local data present in current bookie server
+     */
+    class BookieFormatCmd extends MyCommand {
+        Options opts = new Options();
+
+        public BookieFormatCmd() {
+            super(CMD_BOOKIEFORMAT);
+            opts.addOption("n", "nonInteractive", false,
+                    "Whether to confirm if old data exists..?");
+            opts.addOption("f", "force", false,
+                    "If [nonInteractive] is specified, then whether"
+                            + " to force delete the old data without prompt..?");
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Format the current server contents";
+        }
+
+        @Override
+        String getUsage() {
+            return "bookieformat [-nonInteractive] [-force]";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            boolean interactive = (!cmdLine.hasOption("n"));
+            boolean force = cmdLine.hasOption("f");
+
+            ServerConfiguration conf = new ServerConfiguration(bkConf);
+            boolean result = Bookie.format(conf, interactive, force);
+            return (result) ? 0 : 1;
+        }
+    }
+
+    /**
+     * Recover command for ledger data recovery for failed bookie
+     */
+    class RecoverCmd extends MyCommand {
+        Options opts = new Options();
+
+        public RecoverCmd() {
+            super(CMD_RECOVER);
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Recover the ledger data for failed bookie";
+        }
+
+        @Override
+        String getUsage() {
+            return "recover <bookieSrc> [bookieDest]";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            String[] args = cmdLine.getArgs();
+            if (args.length < 1) {
+                throw new MissingArgumentException(
+                        "'bookieSrc' argument required");
+            }
+
+            ClientConfiguration adminConf = new ClientConfiguration(bkConf);
+            BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
+            try {
+                return bkRecovery(admin, args);
+            } finally {
+                if (null != admin) {
+                    admin.close();
+                }
+            }
+        }
+
+        private int bkRecovery(BookKeeperAdmin bkAdmin, String[] args)
+                throws InterruptedException, BKException {
+            final String bookieSrcString[] = args[0].split(":");
+            if (bookieSrcString.length != 2) {
+                System.err.println("BookieSrc inputted has invalid format"
+                        + "(host:port expected): " + args[0]);
+                return -1;
+            }
+            final InetSocketAddress bookieSrc = new InetSocketAddress(
+                    bookieSrcString[0], Integer.parseInt(bookieSrcString[1]));
+            InetSocketAddress bookieDest = null;
+            if (args.length >= 2) {
+                final String bookieDestString[] = args[1].split(":");
+                if (bookieDestString.length < 2) {
+                    System.err.println("BookieDest inputted has invalid format"
+                            + "(host:port expected): " + args[1]);
+                    return -1;
+                }
+                bookieDest = new InetSocketAddress(bookieDestString[0],
+                        Integer.parseInt(bookieDestString[1]));
+            }
+
+            bkAdmin.recoverBookieData(bookieSrc, bookieDest);
+            return 0;
         }
     }
 
@@ -334,6 +496,9 @@ public class BookieShell implements Tool {
     final Map<String, Command> commands;
     {
         commands = new HashMap<String, Command>();
+        commands.put(CMD_METAFORMAT, new MetaFormatCmd());
+        commands.put(CMD_BOOKIEFORMAT, new BookieFormatCmd());
+        commands.put(CMD_RECOVER, new RecoverCmd());
         commands.put(CMD_LEDGER, new LedgerCmd());
         commands.put(CMD_READLOG, new ReadLogCmd());
         commands.put(CMD_READJOURNAL, new ReadJournalCmd());
@@ -355,6 +520,9 @@ public class BookieShell implements Tool {
     private static void printShellUsage() {
         System.err.println("Usage: BookieShell [-conf configuration] <command>");
         System.err.println();
+        System.err.println("       metaformat   [-nonInteractive] [-force]");
+        System.err.println("       bookieformat [-nonInteractive] [-force]");
+        System.err.println("       recover      <bookieSrc> [bookieDest]");
         System.err.println("       ledger      [-meta] <ledger_id>");
         System.err.println("       readlog     [-msg] <entry_log_id|entry_log_file_name>");
         System.err.println("       readjournal [-msg] <journal_id|journal_file_name>");

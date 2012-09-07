@@ -56,3 +56,13 @@ message LedgerRereplicationLayoutFormat {
 message UnderreplicatedLedgerFormat {
     repeated string replica = 1;
 }
+
+/**
+* Cookie format for storing cookie information
+*/
+message CookieFormat {
+    required string bookieHost = 1;
+    required string journalDir = 2;
+    required string ledgerDirs = 3;
+    optional string instanceId = 4;
+}

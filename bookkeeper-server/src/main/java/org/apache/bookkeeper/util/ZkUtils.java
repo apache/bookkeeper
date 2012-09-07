@@ -22,19 +22,30 @@
 package org.apache.bookkeeper.util;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.AsyncCallback;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.AsyncCallback.StringCallback;
 import org.apache.zookeeper.KeeperException.Code;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.Watcher.Event.EventType;
+import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.ZooKeeper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provided utilites for zookeeper access, etc.
  */
 public class ZkUtils {
+    private static final Logger LOG = LoggerFactory.getLogger(ZkUtils.class);
 
     /**
      * Create zookeeper path recursively
@@ -91,4 +102,42 @@ public class ZkUtils {
 
     }
 
+    /**
+     * Get new ZooKeeper client. Waits till the connection is complete. If
+     * connection is not successful within timeout, then throws back exception.
+     * 
+     * @param servers
+     *            ZK servers connection string.
+     * @param timeout
+     *            Session timeout.
+     */
+    public static ZooKeeper createConnectedZookeeperClient(String servers, int timeout)
+            throws IOException, InterruptedException, KeeperException {
+        if (servers == null || servers.isEmpty()) {
+            throw new IllegalArgumentException("servers cannot be empty");
+        }
+        final CountDownLatch zkConnectLatch = new CountDownLatch(1);
+        Watcher connectWatcher = new Watcher() {
+
+            @Override
+            public void process(WatchedEvent event) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Process: " + event.getType() + " "
+                            + event.getPath());
+                }
+                if (event.getType().equals(EventType.None)
+                        && event.getState() == KeeperState.SyncConnected) {
+                    if (zkConnectLatch.getCount() > 0) {
+                        zkConnectLatch.countDown();
+                    }
+                }
+            }
+        };
+        final ZooKeeper newZk = new ZooKeeper(servers, timeout, connectWatcher);
+        if (!zkConnectLatch.await(timeout, TimeUnit.MILLISECONDS)
+                || !newZk.getState().isConnected()) {
+            throw KeeperException.create(KeeperException.Code.CONNECTIONLOSS);
+        }
+        return newZk;
+    }
 }
