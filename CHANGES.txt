@@ -24,6 +24,8 @@ Release 4.1.1 - UNRELEASED
 
         BOOKKEEPER-381: ReadLastConfirmedOp's Logger class name is wrong (surendra via sijie)
 
+        BOOKKEEPER-387: BookKeeper Upgrade is not working. (surendra via sijie)
+
       hedwig-server/
 
         BOOKKEEPER-330: System.currentTimeMillis usage in Hedwig (uma via sijie)

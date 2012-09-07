@@ -195,6 +195,7 @@ public class FileSystemUpgrade {
                 int version = detectPreviousVersion(d);
                 if (version == Cookie.CURRENT_COOKIE_LAYOUT_VERSION) {
                     LOG.info("Directory is current, no need to upgrade");
+                    continue;
                 }
                 try {
                     File curDir = new File(d, Bookie.CURRENT_DIR);
@@ -230,6 +231,11 @@ public class FileSystemUpgrade {
                     throw new BookieException.UpgradeException(ioe);
                 }
             }
+
+            if (deferredMoves.isEmpty()) {
+                return;
+            }
+
             try {
                 c.writeToZooKeeper(zk, conf);
             } catch (KeeperException ke) {
