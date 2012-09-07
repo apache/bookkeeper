@@ -78,6 +78,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-395: HDFS dep transitively depends on a busted pom (Stu Hood via sijie)
 
+        BOOKKEEPER-387: BookKeeper Upgrade is not working. (surendra via sijie)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

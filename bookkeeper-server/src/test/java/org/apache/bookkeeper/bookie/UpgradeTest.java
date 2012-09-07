@@ -214,6 +214,23 @@ public class UpgradeTest {
     }
 
     @Test
+    public void testUpgradeCurrent() throws Exception {
+        String journalDir = newV2JournalDirectory();
+        String ledgerDir = newV2LedgerDirectory();
+        testUpgradeProceedure(zkutil.getZooKeeperConnectString(), journalDir, ledgerDir);
+        // Upgrade again
+        ServerConfiguration conf = new ServerConfiguration()
+            .setZkServers(zkutil.getZooKeeperConnectString())
+            .setJournalDirName(journalDir)
+            .setLedgerDirNames(new String[] { ledgerDir })
+            .setBookiePort(3181);
+        FileSystemUpgrade.upgrade(conf); // should work fine with current directory
+        Bookie b = new Bookie(conf);
+        b.start();
+        b.shutdown();
+    }
+
+    @Test
     public void testCommandLine() throws Exception {
         PrintStream origerr = System.err;
         PrintStream origout = System.out;
