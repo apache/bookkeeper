@@ -26,11 +26,15 @@ For performance, we require each server to have at least two disks. It is possib
 
 For ZooKeeper, there is no constraint with respect to the number of replicas. Having a single machine running ZooKeeper in standalone mode is sufficient for BookKeeper. For resilience purposes, it might be a good idea to run ZooKeeper in quorum mode with multiple servers. Please refer to the ZooKeeper documentation for detail on how to configure ZooKeeper with multiple replicas.
 
-h2. Running bookies
+h2. Starting and Stopping Bookies
 
-To run a bookie, we execute the following command:
+To *start* a bookie, execute the following command:
 
+* To run a bookie in the foreground:
 @bookkeeper-server/bin/bookkeeper bookie@
+
+* To run a bookie in the background:
+@bookkeeper-server/bin/bookkeeper-daemon.sh start bookie@
 
 The configuration parameters can be set in bookkeeper-server/conf/bk_server.conf.
 
@@ -42,6 +46,11 @@ The important parameters are:
 * @ledgerDir@, Path for Ledger Device (stores ledger entries); 
 
 Ideally, @journalDir@ and @ledgerDir@ are each in a different device. See "Bookie Configuration Parameters":./bookieConfigParams.html for a full list of configuration parameters.
+
+To *stop* a bookie running in the background, execute the following command:
+
+@bookkeeper-server/bin/bookkeeper-daemon.sh stop bookie [-force]@
+@-force@ is optional, which is used to stop the bookie forcefully, if the bookie server is not stopped gracefully within the _BOOKIE_STOP_TIMEOUT_ (environment variable), which is 30 seconds, by default.
 
 h3. Upgrading
 
