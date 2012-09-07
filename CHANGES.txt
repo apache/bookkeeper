@@ -40,6 +40,10 @@ Release 4.1.1 - UNRELEASED
 
         BOOKKEEPER-372: Check service name in bookie start/stop script. (nijel via sjie)
 
+      hedwig-server:
+
+        BOOKKEEPER-329: provide stop scripts for hub server (sijie)
+
 Release 4.1.0 - 2012-06-07
 
   Non-backward compatible changes:

@@ -34,5 +34,14 @@
 # Log4j configuration file
 # HEDWIG_LOG_CONF=
 
+# Logs location
+# HEDWIG_LOG_DIR=
+
 # Extra options to be passed to the jvm
 # HEDWIG_EXTRA_OPTS=
+
+#Folder where the hedwig server PID file should be stored
+#HEDWIG_PID_DIR=
+
+#Wait time before forcefully kill the hedwig server instance, if the stop is not successful
+#HEDWIG_STOP_TIMEOUT=

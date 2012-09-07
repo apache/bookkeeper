@@ -113,6 +113,9 @@ Environment variables:
    HEDWIG_CONSOLE_CLIENT_CONF   Client part configuration for hedwig console,
                                 used for interacting with hub server.
    HEDWIG_LOG_CONF              Log4j configuration file (default $DEFAULT_LOG_CONF)
+   HEDWIG_ROOT_LOGGER           Root logger for hedwig
+   HEDWIG_LOG_DIR               Log directory to store log files for hedwig server
+   HEDWIG_LOG_FILE              Log file name
    HEDWIG_EXTRA_OPTS            Extra options to be passed to the jvm
 
 These variable can also be set in conf/hwenv.sh
@@ -148,6 +151,18 @@ OPTS="-cp $HEDWIG_CLASSPATH $OPTS $HEDWIG_EXTRA_OPTS"
 # Disable ipv6 as it can cause issues
 OPTS="$OPTS -Djava.net.preferIPv4Stack=true"
 
+# log directory & file
+HEDWIG_ROOT_LOGGER=${HEDWIG_ROOT_LOGGER:-"INFO,CONSOLE"}
+HEDWIG_LOG_DIR=${HEDWIG_LOG_DIR:-"$HW_HOME/logs"}
+HEDWIG_LOG_FILE=${HEDWIG_LOG_FILE:-"hedwig-server.log"}
+
+# Configure log configuration system properties
+OPTS="$OPTS -Dhedwig.root.logger=$HEDWIG_ROOT_LOGGER"
+OPTS="$OPTS -Dhedwig.log.dir=$HEDWIG_LOG_DIR"
+OPTS="$OPTS -Dhedwig.log.file=$HEDWIG_LOG_FILE"
+
+# Change to HW_HOME to support relative paths
+cd "$BK_HOME"
 if [ $COMMAND == "server" ]; then
     exec java $OPTS $JMX_ARGS org.apache.hedwig.server.netty.PubSubServer $HEDWIG_SERVER_CONF $@
 elif [ $COMMAND == "console" ]; then
