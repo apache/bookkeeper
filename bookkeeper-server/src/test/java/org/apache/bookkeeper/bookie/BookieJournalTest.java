@@ -221,7 +221,7 @@ public class BookieJournalTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
         Bookie b = new Bookie(conf);
-        b.start();
+        b.readJournal();
 
         b.readEntry(1, 100);
         try {

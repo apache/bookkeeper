@@ -138,6 +138,10 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
 
     @Override
     public void garbageCollectLedgers(GarbageCollector gc) {
+        if (null == zk) {
+            LOG.warn("Skip garbage collecting ledgers because there is no ZooKeeper handle.");
+            return;
+        }
         try {
             // create a snapshot first
             Map<Long, Boolean> bkActiveLedgers = activeLedgers.snapshot();

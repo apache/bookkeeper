@@ -80,6 +80,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-387: BookKeeper Upgrade is not working. (surendra via sijie)
 
+        BOOKKEEPER-383: NPE in BookieJournalTest  (sijie via ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)
