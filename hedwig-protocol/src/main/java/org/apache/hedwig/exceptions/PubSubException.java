@@ -18,6 +18,7 @@
 package org.apache.hedwig.exceptions;
 
 import java.util.Collection;
+import java.util.Iterator;
 
 import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
 
@@ -195,9 +196,6 @@ public abstract class PubSubException extends Exception {
         }
     }
 
-    /*
-     * Insert new ones here
-     */
     public static class UncertainStateException extends PubSubException {
         public UncertainStateException(String msg) {
             super(StatusCode.UNCERTAIN_STATE, msg);
@@ -218,19 +216,23 @@ public abstract class PubSubException extends Exception {
     public static class CompositeException extends PubSubException {
         private final Collection<PubSubException> exceptions;
         public CompositeException(Collection<PubSubException> exceptions) {
-            super(StatusCode.COMPOSITE, "composite exception");
+            super(StatusCode.COMPOSITE, compositeMessage(exceptions));
             this.exceptions = exceptions;
         }
+
         public Collection<PubSubException> getExceptions() {
             return exceptions;
         }
-        @Override
-        public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append(super.toString()).append('\n');
-            for (PubSubException exception : exceptions)
-                builder.append(exception).append('\n');
-            return builder.toString();
+
+        /** Merges the message fields of the given Exceptions into a one line string. */
+        private static String compositeMessage(Collection<PubSubException> exceptions) {
+            StringBuilder builder = new StringBuilder("Composite exception: [");
+            Iterator<PubSubException> iter = exceptions.iterator();
+            if (iter.hasNext())
+                builder.append(iter.next().getMessage());
+            while (iter.hasNext())
+                builder.append(" :: ").append(iter.next().getMessage());
+            return builder.append("]").toString();
         }
     }
 

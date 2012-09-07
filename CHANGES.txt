@@ -76,6 +76,10 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-386: It should not be possible to replicate a ledger fragment which is at the end of an open ledger (ivank & umamahesh via ivank)
 
+      hedwig-protocol:
+
+        BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)
+
       hedwig-client:
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)
