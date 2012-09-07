@@ -78,10 +78,18 @@
        <scope>compile</scope>
     </dependency>
     <dependency>
-       <groupId>org.apache.hadoop</groupId>
-       <artifactId>hadoop-hdfs</artifactId>
-       <version>0.23.1</version>
-       <scope>compile</scope>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-hdfs</artifactId>
+      <version>0.23.1</version>
+      <scope>compile</scope>
+      <!-- commons-daemon has a malformed pom, which can cause the build to fail in an
+           environment which uses an artifactory cache. -->
+      <exclusions>
+        <exclusion>
+          <groupId>commons-daemon</groupId>
+          <artifactId>commons-daemon</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.zookeeper</groupId>

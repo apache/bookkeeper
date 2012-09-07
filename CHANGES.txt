@@ -76,6 +76,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-386: It should not be possible to replicate a ledger fragment which is at the end of an open ledger (ivank & umamahesh via ivank)
 
+        BOOKKEEPER-395: HDFS dep transitively depends on a busted pom (Stu Hood via sijie)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)
