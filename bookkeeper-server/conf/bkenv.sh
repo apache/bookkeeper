@@ -28,8 +28,17 @@
 # Log4j configuration file
 # BOOKIE_LOG_CONF=
 
+# Logs location
+# BOOKIE_LOG_DIR=
+
 # Extra options to be passed to the jvm
 # BOOKIE_EXTRA_OPTS=
 
 # Add extra paths to the bookkeeper classpath
 # BOOKIE_EXTRA_CLASSPATH=
+
+#Folder where the Bookie server PID file should be stored
+#BOOKIE_PID_DIR=
+
+#Wait time before forcefully kill the Bookie server instance, if the stop is not successful
+#BOOKIE_STOP_TIMEOUT=
