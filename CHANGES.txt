@@ -82,6 +82,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-383: NPE in BookieJournalTest  (sijie via ivank)
 
+        BOOKKEEPER-396: Compilation issue in TestClient.java of BenchMark ( showing this in eclipse) (umamahesh via sijie)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)
