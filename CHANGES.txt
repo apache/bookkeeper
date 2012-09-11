@@ -30,6 +30,10 @@ Release 4.1.1 - UNRELEASED
 
         BOOKKEEPER-330: System.currentTimeMillis usage in Hedwig (uma via sijie)
 
+      bookkeeper-benchmark/
+
+        BOOKKEEPER-396: Compilation issue in TestClient.java of BenchMark ( showing this in eclipse) (umamahesh via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-289: mvn clean doesn't remove test output files (sijie via ivank)
