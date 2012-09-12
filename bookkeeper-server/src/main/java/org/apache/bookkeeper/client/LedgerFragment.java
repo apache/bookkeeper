@@ -63,7 +63,7 @@ public class LedgerFragment {
      * last fragment, then no one will modify this fragment.</li>
      * </ol>
      */
-    boolean isClosed() {
+    public boolean isClosed() {
         return isLedgerClosed;
     }
 

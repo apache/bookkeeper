@@ -57,6 +57,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String ZK_SERVERS = "zkServers";
     // Statistics Parameters
     protected final static String ENABLE_STATISTICS = "enableStatistics";
+    protected final static String OPEN_LEDGER_REREPLICATION_GRACE_PERIOD = "openLedgerRereplicationGracePeriod";
 
     /**
      * Construct a default configuration object
@@ -545,5 +546,31 @@ public class ServerConfiguration extends AbstractConfiguration {
     public ServerConfiguration setMajorCompactionInterval(long interval) {
         setProperty(MAJOR_COMPACTION_INTERVAL, interval);
         return this;
+    }
+    
+    /**
+     * Set the grace period which the rereplication worker will wait before
+     * fencing and rereplicating a ledger fragment which is still being written
+     * to, on bookie failure.
+     * 
+     * The grace period allows the writer to detect the bookie failure, and and
+     * start writing to another ledger fragment. If the writer writes nothing
+     * during the grace period, the rereplication worker assumes that it has
+     * crashed and therefore fences the ledger, preventing any further writes to
+     * that ledger.
+     * 
+     * @see LedgerHandle#openLedger
+     */
+    public void setOpenLedgerRereplicationGracePeriod(String waitTime) {
+        setProperty(OPEN_LEDGER_REREPLICATION_GRACE_PERIOD, waitTime);
+    }
+
+    /**
+     * Get the grace period which the rereplication worker to wait before
+     * fencing and rereplicating a ledger fragment which is still being written
+     * to, on bookie failure.
+     */
+    public long getOpenLedgerRereplicationGracePeriod() {
+        return getLong(OPEN_LEDGER_REREPLICATION_GRACE_PERIOD, 30000);
     }
 }

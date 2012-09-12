@@ -27,4 +27,10 @@ public class ClientUtil {
         return dm.computeDigestAndPackageForSending(entryId, lastAddConfirmed, length,
                                                     data, 0, data.length);
     }
+    
+    /** Returns that whether ledger is in open state */
+    public static boolean isLedgerOpen(LedgerHandle handle) {
+        return !handle.metadata.isClosed();
+    }
+
 }

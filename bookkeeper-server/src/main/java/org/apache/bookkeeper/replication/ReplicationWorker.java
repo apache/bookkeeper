@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.bookkeeper.client.BKException;
@@ -36,6 +38,7 @@ import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
 import org.apache.bookkeeper.client.BKException.BKReadException;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -53,15 +56,17 @@ import org.slf4j.LoggerFactory;
 public class ReplicationWorker implements Runnable {
     private static Logger LOG = LoggerFactory
             .getLogger(ReplicationWorker.class);
-    private LedgerUnderreplicationManager underreplicationManager;
+    final private LedgerUnderreplicationManager underreplicationManager;
     private AbstractConfiguration conf;
     private ZooKeeper zkc;
     private volatile boolean workerRunning = false;
-    private BookKeeperAdmin admin;
+    final private BookKeeperAdmin admin;
     private LedgerChecker ledgerChecker;
     private InetSocketAddress targetBookie;
     private BookKeeper bkc;
     private Thread workerThread;
+    private long openLedgerRereplicationGracePeriod;
+    private Timer pendingReplicationTimer;
 
     /**
      * Replication worker for replicating the ledger fragments from
@@ -77,7 +82,7 @@ public class ReplicationWorker implements Runnable {
      *            local Bookie address.
      */
     public ReplicationWorker(final ZooKeeper zkc,
-            final AbstractConfiguration conf, InetSocketAddress targetBKAddr)
+            final ServerConfiguration conf, InetSocketAddress targetBKAddr)
             throws CompatibilityException, KeeperException,
             InterruptedException, IOException {
         this.zkc = zkc;
@@ -91,6 +96,9 @@ public class ReplicationWorker implements Runnable {
         this.admin = new BookKeeperAdmin(bkc);
         this.ledgerChecker = new LedgerChecker(bkc);
         this.workerThread = new Thread(this);
+        this.openLedgerRereplicationGracePeriod = conf
+                .getOpenLedgerRereplicationGracePeriod();
+        this.pendingReplicationTimer = new Timer("PendingReplicationTimer");
     }
 
     /** Start the replication worker */
@@ -103,54 +111,7 @@ public class ReplicationWorker implements Runnable {
         workerRunning = true;
         while (workerRunning) {
             try {
-                long ledgerIdToReplicate = underreplicationManager
-                        .getLedgerToRereplicate();
-                LOG.info("Going to replicate the fragments of the ledger: "
-                        + ledgerIdToReplicate);
-                LedgerHandle lh;
-                try {
-                    lh = admin.openLedgerNoRecovery(ledgerIdToReplicate);
-                } catch (BKNoSuchLedgerExistsException e) {
-                    // Ledger might have been deleted by user
-                    LOG.info("BKNoSuchLedgerExistsException while opening "
-                            + "ledger for replication. Other clients "
-                            + "might have deleted the ledger. "
-                            + "So, no harm to continue");
-                    underreplicationManager
-                            .markLedgerReplicated(ledgerIdToReplicate);
-                    continue;
-                } catch (BKReadException e) {
-                    LOG.info("BKReadException while"
-                            + " opening ledger for replication."
-                            + " Enough Bookies might not have available"
-                            + "So, no harm to continue");
-                    underreplicationManager
-                            .releaseUnderreplicatedLedger(ledgerIdToReplicate);
-                    continue;
-                } catch (BKBookieHandleNotAvailableException e) {
-                    LOG.info("BKBookieHandleNotAvailableException while"
-                            + " opening ledger for replication."
-                            + " Enough Bookies might not have available"
-                            + "So, no harm to continue");
-                    underreplicationManager
-                            .releaseUnderreplicatedLedger(ledgerIdToReplicate);
-                    continue;
-                }
-
-                boolean isAllFragmentsReplicated = doReplicateFragments(
-                        ledgerIdToReplicate, lh);
-                if (!isAllFragmentsReplicated) {
-                    // Releasing the underReplication ledger lock and compete
-                    // for the replication again for the pending fragments
-                    underreplicationManager
-                            .releaseUnderreplicatedLedger(ledgerIdToReplicate);
-                    continue;
-                }
-
-                LOG.info("Ledger replicated successfully. ledger id is: "
-                        + ledgerIdToReplicate);
-                underreplicationManager
-                        .markLedgerReplicated(ledgerIdToReplicate);
+                rereplicate();
             } catch (InterruptedException e) {
                 shutdown();
                 Thread.currentThread().interrupt();
@@ -173,30 +134,55 @@ public class ReplicationWorker implements Runnable {
     /**
      * Replicates the under replicated fragments from failed bookie ledger to
      * targetBookie
-     * 
-     * @return - false if the re-replication fails for any fragment. Also
-     *         returns false if fragment ensemble contains the target bookie
-     *         (since target bookie already present in the current fragment
-     *         ensemble, it will skip replication for that particular
-     *         fragments). Returns true if all fragments replicated
-     *         successfully.
-     * @throws BKException 
      */
-    private boolean doReplicateFragments(long ledgerIdToReplicate,
-            LedgerHandle lh) throws InterruptedException, BKException {
-        CheckerCallback checkerCb = new CheckerCallback();
-        ledgerChecker.checkLedger(lh, checkerCb);
-        Set<LedgerFragment> fragments = checkerCb.waitAndGetResult();
+    private void rereplicate() throws InterruptedException, BKException,
+            UnavailableException {
+        long ledgerIdToReplicate = underreplicationManager
+                .getLedgerToRereplicate();
+        LOG.info("Going to replicate the fragments of the ledger: "
+                + ledgerIdToReplicate);
+        LedgerHandle lh;
+        try {
+            lh = admin.openLedgerNoRecovery(ledgerIdToReplicate);
+        } catch (BKNoSuchLedgerExistsException e) {
+            // Ledger might have been deleted by user
+            LOG.info("BKNoSuchLedgerExistsException while opening "
+                    + "ledger for replication. Other clients "
+                    + "might have deleted the ledger. "
+                    + "So, no harm to continue");
+            underreplicationManager.markLedgerReplicated(ledgerIdToReplicate);
+            return;
+        } catch (BKReadException e) {
+            LOG.info("BKReadException while"
+                    + " opening ledger for replication."
+                    + " Enough Bookies might not have available"
+                    + "So, no harm to continue");
+            underreplicationManager
+                    .releaseUnderreplicatedLedger(ledgerIdToReplicate);
+            return;
+        } catch (BKBookieHandleNotAvailableException e) {
+            LOG.info("BKBookieHandleNotAvailableException while"
+                    + " opening ledger for replication."
+                    + " Enough Bookies might not have available"
+                    + "So, no harm to continue");
+            underreplicationManager
+                    .releaseUnderreplicatedLedger(ledgerIdToReplicate);
+            return;
+        }
+        Set<LedgerFragment> fragments = getUnderreplicatedFragments(lh);
         LOG.info("Founds fragments " + fragments
                 + " for replication from ledger: " + ledgerIdToReplicate);
-        boolean isTargetBookieExistsInFragmentEnsemble = false;
-        boolean isAllFragmentsReplicated = true;
+
+        boolean foundOpenFragments = false;
         for (LedgerFragment ledgerFragment : fragments) {
-            if (isTargetBookieExistsInFragmentEnsemble(lh, ledgerFragment)) {
+            if (!ledgerFragment.isClosed()) {
+                foundOpenFragments = true;
+                continue;
+            } else if (isTargetBookieExistsInFragmentEnsemble(lh,
+                    ledgerFragment)) {
                 LOG.info("Target Bookie[" + targetBookie
                         + "] found in the fragment ensemble:"
                         + ledgerFragment.getEnsemble());
-                isTargetBookieExistsInFragmentEnsemble = true;
                 continue;
             }
             try {
@@ -204,34 +190,96 @@ public class ReplicationWorker implements Runnable {
             } catch (BKException.BKBookieHandleNotAvailableException e) {
                 LOG.warn("BKBookieHandleNotAvailableException "
                         + "while replicating the fragment", e);
-                isAllFragmentsReplicated = false;
             } catch (BKException.BKLedgerRecoveryException e) {
                 LOG.warn("BKLedgerRecoveryException "
                         + "while replicating the fragment", e);
-                isAllFragmentsReplicated = false;
             }
-
-        }
-        if (isTargetBookieExistsInFragmentEnsemble) {
-            LOG.info("Releasing the lock, as target Bookie found"
-                    + " in the fragments ensemble.");
-            return false;
         }
 
-        // There might be some connectivity issues while replicating,
-        // so, still I am eligible to replicate it, lets retry.
-        if (!isAllFragmentsReplicated) {
-            LOG.info("Could not replicate all fragments."
-                    + "So, Releasing the lock. Let's compete "
-                    + "for the replication again");
-            return false;
+        if (foundOpenFragments) {
+            deferLedgerLockRelease(ledgerIdToReplicate);
+            return;
         }
-
-        // Re-replication success
-        return true;
-
+        
+        fragments = getUnderreplicatedFragments(lh);
+        if (fragments.size() == 0) {
+            LOG.info("Ledger replicated successfully. ledger id is: "
+                    + ledgerIdToReplicate);
+            underreplicationManager.markLedgerReplicated(ledgerIdToReplicate);
+        } else {
+            // Releasing the underReplication ledger lock and compete
+            // for the replication again for the pending fragments
+            underreplicationManager
+                    .releaseUnderreplicatedLedger(ledgerIdToReplicate);
+        }
     }
 
+    /** Gets the under replicated fragments */
+    private Set<LedgerFragment> getUnderreplicatedFragments(LedgerHandle lh)
+            throws InterruptedException {
+        CheckerCallback checkerCb = new CheckerCallback();
+        ledgerChecker.checkLedger(lh, checkerCb);
+        Set<LedgerFragment> fragments = checkerCb.waitAndGetResult();
+        return fragments;
+    }
+
+    /**
+     * Schedules a timer task for releasing the lock which will be scheduled
+     * after open ledger fragment replication time. Ledger will be fenced if it
+     * is still in open state when timer task fired
+     */
+    private void deferLedgerLockRelease(final long ledgerId) {
+        long gracePeriod = this.openLedgerRereplicationGracePeriod;
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                LedgerHandle lh = null;
+                try {
+                    lh = admin.openLedgerNoRecovery(ledgerId);
+                    Set<LedgerFragment> fragments = getUnderreplicatedFragments(lh);
+                    for (LedgerFragment fragment : fragments) {
+                        if (!fragment.isClosed()) {
+                            lh = admin.openLedger(ledgerId);
+                            break;
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    LOG.info("InterruptedException "
+                            + "while replicating fragments", e);
+                } catch (BKException e) {
+                    LOG.error("BKException while fencing the ledger"
+                            + " for rereplication of postponed ledgers", e);
+                } finally {
+                    try {
+                        if (lh != null) {
+                            lh.close();
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        LOG.info("InterruptedException while closing "
+                                + "ledger", e);
+                    } catch (BKException e) {
+                        // Lets go ahead and release the lock. Catch actual
+                        // exception in normal replication flow and take
+                        // action.
+                        LOG.warn("BKException while closing ledger ", e);
+                    } finally {
+                        try {
+                            underreplicationManager
+                                    .releaseUnderreplicatedLedger(ledgerId);
+                        } catch (UnavailableException e) {
+                            shutdown();
+                            LOG.error("UnavailableException "
+                                    + "while replicating fragments", e);
+                        }
+                    }
+                }
+            }
+        };
+        pendingReplicationTimer.schedule(timerTask, gracePeriod);
+    }
+    
     /**
      * Stop the replication worker service
      */
@@ -243,6 +291,7 @@ public class ReplicationWorker implements Runnable {
             LOG.warn("Exception while closing the "
                     + "ZkLedgerUnderrepliationManager", e);
         }
+        this.pendingReplicationTimer.cancel();
         try {
             bkc.close();
         } catch (InterruptedException e) {
