@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.client;
 
+import java.util.List;
 /**
  * This interface determins how entries are distributed among bookies.
  *
@@ -30,21 +31,34 @@ package org.apache.bookkeeper.client;
 interface DistributionSchedule {
 
     /**
-     *
-     * @param entryId
-     * @param replicaIndex
-     * @return index of bookie that should get this replica
+     * return the set of bookie indices to send the message to
      */
-    public int getBookieIndex(long entryId, int replicaIndex);
+    public List<Integer> getWriteSet(long entryId);
 
     /**
-     *
-     * @param entryId
-     * @param bookieIndex
-     * @return -1 if the given bookie index is not a replica for the given
-     *         entryId
+     * An ack set represents the set of bookies from which
+     * a response must be received so that an entry can be
+     * considered to be replicated on a quorum.
      */
-    public int getReplicaIndex(long entryId, int bookieIndex);
+    public interface AckSet {
+        /**
+         * Add a bookie response and check if quorum has been met
+         * @return true if quorum has been met, false otherwise
+         */
+        public boolean addBookieAndCheck(int bookieIndexHeardFrom);
+
+        /**
+         * Invalidate a previous bookie response.
+         * Used for reissuing write requests.
+         */
+        public void removeBookie(int bookie);
+    }
+
+    /**
+     * Returns an ackset object, responses should be checked against this
+     */
+    public AckSet getAckSet();
+
 
     /**
      * Interface to keep track of which bookies in an ensemble, an action

@@ -329,7 +329,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
         ArrayList<InetSocketAddress> firstEnsemble = lh.getLedgerMetadata()
                 .getEnsembles().get(0L);
         InetSocketAddress lastBookieFromEnsemble = firstEnsemble.get(
-                lh.getDistributionSchedule().getBookieIndex(lh.getLastAddPushed(), 0));
+                lh.getDistributionSchedule().getWriteSet(lh.getLastAddPushed()).get(0));
         LOG.info("Killing " + lastBookieFromEnsemble + " from ensemble="
                 + firstEnsemble);
         killBookie(lastBookieFromEnsemble);
@@ -338,7 +338,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
         lh.addEntry(TEST_LEDGER_ENTRY_DATA);
 
         lastBookieFromEnsemble = firstEnsemble.get(
-                lh.getDistributionSchedule().getBookieIndex(lh.getLastAddPushed(), 1));
+                lh.getDistributionSchedule().getWriteSet(lh.getLastAddPushed()).get(1));
         LOG.info("Killing " + lastBookieFromEnsemble + " from ensemble="
                 + firstEnsemble);
         killBookie(lastBookieFromEnsemble);

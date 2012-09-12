@@ -94,7 +94,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     }
 
     void sendRead(ArrayList<InetSocketAddress> ensemble, LedgerEntry entry, int lastErrorCode) {
-        if (entry.nextReplicaIndexToReadFrom >= lh.metadata.getQuorumSize()) {
+        if (entry.nextReplicaIndexToReadFrom >= lh.metadata.getWriteQuorumSize()) {
             // we are done, the read has failed from all replicas, just fail the
             // read
             lh.opCounterSem.release();
@@ -102,7 +102,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             return;
         }
 
-        int bookieIndex = lh.distributionSchedule.getBookieIndex(entry.entryId, entry.nextReplicaIndexToReadFrom);
+        int bookieIndex = lh.distributionSchedule.getWriteSet(entry.entryId).get(entry.nextReplicaIndexToReadFrom);
         entry.nextReplicaIndexToReadFrom++;
         lh.bk.bookieClient.readEntry(ensemble.get(bookieIndex), lh.ledgerId, entry.entryId, 
                                      this, entry);
@@ -110,7 +110,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
     void logErrorAndReattemptRead(LedgerEntry entry, String errMsg, int rc) {
         ArrayList<InetSocketAddress> ensemble = lh.metadata.getEnsemble(entry.entryId);
-        int bookeIndex = lh.distributionSchedule.getBookieIndex(entry.entryId, entry.nextReplicaIndexToReadFrom - 1);
+        int bookeIndex = lh.distributionSchedule.getWriteSet(entry.entryId).get(entry.nextReplicaIndexToReadFrom - 1);
         LOG.error(errMsg + " while reading entry: " + entry.entryId + " ledgerId: " + lh.ledgerId + " from bookie: "
                   + ensemble.get(bookeIndex));
         sendRead(ensemble, entry, rc);

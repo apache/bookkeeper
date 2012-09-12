@@ -256,9 +256,10 @@ public class BookKeeper {
      * authenticate access to a ledger, but also to verify entries in ledgers.
      *
      * @param ensSize
-     *          ensemble size
-     * @param qSize
-     *          quorum size
+     *          number of bookies over which to stripe entries
+     * @param writeQuorumSize
+     *          number of bookies each entry will be written to. each of these bookies
+     *          must acknowledge the entry before the call is completed.
      * @param digestType
      *          digest type, either MAC or CRC32
      * @param passwd
@@ -268,9 +269,54 @@ public class BookKeeper {
      * @param ctx
      *          optional control object
      */
-    public void asyncCreateLedger(final int ensSize, final int qSize, final DigestType digestType,
+    public void asyncCreateLedger(final int ensSize,
+                                  final int writeQuorumSize,
+                                  final DigestType digestType,
+                                  final byte[] passwd, final CreateCallback cb, final Object ctx)
+    {
+        asyncCreateLedger(ensSize, writeQuorumSize, writeQuorumSize, digestType, passwd, cb, ctx);
+    }
+
+    /**
+     * Creates a new ledger asynchronously. Ledgers created with this call have
+     * a separate write quorum and ack quorum size. The write quorum must be larger than
+     * the ack quorum.
+     *
+     * Separating the write and the ack quorum allows the BookKeeper client to continue
+     * writing when a bookie has failed but the failure has not yet been detected. Detecting
+     * a bookie has failed can take a number of seconds, as configured by the read timeout
+     * {@link ClientConfiguration#getReadTimeout()}. Once the bookie failure is detected,
+     * that bookie will be removed from the ensemble.
+     *
+     * The other parameters match those of {@link #asyncCreateLedger(int, int, DigestType, byte[],
+     *                                      AsyncCallback.CreateCallback, Object)}
+     *
+     * @param ensSize
+     *          number of bookies over which to stripe entries
+     * @param writeQuorumSize
+     *          number of bookies each entry will be written to
+     * @param ackQuorumSize
+     *          number of bookies which must acknowledge an entry before the call is completed
+     * @param digestType
+     *          digest type, either MAC or CRC32
+     * @param passwd
+     *          password
+     * @param cb
+     *          createCallback implementation
+     * @param ctx
+     *          optional control object
+     */
+
+    public void asyncCreateLedger(final int ensSize,
+                                  final int writeQuorumSize,
+                                  final int ackQuorumSize,
+                                  final DigestType digestType,
                                   final byte[] passwd, final CreateCallback cb, final Object ctx) {
-        new LedgerCreateOp(BookKeeper.this, ensSize, qSize, digestType, passwd, cb, ctx)
+        if (writeQuorumSize < ackQuorumSize) {
+            throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
+        }
+        new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
+                           ackQuorumSize, digestType, passwd, cb, ctx)
             .initiate();
     }
 
@@ -305,14 +351,34 @@ public class BookKeeper {
      * @throws BKException
      */
     public LedgerHandle createLedger(int ensSize, int qSize,
-                                     DigestType digestType, byte passwd[]) 
+                                     DigestType digestType, byte passwd[])
+            throws InterruptedException, BKException {
+        return createLedger(ensSize, qSize, qSize, digestType, passwd);
+    }
+
+    /**
+     * Synchronous call to create ledger. Parameters match those of
+     * {@link #asyncCreateLedger(int, int, int, DigestType, byte[],
+     *                           AsyncCallback.CreateCallback, Object)}
+     *
+     * @param ensSize
+     * @param writeQuorumSize
+     * @param ackQuorumSize
+     * @param digestType
+     * @param passwd
+     * @return a handle to the newly created ledger
+     * @throws InterruptedException
+     * @throws BKException
+     */
+    public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
+                                     DigestType digestType, byte passwd[])
             throws InterruptedException, BKException {
         SyncCounter counter = new SyncCounter();
         counter.inc();
         /*
          * Calls asynchronous version
          */
-        asyncCreateLedger(ensSize, qSize, digestType, passwd, 
+        asyncCreateLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
                           new SyncCreateCallback(), counter);
 
         /*

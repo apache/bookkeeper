@@ -48,6 +48,10 @@ public final class DataFormats {
     // optional bytes password = 8;
     boolean hasPassword();
     com.google.protobuf.ByteString getPassword();
+    
+    // optional int32 ackQuorumSize = 9;
+    boolean hasAckQuorumSize();
+    int getAckQuorumSize();
   }
   public static final class LedgerMetadataFormat extends
       com.google.protobuf.GeneratedMessage
@@ -767,6 +771,16 @@ public final class DataFormats {
       return password_;
     }
     
+    // optional int32 ackQuorumSize = 9;
+    public static final int ACKQUORUMSIZE_FIELD_NUMBER = 9;
+    private int ackQuorumSize_;
+    public boolean hasAckQuorumSize() {
+      return ((bitField0_ & 0x00000080) == 0x00000080);
+    }
+    public int getAckQuorumSize() {
+      return ackQuorumSize_;
+    }
+    
     private void initFields() {
       quorumSize_ = 0;
       ensembleSize_ = 0;
@@ -776,6 +790,7 @@ public final class DataFormats {
       segment_ = java.util.Collections.emptyList();
       digestType_ = org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType.CRC32;
       password_ = com.google.protobuf.ByteString.EMPTY;
+      ackQuorumSize_ = 0;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -835,6 +850,9 @@ public final class DataFormats {
       if (((bitField0_ & 0x00000040) == 0x00000040)) {
         output.writeBytes(8, password_);
       }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        output.writeInt32(9, ackQuorumSize_);
+      }
       getUnknownFields().writeTo(output);
     }
     
@@ -875,6 +893,10 @@ public final class DataFormats {
       if (((bitField0_ & 0x00000040) == 0x00000040)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(8, password_);
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(9, ackQuorumSize_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -1021,6 +1043,8 @@ public final class DataFormats {
         bitField0_ = (bitField0_ & ~0x00000040);
         password_ = com.google.protobuf.ByteString.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000080);
+        ackQuorumSize_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000100);
         return this;
       }
       
@@ -1096,6 +1120,10 @@ public final class DataFormats {
           to_bitField0_ |= 0x00000040;
         }
         result.password_ = password_;
+        if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
+          to_bitField0_ |= 0x00000080;
+        }
+        result.ackQuorumSize_ = ackQuorumSize_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1158,6 +1186,9 @@ public final class DataFormats {
         }
         if (other.hasPassword()) {
           setPassword(other.getPassword());
+        }
+        if (other.hasAckQuorumSize()) {
+          setAckQuorumSize(other.getAckQuorumSize());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -1263,6 +1294,11 @@ public final class DataFormats {
             case 66: {
               bitField0_ |= 0x00000080;
               password_ = input.readBytes();
+              break;
+            }
+            case 72: {
+              bitField0_ |= 0x00000100;
+              ackQuorumSize_ = input.readInt32();
               break;
             }
           }
@@ -1609,6 +1645,27 @@ public final class DataFormats {
       public Builder clearPassword() {
         bitField0_ = (bitField0_ & ~0x00000080);
         password_ = getDefaultInstance().getPassword();
+        onChanged();
+        return this;
+      }
+      
+      // optional int32 ackQuorumSize = 9;
+      private int ackQuorumSize_ ;
+      public boolean hasAckQuorumSize() {
+        return ((bitField0_ & 0x00000100) == 0x00000100);
+      }
+      public int getAckQuorumSize() {
+        return ackQuorumSize_;
+      }
+      public Builder setAckQuorumSize(int value) {
+        bitField0_ |= 0x00000100;
+        ackQuorumSize_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearAckQuorumSize() {
+        bitField0_ = (bitField0_ & ~0x00000100);
+        ackQuorumSize_ = 0;
         onChanged();
         return this;
       }
@@ -3176,24 +3233,24 @@ public final class DataFormats {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n src/main/proto/DataFormats.proto\"\233\003\n\024L" +
+      "\n src/main/proto/DataFormats.proto\"\262\003\n\024L" +
       "edgerMetadataFormat\022\022\n\nquorumSize\030\001 \002(\005\022" +
       "\024\n\014ensembleSize\030\002 \002(\005\022\016\n\006length\030\003 \002(\003\022\023\n" +
       "\013lastEntryId\030\004 \001(\003\0220\n\005state\030\005 \002(\0162\033.Ledg" +
       "erMetadataFormat.State:\004OPEN\022.\n\007segment\030" +
       "\006 \003(\0132\035.LedgerMetadataFormat.Segment\0224\n\n" +
       "digestType\030\007 \001(\0162 .LedgerMetadataFormat." +
-      "DigestType\022\020\n\010password\030\010 \001(\014\0327\n\007Segment\022" +
-      "\026\n\016ensembleMember\030\001 \003(\t\022\024\n\014firstEntryId\030" +
-      "\002 \002(\003\".\n\005State\022\010\n\004OPEN\020\001\022\017\n\013IN_RECOVERY\020",
-      "\002\022\n\n\006CLOSED\020\003\"!\n\nDigestType\022\t\n\005CRC32\020\001\022\010" +
-      "\n\004HMAC\020\002\"@\n\037LedgerRereplicationLayoutFor" +
-      "mat\022\014\n\004type\030\001 \002(\t\022\017\n\007version\030\002 \002(\005\".\n\033Un" +
-      "derreplicatedLedgerFormat\022\017\n\007replica\030\001 \003" +
-      "(\t\"^\n\014CookieFormat\022\022\n\nbookieHost\030\001 \002(\t\022\022" +
-      "\n\njournalDir\030\002 \002(\t\022\022\n\nledgerDirs\030\003 \002(\t\022\022" +
-      "\n\ninstanceId\030\004 \001(\tB\037\n\033org.apache.bookkee" +
-      "per.protoH\001"
+      "DigestType\022\020\n\010password\030\010 \001(\014\022\025\n\rackQuoru" +
+      "mSize\030\t \001(\005\0327\n\007Segment\022\026\n\016ensembleMember" +
+      "\030\001 \003(\t\022\024\n\014firstEntryId\030\002 \002(\003\".\n\005State\022\010\n",
+      "\004OPEN\020\001\022\017\n\013IN_RECOVERY\020\002\022\n\n\006CLOSED\020\003\"!\n\n" +
+      "DigestType\022\t\n\005CRC32\020\001\022\010\n\004HMAC\020\002\"@\n\037Ledge" +
+      "rRereplicationLayoutFormat\022\014\n\004type\030\001 \002(\t" +
+      "\022\017\n\007version\030\002 \002(\005\".\n\033UnderreplicatedLedg" +
+      "erFormat\022\017\n\007replica\030\001 \003(\t\"^\n\014CookieForma" +
+      "t\022\022\n\nbookieHost\030\001 \002(\t\022\022\n\njournalDir\030\002 \002(" +
+      "\t\022\022\n\nledgerDirs\030\003 \002(\t\022\022\n\ninstanceId\030\004 \001(" +
+      "\tB\037\n\033org.apache.bookkeeper.protoH\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -3205,7 +3262,7 @@ public final class DataFormats {
           internal_static_LedgerMetadataFormat_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_LedgerMetadataFormat_descriptor,
-              new java.lang.String[] { "QuorumSize", "EnsembleSize", "Length", "LastEntryId", "State", "Segment", "DigestType", "Password", },
+              new java.lang.String[] { "QuorumSize", "EnsembleSize", "Length", "LastEntryId", "State", "Segment", "DigestType", "Password", "AckQuorumSize", },
               org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.class,
               org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.Builder.class);
           internal_static_LedgerMetadataFormat_Segment_descriptor =

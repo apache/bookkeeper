@@ -165,6 +165,17 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
     }
 
     /**
+     * Get bookie address for bookie at index
+     */
+    public InetSocketAddress getBookie(int index) throws IllegalArgumentException {
+        if (bs.size() <= index || index < 0) {
+            throw new IllegalArgumentException("Invalid index, there are only " + bs.size()
+                                               + " bookies. Asked for " + index);
+        }
+        return bs.get(index).getLocalAddress();
+    }
+
+    /**
      * Kill a bookie by its socket address
      *
      * @param addr
@@ -216,14 +227,13 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      *          Socket Address
      * @param seconds
      *          Sleep seconds
-     * @param l
-     *          Count Down Latch
+     * @return Count Down latch which will be counted down when sleep finishes
      * @throws InterruptedException
      * @throws IOException
      */
-    public void sleepBookie(InetSocketAddress addr, final int seconds,
-                            final CountDownLatch l)
+    public CountDownLatch sleepBookie(InetSocketAddress addr, final int seconds)
             throws InterruptedException, IOException {
+        final CountDownLatch l = new CountDownLatch(1);
         final String name = "BookieJournal-" + addr.getPort();
         Thread[] allthreads = new Thread[Thread.activeCount()];
         Thread.enumerate(allthreads);
@@ -236,6 +246,41 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
                             t.suspend();
                             l.countDown();
                             Thread.sleep(seconds*1000);
+                            t.resume();
+                        } catch (Exception e) {
+                            LOG.error("Error suspending thread", e);
+                        }
+                    }
+                };
+                sleeper.start();
+                return l;
+            }
+        }
+        throw new IOException("Bookie thread not found");
+    }
+
+    /**
+     * Sleep a bookie until I count down the latch
+     *
+     * @param addr
+     *          Socket Address
+     * @param latch
+     *          Latch to wait on
+     * @throws InterruptedException
+     * @throws IOException
+     */
+    public void sleepBookie(InetSocketAddress addr, final CountDownLatch l)
+            throws InterruptedException, IOException {
+        final String name = "BookieJournal-" + addr.getPort();
+        Thread[] allthreads = new Thread[Thread.activeCount()];
+        Thread.enumerate(allthreads);
+        for (final Thread t : allthreads) {
+            if (t.getName().equals(name)) {
+                Thread sleeper = new Thread() {
+                    public void run() {
+                        try {
+                            t.suspend();
+                            l.await();
                             t.resume();
                         } catch (Exception e) {
                             LOG.error("Error suspending thread", e);

@@ -56,7 +56,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
     private void createLedgers(int numLedgers, final Set<Long> createdLedgers) {
         final AtomicInteger expected = new AtomicInteger(numLedgers);
         for (int i=0; i<numLedgers; i++) {
-            getLedgerManager().createLedger(new LedgerMetadata(1, 1, DigestType.MAC, "".getBytes()),
+            getLedgerManager().createLedger(new LedgerMetadata(1, 1, 1, DigestType.MAC, "".getBytes()),
                 new GenericCallback<Long>() {
                 @Override
                 public void operationComplete(int rc, Long ledgerId) {

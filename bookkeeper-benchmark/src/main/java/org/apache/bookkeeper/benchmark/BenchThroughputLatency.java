@@ -78,7 +78,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         }
     }
 
-    public BenchThroughputLatency(int ensemble, int qSize, byte[] passwd,
+    public BenchThroughputLatency(int ensemble, int writeQuorumSize, int ackQuorumSize, byte[] passwd,
             int numberOfLedgers, int sendLimit, ClientConfiguration conf)
             throws KeeperException, IOException, InterruptedException {
         this.sem = new Semaphore(conf.getThrottleValue());
@@ -91,9 +91,11 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
             lh = new LedgerHandle[this.numberOfLedgers];
 
             for(int i = 0; i < this.numberOfLedgers; i++) {
-                lh[i] = bk.createLedger(ensemble, qSize, BookKeeper.DigestType.CRC32,
+                lh[i] = bk.createLedger(ensemble, writeQuorumSize,
+                                        ackQuorumSize,
+                                        BookKeeper.DigestType.CRC32,
                                         passwd);
-                LOG.info("Ledger Handle: " + lh[i].getId());
+                LOG.debug("Ledger Handle: " + lh[i].getId());
             }
         } catch (BKException e) {
             e.printStackTrace();
@@ -233,6 +235,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         options.addOption("entrysize", true, "Entry size (bytes), default 1024");
         options.addOption("ensemble", true, "Ensemble size, default 3");
         options.addOption("quorum", true, "Quorum size, default 2");
+        options.addOption("ackQuorum", true, "Ack quorum size, default is same as quorum");
         options.addOption("throttle", true, "Max outstanding requests, default 10000");
         options.addOption("ledgers", true, "Number of ledgers, default 1");
         options.addOption("zookeeper", true, "Zookeeper ensemble, default \"localhost:2181\"");
@@ -261,6 +264,10 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         int ledgers = Integer.valueOf(cmd.getOptionValue("ledgers", "1"));
         int ensemble = Integer.valueOf(cmd.getOptionValue("ensemble", "3"));
         int quorum = Integer.valueOf(cmd.getOptionValue("quorum", "2"));
+        int ackQuorum = quorum;
+        if (cmd.hasOption("ackQuorum")) {
+            ackQuorum = Integer.valueOf(cmd.getOptionValue("ackQuorum"));
+        }
         int throttle = Integer.valueOf(cmd.getOptionValue("throttle", "10000"));
         int sendLimit = Integer.valueOf(cmd.getOptionValue("sendlimit", "20000000"));
 
@@ -313,8 +320,8 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
 
 
         // Now do the benchmark
-        BenchThroughputLatency bench = new BenchThroughputLatency(ensemble, quorum, passwd,
-                                                                  ledgers, sendLimit, conf);
+        BenchThroughputLatency bench = new BenchThroughputLatency(ensemble, quorum, ackQuorum,
+                passwd, ledgers, sendLimit, conf);
         bench.setEntryData(data);
         thread = new Thread(bench);
         ZooKeeper zk = null;
@@ -439,8 +446,8 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
             }
         }
 
-        BenchThroughputLatency warmup = new BenchThroughputLatency(bookies, bookies, passwd,
-                ledgers, 50000, conf);
+        BenchThroughputLatency warmup = new BenchThroughputLatency(bookies, bookies, bookies, passwd,
+                                                                   ledgers, 10000, conf);
         warmup.setEntryData(data);
         Thread thread = new Thread(warmup);
         thread.start();

@@ -230,6 +230,8 @@ public class ClientConfiguration extends AbstractConfiguration {
      * seconds we wait without hearing a response from a bookie
      * before we consider it failed.
      *
+     * The default is 5 seconds.
+     *
      * @return the current read timeout in seconds
      */
     public int getReadTimeout() {

@@ -132,6 +132,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-300: Create Bookie format command (Vinay via sijie)
 
+        BOOKKEEPER-208: Separate write quorum from ack quorum (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)

@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Queue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BKException;
@@ -74,6 +75,7 @@ public class LedgerHandle {
      */
     final static public long INVALID_ENTRY_ID = BookieProtocol.INVALID_ENTRY_ID;
 
+    final AtomicInteger blockAddCompletions = new AtomicInteger(0);
     final Queue<PendingAddOp> pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
 
     LedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
@@ -98,7 +100,7 @@ public class LedgerHandle {
         macManager = DigestManager.instantiate(ledgerId, password, digestType);
         this.ledgerKey = MacDigestManager.genDigest("ledger", password);
         distributionSchedule = new RoundRobinDistributionSchedule(
-                metadata.getQuorumSize(), metadata.getEnsembleSize());
+                metadata.getWriteQuorumSize(), metadata.getAckQuorumSize(), metadata.getEnsembleSize());
     }
 
     /**
@@ -641,8 +643,9 @@ public class LedgerHandle {
         // Start from the head of the queue and proceed while there are
         // entries that have had all their responses come back
         PendingAddOp pendingAddOp;
-        while ((pendingAddOp = pendingAddOps.peek()) != null) {
-            if (pendingAddOp.numResponsesPending != 0) {
+        while ((pendingAddOp = pendingAddOps.peek()) != null
+               && blockAddCompletions.get() == 0) {
+            if (!pendingAddOp.completed) {
                 return;
             }
             pendingAddOps.remove();
@@ -660,6 +663,7 @@ public class LedgerHandle {
                       + bookieIndex);
         }
         final ArrayList<InetSocketAddress> newEnsemble = new ArrayList<InetSocketAddress>();
+        blockAddCompletions.incrementAndGet();
         final long newEnsembleStartEntry = lastAddConfirmed + 1;
 
         // avoid parallel ensemble changes to same ensemble.
@@ -735,6 +739,8 @@ public class LedgerHandle {
                         handleUnrecoverableErrorDuringAdd(rc);
                         return;
                     }
+                    blockAddCompletions.decrementAndGet();
+
                     // the failed bookie has been replaced
                     unsetSuccessAndSendWriteRequest(ensembleInfo.bookieIndex);
                 }
@@ -815,6 +821,7 @@ public class LedgerHandle {
                 }
             } else {
                 // the failed bookie has been replaced
+                blockAddCompletions.decrementAndGet();
                 unsetSuccessAndSendWriteRequest(ensembleInfo.bookieIndex);
             }
             return true;

@@ -19,6 +19,10 @@ package org.apache.bookkeeper.client;
 
 import org.apache.bookkeeper.util.MathUtils;
 
+import java.util.List;
+import java.util.ArrayList;
+import java.util.HashSet;
+
 /**
  * A specific {@link DistributionSchedule} that places entries in round-robin
  * fashion. For ensemble size 3, and quorum size 2, Entry 0 goes to bookie 0 and
@@ -27,29 +31,39 @@ import org.apache.bookkeeper.util.MathUtils;
  *
  */
 class RoundRobinDistributionSchedule implements DistributionSchedule {
-    int quorumSize;
-    int ensembleSize;
+    private int writeQuorumSize;
+    private int ackQuorumSize;
+    private int ensembleSize;
 
 
-    public RoundRobinDistributionSchedule(int quorumSize, int ensembleSize) {
-        this.quorumSize = quorumSize;
+    public RoundRobinDistributionSchedule(int writeQuorumSize, int ackQuorumSize, int ensembleSize) {
+        this.writeQuorumSize = writeQuorumSize;
+        this.ackQuorumSize = ackQuorumSize;
         this.ensembleSize = ensembleSize;
     }
 
     @Override
-    public int getBookieIndex(long entryId, int replicaIndex) {
-        return (int) ((entryId + replicaIndex) % ensembleSize);
+    public List<Integer> getWriteSet(long entryId) {
+        List<Integer> set = new ArrayList<Integer>();
+        for (int i = 0; i < this.writeQuorumSize; i++) {
+            set.add((int)((entryId + i) % ensembleSize));
+        }
+        return set;
     }
 
     @Override
-    public int getReplicaIndex(long entryId, int bookieIndex) {
-        // NOTE: Java's % operator returns the sign of the dividend and is hence
-        // not always positive
+    public AckSet getAckSet() {
+        final HashSet<Integer> ackSet = new HashSet<Integer>();
+        return new AckSet() {
+            public boolean addBookieAndCheck(int bookieIndexHeardFrom) {
+                ackSet.add(bookieIndexHeardFrom);
+                return ackSet.size() >= ackQuorumSize;
+            }
 
-        int replicaIndex = MathUtils.signSafeMod(bookieIndex - entryId, ensembleSize);
-
-        return replicaIndex < quorumSize ? replicaIndex : -1;
-
+            public void removeBookie(int bookie) {
+                ackSet.remove(bookie);
+            }
+        };
     }
 
     private class RRQuorumCoverageSet implements QuorumCoverageSet {
@@ -68,7 +82,7 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
                 return true;
             }
 
-            for (int i = 0; i < quorumSize; i++) {
+            for (int i = 0; i < ackQuorumSize; i++) {
                 int quorumStartIndex = MathUtils.signSafeMod(bookieIndexHeardFrom - i, ensembleSize);
                 if (!covered[quorumStartIndex]) {
                     covered[quorumStartIndex] = true;
@@ -83,12 +97,13 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
         }
     }
 
+    @Override
     public QuorumCoverageSet getCoverageSet() {
         return new RRQuorumCoverageSet();
     }
     
     @Override
     public boolean hasEntry(long entryId, int bookieIndex) {
-        return getReplicaIndex(entryId, bookieIndex) != -1;
+        return getWriteSet(entryId).contains(bookieIndex);
     }
 }

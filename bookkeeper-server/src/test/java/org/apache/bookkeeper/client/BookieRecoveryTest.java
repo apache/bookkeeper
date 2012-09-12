@@ -464,7 +464,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         ranges.put(keyList.get(keyList.size()-1), untilEntry);
 
         for (Map.Entry<Long, ArrayList<InetSocketAddress>> e : ensembles.entrySet()) {
-            int quorum = md.getQuorumSize();
+            int quorum = md.getAckQuorumSize();
             long startEntryId = e.getKey();
             long endEntryId = ranges.get(startEntryId);
             long expectedSuccess = quorum*(endEntryId-startEntryId);

@@ -46,6 +46,8 @@ message LedgerMetadataFormat {
     }
     optional DigestType digestType = 7;
     optional bytes password = 8;
+
+    optional int32 ackQuorumSize = 9;
 }
 
 message LedgerRereplicationLayoutFormat {

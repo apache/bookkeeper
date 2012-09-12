@@ -77,8 +77,7 @@ public class TestReadTimeout extends BookKeeperClusterTestCase {
         final InetSocketAddress bookieToSleep 
             = writelh.getLedgerMetadata().getEnsemble(numEntries).get(0);
         int sleeptime = baseClientConf.getReadTimeout()*3;
-        CountDownLatch latch = new CountDownLatch(1);
-        sleepBookie(bookieToSleep, sleeptime, latch);
+        CountDownLatch latch = sleepBookie(bookieToSleep, sleeptime);
         latch.await();
 
         writelh.asyncAddEntry(tmp.getBytes(), 

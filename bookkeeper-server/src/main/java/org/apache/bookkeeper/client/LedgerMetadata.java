@@ -61,7 +61,8 @@ public class LedgerMetadata {
     private int metadataFormatVersion = 0;
 
     private int ensembleSize;
-    private int quorumSize;
+    private int writeQuorumSize;
+    private int ackQuorumSize;
     private long length;
     private long lastEntryId;
 
@@ -74,10 +75,11 @@ public class LedgerMetadata {
     private LedgerMetadataFormat.DigestType digestType;
     private byte[] password;
 
-    public LedgerMetadata(int ensembleSize, int quorumSize,
+    public LedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
                           BookKeeper.DigestType digestType, byte[] password) {
         this.ensembleSize = ensembleSize;
-        this.quorumSize = quorumSize;
+        this.writeQuorumSize = writeQuorumSize;
+        this.ackQuorumSize = ackQuorumSize;
 
         /*
          * It is set in PendingReadOp.readEntryComplete, and
@@ -95,7 +97,7 @@ public class LedgerMetadata {
     }
 
     private LedgerMetadata() {
-        this(0, 0, BookKeeper.DigestType.MAC, new byte[] {});
+        this(0, 0, 0, BookKeeper.DigestType.MAC, new byte[] {});
         this.hasPassword = false;
     }
 
@@ -114,8 +116,12 @@ public class LedgerMetadata {
         return ensembleSize;
     }
 
-    public int getQuorumSize() {
-        return quorumSize;
+    public int getWriteQuorumSize() {
+        return writeQuorumSize;
+    }
+
+    public int getAckQuorumSize() {
+        return ackQuorumSize;
     }
 
     /**
@@ -217,7 +223,8 @@ public class LedgerMetadata {
             return serializeVersion1();
         }
         LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
-        builder.setQuorumSize(quorumSize).setEnsembleSize(ensembleSize).setLength(length)
+        builder.setQuorumSize(writeQuorumSize).setAckQuorumSize(ackQuorumSize)
+            .setEnsembleSize(ensembleSize).setLength(length)
             .setState(state).setLastEntryId(lastEntryId);
 
         if (hasPassword) {
@@ -245,7 +252,7 @@ public class LedgerMetadata {
     private byte[] serializeVersion1() {
         StringBuilder s = new StringBuilder();
         s.append(VERSION_KEY).append(tSplitter).append(metadataFormatVersion).append(lSplitter);
-        s.append(quorumSize).append(lSplitter).append(ensembleSize).append(lSplitter).append(length);
+        s.append(writeQuorumSize).append(lSplitter).append(ensembleSize).append(lSplitter).append(length);
 
         for (Map.Entry<Long, ArrayList<InetSocketAddress>> entry : ensembles.entrySet()) {
             s.append(lSplitter).append(entry.getKey());
@@ -321,7 +328,13 @@ public class LedgerMetadata {
         LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
         TextFormat.merge(reader, builder);
         LedgerMetadataFormat data = builder.build();
-        lc.quorumSize = data.getQuorumSize();
+        lc.writeQuorumSize = data.getQuorumSize();
+        if (data.hasAckQuorumSize()) {
+            lc.ackQuorumSize = data.getAckQuorumSize();
+        } else {
+            lc.ackQuorumSize = lc.writeQuorumSize;
+        }
+
         lc.ensembleSize = data.getEnsembleSize();
         lc.length = data.getLength();
         lc.state = data.getState();
@@ -346,7 +359,7 @@ public class LedgerMetadata {
     static LedgerMetadata parseVersion1Config(LedgerMetadata lc,
                                               BufferedReader reader) throws IOException {
         try {
-            lc.quorumSize = new Integer(reader.readLine());
+            lc.writeQuorumSize = lc.ackQuorumSize = new Integer(reader.readLine());
             lc.ensembleSize = new Integer(reader.readLine());
             lc.length = new Long(reader.readLine());
 
@@ -413,7 +426,8 @@ public class LedgerMetadata {
 
         if (metadataFormatVersion != newMeta.metadataFormatVersion ||
             ensembleSize != newMeta.ensembleSize ||
-            quorumSize != newMeta.quorumSize ||
+            writeQuorumSize != newMeta.writeQuorumSize ||
+            ackQuorumSize != newMeta.ackQuorumSize ||
             length != newMeta.length ||
             state != newMeta.state ||
             !digestType.equals(newMeta.digestType) ||

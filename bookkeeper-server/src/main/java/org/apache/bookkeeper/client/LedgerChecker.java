@@ -222,7 +222,7 @@ public class LedgerChecker {
                 final long entryToRead = curEntryId;
 
                 EntryExistsCallback eecb
-                    = new EntryExistsCallback(lh.getLedgerMetadata().getQuorumSize(),
+                    = new EntryExistsCallback(lh.getLedgerMetadata().getWriteQuorumSize(),
                                               new GenericCallback<Boolean>() {
                                                   public void operationComplete(int rc, Boolean result) {
                                                       if (result) {
@@ -232,8 +232,7 @@ public class LedgerChecker {
                                                   }
                                               });
 
-                for (int i = 0; i < lh.getLedgerMetadata().getQuorumSize(); i++) {
-                    int bi = lh.getDistributionSchedule().getBookieIndex(entryToRead, i);
+                for (int bi : lh.getDistributionSchedule().getWriteSet(entryToRead)) {
                     InetSocketAddress addr = curEnsemble.get(bi);
                     bookieClient.readEntry(addr, lh.getId(),
                                            entryToRead, eecb, null);
