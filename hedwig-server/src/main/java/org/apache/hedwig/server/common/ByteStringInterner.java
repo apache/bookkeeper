@@ -26,20 +26,13 @@ public class ByteStringInterner {
     // TODO: how to release references when strings are no longer used. weak
     // references?
 
-    private static ConcurrentMap<ByteString, ByteString> map = new ConcurrentHashMap<ByteString, ByteString>();
+    private static final ConcurrentMap<ByteString, ByteString> map = new ConcurrentHashMap<ByteString, ByteString>();
 
     public static ByteString intern(ByteString in) {
-        ByteString presentValueInMap = map.get(in);
+        ByteString presentValueInMap = map.putIfAbsent(in, in);
         if (presentValueInMap != null) {
             return presentValueInMap;
         }
-
-        presentValueInMap = map.putIfAbsent(in, in);
-        if (presentValueInMap != null) {
-            return presentValueInMap;
-        }
-
         return in;
-
     }
 }

@@ -127,19 +127,14 @@ public class ResponseHandler extends SimpleChannelHandler {
 
         // Response is an ack to a prior PubSubRequest so first retrieve the
         // PubSub data for this txn.
-        PubSubData pubSubData = txn2PubSubData.containsKey(response.getTxnId()) ? txn2PubSubData.get(response
-                                .getTxnId()) : null;
-        // Validate that the PubSub data for this txn is stored. If not, just
+        PubSubData pubSubData = txn2PubSubData.remove(response.getTxnId());
+        // Validate that the PubSub data for this txn was stored. If not, just
         // log an error message and return since we don't know how to handle
         // this.
         if (pubSubData == null) {
             logger.error("PubSub Data was not found for PubSubResponse: " + response);
             return;
         }
-
-        // Now that we've retrieved the PubSubData for this specific Txn ID, we
-        // can remove it from the Map.
-        txn2PubSubData.remove(response.getTxnId());
 
         // Store the topic2Host mapping if this wasn't a server redirect. We'll
         // assume that if the server was able to have an open Channel connection
@@ -242,8 +237,8 @@ public class ResponseHandler extends SimpleChannelHandler {
 
         // Check if we already have a Channel open to the redirected server
         // host.
-        boolean redirectedHostChannelExists = pub.host2Channel.containsKey(redirectedHost) ? true : false;
-        if (pubSubData.operationType.equals(OperationType.SUBSCRIBE) || !redirectedHostChannelExists) {
+        Channel redirectedHostChannel = pub.host2Channel.get(redirectedHost);
+        if (pubSubData.operationType.equals(OperationType.SUBSCRIBE) || redirectedHostChannel == null) {
             // We don't have an existing channel to the redirected host OR this
             // is a redirected Subscribe request. For Subscribe requests, we
             // always want to create a new unique Channel connection to the
@@ -254,9 +249,9 @@ public class ResponseHandler extends SimpleChannelHandler {
             // request again directly on the existing cached redirected host
             // channel.
             if (pubSubData.operationType.equals(OperationType.PUBLISH)) {
-                pub.doPublish(pubSubData, pub.host2Channel.get(redirectedHost));
+                pub.doPublish(pubSubData, redirectedHostChannel);
             } else if (pubSubData.operationType.equals(OperationType.UNSUBSCRIBE)) {
-                sub.doSubUnsub(pubSubData, pub.host2Channel.get(redirectedHost));
+                sub.doSubUnsub(pubSubData, redirectedHostChannel);
             }
         }
     }
@@ -295,12 +290,14 @@ public class ResponseHandler extends SimpleChannelHandler {
             // Due to race concurrency situations, it is possible to
             // create multiple channels to the same host for publish
             // and unsubscribe requests.
-            if (pub.host2Channel.containsKey(host) && pub.host2Channel.get(host).equals(ctx.getChannel())) {
+            Channel channel = pub.host2Channel.get(host);
+            if (channel != null && channel.equals(ctx.getChannel())) {
                 if (logger.isDebugEnabled())
                     logger.debug("Disconnected channel for host: " + host
                                  + " was for Publish/Unsubscribe requests so remove all references to it.");
-                pub.host2Channel.remove(host);
-                client.clearAllTopicsForHost(host);
+                if (pub.host2Channel.remove(host, channel)) {
+                    client.clearAllTopicsForHost(host);
+                }
             }
         } else {
             // Subscribe channel disconnected so first close and clear all

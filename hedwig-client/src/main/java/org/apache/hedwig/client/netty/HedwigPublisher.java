@@ -135,14 +135,15 @@ public class HedwigPublisher implements Publisher {
         // Check if we already have a Channel connection set up to the server
         // for the given Topic.
         PubSubData pubSubData = new PubSubData(topic, msg, null, OperationType.PUBLISH, null, callback, context);
-        if (client.topic2Host.containsKey(topic)) {
-            InetSocketAddress host = client.topic2Host.get(topic);
-            if (host2Channel.containsKey(host)) {
+        InetSocketAddress host = client.topic2Host.get(topic);
+        if (host != null) {
+            Channel channel = host2Channel.get(host);
+            if (channel != null) {
                 // We already have the Channel connection for the server host so
                 // do the publish directly. We will deal with redirect logic
                 // later on if that server is no longer the current host for
                 // the topic.
-                doPublish(pubSubData, host2Channel.get(host));
+                doPublish(pubSubData, channel);
             } else {
                 // We have a mapping for the topic to host but don't have a
                 // Channel for that server. This can happen if the Channel
@@ -155,10 +156,11 @@ public class HedwigPublisher implements Publisher {
             // default server host/port as defined in the configs. This should
             // point to the server VIP which would redirect to a random server
             // (which might not be the server hosting the topic).
-            InetSocketAddress host = cfg.getDefaultServerHost();
-            if (host2Channel.containsKey(host)) {
+            host = cfg.getDefaultServerHost();
+            Channel channel = host2Channel.get(host);
+            if (channel != null) {
                 // if there is a channel to default server, use it!
-                doPublish(pubSubData, host2Channel.get(host));
+                doPublish(pubSubData, channel);
                 return;
             }
             client.doConnect(pubSubData, host);
@@ -226,10 +228,9 @@ public class HedwigPublisher implements Publisher {
     // RemoteAddress tied to it.
     protected synchronized void storeHost2ChannelMapping(Channel channel) {
         InetSocketAddress host = HedwigClientImpl.getHostFromChannel(channel);
-        if (!closed && !host2Channel.containsKey(host)) {
+        if (!closed && host2Channel.putIfAbsent(host, channel) == null) {
             if (logger.isDebugEnabled())
-                logger.debug("Storing a new Channel mapping for host: " + host);
-            host2Channel.put(host, channel);
+                logger.debug("Stored a new Channel mapping for host: " + host);
         } else {
             // If we've reached here, that means we already have a Channel
             // mapping for the given host. This should ideally not happen

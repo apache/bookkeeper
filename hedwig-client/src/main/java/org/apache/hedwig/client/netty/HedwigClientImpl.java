@@ -18,11 +18,10 @@
 package org.apache.hedwig.client.netty;
 
 import java.net.InetSocketAddress;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
@@ -76,7 +75,8 @@ public class HedwigClientImpl implements Client {
     // also want to remove all topic mappings the host was responsible for.
     // The second Map is used as the inverted version of the first one.
     protected final ConcurrentMap<ByteString, InetSocketAddress> topic2Host = new ConcurrentHashMap<ByteString, InetSocketAddress>();
-    private final ConcurrentMap<InetSocketAddress, List<ByteString>> host2Topics = new ConcurrentHashMap<InetSocketAddress, List<ByteString>>();
+    private final ConcurrentMap<InetSocketAddress, ConcurrentLinkedQueue<ByteString>> host2Topics =
+        new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<ByteString>>();
 
     // Each client instantiation will have a Timer for running recurring
     // threads. One such timer task thread to is to timeout long running
@@ -292,23 +292,27 @@ public class HedwigClientImpl implements Client {
         // server statuses, we consider that as a successful connection to the
         // correct topic master.
         InetSocketAddress host = getHostFromChannel(channel);
-        if (topic2Host.containsKey(pubSubData.topic) && topic2Host.get(pubSubData.topic).equals(host)) {
+        InetSocketAddress existingHost = topic2Host.get(pubSubData.topic);
+        if (existingHost != null && existingHost.equals(host)) {
             // Entry in map exists for the topic but it is the same as the
             // current host. In this case there is nothing to do.
             return;
         }
 
         // Store the relevant mappings for this topic and host combination.
-        if (logger.isDebugEnabled())
-            logger.debug("Storing info for topic: " + pubSubData.topic.toStringUtf8() + ", old host: "
-                         + topic2Host.get(pubSubData.topic) + ", new host: " + host);
-        topic2Host.put(pubSubData.topic, host);
-        if (host2Topics.containsKey(host)) {
-            host2Topics.get(host).add(pubSubData.topic);
-        } else {
-            LinkedList<ByteString> topicsList = new LinkedList<ByteString>();
-            topicsList.add(pubSubData.topic);
-            host2Topics.put(host, topicsList);
+        if (topic2Host.putIfAbsent(pubSubData.topic, host) == null) {
+            if (logger.isDebugEnabled())
+                logger.debug("Stored info for topic: " + pubSubData.topic.toStringUtf8() + ", old host: "
+                            + existingHost + ", new host: " + host);
+            ConcurrentLinkedQueue<ByteString> topicsForHost = host2Topics.get(host);
+            if (topicsForHost == null) {
+                ConcurrentLinkedQueue<ByteString> newTopicsList = new ConcurrentLinkedQueue<ByteString>();
+                topicsForHost = host2Topics.putIfAbsent(host, newTopicsList);
+                if (topicsForHost == null) {
+                  topicsForHost = newTopicsList;
+                }
+            }
+            topicsForHost.add(pubSubData.topic);
         }
     }
 
@@ -360,14 +364,15 @@ public class HedwigClientImpl implements Client {
             logger.debug("Clearing all topics for host: " + host);
         // For each of the topics that the host was responsible for,
         // remove it from the topic2Host mapping.
-        if (host2Topics.containsKey(host)) {
-            for (ByteString topic : host2Topics.get(host)) {
+        ConcurrentLinkedQueue<ByteString> topicsForHost = host2Topics.get(host);
+        if (topicsForHost != null) {
+            for (ByteString topic : topicsForHost) {
                 if (logger.isDebugEnabled())
                     logger.debug("Removing mapping for topic: " + topic.toStringUtf8() + " from host: " + host);
-                topic2Host.remove(topic);
+                topic2Host.remove(topic, host);
             }
             // Now it is safe to remove the host2Topics mapping entry.
-            host2Topics.remove(host);
+            host2Topics.remove(host, topicsForHost);
         }
     }
 

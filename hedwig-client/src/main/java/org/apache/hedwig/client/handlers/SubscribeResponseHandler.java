@@ -314,7 +314,7 @@ public class SubscribeResponseHandler {
         // outstanding message limit was reached. For now, only turn the
         // delivery back on if there are no more outstanding messages to
         // consume. We could make this a configurable parameter if needed.
-        if (!subscribeChannel.isReadable() && outstandingMsgSet.size() == 0) {
+        if (!subscribeChannel.isReadable() && outstandingMsgSet.isEmpty()) {
             if (logger.isDebugEnabled())
                 logger
                 .debug("Message consumption has caught up so okay to turn off throttling of messages on the subscribe channel for topic: "

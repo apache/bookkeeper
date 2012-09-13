@@ -84,7 +84,7 @@ public class HedwigSubscriber implements Subscriber {
 
     protected final HedwigClientImpl client;
     protected final ClientConfiguration cfg;
-    private Object closeLock = new Object();
+    private final Object closeLock = new Object();
     private boolean closed = false;
 
     public HedwigSubscriber(HedwigClientImpl client) {
@@ -175,14 +175,17 @@ public class HedwigSubscriber implements Subscriber {
         // subscribing to.
         PubSubData pubSubData = new PubSubData(topic, null, subscriberId, operationType, options, callback,
                                                context);
-        if (client.topic2Host.containsKey(topic)) {
-            InetSocketAddress host = client.topic2Host.get(topic);
-            if (operationType.equals(OperationType.UNSUBSCRIBE) && client.getPublisher().host2Channel.containsKey(host)) {
+
+        InetSocketAddress host = client.topic2Host.get(topic);
+        if (host != null) {
+            Channel existingChannel = null;
+            if (operationType.equals(OperationType.UNSUBSCRIBE) &&
+                (existingChannel = client.getPublisher().host2Channel.get(host)) != null) {
                 // For unsubscribes, we can reuse the channel connections to the
                 // server host that are cached for publishes. For publish and
                 // unsubscribe flows, we will thus use the same Channels and
                 // will cache and store them during the ConnectCallback.
-                doSubUnsub(pubSubData, client.getPublisher().host2Channel.get(host));
+                doSubUnsub(pubSubData, existingChannel);
             } else {
                 // We know which server host is the master for the topic so
                 // connect to that first. For subscribes, we want a new channel
@@ -348,7 +351,8 @@ public class HedwigSubscriber implements Subscriber {
                          + subscriberId.toStringUtf8() + ", messageSeqId: " + messageSeqId);
         TopicSubscriber topicSubscriber = new TopicSubscriber(topic, subscriberId);
         // Check that this topic subscription on the client side exists.
-        if (!topicSubscriber2Channel.containsKey(topicSubscriber)) {
+        Channel channel = topicSubscriber2Channel.get(topicSubscriber);
+        if (channel == null) {
             throw new ClientNotSubscribedException(
                 "Cannot send consume message since client is not subscribed to topic: " + topic.toStringUtf8()
                 + ", subscriberId: " + subscriberId.toStringUtf8());
@@ -356,7 +360,7 @@ public class HedwigSubscriber implements Subscriber {
         PubSubData pubSubData = new PubSubData(topic, null, subscriberId, OperationType.CONSUME, null, null, null);
         // Send the consume message to the server using the same subscribe
         // channel that the topic subscription uses.
-        doConsume(pubSubData, topicSubscriber2Channel.get(topicSubscriber), messageSeqId);
+        doConsume(pubSubData, channel, messageSeqId);
     }
 
     /**
@@ -586,20 +590,16 @@ public class HedwigSubscriber implements Subscriber {
         // exists. The assumption is that the client should have in memory the
         // Channel created for the TopicSubscriber once the server has sent
         // an ack response to the initial subscribe request.
-        if (!topicSubscriber2Channel.containsKey(topicSubscriber)) {
+        Channel topicSubscriberChannel = topicSubscriber2Channel.get(topicSubscriber);
+        if (topicSubscriberChannel == null) {
             logger.error("Client is not yet subscribed to topic: " + topic.toStringUtf8() + ", subscriberId: "
                          + subscriberId.toStringUtf8());
             throw new ClientNotSubscribedException("Client is not yet subscribed to topic: " + topic.toStringUtf8()
                                                    + ", subscriberId: " + subscriberId.toStringUtf8());
         }
 
-        // Register the MessageHandler with the subscribe Channel's
-        // Response Handler.
-        Channel topicSubscriberChannel = topicSubscriber2Channel.get(topicSubscriber);
-
         // Need to ensure the setting of handler and the readability of channel is in sync
         // as there's a race condition that connection recovery and user might call this at the same time
-
         MessageHandler existedMsgHandler = topicSubscriber2MessageHandler.get(topicSubscriber);
         if (restart) {
             // restart using existing msg handler 
@@ -620,7 +620,7 @@ public class HedwigSubscriber implements Subscriber {
             .setMessageHandler(messageHandler);
         } catch (NoResponseHandlerException e) {
             // We did not find a response handler. So remove this subscription handler and throw an exception.
-            topicSubscriber2MessageHandler.remove(topicSubscriber);
+            topicSubscriber2MessageHandler.remove(topicSubscriber, existedMsgHandler);
             asyncCloseSubscription(topic, subscriberId, new Callback<Void>() {
                 @Override
                 public void operationFinished(Object ctx, Void resultOfOperation) {
@@ -664,7 +664,8 @@ public class HedwigSubscriber implements Subscriber {
         // exists. The assumption is that the client should have in memory the
         // Channel created for the TopicSubscriber once the server has sent
         // an ack response to the initial subscribe request.
-        if (!topicSubscriber2Channel.containsKey(topicSubscriber)) {
+        Channel topicSubscriberChannel = topicSubscriber2Channel.get(topicSubscriber);
+        if (topicSubscriberChannel == null) {
             logger.error("Client is not yet subscribed to topic: " + topic.toStringUtf8() + ", subscriberId: "
                          + subscriberId.toStringUtf8());
             throw new ClientNotSubscribedException("Client is not yet subscribed to topic: " + topic.toStringUtf8()
@@ -673,7 +674,6 @@ public class HedwigSubscriber implements Subscriber {
 
         // Unregister the MessageHandler for the subscribe Channel's
         // Response Handler.
-        Channel topicSubscriberChannel = topicSubscriber2Channel.get(topicSubscriber);
         try {
             HedwigClientImpl.getResponseHandlerFromChannel(topicSubscriberChannel).getSubscribeResponseHandler()
                 .setMessageHandler(null);
@@ -729,10 +729,9 @@ public class HedwigSubscriber implements Subscriber {
             logger.debug("Closing subscription asynchronously for topic: " + topic.toStringUtf8() + ", subscriberId: "
                          + subscriberId.toStringUtf8());
         TopicSubscriber topicSubscriber = new TopicSubscriber(topic, subscriberId);
-        if (topicSubscriber2Channel.containsKey(topicSubscriber)) {
-            // Remove all cached references for the TopicSubscriber
-            Channel channel = topicSubscriber2Channel.get(topicSubscriber);
-            topicSubscriber2Channel.remove(topicSubscriber);
+        // Remove all cached references for the TopicSubscriber
+        Channel channel = topicSubscriber2Channel.remove(topicSubscriber);
+        if (channel != null) {
             // Close the subscribe channel asynchronously.
             try {
                 HedwigClientImpl.getResponseHandlerFromChannel(channel).handleChannelClosedExplicitly();
@@ -779,6 +778,7 @@ public class HedwigSubscriber implements Subscriber {
             }
             Channel oldc = topicSubscriber2Channel.putIfAbsent(topic, channel);
             if (oldc != null) {
+                logger.warn("Dropping new channel for " + topic + ", due to existing channel: " + oldc);
                 channel.close();
             }
             if (null != preferences) {
