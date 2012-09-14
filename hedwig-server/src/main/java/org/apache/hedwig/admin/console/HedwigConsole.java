@@ -909,9 +909,7 @@ public class HedwigConsole {
             return false;
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Processing " + cmd);
-        }
+        LOG.debug("Processing {}", cmd);
 
         MyCommand myCommand = myCommands.get(cmd);
         if (myCommand == null) {

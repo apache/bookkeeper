@@ -162,10 +162,8 @@ public class HedwigAdmin {
 
         // connect to zookeeper
         zk = new ZooKeeper(hubConf.getZkHost(), hubConf.getZkTimeout(), new MyWatcher());
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Connecting to zookeeper " + hubConf.getZkHost() + ", timeout = "
-                    + hubConf.getZkTimeout());
-        }
+        LOG.debug("Connecting to zookeeper {}, timeout = {}",
+                hubConf.getZkHost(), hubConf.getZkTimeout());
         // wait until connection is ready
         if (!zkReadyLatch.await(hubConf.getZkTimeout() * 2, TimeUnit.MILLISECONDS)) {
             throw new Exception("Count not establish connection with ZooKeeper after " + hubConf.getZkTimeout() * 2 + " ms.");
@@ -179,9 +177,7 @@ public class HedwigAdmin {
 
         // connect to bookkeeper
         bk = new BookKeeper(bkClientConf, zk);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Connecting to bookkeeper");
-        }
+        LOG.debug("Connecting to bookkeeper");
     }
 
     /**

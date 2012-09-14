@@ -62,9 +62,7 @@ public class CacheValue {
         this.message = message;
         this.timeOfAddition = currTime;
         ScanCallbackWithContext callbackWithCtx;
-        if (logger.isDebugEnabled()) {
-            logger.debug("Invoking " + callbacks.size() + " callbacks for " + " message added to cache");
-        }
+        logger.debug("Invoking {} callbacks for {} message added to cache", callbacks.size(), message);
         while ((callbackWithCtx = callbacks.poll()) != null) {
             callbackWithCtx.getScanCallback().messageScanned(callbackWithCtx.getCtx(), message);
         }

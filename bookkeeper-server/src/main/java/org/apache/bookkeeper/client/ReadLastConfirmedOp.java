@@ -89,7 +89,8 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
             } catch (BKDigestMatchException e) {
                 // Too bad, this bookie didn't give us a valid answer, we
                 // still might be able to recover though so continue
-                LOG.error("Mac mismatch while reading last entry from bookie: "
+                LOG.error("Mac mismatch for ledger: " + ledgerId + ", entry: " + entryId
+                          + " while reading last entry from bookie: "
                           + lh.metadata.currentEnsemble.get(bookieIndex));
             }
         }
@@ -108,9 +109,8 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
             && coverageSet.addBookieAndCheckCovered(bookieIndex)
             && !completed) {
             completed = true;
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Read Complete with enough validResponses");
-            }
+            LOG.debug("Read Complete with enough validResponses for ledger: {}, entry: {}",
+                ledgerId, entryId);
 
             cb.readLastConfirmedDataComplete(BKException.Code.OK, maxRecoveredData);
             return;

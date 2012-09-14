@@ -137,8 +137,10 @@ public class Bookie extends Thread {
         @Override
         public void writeComplete(int rc, long ledgerId, long entryId,
                                   InetSocketAddress addr, Object ctx) {
-            LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
-                      new Object[] { entryId, ledgerId, addr, rc });
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
+                          new Object[] { entryId, ledgerId, addr, rc });
+            }
         }
     }
 
@@ -173,9 +175,7 @@ public class Bookie extends Thread {
         public SyncThread(ServerConfiguration conf) {
             super("SyncThread");
             flushInterval = conf.getFlushInterval();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Flush Interval : " + flushInterval);
-            }
+            LOG.debug("Flush Interval : {}", flushInterval);
         }
         @Override
         public void run() {
@@ -429,7 +429,7 @@ public class Bookie extends Thread {
 
     synchronized public void start() {
         setDaemon(true);
-        LOG.debug("I'm starting a bookie with journal directory " + journalDirectory.getName());
+        LOG.debug("I'm starting a bookie with journal directory {}", journalDirectory.getName());
         // replay journals
         try {
             readJournal();
@@ -732,9 +732,7 @@ public class Bookie extends Thread {
         long entryId = handle.addEntry(entry);
 
         entry.rewind();
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Adding " + entryId + "@" + ledgerId);
-        }
+        LOG.trace("Adding {}@{}", entryId, ledgerId);
         journal.logAddEntry(entry, cb, ctx);
     }
 
@@ -785,9 +783,7 @@ public class Bookie extends Thread {
     public ByteBuffer readEntry(long ledgerId, long entryId)
             throws IOException, NoLedgerException {
         LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Reading " + entryId + "@" + ledgerId);
-        }
+        LOG.trace("Reading {}@{}", entryId, ledgerId);
         return handle.readEntry(entryId);
     }
 

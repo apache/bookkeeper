@@ -167,8 +167,7 @@ public class HedwigClientImpl implements Client {
          */
         @Override
         public void run() {
-            if (logger.isDebugEnabled())
-                logger.debug("Running the PubSubRequest Timeout Task");
+            logger.debug("Running the PubSubRequest Timeout Task");
             // Loop through all outstanding PubSubData requests and check if
             // the requestWriteTime has timed out compared to the current time.
             long curTime = MathUtils.now();
@@ -262,8 +261,7 @@ public class HedwigClientImpl implements Client {
      *            Input server host to connect to of type InetSocketAddress
      */
     public void doConnect(PubSubData pubSubData, InetSocketAddress serverHost) {
-        if (logger.isDebugEnabled())
-            logger.debug("Connecting to host: " + serverHost + " with pubSubData: " + pubSubData);
+        logger.debug("Connecting to host: {} with pubSubData: {}", serverHost, pubSubData);
         // Set up the ClientBootStrap so we can create a new Channel connection
         // to the server.
         ClientBootstrap bootstrap = new ClientBootstrap(socketFactory);
@@ -360,8 +358,7 @@ public class HedwigClientImpl implements Client {
     // need to remove all of the topic mappings that the host was
     // responsible for.
     public void clearAllTopicsForHost(InetSocketAddress host) {
-        if (logger.isDebugEnabled())
-            logger.debug("Clearing all topics for host: " + host);
+        logger.debug("Clearing all topics for host: {}", host);
         // For each of the topics that the host was responsible for,
         // remove it from the topic2Host mapping.
         ConcurrentLinkedQueue<ByteString> topicsForHost = host2Topics.get(host);

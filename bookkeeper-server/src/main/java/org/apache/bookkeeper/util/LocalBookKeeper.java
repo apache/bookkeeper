@@ -98,7 +98,7 @@ public class LocalBookKeeper {
         }
 
         boolean b = waitForServerUp(HOSTPORT, CONNECTION_TIMEOUT);
-        LOG.debug("ZooKeeper server up: " + b);
+        LOG.debug("ZooKeeper server up: {}", b);
     }
 
     private void initializeZookeper() throws IOException {

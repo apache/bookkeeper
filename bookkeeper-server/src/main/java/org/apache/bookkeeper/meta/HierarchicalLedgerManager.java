@@ -105,9 +105,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
 
         this.idGenPath = ledgerRootPath + IDGENERATION_PREFIX;
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Using HierarchicalLedgerManager with root path : " + ledgerRootPath);
-        }
+        LOG.debug("Using HierarchicalLedgerManager with root path : {}", ledgerRootPath);
     }
 
     @Override
@@ -173,9 +171,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
                                     LOG.warn("Exception during deleting znode for id generation : ",
                                              KeeperException.create(KeeperException.Code.get(rc), path));
                                 } else {
-                                    if (LOG.isDebugEnabled()) {
-                                        LOG.debug("Deleting znode for id generation : " + idPathName);
-                                    }
+                                    LOG.debug("Deleting znode for id generation : {}", idPathName);
                                 }
                             }
                         }, null);
@@ -393,10 +389,8 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
         long endLedgerId = getEndLedgerIdByLevel(level1, level2);
         Map<Long, Boolean> bkActiveLedgers = snapshot.subMap(startLedgerId, true, endLedgerId, true);
         if (LOG.isDebugEnabled()) {
-            LOG.debug("All active ledgers from ZK for hash node "
-                      + level1 + "/" + level2 + " : " + zkActiveLedgers);
-            LOG.debug("Current active ledgers from Bookie for hash node "
-                      + level1 + "/" + level2 + " : " + bkActiveLedgers);
+            LOG.debug("For hash node: " + level1 + "/" + level2 + ": All active ledgers from ZK: "
+                      + zkActiveLedgers + ". Current active ledgers from Bookie: "+ bkActiveLedgers);
         }
 
         doGc(gc, bkActiveLedgers, zkActiveLedgers);

@@ -190,8 +190,7 @@ public class ResponseHandler extends SimpleChannelHandler {
             // We've already exceeded the maximum number of server redirects
             // so consider this as an error condition for the client.
             // Invoke the operationFailed callback and just return.
-            if (logger.isDebugEnabled())
-                logger.debug("Exceeded the number of server redirects (" + curNumServerRedirects + ") so error out.");
+            logger.debug("Exceeded the maximum number of redirects ({}): erroring out.", curNumServerRedirects);
             pubSubData.getCallback().operationFailed(pubSubData.context, new ServiceDownException(
                                                     new TooManyServerRedirectsException("Already reached max number of redirects: "
                                                             + curNumServerRedirects)));
@@ -292,9 +291,8 @@ public class ResponseHandler extends SimpleChannelHandler {
             // and unsubscribe requests.
             Channel channel = pub.host2Channel.get(host);
             if (channel != null && channel.equals(ctx.getChannel())) {
-                if (logger.isDebugEnabled())
-                    logger.debug("Disconnected channel for host: " + host
-                                 + " was for Publish/Unsubscribe requests so remove all references to it.");
+                logger.debug("Disconnected channel for host: {} was for Publish/Unsubscribe requests" +
+                    " so remove all references to it.", host);
                 if (pub.host2Channel.remove(host, channel)) {
                     client.clearAllTopicsForHost(host);
                 }
@@ -317,8 +315,7 @@ public class ResponseHandler extends SimpleChannelHandler {
             // case before the channel disconnect).
             origSubData.setCallback(new SubscribeReconnectCallback(origSubData, client));
             origSubData.context = null;
-            if (logger.isDebugEnabled())
-                logger.debug("Disconnected subscribe channel so reconnect with origSubData: " + origSubData);
+            logger.debug("Disconnected subscribe channel so reconnect with origSubData: {}", origSubData);
             client.doConnect(origSubData, cfg.getDefaultServerHost());
         }
 
@@ -329,9 +326,8 @@ public class ResponseHandler extends SimpleChannelHandler {
         // we're not sure of the state of the request since the ack response was
         // never received.
         for (PubSubData pubSubData : txn2PubSubData.values()) {
-            if (logger.isDebugEnabled())
-                logger.debug("Channel disconnected so invoking the operationFailed callback for pubSubData: "
-                             + pubSubData);
+            logger.debug("Channel disconnected so invoking the operationFailed callback for pubSubData: {}",
+                pubSubData);
             pubSubData.getCallback().operationFailed(pubSubData.context, new UncertainStateException(
                                                     "Server ack response never received before server connection disconnected!"));
         }
@@ -347,9 +343,7 @@ public class ResponseHandler extends SimpleChannelHandler {
         // No need to initiate the SSL handshake if we are closing this channel
         // explicitly or the client has been stopped.
         if (cfg.isSSLEnabled() && !channelClosedExplicitly && !client.hasStopped()) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Initiating the SSL handshake");
-            }
+            logger.debug("Initiating the SSL handshake");
             ctx.getPipeline().get(SslHandler.class).handshake(e.getChannel());
         }
     }

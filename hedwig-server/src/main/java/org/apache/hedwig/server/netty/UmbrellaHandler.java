@@ -76,9 +76,7 @@ public class UmbrellaHandler extends SimpleChannelHandler {
         if (throwable instanceof IOException || throwable instanceof TooLongFrameException
                 || throwable instanceof CorruptedFrameException) {
             e.getChannel().close();
-            if (logger.isDebugEnabled()) {
-                logger.debug("Uncaught exception", throwable);
-            }
+            logger.debug("Uncaught exception", throwable);
         } else {
             // call our uncaught exception handler, which might decide to
             // shutdown the system
@@ -104,9 +102,7 @@ public class UmbrellaHandler extends SimpleChannelHandler {
             ctx.getPipeline().get(SslHandler.class).handshake(e.getChannel()).addListener(new ChannelFutureListener() {
                 public void operationComplete(ChannelFuture future) throws Exception {
                     if (future.isSuccess()) {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("SSL handshake has completed successfully!");
-                        }
+                        logger.debug("SSL handshake has completed successfully!");
                         allChannels.add(future.getChannel());
                     } else {
                         future.getChannel().close();
@@ -125,9 +121,7 @@ public class UmbrellaHandler extends SimpleChannelHandler {
     }
 
     public static void sendErrorResponseToMalformedRequest(Channel channel, long txnId, String msg) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Malformed request from " + channel.getRemoteAddress() + " msg, = " + msg);
-        }
+        logger.debug("Malformed request from {}, msg = {}", channel.getRemoteAddress(), msg);
         MalformedRequestException mre = new MalformedRequestException(msg);
         PubSubResponse response = PubSubResponseUtils.getResponseForException(mre, txnId);
         channel.write(response);

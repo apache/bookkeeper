@@ -125,7 +125,10 @@ public abstract class AbstractTopicManager implements TopicManager {
 
                                 @Override
                                 public void operationFinished(Object ctx, Void resultOfOperation) {
-                                    logger.debug("successful periodic release of topic " + topic);
+                                    if (logger.isDebugEnabled()) {
+                                        logger.debug("successful periodic release of topic "
+                                            + topic.toStringUtf8());
+                                    }
                                 }
 
                             }, null);

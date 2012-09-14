@@ -360,9 +360,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
             CacheValue cacheValue = new CacheValue();
             cache.put(cacheKey, cacheValue);
 
-            if (logger.isDebugEnabled()) {
-                logger.debug("Adding stub for seq-id: " + seqId + " topic: " + topic.toStringUtf8());
-            }
+            logger.debug("Adding cache stub for: {}", cacheKey);
             installedStubs.add(cacheKey);
 
             seqId = realPersistenceManager.getSeqIdAfterSkipping(topic, seqId, 1);
@@ -485,10 +483,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
      * @param message
      */
     protected void addMessageToCache(CacheKey cacheKey, Message message, long currTime) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Adding msg (topic: " + cacheKey.getTopic().toStringUtf8() + ", seq-id: "
-                         + message.getMsgId().getLocalComponent() + ") to readahead cache");
-        }
+        logger.debug("Adding msg {} to readahead cache", cacheKey);
 
         CacheValue cacheValue;
 
@@ -558,10 +553,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
             for (Iterator<CacheKey> iter = oldCacheEntries.iterator(); iter.hasNext();) {
                 CacheKey cacheKey = iter.next();
 
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Removing topic: " + cacheKey.getTopic() + "seq-id: " + cacheKey.getSeqId()
-                                 + " from cache because its the oldest");
-                }
+                logger.debug("Removing {} from cache because it's the oldest.", cacheKey);
                 removeMessageFromCache(cacheKey, readAheadExceptionInstance, //
                                        // maintainTimeIndex=
                                        false,
@@ -659,11 +651,8 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
                 Long seqId = iter.next();
                 CacheKey cacheKey = new CacheKey(topic, seqId);
 
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Removing seq-id: " + cacheKey.getSeqId() + " topic: "
-                                 + cacheKey.getTopic().toStringUtf8()
-                                 + " from cache because every subscriber has moved past");
-                }
+                logger.debug("Removing {} from cache because every subscriber has moved past",
+                    cacheKey);
 
                 removeMessageFromCache(cacheKey, readAheadExceptionInstance, //
                                        // maintainTimeIndex=

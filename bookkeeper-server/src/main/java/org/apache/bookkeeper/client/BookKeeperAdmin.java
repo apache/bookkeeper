@@ -474,9 +474,7 @@ public class BookKeeperAdmin {
      */
     private void recoverLedger(final InetSocketAddress bookieSrc, final long lId,
                                final AsyncCallback.VoidCallback ledgerIterCb, final List<InetSocketAddress> availableBookies) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Recovering ledger : " + lId);
-        }
+        LOG.debug("Recovering ledger : {}", lId);
 
         asyncOpenLedgerNoRecovery(lId, new OpenCallback() {
             @Override

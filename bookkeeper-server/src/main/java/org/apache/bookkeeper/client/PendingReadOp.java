@@ -74,10 +74,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
         ArrayList<InetSocketAddress> ensemble = null;
         do {
-
-            if(LOG.isDebugEnabled()) {
-                LOG.debug("Acquiring lock: " + i);
-            }
+            LOG.debug("Acquiring lock: {}", i);
 
             lh.opCounterSem.acquire();
 
@@ -162,9 +159,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             submitCallback(BKException.Code.OK);
         }
 
-        if(LOG.isDebugEnabled()) {
-            LOG.debug("Releasing lock: " + entryId);
-        }
+        LOG.debug("Releasing lock: {}", entryId);
 
         lh.opCounterSem.release();
 

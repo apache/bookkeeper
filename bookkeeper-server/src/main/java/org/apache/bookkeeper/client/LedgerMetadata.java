@@ -243,9 +243,7 @@ public class LedgerMetadata {
         StringBuilder s = new StringBuilder();
         s.append(VERSION_KEY).append(tSplitter).append(CURRENT_METADATA_FORMAT_VERSION).append(lSplitter);
         s.append(TextFormat.printToString(builder.build()));
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Serialized config: " + s.toString());
-        }
+        LOG.debug("Serialized config: {}", s);
         return s.toString().getBytes();
     }
 
@@ -268,9 +266,7 @@ public class LedgerMetadata {
             s.append(lSplitter).append(getLastEntryId()).append(tSplitter).append(closed);
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Serialized config: " + s.toString());
-        }
+        LOG.debug("Serialized config: {}", s);
 
         return s.toString().getBytes();
     }
@@ -292,9 +288,7 @@ public class LedgerMetadata {
 
         String config = new String(bytes);
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Parsing Config: " + config);
-        }
+        LOG.debug("Parsing Config: {}", config);
         BufferedReader reader = new BufferedReader(new StringReader(config));
         String versionLine = reader.readLine();
         if (versionLine == null) {

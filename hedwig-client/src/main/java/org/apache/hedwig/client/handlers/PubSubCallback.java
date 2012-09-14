@@ -52,8 +52,7 @@ public class PubSubCallback implements Callback<PubSubProtocol.ResponseBody> {
     }
 
     public void operationFinished(Object ctx, PubSubProtocol.ResponseBody resultOfOperation) {
-        if (logger.isDebugEnabled())
-            logger.debug("PubSub call succeeded for pubSubData: " + pubSubData);
+        logger.debug("PubSub call succeeded for pubSubData: {}", pubSubData);
         // Wake up the main sync PubSub thread that is waiting for us to
         // complete.
         synchronized (pubSubData) {
@@ -65,8 +64,7 @@ public class PubSubCallback implements Callback<PubSubProtocol.ResponseBody> {
     }
 
     public void operationFailed(Object ctx, PubSubException exception) {
-        if (logger.isDebugEnabled())
-            logger.debug("PubSub call failed with exception: " + exception + ", pubSubData: " + pubSubData);
+        logger.debug("PubSub call failed with exception: {}, pubSubData: {}", exception, pubSubData);
         // Wake up the main sync PubSub thread that is waiting for us to
         // complete.
         synchronized (pubSubData) {

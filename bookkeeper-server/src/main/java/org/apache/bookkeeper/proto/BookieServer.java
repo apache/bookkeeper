@@ -45,6 +45,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.codec.binary.Hex;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -362,7 +363,6 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
             statType = BKStats.STATS_ADD;
             try {
                 TimedCnxn tsrc = new TimedCnxn(src, startTime);
-                // LOG.debug("Master key: " + new String(masterKey));
                 if ((flags & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD) {
                     bookie.recoveryAddEntry(packet.slice(), this, tsrc, masterKey);
                 } else {
@@ -383,7 +383,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         case BookieProtocol.READENTRY:
             statType = BKStats.STATS_READ;
             ByteBuffer[] rsp = new ByteBuffer[2];
-            LOG.debug("Received new read request: " + ledgerId + ", " + entryId);
+            LOG.debug("Received new read request: {}, {}", ledgerId, entryId);
             int errorCode = BookieProtocol.EIO;
             try {
                 if ((flags & BookieProtocol.FLAG_DO_FENCING) == BookieProtocol.FLAG_DO_FENCING) {
@@ -399,7 +399,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
                     }
                 }
                 rsp[1] = bookie.readEntry(ledgerId, entryId);
-                LOG.debug("##### Read entry ##### " + rsp[1].remaining());
+                LOG.debug("##### Read entry ##### {}", rsp[1].remaining());
                 errorCode = BookieProtocol.EOK;
                 success = true;
             } catch (Bookie.NoLedgerException e) {
@@ -434,7 +434,13 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
                 rsp[1].putLong(entryId);
                 rsp[1].flip();
             }
-            LOG.debug("Sending response for: " + entryId + ", " + new String(rsp[1].array()));
+            if (LOG.isTraceEnabled()) {
+                byte[] content = new byte[rsp[1].remaining()];
+                rsp[1].duplicate().get(content);
+                LOG.trace("Sending response for: {}, content: {}", entryId, Hex.encodeHexString(content));
+            } else {
+                LOG.debug("Sending response for: {}, length: {}", entryId, rsp[1].remaining());
+            }
             src.sendResponse(rsp);
             break;
         default:

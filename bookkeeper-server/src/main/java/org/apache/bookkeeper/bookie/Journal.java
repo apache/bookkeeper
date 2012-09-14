@@ -119,9 +119,7 @@ class Journal extends Thread {
             // persisted to disk (both index & entry logger)
             bb.putLong(lastMark.getTxnLogId());
             bb.putLong(lastMark.getTxnLogPosition());
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("RollLog to persist last marked log : " + lastMark);
-            }
+            LOG.debug("RollLog to persist last marked log : {}", lastMark);
             for(File dir: ledgerDirectories) {
                 File file = new File(dir, "lastMark");
                 try {
@@ -265,9 +263,7 @@ class Journal extends Thread {
 
         // read last log mark
         lastLogMark.readLog();
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Last Log Mark : " + lastLogMark);
-        }
+        LOG.debug("Last Log Mark : {}", lastLogMark);
     }
 
     LastLogMark getLastLogMark() {
@@ -418,9 +414,7 @@ class Journal extends Thread {
                 throw new IOException("Recovery log " + markedLogId + " is missing");
             }
         }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Try to relay journal logs : " + logs);
-        }
+        LOG.debug("Try to relay journal logs : {}", logs);
         // TODO: When reading in the journal logs that need to be synced, we
         // should use BufferedChannels instead to minimize the amount of
         // system calls done.

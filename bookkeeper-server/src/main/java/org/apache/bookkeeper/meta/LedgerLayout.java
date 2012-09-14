@@ -161,15 +161,12 @@ class LedgerLayout {
      * @return byte[]
      */
     private byte[] serialize() throws IOException {
-        StringBuilder sb = new StringBuilder();
-        sb.append(layoutFormatVersion).append(lSplitter)
-            .append(managerFactoryCls).append(splitter).append(managerVersion);
+        String s =
+          new StringBuilder().append(layoutFormatVersion).append(lSplitter)
+              .append(managerFactoryCls).append(splitter).append(managerVersion).toString();
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Serialized layout info: " + sb.toString());
-        }
-
-        return sb.toString().getBytes("UTF-8");
+        LOG.debug("Serialized layout info: {}", s);
+        return s.getBytes("UTF-8");
     }
 
     /**
@@ -186,9 +183,7 @@ class LedgerLayout {
     private static LedgerLayout parseLayout(byte[] bytes) throws IOException {
         String layout = new String(bytes, "UTF-8");
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Parsing Layout: " + layout);
-        }
+        LOG.debug("Parsing Layout: {}", layout);
 
         String lines[] = layout.split(lSplitter);
 
@@ -214,7 +209,7 @@ class LedgerLayout {
             int managerVersion = new Integer(parts[1]);
             return new LedgerLayout(managerFactoryCls, managerVersion, layoutFormatVersion);
         } catch (NumberFormatException e) {
-            throw new IOException(e);
+            throw new IOException("Could not parse layout '" + layout + "'", e);
         }
     }
 

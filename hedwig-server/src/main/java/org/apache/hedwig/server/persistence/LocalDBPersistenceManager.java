@@ -427,7 +427,10 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
                                          + " <= ?");
             stmt.setLong(1, seqId);
             int rowCount = stmt.executeUpdate();
-            logger.debug("Deleted " + rowCount + " records for topic: " + topic.toStringUtf8() + ", seqId: " + seqId);
+            if (logger.isDebugEnabled()) {
+              logger.debug("Deleted " + rowCount + " records for topic: " + topic.toStringUtf8()
+                  + ", seqId: " + seqId);
+            }
         } catch (SQLException sqle) {
             String theError = (sqle).getSQLState();
             if (theError.equals("42X05")) {

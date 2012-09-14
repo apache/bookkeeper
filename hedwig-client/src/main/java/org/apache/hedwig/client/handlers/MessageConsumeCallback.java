@@ -67,10 +67,8 @@ public class MessageConsumeCallback implements Callback<Void> {
             try {
                 handler = HedwigClientImpl.getResponseHandlerFromChannel(topicSubscriberChannel);
             } catch (NoResponseHandlerException e) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("No response handler found while invoking asyncMessageConsumed in the Message" +
-                    " consume retry task ." , e);
-                }
+                logger.debug("No response handler found while invoking asyncMessageConsumed in the Message"
+                    + " consume retry task.", e);
                 // Explicitly close the channel
                 if (null != topicSubscriberChannel) {
                     topicSubscriberChannel.close();
@@ -91,9 +89,7 @@ public class MessageConsumeCallback implements Callback<Void> {
         try {
             handler = HedwigClientImpl.getResponseHandlerFromChannel(topicSubscriberChannel);
         } catch (NoResponseHandlerException e) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("No response handler found while invoking messageConsumed." , e);
-            }
+            logger.debug("No response handler found while invoking messageConsumed.", e);
             // Explicitly close the channel
             if (null != topicSubscriberChannel) {
                 topicSubscriberChannel.close();

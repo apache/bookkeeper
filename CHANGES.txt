@@ -30,6 +30,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-338: Create Version.NEW and Version.ANY static instances of Version so that were not passing around nulls (sijie via ivank)
 
+      BOOKKEEPER-32: Clean up LOG.debug statements (Stu Hood via sijie)
+
       bookkeeper-server:
 
         BOOKKEEPER-183: Provide tools to read/check data files in bookie server (sijie via ivank)

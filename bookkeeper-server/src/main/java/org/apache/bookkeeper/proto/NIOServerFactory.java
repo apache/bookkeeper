@@ -390,7 +390,7 @@ public class NIOServerFactory extends Thread {
             synchronized (cnxns) {
                 cnxns.remove(this);
             }
-            LOG.debug("close  NIOServerCnxn: " + sock);
+            LOG.debug("close NIOServerCnxn: {}", sock);
             try {
                 /*
                  * The following sequence of code is stupid! You would think
@@ -451,9 +451,7 @@ public class NIOServerFactory extends Thread {
                     total += bb[i].remaining();
                 }
             }
-            if (LOG.isTraceEnabled()) {
-                LOG.debug("Sending response of size " + total + " to " + peerName);
-            }
+            LOG.debug("Sending response of size {} to {}", total, peerName);
             len.putInt(total);
             len.flip();
             outgoingBuffers.add(len);

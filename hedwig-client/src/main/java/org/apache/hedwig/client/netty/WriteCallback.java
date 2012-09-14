@@ -86,9 +86,8 @@ public class WriteCallback implements ChannelFutureListener {
                 pubSubData.getCallback().operationFailed(pubSubData.context, new ServiceDownException(
                                                         "Error while writing message to server: " + hostString));
             } else {
-                if (logger.isDebugEnabled())
-                    logger.debug("Try to send the PubSubRequest again to the default server host/VIP for pubSubData: "
-                                 + pubSubData);
+                logger.debug("Try to send the PubSubRequest again to the default server host/VIP for pubSubData: {}",
+                    pubSubData);
                 // Keep track of this current server that we failed to write to
                 // but retry the request on the default server host/VIP.
                 if (pubSubData.writeFailedServers == null)
@@ -101,8 +100,7 @@ public class WriteCallback implements ChannelFutureListener {
             // to respond. The ResponseHandler will take care of the ack
             // response from the server before we can determine if the async
             // PubSub call has really completed successfully or not.
-            if (logger.isDebugEnabled())
-                logger.debug("Successfully wrote to host: " + host + " for pubSubData: " + pubSubData);
+            logger.debug("Successfully wrote to host: {} for pubSubData: {}", host, pubSubData);
         }
     }
 

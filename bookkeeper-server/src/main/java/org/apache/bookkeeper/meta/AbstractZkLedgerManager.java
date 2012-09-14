@@ -191,9 +191,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager, ActiveLedgerMan
         zk.sync(nodePath, new AsyncCallback.VoidCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Sync node path " + path + " return : " + rc);
-                }
+                LOG.debug("Sync node path {} return : {}", path, rc);
                 if (rc != Code.OK.intValue()) {
                     LOG.error("ZK error syncing the ledgers node when getting children: ", KeeperException
                             .create(KeeperException.Code.get(rc), path));
@@ -218,9 +216,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager, ActiveLedgerMan
                     getLedgersCallback.operationComplete(rc, null);
                     return;
                 }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Retrieved current set of ledger nodes: " + ledgerNodes);
-                }
+                LOG.debug("Retrieved current set of ledger nodes: {}", ledgerNodes);
                 // Convert the ZK retrieved ledger nodes to a HashSet for easier comparisons.
                 HashSet<Long> allActiveLedgers = new HashSet<Long>(ledgerNodes.size(), 1.0f);
                 for (String ledgerNode : ledgerNodes) {
@@ -262,9 +258,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager, ActiveLedgerMan
     protected HashSet<Long> getLedgersInSingleNode(final String nodePath)
         throws IOException, InterruptedException {
         final GetLedgersCtx ctx = new GetLedgersCtx();
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Try to get ledgers of node : " + nodePath);
-        }
+        LOG.debug("Try to get ledgers of node : {}", nodePath);
         asyncGetLedgersInSingleNode(nodePath, new GenericCallback<HashSet<Long>>() {
                 @Override
                 public void operationComplete(int rc, HashSet<Long> zkActiveLedgers) {
@@ -328,9 +322,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager, ActiveLedgerMan
                     return;
                 }
 
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Processing ledgers : " + zkActiveLedgers);
-                }
+                LOG.debug("Processing ledgers: {}", zkActiveLedgers);
 
                 // no ledgers found, return directly
                 if (zkActiveLedgers.size() == 0) {

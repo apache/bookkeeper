@@ -247,8 +247,7 @@ public class HedwigPublisher implements Publisher {
             // set of server hosts, we could be redirected to a server that
             // we already have a channel connection to from a prior existing
             // topic. Close these redundant channels as they won't be used.
-            if (logger.isDebugEnabled())
-                logger.debug("Channel mapping to host: " + host + " already exists so no need to store it.");
+            logger.debug("Channel mapping to host: {} already exists so no need to store it.", host);
             try {
                 HedwigClientImpl.getResponseHandlerFromChannel(channel).handleChannelClosedExplicitly();
             } catch (NoResponseHandlerException e) {

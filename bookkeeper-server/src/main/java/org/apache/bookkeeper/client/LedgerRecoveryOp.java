@@ -121,7 +121,7 @@ class LedgerRecoveryOp implements ReadCallback, AddCallback {
                         cb.operationComplete(BKException.Code.ZKException, null);
                     } else {
                         cb.operationComplete(BKException.Code.OK, null);
-                        LOG.debug("After closing length is: " + lh.getLength());
+                        LOG.debug("After closing length is: {}", lh.getLength());
                     }
                 }
                 }, null, BKException.Code.LedgerClosedException);

@@ -79,9 +79,8 @@ public class BenchmarkSubscriber extends BenchmarkWorker implements Callable<Voi
                 @Override
                 public void deliver(ByteString thisTopic, ByteString subscriberId, Message msg,
                 Callback<Void> callback, Object context) {
-                    if (logger.isDebugEnabled())
-                        logger.debug("Got message from src-region: " + msg.getSrcRegion() + " with seq-id: "
-                                     + msg.getMsgId());
+                    logger.debug("Got message from src-region: {} with seq-id: {}",
+                        msg.getSrcRegion(), msg.getMsgId());
 
                     String mapKey = topic + msg.getSrcRegion().toStringUtf8();
                     Long lastSeqIdSeen = lastSeqIdSeenMap.get(mapKey);

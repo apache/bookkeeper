@@ -63,8 +63,7 @@ public class SubscribeReconnectCallback implements Callback<PubSubProtocol.Respo
     class SubscribeReconnectRetryTask extends TimerTask {
         @Override
         public void run() {
-            if (logger.isDebugEnabled())
-                logger.debug("Retrying subscribe reconnect request for origSubData: " + origSubData);
+            logger.debug("Retrying subscribe reconnect request for origSubData: {}", origSubData);
             // Clear out all of the servers we've contacted or attempted to from
             // this request.
             origSubData.clearServersList();
@@ -73,8 +72,7 @@ public class SubscribeReconnectCallback implements Callback<PubSubProtocol.Respo
     }
 
     public void operationFinished(Object ctx, PubSubProtocol.ResponseBody resultOfOperation) {
-        if (logger.isDebugEnabled())
-            logger.debug("Subscribe reconnect succeeded for origSubData: " + origSubData);
+        logger.debug("Subscribe reconnect succeeded for origSubData: {}", origSubData);
         // Now we want to restart delivery for the subscription channel only
         // if delivery was started at the time the original subscribe channel
         // was disconnected.

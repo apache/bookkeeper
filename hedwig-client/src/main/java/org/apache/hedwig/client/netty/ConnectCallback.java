@@ -78,8 +78,7 @@ public class ConnectCallback implements ChannelFutureListener {
                 pubSubData.getCallback().operationFailed(pubSubData.context, new CouldNotConnectException(
                                                         "Could not connect to host: " + host));
             } else {
-                if (logger.isDebugEnabled())
-                    logger.debug("Try to connect to server: " + host + " again for pubSubData: " + pubSubData);
+                logger.debug("Try to connect to server: {} again for pubSubData: {}", host, pubSubData);
                 // Keep track of this current server that we failed to connect
                 // to but retry the request on the default server host/VIP.
                 // The topic2Host mapping might need to be updated.
@@ -95,8 +94,7 @@ public class ConnectCallback implements ChannelFutureListener {
 
         // Now that we have connected successfully to the server, see what type
         // of PubSub request this was.
-        if (logger.isDebugEnabled())
-            logger.debug("Connection to host: " + host + " was successful for pubSubData: " + pubSubData);
+        logger.debug("Connection to host: {} was successful for pubSubData: {}", host, pubSubData);
         if (pubSubData.operationType.equals(OperationType.PUBLISH)) {
             // Publish Request so store this Channel connection in the
             // HedwigPublisher Map (if it doesn't exist yet) and then

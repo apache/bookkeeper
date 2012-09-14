@@ -278,10 +278,8 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                             return;
                         }
 
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Read response from ledger: " + lh.getId() + " entry-id: "
-                                         + entry.getEntryId());
-                        }
+                        logger.debug("Read response from ledger: {} entry-id: {}",
+                                     lh.getId(), entry.getEntryId());
 
                         assert expectedEntryId == entry.getEntryId() : "expectedEntryId (" + expectedEntryId
                         + ") != entry.getEntryId() (" + entry.getEntryId() + ")";

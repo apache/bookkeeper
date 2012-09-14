@@ -206,9 +206,7 @@ public class LedgerHandle {
     }
 
     void writeLedgerConfig(GenericCallback<Void> writeCb) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Writing metadata to ledger manager: " + this.ledgerId + ", " + metadata.getVersion());
-        }
+        LOG.debug("Writing metadata to ledger manager: {}, {}", this.ledgerId, metadata.getVersion());
 
         bk.getLedgerManager().writeLedgerMetadata(ledgerId, metadata, writeCb);
     }
@@ -665,10 +663,7 @@ public class LedgerHandle {
     void handleBookieFailure(final InetSocketAddress addr, final int bookieIndex) {
         InetSocketAddress newBookie;
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Handling failure of bookie: " + addr + " index: "
-                      + bookieIndex);
-        }
+        LOG.debug("Handling failure of bookie: {} index: {}", addr, bookieIndex);
         final ArrayList<InetSocketAddress> newEnsemble = new ArrayList<InetSocketAddress>();
         blockAddCompletions.incrementAndGet();
         final long newEnsembleStartEntry = lastAddConfirmed + 1;

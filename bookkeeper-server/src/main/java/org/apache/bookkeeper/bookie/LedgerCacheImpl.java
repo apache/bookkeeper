@@ -257,9 +257,7 @@ public class LedgerCacheImpl implements LedgerCache {
                     lf = new File(dir, ledgerName);
                     // A new ledger index file has been created for this Bookie.
                     // Add this new ledger to the set of active ledgers.
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("New ledger index file created for ledgerId: " + ledger);
-                    }
+                    LOG.debug("New ledger index file created for ledgerId: {}", ledger);
                     activeLedgerManager.addActiveLedger(ledger, true);
                 }
                 evictFileInfoIfNecessary();
@@ -300,7 +298,7 @@ public class LedgerCacheImpl implements LedgerCache {
                 synchronized(this) {
                     for(Long l: pages.keySet()) {
                         if (LOG.isTraceEnabled()) {
-                            LOG.trace("Adding " + Long.toHexString(l) + " to dirty pages");
+                            LOG.trace("Adding {} to dirty pages", Long.toHexString(l));
                         }
                         dirtyLedgers.add(l);
                     }
@@ -347,9 +345,7 @@ public class LedgerCacheImpl implements LedgerCache {
             for(Map.Entry<Long, LedgerEntryPage> entry: pageMap.entrySet()) {
                 LedgerEntryPage lep = entry.getValue();
                 if (lep.isClean()) {
-                    if (LOG.isTraceEnabled()) {
-                        LOG.trace("Page is clean " + lep);
-                    }
+                    LOG.trace("Page is clean {}", lep);
                     continue;
                 }
                 firstEntryList.add(lep.getFirstEntry());
@@ -419,7 +415,7 @@ public class LedgerCacheImpl implements LedgerCache {
                               List<LedgerEntryPage> entries, FileInfo fi,
                               int start, int count) throws IOException {
         if (LOG.isTraceEnabled()) {
-            LOG.trace("Writing " + count + " buffers of " + Long.toHexString(ledger));
+            LOG.trace("Writing {} buffers of {}", count, Long.toHexString(ledger));
         }
         if (count == 0) {
             return;
@@ -613,8 +609,7 @@ public class LedgerCacheImpl implements LedgerCache {
      */
     @Override
     public void deleteLedger(long ledgerId) throws IOException {
-        if (LOG.isDebugEnabled())
-            LOG.debug("Deleting ledgerId: " + ledgerId);
+        LOG.debug("Deleting ledgerId: {}", ledgerId);
 
         // remove pages first to avoid page flushed when deleting file info
         synchronized(this) {

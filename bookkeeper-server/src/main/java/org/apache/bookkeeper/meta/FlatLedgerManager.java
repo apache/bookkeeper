@@ -147,8 +147,8 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
             Map<Long, Boolean> bkActiveLedgers = activeLedgers.snapshot();
             Set<Long> zkActiveLedgers = getLedgersInSingleNode(ledgerRootPath);
             if (LOG.isDebugEnabled()) {
-                LOG.debug("All active ledgers from ZK: " + zkActiveLedgers);
-                LOG.debug("Current active ledgers from Bookie: " + bkActiveLedgers.keySet());
+                LOG.debug("All active ledgers from ZK: {}. Current active ledgers from Bookie: {}.",
+                    zkActiveLedgers, bkActiveLedgers.keySet());
             }
             doGc(gc, bkActiveLedgers, zkActiveLedgers);
         } catch (IOException ie) {

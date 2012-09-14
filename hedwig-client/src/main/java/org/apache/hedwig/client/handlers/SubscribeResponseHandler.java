@@ -218,10 +218,8 @@ public class SubscribeResponseHandler {
                 // so these messages are not consumed and just buffered up here.
                 if (subscribeMsgQueue == null)
                     subscribeMsgQueue = new LinkedList<Message>();
-                if (logger.isDebugEnabled())
-                    logger
-                    .debug("Message has arrived but Subscribe channel does not have a registered MessageHandler yet so queueing up the message: "
-                           + message);
+                logger.debug("Message has arrived but Subscribe channel does not have a registered "
+                    + "MessageHandler yet so queueing up the message: {}", message);
                 subscribeMsgQueue.add(message);
             }
         }
@@ -301,10 +299,8 @@ public class SubscribeResponseHandler {
             // Send the consume request and reset the consumed messages buffer
             // variables. We will use the same Channel created from the
             // subscribe request for the TopicSubscriber.
-            if (logger.isDebugEnabled())
-                logger
-                .debug("Consumed message buffer limit reached so send the Consume Request to the server with lastMessageSeqId: "
-                       + lastMessageSeqId);
+            logger.debug("Consumed message buffer limit reached so send the Consume Request to the "
+                + "server with lastMessageSeqId: {}", lastMessageSeqId);
             responseHandler.getSubscriber().doConsume(origSubData, subscribeChannel, lastMessageSeqId);
             numConsumedMessagesInBuffer = 0;
             lastMessageSeqId = null;
@@ -316,11 +312,9 @@ public class SubscribeResponseHandler {
         // consume. We could make this a configurable parameter if needed.
         if (!subscribeChannel.isReadable() && outstandingMsgSet.isEmpty()) {
             if (logger.isDebugEnabled())
-                logger
-                .debug("Message consumption has caught up so okay to turn off throttling of messages on the subscribe channel for topic: "
-                       + origSubData.topic.toStringUtf8()
-                       + ", subscriberId: "
-                       + origSubData.subscriberId.toStringUtf8());
+                logger.debug("Message consumption has caught up so okay to turn off throttling of " +
+                    "messages on the subscribe channel for topic: " + origSubData.topic.toStringUtf8()
+                       + ", subscriberId: " + origSubData.subscriberId.toStringUtf8());
             subscribeChannel.setReadable(true);
         }
     }
