@@ -84,6 +84,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-396: Compilation issue in TestClient.java of BenchMark ( showing this in eclipse) (umamahesh via sijie)
 
+        BOOKKEEPER-403: ReReadMetadataCb is not executed in the thread responsible for that ledger (ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

@@ -22,7 +22,7 @@
 package org.apache.bookkeeper.client;
 
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
  * Encapsulates asynchronous ledger delete operation
  *
  */
-class LedgerDeleteOp implements GenericCallback<Void> {
+class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerDeleteOp.class);
 
@@ -52,6 +52,7 @@ class LedgerDeleteOp implements GenericCallback<Void> {
      *            optional control object
      */
     LedgerDeleteOp(BookKeeper bk, long ledgerId, DeleteCallback cb, Object ctx) {
+        super(bk.mainWorkerPool, ledgerId);
         this.bk = bk;
         this.ledgerId = ledgerId;
         this.cb = cb;
@@ -70,8 +71,8 @@ class LedgerDeleteOp implements GenericCallback<Void> {
     /**
      * Implements Delete Callback.
      */
-    public void operationComplete(int rc, Void result) {
+    @Override
+    public void safeOperationComplete(int rc, Void result) {
         cb.deleteComplete(rc, this.ctx);
     }
-
 }

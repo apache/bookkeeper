@@ -23,6 +23,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+
 /**
  * This class provides 2 things over the java {@link ScheduledExecutorService}.
  *
@@ -95,4 +97,35 @@ public class OrderedSafeExecutor {
         }
     }
 
+    /**
+     * Generic callback implementation which will run the
+     * callback in the thread which matches the ordering key
+     */
+    public static abstract class OrderedSafeGenericCallback<T>
+            implements GenericCallback<T> {
+        private final OrderedSafeExecutor executor;
+        private final Object orderingKey;
+
+        /**
+         * @param executor The executor on which to run the callback
+         * @param orderingKey Key used to decide which thread the callback
+         *                    should run on.
+         */
+        public OrderedSafeGenericCallback(OrderedSafeExecutor executor, Object orderingKey) {
+            this.executor = executor;
+            this.orderingKey = orderingKey;
+        }
+
+        @Override
+        public final void operationComplete(final int rc, final T result) {
+            executor.submitOrdered(orderingKey, new SafeRunnable() {
+                    @Override
+                    public void safeRun() {
+                        safeOperationComplete(rc, result);
+                    }
+                });
+        }
+
+        public abstract void safeOperationComplete(int rc, T result);
+    }
 }

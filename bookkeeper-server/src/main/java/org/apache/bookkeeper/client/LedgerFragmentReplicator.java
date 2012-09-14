@@ -30,6 +30,8 @@ import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
+
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException.Code;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -261,9 +263,10 @@ public class LedgerFragmentReplicator {
                     // will have updated the stat
                     // other operations such as (addEnsemble) would update it
                     // too.
-                    lh.rereadMetadata(new GenericCallback<LedgerMetadata>() {
+                    lh.rereadMetadata(new OrderedSafeGenericCallback<LedgerMetadata>(lh.bk.mainWorkerPool,
+                                                                                     lh.getId()) {
                         @Override
-                        public void operationComplete(int rc,
+                        public void safeOperationComplete(int rc,
                                 LedgerMetadata newMeta) {
                             if (rc != BKException.Code.OK) {
                                 LOG

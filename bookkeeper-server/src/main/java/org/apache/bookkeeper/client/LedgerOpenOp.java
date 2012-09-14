@@ -28,6 +28,7 @@ import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -155,9 +156,9 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         }
 
         if (doRecovery) {
-            lh.recover(new GenericCallback<Void>() {
+            lh.recover(new OrderedSafeGenericCallback<Void>(bk.mainWorkerPool, ledgerId) {
                     @Override
-                    public void operationComplete(int rc, Void result) {
+                    public void safeOperationComplete(int rc, Void result) {
                         if (rc == BKException.Code.OK) {
                             cb.openComplete(BKException.Code.OK, lh, LedgerOpenOp.this.ctx);
                         } else if (rc == BKException.Code.UnauthorizedAccessException) {
