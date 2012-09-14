@@ -147,7 +147,8 @@ void SubscriberReconnectCallback::operationFailed(const std::exception& exceptio
 }
 
 SubscriberClientChannelHandler::SubscriberClientChannelHandler(const ClientImplPtr& client, SubscriberImpl& subscriber, const PubSubDataPtr& data)
-  : HedwigClientChannelHandler(client), subscriber(subscriber), origData(data), closed(false), should_wait(true)  {
+  : HedwigClientChannelHandler(client), subscriber(subscriber), origData(data), closed(false),
+    should_wait(true), disconnected(false) {
   LOG4CXX_DEBUG(logger, "Creating SubscriberClientChannelHandler " << this);
 }
 
@@ -178,7 +179,7 @@ void SubscriberClientChannelHandler::messageReceived(const DuplexChannelPtr& cha
 void SubscriberClientChannelHandler::close() {
   closed = true;
 
-  if (channel) {
+  if (channel.get()) {
     channel->kill();
   }
 }
@@ -190,7 +191,7 @@ void SubscriberClientChannelHandler::close() {
     return;
   }
   handler->should_wait = false;
-  handler->channelDisconnected(channel, e);
+  handler->reconnect(channel, e);
 }
 
 void SubscriberClientChannelHandler::channelDisconnected(const DuplexChannelPtr& channel, const std::exception& e) {
@@ -205,12 +206,40 @@ void SubscriberClientChannelHandler::channelDisconnected(const DuplexChannelPtr&
     return;
   }
 
+  {
+    boost::shared_lock<boost::shared_mutex> lock(disconnected_lock);
+    // some one is reconnecting return
+    if (disconnected) {
+      return;
+    }
+    disconnected = true;
+  }
+
+  // if we have registered the subscription channel listener, disable retry
+  // just trigger listener to let application handle channel disconnected event
+  if (!origData->getSubscriptionOptions().enableresubscribe()) {
+    LOG4CXX_INFO(logger, "Tell subscriber (topic:" << origData->getTopic()
+                         << ", subscriberId:" << origData->getSubscriberId()
+                         << ") his topic has been moved : channel "
+                         << channel.get() << " is disconnected");
+    // remove record of the failed channel from the subscriber
+    client->getSubscriberImpl().closeSubscription(origData->getTopic(), origData->getSubscriberId());
+    // emit the event to notify the client that topic has been moved
+    client->getSubscriberImpl().emitSubscriptionEvent(
+      origData->getTopic(), origData->getSubscriberId(), TOPIC_MOVED);
+  } else {
+    reconnect(channel, e);
+  }
+}
+
+void SubscriberClientChannelHandler::reconnect(const DuplexChannelPtr& channel, const std::exception& e) {
   if (should_wait) {
     int retrywait = client->getConfiguration().getInt(Configuration::RECONNECT_SUBSCRIBE_RETRY_WAIT_TIME,
 						      DEFAULT_RECONNECT_SUBSCRIBE_RETRY_WAIT_TIME);
     
-    boost::asio::deadline_timer t(channel->getService(), boost::posix_time::milliseconds(retrywait));
-    t.async_wait(boost::bind(&SubscriberClientChannelHandler::reconnectTimerComplete, shared_from_this(), 
+    // set reconnect timer
+    reconnectTimer = ReconnectTimerPtr(new boost::asio::deadline_timer(channel->getService(), boost::posix_time::milliseconds(retrywait)));
+    reconnectTimer->async_wait(boost::bind(&SubscriberClientChannelHandler::reconnectTimerComplete, shared_from_this(),
 			     channel, e, boost::asio::placeholders::error));  
     return;
   }
@@ -387,9 +416,12 @@ void SubscriberImpl::doUnsubscribe(const DuplexChannelPtr& channel, const PubSub
 
 void SubscriberImpl::consume(const std::string& topic, const std::string& subscriberId, const MessageSeqId& messageSeqId) {
   TopicSubscriber t(topic, subscriberId);
-  
-  boost::shared_lock<boost::shared_mutex> lock(topicsubscriber2handler_lock);
-  SubscriberClientChannelHandlerPtr handler = topicsubscriber2handler[t];
+
+  SubscriberClientChannelHandlerPtr handler;
+  {
+    boost::shared_lock<boost::shared_mutex> lock(topicsubscriber2handler_lock);
+    handler = topicsubscriber2handler[t];
+  }
 
   if (handler.get() == 0) {
     LOG4CXX_ERROR(logger, "Cannot consume. Bad handler for topic(" << topic << ") subscriberId(" << subscriberId << ") topicsubscriber2topic(" << &topicsubscriber2handler << ")");
@@ -399,6 +431,7 @@ void SubscriberImpl::consume(const std::string& topic, const std::string& subscr
   DuplexChannelPtr channel = handler->getChannel();
   if (channel.get() == 0) {
     LOG4CXX_ERROR(logger, "Trying to consume a message on a topic/subscriber pair that don't have a channel. Something fishy going on. Topic: " << topic << " SubscriberId: " << subscriberId << " MessageSeqId: " << messageSeqId.localcomponent());
+    return;
   }
   
   PubSubDataPtr data = PubSubData::forConsumeRequest(client->counter().next(), subscriberId, topic, messageSeqId);  
@@ -430,23 +463,31 @@ void SubscriberImpl::startDelivery(const std::string& topic, const std::string& 
                                    const MessageHandlerCallbackPtr& callback) {
   TopicSubscriber t(topic, subscriberId);
 
-  boost::shared_lock<boost::shared_mutex> lock(topicsubscriber2handler_lock);
-  SubscriberClientChannelHandlerPtr handler = topicsubscriber2handler[t];
+  SubscriberClientChannelHandlerPtr handler;
+  {
+    boost::shared_lock<boost::shared_mutex> lock(topicsubscriber2handler_lock);
+    handler = topicsubscriber2handler[t];
+  }
 
   if (handler.get() == 0) {
     LOG4CXX_ERROR(logger, "Trying to start deliver on a non existant handler topic = " << topic << ", subscriber = " << subscriberId);
+    throw NotSubscribedException();
   }
   handler->startDelivery(callback);
 }
 
 void SubscriberImpl::stopDelivery(const std::string& topic, const std::string& subscriberId) {
   TopicSubscriber t(topic, subscriberId);
-  
-  boost::shared_lock<boost::shared_mutex> lock(topicsubscriber2handler_lock);
-  SubscriberClientChannelHandlerPtr handler = topicsubscriber2handler[t];
+
+  SubscriberClientChannelHandlerPtr handler;
+  {
+    boost::shared_lock<boost::shared_mutex> lock(topicsubscriber2handler_lock);
+    handler = topicsubscriber2handler[t];
+  }
 
   if (handler.get() == 0) {
-    LOG4CXX_ERROR(logger, "Trying to start deliver on a non existant handler topic = " << topic << ", subscriber = " << subscriberId);
+    LOG4CXX_ERROR(logger, "Trying to stop deliver on a non existant handler topic = " << topic << ", subscriber = " << subscriberId);
+    throw NotSubscribedException();
   }
   handler->stopDelivery();
 }
@@ -482,6 +523,29 @@ const SubscriptionPreferencesPtr& SubscriberImpl::getSubscriptionPreferences(
   TopicSubscriber t(topic, subscriberId);
   const SubscriptionPreferencesPtr &preferences = topicsubscriber2preferences[t];
   return preferences;
+}
+
+void SubscriberImpl::addSubscriptionListener(SubscriptionListenerPtr& listener) {
+  boost::lock_guard<boost::shared_mutex> lock(listeners_lock);
+  listeners.insert(listener);
+}
+
+void SubscriberImpl::removeSubscriptionListener(SubscriptionListenerPtr& listener) {
+  boost::lock_guard<boost::shared_mutex> lock(listeners_lock);
+  listeners.erase(listener);
+}
+
+void SubscriberImpl::emitSubscriptionEvent(const std::string& topic,
+                                           const std::string& subscriberId,
+                                           const SubscriptionEvent event) {
+  boost::shared_lock<boost::shared_mutex> lock(listeners_lock);
+  if (0 == listeners.size()) {
+    return;
+  }
+  for (SubscriptionListenerSet::iterator iter = listeners.begin();
+       iter != listeners.end(); ++iter) {
+    (*iter)->processEvent(topic, subscriberId, event);
+  }
 }
 
 /**

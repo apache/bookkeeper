@@ -31,6 +31,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.util.Callback;
+import org.apache.hedwig.util.SubscriptionListener;
 
 /**
  * Interface to define the client Subscriber API.
@@ -349,4 +350,21 @@ public interface Subscriber {
     public void asyncCloseSubscription(ByteString topic, ByteString subscriberId, Callback<Void> callback,
                                        Object context);
 
+    /**
+     * Register a subscription listener which get notified about subscription
+     * event indicating a state of a subscription that subscribed disable
+     * resubscribe logic.
+     *
+     * @param listener
+     *          Subscription Listener
+     */
+    public void addSubscriptionListener(SubscriptionListener listener);
+
+    /**
+     * Unregister a subscription listener.
+     *
+     * @param listener
+     *          Subscription Listener
+     */
+    public void removeSubscriptionListener(SubscriptionListener listener);
 }

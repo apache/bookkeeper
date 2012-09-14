@@ -36,7 +36,7 @@ namespace Hedwig {
     virtual void asyncSubscribe(const std::string& topic, const std::string& subscriberId, const SubscribeRequest::CreateOrAttach mode, const OperationCallbackPtr& callback) = 0;
     virtual void subscribe(const std::string& topic, const std::string& subscriberId, const SubscriptionOptions& options) = 0;
     virtual void asyncSubscribe(const std::string& topic, const std::string& subscriberId, const SubscriptionOptions& options, const OperationCallbackPtr& callback) = 0;
-    
+
     virtual void unsubscribe(const std::string& topic, const std::string& subscriberId) = 0;
     virtual void asyncUnsubscribe(const std::string& topic, const std::string& subscriberId, const OperationCallbackPtr& callback) = 0;  
 
@@ -52,6 +52,14 @@ namespace Hedwig {
     virtual void stopDelivery(const std::string& topic, const std::string& subscriberId) = 0;
 
     virtual void closeSubscription(const std::string& topic, const std::string& subscriberId) = 0;
+
+    //
+    // API to register/unregister subscription listeners for receiving
+    // events indicating subscription changes for those disable resubscribe
+    // subscriptions
+    //
+    virtual void addSubscriptionListener(SubscriptionListenerPtr& listener) = 0;
+    virtual void removeSubscriptionListener(SubscriptionListenerPtr& listener) = 0;
 
     virtual ~Subscriber() {}
   };

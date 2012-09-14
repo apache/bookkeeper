@@ -25,6 +25,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.server.common.ServerConfiguration;
+import org.apache.hedwig.server.delivery.DeliveryManager;
 import org.apache.hedwig.server.persistence.PersistenceManager;
 import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.util.Callback;
@@ -36,8 +37,9 @@ public class StubSubscriptionManager extends InMemorySubscriptionManager {
         this.fail = fail;
     }
 
-    public StubSubscriptionManager(TopicManager tm, PersistenceManager pm, ServerConfiguration conf, ScheduledExecutorService scheduler) {
-        super(tm, pm, conf, scheduler);
+    public StubSubscriptionManager(TopicManager tm, PersistenceManager pm, DeliveryManager dm,
+                                   ServerConfiguration conf, ScheduledExecutorService scheduler) {
+        super(conf, tm, pm, dm, scheduler);
     }
 
     @Override

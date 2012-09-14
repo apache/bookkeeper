@@ -18,9 +18,12 @@
 package org.apache.hedwig.client.netty;
 
 import java.net.InetSocketAddress;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.apache.hedwig.client.exceptions.NoResponseHandlerException;
 import org.apache.hedwig.protocol.PubSubProtocol;
@@ -54,11 +57,13 @@ import org.apache.hedwig.protocol.PubSubProtocol.ProtocolVersion;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.UnsubscribeRequest;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionEvent;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 import org.apache.hedwig.util.Callback;
+import org.apache.hedwig.util.SubscriptionListener;
 
 /**
  * This is the Hedwig Netty specific implementation of the Subscriber interface.
@@ -82,6 +87,8 @@ public class HedwigSubscriber implements Subscriber {
     // user set when connection is recovered
     protected final ConcurrentMap<TopicSubscriber, MessageHandler> topicSubscriber2MessageHandler= new ConcurrentHashMap<TopicSubscriber, MessageHandler>();
 
+    protected final CopyOnWriteArraySet<SubscriptionListener> listeners;
+
     protected final HedwigClientImpl client;
     protected final ClientConfiguration cfg;
     private final Object closeLock = new Object();
@@ -90,6 +97,22 @@ public class HedwigSubscriber implements Subscriber {
     public HedwigSubscriber(HedwigClientImpl client) {
         this.client = client;
         this.cfg = client.getConfiguration();
+        this.listeners = new CopyOnWriteArraySet<SubscriptionListener>();
+    }
+
+    public void addSubscriptionListener(SubscriptionListener listener) {
+        listeners.add(listener); 
+    }
+
+    public void removeSubscriptionListener(SubscriptionListener listener) {
+        listeners.remove(listener);
+    }
+
+    void emitSubscriptionEvent(ByteString topic, ByteString subscriberId,
+                               SubscriptionEvent event) {
+        for (SubscriptionListener listener : listeners) {
+            listener.processEvent(topic, subscriberId, event);
+        }
     }
 
     // Private method that holds the common logic for doing synchronous
@@ -424,6 +447,7 @@ public class HedwigSubscriber implements Subscriber {
             SubscribeRequest.Builder subscribeRequestBuilder = SubscribeRequest.newBuilder();
             subscribeRequestBuilder.setSubscriberId(pubSubData.subscriberId);
             subscribeRequestBuilder.setCreateOrAttach(pubSubData.options.getCreateOrAttach());
+            subscribeRequestBuilder.setForceAttach(pubSubData.options.getForceAttach());
             // For now, all subscribes should wait for all cross-regional
             // subscriptions to be established before returning.
             subscribeRequestBuilder.setSynchronous(true);

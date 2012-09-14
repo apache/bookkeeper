@@ -40,11 +40,12 @@ public class MMSubscriptionManager extends AbstractSubscriptionManager {
 
     SubscriptionDataManager subManager;
 
-    public MMSubscriptionManager(MetadataManagerFactory metaManagerFactory,
+    public MMSubscriptionManager(ServerConfiguration cfg,
+                                 MetadataManagerFactory metaManagerFactory,
                                  TopicManager topicMgr, PersistenceManager pm,
-                                 ServerConfiguration cfg,
+                                 DeliveryManager dm,
                                  ScheduledExecutorService scheduler) {
-        super(cfg, topicMgr, pm, scheduler);
+        super(cfg, topicMgr, pm, dm, scheduler);
         this.subManager = metaManagerFactory.newSubscriptionDataManager();
     }
 

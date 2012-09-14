@@ -121,6 +121,8 @@ namespace Hedwig {
     void setChannel(const DuplexChannelPtr& channel);
     DuplexChannelPtr& getChannel();
 
+    void reconnect(const DuplexChannelPtr& channel, const std::exception& e);
+
     static void reconnectTimerComplete(const SubscriberClientChannelHandlerPtr handler, const DuplexChannelPtr channel, const std::exception e, 
 				       const boost::system::error_code& error);
 
@@ -135,7 +137,18 @@ namespace Hedwig {
     PubSubDataPtr origData;
     DuplexChannelPtr channel;
     bool closed;
+
+    boost::shared_mutex disconnected_lock;
     bool should_wait;
+    bool disconnected;
+    typedef boost::shared_ptr<boost::asio::deadline_timer> ReconnectTimerPtr;
+    ReconnectTimerPtr reconnectTimer;
+  };
+
+  struct SubscriptionListenerPtrHash : public std::unary_function<SubscriptionListenerPtr, size_t> {
+    size_t operator()(const Hedwig::SubscriptionListenerPtr& listener) const {
+      return reinterpret_cast<size_t>(listener.get());
+    }
   };
 
   class SubscriberImpl : public Subscriber {
@@ -167,6 +180,12 @@ namespace Hedwig {
     void doSubscribe(const DuplexChannelPtr& channel, const PubSubDataPtr& data, const SubscriberClientChannelHandlerPtr& handler);
     void doUnsubscribe(const DuplexChannelPtr& channel, const PubSubDataPtr& data);
 
+    virtual void addSubscriptionListener(SubscriptionListenerPtr& listener);
+    virtual void removeSubscriptionListener(SubscriptionListenerPtr& listener);
+    void emitSubscriptionEvent(const std::string& topic,
+                               const std::string& subscriberId,
+                               const SubscriptionEvent event);
+
   private:
     void setSubscriptionPreferences(const std::string& topic, const std::string& subscriberId,
                                     const SubscriptionPreferences& preferences);
@@ -180,6 +199,10 @@ namespace Hedwig {
     boost::shared_mutex topicsubscriber2handler_lock;	    
     std::tr1::unordered_map<TopicSubscriber, SubscriptionPreferencesPtr, TopicSubscriberHash> topicsubscriber2preferences;
     boost::shared_mutex topicsubscriber2preferences_lock;	    
+
+    typedef std::tr1::unordered_set<SubscriptionListenerPtr, SubscriptionListenerPtrHash> SubscriptionListenerSet;
+    SubscriptionListenerSet listeners;
+    boost::shared_mutex listeners_lock;
   };
 
 };

@@ -113,6 +113,26 @@ private:
   SimpleWaitCondition *cond;
 };
 
+class TestSubscriptionListener : public Hedwig::SubscriptionListener {
+public:
+  TestSubscriptionListener(SimpleWaitCondition* cond) : cond(cond) {
+  }
+
+  virtual ~TestSubscriptionListener() {}
+
+  virtual void processEvent(const std::string& topic, const std::string& subscriberId,
+                            const Hedwig::SubscriptionEvent event) {
+    if (Hedwig::TOPIC_MOVED == event) {
+      if (cond) {
+        cond->setSuccess(true);
+        cond->notify();
+      }
+    }
+  }
+
+private:
+  SimpleWaitCondition *cond;
+};
 
 class TestServerConfiguration : public Hedwig::Configuration {
 public:

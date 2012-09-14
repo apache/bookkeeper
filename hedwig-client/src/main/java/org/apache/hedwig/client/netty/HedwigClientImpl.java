@@ -54,6 +54,10 @@ public class HedwigClientImpl implements Client {
 
     private static final Logger logger = LoggerFactory.getLogger(HedwigClientImpl.class);
 
+    // Empty Topic List
+    private ConcurrentLinkedQueue<ByteString> EMPTY_TOPIC_LIST =
+        new ConcurrentLinkedQueue<ByteString>();
+
     // Global counter used for generating unique transaction ID's for
     // publish and subscribe requests
     protected final AtomicLong globalCounter = new AtomicLong();
@@ -370,6 +374,31 @@ public class HedwigClientImpl implements Client {
             }
             // Now it is safe to remove the host2Topics mapping entry.
             host2Topics.remove(host, topicsForHost);
+        }
+    }
+
+    // If a subscribe channel goes down, the topic might have moved.
+    // We only clear out that topic for the host and not all cached information.
+    public void clearHostForTopic(ByteString topic, InetSocketAddress host) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Clearing topic: " + topic.toStringUtf8() + " for host: "
+                    + host);
+        }
+        if (topic2Host.remove(topic, host)) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Removed topic to host mapping for topic: " + topic.toStringUtf8()
+                           + " and host: " + host);
+            }
+        }
+        ConcurrentLinkedQueue<ByteString> topicsForHost = host2Topics.get(host);
+        if (null != topicsForHost && topicsForHost.remove(topic)) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Removed topic: " + topic.toStringUtf8() + " from host: " + host);
+            }
+            if (topicsForHost.isEmpty()) {
+                // remove only topic list is empty
+                host2Topics.remove(host, EMPTY_TOPIC_LIST);
+            }
         }
     }
 

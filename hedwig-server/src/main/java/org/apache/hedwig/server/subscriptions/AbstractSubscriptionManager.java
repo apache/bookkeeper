@@ -42,6 +42,7 @@ import org.apache.hedwig.protoextensions.MessageIdUtils;
 import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.common.TopicOpQueuer;
+import org.apache.hedwig.server.delivery.DeliveryManager;
 import org.apache.hedwig.server.persistence.PersistenceManager;
 import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.server.topics.TopicOwnershipChangeListener;
@@ -59,6 +60,9 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
     private final ArrayList<SubscriptionEventListener> listeners = new ArrayList<SubscriptionEventListener>();
     private final ConcurrentHashMap<ByteString, AtomicInteger> topic2LocalCounts = new ConcurrentHashMap<ByteString, AtomicInteger>();
 
+    // Handle to the DeliveryManager for the server so we can stop serving subscribers
+    // when losing topics
+    private final DeliveryManager dm;
     // Handle to the PersistenceManager for the server so we can pass along the
     // message consume pointers for each topic.
     private final PersistenceManager pm;
@@ -83,12 +87,14 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
         };
     }
 
-    public AbstractSubscriptionManager(ServerConfiguration cfg, TopicManager tm, PersistenceManager pm,
+    public AbstractSubscriptionManager(ServerConfiguration cfg, TopicManager tm,
+                                       PersistenceManager pm, DeliveryManager dm,
                                        ScheduledExecutorService scheduler) {
         this.cfg = cfg;
         queuer = new TopicOpQueuer(scheduler);
         tm.addTopicOwnershipChangeListener(this);
         this.pm = pm;
+        this.dm = dm;
         // Schedule the recurring MessagesConsumedTask only if a
         // PersistenceManager is passed.
         if (pm != null) {
@@ -238,8 +244,12 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
 
     class ReleaseOp extends TopicOpQueuer.AsynchronousOp<Void> {
 
-        public ReleaseOp(final ByteString topic, final Callback<Void> cb, Object ctx) {
+        final boolean removeStates;
+
+        public ReleaseOp(final ByteString topic, final Callback<Void> cb, Object ctx,
+                         boolean removeStates) {
             queuer.super(topic, cb, ctx);
+            this.removeStates = removeStates;
         }
 
         @Override
@@ -247,6 +257,8 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
             Callback<Void> finalCb = new Callback<Void>() {
                 @Override
                 public void operationFinished(Object ctx, Void resultOfOperation) {
+                    logger.info("Finished update subscription states when losting topic "
+                              + topic.toStringUtf8());
                     finish();
                 }
 
@@ -258,6 +270,28 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                 }
 
                 private void finish() {
+                    // tell delivery manager to stop delivery for subscriptions of this topic
+                    final Map<ByteString, InMemorySubscriptionState> topicSubscriptions;
+                    if (removeStates) {
+                        topicSubscriptions = top2sub2seq.remove(topic);
+                    } else {
+                        topicSubscriptions = top2sub2seq.get(topic);
+                    }
+                    // no subscriptions now, it may be removed by other release ops
+                    if (null != topicSubscriptions) {
+                        for (ByteString subId : topicSubscriptions.keySet()) {
+                            if (logger.isDebugEnabled()) {
+                                logger.debug("Stop serving subscriber (" + topic.toStringUtf8() + ", "
+                                           + subId.toStringUtf8() + ") when losing topic");
+                            }
+                            if (null != dm) {
+                                dm.stopServingSubscriber(topic, subId);
+                            }
+                        }
+                    }
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Stop serving topic " + topic.toStringUtf8());
+                    }
                     topic2LocalCounts.remove(topic);
                     // Since we decrement local count when some of remote subscriptions failed,
                     // while we don't unsubscribe those succeed subscriptions. so we can't depends
@@ -269,18 +303,13 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
             if (logger.isDebugEnabled()) {
                 logger.debug("Try to update subscription states when losing topic " + topic.toStringUtf8());
             }
-            updateSubscriptionStates(topic, finalCb, ctx, true);
+            updateSubscriptionStates(topic, finalCb, ctx);
         }
     }
 
-    void updateSubscriptionStates(ByteString topic, Callback<Void> finalCb, Object ctx, boolean removeTopic) {
+    void updateSubscriptionStates(ByteString topic, Callback<Void> finalCb, Object ctx) {
         // Try to update subscription states of a specified topic
-        Map<ByteString, InMemorySubscriptionState> states;
-        if (removeTopic) {
-            states = top2sub2seq.remove(topic);
-        } else {
-            states = top2sub2seq.get(topic);
-        }
+        Map<ByteString, InMemorySubscriptionState> states = top2sub2seq.get(topic);
         if (null == states) {
             finalCb.operationFinished(ctx, null);
         } else {
@@ -301,7 +330,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
      */
     @Override
     public void lostTopic(ByteString topic) {
-        queuer.pushAndMaybeRun(topic, new ReleaseOp(topic, noopCallback, null));
+        queuer.pushAndMaybeRun(topic, new ReleaseOp(topic, noopCallback, null, true));
     }
 
     private void notifyUnsubcribe(ByteString topic) {
@@ -342,7 +371,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                     String msg = "Topic: " + topic.toStringUtf8() + " subscriberId: " + subscriberId.toStringUtf8()
                                  + " requested creating a subscription but it is already subscribed with state: "
                                  + SubscriptionStateUtils.toString(subscriptionState.getSubscriptionState());
-                    logger.debug(msg);
+                    logger.error(msg);
                     cb.operationFailed(ctx, new PubSubException.ClientAlreadySubscribedException(msg));
                     return;
                 }
@@ -392,7 +421,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
             if (createOrAttach.equals(CreateOrAttach.ATTACH)) {
                 String msg = "Topic: " + topic.toStringUtf8() + " subscriberId: " + subscriberId.toStringUtf8()
                              + " requested attaching to an existing subscription but it is not subscribed";
-                logger.debug(msg);
+                logger.error(msg);
                 cb.operationFailed(ctx, new PubSubException.ClientNotSubscribedException(msg));
                 return;
             }
@@ -635,7 +664,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                         ConcurrencyUtils.put(queue, false);
                     }
                 };
-                updateSubscriptionStates(topic, finalCb, null, false);
+                updateSubscriptionStates(topic, finalCb, null);
                 queue.take();
             }
         } catch (InterruptedException ie) {

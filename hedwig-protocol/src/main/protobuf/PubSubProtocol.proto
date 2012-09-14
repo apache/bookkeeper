@@ -136,17 +136,26 @@ message SubscribeRequest{
 
     // subscription options
     optional SubscriptionPreferences preferences = 6;
+
+    // force attach subscription which would kill existed channel
+    // this option doesn't need to be persisted
+    optional bool forceAttach = 7 [default = false];
 }
 
 // used in client only
 // options are stored in SubscriptionPreferences structure
 message SubscriptionOptions {
+    // force attach subscription which would kill existed channel
+    // this option doesn't need to be persisted
+    optional bool forceAttach = 1 [default = false];
     optional SubscribeRequest.CreateOrAttach createOrAttach = 2 [default = CREATE_OR_ATTACH];
     optional uint32 messageBound = 3 [default = 0];
     // user customized subscription options
     optional Map options = 4;
     // server-side message filter
     optional string messageFilter = 5;
+    // enable resubscribe
+    optional bool enableResubscribe = 7 [default = true];
 }
 
 message ConsumeRequest{
@@ -166,6 +175,14 @@ message StopDeliveryRequest{
 
 message StartDeliveryRequest{
     required bytes subscriberId = 2;
+}
+
+// Identify an event happened for a subscription
+enum SubscriptionEvent {
+    // topic has changed ownership (hub server down or topic released)
+    TOPIC_MOVED = 1;
+    // subscription is force closed by other subscribers
+    SUBSCRIPTION_FORCED_CLOSED = 2;
 }
 
 message PubSubResponse{

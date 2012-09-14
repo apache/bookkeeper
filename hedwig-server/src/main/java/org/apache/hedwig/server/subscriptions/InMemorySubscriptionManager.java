@@ -24,14 +24,18 @@ import java.util.concurrent.ScheduledExecutorService;
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.server.common.ServerConfiguration;
+import org.apache.hedwig.server.delivery.DeliveryManager;
 import org.apache.hedwig.server.persistence.PersistenceManager;
 import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.util.Callback;
 
 public class InMemorySubscriptionManager extends AbstractSubscriptionManager {
 
-    public InMemorySubscriptionManager(TopicManager tm, PersistenceManager pm, ServerConfiguration conf, ScheduledExecutorService scheduler) {
-        super(conf, tm, pm, scheduler);
+    public InMemorySubscriptionManager(ServerConfiguration conf,
+                                       TopicManager tm, PersistenceManager pm,
+                                       DeliveryManager dm,
+                                       ScheduledExecutorService scheduler) {
+        super(conf, tm, pm, dm, scheduler);
     }
 
     @Override
@@ -69,6 +73,10 @@ public class InMemorySubscriptionManager extends AbstractSubscriptionManager {
     @Override
     public void lostTopic(ByteString topic) {
         // Intentionally do nothing, so that we dont lose in-memory information
+        if (logger.isDebugEnabled()) {
+            logger.debug("InMemorySubscriptionManager is losing topic " + topic.toStringUtf8());
+        }
+        queuer.pushAndMaybeRun(topic, new ReleaseOp(topic, noopCallback, null, false));
     }
 
     @Override

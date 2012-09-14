@@ -134,6 +134,7 @@ const PubSubRequestPtr PubSubData::getRequest() {
     Hedwig::SubscribeRequest* subreq = request->mutable_subscriberequest();
     subreq->set_subscriberid(subscriberid);
     subreq->set_createorattach(options.createorattach());
+    subreq->set_forceattach(options.forceattach());
     setPreferencesForSubRequest(subreq, options);
   } else if (type == CONSUME) {
     LOG4CXX_DEBUG(logger, "Creating consume request");

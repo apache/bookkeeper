@@ -148,11 +148,12 @@ public class PubSubServer {
         return pm;
     }
 
-    protected SubscriptionManager instantiateSubscriptionManager(TopicManager tm, PersistenceManager pm) {
+    protected SubscriptionManager instantiateSubscriptionManager(TopicManager tm, PersistenceManager pm,
+                                                                 DeliveryManager dm) {
         if (conf.isStandalone()) {
-            return new InMemorySubscriptionManager(tm, pm, conf, scheduler);
+            return new InMemorySubscriptionManager(conf, tm, pm, dm, scheduler);
         } else {
-            return new MMSubscriptionManager(mm, tm, pm, conf, scheduler);
+            return new MMSubscriptionManager(conf, mm, tm, pm, dm, scheduler);
         }
 
     }
@@ -392,7 +393,7 @@ public class PubSubServer {
                     dm = new FIFODeliveryManager(pm, conf);
                     dm.start();
 
-                    sm = instantiateSubscriptionManager(tm, pm);
+                    sm = instantiateSubscriptionManager(tm, pm, dm);
                     rm = instantiateRegionManager(pm, scheduler);
                     sm.addListener(rm);
 

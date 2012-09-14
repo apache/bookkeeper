@@ -164,3 +164,54 @@ TEST(SubscribeTest, testSubscribeTwice) {
   ASSERT_THROW(sub.subscribe("testTopic", "mySubscriberId-8", Hedwig::SubscribeRequest::CREATE_OR_ATTACH), Hedwig::AlreadySubscribedException);
 }
 
+TEST(SubscribeTest, testAsyncSubcribeForceAttach) {
+  Hedwig::Configuration* conf = new TestServerConfiguration();
+  std::auto_ptr<Hedwig::Configuration> confptr(conf);
+  // client 1
+  Hedwig::Client* client1 = new Hedwig::Client(*conf);
+  std::auto_ptr<Hedwig::Client> client1ptr(client1);
+  Hedwig::Subscriber& sub1 = client1->getSubscriber();
+  // client 2
+  Hedwig::Client* client2 = new Hedwig::Client(*conf);
+  std::auto_ptr<Hedwig::Client> client2ptr(client2);
+  Hedwig::Subscriber& sub2 = client2->getSubscriber();
+
+  SimpleWaitCondition* cond1 = new SimpleWaitCondition();
+  std::auto_ptr<SimpleWaitCondition> cond1ptr(cond1);
+  Hedwig::OperationCallbackPtr testcb1(new TestCallback(cond1));
+
+  SimpleWaitCondition* lcond1 = new SimpleWaitCondition();
+  std::auto_ptr<SimpleWaitCondition> lcond1ptr(lcond1);
+  Hedwig::SubscriptionListenerPtr listener1(new TestSubscriptionListener(lcond1));
+
+  Hedwig::SubscriptionOptions options;
+  options.set_createorattach(Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
+  options.set_forceattach(true);
+  options.set_enableresubscribe(false);
+
+  sub1.addSubscriptionListener(listener1);
+
+  sub1.asyncSubscribe("asyncSubscribeForceAttach", "mysub",
+                      options, testcb1);
+  cond1->wait();
+  ASSERT_TRUE(cond1->wasSuccess());
+
+  // sub2 subscribe would force close the channel of sub1
+  SimpleWaitCondition* cond2 = new SimpleWaitCondition();
+  std::auto_ptr<SimpleWaitCondition> cond2ptr(cond2);
+  Hedwig::OperationCallbackPtr testcb2(new TestCallback(cond2));
+
+  Hedwig::SubscriptionListenerPtr listener2(new TestSubscriptionListener(0));
+
+  sub2.addSubscriptionListener(listener2);
+
+  sub2.asyncSubscribe("asyncSubscribeForceAttach", "mysub",
+                      options, testcb2);
+  cond2->wait();
+  ASSERT_TRUE(cond2->wasSuccess());
+
+  // sub1 would receive the disconnect event
+  lcond1->wait();
+
+  sub1.unsubscribe("asyncSubscribeForceAttach", "mysub");
+}

@@ -47,7 +47,9 @@ import org.apache.hedwig.exceptions.PubSubException.UncertainStateException;
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
 import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionEvent;
 import org.apache.hedwig.util.HedwigSocketAddress;
+import org.apache.hedwig.util.SubscriptionListener;
 
 @ChannelPipelineCoverage("all")
 public class ResponseHandler extends SimpleChannelHandler {
@@ -301,7 +303,9 @@ public class ResponseHandler extends SimpleChannelHandler {
             // Subscribe channel disconnected so first close and clear all
             // cached Channel data set up for this topic subscription.
             sub.closeSubscription(origSubData.topic, origSubData.subscriberId);
-            client.clearAllTopicsForHost(host);
+            // a subscription channel disconnecteda because topic has moved.
+            // just clear the entry for the given topic
+            client.clearHostForTopic(origSubData.topic, host);
             // Since the connection to the server host that was responsible
             // for the topic died, we are not sure about the state of that
             // server. Resend the original subscribe request data to the default
@@ -309,14 +313,24 @@ public class ResponseHandler extends SimpleChannelHandler {
             // contacted or attempted to from this request as we are starting a
             // "fresh" subscribe request.
             origSubData.clearServersList();
-            // Set a new type of VoidCallback for this async call. We need this
-            // hook so after the subscribe reconnect has completed, delivery for
-            // that topic subscriber should also be restarted (if it was that
-            // case before the channel disconnect).
-            origSubData.setCallback(new SubscribeReconnectCallback(origSubData, client));
-            origSubData.context = null;
-            logger.debug("Disconnected subscribe channel so reconnect with origSubData: {}", origSubData);
-            client.doConnect(origSubData, cfg.getDefaultServerHost());
+            // do resubscribe if the subscription enables it
+            if (origSubData.options.getEnableResubscribe()) {
+                // Set a new type of VoidCallback for this async call. We need this
+                // hook so after the subscribe reconnect has completed, delivery for
+                // that topic subscriber should also be restarted (if it was that
+                // case before the channel disconnect).
+                origSubData.setCallback(new SubscribeReconnectCallback(origSubData, client));
+                origSubData.context = null;
+                // Clear the shouldClaim flag
+                origSubData.shouldClaim = false;
+                logger.debug("Disconnected subscribe channel so reconnect with origSubData: {}", origSubData);
+                client.doConnect(origSubData, cfg.getDefaultServerHost());
+            } else {
+                logger.info("Subscription channel for (topic:{}, subscriber:{}) is disconnected.",
+                            origSubData.topic.toStringUtf8(), origSubData.subscriberId.toStringUtf8());
+                sub.emitSubscriptionEvent(origSubData.topic, origSubData.subscriberId,
+                                          SubscriptionEvent.TOPIC_MOVED);
+            }
         }
 
         // Finally, all of the PubSubRequests that are still waiting for an ack

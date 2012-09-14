@@ -41,23 +41,40 @@ public abstract class PubSubServerStandAloneTestBase extends TestCase {
         }
     }
 
+    public ServerConfiguration getStandAloneServerConfiguration() {
+        return new StandAloneServerConfiguration();
+    }
+
     protected PubSubServer server;
 
     @Override
     @Before
     public void setUp() throws Exception {
         logger.info("STARTING " + getName());
-        server = new PubSubServer(new StandAloneServerConfiguration());
-        server.start();
+        startHubServer();
         logger.info("Standalone PubSubServer test setup finished");
     }
+
 
     @Override
     @After
     public void tearDown() throws Exception {
         logger.info("tearDown starting");
-        server.shutdown();
+        tearDownHubServer();
         logger.info("FINISHED " + getName());
+    }
+
+    protected void startHubServer() throws Exception {
+        startHubServer(getStandAloneServerConfiguration());
+    }
+
+    protected void startHubServer(ServerConfiguration conf) throws Exception {
+        server = new PubSubServer(conf);
+        server.start();
+    }
+
+    protected void tearDownHubServer() throws Exception {
+        server.shutdown();
     }
 
 }

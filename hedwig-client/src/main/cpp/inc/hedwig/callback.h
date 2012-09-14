@@ -30,6 +30,18 @@
 
 namespace Hedwig {
 
+  //
+  // A Listener registered for a Subscriber instance to emit events
+  // for those disable resubscribe subscriptions.
+  //
+  class SubscriptionListener {
+  public:
+    virtual void processEvent(const std::string &topic, const std::string &subscriberId,
+                              const Hedwig::SubscriptionEvent event) = 0;
+    virtual ~SubscriptionListener() {};
+  };
+  typedef std::tr1::shared_ptr<SubscriptionListener> SubscriptionListenerPtr;
+
   template<class R>
   class Callback {
   public:

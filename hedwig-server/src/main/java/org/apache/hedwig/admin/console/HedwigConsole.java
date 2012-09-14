@@ -50,11 +50,14 @@ import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionEvent;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.topics.HubInfo;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.HedwigSocketAddress;
+import org.apache.hedwig.util.SubscriptionListener;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 
@@ -238,6 +241,15 @@ public class HedwigConsole {
         
     }
 
+    static class ConsoleSubscriptionListener implements SubscriptionListener {
+
+        @Override
+        public void processEvent(ByteString t, ByteString s, SubscriptionEvent event) {
+            System.out.println("Subscription Channel for (topic:" + t.toStringUtf8() + ", subscriber:"
+                                + s.toStringUtf8() + ") received event : " + event);
+        }
+    }
+
     class SubCmd implements MyCommand {
 
         @Override
@@ -271,7 +283,10 @@ public class HedwigConsole {
             ByteString topic = ByteString.copyFromUtf8(args[1]);
             ByteString subId = ByteString.copyFromUtf8(args[2]);
             try {
-                subscriber.subscribe(topic, subId, mode);
+                SubscriptionOptions options =
+                    SubscriptionOptions.newBuilder().setCreateOrAttach(mode)
+                                       .setForceAttach(false).build();
+                subscriber.subscribe(topic, subId, options);
                 if (receive) {
                     subscriber.startDelivery(topic, subId, consoleHandler);
                     System.out.println("SUB DONE AND RECEIVE");
@@ -400,6 +415,7 @@ public class HedwigConsole {
                                  + " subscriber: " + args[2]);
                 return true;
             }
+            lastConsumedId = subData.getState().getMsgId().getLocalComponent();
             long numMessagesToConsume = Long.parseLong(args[3]);
             long idToConsumed = lastConsumedId + numMessagesToConsume;
             System.out.println("Try to move subscriber(" + args[2] + ") consume ptr of topic(" + args[1]
@@ -852,6 +868,7 @@ public class HedwigConsole {
         hubClient = new HedwigClient(hubClientCfg);
         publisher = hubClient.getPublisher();
         subscriber = hubClient.getSubscriber();
+        subscriber.addSubscriptionListener(new ConsoleSubscriptionListener());
         
         // other parameters
         myRegion = hubServerConf.getMyRegion();

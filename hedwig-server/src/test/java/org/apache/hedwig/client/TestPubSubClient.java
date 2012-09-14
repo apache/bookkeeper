@@ -40,20 +40,61 @@ import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.PublishResponse;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionEvent;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.server.PubSubServerStandAloneTestBase;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.ConcurrencyUtils;
+import org.apache.hedwig.util.SubscriptionListener;
 
 public class TestPubSubClient extends PubSubServerStandAloneTestBase {
+
+    private static final int RETENTION_SECS_VALUE = 10;
 
     // Client side variables
     protected HedwigClient client;
     protected Publisher publisher;
     protected Subscriber subscriber;
 
+    protected class RetentionServerConfiguration extends StandAloneServerConfiguration {
+        @Override
+        public boolean isStandalone() {
+            return true;
+        }
+
+        @Override
+        public int getRetentionSecs() {
+            return RETENTION_SECS_VALUE;
+        }
+    }
+
     // SynchronousQueues to verify async calls
     private final SynchronousQueue<Boolean> queue = new SynchronousQueue<Boolean>();
     private final SynchronousQueue<Boolean> consumeQueue = new SynchronousQueue<Boolean>();
+    private final SynchronousQueue<SubscriptionEvent> eventQueue =
+        new SynchronousQueue<SubscriptionEvent>();
+
+    class TestSubscriptionListener implements SubscriptionListener {
+        SynchronousQueue<SubscriptionEvent> eventQueue;
+        public TestSubscriptionListener() {
+            this.eventQueue = TestPubSubClient.this.eventQueue;
+        }
+        public TestSubscriptionListener(SynchronousQueue<SubscriptionEvent> queue) {
+            this.eventQueue = queue;
+        }
+        @Override
+        public void processEvent(final ByteString topic, final ByteString subscriberId,
+                                 final SubscriptionEvent event) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    logger.debug("Event {} received for subscription(topic:{}, subscriber:{})",
+                                 new Object[] { event, topic.toStringUtf8(), subscriberId.toStringUtf8() });
+                    ConcurrencyUtils.put(TestSubscriptionListener.this.eventQueue, event);
+                }
+            }).start();
+        }
+    }
 
     // Test implementation of Callback for async client actions.
     class TestCallback implements Callback<Void> {
@@ -84,6 +125,17 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
 
     // Test implementation of subscriber's message handler.
     class TestMessageHandler implements MessageHandler {
+
+        private final SynchronousQueue<Boolean> consumeQueue;
+
+        public TestMessageHandler() {
+            this.consumeQueue = TestPubSubClient.this.consumeQueue;
+        }
+
+        public TestMessageHandler(SynchronousQueue<Boolean> consumeQueue) {
+            this.consumeQueue = consumeQueue;
+        }
+
         public void deliver(ByteString topic, ByteString subscriberId, Message msg, Callback<Void> callback,
                             Object context) {
             new Thread(new Runnable() {
@@ -91,7 +143,7 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
                 public void run() {
                     if (logger.isDebugEnabled())
                         logger.debug("Consume operation finished successfully!");
-                    ConcurrencyUtils.put(consumeQueue, true);
+                    ConcurrencyUtils.put(TestMessageHandler.this.consumeQueue, true);
                 }
             }).start();
             callback.operationFinished(context, null);
@@ -360,6 +412,121 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
         assertTrue(queue.take());
         subscriber.closeSubscription(topic, subscriberId);
         assertTrue(true);
+    }
+
+    @Test
+    public void testSyncSubscribeWithListener() throws Exception {
+        ByteString topic = ByteString.copyFromUtf8("mySyncSubscribeWithListener");
+        ByteString subscriberId = ByteString.copyFromUtf8("mysub");
+        subscriber.addSubscriptionListener(new TestSubscriptionListener());
+        try {
+            SubscriptionOptions options =
+                SubscriptionOptions.newBuilder()
+                .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH)
+                .setEnableResubscribe(false).build();
+            subscriber.subscribe(topic, subscriberId, options);
+        } catch (PubSubException.ServiceDownException e) {
+            fail("Should not reach here!");
+        }
+        subscriber.startDelivery(topic, subscriberId, new TestMessageHandler());
+        tearDownHubServer();
+        assertEquals(SubscriptionEvent.TOPIC_MOVED, eventQueue.take());
+    }
+
+    @Test
+    public void testAsyncSubscribeWithListener() throws Exception {
+        ByteString topic = ByteString.copyFromUtf8("myAsyncSubscribeWithListener");
+        ByteString subscriberId = ByteString.copyFromUtf8("mysub");
+        subscriber.addSubscriptionListener(new TestSubscriptionListener());
+        SubscriptionOptions options =
+            SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH)
+            .setEnableResubscribe(false).build();
+        subscriber.asyncSubscribe(topic, subscriberId, options,
+                                  new TestCallback(), null);
+        assertTrue(queue.take());
+        subscriber.startDelivery(topic, subscriberId, new TestMessageHandler());
+        tearDownHubServer();
+        assertEquals(SubscriptionEvent.TOPIC_MOVED, eventQueue.take());
+    }
+
+    @Test
+    public void testSyncSubscribeForceAttach() throws Exception {
+        ByteString topic = ByteString.copyFromUtf8("mySyncSubscribeForceAttach");
+        ByteString subscriberId = ByteString.copyFromUtf8("mysub");
+        subscriber.addSubscriptionListener(new TestSubscriptionListener());
+        SubscriptionOptions options =
+            SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH)
+            .setForceAttach(true).setEnableResubscribe(false).build();
+        try {
+            subscriber.subscribe(topic, subscriberId, options);
+        } catch (PubSubException.ServiceDownException e) {
+            fail("Should not reach here!");
+        }
+        subscriber.startDelivery(topic, subscriberId, new TestMessageHandler());
+
+        // new a client
+        HedwigClient client2 = new HedwigClient(new ClientConfiguration());
+        Subscriber subscriber2 = client2.getSubscriber();
+        Publisher publisher2 = client2.getPublisher();
+        SynchronousQueue<SubscriptionEvent> eventQueue2 =
+            new SynchronousQueue<SubscriptionEvent>();
+        subscriber2.addSubscriptionListener(new TestSubscriptionListener(eventQueue2));
+        try {
+            subscriber2.subscribe(topic, subscriberId, options);
+        } catch (PubSubException.ServiceDownException e) {
+            fail("Should not reach here!");
+        }
+
+        SynchronousQueue<Boolean> consumeQueue2 = new SynchronousQueue<Boolean>();
+        subscriber2.startDelivery(topic, subscriberId, new TestMessageHandler(consumeQueue2));
+
+        assertEquals(SubscriptionEvent.TOPIC_MOVED, eventQueue.take());
+        assertTrue(eventQueue2.isEmpty());
+
+        // Now publish some messages for the topic to be consumed by the
+        // subscriber.
+        publisher.asyncPublish(topic, Message.newBuilder().setBody(ByteString.copyFromUtf8("Message #1")).build(),
+                               new TestCallback(), null);
+        assertTrue(queue.take());
+        assertTrue(consumeQueue2.take());
+        assertTrue(consumeQueue.isEmpty());
+
+        publisher2.asyncPublish(topic, Message.newBuilder().setBody(ByteString.copyFromUtf8("Message #2")).build(),
+                               new TestCallback(), null);
+        assertTrue(queue.take());
+        assertTrue(consumeQueue2.take());
+        assertTrue(consumeQueue.isEmpty());
+
+        client2.close();
+    }
+
+    @Test
+    public void testSyncSubscribeWithListenerWhenReleasingTopic() throws Exception {
+        tearDownHubServer();
+        startHubServer(new RetentionServerConfiguration());
+        ByteString topic = ByteString.copyFromUtf8("mySyncSubscribeWithListenerWhenReleasingTopic");
+        ByteString subscriberId = ByteString.copyFromUtf8("mysub");
+        subscriber.addSubscriptionListener(new TestSubscriptionListener());
+        SubscriptionOptions options =
+            SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH)
+            .setForceAttach(false).setEnableResubscribe(false).build();
+        try {
+            subscriber.subscribe(topic, subscriberId, options);
+        } catch (PubSubException.ServiceDownException e) {
+            fail("Should not reach here!");
+        }
+        subscriber.startDelivery(topic, subscriberId, new TestMessageHandler());
+
+        publisher.asyncPublish(topic, Message.newBuilder().setBody(ByteString.copyFromUtf8("Message #1")).build(),
+                               new TestCallback(), null);
+        assertTrue(queue.take());
+        assertTrue(consumeQueue.take());
+
+        Thread.sleep(RETENTION_SECS_VALUE * 2);
+        assertEquals(SubscriptionEvent.TOPIC_MOVED, eventQueue.take());
     }
 
 }

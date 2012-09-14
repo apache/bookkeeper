@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 
 import com.google.protobuf.ByteString;
@@ -65,6 +66,17 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
     // op stats
     private final OpStats subStats;
 
+    private static ChannelFutureListener CLOSE_OLD_CHANNEL_LISTENER = new ChannelFutureListener() {
+        @Override
+        public void operationComplete(ChannelFuture future) throws Exception {
+            if (!future.isSuccess()) {
+                logger.warn("Failed to close old subscription channel.");
+            } else {
+                logger.debug("Close old subscription channel succeed.");
+            }
+        }
+    };
+
     public SubscribeHandler(TopicManager topicMgr, DeliveryManager deliveryManager, PersistenceManager persistenceMgr,
                             SubscriptionManager subMgr, ServerConfiguration cfg) {
         super(topicMgr, cfg);
@@ -83,7 +95,8 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
         synchronized (channel) {
             TopicSubscriber topicSub = channel2sub.remove(channel);
             if (topicSub != null) {
-                sub2Channel.remove(topicSub);
+                // remove entry only currently mapped to given value.
+                sub2Channel.remove(topicSub, channel);
             }
         }
     }
@@ -106,6 +119,8 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
         } catch (ServerNotResponsibleForTopicException e) {
             channel.write(PubSubResponseUtils.getResponseForException(e, request.getTxnId())).addListener(
                 ChannelFutureListener.CLOSE);
+            logger.error("Error getting current seq id for topic " + topic.toStringUtf8()
+                       + " when processing subscribe request (txnid:" + request.getTxnId() + ") :", e);
             subStats.incrementFailedOps();
             ServerStats.getInstance().incrementRequestsRedirect();
             return;
@@ -123,6 +138,8 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
             public void operationFailed(Object ctx, PubSubException exception) {
                 channel.write(PubSubResponseUtils.getResponseForException(exception, request.getTxnId())).addListener(
                     ChannelFutureListener.CLOSE);
+                logger.error("Error serving subscribe request (" + request.getTxnId() + ") for (topic: "
+                           + topic.toStringUtf8() + " , subscriber: " + subscriberId.toStringUtf8() + ")", exception);
                 subStats.incrementFailedOps();
             }
 
@@ -130,9 +147,6 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
             public void operationFinished(Object ctx, SubscriptionData subData) {
 
                 TopicSubscriber topicSub = new TopicSubscriber(topic, subscriberId);
-
-                // race with channel getting disconnected while we are adding it
-                // to the 2 maps
                 synchronized (channel) {
                     if (!channel.isConnected()) {
                         // channel got disconnected while we were processing the
@@ -140,20 +154,6 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
                         // nothing much we can do in this case
                         subStats.incrementFailedOps();
                         return;
-                    }
-
-                    if (null != sub2Channel.putIfAbsent(topicSub, channel)) {
-                        // there was another channel mapped to this sub
-                        PubSubException pse = new PubSubException.TopicBusyException(
-                            "subscription for this topic, subscriberId is already being served on a different channel");
-                        channel.write(PubSubResponseUtils.getResponseForException(pse, request.getTxnId()))
-                        .addListener(ChannelFutureListener.CLOSE);
-                        subStats.incrementFailedOps();
-                        return;
-                    } else {
-                        // channel2sub is just a cache, so we can add to it
-                        // without synchronization
-                        channel2sub.put(channel, topicSub);
                     }
                 }
                 // initialize the message filter
@@ -192,7 +192,57 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
                     .addListener(ChannelFutureListener.CLOSE);
                     return;
                 }
+                // race with channel getting disconnected while we are adding it
+                // to the 2 maps
+                synchronized (channel) {
+                    boolean forceAttach = false;
+                    if (subRequest.hasForceAttach()) {
+                        forceAttach = subRequest.getForceAttach();
+                    }
 
+                    Channel oldChannel = sub2Channel.putIfAbsent(topicSub, channel);
+                    if (null != oldChannel) {
+                        boolean subSuccess = false;
+                        if (forceAttach) {
+                            // it is safe to close old channel here since new channel will be put
+                            // in sub2Channel / channel2Sub so there is no race between channel
+                            // getting disconnected and it.
+                            ChannelFuture future = oldChannel.close();
+                            future.addListener(CLOSE_OLD_CHANNEL_LISTENER);
+                            logger.info("New subscribe request (" + request.getTxnId() + ") for (topic: " + topic.toStringUtf8()
+                                      + ", subscriber: " + subscriberId.toStringUtf8() + ") from channel " + channel.getRemoteAddress()
+                                      + " kills old channel " + oldChannel.getRemoteAddress());
+                            // try replace the oldChannel
+                            // if replace failure, it migth caused because channelDisconnect callback
+                            // has removed the old channel.
+                            if (!sub2Channel.replace(topicSub, oldChannel, channel)) {
+                                // try to add it now.
+                                // if add failure, it means other one has obtained the channel
+                                oldChannel = sub2Channel.putIfAbsent(topicSub, channel);
+                                if (null == oldChannel) {
+                                    subSuccess = true;
+                                }
+                            } else {
+                                subSuccess = true;
+                            }
+                        }
+                        if (!subSuccess) {
+                            PubSubException pse = new PubSubException.TopicBusyException(
+                                "Subscriber " + subscriberId.toStringUtf8() + " for topic " + topic.toStringUtf8()
+                                + " is already being served on a different channel " + oldChannel.getRemoteAddress());
+                            subStats.incrementFailedOps();
+                            logger.error("Error serving subscribe request (" + request.getTxnId() + ") for (topic: " + topic.toStringUtf8()
+                                       + ", subscriber: " + subscriberId.toStringUtf8() + ") from channel " + channel.getRemoteAddress()
+                                       + " since it already being served on a different channel " + oldChannel.getRemoteAddress());
+                            channel.write(PubSubResponseUtils.getResponseForException(pse, request.getTxnId()))
+                            .addListener(ChannelFutureListener.CLOSE);
+                            return;
+                        }
+                    }
+                    // channel2sub is just a cache, so we can add to it
+                    // without synchronization
+                    channel2sub.put(channel, topicSub);
+                }
                 // First write success and then tell the delivery manager,
                 // otherwise the first message might go out before the response
                 // to the subscribe

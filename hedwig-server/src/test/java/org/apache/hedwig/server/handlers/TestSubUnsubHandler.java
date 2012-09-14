@@ -74,7 +74,7 @@ public class TestSubUnsubHandler extends TestCase {
         TopicManager tm = new TrivialOwnAllTopicManager(conf, executor);
         dm = new StubDeliveryManager();
         PersistenceManager pm = LocalDBPersistenceManager.instance();
-        sm = new StubSubscriptionManager(tm, pm, conf, executor);
+        sm = new StubSubscriptionManager(tm, pm, dm, conf, executor);
         sh = new SubscribeHandler(tm, dm, pm, sm, conf);
         channel = new WriteRecordingChannel();
 

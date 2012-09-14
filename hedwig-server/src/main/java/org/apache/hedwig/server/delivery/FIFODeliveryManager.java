@@ -314,6 +314,10 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
         }
 
         public void setNotConnected() {
+            // have closed it.
+            if (!isConnected()) {
+                return;
+            }
             this.connected = false;
             deliveryEndPoint.close();
             // uninitialize filter
