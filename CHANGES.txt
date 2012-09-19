@@ -88,6 +88,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-403: ReReadMetadataCb is not executed in the thread responsible for that ledger (ivank)
 
+        BOOKKEEPER-405: Let's add Thread name for ReplicationWorker thread. (umamahesh via ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

@@ -95,7 +95,7 @@ public class ReplicationWorker implements Runnable {
         this.bkc = new BookKeeper(new ClientConfiguration(conf), zkc);
         this.admin = new BookKeeperAdmin(bkc);
         this.ledgerChecker = new LedgerChecker(bkc);
-        this.workerThread = new Thread(this);
+        this.workerThread = new Thread(this, "ReplicationWorker");
         this.openLedgerRereplicationGracePeriod = conf
                 .getOpenLedgerRereplicationGracePeriod();
         this.pendingReplicationTimer = new Timer("PendingReplicationTimer");
