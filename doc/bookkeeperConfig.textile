@@ -70,6 +70,22 @@ The upgrade application takes 3 possible switches, @--upgrade@, @--rollback@ or 
 # Start bookie again @bookkeeper-server/bin/bookkeeper bookie@
 # If something is amiss, you can roll back the upgrade @bookkeeper-server/bin/bookkeeper upgrade --rollback@
 
+h3. Formatting
+
+To format the bookie metadata in Zookeeper, execute the following command once:
+
+@bookkeeper-server/bin/bookkeeper shell metaformat [-nonInteractive] [-force]@
+
+To format the bookie local filesystem data, execute the following command on each bookie node:
+
+@bookkeeper-server/bin/bookkeeper shell bookieformat [-nonInteractive] [-force]@
+
+The @-nonInteractive@ and @-force@ switches are optional.
+
+If @-nonInteractive@ is set, the user will not be asked to confirm the format operation if old data exists. If it exists, the format operation will abort, unless the @-force@ switch has been specified, in which case it will process.
+
+By default, the user will be prompted to confirm the format operation if old data exists.
+
 h3. Logging
 
 BookKeeper uses "slf4j":http://www.slf4j.org for logging, with the log4j bindings enabled by default. To enable logging from a bookie, create a log4j.properties file and point the environment variable BOOKIE_LOG_CONF to the configuration file. The path to the log4j.properties file must be absolute.

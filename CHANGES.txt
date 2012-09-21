@@ -144,6 +144,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-325: Delay the replication of a ledger if RW found that its last fragment is in underReplication. (umamahesh via ivank)
 
+        BOOKKEEPER-388: Document bookie format command (vinayrpet via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)
