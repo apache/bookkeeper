@@ -164,6 +164,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-252: Hedwig: provide a subscription mode to kill other subscription channel when hedwig client is used as a proxy-style server. (sijie via ivank)
 
+        BOOKKEEPER-397: Make the hedwig client in RegionManager configurable. (Aniruddha via sijie)
+
       hedwig-client:
 
         BOOKKEEPER-306: Change C++ client to use gtest for testing (ivank via sijie)

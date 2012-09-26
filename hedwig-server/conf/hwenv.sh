@@ -21,7 +21,13 @@
 # */
 
 # default settings for starting hedwig
-#HEDWIG_SERVER_CONF=
+# HEDWIG_SERVER_CONF=
+
+# default settings for the region manager's hedwig client
+# HEDWIG_REGION_CLIENT_CONF=
+
+# default settings for the region manager's hedwig client
+# HEDWIG_CLIENT_CONF=
 
 # Server part configuration for hedwig console,
 # used for metadata management

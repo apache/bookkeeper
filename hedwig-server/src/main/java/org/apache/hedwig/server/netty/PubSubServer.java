@@ -94,6 +94,7 @@ public class PubSubServer {
     ServerSocketChannelFactory serverChannelFactory;
     ClientSocketChannelFactory clientChannelFactory;
     ServerConfiguration conf;
+    org.apache.hedwig.client.conf.ClientConfiguration clientConfiguration;
     ChannelGroup allChannels;
 
     // Manager components that make up the PubSubServer
@@ -159,7 +160,8 @@ public class PubSubServer {
     }
 
     protected RegionManager instantiateRegionManager(PersistenceManager pm, ScheduledExecutorService scheduler) {
-        return new RegionManager(pm, conf, zk, scheduler, new HedwigHubClientFactory(conf, clientChannelFactory));
+        return new RegionManager(pm, conf, zk, scheduler, new HedwigHubClientFactory(conf, clientConfiguration,
+                clientChannelFactory));
     }
 
     protected void instantiateZookeeperClient() throws Exception {
@@ -349,13 +351,18 @@ public class PubSubServer {
      * @throws InterruptedException
      * @throws ConfigurationException
      */
-    public PubSubServer(final ServerConfiguration conf,
+    public PubSubServer(final ServerConfiguration serverConfiguration,
+                        final org.apache.hedwig.client.conf.ClientConfiguration clientConfiguration,
                         final Thread.UncaughtExceptionHandler exceptionHandler)
             throws ConfigurationException {
 
-        // First validate the conf
-        this.conf = conf;
-        conf.validate();
+        // First validate the serverConfiguration
+        this.conf = serverConfiguration;
+        serverConfiguration.validate();
+
+        // Validate the client configuration
+        this.clientConfiguration = clientConfiguration;
+        clientConfiguration.validate();
 
         // We need a custom thread group, so that we can override the uncaught
         // exception method
@@ -425,8 +432,13 @@ public class PubSubServer {
         }
     }
 
-    public PubSubServer(ServerConfiguration conf) throws Exception {
-        this(conf, new TerminateJVMExceptionHandler());
+    public PubSubServer(ServerConfiguration serverConfiguration,
+                        org.apache.hedwig.client.conf.ClientConfiguration clientConfiguration) throws Exception {
+        this(serverConfiguration, clientConfiguration, new TerminateJVMExceptionHandler());
+    }
+
+    public PubSubServer(ServerConfiguration serverConfiguration) throws Exception {
+        this(serverConfiguration, new org.apache.hedwig.client.conf.ClientConfiguration());
     }
 
     /**
@@ -451,22 +463,38 @@ public class PubSubServer {
     public static void main(String[] args) {
 
         logger.info("Attempting to start Hedwig");
-        ServerConfiguration conf = new ServerConfiguration();
+        ServerConfiguration serverConfiguration = new ServerConfiguration();
+        // The client configuration for the hedwig client in the region manager.
+        org.apache.hedwig.client.conf.ClientConfiguration regionMgrClientConfiguration
+                = new org.apache.hedwig.client.conf.ClientConfiguration();
         if (args.length > 0) {
             String confFile = args[0];
             try {
-                conf.loadConf(new File(confFile).toURI().toURL());
+                serverConfiguration.loadConf(new File(confFile).toURI().toURL());
             } catch (MalformedURLException e) {
-                String msg = "Could not open configuration file: " + confFile;
+                String msg = "Could not open server configuration file: " + confFile;
                 errorMsgAndExit(msg, e, RC_INVALID_CONF_FILE);
             } catch (ConfigurationException e) {
-                String msg = "Malformed configuration file: " + confFile;
+                String msg = "Malformed server configuration file: " + confFile;
                 errorMsgAndExit(msg, e, RC_MISCONFIGURED);
             }
             logger.info("Using configuration file " + confFile);
         }
+        if (args.length > 1) {
+            // args[1] is the client configuration file.
+            String confFile = args[1];
+            try {
+                regionMgrClientConfiguration.loadConf(new File(confFile).toURI().toURL());
+            } catch (MalformedURLException e) {
+                String msg = "Could not open client configuration file: " + confFile;
+                errorMsgAndExit(msg, e, RC_INVALID_CONF_FILE);
+            } catch (ConfigurationException e) {
+                String msg = "Malformed client configuration file: " + confFile;
+                errorMsgAndExit(msg, e, RC_MISCONFIGURED);
+            }
+        }
         try {
-            new PubSubServer(conf).start();
+            new PubSubServer(serverConfiguration, regionMgrClientConfiguration).start();
         } catch (Throwable t) {
             errorMsgAndExit("Error during startup", t, RC_OTHER);
         }

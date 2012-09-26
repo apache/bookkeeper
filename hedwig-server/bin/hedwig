@@ -53,6 +53,7 @@ BINDIR=`dirname "$0"`
 HW_HOME=`cd $BINDIR/..;pwd`
 
 DEFAULT_CONF=$HW_HOME/conf/hw_server.conf
+DEFAULT_REGION_CLIENT_CONF=$HW_HOME/conf/hw_region_client.conf
 DEFAULT_LOG_CONF=$HW_HOME/conf/log4j.properties
 
 . $HW_HOME/conf/hwenv.sh
@@ -108,6 +109,8 @@ or command is the full name of a class with a defined main() method.
 
 Environment variables:
    HEDWIG_SERVER_CONF           Hedwig server configuration file (default $DEFAULT_CONF)
+   HEDWIG_REGION_CLIENT_CONF           Configuration file for the hedwig client used by the
+                                region manager (default $DEFAULT_REGION_CLIENT_CONF)
    HEDWIG_CONSOLE_SERVER_CONF   Server part configuration for hedwig console,
                                 used for metadata management (defaults to HEDWIG_SERVER_CONF)
    HEDWIG_CONSOLE_CLIENT_CONF   Client part configuration for hedwig console,
@@ -134,6 +137,10 @@ shift
 
 if [ -z "$HEDWIG_SERVER_CONF" ]; then
     HEDWIG_SERVER_CONF=$DEFAULT_CONF;
+fi
+
+if [ -z "$HEDWIG_REGION_CLIENT_CONF" ]; then
+    HEDWIG_REGION_CLIENT_CONF=$DEFAULT_REGION_CLIENT_CONF;
 fi
 
 if [ -z "$HEDWIG_LOG_CONF" ]; then
@@ -164,7 +171,7 @@ OPTS="$OPTS -Dhedwig.log.file=$HEDWIG_LOG_FILE"
 # Change to HW_HOME to support relative paths
 cd "$BK_HOME"
 if [ $COMMAND == "server" ]; then
-    exec java $OPTS $JMX_ARGS org.apache.hedwig.server.netty.PubSubServer $HEDWIG_SERVER_CONF $@
+    exec java $OPTS $JMX_ARGS org.apache.hedwig.server.netty.PubSubServer $HEDWIG_SERVER_CONF $HEDWIG_REGION_CLIENT_CONF $@
 elif [ $COMMAND == "console" ]; then
     # hedwig console configuration server part
     if [ -z "$HEDWIG_CONSOLE_SERVER_CONF" ]; then

@@ -85,7 +85,7 @@ public class TestPubSubServer extends PubSubServerStandAloneTestBase {
                 return port;
             }
 
-        }, uncaughtExceptionHandler) {
+        }, new ClientConfiguration(), uncaughtExceptionHandler) {
 
             @Override
             protected TopicManager instantiateTopicManager() throws IOException {
