@@ -17,7 +17,7 @@
  */
 package org.apache.hedwig.client.data;
 
-import com.google.protobuf.ByteString;
+import org.apache.hedwig.client.data.TopicSubscriber;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 
 /**
@@ -31,28 +31,26 @@ import org.apache.hedwig.protocol.PubSubProtocol.Message;
 public class MessageConsumeData {
 
     // Member variables
-    public final ByteString topic;
-    public final ByteString subscriberId;
+    public final TopicSubscriber topicSubscriber;
     // This is the Message sent from the server for Subscribes for consumption
     // by the client.
     public final Message msg;
 
     // Constructor
-    public MessageConsumeData(final ByteString topic, final ByteString subscriberId, final Message msg) {
-        this.topic = topic;
-        this.subscriberId = subscriberId;
+    public MessageConsumeData(final TopicSubscriber topicSubscriber, final Message msg) {
+        this.topicSubscriber = topicSubscriber;
         this.msg = msg;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        if (topic != null)
-            sb.append("Topic: " + topic.toStringUtf8());
-        if (subscriberId != null)
-            sb.append(PubSubData.COMMA).append("SubscriberId: " + subscriberId.toStringUtf8());
-        if (msg != null)
-            sb.append(PubSubData.COMMA).append("Message: " + msg);
+        if (topicSubscriber != null) {
+            sb.append("Subscription: ").append(topicSubscriber);
+        }
+        if (msg != null) {
+            sb.append(PubSubData.COMMA).append("Message: ").append(msg);
+        }
         return sb.toString();
     }
 }

@@ -15,24 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hedwig.client.handlers;
+package org.apache.hedwig.client.netty.impl.simple;
 
-import java.util.TimerTask;
-
-import org.apache.hedwig.protocol.PubSubProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.hedwig.client.api.MessageHandler;
-import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.data.PubSubData;
+import org.apache.hedwig.client.data.TopicSubscriber;
 import org.apache.hedwig.client.exceptions.AlreadyStartDeliveryException;
-import org.apache.hedwig.client.netty.HedwigClientImpl;
-import org.apache.hedwig.client.netty.HedwigSubscriber;
 import org.apache.hedwig.exceptions.PubSubException;
-
 import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException;
+import org.apache.hedwig.protocol.PubSubProtocol.ResponseBody;
 import org.apache.hedwig.util.Callback;
+import static org.apache.hedwig.util.VarArgs.va;
 
 /**
  * This class is used when a Subscribe channel gets disconnected and we attempt
@@ -42,72 +37,60 @@ import org.apache.hedwig.util.Callback;
  * callback will be the hook for this.
  *
  */
-public class SubscribeReconnectCallback implements Callback<PubSubProtocol.ResponseBody> {
+class SubscribeReconnectCallback implements Callback<ResponseBody> {
 
     private static Logger logger = LoggerFactory.getLogger(SubscribeReconnectCallback.class);
 
     // Private member variables
+    private final TopicSubscriber origTopicSubscriber;
     private final PubSubData origSubData;
-    private final HedwigClientImpl client;
-    private final HedwigSubscriber sub;
-    private final ClientConfiguration cfg;
+    private final SimpleHChannelManager channelManager;
+    private final long retryWaitTime;
 
     // Constructor
-    public SubscribeReconnectCallback(PubSubData origSubData, HedwigClientImpl client) {
+    SubscribeReconnectCallback(TopicSubscriber origTopicSubscriber,
+                               PubSubData origSubData,
+                               SimpleHChannelManager channelManager,
+                               long retryWaitTime) {
+        this.origTopicSubscriber = origTopicSubscriber;
         this.origSubData = origSubData;
-        this.client = client;
-        this.sub = client.getSubscriber();
-        this.cfg = client.getConfiguration();
+        this.channelManager = channelManager;
+        this.retryWaitTime = retryWaitTime;
     }
 
-    class SubscribeReconnectRetryTask extends TimerTask {
-        @Override
-        public void run() {
-            logger.debug("Retrying subscribe reconnect request for origSubData: {}", origSubData);
-            // Clear out all of the servers we've contacted or attempted to from
-            // this request.
-            origSubData.clearServersList();
-            client.doConnect(origSubData, cfg.getDefaultServerHost());
-        }
-    }
-
-    public void operationFinished(Object ctx, PubSubProtocol.ResponseBody resultOfOperation) {
+    @Override
+    public void operationFinished(Object ctx, ResponseBody resultOfOperation) {
         logger.debug("Subscribe reconnect succeeded for origSubData: {}", origSubData);
         // Now we want to restart delivery for the subscription channel only
         // if delivery was started at the time the original subscribe channel
         // was disconnected.
         try {
-            sub.restartDelivery(origSubData.topic, origSubData.subscriberId);
+            channelManager.restartDelivery(origTopicSubscriber);
         } catch (ClientNotSubscribedException e) {
             // This exception should never be thrown here but just in case,
             // log an error and just keep retrying the subscribe request.
-            logger.error("Subscribe was successful but error starting delivery for topic: "
-                         + origSubData.topic.toStringUtf8() + ", subscriberId: "
-                         + origSubData.subscriberId.toStringUtf8(), e);
+            logger.error("Subscribe was successful but error starting delivery for {} : {}",
+                         va(origTopicSubscriber, e.getMessage()));
             retrySubscribeRequest();
         } catch (AlreadyStartDeliveryException asde) {
             // should not reach here
         }
     }
 
+    @Override
     public void operationFailed(Object ctx, PubSubException exception) {
         // If the subscribe reconnect fails, just keep retrying the subscribe
         // request. There isn't a way to flag to the application layer that
         // a topic subscription has failed. So instead, we'll just keep
         // retrying in the background until success.
-        logger.error("Subscribe reconnect failed with error: " + exception.getMessage());
+        logger.error("Subscribe reconnect failed with error: ", exception);
         retrySubscribeRequest();
     }
 
     private void retrySubscribeRequest() {
-        // If the client has stopped, there is no need to proceed with any
-        // callback logic here.
-        if (client.hasStopped())
-            return;
-
-        // Retry the subscribe request but only after waiting for a
-        // preconfigured amount of time.
-        client.getClientTimer().schedule(new SubscribeReconnectRetryTask(),
-                                         client.getConfiguration().getSubscribeReconnectRetryWaitTime());
+        origSubData.clearServersList();
+        logger.debug("Reconnect subscription channel for {} in {} ms later.",
+                     va(origTopicSubscriber, retryWaitTime));
+        channelManager.submitOpAfterDelay(origSubData, retryWaitTime);
     }
 }

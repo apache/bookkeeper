@@ -21,36 +21,35 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 
+import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.data.PubSubData;
-import org.apache.hedwig.client.netty.HedwigClientImpl;
-import org.apache.hedwig.client.netty.ResponseHandler;
+import org.apache.hedwig.client.data.TopicSubscriber;
+import org.apache.hedwig.client.netty.HChannelManager;
+import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException;
 import org.apache.hedwig.exceptions.PubSubException.ServiceDownException;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
+import org.apache.hedwig.protocol.PubSubProtocol.ResponseBody;
+import org.apache.hedwig.util.Callback;
+import static org.apache.hedwig.util.VarArgs.va;
 
-public class UnsubscribeResponseHandler {
+public class UnsubscribeResponseHandler extends AbstractResponseHandler {
 
     private static Logger logger = LoggerFactory.getLogger(UnsubscribeResponseHandler.class);
 
-    private final ResponseHandler responseHandler;
-
-    public UnsubscribeResponseHandler(ResponseHandler responseHandler) {
-        this.responseHandler = responseHandler;
+    public UnsubscribeResponseHandler(ClientConfiguration cfg,
+                                      HChannelManager channelManager) {
+        super(cfg, channelManager);
     }
 
-    // Main method to handle Unsubscribe Response messages from the server.
-    public void handleUnsubscribeResponse(PubSubResponse response, PubSubData pubSubData, Channel channel)
+    @Override
+    public void handleResponse(final PubSubResponse response, final PubSubData pubSubData,
+                               final Channel channel)
             throws Exception {
-        if (logger.isDebugEnabled())
-            logger.debug("Handling an Unsubscribe response: " + response + ", pubSubData: " + pubSubData + ", host: "
-                         + HedwigClientImpl.getHostFromChannel(channel));
         switch (response.getStatusCode()) {
         case SUCCESS:
-            // For successful Unsubscribe requests, we can now safely close the
-            // Subscribe Channel and any cached data for that TopicSubscriber.
-            responseHandler.getSubscriber().closeSubscription(pubSubData.topic, pubSubData.subscriberId);
-            // Response was success so invoke the callback's operationFinished
-            // method.
+            // since for unsubscribe request, we close subscription first
+            // for now, we don't need to do anything now.
             pubSubData.getCallback().operationFinished(pubSubData.context, null);
             break;
         case CLIENT_NOT_SUBSCRIBED:
@@ -70,7 +69,7 @@ public class UnsubscribeResponseHandler {
         case NOT_RESPONSIBLE_FOR_TOPIC:
             // Redirect response so we'll need to repost the original
             // Unsubscribe Request
-            responseHandler.handleRedirectResponse(response, pubSubData, channel);
+            handleRedirectResponse(response, pubSubData, channel);
             break;
         default:
             // Consider all other status codes as errors, operation failed

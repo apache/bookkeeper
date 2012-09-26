@@ -17,32 +17,29 @@
  */
 package org.apache.hedwig.client.handlers;
 
-import org.apache.hedwig.protocol.PubSubProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 
+import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.data.PubSubData;
-import org.apache.hedwig.client.netty.HedwigClientImpl;
-import org.apache.hedwig.client.netty.ResponseHandler;
+import org.apache.hedwig.client.netty.HChannelManager;
 import org.apache.hedwig.exceptions.PubSubException.ServiceDownException;
+import org.apache.hedwig.protocol.PubSubProtocol;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
 
-public class PublishResponseHandler {
+public class PublishResponseHandler extends AbstractResponseHandler {
 
     private static Logger logger = LoggerFactory.getLogger(PublishResponseHandler.class);
 
-    private final ResponseHandler responseHandler;
-
-    public PublishResponseHandler(ResponseHandler responseHandler) {
-        this.responseHandler = responseHandler;
+    public PublishResponseHandler(ClientConfiguration cfg,
+                                  HChannelManager channelManager) {
+        super(cfg, channelManager);
     }
 
-    // Main method to handle Publish Response messages from the server.
-    public void handlePublishResponse(PubSubResponse response, PubSubData pubSubData, Channel channel) throws Exception {
-        if (logger.isDebugEnabled())
-            logger.debug("Handling a Publish response: " + response + ", pubSubData: " + pubSubData + ", host: "
-                         + HedwigClientImpl.getHostFromChannel(channel));
+    @Override
+    public void handleResponse(PubSubResponse response, PubSubData pubSubData,
+                               Channel channel) throws Exception {
         switch (response.getStatusCode()) {
         case SUCCESS:
             // Response was success so invoke the callback's operationFinished
@@ -59,7 +56,7 @@ public class PublishResponseHandler {
         case NOT_RESPONSIBLE_FOR_TOPIC:
             // Redirect response so we'll need to repost the original Publish
             // Request
-            responseHandler.handleRedirectResponse(response, pubSubData, channel);
+            handleRedirectResponse(response, pubSubData, channel);
             break;
         default:
             // Consider all other status codes as errors, operation failed

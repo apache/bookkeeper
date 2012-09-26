@@ -15,7 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hedwig.client.netty;
+package org.apache.hedwig.client.netty.impl;
+
+import java.util.Map;
 
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -26,14 +28,26 @@ import org.jboss.netty.handler.codec.protobuf.ProtobufDecoder;
 import org.jboss.netty.handler.codec.protobuf.ProtobufEncoder;
 import org.jboss.netty.handler.ssl.SslHandler;
 
+import org.apache.hedwig.client.conf.ClientConfiguration;
+import org.apache.hedwig.client.handlers.AbstractResponseHandler;
 import org.apache.hedwig.protocol.PubSubProtocol;
+import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
 
-public class ClientChannelPipelineFactory implements ChannelPipelineFactory {
+public abstract class ClientChannelPipelineFactory implements ChannelPipelineFactory {
 
-    private HedwigClientImpl client;
+    protected ClientConfiguration cfg;
+    protected AbstractHChannelManager channelManager;
 
-    public ClientChannelPipelineFactory(HedwigClientImpl client) {
-        this.client = client;
+    public ClientChannelPipelineFactory(ClientConfiguration cfg,
+                                        AbstractHChannelManager channelManager) {
+        this.cfg = cfg;
+        this.channelManager = channelManager;
+    }
+
+    protected abstract Map<OperationType, AbstractResponseHandler> createResponseHandlers();
+
+    private HChannelHandler createHChannelHandler() {
+        return new HChannelHandler(cfg, channelManager, createResponseHandlers());
     }
 
     // Retrieve a ChannelPipeline from the factory.
@@ -41,17 +55,17 @@ public class ClientChannelPipelineFactory implements ChannelPipelineFactory {
         // Create a new ChannelPipline using the factory method from the
         // Channels helper class.
         ChannelPipeline pipeline = Channels.pipeline();
-        if (client.getSslFactory() != null) {
-            pipeline.addLast("ssl", new SslHandler(client.getSslFactory().getEngine()));
+        if (channelManager.getSslFactory() != null) {
+            pipeline.addLast("ssl", new SslHandler(channelManager.getSslFactory().getEngine()));
         }
-        pipeline.addLast("lengthbaseddecoder", new LengthFieldBasedFrameDecoder(client.getConfiguration()
-                         .getMaximumMessageSize(), 0, 4, 0, 4));
+        pipeline.addLast("lengthbaseddecoder", new LengthFieldBasedFrameDecoder(
+                         cfg.getMaximumMessageSize(), 0, 4, 0, 4));
         pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
 
         pipeline.addLast("protobufdecoder", new ProtobufDecoder(PubSubProtocol.PubSubResponse.getDefaultInstance()));
         pipeline.addLast("protobufencoder", new ProtobufEncoder());
 
-        pipeline.addLast("responsehandler", new ResponseHandler(client));
+        pipeline.addLast("responsehandler", createHChannelHandler());
         return pipeline;
     }
 

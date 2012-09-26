@@ -27,7 +27,7 @@ import org.apache.hedwig.util.Callback;
 /**
  * Handlers used by a subscription.
  */
-class FilterableMessageHandler implements MessageHandler {
+public class FilterableMessageHandler implements MessageHandler {
 
     MessageHandler msgHandler;
     ClientMessageFilter  msgFilter;

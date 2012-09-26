@@ -17,33 +17,18 @@
  */
 package org.apache.hedwig.client.netty;
 
-import java.net.InetSocketAddress;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.hedwig.client.exceptions.NoResponseHandlerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
 import com.google.protobuf.ByteString;
 
-import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.client.api.Client;
 import org.apache.hedwig.client.conf.ClientConfiguration;
-import org.apache.hedwig.client.data.PubSubData;
-import org.apache.hedwig.client.handlers.MessageConsumeCallback;
-import org.apache.hedwig.client.ssl.SslClientContextFactory;
-import org.apache.hedwig.exceptions.PubSubException.UncertainStateException;
+import org.apache.hedwig.client.netty.impl.simple.SimpleHChannelManager;
 
 /**
  * This is a top level Hedwig Client class that encapsulates the common
@@ -54,49 +39,18 @@ public class HedwigClientImpl implements Client {
 
     private static final Logger logger = LoggerFactory.getLogger(HedwigClientImpl.class);
 
-    // Empty Topic List
-    private ConcurrentLinkedQueue<ByteString> EMPTY_TOPIC_LIST =
-        new ConcurrentLinkedQueue<ByteString>();
-
-    // Global counter used for generating unique transaction ID's for
-    // publish and subscribe requests
-    protected final AtomicLong globalCounter = new AtomicLong();
-    // Static String constants
-    protected static final String COLON = ":";
-
     // The Netty socket factory for making connections to the server.
     protected final ChannelFactory socketFactory;
     // Whether the socket factory is one we created or is owned by whoever
     // instantiated us.
     protected boolean ownChannelFactory = false;
 
-    // PipelineFactory to create netty client channels to the appropriate server
-    private ClientChannelPipelineFactory pipelineFactory;
-
-    // Concurrent Map to store the mapping from the Topic to the Host.
-    // This could change over time since servers can drop mastership of topics
-    // for load balancing or failover. If a server host ever goes down, we'd
-    // also want to remove all topic mappings the host was responsible for.
-    // The second Map is used as the inverted version of the first one.
-    protected final ConcurrentMap<ByteString, InetSocketAddress> topic2Host = new ConcurrentHashMap<ByteString, InetSocketAddress>();
-    private final ConcurrentMap<InetSocketAddress, ConcurrentLinkedQueue<ByteString>> host2Topics =
-        new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<ByteString>>();
-
-    // Each client instantiation will have a Timer for running recurring
-    // threads. One such timer task thread to is to timeout long running
-    // PubSubRequests that are waiting for an ack response from the server.
-    private final Timer clientTimer = new Timer(true);
-
-    // Boolean indicating if the client is running or has stopped.
-    // Once we stop the client, we should sidestep all of the connect,
-    // write callback and channel disconnected logic.
-    private boolean isStopped = false;
+    // channel manager manages all the channels established by the client
+    protected final HChannelManager channelManager;
 
     private HedwigSubscriber sub;
     private final HedwigPublisher pub;
     private final ClientConfiguration cfg;
-    private final MessageConsumeCallback consumeCb;
-    private SslClientContextFactory sslFactory = null;
 
     public static Client create(ClientConfiguration cfg) {
         return new HedwigClientImpl(cfg);
@@ -109,7 +63,8 @@ public class HedwigClientImpl implements Client {
     // Base constructor that takes in a Configuration object.
     // This will create its own client socket channel factory.
     protected HedwigClientImpl(ClientConfiguration cfg) {
-        this(cfg, new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
+        this(cfg, new NioClientSocketChannelFactory(
+                  Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
         ownChannelFactory = true;
     }
 
@@ -118,21 +73,18 @@ public class HedwigClientImpl implements Client {
     protected HedwigClientImpl(ClientConfiguration cfg, ChannelFactory socketFactory) {
         this.cfg = cfg;
         this.socketFactory = socketFactory;
+        channelManager = new SimpleHChannelManager(cfg, socketFactory);
+
         pub = new HedwigPublisher(this);
         sub = new HedwigSubscriber(this);
-        pipelineFactory = new ClientChannelPipelineFactory(this);
-        consumeCb = new MessageConsumeCallback(this);
-        if (cfg.isSSLEnabled()) {
-            sslFactory = new SslClientContextFactory(cfg);
-        }
-        // Schedule all of the client timer tasks. Currently we only have the
-        // Request Timeout task.
-        clientTimer.schedule(new PubSubRequestTimeoutTask(), 0, cfg.getTimeoutThreadRunInterval());
     }
 
-    // Public getters for the various components of a client.
     public ClientConfiguration getConfiguration() {
         return cfg;
+    }
+
+    public HChannelManager getHChannelManager() {
+        return channelManager;
     }
 
     public HedwigSubscriber getSubscriber() {
@@ -149,96 +101,14 @@ public class HedwigClientImpl implements Client {
         return pub;
     }
 
-    public MessageConsumeCallback getConsumeCallback() {
-        return consumeCb;
-    }
-
-    public SslClientContextFactory getSslFactory() {
-        return sslFactory;
-    }
-
-    // We need to deal with the possible problem of a PubSub request being
-    // written to successfully to the server host but for some reason, the
-    // ack message back never comes. What could happen is that the VoidCallback
-    // stored in the ResponseHandler.txn2PublishData map will never be called.
-    // We should have a configured timeout so if that passes from the time a
-    // write was successfully done to the server, we can fail this async PubSub
-    // transaction. The caller could possibly redo the transaction if needed at
-    // a later time. Creating a timeout cleaner TimerTask to do this here.
-    class PubSubRequestTimeoutTask extends TimerTask {
-        /**
-         * Implement the TimerTask's abstract run method.
-         */
-        @Override
-        public void run() {
-            logger.debug("Running the PubSubRequest Timeout Task");
-            // Loop through all outstanding PubSubData requests and check if
-            // the requestWriteTime has timed out compared to the current time.
-            long curTime = MathUtils.now();
-            long timeoutInterval = cfg.getServerAckResponseTimeout();
-
-            // First check the ResponseHandlers associated with cached
-            // channels in HedwigPublisher.host2Channel. This stores the
-            // channels used for Publish and Unsubscribe requests.
-            for (Channel channel : pub.host2Channel.values()) {
-                ResponseHandler responseHandler = null;
-                try {
-                    responseHandler = getResponseHandlerFromChannel(channel);
-                } catch (NoResponseHandlerException e) {
-                    logger.warn("No response handler found for channel" + channel + " in the retry timeout task.", e);
-                    continue;
-                }
-                for (PubSubData pubSubData : responseHandler.txn2PubSubData.values()) {
-                    checkPubSubDataToTimeOut(pubSubData, responseHandler, curTime, timeoutInterval);
-                }
-            }
-            // Now do the same for the cached channels in
-            // HedwigSubscriber.topicSubscriber2Channel. This stores the
-            // channels used exclusively for Subscribe requests.
-            for (Channel channel : sub.topicSubscriber2Channel.values()) {
-                ResponseHandler responseHandler = null;
-                try {
-                    responseHandler = getResponseHandlerFromChannel(channel);
-                } catch (NoResponseHandlerException e) {
-                    logger.warn("No response handler found for channel" + channel + " in the retry timeout task.", e);
-                    continue;
-                }
-                for (PubSubData pubSubData : responseHandler.txn2PubSubData.values()) {
-                    checkPubSubDataToTimeOut(pubSubData, responseHandler, curTime, timeoutInterval);
-                }
-            }
-        }
-
-        private void checkPubSubDataToTimeOut(PubSubData pubSubData, ResponseHandler responseHandler, long curTime,
-                                              long timeoutInterval) {
-            if (curTime > pubSubData.requestWriteTime + timeoutInterval) {
-                // Current PubSubRequest has timed out so remove it from the
-                // ResponseHandler's map and invoke the VoidCallback's
-                // operationFailed method.
-                logger.error("Current PubSubRequest has timed out for pubSubData: " + pubSubData);
-                responseHandler.txn2PubSubData.remove(pubSubData.txnId);
-                pubSubData.getCallback().operationFailed(pubSubData.context,
-                    new UncertainStateException("Server ack response never received so PubSubRequest has timed out!"));
-            }
-        }
-    }
-
     // When we are done with the client, this is a clean way to gracefully close
     // all channels/sockets created by the client and to also release all
     // resources used by netty.
     public void close() {
         logger.info("Stopping the client!");
-        // Set the client boolean flag to indicate the client has stopped.
-        isStopped = true;
-        // Stop the timer and all timer task threads.
-        clientTimer.cancel();
 
-        pub.close();
-        sub.close();
-
-        // Clear out all Maps.
-        topic2Host.clear();
-        host2Topics.clear();
+        // close channel manager to release all channels
+        channelManager.close(); 
 
         // Release resources used by the ChannelFactory on the client if we are
         // the owner that created it.
@@ -246,172 +116,6 @@ public class HedwigClientImpl implements Client {
             socketFactory.releaseExternalResources();
         }
         logger.info("Completed stopping the client!");
-    }
-
-    /**
-     * This is a helper method to do the connect attempt to the server given the
-     * inputted host/port. This can be used to connect to the default server
-     * host/port which is the VIP. That will pick a server in the cluster at
-     * random to connect to for the initial PubSub attempt (with redirect logic
-     * being done at the server side). Additionally, this could be called after
-     * the client makes an initial PubSub attempt at a server, and is redirected
-     * to the one that is responsible for the topic. Once the connect to the
-     * server is done, we will perform the corresponding PubSub write on that
-     * channel.
-     *
-     * @param pubSubData
-     *            PubSub call's data wrapper object
-     * @param serverHost
-     *            Input server host to connect to of type InetSocketAddress
-     */
-    public void doConnect(PubSubData pubSubData, InetSocketAddress serverHost) {
-        logger.debug("Connecting to host: {} with pubSubData: {}", serverHost, pubSubData);
-        // Set up the ClientBootStrap so we can create a new Channel connection
-        // to the server.
-        ClientBootstrap bootstrap = new ClientBootstrap(socketFactory);
-        bootstrap.setPipelineFactory(pipelineFactory);
-        bootstrap.setOption("tcpNoDelay", true);
-        bootstrap.setOption("keepAlive", true);
-
-        // Start the connection attempt to the input server host.
-        ChannelFuture future = bootstrap.connect(serverHost);
-        future.addListener(new ConnectCallback(pubSubData, serverHost, this));
-    }
-
-    /**
-     * Helper method to store the topic2Host mapping in the HedwigClient cache
-     * map. This method is assumed to be called when we've done a successful
-     * connection to the correct server topic master.
-     *
-     * @param pubSubData
-     *            PubSub wrapper data
-     * @param channel
-     *            Netty Channel
-     */
-    protected void storeTopic2HostMapping(PubSubData pubSubData, Channel channel) {
-        // Retrieve the server host that we've connected to and store the
-        // mapping from the topic to this host. For all other non-redirected
-        // server statuses, we consider that as a successful connection to the
-        // correct topic master.
-        InetSocketAddress host = getHostFromChannel(channel);
-        InetSocketAddress existingHost = topic2Host.get(pubSubData.topic);
-        if (existingHost != null && existingHost.equals(host)) {
-            // Entry in map exists for the topic but it is the same as the
-            // current host. In this case there is nothing to do.
-            return;
-        }
-
-        // Store the relevant mappings for this topic and host combination.
-        if (topic2Host.putIfAbsent(pubSubData.topic, host) == null) {
-            if (logger.isDebugEnabled())
-                logger.debug("Stored info for topic: " + pubSubData.topic.toStringUtf8() + ", old host: "
-                            + existingHost + ", new host: " + host);
-            ConcurrentLinkedQueue<ByteString> topicsForHost = host2Topics.get(host);
-            if (topicsForHost == null) {
-                ConcurrentLinkedQueue<ByteString> newTopicsList = new ConcurrentLinkedQueue<ByteString>();
-                topicsForHost = host2Topics.putIfAbsent(host, newTopicsList);
-                if (topicsForHost == null) {
-                  topicsForHost = newTopicsList;
-                }
-            }
-            topicsForHost.add(pubSubData.topic);
-        }
-    }
-
-    /**
-     * Helper static method to get the String Hostname:Port from a netty
-     * Channel. Assumption is that the netty Channel was originally created with
-     * an InetSocketAddress. This is true with the Hedwig netty implementation.
-     *
-     * @param channel
-     *            Netty channel to extract the hostname and port from.
-     * @return String representation of the Hostname:Port from the Netty Channel
-     */
-    public static InetSocketAddress getHostFromChannel(Channel channel) {
-        return (InetSocketAddress) channel.getRemoteAddress();
-    }
-
-    /**
-     * Helper static method to get the ResponseHandler instance from a Channel
-     * via the ChannelPipeline it is associated with. The assumption is that the
-     * last ChannelHandler tied to the ChannelPipeline is the ResponseHandler.
-     *
-     * @param channel
-     *            Channel we are retrieving the ResponseHandler instance for
-     * @return ResponseHandler Instance tied to the Channel's Pipeline
-     * @throws NoResponseHandlerException if the response handler found for the channel is null.
-     */
-    public static ResponseHandler getResponseHandlerFromChannel(Channel channel) throws NoResponseHandlerException {
-        if (null == channel) {
-            throw new NoResponseHandlerException("Received a null value for the channel. Cannot retrieve the response handler");
-        }
-        ResponseHandler handler = (ResponseHandler) channel.getPipeline().getLast();
-        if (null == handler) {
-            throw new NoResponseHandlerException("Could not retrieve the response handler from the channel's pipeline.");
-        }
-        return handler;
-    }
-
-    // Public getter for entries in the topic2Host Map.
-    public InetSocketAddress getHostForTopic(ByteString topic) {
-        return topic2Host.get(topic);
-    }
-
-    // If a server host goes down or the channel to it gets disconnected,
-    // we want to clear out all relevant cached information. We'll
-    // need to remove all of the topic mappings that the host was
-    // responsible for.
-    public void clearAllTopicsForHost(InetSocketAddress host) {
-        logger.debug("Clearing all topics for host: {}", host);
-        // For each of the topics that the host was responsible for,
-        // remove it from the topic2Host mapping.
-        ConcurrentLinkedQueue<ByteString> topicsForHost = host2Topics.get(host);
-        if (topicsForHost != null) {
-            for (ByteString topic : topicsForHost) {
-                if (logger.isDebugEnabled())
-                    logger.debug("Removing mapping for topic: " + topic.toStringUtf8() + " from host: " + host);
-                topic2Host.remove(topic, host);
-            }
-            // Now it is safe to remove the host2Topics mapping entry.
-            host2Topics.remove(host, topicsForHost);
-        }
-    }
-
-    // If a subscribe channel goes down, the topic might have moved.
-    // We only clear out that topic for the host and not all cached information.
-    public void clearHostForTopic(ByteString topic, InetSocketAddress host) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Clearing topic: " + topic.toStringUtf8() + " for host: "
-                    + host);
-        }
-        if (topic2Host.remove(topic, host)) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Removed topic to host mapping for topic: " + topic.toStringUtf8()
-                           + " and host: " + host);
-            }
-        }
-        ConcurrentLinkedQueue<ByteString> topicsForHost = host2Topics.get(host);
-        if (null != topicsForHost && topicsForHost.remove(topic)) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Removed topic: " + topic.toStringUtf8() + " from host: " + host);
-            }
-            if (topicsForHost.isEmpty()) {
-                // remove only topic list is empty
-                host2Topics.remove(host, EMPTY_TOPIC_LIST);
-            }
-        }
-    }
-
-    // Public getter to see if the client has been stopped.
-    public boolean hasStopped() {
-        return isStopped;
-    }
-
-    // Public getter to get the client's Timer object.
-    // This is so we can reuse this and not have to create multiple Timer
-    // objects.
-    public Timer getClientTimer() {
-        return clientTimer;
     }
 
 }

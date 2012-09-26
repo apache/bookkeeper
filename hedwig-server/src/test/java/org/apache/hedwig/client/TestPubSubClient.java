@@ -348,6 +348,33 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
     }
 
     @Test
+    public void testStartDeliveryAfterCloseSub() throws Exception {
+        ByteString topic = ByteString.copyFromUtf8("testStartDeliveryAfterCloseSub");
+        ByteString subid = ByteString.copyFromUtf8("mysubid");
+        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+
+        // Start delivery for the subscriber
+        subscriber.startDelivery(topic, subid, new TestMessageHandler());
+
+        // Now publish some messages for the topic to be consumed by the
+        // subscriber.
+        publisher.publish(topic, Message.newBuilder()
+                                .setBody(ByteString.copyFromUtf8("Message #1")).build());
+        assertTrue(consumeQueue.take());
+
+        // Close subscriber for the subscriber
+        subscriber.closeSubscription(topic, subid);
+
+        // subscribe again
+        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        subscriber.startDelivery(topic, subid, new TestMessageHandler());
+
+        publisher.publish(topic, Message.newBuilder()
+                                .setBody(ByteString.copyFromUtf8("Message #2")).build());
+        assertTrue(consumeQueue.take());
+    }
+
+    @Test
     public void testSubscribeAndConsume() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("myConsumeTopic");
         ByteString subscriberId = ByteString.copyFromUtf8("1");

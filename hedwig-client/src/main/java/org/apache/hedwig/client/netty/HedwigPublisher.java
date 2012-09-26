@@ -17,22 +17,12 @@
  */
 package org.apache.hedwig.client.netty;
 
-import java.net.InetSocketAddress;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import org.apache.hedwig.client.exceptions.NoResponseHandlerException;
-import org.apache.hedwig.protocol.PubSubProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
 
 import com.google.protobuf.ByteString;
 
-import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.client.api.Publisher;
-import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.data.PubSubData;
 import org.apache.hedwig.client.handlers.PubSubCallback;
 import org.apache.hedwig.exceptions.PubSubException;
@@ -40,9 +30,8 @@ import org.apache.hedwig.exceptions.PubSubException.CouldNotConnectException;
 import org.apache.hedwig.exceptions.PubSubException.ServiceDownException;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
-import org.apache.hedwig.protocol.PubSubProtocol.ProtocolVersion;
-import org.apache.hedwig.protocol.PubSubProtocol.PubSubRequest;
-import org.apache.hedwig.protocol.PubSubProtocol.PublishRequest;
+import org.apache.hedwig.protocol.PubSubProtocol.PublishResponse;
+import org.apache.hedwig.protocol.PubSubProtocol.ResponseBody;
 import org.apache.hedwig.util.Callback;
 
 /**
@@ -53,27 +42,19 @@ public class HedwigPublisher implements Publisher {
 
     private static Logger logger = LoggerFactory.getLogger(HedwigPublisher.class);
 
-    // Concurrent Map to store the mappings for a given Host (Hostname:Port) to
-    // the Channel that has been established for it previously. This channel
-    // will be used whenever we publish on a topic that the server is the master
-    // of currently. The channels used here will only be used for publish and
-    // unsubscribe requests.
-    protected final ConcurrentMap<InetSocketAddress, Channel> host2Channel = new ConcurrentHashMap<InetSocketAddress, Channel>();
-
-    private final HedwigClientImpl client;
-    private final ClientConfiguration cfg;
-    private boolean closed = false;
+    private final HChannelManager channelManager;
 
     protected HedwigPublisher(HedwigClientImpl client) {
-        this.client = client;
-        this.cfg = client.getConfiguration();
+        this.channelManager = client.getHChannelManager();
     }
 
-    public PubSubProtocol.PublishResponse publish(ByteString topic, Message msg)
+    public PublishResponse publish(ByteString topic, Message msg)
         throws CouldNotConnectException, ServiceDownException {
 
-        if (logger.isDebugEnabled())
-            logger.debug("Calling a sync publish for topic: " + topic.toStringUtf8() + ", msg: " + msg);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Calling a sync publish for topic: {}, msg: {}.",
+                         topic.toStringUtf8(), msg);
+        }
         PubSubData pubSubData = new PubSubData(topic, msg, null, OperationType.PUBLISH, null, null, null);
         synchronized (pubSubData) {
             PubSubCallback pubSubCallback = new PubSubCallback(pubSubData);
@@ -105,192 +86,61 @@ public class HedwigPublisher implements Publisher {
                 } else {
                     // For other types of PubSubExceptions, just throw a generic
                     // ServiceDownException but log a warning message.
-                    logger.error("Unexpected exception type when a sync publish operation failed: " + failureException);
+                    logger.error("Unexpected exception type when a sync publish operation failed: ",
+                                 failureException);
                     throw new ServiceDownException("Server ack response to publish request is not successful");
                 }
             }
 
-            PubSubProtocol.ResponseBody respBody = pubSubCallback.getResponseBody();
-            if (null == respBody) return null;
+            ResponseBody respBody = pubSubCallback.getResponseBody();
+            if (null == respBody) {
+                return null;
+            }
             return respBody.hasPublishResponse() ? respBody.getPublishResponse() : null;
         }
     }
 
-    public void asyncPublish(ByteString topic, Message msg, final Callback<Void> callback, Object context) {
+    public void asyncPublish(ByteString topic, Message msg,
+                             final Callback<Void> callback, Object context) {
         asyncPublishWithResponseImpl(topic, msg,
-            new VoidCallbackAdapter<PubSubProtocol.ResponseBody>(callback), context);
+                                     new VoidCallbackAdapter<ResponseBody>(callback), context);
     }
 
     public void asyncPublishWithResponse(ByteString topic, Message msg,
-                                         Callback<PubSubProtocol.PublishResponse> _callback, Object context) {
+                                         Callback<PublishResponse> callback,
+                                         Object context) {
         // adapt the callback.
-        asyncPublishWithResponseImpl(topic, msg, new PublishResponseCallbackAdapter(_callback), context);
+        asyncPublishWithResponseImpl(topic, msg,
+                                     new PublishResponseCallbackAdapter(callback), context);
     }
 
     private void asyncPublishWithResponseImpl(ByteString topic, Message msg,
-                                              Callback<PubSubProtocol.ResponseBody> callback, Object context) {
-
-        if (logger.isDebugEnabled())
-            logger.debug("Calling an async publish for topic: " + topic.toStringUtf8() + ", msg: " + msg);
-        // Check if we already have a Channel connection set up to the server
-        // for the given Topic.
-        PubSubData pubSubData = new PubSubData(topic, msg, null, OperationType.PUBLISH, null, callback, context);
-        InetSocketAddress host = client.topic2Host.get(topic);
-        if (host != null) {
-            Channel channel = host2Channel.get(host);
-            if (channel != null) {
-                // We already have the Channel connection for the server host so
-                // do the publish directly. We will deal with redirect logic
-                // later on if that server is no longer the current host for
-                // the topic.
-                doPublish(pubSubData, channel);
-            } else {
-                // We have a mapping for the topic to host but don't have a
-                // Channel for that server. This can happen if the Channel
-                // is disconnected for some reason. Do the connect then to
-                // the specified server host to create a new Channel connection.
-                client.doConnect(pubSubData, host);
-            }
-        } else {
-            // Server host for the given topic is not known yet so use the
-            // default server host/port as defined in the configs. This should
-            // point to the server VIP which would redirect to a random server
-            // (which might not be the server hosting the topic).
-            host = cfg.getDefaultServerHost();
-            Channel channel = host2Channel.get(host);
-            if (channel != null) {
-                // if there is a channel to default server, use it!
-                doPublish(pubSubData, channel);
-                return;
-            }
-            client.doConnect(pubSubData, host);
+                                              Callback<ResponseBody> callback,
+                                              Object context) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Calling an async publish for topic: {}, msg: {}.",
+                         topic.toStringUtf8(), msg);
         }
+        PubSubData pubSubData = new PubSubData(topic, msg, null, OperationType.PUBLISH, null,
+                                               callback, context);
+        channelManager.submitOp(pubSubData);
     }
 
-    /**
-     * This is a helper method to write the actual publish message once the
-     * client is connected to the server and a Channel is available.
-     *
-     * @param pubSubData
-     *            Publish call's data wrapper object
-     * @param channel
-     *            Netty I/O channel for communication between the client and
-     *            server
-     */
-    protected void doPublish(PubSubData pubSubData, Channel channel) {
-        // Create a PubSubRequest
-        PubSubRequest.Builder pubsubRequestBuilder = PubSubRequest.newBuilder();
-        pubsubRequestBuilder.setProtocolVersion(ProtocolVersion.VERSION_ONE);
-        pubsubRequestBuilder.setType(OperationType.PUBLISH);
-        if (pubSubData.triedServers != null && pubSubData.triedServers.size() > 0) {
-            pubsubRequestBuilder.addAllTriedServers(pubSubData.triedServers);
-        }
-        long txnId = client.globalCounter.incrementAndGet();
-        pubsubRequestBuilder.setTxnId(txnId);
-        pubsubRequestBuilder.setShouldClaim(pubSubData.shouldClaim);
-        pubsubRequestBuilder.setTopic(pubSubData.topic);
+    private static class PublishResponseCallbackAdapter implements Callback<ResponseBody>{
 
-        // Now create the PublishRequest
-        PublishRequest.Builder publishRequestBuilder = PublishRequest.newBuilder();
+        private final Callback<PublishResponse> delegate;
 
-        publishRequestBuilder.setMsg(pubSubData.msg);
-
-        // Set the PublishRequest into the outer PubSubRequest
-        pubsubRequestBuilder.setPublishRequest(publishRequestBuilder);
-
-        // Update the PubSubData with the txnId and the requestWriteTime
-        pubSubData.txnId = txnId;
-        pubSubData.requestWriteTime = MathUtils.now();
-
-        // Before we do the write, store this information into the
-        // ResponseHandler so when the server responds, we know what
-        // appropriate Callback Data to invoke for the given txn ID.
-        try {
-            HedwigClientImpl.getResponseHandlerFromChannel(channel).txn2PubSubData.put(txnId, pubSubData);
-        } catch (NoResponseHandlerException e) {
-            logger.error("No response handler found while storing the publish callback.");
-            // Callback on pubsubdata indicating failure.
-            pubSubData.getCallback().operationFailed(pubSubData.context, new CouldNotConnectException("No response " +
-                    "handler found while attempting to publish. So could not connect."));
-            return;
-        }
-
-        // Finally, write the Publish request through the Channel.
-        if (logger.isDebugEnabled())
-            logger.debug("Writing a Publish request to host: " + HedwigClientImpl.getHostFromChannel(channel)
-                         + " for pubSubData: " + pubSubData);
-        ChannelFuture future = channel.write(pubsubRequestBuilder.build());
-        future.addListener(new WriteCallback(pubSubData, client));
-    }
-
-    // Synchronized method to store the host2Channel mapping (if it doesn't
-    // exist yet). Retrieve the hostname info from the Channel created via the
-    // RemoteAddress tied to it.
-    protected synchronized void storeHost2ChannelMapping(Channel channel) {
-        InetSocketAddress host = HedwigClientImpl.getHostFromChannel(channel);
-        if (!closed && host2Channel.putIfAbsent(host, channel) == null) {
-            if (logger.isDebugEnabled())
-                logger.debug("Stored a new Channel mapping for host: " + host);
-        } else {
-            // If we've reached here, that means we already have a Channel
-            // mapping for the given host. This should ideally not happen
-            // and it means we are creating another Channel to a server host
-            // to publish on when we could have used an existing one. This could
-            // happen due to a race condition if initially multiple concurrent
-            // threads are publishing on the same topic and no Channel exists
-            // currently to the server. We are not synchronizing this initial
-            // creation of Channels to a given host for performance.
-            // Another possible way to have redundant Channels created is if
-            // a new topic is being published to, we connect to the default
-            // server host which should be a VIP that redirects to a "real"
-            // server host. Since we don't know beforehand what is the full
-            // set of server hosts, we could be redirected to a server that
-            // we already have a channel connection to from a prior existing
-            // topic. Close these redundant channels as they won't be used.
-            logger.debug("Channel mapping to host: {} already exists so no need to store it.", host);
-            try {
-                HedwigClientImpl.getResponseHandlerFromChannel(channel).handleChannelClosedExplicitly();
-            } catch (NoResponseHandlerException e) {
-                logger.error("Could not get response handler while closing channel.");
-            }
-            channel.close();
-        }
-    }
-
-    // Public getter for entries in the host2Channel Map.
-    // This is used for classes that need this information but are not in the
-    // same classpath.
-    public Channel getChannelForHost(InetSocketAddress host) {
-        return host2Channel.get(host);
-    }
-
-    void close() {
-        synchronized(this) {
-            closed = true;
-        }
-        for (Channel channel : host2Channel.values()) {
-            try {
-                client.getResponseHandlerFromChannel(channel).handleChannelClosedExplicitly();
-            } catch (NoResponseHandlerException e) {
-                logger.error("No response handler while trying explicitly close Publisher channel " + channel);
-            }
-            channel.close().awaitUninterruptibly();
-        }
-        host2Channel.clear();
-    }
-
-    private static class PublishResponseCallbackAdapter implements Callback<PubSubProtocol.ResponseBody>{
-
-        private final Callback<PubSubProtocol.PublishResponse> delegate;
-
-        private PublishResponseCallbackAdapter(Callback<PubSubProtocol.PublishResponse> delegate) {
+        private PublishResponseCallbackAdapter(Callback<PublishResponse> delegate) {
             this.delegate = delegate;
         }
 
         @Override
-        public void operationFinished(Object ctx, PubSubProtocol.ResponseBody resultOfOperation) {
-            if (null == resultOfOperation) delegate.operationFinished(ctx, null);
-            else delegate.operationFinished(ctx, resultOfOperation.getPublishResponse());
+        public void operationFinished(Object ctx, ResponseBody resultOfOperation) {
+            if (null == resultOfOperation) {
+                delegate.operationFinished(ctx, null);
+            } else {
+                delegate.operationFinished(ctx, resultOfOperation.getPublishResponse());
+            }
         }
 
         @Override

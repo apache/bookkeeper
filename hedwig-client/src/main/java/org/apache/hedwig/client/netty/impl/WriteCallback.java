@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hedwig.client.netty;
+package org.apache.hedwig.client.netty.impl;
 
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
@@ -27,8 +27,9 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 
 import com.google.protobuf.ByteString;
-import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.data.PubSubData;
+import org.apache.hedwig.client.netty.HChannelManager;
+import org.apache.hedwig.client.netty.NetUtils;
 import org.apache.hedwig.exceptions.PubSubException.ServiceDownException;
 import org.apache.hedwig.util.HedwigSocketAddress;
 
@@ -38,38 +39,41 @@ public class WriteCallback implements ChannelFutureListener {
 
     // Private member variables
     private PubSubData pubSubData;
-    private final HedwigClientImpl client;
-    private final ClientConfiguration cfg;
+    private final HChannelManager channelManager;
 
     // Constructor
-    public WriteCallback(PubSubData pubSubData, HedwigClientImpl client) {
+    public WriteCallback(PubSubData pubSubData,
+                         HChannelManager channelManager) {
         super();
         this.pubSubData = pubSubData;
-        this.client = client;
-        this.cfg = client.getConfiguration();
+        this.channelManager = channelManager;
     }
 
     public void operationComplete(ChannelFuture future) throws Exception {
         // If the client has stopped, there is no need to proceed
         // with any callback logic here.
-        if (client.hasStopped()) {
+        if (channelManager.isClosed()) {
             future.getChannel().close();
             return;
         }
 
         // When the write operation to the server is done, we just need to check
         // if it was successful or not.
-        InetSocketAddress host = HedwigClientImpl.getHostFromChannel(future.getChannel());
+        InetSocketAddress host = NetUtils.getHostFromChannel(future.getChannel());
         if (!future.isSuccess()) {
-            logger.error("Error writing on channel to host: " + host);
+            logger.error("Error writing on channel to host: {}", host);
             // On a write failure for a PubSubRequest, we also want to remove
             // the saved txnId to PubSubData in the ResponseHandler. These
             // requests will not receive an ack response from the server
             // so there is no point storing that information there anymore.
             try {
-                HedwigClientImpl.getResponseHandlerFromChannel(future.getChannel()).txn2PubSubData.remove(pubSubData.txnId);
+                HChannelHandler channelHandler = 
+                    HChannelImpl.getHChannelHandlerFromChannel(future.getChannel());
+                channelHandler.removeTxn(pubSubData.txnId);
+                channelHandler.closeExplicitly();
             } catch (NoResponseHandlerException e) {
-                // We just couldn't remove the transaction ID's mapping. The handler was null, so this has been reset anyway.
+                // We just couldn't remove the transaction ID's mapping.
+                // The handler was null, so this has been reset anyway.
                 logger.warn("Could not find response handler to remove txnId mapping to pubsub data. Ignoring.");
             }
 
@@ -93,7 +97,7 @@ public class WriteCallback implements ChannelFutureListener {
                 if (pubSubData.writeFailedServers == null)
                     pubSubData.writeFailedServers = new LinkedList<ByteString>();
                 pubSubData.writeFailedServers.add(hostString);
-                client.doConnect(pubSubData, cfg.getDefaultServerHost());
+                channelManager.submitOpToDefaultServer(pubSubData);
             }
         } else {
             // Now that the write to the server is done, we have to wait for it
