@@ -94,6 +94,7 @@ start_hw_server () {
     REGION=$1
     COUNT=$2
     PORT=$((4080+$COUNT))
+    SSL_PORT=$((9876+$COUNT))
 
     export HEDWIG_LOG_CONF=/tmp/hw-log4j-$COUNT.properties
     cat > $HEDWIG_LOG_CONF <<EOF
@@ -112,6 +113,8 @@ log4j.appender.ROLLINGFILE.MaxFileSize=10MB
 #log4j.appender.ROLLINGFILE.MaxBackupIndex=10
 log4j.appender.ROLLINGFILE.layout=org.apache.log4j.PatternLayout
 log4j.appender.ROLLINGFILE.layout.ConversionPattern=%d{ISO8601} - %-5p [%t:%C{1}@%L] - %m%n
+log4j.logger.org.apache.zookeeper=OFF,ROLLINGFILE
+log4j.logger.org.apache.hedwig.zookeeper=OFF,ROLLINGFILE
 EOF
 
     export HEDWIG_SERVER_CONF=/tmp/hw-server-$COUNT.conf
@@ -122,9 +125,11 @@ zk_timeout=2000
 # The port at which the clients will connect.
 server_port=$PORT
 # The SSL port at which the clients will connect (only if SSL is enabled).
-ssl_server_port=9876
+ssl_server_port=$SSL_PORT
 # Flag indicating if the server should also operate in SSL mode.
-ssl_enabled=false
+ssl_enabled=true
+cert_path=$PWD/../../../../../hedwig-server/src/main/resources/server.p12
+password=eUySvp2phM2Wk
 region=$REGION
 EOF
     sh $HWSCRIPT server 2>&1 > hwoutput.$COUNT.log &

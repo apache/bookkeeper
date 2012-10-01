@@ -136,9 +136,11 @@ private:
 
 class TestServerConfiguration : public Hedwig::Configuration {
 public:
-  TestServerConfiguration() : address("localhost:4081"), syncTimeout(10000), numThreads(2) {}
+  TestServerConfiguration() : address("localhost:4081:9877"),
+                              syncTimeout(10000), numThreads(2) {}
 
-  TestServerConfiguration(int syncTimeout, int numThreads = 2) : address("localhost:4081"), syncTimeout(syncTimeout), numThreads(numThreads) {}
+  TestServerConfiguration(int syncTimeout, int numThreads = 2)
+    : address("localhost:4081:9877"), syncTimeout(syncTimeout), numThreads(numThreads) {}
   
   virtual int getInt(const std::string& key, int defaultVal) const {
     if (key == Configuration::SYNC_REQUEST_TIMEOUT) {
@@ -152,15 +154,23 @@ public:
   virtual const std::string get(const std::string& key, const std::string& defaultVal) const {
     if (key == Configuration::DEFAULT_SERVER) {
       return address;
+    } else if (key == Configuration::SSL_PEM_FILE) {
+      return certFile;
     } else {
       return defaultVal;
     }
   }
 
-  virtual bool getBool(const std::string& /*key*/, bool defaultVal) const {
+  virtual bool getBool(const std::string& key, bool defaultVal) const {
+    if (key == Configuration::RUN_AS_SSL_MODE) {
+      return isSSL;
+    }
     return defaultVal;
   }
-  
+public:
+  // for testing
+  static bool isSSL;
+  static std::string certFile;
 private:
   const std::string address;
   const int syncTimeout;

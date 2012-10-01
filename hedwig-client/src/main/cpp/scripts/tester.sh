@@ -24,15 +24,19 @@ export LOG4CXX_CONF=`pwd`/log4cxx.conf
 source network-delays.sh
 source server-control.sh
 
-all() {
+runtest() {
     if [ "z$HEDWIG_NETWORK_DELAY" != "z" ]; then
 	setup_delays $HEDWIG_NETWORK_DELAY
     fi
 
     stop_cluster;
     start_cluster;
+    if [ "z$1" != "z" ]; then
+      ../test/hedwigtest -s true
+    else
+      ../test/hedwigtest
+    fi
 
-    ../test/hedwigtest 
     RESULT=$?
     stop_cluster;
 
@@ -101,6 +105,12 @@ case "$1" in
     stop-cluster)
 	stop_cluster 
 	;;
+    simple-test)
+        runtest
+        ;;
+    ssl-test)
+        runtest ssl
+        ;;
     setup-delays)
 	setup_delays $2
 	;;
@@ -108,7 +118,8 @@ case "$1" in
 	clear_delays
 	;;
     all)
-	all
+	runtest
+	runtest ssl
 	;;
     singletest)
 	singletest $2
@@ -118,7 +129,13 @@ case "$1" in
 Usage: tester.sh [command]
 
 tester.sh all
-   Run through the tests, setting up and cleaning up all prerequisites.
+   Run through the tests (both simple and ssl), setting up and cleaning up all prerequisites.
+
+tester.sh simple-test
+   Run through the tests (simple mode), setting up and cleaning up all prerequisites.
+
+tester.sh ssl-test
+   Run through the tests (ssl mode), setting up and cleaning up all prerequisites.
 
 tester.sh singletest <name>
    Run a single test

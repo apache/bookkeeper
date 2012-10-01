@@ -107,7 +107,8 @@ namespace Hedwig {
   class SubscriberClientChannelHandler : public HedwigClientChannelHandler, 
 					 public boost::enable_shared_from_this<SubscriberClientChannelHandler> {
   public: 
-    SubscriberClientChannelHandler(const ClientImplPtr& client, SubscriberImpl& subscriber, const PubSubDataPtr& data);
+    SubscriberClientChannelHandler(const ClientImplPtr& client, SubscriberImpl& subscriber,
+                                   const PubSubDataPtr& data);
     ~SubscriberClientChannelHandler();
 
     void messageReceived(const DuplexChannelPtr& channel, const PubSubResponsePtr& m);

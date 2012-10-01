@@ -26,6 +26,13 @@ hedwigtest_LDFLAGS = -no-undefined $(BOOST_ASIO_LIB) $(BOOST_LDFLAGS) $(BOOST_TH
 
 check: hedwigtest
 	bash ../scripts/tester.sh all
+
+sslcheck: hedwigtest
+	bash ../scripts/tester.sh ssl-test
+
+simplecheck: hedwigtest
+	bash ../scripts/tester.sh simple-test
+
 else
 check:
 	@echo "\n\nYou haven't configured with gtest. Run the ./configure command with --enable-gtest=<path_to_gtest>"

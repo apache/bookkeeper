@@ -206,6 +206,7 @@ namespace Hedwig {
 
     void setChannelForHost(const HostAddress& address, const DuplexChannelPtr& channel);
     void channelDied(const DuplexChannelPtr& channel);
+    void removeAndCloseChannel(const DuplexChannelPtr& channel);
     bool shuttingDown() const;
     
     SubscriberImpl& getSubscriberImpl();
@@ -230,7 +231,8 @@ namespace Hedwig {
 
     typedef boost::shared_ptr<EventDispatcher> EventDispatcherPtr;
     EventDispatcherPtr dispatcher;
-    
+    DuplexChannelManagerPtr channelManager;
+
     typedef std::tr1::unordered_multimap<HostAddress, std::string, HostAddressHash > Host2TopicsMap;
     Host2TopicsMap host2topics;
     boost::shared_mutex host2topics_lock;

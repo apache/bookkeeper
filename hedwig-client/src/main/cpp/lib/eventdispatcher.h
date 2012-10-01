@@ -20,37 +20,62 @@
 
 #include <vector>
 
+#include <hedwig/client.h>
+
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
-#include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
 
 namespace Hedwig {
-  typedef boost::shared_ptr<boost::asio::io_service> io_service_ptr;
   typedef boost::shared_ptr<boost::asio::io_service::work> work_ptr;
   typedef boost::shared_ptr<boost::thread> thread_ptr;
 
+  class IOService;
+  typedef boost::shared_ptr<IOService> IOServicePtr;
+
+  class IOService {
+  public:
+    IOService();
+    virtual ~IOService();
+
+    // start the io service
+    void start();
+    // stop the io service
+    void stop();
+    // run the io service
+    void run();
+
+    inline boost::asio::io_service& getService() {
+      return service;
+    }
+
+  private:
+    boost::asio::io_service service;  
+    work_ptr work;
+  };
+
   class EventDispatcher {
   public:  
-    EventDispatcher(int numThreads = 1);
+    EventDispatcher(const Configuration& conf);
     ~EventDispatcher();
     
     void start();
+
     void stop();
     
-    boost::asio::io_service& getService();
-    
+    IOServicePtr& getService();
+
   private:
-    void run_forever(io_service_ptr service, size_t idx);
+    void run_forever(IOServicePtr service, size_t idx);
+
+    const Configuration& conf;
 
     // number of threads
     size_t num_threads;
     // running flag
     bool running;
     // pool of io_services.
-    std::vector<io_service_ptr> services;
-    // pool of works
-    std::vector<work_ptr> works;
+    std::vector<IOServicePtr> services;
     // threads
     std::vector<thread_ptr> threads;
     // next io_service used for a connection

@@ -75,23 +75,29 @@ protected:
 class PubSubOrderCheckingMessageHandlerCallback : public Hedwig::MessageHandlerCallback {
 public:
   PubSubOrderCheckingMessageHandlerCallback(const std::string& topic, const std::string& subscriberId, const int startMsgId, const int sleepTimeInConsume)
-    : messagesReceived(0), topic(topic), subscriberId(subscriberId), startMsgId(startMsgId), 
-      isInOrder(true), sleepTimeInConsume(sleepTimeInConsume) {
+    : topic(topic), subscriberId(subscriberId), startMsgId(startMsgId),
+      nextMsgId(startMsgId), isInOrder(true), sleepTimeInConsume(sleepTimeInConsume) {
   }
 
   virtual void consume(const std::string& topic, const std::string& subscriberId,
 		       const Hedwig::Message& msg, Hedwig::OperationCallbackPtr& callback) {
     if (topic == this->topic && subscriberId == this->subscriberId) {
       boost::lock_guard<boost::mutex> lock(mutex);
-            
-      messagesReceived++;
 
       int newMsgId = atoi(msg.body().c_str());
+      if (newMsgId == nextMsgId + 1) {
+        // only calculate unduplicated entries
+        ++nextMsgId;
+      }
+
       // checking msgId
       LOG4CXX_DEBUG(logger, "received message " << newMsgId);
       if (startMsgId >= 0) { // need to check ordering if start msg id is larger than 0
 	if (isInOrder) {
-	  if (newMsgId != startMsgId + 1) {
+          // in some environments, ssl channel encountering error like Bad File Descriptor.
+          // the channel would disconnect and reconnect. A duplicated message would be received.
+          // so just checking we received a larger out-of-order message.
+	  if (newMsgId > startMsgId + 1) {
 	    LOG4CXX_ERROR(logger, "received out-of-order message : expected " << (startMsgId + 1) << ", actual " << newMsgId);
 	    isInOrder = false;
 	  } else {
@@ -106,10 +112,9 @@ public:
     }
   }
     
-  int numMessagesReceived() {
+  int nextExpectedMsgId() {
     boost::lock_guard<boost::mutex> lock(mutex);
-    int i = messagesReceived;
-    return i;
+    return nextMsgId;
   }    
 
   bool inOrder() {
@@ -119,10 +124,10 @@ public:
     
 protected:
   boost::mutex mutex;
-  int messagesReceived;
   std::string topic;
   std::string subscriberId;
   int startMsgId;
+  int nextMsgId;
   bool isInOrder;
   int sleepTimeInConsume;
 };
@@ -271,7 +276,7 @@ TEST(PubSubTest, testRandomDelivery) {
 
    for (int i = 0; i < 10; i++) {
      sleep(3);
-     if (cb->numMessagesReceived() == 2 * numMessages) {
+     if (cb->nextExpectedMsgId() == 2 * numMessages) {
        break;
      }
    }
@@ -329,7 +334,7 @@ TEST(PubSubTest, testRandomDelivery) {
      PubSubOrderCheckingMessageHandlerCallback *cb =
        (PubSubOrderCheckingMessageHandlerCallback *)(callbacks[j].get());
      for (int i = 0; i < 10; i++) {
-       if (cb->numMessagesReceived() == numMessages) {
+       if (cb->nextExpectedMsgId() == numMessages) {
 	 break;
        }
        sleep(3);
@@ -338,7 +343,6 @@ TEST(PubSubTest, testRandomDelivery) {
    }
    callbacks.clear();
  }
-
 
  TEST(PubSubTest, testPubSubContinuousOverClose) {
    std::string topic = "pubSubTopic";

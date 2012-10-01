@@ -129,7 +129,8 @@ void SubscriberConsumeCallback::operationFailed(const std::exception& exception)
   LOG4CXX_ERROR(logger, "Error passing message to client transaction: " << data->getTxnId() << " error: " << exception.what() 
 		<< " retrying in " << retrywait << " Microseconds");
 
-  boost::asio::deadline_timer t(handler->getChannel()->getService(), boost::posix_time::milliseconds(retrywait));
+  AbstractDuplexChannelPtr chPtr = boost::dynamic_pointer_cast<AbstractDuplexChannel>(handler->getChannel());
+  boost::asio::deadline_timer t(chPtr->getService(), boost::posix_time::milliseconds(retrywait));
 
   t.async_wait(boost::bind(&SubscriberConsumeCallback::timerComplete, handler, m, boost::asio::placeholders::error));  
 }
@@ -179,8 +180,23 @@ void SubscriberClientChannelHandler::messageReceived(const DuplexChannelPtr& cha
 void SubscriberClientChannelHandler::close() {
   closed = true;
 
+  // cancel reconnect timer
+  if (reconnectTimer.get()) {
+    boost::system::error_code ec;
+    reconnectTimer->cancel(ec);
+    if (ec) {
+      LOG4CXX_WARN(logger, "Handler " << this << " cancel reconnect task " << reconnectTimer.get() << " error :" << ec.message().c_str());
+    }
+  }
+
+  LOG4CXX_INFO(logger, "close subscription handler " << this << " for (topic:" << origData->getTopic()
+                    << ", subscriberId:" << origData->getSubscriberId() << ").");
   if (channel.get()) {
-    channel->kill();
+    // need to ensure the channel is removed from allchannels list
+    // since it will be killed
+    client->removeAndCloseChannel(channel);
+    LOG4CXX_INFO(logger, "removed subscription channel " << channel.get() << " for (topic: " << origData->getTopic()
+                      << ", subscriberId:" << origData->getSubscriberId() << ").");
   }
 }
 
@@ -236,9 +252,10 @@ void SubscriberClientChannelHandler::reconnect(const DuplexChannelPtr& channel, 
   if (should_wait) {
     int retrywait = client->getConfiguration().getInt(Configuration::RECONNECT_SUBSCRIBE_RETRY_WAIT_TIME,
 						      DEFAULT_RECONNECT_SUBSCRIBE_RETRY_WAIT_TIME);
-    
+    AbstractDuplexChannelPtr chPtr = boost::dynamic_pointer_cast<AbstractDuplexChannel>(channel);
     // set reconnect timer
-    reconnectTimer = ReconnectTimerPtr(new boost::asio::deadline_timer(channel->getService(), boost::posix_time::milliseconds(retrywait)));
+    reconnectTimer = ReconnectTimerPtr(new boost::asio::deadline_timer(chPtr->getService(),
+                                       boost::posix_time::milliseconds(retrywait)));
     reconnectTimer->async_wait(boost::bind(&SubscriberClientChannelHandler::reconnectTimerComplete, shared_from_this(),
 			     channel, e, boost::asio::placeholders::error));  
     return;
@@ -256,6 +273,8 @@ void SubscriberClientChannelHandler::reconnect(const DuplexChannelPtr& channel, 
   
   DuplexChannelPtr newchannel = client->createChannel(origData->getTopic(), baseptr);
   newhandler->setChannel(newchannel);
+  newchannel->connect();
+  LOG4CXX_DEBUG(logger, "Create a new channel " << newchannel.get() << " to handover delivery to new handler " << newhandler.get());
   handoverDelivery(newhandler);
   
   // remove record of the failed channel from the subscriber
@@ -368,6 +387,10 @@ void SubscriberImpl::asyncSubscribe(const std::string& topic, const std::string&
 
   DuplexChannelPtr channel = client->createChannel(topic, handler);
   handler->setChannel(channel);
+  channel->connect();
+  LOG4CXX_INFO(logger, "New handler " << handler.get() << " on channel " << channel.get()
+                    << " is created for (topic:" << topic << ", subscriber:" << subscriberId << ", txn:"
+                    << data->getTxnId() << ").");
   doSubscribe(channel, data, handler);
 }
 
@@ -377,15 +400,19 @@ void SubscriberImpl::doSubscribe(const DuplexChannelPtr& channel, const PubSubDa
   OperationCallbackPtr writecb(new SubscriberWriteCallback(client, data));
   channel->writeRequest(data->getRequest(), writecb);
 
-  boost::lock_guard<boost::shared_mutex> lock(topicsubscriber2handler_lock);
-  TopicSubscriber t(data->getTopic(), data->getSubscriberId());
-  SubscriberClientChannelHandlerPtr oldhandler = topicsubscriber2handler[t];
-  if (oldhandler != NULL) {
+  SubscriberClientChannelHandlerPtr oldhandler;
+  {
+    boost::lock_guard<boost::shared_mutex> lock(topicsubscriber2handler_lock);
+    TopicSubscriber t(data->getTopic(), data->getSubscriberId());
+    oldhandler = topicsubscriber2handler[t];
+    topicsubscriber2handler[t] = handler;
+  }
+  if (oldhandler.get() != NULL) {
+    LOG4CXX_DEBUG(logger, "(topic:" << data->getTopic() << ", subscriber:" << data->getSubscriberId()
+                          << ") handover delivery from old handler " << oldhandler.get()
+                          << " to new handler " << handler.get());
     oldhandler->handoverDelivery(handler);
   }
-  topicsubscriber2handler[t] = handler;
-  
-  LOG4CXX_DEBUG(logger, "Set topic subscriber for topic(" << data->getTopic() << ") subscriberId(" << data->getSubscriberId() << ") to " << handler.get() << " topicsubscriber2topic(" << &topicsubscriber2handler << ")");
 }
 
 void SubscriberImpl::unsubscribe(const std::string& topic, const std::string& subscriberId) {

@@ -176,6 +176,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-364: re-factor hedwig java client to support both one-subscription-per-channel and multiplex-subscriptions-per-channel. (sijie via ivank)
 
+        BOOKKEEPER-143: Add SSL support for hedwig cpp client (sijie via ivank)
+
 Release 4.1.0 - 2012-06-07
 
   Non-backward compatible changes:

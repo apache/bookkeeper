@@ -33,32 +33,17 @@
 
 static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("hedwig."__FILE__));
 
-class MessageFilterConfiguration : public Hedwig::Configuration {
+class MessageFilterConfiguration : public TestServerConfiguration {
 public:
-  MessageFilterConfiguration() : address("localhost:4081") {}
-  
-  virtual int getInt(const std::string& key, int defaultVal) const {
-    return defaultVal;
-  }
-
-  virtual const std::string get(const std::string& key, const std::string& defaultVal) const {
-    if (key == Configuration::DEFAULT_SERVER) {
-      return address;
-    } else {
-      return defaultVal;
-    }
-  }
+  MessageFilterConfiguration() : TestServerConfiguration() {}
   
   virtual bool getBool(const std::string& key, bool defaultVal) const {
     if (key == Configuration::SUBSCRIBER_AUTOCONSUME) {
       return false;
     } else {
-      return defaultVal;
+      return TestServerConfiguration::getBool(key, defaultVal);
     }
   }
-
-  protected:
-  const std::string address;
 };
     
 class ModMessageFilter : public Hedwig::ClientMessageFilter {

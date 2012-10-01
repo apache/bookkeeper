@@ -27,3 +27,12 @@ pkgconfigdir = $(libdir)/pkgconfig
 nodist_pkgconfig_DATA = hedwig-0.1.pc
 
 EXTRA_DIST = $(DX_CONFIG) doc/html
+
+check:
+	cd test; make check
+
+sslcheck:
+	cd test; make sslcheck
+
+simplecheck:
+	cd test; make simplecheck

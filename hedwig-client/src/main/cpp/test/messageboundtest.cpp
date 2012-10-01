@@ -33,32 +33,16 @@
 
 static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("hedwig."__FILE__));
 
-
-class MessageBoundConfiguration : public Hedwig::Configuration {
+class MessageBoundConfiguration : public TestServerConfiguration {
 public:
-  MessageBoundConfiguration() : address("localhost:4081") {}
+  MessageBoundConfiguration() : TestServerConfiguration() {}
     
   virtual int getInt(const std::string& key, int defaultVal) const {
     if (key == Configuration::SUBSCRIPTION_MESSAGE_BOUND) {
       return 5;
     }
-    return defaultVal;
+    return TestServerConfiguration::getInt(key, defaultVal);
   }
-
-  virtual const std::string get(const std::string& key, const std::string& defaultVal) const {
-    if (key == Configuration::DEFAULT_SERVER) {
-      return address;
-    } else {
-      return defaultVal;
-    }
-  }
-    
-  virtual bool getBool(const std::string& /*key*/, bool defaultVal) const {
-    return defaultVal;
-  }
-
-protected:
-  const std::string address;
 };
     
 class MessageBoundOrderCheckingMessageHandlerCallback : public Hedwig::MessageHandlerCallback {
@@ -91,10 +75,16 @@ protected:
 
 void sendXExpectLastY(Hedwig::Publisher& pub, Hedwig::Subscriber& sub, const std::string& topic, 
 		      const std::string& subid, int X, int Y) {
-  for (int i = 0; i < X; i++) {
+  for (int i = 0; i < X;) {
     std::stringstream oss;
     oss << i;
-    pub.publish(topic, oss.str());
+    try {
+      pub.publish(topic, oss.str());
+      ++i;
+    } catch (std::exception &e) {
+      LOG4CXX_WARN(logger, "Exception when publishing message " << i << " : "
+                           << e.what());
+    }
   }
 
   sub.subscribe(topic, subid, Hedwig::SubscribeRequest::ATTACH);

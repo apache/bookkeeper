@@ -53,6 +53,11 @@ namespace Hedwig {
     const std::string& getAddressString() const;
     uint32_t ip() const;
     uint16_t port() const;
+    uint16_t sslPort() const;
+
+    // the real ip address is different from default server
+    // if default server is a VIP
+    void updateIP(uint32_t ip);
 
     static HostAddress fromString(std::string host);
 
@@ -64,6 +69,7 @@ namespace Hedwig {
     std::string address_str;
     uint32_t host_ip;
     uint16_t host_port;
+    uint16_t ssl_host_port;
   };
 
   /**

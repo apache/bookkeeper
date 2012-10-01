@@ -39,7 +39,7 @@ const std::string UNITIALISED_HOST("UNINITIALISED HOST");
 const int DEFAULT_PORT = 4080;
 const int DEFAULT_SSL_PORT = 9876;
 
-HostAddress::HostAddress() : initialised(false), address_str() {
+HostAddress::HostAddress() : initialised(false), address_str(), ssl_host_port(0) {
 }
 
 HostAddress::~HostAddress() {
@@ -65,12 +65,22 @@ uint32_t HostAddress::ip() const {
   return host_ip;
 }
 
+void HostAddress::updateIP(uint32_t ip) {
+  this->host_ip = ip;
+}
+
 uint16_t HostAddress::port() const {
   return host_port;
 }
 
+uint16_t HostAddress::sslPort() const {
+  return ssl_host_port;
+}
+
 void HostAddress::parse_string() {
   char* url = strdup(address_str.c_str());
+
+  LOG4CXX_DEBUG(logger, "Parse address : " << url);
 
   if (url == NULL) {
     LOG4CXX_ERROR(logger, "You seems to be out of memory");
@@ -130,6 +140,7 @@ void HostAddress::parse_string() {
 
   host_ip = ntohl(socket_addr.sin_addr.s_addr);
   host_port = ntohs(socket_addr.sin_port);
+  ssl_host_port = sslport;
 
   freeaddrinfo(addr);
   free((void*)url);

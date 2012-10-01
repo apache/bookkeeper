@@ -30,7 +30,6 @@ static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("hedwig."__FILE__));
 using namespace Hedwig;
 
 const std::string DEFAULT_SERVER_DEFAULT_VAL = "";
-const int DEFAULT_NUM_DISPATCH_THREADS = 1;
 
 void SyncOperationCallback::wait() {
   boost::unique_lock<boost::mutex> lock(mut);
@@ -182,25 +181,25 @@ long ClientTxnCounter::next() {  // would be nice to remove lock from here, look
 ClientImplPtr ClientImpl::Create(const Configuration& conf) {
   ClientImplPtr impl(new ClientImpl(conf));
   LOG4CXX_DEBUG(logger, "Creating Clientimpl " << impl);
-
   impl->dispatcher->start();
-
   return impl;
 }
 
 void ClientImpl::Destroy() {
   LOG4CXX_DEBUG(logger, "destroying Clientimpl " << this);
 
-  dispatcher->stop();
   {
     boost::lock_guard<boost::shared_mutex> lock(allchannels_lock);
     
     shuttingDownFlag = true;
     for (ChannelMap::iterator iter = allchannels.begin(); iter != allchannels.end(); ++iter ) {
-      (*iter)->kill();
+      (*iter)->close();
     }  
     allchannels.clear();
   }
+  // SSL Channel shutdown needs to send packets to server
+  // so we only stop dispatcher after all channels are closed
+  dispatcher->stop();
 
   /* destruction of the maps will clean up any items they hold */
   
@@ -217,8 +216,10 @@ void ClientImpl::Destroy() {
 ClientImpl::ClientImpl(const Configuration& conf) 
   : conf(conf), publisher(NULL), subscriber(NULL), counterobj(), shuttingDownFlag(false)
 {
-  defaultHost = HostAddress::fromString(conf.get(Configuration::DEFAULT_SERVER, DEFAULT_SERVER_DEFAULT_VAL));
-  dispatcher = EventDispatcherPtr(new EventDispatcher(conf.getInt(Configuration::NUM_DISPATCH_THREADS, DEFAULT_NUM_DISPATCH_THREADS)));
+  defaultHost = HostAddress::fromString(conf.get(Configuration::DEFAULT_SERVER,
+                                                 DEFAULT_SERVER_DEFAULT_VAL));
+  dispatcher = EventDispatcherPtr(new EventDispatcher(conf));
+  channelManager = DuplexChannelManager::create(conf, *dispatcher);
 }
 
 Subscriber& ClientImpl::getSubscriber() {
@@ -275,15 +276,13 @@ void ClientImpl::redirectRequest(const DuplexChannelPtr& channel, PubSubDataPtr&
     if (data->getType() == SUBSCRIBE) {
       // a redirect for subscription, kill old channel and remove old channel from all channels list
       // otherwise old channel will not be destroyed, caused lost of CLOSE_WAIT connections
-      channel->kill();
-      {
-        boost::lock_guard<boost::shared_mutex> aclock(allchannels_lock);
-        allchannels.erase(channel); // channel should be deleted here
-      }
+      removeAndCloseChannel(channel);
+
       SubscriberClientChannelHandlerPtr handler(new SubscriberClientChannelHandler(shared_from_this(), 
 										   this->getSubscriberImpl(), data));
       newchannel = createChannel(data->getTopic(), handler);
       handler->setChannel(newchannel);
+      newchannel->connect();
       getSubscriberImpl().doSubscribe(newchannel, data, handler);
     } else if (data->getType() == PUBLISH) {
       newchannel = getChannel(data->getTopic());
@@ -314,14 +313,15 @@ DuplexChannelPtr ClientImpl::createChannel(const std::string& topic, const Chann
     setHostForTopic(topic, addr);
   }
 
-  DuplexChannelPtr channel(new DuplexChannel(*dispatcher, addr, conf, handler));
+  DuplexChannelPtr channel = channelManager->createChannel(addr, handler);
 
   boost::lock_guard<boost::shared_mutex> lock(allchannels_lock);
   if (shuttingDownFlag) {
-    channel->kill();
+    channel->close();
     throw ShuttingDownException();
   }
-  channel->connect();
+  // Don't connect here, otherwise connect callback may be triggered before setChannel
+  // channel->connect();
 
   allchannels.insert(channel);
   LOG4CXX_DEBUG(logger, "(create) All channels size: " << allchannels.size());
@@ -345,6 +345,7 @@ DuplexChannelPtr ClientImpl::getChannel(const std::string& topic) {
     LOG4CXX_DEBUG(logger, " No channel for topic, creating new channel.get() " << channel.get() << " addr " << addr.getAddressString());
     ChannelHandlerPtr handler(new HedwigClientChannelHandler(shared_from_this()));
     channel = createChannel(topic, handler);
+    channel->connect();
 
     boost::lock_guard<boost::shared_mutex> lock(host2channel_lock);
     host2channel[addr] = channel;
@@ -376,7 +377,6 @@ void ClientImpl::channelDied(const DuplexChannelPtr& channel) {
   boost::lock_guard<boost::shared_mutex> h2tlock(host2topics_lock);
   boost::lock_guard<boost::shared_mutex> h2clock(host2channel_lock);
   boost::lock_guard<boost::shared_mutex> t2hlock(topic2host_lock);
-  boost::lock_guard<boost::shared_mutex> aclock(allchannels_lock);
   // get host
   HostAddress addr = channel->getHostAddress();
   
@@ -385,8 +385,13 @@ void ClientImpl::channelDied(const DuplexChannelPtr& channel) {
   }
   host2topics.erase(addr);
   host2channel.erase(addr);
+  removeAndCloseChannel(channel);
+}
 
+void ClientImpl::removeAndCloseChannel(const DuplexChannelPtr& channel) {
+  boost::lock_guard<boost::shared_mutex> aclock(allchannels_lock);
   allchannels.erase(channel); // channel should be deleted here
+  channel->close(); // close channel
 }
 
 const Configuration& ClientImpl::getConfiguration() {
@@ -394,5 +399,5 @@ const Configuration& ClientImpl::getConfiguration() {
 }
 
 boost::asio::io_service& ClientImpl::getService() {
-  return dispatcher->getService();
+  return dispatcher->getService()->getService();
 }
