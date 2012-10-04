@@ -61,6 +61,9 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String BK_ENSEMBLE_SIZE = "bk_ensemble_size";
     protected final static String BK_QUORUM_SIZE = "bk_quorum_size";
     protected final static String RETRY_REMOTE_SUBSCRIBE_THREAD_RUN_INTERVAL = "retry_remote_subscribe_thread_run_interval";
+    protected final static String DEFAULT_DELIVERY_THROTTLE_VALUE =
+        "default_delivery_throttle_value";
+
     protected final static String MAX_ENTRIES_PER_LEDGER = "max_entries_per_ledger";
 
     // manager related settings
@@ -280,6 +283,13 @@ public class ServerConfiguration extends AbstractConfiguration {
     // (in milliseconds).
     public int getRetryRemoteSubscribeThreadRunInterval() {
         return conf.getInt(RETRY_REMOTE_SUBSCRIBE_THREAD_RUN_INTERVAL, 120000);
+    }
+
+    // This parameter is for setting the default maximum number of messages delivered
+    // to a subscriber without being consumed.
+    // we throttle delivery messages to a subscriber when reaching the threshold.
+    public int getDefaultDeliveryThrottleValue() {
+        return conf.getInt(DEFAULT_DELIVERY_THROTTLE_VALUE, 0);
     }
 
     // This parameter is used when Bookkeeper is the persistence store

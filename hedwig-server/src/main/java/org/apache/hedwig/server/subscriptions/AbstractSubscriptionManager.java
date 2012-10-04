@@ -575,7 +575,10 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                 }
                 cb.operationFinished(ctx, null);
             }
-
+            // tell delivery manage about the consume event
+            if (null != dm) {
+                dm.messageConsumed(topic, subscriberId, consumeSeqId);
+            }
         }
     }
 

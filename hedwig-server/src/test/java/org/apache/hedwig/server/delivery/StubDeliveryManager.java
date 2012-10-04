@@ -24,6 +24,7 @@ import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.data.TopicSubscriber;
 import org.apache.hedwig.filter.ServerMessageFilter;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
 
 public class StubDeliveryManager implements DeliveryManager {
 
@@ -34,8 +35,11 @@ public class StubDeliveryManager implements DeliveryManager {
         public DeliveryEndPoint endPoint;
         public ServerMessageFilter filter;
 
-        public StartServingRequest(ByteString topic, ByteString subscriberId, MessageSeqId seqIdToStartFrom,
-                                   DeliveryEndPoint endPoint, ServerMessageFilter filter) {
+        public StartServingRequest(ByteString topic, ByteString subscriberId,
+                                   SubscriptionPreferences preferences,
+                                   MessageSeqId seqIdToStartFrom,
+                                   DeliveryEndPoint endPoint,
+                                   ServerMessageFilter filter) {
             this.topic = topic;
             this.subscriberId = subscriberId;
             this.seqIdToStartFrom = seqIdToStartFrom;
@@ -48,14 +52,24 @@ public class StubDeliveryManager implements DeliveryManager {
     public Queue<Object> lastRequest = new LinkedList<Object>();
 
     @Override
-    public void startServingSubscription(ByteString topic, ByteString subscriberId, MessageSeqId seqIdToStartFrom,
-                                         DeliveryEndPoint endPoint, ServerMessageFilter filter) {
-        lastRequest.add(new StartServingRequest(topic, subscriberId, seqIdToStartFrom, endPoint, filter));
+    public void startServingSubscription(ByteString topic, ByteString subscriberId,
+                                         SubscriptionPreferences preferences,
+                                         MessageSeqId seqIdToStartFrom,
+                                         DeliveryEndPoint endPoint,
+                                         ServerMessageFilter filter) {
+        lastRequest.add(new StartServingRequest(topic, subscriberId, preferences,
+                                                seqIdToStartFrom, endPoint, filter));
     }
 
     @Override
     public void stopServingSubscriber(ByteString topic, ByteString subscriberId) {
         lastRequest.add(new TopicSubscriber(topic, subscriberId));
+    }
+
+    @Override
+    public void messageConsumed(ByteString topic, ByteString subscriberId,
+                                MessageSeqId seqId) {
+        // do nothing
     }
 
     @Override

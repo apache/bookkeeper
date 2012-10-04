@@ -577,10 +577,14 @@ public class TestBackwardCompat extends TestCase {
         }
 
         ClientCurrent() {
+            this(true);
+        }
+
+        ClientCurrent(final boolean autoConsumeEnabled) {
             conf = new org.apache.hedwig.client.conf.ClientConfiguration() {
                 @Override
                 public boolean isAutoSendConsumeMessageEnabled() {
-                    return true;
+                    return autoConsumeEnabled;
                 }
                 @Override
                 public int getConsumedMessagesBufferSize() {
@@ -756,6 +760,65 @@ public class TestBackwardCompat extends TestCase {
             subscriber.stopDelivery(topic, subscriberId);
         }
 
+        // throttle doesn't work talking with 41 server
+        void throttleX41(ByteString topic, ByteString subid, final int X)
+        throws Exception {
+            org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions options =
+                org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions.newBuilder()
+                .setCreateOrAttach(org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach.CREATE_OR_ATTACH)
+                .setDeliveryThrottleValue(X) .build();
+            subscribe(topic, subid, options);
+            closeSubscription(topic, subid);
+            publishInts(topic, 1, 3*X);
+            subscribe(topic, subid);
+
+            final AtomicInteger expected = new AtomicInteger(1);
+            final CountDownLatch throttleLatch = new CountDownLatch(1);
+            final CountDownLatch nonThrottleLatch = new CountDownLatch(1);
+            subscriber.startDelivery(topic, subid, new org.apache.hedwig.client.api.MessageHandler() {
+                @Override
+                public synchronized void deliver(ByteString topic, ByteString subscriberId,
+                                                 org.apache.hedwig.protocol.PubSubProtocol.Message msg,
+                                                 org.apache.hedwig.util.Callback<Void> callback, Object context) {
+                    try {
+                        int value = Integer.valueOf(msg.getBody().toStringUtf8());
+                        logger.debug("Received message {},", value);
+
+                        if (value == expected.get()) {
+                            expected.incrementAndGet();
+                        } else {
+                            // error condition
+                            logger.error("Did not receive expected value, expected {}, got {}",
+                                         expected.get(), value);
+                            expected.set(0);
+                            throttleLatch.countDown();
+                            nonThrottleLatch.countDown();
+                        }
+                        if (expected.get() > X+1) {
+                            throttleLatch.countDown();
+                        }
+                        if (expected.get() == (3 * X + 1)) {
+                            nonThrottleLatch.countDown();
+                        }
+                        callback.operationFinished(context, null);
+                    } catch (Exception e) {
+                        logger.error("Received bad message", e);
+                        throttleLatch.countDown();
+                        nonThrottleLatch.countDown();
+                    }
+                }
+            });
+            assertTrue("Should Receive more messages than throttle value " + X,
+                        throttleLatch.await(10, TimeUnit.SECONDS));
+
+            assertTrue("Timed out waiting for messages " + (3*X + 1),
+                       nonThrottleLatch.await(10, TimeUnit.SECONDS));
+            assertEquals("Should be expected message with " + (3*X + 1),
+                         3*X + 1, expected.get());
+
+            subscriber.stopDelivery(topic, subid);
+            closeSubscription(topic, subid);
+        }
     }
 
     /**
@@ -1023,6 +1086,36 @@ public class TestBackwardCompat extends TestCase {
             logger.info("Should fail to run client-side message filter on 4.1.0 hub server.", e);
             ccur.closeSubscription(topic, subid);
         }
+
+        // stop 410 server
+        s410.stop();
+        // stop bookkeeper cluster
+        bkc410.stop();
+    }
+
+    /**
+     * Test compatability between version 4.1.0 and the current version.
+     *
+     * Server side throttling does't work when current client connects to old version
+     * server.
+     */
+    @Test
+    public void testServerSideThrottleCompat410() throws Exception {
+        ByteString topic = ByteString.copyFromUtf8("TestServerSideThrottleCompat410");
+        ByteString subid = ByteString.copyFromUtf8("mysub");
+
+        // start bookkeeper
+        BookKeeperCluster410 bkc410 = new BookKeeperCluster410(3);
+        bkc410.start();
+
+        // start hub server 410
+        Server410 s410 = new Server410(zkUtil.getZooKeeperConnectString());
+        s410.start();
+
+        ClientCurrent ccur = new ClientCurrent(false);
+        ccur.throttleX41(topic, subid, 10);
+
+        ccur.close();
 
         // stop 410 server
         s410.stop();

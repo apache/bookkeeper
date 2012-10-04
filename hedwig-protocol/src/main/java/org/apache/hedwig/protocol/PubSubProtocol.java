@@ -5704,6 +5704,10 @@ public final class PubSubProtocol {
     // optional string messageFilter = 3;
     boolean hasMessageFilter();
     String getMessageFilter();
+    
+    // optional uint32 deliveryThrottleValue = 4;
+    boolean hasDeliveryThrottleValue();
+    int getDeliveryThrottleValue();
   }
   public static final class SubscriptionPreferences extends
       com.google.protobuf.GeneratedMessage
@@ -5789,10 +5793,21 @@ public final class PubSubProtocol {
       }
     }
     
+    // optional uint32 deliveryThrottleValue = 4;
+    public static final int DELIVERYTHROTTLEVALUE_FIELD_NUMBER = 4;
+    private int deliveryThrottleValue_;
+    public boolean hasDeliveryThrottleValue() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    public int getDeliveryThrottleValue() {
+      return deliveryThrottleValue_;
+    }
+    
     private void initFields() {
       options_ = org.apache.hedwig.protocol.PubSubProtocol.Map.getDefaultInstance();
       messageBound_ = 0;
       messageFilter_ = "";
+      deliveryThrottleValue_ = 0;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -5815,6 +5830,9 @@ public final class PubSubProtocol {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeBytes(3, getMessageFilterBytes());
       }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeUInt32(4, deliveryThrottleValue_);
+      }
       getUnknownFields().writeTo(output);
     }
     
@@ -5835,6 +5853,10 @@ public final class PubSubProtocol {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(3, getMessageFilterBytes());
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(4, deliveryThrottleValue_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -5971,6 +5993,8 @@ public final class PubSubProtocol {
         bitField0_ = (bitField0_ & ~0x00000002);
         messageFilter_ = "";
         bitField0_ = (bitField0_ & ~0x00000004);
+        deliveryThrottleValue_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
       
@@ -6025,6 +6049,10 @@ public final class PubSubProtocol {
           to_bitField0_ |= 0x00000004;
         }
         result.messageFilter_ = messageFilter_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.deliveryThrottleValue_ = deliveryThrottleValue_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -6049,6 +6077,9 @@ public final class PubSubProtocol {
         }
         if (other.hasMessageFilter()) {
           setMessageFilter(other.getMessageFilter());
+        }
+        if (other.hasDeliveryThrottleValue()) {
+          setDeliveryThrottleValue(other.getDeliveryThrottleValue());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -6098,6 +6129,11 @@ public final class PubSubProtocol {
             case 26: {
               bitField0_ |= 0x00000004;
               messageFilter_ = input.readBytes();
+              break;
+            }
+            case 32: {
+              bitField0_ |= 0x00000008;
+              deliveryThrottleValue_ = input.readUInt32();
               break;
             }
           }
@@ -6251,6 +6287,27 @@ public final class PubSubProtocol {
         bitField0_ |= 0x00000004;
         messageFilter_ = value;
         onChanged();
+      }
+      
+      // optional uint32 deliveryThrottleValue = 4;
+      private int deliveryThrottleValue_ ;
+      public boolean hasDeliveryThrottleValue() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      public int getDeliveryThrottleValue() {
+        return deliveryThrottleValue_;
+      }
+      public Builder setDeliveryThrottleValue(int value) {
+        bitField0_ |= 0x00000008;
+        deliveryThrottleValue_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearDeliveryThrottleValue() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        deliveryThrottleValue_ = 0;
+        onChanged();
+        return this;
       }
       
       // @@protoc_insertion_point(builder_scope:Hedwig.SubscriptionPreferences)
@@ -7089,6 +7146,10 @@ public final class PubSubProtocol {
     boolean hasMessageFilter();
     String getMessageFilter();
     
+    // optional uint32 deliveryThrottleValue = 6;
+    boolean hasDeliveryThrottleValue();
+    int getDeliveryThrottleValue();
+    
     // optional bool enableResubscribe = 7 [default = true];
     boolean hasEnableResubscribe();
     boolean getEnableResubscribe();
@@ -7197,11 +7258,21 @@ public final class PubSubProtocol {
       }
     }
     
+    // optional uint32 deliveryThrottleValue = 6;
+    public static final int DELIVERYTHROTTLEVALUE_FIELD_NUMBER = 6;
+    private int deliveryThrottleValue_;
+    public boolean hasDeliveryThrottleValue() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    public int getDeliveryThrottleValue() {
+      return deliveryThrottleValue_;
+    }
+    
     // optional bool enableResubscribe = 7 [default = true];
     public static final int ENABLERESUBSCRIBE_FIELD_NUMBER = 7;
     private boolean enableResubscribe_;
     public boolean hasEnableResubscribe() {
-      return ((bitField0_ & 0x00000020) == 0x00000020);
+      return ((bitField0_ & 0x00000040) == 0x00000040);
     }
     public boolean getEnableResubscribe() {
       return enableResubscribe_;
@@ -7213,6 +7284,7 @@ public final class PubSubProtocol {
       messageBound_ = 0;
       options_ = org.apache.hedwig.protocol.PubSubProtocol.Map.getDefaultInstance();
       messageFilter_ = "";
+      deliveryThrottleValue_ = 0;
       enableResubscribe_ = true;
     }
     private byte memoizedIsInitialized = -1;
@@ -7243,6 +7315,9 @@ public final class PubSubProtocol {
         output.writeBytes(5, getMessageFilterBytes());
       }
       if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeUInt32(6, deliveryThrottleValue_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
         output.writeBool(7, enableResubscribe_);
       }
       getUnknownFields().writeTo(output);
@@ -7275,6 +7350,10 @@ public final class PubSubProtocol {
           .computeBytesSize(5, getMessageFilterBytes());
       }
       if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(6, deliveryThrottleValue_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBoolSize(7, enableResubscribe_);
       }
@@ -7417,8 +7496,10 @@ public final class PubSubProtocol {
         bitField0_ = (bitField0_ & ~0x00000008);
         messageFilter_ = "";
         bitField0_ = (bitField0_ & ~0x00000010);
-        enableResubscribe_ = true;
+        deliveryThrottleValue_ = 0;
         bitField0_ = (bitField0_ & ~0x00000020);
+        enableResubscribe_ = true;
+        bitField0_ = (bitField0_ & ~0x00000040);
         return this;
       }
       
@@ -7484,6 +7565,10 @@ public final class PubSubProtocol {
         if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
           to_bitField0_ |= 0x00000020;
         }
+        result.deliveryThrottleValue_ = deliveryThrottleValue_;
+        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          to_bitField0_ |= 0x00000040;
+        }
         result.enableResubscribe_ = enableResubscribe_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
@@ -7515,6 +7600,9 @@ public final class PubSubProtocol {
         }
         if (other.hasMessageFilter()) {
           setMessageFilter(other.getMessageFilter());
+        }
+        if (other.hasDeliveryThrottleValue()) {
+          setDeliveryThrottleValue(other.getDeliveryThrottleValue());
         }
         if (other.hasEnableResubscribe()) {
           setEnableResubscribe(other.getEnableResubscribe());
@@ -7585,8 +7673,13 @@ public final class PubSubProtocol {
               messageFilter_ = input.readBytes();
               break;
             }
-            case 56: {
+            case 48: {
               bitField0_ |= 0x00000020;
+              deliveryThrottleValue_ = input.readUInt32();
+              break;
+            }
+            case 56: {
+              bitField0_ |= 0x00000040;
               enableResubscribe_ = input.readBool();
               break;
             }
@@ -7788,22 +7881,43 @@ public final class PubSubProtocol {
         onChanged();
       }
       
+      // optional uint32 deliveryThrottleValue = 6;
+      private int deliveryThrottleValue_ ;
+      public boolean hasDeliveryThrottleValue() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      public int getDeliveryThrottleValue() {
+        return deliveryThrottleValue_;
+      }
+      public Builder setDeliveryThrottleValue(int value) {
+        bitField0_ |= 0x00000020;
+        deliveryThrottleValue_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearDeliveryThrottleValue() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        deliveryThrottleValue_ = 0;
+        onChanged();
+        return this;
+      }
+      
       // optional bool enableResubscribe = 7 [default = true];
       private boolean enableResubscribe_ = true;
       public boolean hasEnableResubscribe() {
-        return ((bitField0_ & 0x00000020) == 0x00000020);
+        return ((bitField0_ & 0x00000040) == 0x00000040);
       }
       public boolean getEnableResubscribe() {
         return enableResubscribe_;
       }
       public Builder setEnableResubscribe(boolean value) {
-        bitField0_ |= 0x00000020;
+        bitField0_ |= 0x00000040;
         enableResubscribe_ = value;
         onChanged();
         return this;
       }
       public Builder clearEnableResubscribe() {
-        bitField0_ = (bitField0_ & ~0x00000020);
+        bitField0_ = (bitField0_ & ~0x00000040);
         enableResubscribe_ = true;
         onChanged();
         return this;
@@ -15382,73 +15496,75 @@ public final class PubSubProtocol {
       "\033.Hedwig.StopDeliveryRequest\022:\n\024startDel" +
       "iveryRequest\0309 \001(\0132\034.Hedwig.StartDeliver" +
       "yRequest\".\n\016PublishRequest\022\034\n\003msg\030\002 \002(\0132" +
-      "\017.Hedwig.Message\"d\n\027SubscriptionPreferen" +
-      "ces\022\034\n\007options\030\001 \001(\0132\013.Hedwig.Map\022\024\n\014mes" +
-      "sageBound\030\002 \001(\r\022\025\n\rmessageFilter\030\003 \001(\t\"\277" +
-      "\002\n\020SubscribeRequest\022\024\n\014subscriberId\030\002 \002(" +
-      "\014\022Q\n\016createOrAttach\030\003 \001(\0162\'.Hedwig.Subsc",
-      "ribeRequest.CreateOrAttach:\020CREATE_OR_AT" +
-      "TACH\022\032\n\013synchronous\030\004 \001(\010:\005false\022\024\n\014mess" +
-      "ageBound\030\005 \001(\r\0224\n\013preferences\030\006 \001(\0132\037.He" +
-      "dwig.SubscriptionPreferences\022\032\n\013forceAtt" +
-      "ach\030\007 \001(\010:\005false\">\n\016CreateOrAttach\022\n\n\006CR" +
-      "EATE\020\000\022\n\n\006ATTACH\020\001\022\024\n\020CREATE_OR_ATTACH\020\002" +
-      "\"\363\001\n\023SubscriptionOptions\022\032\n\013forceAttach\030" +
-      "\001 \001(\010:\005false\022Q\n\016createOrAttach\030\002 \001(\0162\'.H" +
-      "edwig.SubscribeRequest.CreateOrAttach:\020C" +
-      "REATE_OR_ATTACH\022\027\n\014messageBound\030\003 \001(\r:\0010",
-      "\022\034\n\007options\030\004 \001(\0132\013.Hedwig.Map\022\025\n\rmessag" +
-      "eFilter\030\005 \001(\t\022\037\n\021enableResubscribe\030\007 \001(\010" +
-      ":\004true\"K\n\016ConsumeRequest\022\024\n\014subscriberId" +
-      "\030\002 \002(\014\022#\n\005msgId\030\003 \002(\0132\024.Hedwig.MessageSe" +
-      "qId\"*\n\022UnsubscribeRequest\022\024\n\014subscriberI" +
-      "d\030\002 \002(\014\"+\n\023StopDeliveryRequest\022\024\n\014subscr" +
-      "iberId\030\002 \002(\014\",\n\024StartDeliveryRequest\022\024\n\014" +
-      "subscriberId\030\002 \002(\014\"\377\001\n\016PubSubResponse\0220\n" +
-      "\017protocolVersion\030\001 \002(\0162\027.Hedwig.Protocol" +
-      "Version\022&\n\nstatusCode\030\002 \002(\0162\022.Hedwig.Sta",
-      "tusCode\022\r\n\005txnId\030\003 \002(\004\022\021\n\tstatusMsg\030\004 \001(" +
-      "\t\022 \n\007message\030\005 \001(\0132\017.Hedwig.Message\022\r\n\005t" +
-      "opic\030\006 \001(\014\022\024\n\014subscriberId\030\007 \001(\014\022*\n\014resp" +
-      "onseBody\030\010 \001(\0132\024.Hedwig.ResponseBody\"?\n\017" +
-      "PublishResponse\022,\n\016publishedMsgId\030\001 \002(\0132" +
-      "\024.Hedwig.MessageSeqId\"I\n\021SubscribeRespon" +
-      "se\0224\n\013preferences\030\002 \001(\0132\037.Hedwig.Subscri" +
-      "ptionPreferences\"v\n\014ResponseBody\0220\n\017publ" +
-      "ishResponse\030\001 \001(\0132\027.Hedwig.PublishRespon" +
-      "se\0224\n\021subscribeResponse\030\002 \001(\0132\031.Hedwig.S",
-      "ubscribeResponse\"N\n\021SubscriptionState\022#\n" +
-      "\005msgId\030\001 \002(\0132\024.Hedwig.MessageSeqId\022\024\n\014me" +
-      "ssageBound\030\002 \001(\r\"r\n\020SubscriptionData\022(\n\005" +
-      "state\030\001 \001(\0132\031.Hedwig.SubscriptionState\0224" +
-      "\n\013preferences\030\002 \001(\0132\037.Hedwig.Subscriptio" +
-      "nPreferences\"O\n\013LedgerRange\022\020\n\010ledgerId\030" +
-      "\001 \002(\004\022.\n\020endSeqIdIncluded\030\002 \001(\0132\024.Hedwig" +
-      ".MessageSeqId\"3\n\014LedgerRanges\022#\n\006ranges\030" +
-      "\001 \003(\0132\023.Hedwig.LedgerRange\":\n\013ManagerMet" +
-      "a\022\023\n\013managerImpl\030\002 \002(\t\022\026\n\016managerVersion",
-      "\030\003 \002(\r\".\n\013HubInfoData\022\020\n\010hostname\030\002 \002(\t\022" +
-      "\r\n\005czxid\030\003 \002(\004\" \n\013HubLoadData\022\021\n\tnumTopi" +
-      "cs\030\002 \002(\004*\"\n\017ProtocolVersion\022\017\n\013VERSION_O" +
-      "NE\020\001*p\n\rOperationType\022\013\n\007PUBLISH\020\000\022\r\n\tSU" +
-      "BSCRIBE\020\001\022\013\n\007CONSUME\020\002\022\017\n\013UNSUBSCRIBE\020\003\022" +
-      "\022\n\016START_DELIVERY\020\004\022\021\n\rSTOP_DELIVERY\020\005*D" +
-      "\n\021SubscriptionEvent\022\017\n\013TOPIC_MOVED\020\001\022\036\n\032" +
-      "SUBSCRIPTION_FORCED_CLOSED\020\002*\205\004\n\nStatusC" +
-      "ode\022\013\n\007SUCCESS\020\000\022\026\n\021MALFORMED_REQUEST\020\221\003" +
-      "\022\022\n\rNO_SUCH_TOPIC\020\222\003\022\036\n\031CLIENT_ALREADY_S",
-      "UBSCRIBED\020\223\003\022\032\n\025CLIENT_NOT_SUBSCRIBED\020\224\003" +
-      "\022\026\n\021COULD_NOT_CONNECT\020\225\003\022\017\n\nTOPIC_BUSY\020\226" +
-      "\003\022\036\n\031NOT_RESPONSIBLE_FOR_TOPIC\020\365\003\022\021\n\014SER" +
-      "VICE_DOWN\020\366\003\022\024\n\017UNCERTAIN_STATE\020\367\003\022\033\n\026IN" +
-      "VALID_MESSAGE_FILTER\020\370\003\022\020\n\013BAD_VERSION\020\210" +
-      "\004\022\036\n\031NO_TOPIC_PERSISTENCE_INFO\020\211\004\022\"\n\035TOP" +
-      "IC_PERSISTENCE_INFO_EXISTS\020\212\004\022\032\n\025NO_SUBS" +
-      "CRIPTION_STATE\020\213\004\022\036\n\031SUBSCRIPTION_STATE_" +
-      "EXISTS\020\214\004\022\030\n\023NO_TOPIC_OWNER_INFO\020\215\004\022\034\n\027T" +
-      "OPIC_OWNER_INFO_EXISTS\020\216\004\022\031\n\024UNEXPECTED_",
-      "CONDITION\020\330\004\022\016\n\tCOMPOSITE\020\274\005B\036\n\032org.apac" +
-      "he.hedwig.protocolH\001"
+      "\017.Hedwig.Message\"\203\001\n\027SubscriptionPrefere" +
+      "nces\022\034\n\007options\030\001 \001(\0132\013.Hedwig.Map\022\024\n\014me" +
+      "ssageBound\030\002 \001(\r\022\025\n\rmessageFilter\030\003 \001(\t\022" +
+      "\035\n\025deliveryThrottleValue\030\004 \001(\r\"\277\002\n\020Subsc" +
+      "ribeRequest\022\024\n\014subscriberId\030\002 \002(\014\022Q\n\016cre",
+      "ateOrAttach\030\003 \001(\0162\'.Hedwig.SubscribeRequ" +
+      "est.CreateOrAttach:\020CREATE_OR_ATTACH\022\032\n\013" +
+      "synchronous\030\004 \001(\010:\005false\022\024\n\014messageBound" +
+      "\030\005 \001(\r\0224\n\013preferences\030\006 \001(\0132\037.Hedwig.Sub" +
+      "scriptionPreferences\022\032\n\013forceAttach\030\007 \001(" +
+      "\010:\005false\">\n\016CreateOrAttach\022\n\n\006CREATE\020\000\022\n" +
+      "\n\006ATTACH\020\001\022\024\n\020CREATE_OR_ATTACH\020\002\"\222\002\n\023Sub" +
+      "scriptionOptions\022\032\n\013forceAttach\030\001 \001(\010:\005f" +
+      "alse\022Q\n\016createOrAttach\030\002 \001(\0162\'.Hedwig.Su" +
+      "bscribeRequest.CreateOrAttach:\020CREATE_OR",
+      "_ATTACH\022\027\n\014messageBound\030\003 \001(\r:\0010\022\034\n\007opti" +
+      "ons\030\004 \001(\0132\013.Hedwig.Map\022\025\n\rmessageFilter\030" +
+      "\005 \001(\t\022\035\n\025deliveryThrottleValue\030\006 \001(\r\022\037\n\021" +
+      "enableResubscribe\030\007 \001(\010:\004true\"K\n\016Consume" +
+      "Request\022\024\n\014subscriberId\030\002 \002(\014\022#\n\005msgId\030\003" +
+      " \002(\0132\024.Hedwig.MessageSeqId\"*\n\022Unsubscrib" +
+      "eRequest\022\024\n\014subscriberId\030\002 \002(\014\"+\n\023StopDe" +
+      "liveryRequest\022\024\n\014subscriberId\030\002 \002(\014\",\n\024S" +
+      "tartDeliveryRequest\022\024\n\014subscriberId\030\002 \002(" +
+      "\014\"\377\001\n\016PubSubResponse\0220\n\017protocolVersion\030",
+      "\001 \002(\0162\027.Hedwig.ProtocolVersion\022&\n\nstatus" +
+      "Code\030\002 \002(\0162\022.Hedwig.StatusCode\022\r\n\005txnId\030" +
+      "\003 \002(\004\022\021\n\tstatusMsg\030\004 \001(\t\022 \n\007message\030\005 \001(" +
+      "\0132\017.Hedwig.Message\022\r\n\005topic\030\006 \001(\014\022\024\n\014sub" +
+      "scriberId\030\007 \001(\014\022*\n\014responseBody\030\010 \001(\0132\024." +
+      "Hedwig.ResponseBody\"?\n\017PublishResponse\022," +
+      "\n\016publishedMsgId\030\001 \002(\0132\024.Hedwig.MessageS" +
+      "eqId\"I\n\021SubscribeResponse\0224\n\013preferences" +
+      "\030\002 \001(\0132\037.Hedwig.SubscriptionPreferences\"" +
+      "v\n\014ResponseBody\0220\n\017publishResponse\030\001 \001(\013",
+      "2\027.Hedwig.PublishResponse\0224\n\021subscribeRe" +
+      "sponse\030\002 \001(\0132\031.Hedwig.SubscribeResponse\"" +
+      "N\n\021SubscriptionState\022#\n\005msgId\030\001 \002(\0132\024.He" +
+      "dwig.MessageSeqId\022\024\n\014messageBound\030\002 \001(\r\"" +
+      "r\n\020SubscriptionData\022(\n\005state\030\001 \001(\0132\031.Hed" +
+      "wig.SubscriptionState\0224\n\013preferences\030\002 \001" +
+      "(\0132\037.Hedwig.SubscriptionPreferences\"O\n\013L" +
+      "edgerRange\022\020\n\010ledgerId\030\001 \002(\004\022.\n\020endSeqId" +
+      "Included\030\002 \001(\0132\024.Hedwig.MessageSeqId\"3\n\014" +
+      "LedgerRanges\022#\n\006ranges\030\001 \003(\0132\023.Hedwig.Le",
+      "dgerRange\":\n\013ManagerMeta\022\023\n\013managerImpl\030" +
+      "\002 \002(\t\022\026\n\016managerVersion\030\003 \002(\r\".\n\013HubInfo" +
+      "Data\022\020\n\010hostname\030\002 \002(\t\022\r\n\005czxid\030\003 \002(\004\" \n" +
+      "\013HubLoadData\022\021\n\tnumTopics\030\002 \002(\004*\"\n\017Proto" +
+      "colVersion\022\017\n\013VERSION_ONE\020\001*p\n\rOperation" +
+      "Type\022\013\n\007PUBLISH\020\000\022\r\n\tSUBSCRIBE\020\001\022\013\n\007CONS" +
+      "UME\020\002\022\017\n\013UNSUBSCRIBE\020\003\022\022\n\016START_DELIVERY" +
+      "\020\004\022\021\n\rSTOP_DELIVERY\020\005*D\n\021SubscriptionEve" +
+      "nt\022\017\n\013TOPIC_MOVED\020\001\022\036\n\032SUBSCRIPTION_FORC" +
+      "ED_CLOSED\020\002*\205\004\n\nStatusCode\022\013\n\007SUCCESS\020\000\022",
+      "\026\n\021MALFORMED_REQUEST\020\221\003\022\022\n\rNO_SUCH_TOPIC" +
+      "\020\222\003\022\036\n\031CLIENT_ALREADY_SUBSCRIBED\020\223\003\022\032\n\025C" +
+      "LIENT_NOT_SUBSCRIBED\020\224\003\022\026\n\021COULD_NOT_CON" +
+      "NECT\020\225\003\022\017\n\nTOPIC_BUSY\020\226\003\022\036\n\031NOT_RESPONSI" +
+      "BLE_FOR_TOPIC\020\365\003\022\021\n\014SERVICE_DOWN\020\366\003\022\024\n\017U" +
+      "NCERTAIN_STATE\020\367\003\022\033\n\026INVALID_MESSAGE_FIL" +
+      "TER\020\370\003\022\020\n\013BAD_VERSION\020\210\004\022\036\n\031NO_TOPIC_PER" +
+      "SISTENCE_INFO\020\211\004\022\"\n\035TOPIC_PERSISTENCE_IN" +
+      "FO_EXISTS\020\212\004\022\032\n\025NO_SUBSCRIPTION_STATE\020\213\004" +
+      "\022\036\n\031SUBSCRIPTION_STATE_EXISTS\020\214\004\022\030\n\023NO_T",
+      "OPIC_OWNER_INFO\020\215\004\022\034\n\027TOPIC_OWNER_INFO_E" +
+      "XISTS\020\216\004\022\031\n\024UNEXPECTED_CONDITION\020\330\004\022\016\n\tC" +
+      "OMPOSITE\020\274\005B\036\n\032org.apache.hedwig.protoco" +
+      "lH\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -15524,7 +15640,7 @@ public final class PubSubProtocol {
           internal_static_Hedwig_SubscriptionPreferences_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_Hedwig_SubscriptionPreferences_descriptor,
-              new java.lang.String[] { "Options", "MessageBound", "MessageFilter", },
+              new java.lang.String[] { "Options", "MessageBound", "MessageFilter", "DeliveryThrottleValue", },
               org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences.class,
               org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences.Builder.class);
           internal_static_Hedwig_SubscribeRequest_descriptor =
@@ -15540,7 +15656,7 @@ public final class PubSubProtocol {
           internal_static_Hedwig_SubscriptionOptions_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_Hedwig_SubscriptionOptions_descriptor,
-              new java.lang.String[] { "ForceAttach", "CreateOrAttach", "MessageBound", "Options", "MessageFilter", "EnableResubscribe", },
+              new java.lang.String[] { "ForceAttach", "CreateOrAttach", "MessageBound", "Options", "MessageFilter", "DeliveryThrottleValue", "EnableResubscribe", },
               org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions.class,
               org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions.Builder.class);
           internal_static_Hedwig_ConsumeRequest_descriptor =

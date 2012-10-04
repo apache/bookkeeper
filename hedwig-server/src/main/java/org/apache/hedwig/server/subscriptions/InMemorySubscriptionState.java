@@ -136,6 +136,14 @@ public class InMemorySubscriptionState {
                 changed = true;
             }
         }
+        if (preferences.hasDeliveryThrottleValue()) {
+            if (!subscriptionPreferences.hasDeliveryThrottleValue() ||
+                subscriptionPreferences.getDeliveryThrottleValue() !=
+                preferences.getDeliveryThrottleValue()) {
+                newPreferencesBuilder.setDeliveryThrottleValue(preferences.getDeliveryThrottleValue());
+                changed = true;
+            }
+        }
         if (preferences.hasOptions()) {
             Map<String, ByteString> userOptions = SubscriptionStateUtils.buildUserOptions(subscriptionPreferences);
             Map<String, ByteString> optUpdates = SubscriptionStateUtils.buildUserOptions(preferences);

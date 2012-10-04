@@ -17,6 +17,7 @@
  */
 package org.apache.hedwig.server.delivery;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -25,7 +26,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -42,6 +43,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.ProtocolVersion;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
 import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.common.UnexpectedError;
 import org.apache.hedwig.server.netty.ServerStats;
@@ -50,6 +52,7 @@ import org.apache.hedwig.server.persistence.MapMethods;
 import org.apache.hedwig.server.persistence.PersistenceManager;
 import org.apache.hedwig.server.persistence.ScanCallback;
 import org.apache.hedwig.server.persistence.ScanRequest;
+import static org.apache.hedwig.util.VarArgs.va;
 
 public class FIFODeliveryManager implements Runnable, DeliveryManager {
 
@@ -68,7 +71,14 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
      * The queue of all subscriptions that are facing a transient error either
      * in scanning from the persistence manager, or in sending to the consumer
      */
-    Queue<ActiveSubscriberState> retryQueue = new ConcurrentLinkedQueue<ActiveSubscriberState>();
+    Queue<ActiveSubscriberState> retryQueue =
+        new PriorityBlockingQueue<ActiveSubscriberState>(32, new Comparator<ActiveSubscriberState>() {
+            @Override
+            public int compare(ActiveSubscriberState as1, ActiveSubscriberState as2) {
+                long s = as1.lastScanErrorTime - as2.lastScanErrorTime;
+                return s > 0 ? 1 : (s < 0 ? -1 : 0);
+            }
+        });
 
     /**
      * Stores a mapping from topic to the delivery pointers on the topic. The
@@ -136,11 +146,16 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
      *            Only messages passing this filter should be sent to this
      *            subscriber
      */
-    public void startServingSubscription(ByteString topic, ByteString subscriberId, MessageSeqId seqIdToStartFrom,
+    public void startServingSubscription(ByteString topic, ByteString subscriberId,
+                                         SubscriptionPreferences preferences,
+                                         MessageSeqId seqIdToStartFrom,
                                          DeliveryEndPoint endPoint, ServerMessageFilter filter) {
 
-        ActiveSubscriberState subscriber = new ActiveSubscriberState(topic, subscriberId, seqIdToStartFrom
-                .getLocalComponent() - 1, endPoint, filter);
+        ActiveSubscriberState subscriber = 
+            new ActiveSubscriberState(topic, subscriberId,
+                                      preferences,
+                                      seqIdToStartFrom.getLocalComponent() - 1,
+                                      endPoint, filter);
 
         enqueueWithoutFailure(subscriber);
     }
@@ -177,6 +192,34 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
         if (!retryQueue.offer(subscriber)) {
             throw new UnexpectedError("Could not enqueue to delivery manager retry queue");
         }
+    }
+
+    public void clearRetryDelayForSubscriber(ActiveSubscriberState subscriber) {
+        subscriber.clearLastScanErrorTime();
+        if (!retryQueue.offer(subscriber)) {
+            throw new UnexpectedError("Could not enqueue to delivery manager retry queue");
+        }
+        // no request in request queue now
+        // issue a empty delivery request to not waiting for polling requests queue
+        if (requestQueue.isEmpty()) {
+            enqueueWithoutFailure(new DeliveryManagerRequest() {
+                    @Override
+                    public void performRequest() {
+                    // do nothing
+                    }
+                    });
+        }
+    }
+
+    @Override
+    public void messageConsumed(ByteString topic, ByteString subscriberId,
+                                MessageSeqId consumedSeqId) {
+        ActiveSubscriberState subState =
+            subscriberStates.get(new TopicSubscriber(topic, subscriberId));
+        if (null == subState) {
+            return;
+        }
+        subState.messageConsumed(consumedSeqId.getLocalComponent()); 
     }
 
     /**
@@ -291,6 +334,9 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
     }
 
     public class ActiveSubscriberState implements ScanCallback, DeliveryCallback, DeliveryManagerRequest {
+
+        static final int UNLIMITED = 0;
+
         ByteString topic;
         ByteString subscriberId;
         long lastLocalSeqIdDelivered;
@@ -299,18 +345,35 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
         long lastScanErrorTime = -1;
         long localSeqIdDeliveringNow;
         long lastSeqIdCommunicatedExternally;
+        long lastSeqIdConsumedUtil;
+        boolean isThrottled = false;
+        final int throttleThreshold;
         ServerMessageFilter filter;
         // TODO make use of these variables
 
         final static int SEQ_ID_SLACK = 10;
 
-        public ActiveSubscriberState(ByteString topic, ByteString subscriberId, long lastLocalSeqIdDelivered,
-                                     DeliveryEndPoint deliveryEndPoint, ServerMessageFilter filter) {
+        public ActiveSubscriberState(ByteString topic, ByteString subscriberId,
+                                     SubscriptionPreferences preferences,
+                                     long lastLocalSeqIdDelivered,
+                                     DeliveryEndPoint deliveryEndPoint,
+                                     ServerMessageFilter filter) {
             this.topic = topic;
             this.subscriberId = subscriberId;
             this.lastLocalSeqIdDelivered = lastLocalSeqIdDelivered;
+            this.lastSeqIdConsumedUtil = lastLocalSeqIdDelivered;
             this.deliveryEndPoint = deliveryEndPoint;
             this.filter = filter;
+            if (preferences.hasDeliveryThrottleValue()) {
+                throttleThreshold = preferences.getDeliveryThrottleValue();
+            } else {
+                if (FIFODeliveryManager.this.cfg.getDefaultDeliveryThrottleValue() > 0) {
+                    throttleThreshold =
+                        FIFODeliveryManager.this.cfg.getDefaultDeliveryThrottleValue();
+                } else {
+                    throttleThreshold = UNLIMITED;
+                }
+            }
         }
 
         public void setNotConnected() {
@@ -340,13 +403,68 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
             this.lastScanErrorTime = lastScanErrorTime;
         }
 
+        /**
+         * Clear the last scan error time so it could be retry immediately.
+         */
+        protected void clearLastScanErrorTime() {
+            this.lastScanErrorTime = -1;
+        }
+
         protected boolean isConnected() {
             return connected;
+        }
+
+        protected void messageConsumed(long newSeqIdConsumed) {
+            if (newSeqIdConsumed <= lastSeqIdConsumedUtil) {
+                return;
+            }
+            if (logger.isDebugEnabled()) {
+                logger.debug("Subscriber ({}) moved consumed ptr from {} to {}.",
+                             va(this, lastSeqIdConsumedUtil, newSeqIdConsumed));
+            }
+            lastSeqIdConsumedUtil = newSeqIdConsumed;
+            // after updated seq id check whether it still exceed msg limitation
+            if (msgLimitExceeded()) {
+                return;
+            }
+            if (isThrottled) {
+                isThrottled = false;
+                logger.info("Try to wake up subscriber ({}) to deliver messages again : last delivered {}, last consumed {}.",
+                            va(this, lastLocalSeqIdDelivered, lastSeqIdConsumedUtil));
+
+                enqueueWithoutFailure(new DeliveryManagerRequest() {
+                    @Override
+                    public void performRequest() {
+                        // enqueue 
+                        clearRetryDelayForSubscriber(ActiveSubscriberState.this);            
+                    }
+                });
+            }
+        }
+
+        protected boolean msgLimitExceeded() {
+            if (throttleThreshold == UNLIMITED) {
+                return false;
+            }
+            if (lastLocalSeqIdDelivered - lastSeqIdConsumedUtil >= throttleThreshold) {
+                return true;
+            }
+            return false;
         }
 
         public void deliverNextMessage() {
 
             if (!isConnected()) {
+                return;
+            }
+
+            // check whether we have delivered enough messages without receiving their consumes
+            if (msgLimitExceeded()) {
+                logger.info("Subscriber ({}) is throttled : last delivered {}, last consumed {}.",
+                            va(this, lastLocalSeqIdDelivered, lastSeqIdConsumedUtil));
+                isThrottled = true;
+                // do nothing, since the delivery process would be throttled.
+                // After message consumed, it would be added back to retry queue.
                 return;
             }
 

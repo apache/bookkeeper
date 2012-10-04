@@ -168,6 +168,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-397: Make the hedwig client in RegionManager configurable. (Aniruddha via sijie)
 
+        BOOKKEEPER-367: Server-Side Message Delivery Flow Control (sijie via ivank)
+
       hedwig-client:
 
         BOOKKEEPER-306: Change C++ client to use gtest for testing (ivank via sijie)

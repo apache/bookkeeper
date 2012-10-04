@@ -192,6 +192,11 @@ public class NetUtils {
             preferencesBuilder.setOptions(options.getOptions());
         }
 
+        // set delivery throttle value
+        if (options.getDeliveryThrottleValue() > 0) {
+            preferencesBuilder.setDeliveryThrottleValue(options.getDeliveryThrottleValue());
+        }
+
         return preferencesBuilder;
     }
 

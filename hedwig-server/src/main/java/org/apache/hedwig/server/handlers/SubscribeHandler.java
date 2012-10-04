@@ -260,7 +260,9 @@ public class SubscribeHandler extends BaseHandler implements ChannelDisconnectLi
                 MessageSeqId lastConsumedSeqId = subData.getState().getMsgId();
                 MessageSeqId seqIdToStartFrom = MessageSeqId.newBuilder(lastConsumedSeqId).setLocalComponent(
                                                     lastConsumedSeqId.getLocalComponent() + 1).build();
-                deliveryMgr.startServingSubscription(topic, subscriberId, seqIdToStartFrom,
+                deliveryMgr.startServingSubscription(topic, subscriberId,
+                                                     subData.getPreferences(),
+                                                     seqIdToStartFrom,
                                                      new ChannelEndPoint(channel), filter);
             }
         }, null);

@@ -19,15 +19,32 @@ package org.apache.hedwig.server.delivery;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
 import org.apache.hedwig.filter.ServerMessageFilter;
 
 public interface DeliveryManager {
     public void start();
 
-    public void startServingSubscription(ByteString topic, ByteString subscriberId, MessageSeqId seqIdToStartFrom,
-                                         DeliveryEndPoint endPoint, ServerMessageFilter filter);
+    public void startServingSubscription(ByteString topic, ByteString subscriberId,
+                                         SubscriptionPreferences preferences,
+                                         MessageSeqId seqIdToStartFrom,
+                                         DeliveryEndPoint endPoint,
+                                         ServerMessageFilter filter);
 
     public void stopServingSubscriber(ByteString topic, ByteString subscriberId);
+
+    /**
+     * Tell the delivery manager where that a subscriber has consumed
+     *
+     * @param topic
+     *          Topic Name
+     * @param subscriberId
+     *          Subscriber Id
+     * @param consumedSeqId
+     *          Max consumed seq id.
+     */
+    public void messageConsumed(ByteString topic, ByteString subscriberId,
+                                MessageSeqId consumedSeqId);
 
     /**
      * Stop delivery manager
