@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.meta;
 
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.ReplicationException;
 
 /**
@@ -60,5 +61,40 @@ public interface LedgerUnderreplicationManager {
      * Release all resources held by the ledger underreplication manager
      */
     void close()
+            throws ReplicationException.UnavailableException;
+
+    /**
+     * Stop ledger replication. Currently running ledger rereplication tasks
+     * will be continued and will be stopped from next task. This will block
+     * ledger replication {@link #Auditor} and {@link #getLedgerToRereplicate()}
+     * tasks
+     */
+    void disableLedgerReplication()
+            throws ReplicationException.UnavailableException;
+
+    /**
+     * Resuming ledger replication. This will allow ledger replication
+     * {@link #Auditor} and {@link #getLedgerToRereplicate()} tasks to continue
+     */
+    void enableLedgerReplication()
+            throws ReplicationException.UnavailableException;
+
+    /**
+     * Check whether the ledger replication is enabled or not. This will return
+     * true if the ledger replication is enabled, otherwise return false
+     * 
+     * @return - return true if it is enabled otherwise return false
+     */
+    boolean isLedgerReplicationEnabled()
+            throws ReplicationException.UnavailableException;
+
+    /**
+     * Receive notification asynchronously when the ledger replication process
+     * is enabled
+     * 
+     * @param cb
+     *            - callback implementation to receive the notification
+     */
+    void notifyLedgerReplicationEnabled(GenericCallback<Void> cb)
             throws ReplicationException.UnavailableException;
 }

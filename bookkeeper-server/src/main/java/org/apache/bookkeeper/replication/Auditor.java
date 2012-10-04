@@ -106,6 +106,10 @@ public class Auditor extends Thread implements Watcher {
             while (true) {
                 // wait for bookie join/failure notifications
                 bookieNotifications.take();
+
+                // check whether ledger replication is enabled
+                waitIfLedgerReplicationDisabled();
+
                 List<String> availableBookies = getAvailableBookies();
 
                 // casting to String, as knownBookies and availableBookies
@@ -132,11 +136,22 @@ public class Auditor extends Thread implements Watcher {
             LOG.error("Interrupted while watching available bookies ", ie);
         } catch (BKAuditException bke) {
             LOG.error("Exception while watching available bookies", bke);
+        } catch (UnavailableException ue) {
+            LOG.error("Exception while watching available bookies", ue);
         }
 
         shutdown();
     }
 
+    private void waitIfLedgerReplicationDisabled() throws UnavailableException,
+            InterruptedException {
+        ReplicationEnableCb cb = new ReplicationEnableCb();
+        if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+            ledgerUnderreplicationManager.notifyLedgerReplicationEnabled(cb);
+            cb.await();
+        }
+    }
+    
     private List<String> getAvailableBookies() throws KeeperException,
             InterruptedException {
         return zkc.getChildren(conf.getZkAvailableBookiesPath(), this);

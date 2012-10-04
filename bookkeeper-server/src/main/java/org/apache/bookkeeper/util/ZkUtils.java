@@ -140,4 +140,38 @@ public class ZkUtils {
         }
         return newZk;
     }
+
+    /**
+     * Utility to create the complete znode path synchronously
+     * 
+     * @param zkc
+     *            - ZK instance
+     * @param path
+     *            - znode path
+     * @param data
+     *            - znode data
+     * @param acl
+     *            - Acl of the zk path
+     * @param createMode
+     *            - Create mode of zk path
+     * @throws KeeperException
+     *             if the server returns a non-zero error code, or invalid ACL
+     * @throws InterruptedException
+     *             if the transaction is interrupted
+     */
+    public static void createFullPathOptimistic(ZooKeeper zkc, String path,
+            byte[] data, final List<ACL> acl, final CreateMode createMode)
+            throws KeeperException, InterruptedException {
+        try {
+            zkc.create(path, data, acl, createMode);
+        } catch (KeeperException.NoNodeException nne) {
+            int lastSlash = path.lastIndexOf('/');
+            if (lastSlash <= 0) {
+                throw nne;
+            }
+            String parent = path.substring(0, lastSlash);
+            createFullPathOptimistic(zkc, parent, new byte[0], acl, createMode);
+            zkc.create(path, data, acl, createMode);
+        }
+    }
 }

@@ -18,7 +18,11 @@
 
 package org.apache.bookkeeper.meta;
 
+import org.apache.bookkeeper.replication.ReplicationEnableCb;
 import org.apache.bookkeeper.replication.ReplicationException;
+import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -65,6 +69,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     static final Logger LOG = LoggerFactory.getLogger(ZkLedgerUnderreplicationManager.class);
     static final Charset UTF8 = Charset.forName("UTF-8");
     public static final String UNDER_REPLICATION_NODE = "underreplication";
+    static final String DISABLE_NODE = "disable";
     static final String LAYOUT="BASIC";
     static final int LAYOUT_VERSION=1;
 
@@ -102,22 +107,6 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         this.zkc = zkc;
 
         checkLayout();
-    }
-
-    private void createOptimistic(String path, byte[] data) throws KeeperException, InterruptedException {
-        try {
-            zkc.create(path, data,
-                       Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        } catch (KeeperException.NoNodeException nne) {
-            int lastSlash = path.lastIndexOf('/');
-            if (lastSlash <= 0) {
-                throw nne;
-            }
-            String parent = path.substring(0, lastSlash);
-            createOptimistic(parent, new byte[0]);
-            zkc.create(path, data,
-                       Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        }        
     }
 
     private void checkLayout()
@@ -212,8 +201,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                 UnderreplicatedLedgerFormat.Builder builder = UnderreplicatedLedgerFormat.newBuilder();
                 try {
                     builder.addReplica(missingReplica);
-                    createOptimistic(znode,
-                                     TextFormat.printToString(builder.build()).getBytes(UTF8));
+                    ZkUtils.createFullPathOptimistic(zkc, znode, TextFormat
+                            .printToString(builder.build()).getBytes(UTF8),
+                            Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
                 } catch (KeeperException.NodeExistsException nee) {
                     Stat s = zkc.exists(znode, false);
                     if (s == null) {
@@ -331,6 +321,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         LOG.debug("getLedgerToRereplicate()");
         try {
             while (true) {
+                waitIfLedgerReplicationDisabled();
                 final CountDownLatch changedLatch = new CountDownLatch(1);
                 Watcher w = new Watcher() {
                         public void process(WatchedEvent e) {
@@ -352,10 +343,19 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            throw new ReplicationException.UnavailableException("Interrupted while conecting zookeeper", ie);
+            throw new ReplicationException.UnavailableException("Interrupted while connecting zookeeper", ie);
         }
     }
 
+    private void waitIfLedgerReplicationDisabled() throws UnavailableException,
+            InterruptedException {
+        ReplicationEnableCb cb = new ReplicationEnableCb();
+        if (!this.isLedgerReplicationEnabled()) {
+            this.notifyLedgerReplicationEnabled(cb);
+            cb.await();
+        }
+    }
+    
     @Override
     public void releaseUnderreplicatedLedger(long ledgerId) throws ReplicationException.UnavailableException {
         LOG.debug("releaseLedger(ledgerId={})", ledgerId);
@@ -371,7 +371,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            throw new ReplicationException.UnavailableException("Interrupted while conecting zookeeper", ie);
+            throw new ReplicationException.UnavailableException("Interrupted while connecting zookeeper", ie);
         }
     }
 
@@ -389,7 +389,95 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            throw new ReplicationException.UnavailableException("Interrupted while conecting zookeeper", ie);
+            throw new ReplicationException.UnavailableException("Interrupted while connecting zookeeper", ie);
+        }
+    }
+
+    @Override
+    public void disableLedgerReplication()
+            throws ReplicationException.UnavailableException {
+        LOG.debug("disableLedegerReplication()");
+        try {
+            ZkUtils.createFullPathOptimistic(zkc, basePath + '/'
+                    + ZkLedgerUnderreplicationManager.DISABLE_NODE, ""
+                    .getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            LOG.info("Auto ledger re-replication is disabled!");
+        } catch (KeeperException ke) {
+            LOG.error("Exception while stopping replication", ke);
+            throw new ReplicationException.UnavailableException(
+                    "Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException(
+                    "Interrupted while connecting zookeeper", ie);
+        }
+    }
+
+    @Override
+    public void enableLedgerReplication()
+            throws ReplicationException.UnavailableException {
+        LOG.debug("enableLedegerReplication()");
+        try {
+            zkc.delete(basePath + '/'
+                    + ZkLedgerUnderreplicationManager.DISABLE_NODE, -1);
+            LOG.info("Resuming automatic ledger re-replication");
+        } catch (KeeperException ke) {
+            LOG.error("Exception while resuming ledger replication", ke);
+            throw new ReplicationException.UnavailableException(
+                    "Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException(
+                    "Interrupted while connecting zookeeper", ie);
+        }
+    }
+
+    @Override
+    public boolean isLedgerReplicationEnabled()
+            throws ReplicationException.UnavailableException {
+        LOG.debug("isLedgerReplicationEnabled()");
+        try {
+            if (null != zkc.exists(basePath + '/' + DISABLE_NODE, false)) {
+                return false;
+            }
+            return true;
+        } catch (KeeperException ke) {
+            LOG.error("Error while checking the state of "
+                    + "ledger re-replication", ke);
+            throw new ReplicationException.UnavailableException(
+                    "Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException(
+                    "Interrupted while contacting zookeeper", ie);
+        }
+    }
+
+    @Override
+    public void notifyLedgerReplicationEnabled(final GenericCallback<Void> cb)
+            throws ReplicationException.UnavailableException {
+        LOG.debug("notifyLedgerReplicationEnabled()");
+        Watcher w = new Watcher() {
+            public void process(WatchedEvent e) {
+                if (e.getType() == Watcher.Event.EventType.NodeDeleted) {
+                    cb.operationComplete(0, null);
+                }
+            }
+        };
+        try {
+            if (null == zkc.exists(basePath + '/' + DISABLE_NODE, w)) {
+                cb.operationComplete(0, null);
+                return;
+            }
+        } catch (KeeperException ke) {
+            LOG.error("Error while checking the state of "
+                    + "ledger re-replication", ke);
+            throw new ReplicationException.UnavailableException(
+                    "Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException(
+                    "Interrupted while contacting zookeeper", ie);
         }
     }
 }

@@ -49,8 +49,12 @@ import org.apache.bookkeeper.replication.ReplicationException.CompatibilityExcep
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.Watcher.Event.EventType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -76,6 +80,7 @@ public class TestLedgerUnderreplicationManager {
 
     String basePath;
     String urLedgerPath;
+    boolean isLedgerReplicationDisabled = true;
 
     @Before
     public void setupZooKeeper() throws Exception {
@@ -464,6 +469,119 @@ public class TestLedgerUnderreplicationManager {
         missingReplica.add("localhost:3181");
         missingReplica.add("localhost:3182");
         verifyMarkLedgerUnderreplicated(missingReplica);
+    }
+
+    /**
+     * Test disabling the ledger re-replication. After disabling, it will not be
+     * able to getLedgerToRereplicate(). This calls will enter into infinite
+     * waiting until enabling rereplication process
+     */
+    @Test(timeout = 20000)
+    public void testDisableLedegerReplication() throws Exception {
+        final LedgerUnderreplicationManager replicaMgr = lmf1
+                .newLedgerUnderreplicationManager();
+
+        // simulate few urLedgers before disabling
+        final Long ledgerA = 0xfeadeefdacL;
+        final String missingReplica = "localhost:3181";
+
+        // disabling replication
+        replicaMgr.disableLedgerReplication();
+        LOG.info("Disabled Ledeger Replication");
+
+        try {
+            replicaMgr.markLedgerUnderreplicated(ledgerA, missingReplica);
+        } catch (UnavailableException e) {
+            LOG.debug("Unexpected exception while marking urLedger", e);
+            fail("Unexpected exception while marking urLedger" + e.getMessage());
+        }
+
+        Future<Long> fA = getLedgerToReplicate(replicaMgr);
+        try {
+            fA.get(5, TimeUnit.SECONDS);
+            fail("Shouldn't be able to find a ledger to replicate");
+        } catch (TimeoutException te) {
+            // expected behaviour, as the replication is disabled
+            isLedgerReplicationDisabled = false;
+        }
+
+        assertTrue("Ledger replication is not disabled!",
+                !isLedgerReplicationDisabled);
+    }
+
+    /**
+     * Test enabling the ledger re-replication. After enableLedegerReplication,
+     * should continue getLedgerToRereplicate() task
+     */
+    @Test(timeout = 20000)
+    public void testEnableLedegerReplication() throws Exception {
+        isLedgerReplicationDisabled = true;
+        final LedgerUnderreplicationManager replicaMgr = lmf1
+                .newLedgerUnderreplicationManager();
+
+        // simulate few urLedgers before disabling
+        final Long ledgerA = 0xfeadeefdacL;
+        final String missingReplica = "localhost:3181";
+        try {
+            replicaMgr.markLedgerUnderreplicated(ledgerA, missingReplica);
+        } catch (UnavailableException e) {
+            LOG.debug("Unexpected exception while marking urLedger", e);
+            fail("Unexpected exception while marking urLedger" + e.getMessage());
+        }
+
+        // disabling replication
+        replicaMgr.disableLedgerReplication();
+        LOG.debug("Disabled Ledeger Replication");
+
+        String znodeA = getUrLedgerZnode(ledgerA);
+        final CountDownLatch znodeLatch = new CountDownLatch(2);
+        String urledgerA = StringUtils.substringAfterLast(znodeA, "/");
+        String urLockLedgerA = basePath + "/locks/" + urledgerA;
+        zkc1.exists(urLockLedgerA, new Watcher(){
+            @Override
+            public void process(WatchedEvent event) {
+                if (event.getType() == EventType.NodeCreated) {
+                    znodeLatch.countDown();
+                    LOG.debug("Recieved node creation event for the zNodePath:"
+                            + event.getPath());
+                }
+                
+            }});
+        // getLedgerToRereplicate is waiting until enable rereplication
+        Thread thread1 = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    Long lA = replicaMgr.getLedgerToRereplicate();
+                    assertEquals("Should be the ledger I just marked", lA,
+                            ledgerA);
+                    isLedgerReplicationDisabled = false;
+                    znodeLatch.countDown();
+                } catch (UnavailableException e) {
+                    LOG.debug("Unexpected exception while marking urLedger", e);
+                    isLedgerReplicationDisabled = false;
+                }
+            }
+        };
+        thread1.start();
+
+        try {
+            znodeLatch.await(5, TimeUnit.SECONDS);
+            assertTrue("Ledger replication is not disabled!",
+                    isLedgerReplicationDisabled);
+            assertEquals("Failed to disable ledger replication!", 2, znodeLatch
+                    .getCount());
+
+            replicaMgr.enableLedgerReplication();
+            znodeLatch.await(5, TimeUnit.SECONDS);
+            LOG.debug("Enabled Ledeger Replication");
+            assertTrue("Ledger replication is not disabled!",
+                    !isLedgerReplicationDisabled);
+            assertEquals("Failed to disable ledger replication!", 0, znodeLatch
+                    .getCount());
+        } finally {
+            thread1.interrupt();
+        }
     }
 
     private void verifyMarkLedgerUnderreplicated(Collection<String> missingReplica)

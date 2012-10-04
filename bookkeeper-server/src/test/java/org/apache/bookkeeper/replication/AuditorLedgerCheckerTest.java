@@ -256,6 +256,31 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         }
     }
 
+    @Test//(timeout = 30000)
+    public void testToggleLedgerReplication() throws Exception {
+        LedgerHandle lh1 = createAndAddEntriesToLedger();
+        ledgerList.add(lh1.getId());
+        LOG.debug("Created following ledgers : " + ledgerList);
+
+        // failing another bookie
+        CountDownLatch urReplicaLatch = registerUrLedgerWatcher(ledgerList
+                .size());
+
+        // disabling ledger replication
+        urLedgerMgr.disableLedgerReplication();
+        ArrayList<String> shutdownBookieList = new ArrayList<String>();
+        shutdownBookieList.add(shutdownBookie(bs.size() - 1));
+        shutdownBookieList.add(shutdownBookie(bs.size() - 1));
+
+        assertFalse("Ledger replication is not disabled!", urReplicaLatch
+                .await(5, TimeUnit.SECONDS));
+
+        // enabling ledger replication
+        urLedgerMgr.enableLedgerReplication();
+        assertTrue("Ledger replication is not disabled!", urReplicaLatch.await(
+                5, TimeUnit.SECONDS));
+    }
+
     private CountDownLatch registerUrLedgerWatcher(int count)
             throws KeeperException, InterruptedException {
         final CountDownLatch underReplicaLatch = new CountDownLatch(count);

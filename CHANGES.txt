@@ -146,6 +146,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-388: Document bookie format command (kiran_bc via ivank)
 
+        BOOKKEEPER-278: Ability to disable auto recovery temporarily (rakeshr via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)
