@@ -61,6 +61,9 @@ case $command in
     (bookie)
         echo "doing $startStop $command ..."
         ;;
+    (autorecovery)
+        echo "doing $startStop $command ..."
+        ;;
     (*)
         echo "Error: unknown service name $command"
         usage

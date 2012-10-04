@@ -148,6 +148,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-278: Ability to disable auto recovery temporarily (rakeshr via ivank)
 
+        BOOKKEEPER-319: Manage auditing and replication processes (Vinay via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)

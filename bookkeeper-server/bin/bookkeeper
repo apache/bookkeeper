@@ -78,6 +78,7 @@ bookkeeper_help() {
 Usage: bookkeeper <command>
 where command is one of:
     bookie              Run a bookie server
+    autorecovery        Run AutoRecovery service daemon
     localbookie <n>     Run a test ensemble of <n> bookies locally
     upgrade             Upgrade bookie filesystem
     shell               Run shell for admin commands
@@ -165,6 +166,8 @@ OPTS="$OPTS -Dbookkeeper.log.file=$BOOKIE_LOG_FILE"
 cd "$BK_HOME"
 if [ $COMMAND == "bookie" ]; then
     exec java $OPTS $JMX_ARGS org.apache.bookkeeper.proto.BookieServer --conf $BOOKIE_CONF $@
+elif [ $COMMAND == "autorecovery" ]; then
+    exec java $OPTS $JMX_ARGS org.apache.bookkeeper.replication.AutoRecoveryMain --conf $BOOKIE_CONF $@
 elif [ $COMMAND == "localbookie" ]; then
     NUMBER=$1
     shift

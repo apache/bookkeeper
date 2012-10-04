@@ -284,6 +284,9 @@ public class ReplicationWorker implements Runnable {
      * Stop the replication worker service
      */
     public void shutdown() {
+        if (!workerRunning) {
+            return;
+        }
         workerRunning = false;
         try {
             underreplicationManager.close();
@@ -308,6 +311,13 @@ public class ReplicationWorker implements Runnable {
                     e);
             Thread.currentThread().interrupt();
         }
+    }
+
+    /**
+     * Gives the running status of ReplicationWorker
+     */
+    boolean isRunning() {
+        return workerRunning;
     }
 
     private boolean isTargetBookieExistsInFragmentEnsemble(LedgerHandle lh,

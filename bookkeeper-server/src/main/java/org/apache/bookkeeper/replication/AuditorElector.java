@@ -66,7 +66,7 @@ public class AuditorElector {
     private final ZooKeeper zkc;
 
     private String myVote;
-    private Auditor auditor;
+    Auditor auditor;
     private volatile boolean running = true;
 
     /**
