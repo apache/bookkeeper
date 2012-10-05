@@ -51,6 +51,8 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     protected final static String LEDGER_MANAGER_FACTORY_CLASS = "ledgerManagerFactoryClass";
     protected final static String ZK_LEDGERS_ROOT_PATH = "zkLedgersRootPath";
     protected final static String AVAILABLE_NODE = "available";
+    protected final static String REREPLICATION_ENTRY_BATCH_SIZE = "rereplicationEntryBatchSize";
+
     protected AbstractConfiguration() {
         super();
         // add configuration for system properties
@@ -173,5 +175,23 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      */
     public String getZkAvailableBookiesPath() {
         return getZkLedgersRootPath() + "/" + AVAILABLE_NODE;
+    }
+    
+    /**
+     * Set the max entries to keep in fragment for re-replication. If fragment
+     * has more entries than this count, then the original fragment will be
+     * split into multiple small logical fragments by keeping max entries count
+     * to rereplicationEntryBatchSize. So, re-replication will happen in batches
+     * wise.
+     */
+    public void setRereplicationEntryBatchSize(long rereplicationEntryBatchSize) {
+        setProperty(REREPLICATION_ENTRY_BATCH_SIZE, rereplicationEntryBatchSize);
+    }
+
+    /**
+     * Get the re-replication entry batch size
+     */
+    public long getRereplicationEntryBatchSize() {
+        return getLong(REREPLICATION_ENTRY_BATCH_SIZE, 10);
     }
 }

@@ -44,9 +44,9 @@ import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZKUtil;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.KeeperException.Code;
+import org.apache.zookeeper.ZooDefs.Ids;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -633,7 +633,7 @@ public class BookKeeperAdmin {
      */
     private void asyncRecoverLedgerFragment(final LedgerHandle lh,
             final LedgerFragment ledgerFragment,
-            final LedgerFragmentReplicator.SingleFragmentCallback ledgerFragmentMcb,
+            final AsyncCallback.VoidCallback ledgerFragmentMcb,
             final InetSocketAddress newBookie) throws InterruptedException {
         lfr.replicate(lh, ledgerFragment, ledgerFragmentMcb, newBookie);
     }
@@ -650,15 +650,15 @@ public class BookKeeperAdmin {
      */
     public void replicateLedgerFragment(LedgerHandle lh,
             final LedgerFragment ledgerFragment,
-            InetSocketAddress targetBookieAddress) throws InterruptedException,
-            BKException {
-        final SyncCounter syncCounter = new SyncCounter();
+            final InetSocketAddress targetBookieAddress)
+            throws InterruptedException, BKException {
+        SyncCounter syncCounter = new SyncCounter();
         ResultCallBack resultCallBack = new ResultCallBack(syncCounter);
-        SingleFragmentCallback sfcb = new SingleFragmentCallback(
-                resultCallBack, lh, ledgerFragment.getFirstStoredEntryId(),
-                ledgerFragment.getAddress(), targetBookieAddress);
+        SingleFragmentCallback cb = new SingleFragmentCallback(resultCallBack,
+                lh, ledgerFragment.getFirstEntryId(), ledgerFragment
+                        .getAddress(), targetBookieAddress);
         syncCounter.inc();
-        lfr.replicate(lh, ledgerFragment, sfcb, targetBookieAddress);
+        asyncRecoverLedgerFragment(lh, ledgerFragment, cb, targetBookieAddress);
         syncCounter.block(0);
         if (syncCounter.getrc() != BKException.Code.OK) {
             throw BKException.create(syncCounter.getrc());

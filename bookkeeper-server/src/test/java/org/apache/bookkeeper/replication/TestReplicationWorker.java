@@ -69,6 +69,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
         basePath = baseClientConf.getZkLedgersRootPath() + '/'
                 + ZkLedgerUnderreplicationManager.UNDER_REPLICATION_NODE
                 + "/ledgers";
+        baseConf.setRereplicationEntryBatchSize(3);
     }
 
     @Override

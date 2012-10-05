@@ -28,6 +28,7 @@ import java.util.SortedMap;
 import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
@@ -40,6 +41,8 @@ import org.slf4j.LoggerFactory;
  */
 public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
 
+    private static final byte[] TEST_PSSWD = "testpasswd".getBytes();
+    private static final DigestType TEST_DIGEST_TYPE = BookKeeper.DigestType.CRC32;
     private static Logger LOG = LoggerFactory
             .getLogger(TestLedgerFragmentReplication.class);
 
@@ -72,8 +75,8 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
     public void testReplicateLFShouldCopyFailedBookieFragmentsToTargetBookie()
             throws Exception {
         byte[] data = "TestLedgerFragmentReplication".getBytes();
-        LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,
-                "testpasswd".getBytes());
+        LedgerHandle lh = bkc.createLedger(3, 3, TEST_DIGEST_TYPE,
+                TEST_PSSWD);
 
         for (int i = 0; i < 10; i++) {
             lh.addEntry(data);
@@ -129,8 +132,8 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
     public void testReplicateLFFailsOnlyOnLastUnClosedFragments()
             throws Exception {
         byte[] data = "TestLedgerFragmentReplication".getBytes();
-        LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,
-                "testpasswd".getBytes());
+        LedgerHandle lh = bkc.createLedger(3, 3, TEST_DIGEST_TYPE,
+                TEST_PSSWD);
 
         for (int i = 0; i < 10; i++) {
             lh.addEntry(data);
@@ -187,8 +190,8 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
     public void testReplicateLFShouldReturnFalseIfTheReplicationFails()
             throws Exception {
         byte[] data = "TestLedgerFragmentReplication".getBytes();
-        LedgerHandle lh = bkc.createLedger(2, 1, BookKeeper.DigestType.CRC32,
-                "testpasswd".getBytes());
+        LedgerHandle lh = bkc.createLedger(2, 1, TEST_DIGEST_TYPE,
+                TEST_PSSWD);
 
         for (int i = 0; i < 10; i++) {
             lh.addEntry(data);
@@ -222,6 +225,94 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
             }
         }
     }
+    
+    /**
+     * Tests that splitIntoSubFragment should be able to split the original
+     * passed fragment into sub fragments at correct boundaries
+     */
+    @Test(timeout = 30000)
+    public void testSplitIntoSubFragmentsWithDifferentFragmentBoundaries()
+            throws Exception {
+        LedgerMetadata metadata = new LedgerMetadata(3, 3, 3, TEST_DIGEST_TYPE,
+                TEST_PSSWD) {
+            @Override
+            ArrayList<InetSocketAddress> getEnsemble(long entryId) {
+                return null;
+            }
+
+            @Override
+            public boolean isClosed() {
+                return true;
+            }
+        };
+        LedgerHandle lh = new LedgerHandle(bkc, 0, metadata, TEST_DIGEST_TYPE,
+                TEST_PSSWD);
+        testSplitIntoSubFragments(10, 21, -1, 1, lh);
+        testSplitIntoSubFragments(10, 21, 20, 1, lh);
+        testSplitIntoSubFragments(0, 0, 10, 1, lh);
+        testSplitIntoSubFragments(0, 1, 1, 2, lh);
+        testSplitIntoSubFragments(20, 24, 2, 3, lh);
+        testSplitIntoSubFragments(21, 32, 3, 4, lh);
+        testSplitIntoSubFragments(22, 103, 11, 8, lh);
+        testSplitIntoSubFragments(49, 51, 1, 3, lh);
+        testSplitIntoSubFragments(11, 101, 3, 31, lh);
+    }
+
+    /** assert the sub-fragment boundaries */
+    void testSplitIntoSubFragments(final long oriFragmentFirstEntry,
+            final long oriFragmentLastEntry, long entriesPerSubFragment,
+            long expectedSubFragments, LedgerHandle lh) {
+        LedgerFragment fr = new LedgerFragment(lh, oriFragmentFirstEntry,
+                oriFragmentLastEntry, 0) {
+            @Override
+            public long getLastStoredEntryId() {
+                return oriFragmentLastEntry;
+            }
+
+            @Override
+            public long getFirstStoredEntryId() {
+                return oriFragmentFirstEntry;
+            }
+        };
+        Set<LedgerFragment> subFragments = LedgerFragmentReplicator
+                .splitIntoSubFragments(lh, fr, entriesPerSubFragment);
+        assertEquals(expectedSubFragments, subFragments.size());
+        int fullSubFragment = 0;
+        int partialSubFragment = 0;
+        for (LedgerFragment ledgerFragment : subFragments) {
+            if ((ledgerFragment.getLastKnownEntryId()
+                    - ledgerFragment.getFirstEntryId() + 1) == entriesPerSubFragment) {
+                fullSubFragment++;
+            } else {
+                long totalEntriesToReplicate = oriFragmentLastEntry
+                        - oriFragmentFirstEntry + 1;
+                if (entriesPerSubFragment <= 0
+                        || totalEntriesToReplicate / entriesPerSubFragment == 0) {
+                    assertEquals(
+                            "FirstEntryId should be same as original fragment's firstEntryId",
+                            fr.getFirstEntryId(), ledgerFragment
+                                    .getFirstEntryId());
+                    assertEquals(
+                            "LastEntryId should be same as original fragment's lastEntryId",
+                            fr.getLastKnownEntryId(), ledgerFragment
+                                    .getLastKnownEntryId());
+                } else {
+                    long partialSplitEntries = totalEntriesToReplicate
+                            % entriesPerSubFragment;
+                    assertEquals(
+                            "Partial fragment with wrong entry boundaries",
+                            ledgerFragment.getLastKnownEntryId()
+                                    - ledgerFragment.getFirstEntryId() + 1,
+                            partialSplitEntries);
+                }
+                partialSubFragment++;
+            }
+        }
+        assertEquals("Unexpected number of sub fargments", fullSubFragment
+                + partialSubFragment, expectedSubFragments);
+        assertTrue("There should be only one or zero partial sub Fragment",
+                partialSubFragment == 0 || partialSubFragment == 1);
+    }
 
     private Set<LedgerFragment> getFragmentsToReplicate(LedgerHandle lh)
             throws InterruptedException {
@@ -235,7 +326,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
     private void verifyRecoveredLedgers(LedgerHandle lh, long startEntryId,
             long endEntryId) throws BKException, InterruptedException {
         LedgerHandle lhs = bkc.openLedgerNoRecovery(lh.getId(),
-                BookKeeper.DigestType.CRC32, "testpasswd".getBytes());
+                TEST_DIGEST_TYPE, TEST_PSSWD);
         Enumeration<LedgerEntry> entries = lhs.readEntries(startEntryId,
                 endEntryId);
         assertTrue("Should have the elements", entries.hasMoreElements());

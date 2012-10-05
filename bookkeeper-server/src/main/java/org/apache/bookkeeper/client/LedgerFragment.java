@@ -85,6 +85,13 @@ public class LedgerFragment {
     public InetSocketAddress getAddress() {
         return ensemble.get(bookieIndex);
     }
+    
+    /**
+     * Gets the failedBookie index
+     */
+    public int getBookiesIndex() {
+        return bookieIndex;
+    }
 
     /**
      * Gets the first stored entry id of the fragment in failed bookie.
