@@ -25,7 +25,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 import com.google.protobuf.ByteString;
 
@@ -44,7 +46,7 @@ import org.apache.hedwig.util.Callback;
 
 public class TestThrottlingDelivery extends HedwigHubTestBase {
 
-    private static final int DEFAULT_THROTTLE_VALUE = 10;
+    private static final int DEFAULT_MESSAGE_WINDOW_SIZE = 10;
 
     protected class ThrottleDeliveryServerConfiguration extends HubServerConfiguration {
 
@@ -53,30 +55,30 @@ public class TestThrottlingDelivery extends HedwigHubTestBase {
         }
 
         @Override
-        public int getDefaultDeliveryThrottleValue() {
-            return DEFAULT_THROTTLE_VALUE;
+        public int getDefaultMessageWindowSize() {
+            return TestThrottlingDelivery.this.DEFAULT_MESSAGE_WINDOW_SIZE;
         }
     }
 
     protected class ThrottleDeliveryClientConfiguration extends ClientConfiguration {
 
-        int throttleValue;
+        int messageWindowSize;
 
         ThrottleDeliveryClientConfiguration() {
-            this(DEFAULT_THROTTLE_VALUE);
+            this(TestThrottlingDelivery.this.DEFAULT_MESSAGE_WINDOW_SIZE);
         }
 
-        ThrottleDeliveryClientConfiguration(int throttleValue) {
-            this.throttleValue = throttleValue;
+        ThrottleDeliveryClientConfiguration(int messageWindowSize) {
+            this.messageWindowSize = messageWindowSize;
         }
 
         @Override
         public int getMaximumOutstandingMessages() {
-            return throttleValue;
+            return messageWindowSize;
         }
 
-        void setThrottleValue(int throttleValue) {
-            this.throttleValue = throttleValue;
+        void setMessageWindowSize(int messageWindowSize) {
+            this.messageWindowSize = messageWindowSize;
         }
 
         @Override
@@ -166,7 +168,7 @@ public class TestThrottlingDelivery extends HedwigHubTestBase {
 
     @Test
     public void testServerSideThrottle() throws Exception {
-        int throttleValue = DEFAULT_THROTTLE_VALUE;
+        int messageWindowSize = DEFAULT_MESSAGE_WINDOW_SIZE;
         ThrottleDeliveryClientConfiguration conf =
             new ThrottleDeliveryClientConfiguration();
         HedwigClient client = new HedwigClient(conf);
@@ -179,27 +181,27 @@ public class TestThrottlingDelivery extends HedwigHubTestBase {
         sub.closeSubscription(topic, subid);
 
         // throttle with hub server's setting
-        throttleX(pub, sub, topic, subid, DEFAULT_THROTTLE_VALUE);
+        throttleX(pub, sub, topic, subid, DEFAULT_MESSAGE_WINDOW_SIZE);
 
-        throttleValue = DEFAULT_THROTTLE_VALUE / 2;
+        messageWindowSize = DEFAULT_MESSAGE_WINDOW_SIZE / 2;
         // throttle with a lower value than hub server's setting
         SubscriptionOptions.Builder optionsBuilder = SubscriptionOptions.newBuilder()
             .setCreateOrAttach(CreateOrAttach.CREATE)
-            .setDeliveryThrottleValue(throttleValue);
+            .setMessageWindowSize(messageWindowSize);
         topic = ByteString.copyFromUtf8("testServerSideThrottleWithLowerValue");
         sub.subscribe(topic, subid, optionsBuilder.build());
         sub.closeSubscription(topic, subid);
-        throttleX(pub, sub, topic, subid, throttleValue);
+        throttleX(pub, sub, topic, subid, messageWindowSize);
 
-        throttleValue = DEFAULT_THROTTLE_VALUE + 5;
+        messageWindowSize = DEFAULT_MESSAGE_WINDOW_SIZE + 5;
         // throttle with a higher value than hub server's setting
         optionsBuilder = SubscriptionOptions.newBuilder()
                          .setCreateOrAttach(CreateOrAttach.CREATE)
-                         .setDeliveryThrottleValue(throttleValue);
+                         .setMessageWindowSize(messageWindowSize);
         topic = ByteString.copyFromUtf8("testServerSideThrottleWithHigherValue");
         sub.subscribe(topic, subid, optionsBuilder.build());
         sub.closeSubscription(topic, subid);
-        throttleX(pub, sub, topic, subid, throttleValue);
+        throttleX(pub, sub, topic, subid, messageWindowSize);
 
         client.close();
     }

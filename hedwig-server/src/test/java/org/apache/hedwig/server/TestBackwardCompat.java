@@ -766,7 +766,7 @@ public class TestBackwardCompat extends TestCase {
             org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions options =
                 org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions.newBuilder()
                 .setCreateOrAttach(org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach.CREATE_OR_ATTACH)
-                .setDeliveryThrottleValue(X) .build();
+                .setMessageWindowSize(X) .build();
             subscribe(topic, subid, options);
             closeSubscription(topic, subid);
             publishInts(topic, 1, 3*X);

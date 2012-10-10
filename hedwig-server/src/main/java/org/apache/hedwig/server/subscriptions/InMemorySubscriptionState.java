@@ -136,11 +136,11 @@ public class InMemorySubscriptionState {
                 changed = true;
             }
         }
-        if (preferences.hasDeliveryThrottleValue()) {
-            if (!subscriptionPreferences.hasDeliveryThrottleValue() ||
-                subscriptionPreferences.getDeliveryThrottleValue() !=
-                preferences.getDeliveryThrottleValue()) {
-                newPreferencesBuilder.setDeliveryThrottleValue(preferences.getDeliveryThrottleValue());
+        if (preferences.hasMessageWindowSize()) {
+            if (!subscriptionPreferences.hasMessageWindowSize() ||
+                subscriptionPreferences.getMessageWindowSize() !=
+                preferences.getMessageWindowSize()) {
+                newPreferencesBuilder.setMessageWindowSize(preferences.getMessageWindowSize());
                 changed = true;
             }
         }

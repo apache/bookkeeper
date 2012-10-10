@@ -117,8 +117,9 @@ message SubscriptionPreferences {
     optional uint32 messageBound = 2;
     // server-side message filter
     optional string messageFilter = 3;
-    // server-side delivery throttle value
-    optional uint32 deliveryThrottleValue = 4;
+    // message window size, this is the maximum number of messages 
+    // which will be delivered without being consumed
+    optional uint32 messageWindowSize = 4;
 }
 
 message SubscribeRequest{
@@ -156,8 +157,9 @@ message SubscriptionOptions {
     optional Map options = 4;
     // server-side message filter
     optional string messageFilter = 5;
-    // server-side delivery throttle value
-    optional uint32 deliveryThrottleValue = 6;
+    // message window size, this is the maximum number of messages 
+    // which will be delivered without being consumed
+    optional uint32 messageWindowSize = 6;
     // enable resubscribe
     optional bool enableResubscribe = 7 [default = true];
 }

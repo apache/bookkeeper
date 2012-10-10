@@ -192,9 +192,9 @@ public class NetUtils {
             preferencesBuilder.setOptions(options.getOptions());
         }
 
-        // set delivery throttle value
-        if (options.getDeliveryThrottleValue() > 0) {
-            preferencesBuilder.setDeliveryThrottleValue(options.getDeliveryThrottleValue());
+        // set message window size if set
+        if (options.hasMessageWindowSize() && options.getMessageWindowSize() > 0) {
+            preferencesBuilder.setMessageWindowSize(options.getMessageWindowSize());
         }
 
         return preferencesBuilder;

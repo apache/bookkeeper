@@ -347,7 +347,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
         long lastSeqIdCommunicatedExternally;
         long lastSeqIdConsumedUtil;
         boolean isThrottled = false;
-        final int throttleThreshold;
+        final int messageWindowSize;
         ServerMessageFilter filter;
         // TODO make use of these variables
 
@@ -364,14 +364,14 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
             this.lastSeqIdConsumedUtil = lastLocalSeqIdDelivered;
             this.deliveryEndPoint = deliveryEndPoint;
             this.filter = filter;
-            if (preferences.hasDeliveryThrottleValue()) {
-                throttleThreshold = preferences.getDeliveryThrottleValue();
+            if (preferences.hasMessageWindowSize()) {
+                messageWindowSize = preferences.getMessageWindowSize();
             } else {
-                if (FIFODeliveryManager.this.cfg.getDefaultDeliveryThrottleValue() > 0) {
-                    throttleThreshold =
-                        FIFODeliveryManager.this.cfg.getDefaultDeliveryThrottleValue();
+                if (FIFODeliveryManager.this.cfg.getDefaultMessageWindowSize() > 0) {
+                    messageWindowSize =
+                        FIFODeliveryManager.this.cfg.getDefaultMessageWindowSize();
                 } else {
-                    throttleThreshold = UNLIMITED;
+                    messageWindowSize = UNLIMITED;
                 }
             }
         }
@@ -443,10 +443,10 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
         }
 
         protected boolean msgLimitExceeded() {
-            if (throttleThreshold == UNLIMITED) {
+            if (messageWindowSize == UNLIMITED) {
                 return false;
             }
-            if (lastLocalSeqIdDelivered - lastSeqIdConsumedUtil >= throttleThreshold) {
+            if (lastLocalSeqIdDelivered - lastSeqIdConsumedUtil >= messageWindowSize) {
                 return true;
             }
             return false;
