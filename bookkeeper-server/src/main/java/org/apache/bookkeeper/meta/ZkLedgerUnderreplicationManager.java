@@ -25,6 +25,7 @@ import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
+import org.apache.bookkeeper.proto.DataFormats.LockDataFormat;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.WatchedEvent;
@@ -36,6 +37,8 @@ import org.apache.zookeeper.ZooDefs.Ids;
 
 import com.google.protobuf.TextFormat;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 
 import java.util.concurrent.CountDownLatch;
@@ -92,6 +95,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     private final String urLedgerPath;
     private final String urLockPath;
     private final String layoutZNode;
+    private final LockDataFormat lockData;
 
     private final ZooKeeper zkc;
 
@@ -105,6 +109,15 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
         idExtractionPattern = Pattern.compile("urL(\\d+)$");
         this.zkc = zkc;
+
+        LockDataFormat.Builder lockDataBuilder = LockDataFormat.newBuilder();
+        try {
+            lockDataBuilder.setBookieId(InetAddress.getLocalHost().getHostAddress().toString());
+        } catch (UnknownHostException uhe) {
+            // if we cant get the address, ignore. it's optional
+            // in the data structure in any case
+        }
+        lockData = lockDataBuilder.build();
 
         checkLayout();
     }
@@ -288,7 +301,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                     }
 
                     long ledgerId = getLedgerId(tryChild);
-                    zkc.create(lockPath, new byte[0],
+                    zkc.create(lockPath, TextFormat.printToString(lockData).getBytes(UTF8),
                                Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
                     heldLocks.put(ledgerId, new Lock(lockPath, stat.getVersion()));
                     return ledgerId;

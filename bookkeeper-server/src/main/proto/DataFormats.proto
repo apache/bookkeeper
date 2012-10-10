@@ -68,3 +68,10 @@ message CookieFormat {
     required string ledgerDirs = 3;
     optional string instanceId = 4;
 }
+
+/**
+ * Debug information for locks
+ */
+message LockDataFormat {
+    optional string bookieId = 1;
+}

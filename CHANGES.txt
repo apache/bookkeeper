@@ -90,6 +90,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-405: Let's add Thread name for ReplicationWorker thread. (umamahesh via ivank)
 
+        BOOKKEEPER-418: Store hostname of locker in replication lock (ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)
