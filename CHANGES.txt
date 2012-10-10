@@ -188,6 +188,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-143: Add SSL support for hedwig cpp client (sijie via ivank)
 
+        BOOKKEEPER-413: Hedwig C++ client: Rename RUN_AS_SSL_MODE to SSL_ENABLED (ivank via sijie)
+
 Release 4.1.0 - 2012-06-07
 
   Non-backward compatible changes:

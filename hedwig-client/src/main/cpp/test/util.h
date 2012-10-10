@@ -162,7 +162,7 @@ public:
   }
 
   virtual bool getBool(const std::string& key, bool defaultVal) const {
-    if (key == Configuration::RUN_AS_SSL_MODE) {
+    if (key == Configuration::SSL_ENABLED) {
       return isSSL;
     }
     return defaultVal;

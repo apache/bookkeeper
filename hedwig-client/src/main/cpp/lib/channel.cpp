@@ -806,7 +806,7 @@ DuplexChannelManagerPtr DuplexChannelManager::create(const Configuration& conf,
 DuplexChannelManager::DuplexChannelManager(const Configuration& conf,
                                            EventDispatcher& dispatcher)
   : conf(conf), dispatcher(dispatcher) {
-  sslEnabled = conf.getBool(Configuration::RUN_AS_SSL_MODE, DEFAULT_SSL_ENABLED); 
+  sslEnabled = conf.getBool(Configuration::SSL_ENABLED, DEFAULT_SSL_ENABLED);
   if (sslEnabled) {
     sslCtxFactory = SSLContextFactoryPtr(new SSLContextFactory(conf));
   }
