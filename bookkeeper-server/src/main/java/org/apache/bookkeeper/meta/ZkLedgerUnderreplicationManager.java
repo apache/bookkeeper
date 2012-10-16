@@ -36,6 +36,7 @@ import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.ZooDefs.Ids;
 
 import com.google.protobuf.TextFormat;
+import com.google.common.base.Joiner;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -46,6 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.Collections;
+import java.util.Arrays;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -260,6 +262,24 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             Lock l = heldLocks.get(ledgerId);
             if (l != null) {
                 zkc.delete(getUrLedgerZnode(ledgerId), l.getLedgerZNodeVersion());
+
+                try {
+                    // clean up the hierarchy
+                    String parts[] = getUrLedgerZnode(ledgerId).split("/");
+                    for (int i = 1; i <= 4; i++) {
+                        String p[] = Arrays.copyOf(parts, parts.length - i);
+                        String path = Joiner.on("/").join(p);
+                        Stat s = zkc.exists(path, null);
+                        if (s != null) {
+                            zkc.delete(path, s.getVersion());
+                        }
+                    }
+                } catch (KeeperException.NotEmptyException nee) {
+                    // This can happen when cleaning up the hierarchy.
+                    // It's safe to ignore, it simply means another
+                    // ledger in the same hierarchy has been marked as
+                    // underreplicated.
+                }
             }
         } catch (KeeperException.NoNodeException nne) {
             // this is ok
@@ -281,7 +301,15 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     private long getLedgerToRereplicateFromHierarchy(String parent, long depth, Watcher w)
             throws KeeperException, InterruptedException {
         if (depth == 4) {
-            List<String> children = zkc.getChildren(parent, w);
+            List<String> children;
+            try {
+                children = zkc.getChildren(parent, w);
+            } catch (KeeperException.NoNodeException nne) {
+                // can occur if another underreplicated ledger's
+                // hierarchy is being cleaned up
+                return -1;
+            }
+
             Collections.shuffle(children);
 
             while (children.size() > 0) {
@@ -314,7 +342,15 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             return -1;
         }
 
-        List<String> children = zkc.getChildren(parent, w);
+        List<String> children;
+        try {
+            children = zkc.getChildren(parent, w);
+        } catch (KeeperException.NoNodeException nne) {
+            // can occur if another underreplicated ledger's
+            // hierarchy is being cleaned up
+            return -1;
+        }
+
         Collections.shuffle(children);
 
         while (children.size() > 0) {

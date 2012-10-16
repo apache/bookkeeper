@@ -23,6 +23,7 @@ package org.apache.bookkeeper.replication;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 import java.nio.charset.Charset;
@@ -39,6 +40,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -582,6 +585,117 @@ public class TestLedgerUnderreplicationManager {
         } finally {
             thread1.interrupt();
         }
+    }
+
+    /**
+     * Test that the hierarchy gets cleaned up as ledgers
+     * are marked as fully replicated
+     */
+    @Test
+    public void testHierarchyCleanup() throws Exception {
+        final LedgerUnderreplicationManager replicaMgr = lmf1
+            .newLedgerUnderreplicationManager();
+        // 4 ledgers, 2 in the same hierarchy
+        long[] ledgers = { 0x00000000deadbeefL, 0x00000000deadbeeeL,
+                           0x00000000beefcafeL, 0x00000000cafed00dL };
+
+        for (long l : ledgers) {
+            replicaMgr.markLedgerUnderreplicated(l, "localhost:3181");
+        }
+        // can't simply test top level as we are limited to ledger
+        // ids no larger than an int
+        String testPath = urLedgerPath + "/0000/0000";
+        List<String> children = zkc1.getChildren(testPath, false);
+        assertEquals("Wrong number of hierarchies", 3, children.size());
+
+        int marked = 0;
+        while (marked < 3) {
+            long l = replicaMgr.getLedgerToRereplicate();
+            if (l != ledgers[0]) {
+                replicaMgr.markLedgerReplicated(l);
+                marked++;
+            } else {
+                replicaMgr.releaseUnderreplicatedLedger(l);
+            }
+        }
+        children = zkc1.getChildren(testPath, false);
+        assertEquals("Wrong number of hierarchies", 1, children.size());
+
+        long l = replicaMgr.getLedgerToRereplicate();
+        assertEquals("Got wrong ledger", ledgers[0], l);
+        replicaMgr.markLedgerReplicated(l);
+
+        children = zkc1.getChildren(urLedgerPath, false);
+        assertEquals("All hierarchies should be cleaned up", 0, children.size());
+    }
+
+    /**
+     * Test that as the hierarchy gets cleaned up, it doesn't interfere
+     * with the marking of other ledgers as underreplicated
+     */
+    @Test(timeout = 90000)
+    public void testHierarchyCleanupInterference() throws Exception {
+        final LedgerUnderreplicationManager replicaMgr1 = lmf1
+            .newLedgerUnderreplicationManager();
+        final LedgerUnderreplicationManager replicaMgr2 = lmf2
+            .newLedgerUnderreplicationManager();
+
+        final int iterations = 1000;
+        final AtomicBoolean threadFailed = new AtomicBoolean(false);
+        Thread markUnder = new Thread() {
+                public void run() {
+                    long l = 1;
+                    try {
+                        for (int i = 0; i < iterations; i++) {
+                            replicaMgr1.markLedgerUnderreplicated(l, "localhost:3181");
+                            l += 10000;
+                        }
+                    } catch (Exception e) {
+                        LOG.error("markUnder Thread failed with exception", e);
+                        threadFailed.set(true);
+                        return;
+                    }
+                }
+            };
+        final AtomicInteger processed = new AtomicInteger(0);
+        Thread markRepl = new Thread() {
+                public void run() {
+                    try {
+                        for (int i = 0; i < iterations; i++) {
+                            long l = replicaMgr2.getLedgerToRereplicate();
+                            replicaMgr2.markLedgerReplicated(l);
+                            processed.incrementAndGet();
+                        }
+                    } catch (Exception e) {
+                        LOG.error("markRepl Thread failed with exception", e);
+                        threadFailed.set(true);
+                        return;
+                    }
+                }
+            };
+        markRepl.setDaemon(true);
+        markUnder.setDaemon(true);
+
+        markRepl.start();
+        markUnder.start();
+        markUnder.join();
+        assertFalse("Thread failed to complete", threadFailed.get());
+
+        int lastProcessed = 0;
+        while (true) {
+            markRepl.join(10000);
+            if (!markRepl.isAlive()) {
+                break;
+            }
+            assertFalse("markRepl thread not progressing", lastProcessed == processed.get());
+        }
+        assertFalse("Thread failed to complete", threadFailed.get());
+
+        List<String> children = zkc1.getChildren(urLedgerPath, false);
+        for (String s : children) {
+            LOG.info("s: {}", s);
+        }
+        assertEquals("All hierarchies should be cleaned up", 0, children.size());
     }
 
     private void verifyMarkLedgerUnderreplicated(Collection<String> missingReplica)

@@ -502,7 +502,13 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
 
     private boolean isLedgerInUnderReplication(long id, String basePath)
             throws KeeperException, InterruptedException {
-        List<String> children = zkc.getChildren(basePath, true);
+        List<String> children;
+        try {
+            children = zkc.getChildren(basePath, true);
+        } catch (KeeperException.NoNodeException nne) {
+            return false;
+        }
+
         boolean isMatched = false;
         for (String child : children) {
             if (child.startsWith("urL") && child.contains(String.valueOf(id))) {
@@ -510,8 +516,12 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
                 break;
             } else {
                 String path = basePath + '/' + child;
-                if (zkc.getChildren(path, false).size() > 0) {
-                    isMatched = isLedgerInUnderReplication(id, path);
+                try {
+                    if (zkc.getChildren(path, false).size() > 0) {
+                        isMatched = isLedgerInUnderReplication(id, path);
+                    }
+                } catch (KeeperException.NoNodeException nne) {
+                    return false;
                 }
             }
 

@@ -92,6 +92,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-418: Store hostname of locker in replication lock (ivank)
 
+        BOOKKEEPER-417: Hierarchical zk underreplication manager should clean up its hierarchy when done to allow for fast acquisition of underreplicated entries (ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)
