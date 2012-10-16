@@ -94,6 +94,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-417: Hierarchical zk underreplication manager should clean up its hierarchy when done to allow for fast acquisition of underreplicated entries (ivank)
 
+        BOOKKEEPER-436: Journal#rollLog may leak file handler (umamahesh via ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

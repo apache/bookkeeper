@@ -120,15 +120,22 @@ class Journal extends Thread {
             bb.putLong(lastMark.getTxnLogId());
             bb.putLong(lastMark.getTxnLogPosition());
             LOG.debug("RollLog to persist last marked log : {}", lastMark);
-            for(File dir: ledgerDirectories) {
+            for (File dir : ledgerDirectories) {
                 File file = new File(dir, "lastMark");
+                FileOutputStream fos = null;
                 try {
-                    FileOutputStream fos = new FileOutputStream(file);
+                    fos = new FileOutputStream(file);
                     fos.write(buff);
                     fos.getChannel().force(true);
                     fos.close();
+                    fos = null;
                 } catch (IOException e) {
                     LOG.error("Problems writing to " + file, e);
+                } finally {
+                    // if stream already closed in try block successfully,
+                    // stream might have nullified, in such case below
+                    // call will simply returns
+                    IOUtils.close(LOG, fos);
                 }
             }
         }
