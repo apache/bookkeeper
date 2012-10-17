@@ -182,6 +182,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-415: Rename DeliveryThrottle to MessageWindowSize (ivank via sijie)
 
+	BOOKKEEPER-422: Simplify AbstractSubscriptionManager (stu via fpj)
+
       hedwig-client:
 
         BOOKKEEPER-306: Change C++ client to use gtest for testing (ivank via sijie)
