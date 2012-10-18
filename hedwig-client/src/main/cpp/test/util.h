@@ -116,12 +116,15 @@ private:
 class TestSubscriptionListener : public Hedwig::SubscriptionListener {
 public:
   TestSubscriptionListener(SimpleWaitCondition* cond) : cond(cond) {
+    LOG4CXX_DEBUG(utillogger, "Created TestSubscriptionListener " << this);
   }
 
   virtual ~TestSubscriptionListener() {}
 
   virtual void processEvent(const std::string& topic, const std::string& subscriberId,
                             const Hedwig::SubscriptionEvent event) {
+    LOG4CXX_DEBUG(utillogger, "Received event " << event << " for (topic:" << topic
+                              << ", subscriber:" << subscriberId << ") from listener " << this);
     if (Hedwig::TOPIC_MOVED == event) {
       if (cond) {
         cond->setSuccess(true);

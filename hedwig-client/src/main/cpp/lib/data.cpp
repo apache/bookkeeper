@@ -23,10 +23,22 @@
 #include "data.h"
 
 #include <log4cxx/logger.h>
+#include <iostream>
+
+#define stringify( name ) #name
 
 static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("hedwig."__FILE__));
 
 using namespace Hedwig;
+
+const char* OPERATION_TYPE_NAMES[] = {
+  stringify( PUBLISH ),
+  stringify( SUBSCRIBE ),
+  stringify( CONSUME ),
+  stringify( UNSUBSCRIBE ),
+  stringify( START_DELIVERY ),
+  stringify( STOP_DELIVERY )
+};
 
 PubSubDataPtr PubSubData::forPublishRequest(long txnid, const std::string& topic, const Message& body,
                                             const ResponseCallbackPtr& callback) {
@@ -185,4 +197,58 @@ const std::string& PubSubData::getSubscriberId() const {
 
 const SubscriptionOptions& PubSubData::getSubscriptionOptions() const {
   return options;
+}
+
+void PubSubData::setOrigChannelForResubscribe(
+  boost::shared_ptr<DuplexChannel>& channel) {
+  this->origChannel = channel;
+}
+
+boost::shared_ptr<DuplexChannel>& PubSubData::getOrigChannelForResubscribe() {
+  return this->origChannel;
+}
+
+bool PubSubData::isResubscribeRequest() {
+  return 0 != this->origChannel.get();
+}
+
+ClientTxnCounter::ClientTxnCounter() : counter(0) 
+{
+}
+
+ClientTxnCounter::~ClientTxnCounter() {
+}
+
+/**
+Increment the transaction counter and return the new value.
+
+@returns the next transaction id
+*/
+long ClientTxnCounter::next() {  // would be nice to remove lock from here, look more into it
+  boost::lock_guard<boost::mutex> lock(mutex);
+
+  long next= ++counter; 
+
+  return next;
+}
+
+std::ostream& Hedwig::operator<<(std::ostream& os, const PubSubData& data) {
+  OperationType type = data.getType();
+  os << "[" << OPERATION_TYPE_NAMES[type] << " request (txn:" << data.getTxnId()
+     << ") for (topic:" << data.getTopic();
+  switch (type) {
+  case SUBSCRIBE:
+  case UNSUBSCRIBE:
+    os << ", subscriber:" << data.getSubscriberId() << ")";
+    break;
+  case CONSUME:
+    os << ", subscriber:" << data.getSubscriberId() << ", seq:"
+    << data.getMessageSeqId().localcomponent() << ")";
+    break;
+  case PUBLISH:
+  default:
+    os << ")";
+    break;
+  }
+  return os;
 }

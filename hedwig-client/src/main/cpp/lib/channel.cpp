@@ -47,7 +47,6 @@ static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("hedwig."__FILE__));
 
 using namespace Hedwig;
 
-const bool DEFAULT_SSL_ENABLED = false;
 const std::string DEFAULT_SSL_PEM_FILE = "";
 
 AbstractDuplexChannel::AbstractDuplexChannel(IOServicePtr& service,
@@ -65,6 +64,10 @@ AbstractDuplexChannel::~AbstractDuplexChannel() {
   copy_buf_length = 0;
 
   LOG4CXX_INFO(logger, "Destroying DuplexChannel(" << this << ")");
+}
+
+ChannelHandlerPtr AbstractDuplexChannel::getChannelHandler() {
+  return handler;
 }
 
 /*static*/ void AbstractDuplexChannel::connectCallbackHandler(
@@ -601,6 +604,7 @@ void AsioDuplexChannel::closeSocket() {
   if (ec) {
     LOG4CXX_WARN(logger, "Channel " << this << " close error : " << ec.message().c_str());
   }
+  LOG4CXX_DEBUG(logger, "Closed socket for channel " << this << ".");
 }
 
 // SSL Context Factory
@@ -793,37 +797,5 @@ void AsioSSLDuplexChannel::closeLowestLayer() {
   ssl_socket->lowest_layer().close(ec);
   if (ec) {
     LOG4CXX_WARN(logger, "Channel " << this << " close error : " << ec.message().c_str());
-  }
-}
-
-DuplexChannelManagerPtr DuplexChannelManager::create(const Configuration& conf,
-                                                     EventDispatcher& dispatcher) {
-  DuplexChannelManagerPtr factory(new DuplexChannelManager(conf, dispatcher));
-  LOG4CXX_DEBUG(logger, "Created DuplexChannelManager " << factory);
-  return factory;
-}
-
-DuplexChannelManager::DuplexChannelManager(const Configuration& conf,
-                                           EventDispatcher& dispatcher)
-  : conf(conf), dispatcher(dispatcher) {
-  sslEnabled = conf.getBool(Configuration::SSL_ENABLED, DEFAULT_SSL_ENABLED);
-  if (sslEnabled) {
-    sslCtxFactory = SSLContextFactoryPtr(new SSLContextFactory(conf));
-  }
-}
-
-DuplexChannelManager::~DuplexChannelManager() {
-}
-
-DuplexChannelPtr DuplexChannelManager::createChannel(const HostAddress& addr,
-                                                     const ChannelHandlerPtr& handler) {
-  LOG4CXX_DEBUG(logger, "Creating channel with handler " << handler.get());
-  IOServicePtr& service = dispatcher.getService();
-  if (sslEnabled) {
-    boost_ssl_context_ptr sslCtx =
-      sslCtxFactory->createSSLContext(service->getService());
-    return DuplexChannelPtr(new AsioSSLDuplexChannel(service, sslCtx, addr, handler));
-  } else {
-    return DuplexChannelPtr(new AsioDuplexChannel(service, addr, handler));
   }
 }

@@ -32,15 +32,19 @@ namespace Hedwig {
   class OomException : public ClientException {};
   class UnknownRequestException : public ClientException {};
   class InvalidRedirectException : public ClientException {};
+  class NoChannelHandlerException : public ClientException {};
 
   class PublisherException : public ClientException { };
   
-
   class SubscriberException : public ClientException { };
   class AlreadySubscribedException : public SubscriberException {};
   class NotSubscribedException : public SubscriberException {};
+  class ResubscribeException : public SubscriberException {};
   class NullMessageHandlerException : public SubscriberException {};
   class NullMessageFilterException : public SubscriberException {};
+
+  class AlreadyStartDeliveryException : public SubscriberException {};
+  class StartingDeliveryException : public SubscriberException {};
 
   class ConfigurationException : public ClientException { };
   class InvalidPortException : public ConfigurationException {};

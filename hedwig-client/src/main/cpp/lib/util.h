@@ -38,6 +38,8 @@
 
 namespace Hedwig {
   typedef std::pair<const std::string, const std::string> TopicSubscriber;
+  // Help Function to print topicSubscriber
+  std::ostream& operator<<(std::ostream& os, const TopicSubscriber& ts);
 
   /**
      Representation of a hosts address
@@ -61,6 +63,7 @@ namespace Hedwig {
 
     static HostAddress fromString(std::string host);
 
+    friend std::ostream& operator<<(std::ostream& os, const HostAddress& host);
   private:
 
     void parse_string();
@@ -104,6 +107,15 @@ namespace Hedwig {
     size_t operator()(const Hedwig::TopicSubscriber& topicsub) const {
       std::string fullstr = topicsub.first + topicsub.second;
       return std::tr1::hash<std::string>()(fullstr);
+    }
+  };
+
+  /**
+   * Operation Type Hash
+   */
+  struct OperationTypeHash : public std::unary_function<Hedwig::OperationType, size_t> {
+    size_t operator()(const Hedwig::OperationType& type) const {
+      return type;
     }
   };
 };

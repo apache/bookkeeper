@@ -88,6 +88,9 @@ namespace Hedwig {
   public:
     virtual ~DuplexChannel() {}
 
+    // Return the channel handler bound with a channel
+    virtual ChannelHandlerPtr getChannelHandler() = 0;
+
     // Issues a connect request to the target host
     // User could writeRequest after issued connect request, those requests should
     // be buffered and written until the channel is connected.
@@ -156,25 +159,6 @@ namespace Hedwig {
 
   typedef boost::shared_ptr<SSLContextFactory> SSLContextFactoryPtr;
 
-  class DuplexChannelManager;
-  typedef boost::shared_ptr<DuplexChannelManager> DuplexChannelManagerPtr;
-
-  class DuplexChannelManager : public boost::enable_shared_from_this<DuplexChannelManager> {
-  public:
-    static DuplexChannelManagerPtr create(const Configuration& conf,
-                                          EventDispatcher& dispatcher);
-    ~DuplexChannelManager();
-
-    DuplexChannelPtr createChannel(const HostAddress& addr, const ChannelHandlerPtr& handler);
-  private:
-    DuplexChannelManager(const Configuration& conf, EventDispatcher& dispatcher);
-
-    const Configuration& conf;
-    EventDispatcher& dispatcher;
-    bool sslEnabled;
-    SSLContextFactoryPtr sslCtxFactory;
-  };
-
   class AbstractDuplexChannel;
   typedef boost::shared_ptr<AbstractDuplexChannel> AbstractDuplexChannelPtr;
 
@@ -185,6 +169,8 @@ namespace Hedwig {
                           const HostAddress& addr, 
                           const ChannelHandlerPtr& handler);
     virtual ~AbstractDuplexChannel();
+
+    virtual ChannelHandlerPtr getChannelHandler();
 
     //
     // Connect Operation

@@ -19,10 +19,11 @@
 #include <config.h>
 #endif
 
+#include <string>
+#include <log4cxx/logger.h>
+
 #include "publisherimpl.h"
 #include "channel.h"
-
-#include <log4cxx/logger.h>
 
 static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("hedwig."__FILE__));
 
@@ -48,31 +49,19 @@ void PublishResponseAdaptor::operationFailed(const std::exception& exception) {
   pubCallback->operationFailed(exception);
 }
 
-PublishWriteCallback::PublishWriteCallback(const ClientImplPtr& client, const PubSubDataPtr& data) : client(client), data(data) {}
-
-void PublishWriteCallback::operationComplete() {
-  LOG4CXX_DEBUG(logger, "Successfully wrote transaction: " << data->getTxnId());
-}
-
-void PublishWriteCallback::operationFailed(const std::exception& exception) {
-  LOG4CXX_ERROR(logger, "Error writing to publisher " << exception.what());
-  
-  data->getCallback()->operationFailed(exception);
-}
-
-PublisherImpl::PublisherImpl(const ClientImplPtr& client) 
-  : client(client) {
+PublisherImpl::PublisherImpl(const DuplexChannelManagerPtr& channelManager)
+  : channelManager(channelManager) {
 }
 
 PublishResponsePtr PublisherImpl::publish(const std::string& topic, const Message& message) {
-  SyncCallback<PublishResponsePtr>* cb =
-    new SyncCallback<PublishResponsePtr>(client->getConfiguration().getInt(Configuration::SYNC_REQUEST_TIMEOUT, 
-											                                                     DEFAULT_SYNC_REQUEST_TIMEOUT));
+  SyncCallback<PublishResponsePtr>* cb = new SyncCallback<PublishResponsePtr>(
+    channelManager->getConfiguration().getInt(Configuration::SYNC_REQUEST_TIMEOUT,
+                                              DEFAULT_SYNC_REQUEST_TIMEOUT));
   PublishResponseCallbackPtr callback(cb);
   asyncPublishWithResponse(topic, message, callback);
   cb->wait();
-  
-  cb->throwExceptionIfNeeded();  
+
+  cb->throwExceptionIfNeeded();
   return cb->getResult();
 }
 
@@ -82,13 +71,15 @@ PublishResponsePtr PublisherImpl::publish(const std::string& topic, const std::s
   return publish(topic, msg);
 }
 
-void PublisherImpl::asyncPublish(const std::string& topic, const Message& message, const OperationCallbackPtr& callback) {
+void PublisherImpl::asyncPublish(const std::string& topic, const Message& message,
+                                 const OperationCallbackPtr& callback) {
   // use release after callback to release the channel after the callback is called
   ResponseCallbackPtr respCallback(new ResponseCallbackAdaptor(callback));
   doPublish(topic, message, respCallback);
 }
 
-void PublisherImpl::asyncPublish(const std::string& topic, const std::string& message, const OperationCallbackPtr& callback) {
+void PublisherImpl::asyncPublish(const std::string& topic, const std::string& message,
+                                 const OperationCallbackPtr& callback) {
   Message msg;
   msg.set_body(message);
   asyncPublish(topic, msg, callback);
@@ -100,22 +91,26 @@ void PublisherImpl::asyncPublishWithResponse(const std::string& topic, const Mes
   doPublish(topic, message, respCallback);
 }
 
-void PublisherImpl::doPublish(const std::string& topic, const Message& message, const ResponseCallbackPtr& callback) {
-  PubSubDataPtr data = PubSubData::forPublishRequest(client->counter().next(), topic, message, callback);
-  
-  DuplexChannelPtr channel = client->getChannel(topic);
-
-  doPublish(channel, data);
+void PublisherImpl::doPublish(const std::string& topic, const Message& message,
+                              const ResponseCallbackPtr& callback) {
+  PubSubDataPtr data = PubSubData::forPublishRequest(channelManager->nextTxnId(),
+                                                     topic, message, callback);
+  LOG4CXX_INFO(logger, "Publish message (topic:" << data->getTopic() << ", txn:"
+                       << data->getTxnId() << ").");
+  channelManager->submitOp(data);
 }
 
-void PublisherImpl::doPublish(const DuplexChannelPtr& channel, const PubSubDataPtr& data) {
-  channel->storeTransaction(data);
-  
-  OperationCallbackPtr writecb(new PublishWriteCallback(client, data));
-  channel->writeRequest(data->getRequest(), writecb);
+//
+// Publish Response Handler
+//
+PublishResponseHandler::PublishResponseHandler(const DuplexChannelManagerPtr& channelManager)
+  : ResponseHandler(channelManager) {
+  LOG4CXX_DEBUG(logger, "Created PublishResponseHandler for ChannelManager " << channelManager.get());
 }
 
-void PublisherImpl::messageHandler(const PubSubResponsePtr& m, const PubSubDataPtr& txn) {
+void PublishResponseHandler::handleResponse(const PubSubResponsePtr& m,
+                                            const PubSubDataPtr& txn,
+                                            const DuplexChannelPtr& channel) {
   switch (m->statuscode()) {
   case SUCCESS:
     if (m->has_responsebody()) {
@@ -127,6 +122,9 @@ void PublisherImpl::messageHandler(const PubSubResponsePtr& m, const PubSubDataP
   case SERVICE_DOWN:
     LOG4CXX_ERROR(logger, "Server responsed with SERVICE_DOWN for " << txn->getTxnId());
     txn->getCallback()->operationFailed(ServiceDownException());
+    break;
+  case NOT_RESPONSIBLE_FOR_TOPIC:
+    redirectRequest(m, txn, channel);
     break;
   default:
     LOG4CXX_ERROR(logger, "Unexpected response " << m->statuscode() << " for " << txn->getTxnId());

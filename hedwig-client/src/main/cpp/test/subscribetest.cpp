@@ -151,6 +151,40 @@ TEST(SubscribeTest, testUnsubscribeWithoutSubscribe) {
   ASSERT_THROW(sub.unsubscribe("testTopic", "mySubscriberId-7"), Hedwig::NotSubscribedException);
 }
 
+TEST(SubscribeTest, testAsyncSubscribeTwice) {
+  Hedwig::Configuration* conf = new TestServerConfiguration();
+  std::auto_ptr<Hedwig::Configuration> confptr(conf);
+  
+  Hedwig::Client* client = new Hedwig::Client(*conf);
+  std::auto_ptr<Hedwig::Client> clientptr(client);
+
+  Hedwig::Subscriber& sub = client->getSubscriber();
+
+  SimpleWaitCondition* cond1 = new SimpleWaitCondition();
+  std::auto_ptr<SimpleWaitCondition> cond1ptr(cond1);
+  SimpleWaitCondition* cond2 = new SimpleWaitCondition();
+  std::auto_ptr<SimpleWaitCondition> cond2ptr(cond2);
+  
+  Hedwig::OperationCallbackPtr testcb1(new TestCallback(cond1));
+  Hedwig::OperationCallbackPtr testcb2(new TestCallback(cond2));
+
+  std::string topic("testAsyncSubscribeTwice");
+  std::string subid("mysubid");
+
+  sub.asyncSubscribe(topic, subid,
+                     Hedwig::SubscribeRequest::CREATE_OR_ATTACH, testcb1);
+  sub.asyncSubscribe(topic, subid,
+                     Hedwig::SubscribeRequest::CREATE_OR_ATTACH, testcb2);
+  cond1->wait();
+  cond2->wait();
+
+  if (cond1->wasSuccess()) {
+    ASSERT_TRUE(!cond2->wasSuccess());
+  } else {
+    ASSERT_TRUE(cond2->wasSuccess());
+  }
+}
+
 TEST(SubscribeTest, testSubscribeTwice) {
   Hedwig::Configuration* conf = new TestServerConfiguration();
   std::auto_ptr<Hedwig::Configuration> confptr(conf);

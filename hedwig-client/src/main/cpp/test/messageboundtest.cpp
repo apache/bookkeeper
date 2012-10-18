@@ -52,7 +52,7 @@ public:
   }
 
   virtual void consume(const std::string& topic, const std::string& subscriberId,
-		       const Hedwig::Message& msg, Hedwig::OperationCallbackPtr& callback) {
+                       const Hedwig::Message& msg, Hedwig::OperationCallbackPtr& callback) {
     boost::lock_guard<boost::mutex> lock(mutex);
       
     int thisMsg = atoi(msg.body().c_str());
@@ -118,7 +118,7 @@ TEST(MessageBoundTest, testMessageBound) {
   Hedwig::Subscriber& sub = client->getSubscriber();
   Hedwig::Publisher& pub = client->getPublisher();
 
-  std::string topic = "testTopic";
+  std::string topic = "testMessageBound";
   std::string subid = "testSubId";
   sub.subscribe(topic, subid, Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
   sub.closeSubscription(topic, subid);
@@ -145,7 +145,7 @@ TEST(MessageBoundTest, testMultipleSubscribers) {
   Hedwig::SubscriptionOptions optionsUnlimited;
   optionsUnlimited.set_createorattach(Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
 
-  std::string topic = "testTopic";
+  std::string topic = "testMultipleSubscribers";
   std::string subid5 = "testSubId5";
   std::string subid20 = "testSubId20";
   std::string subidUnlimited = "testSubIdUnlimited";

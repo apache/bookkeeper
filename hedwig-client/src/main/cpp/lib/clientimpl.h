@@ -164,22 +164,301 @@ namespace Hedwig {
     int timeout;
   };
 
+  class DuplexChannelManager;
+  typedef boost::shared_ptr<DuplexChannelManager> DuplexChannelManagerPtr;
+
+  //
+  // Hedwig Response Handler
+  //
+
+  // Response Handler used to process response for different types of requests
+  class ResponseHandler {
+  public:
+    ResponseHandler(const DuplexChannelManagerPtr& channelManager); 
+    virtual ~ResponseHandler() {};
+
+    virtual void handleResponse(const PubSubResponsePtr& m, const PubSubDataPtr& txn,
+                                const DuplexChannelPtr& channel) = 0;
+  protected:
+    // common method used to redirect request
+    void redirectRequest(const PubSubResponsePtr& response, const PubSubDataPtr& data,
+                         const DuplexChannelPtr& channel);
+
+    // channel manager to manage all established channels
+    const DuplexChannelManagerPtr channelManager;
+  };
+
+  typedef boost::shared_ptr<ResponseHandler> ResponseHandlerPtr;
+  typedef std::tr1::unordered_map<OperationType, ResponseHandlerPtr, OperationTypeHash> ResponseHandlerMap;
+
+  class PubSubWriteCallback : public OperationCallback {
+  public:
+    PubSubWriteCallback(const DuplexChannelPtr& channel, const PubSubDataPtr& data); 
+    virtual void operationComplete();
+    virtual void operationFailed(const std::exception& exception);
+  private:
+    DuplexChannelPtr channel;
+    PubSubDataPtr data;
+  };
+
+  class DefaultServerConnectCallback : public OperationCallback {
+  public:
+    DefaultServerConnectCallback(const DuplexChannelManagerPtr& channelManager,
+                                 const DuplexChannelPtr& channel,
+                                 const PubSubDataPtr& data);
+    virtual void operationComplete();
+    virtual void operationFailed(const std::exception& exception);
+  private:
+    DuplexChannelManagerPtr channelManager;
+    DuplexChannelPtr channel;
+    PubSubDataPtr data;
+  };
+
+  struct SubscriptionListenerPtrHash : public std::unary_function<SubscriptionListenerPtr, size_t> {
+    size_t operator()(const Hedwig::SubscriptionListenerPtr& listener) const {
+      return reinterpret_cast<size_t>(listener.get());
+    }
+  };
+
+  // Subscription Event Emitter
+  class SubscriptionEventEmitter {
+  public:
+    SubscriptionEventEmitter();
+
+    void addSubscriptionListener(SubscriptionListenerPtr& listener);
+    void removeSubscriptionListener(SubscriptionListenerPtr& listener);
+    void emitSubscriptionEvent(const std::string& topic,
+                               const std::string& subscriberId,
+                               const SubscriptionEvent event);
+
+  private:
+    typedef std::tr1::unordered_set<SubscriptionListenerPtr, SubscriptionListenerPtrHash> SubscriptionListenerSet;
+    SubscriptionListenerSet listeners;
+    boost::shared_mutex listeners_lock;
+  };
+
+  class SubscriberClientChannelHandler;
+
+  //
+  // Duplex Channel Manager to manage all established channels
+  //
+
+  class DuplexChannelManager : public boost::enable_shared_from_this<DuplexChannelManager> {
+  public:
+    static DuplexChannelManagerPtr create(const Configuration& conf);
+    virtual ~DuplexChannelManager();
+
+    inline const Configuration& getConfiguration() const {
+      return conf;
+    }
+
+    // Submit a pub/sub request
+    void submitOp(const PubSubDataPtr& op);
+
+    // Submit a pub/sub request to default host
+    // It is called only when client doesn't have the knowledge of topic ownership
+    void submitOpToDefaultServer(const PubSubDataPtr& op);
+
+    // Redirect pub/sub request to a target hosts
+    void redirectOpToHost(const PubSubDataPtr& op, const HostAddress& host);
+
+    // Submit a pub/sub request thru established channel
+    // It is called when connecting to default server to established a channel
+    void submitOpThruChannel(const PubSubDataPtr& op, const DuplexChannelPtr& channel);
+
+    // Generate next transaction id for pub/sub requests sending thru this manager
+    long nextTxnId();
+
+    // return default host
+    inline const HostAddress& getDefaultHost() { return defaultHost; }
+
+    // set the owner host of a topic
+    void setHostForTopic(const std::string& topic, const HostAddress& host);
+
+    // clear all topics that hosted by a hub server
+    void clearAllTopicsForHost(const HostAddress& host);
+
+    // clear host for a given topic
+    void clearHostForTopic(const std::string& topic, const HostAddress& host);
+
+    // Called when a channel is disconnected
+    void nonSubscriptionChannelDied(const DuplexChannelPtr& channel);
+
+    // Remove a channel from all channel map
+    void removeChannel(const DuplexChannelPtr& channel);
+
+    // Get the subscription channel handler for a given subscription
+    virtual boost::shared_ptr<SubscriberClientChannelHandler>
+            getSubscriptionChannelHandler(const TopicSubscriber& ts) = 0;
+
+    // Close subscription for a given subscription
+    virtual void asyncCloseSubscription(const TopicSubscriber& ts,
+                                        const OperationCallbackPtr& callback) = 0;
+
+    virtual void handoverDelivery(const TopicSubscriber& ts,
+                                  const MessageHandlerCallbackPtr& handler,
+                                  const ClientMessageFilterPtr& filter) = 0;
+
+    // start the channel manager
+    virtual void start();
+    // close the channel manager
+    virtual void close();
+    // whether the channel manager is closed
+    bool isClosed();
+
+    // Return an available service
+    inline boost::asio::io_service & getService() const {
+      return dispatcher->getService()->getService();
+    }
+
+    // Return the event emitter
+    inline SubscriptionEventEmitter& getEventEmitter() {
+      return eventEmitter;
+    }
+
+  protected:
+    DuplexChannelManager(const Configuration& conf);
+
+    // Get the ownership for a given topic.
+    const HostAddress& getHostForTopic(const std::string& topic);
+
+    //
+    // Channel Management
+    //
+
+    // Non subscription channel management
+
+    // Get a non subscription channel for a given topic
+    // If the topic's owner is known, retrieve a subscription channel to
+    // target host (if there is no channel existed, create one);
+    // If the topic's owner is unknown, return null
+    DuplexChannelPtr getNonSubscriptionChannel(const std::string& topic);
+
+    // Get an existed non subscription channel to a given host
+    DuplexChannelPtr getNonSubscriptionChannel(const HostAddress& addr);
+
+    // Create a non subscription channel to a given host
+    DuplexChannelPtr createNonSubscriptionChannel(const HostAddress& addr);
+
+    // Store the established non subscription channel
+    DuplexChannelPtr storeNonSubscriptionChannel(const DuplexChannelPtr& ch,
+                                                 bool doConnect); 
+
+    //
+    // Subscription Channel Management
+    //
+
+    // Get a subscription channel for a given subscription.
+    // If there is subscription channel established before, return it.
+    // Otherwise, check whether the topic's owner is known. If the topic owner
+    // is known, retrieve a subscription channel to target host (if there is no
+    // channel exsited, create one); If unknown, return null
+    virtual DuplexChannelPtr getSubscriptionChannel(const TopicSubscriber& ts,
+                                                    const bool isResubscribeRequest) = 0;
+
+    // Get an existed subscription channel to a given host
+    virtual DuplexChannelPtr getSubscriptionChannel(const HostAddress& addr) = 0;
+
+    // Create a subscription channel to a given host
+    // If store is true, store the channel for future usage.
+    // If store is false, return a newly created channel.
+    virtual DuplexChannelPtr createSubscriptionChannel(const HostAddress& addr) = 0;
+
+    // Store the established subscription channel
+    virtual DuplexChannelPtr storeSubscriptionChannel(const DuplexChannelPtr& ch,
+                                                      bool doConnect) = 0;
+
+    //
+    // Raw Channel Management
+    //
+
+    // Create a raw channel
+    DuplexChannelPtr createChannel(IOServicePtr& service,
+                                   const HostAddress& addr, const ChannelHandlerPtr& handler);
+
+    // event dispatcher running io threads
+    typedef boost::shared_ptr<EventDispatcher> EventDispatcherPtr;
+    EventDispatcherPtr dispatcher;
+
+    // topic2host mapping for topic ownership
+    std::tr1::unordered_map<std::string, HostAddress> topic2host;
+    boost::shared_mutex topic2host_lock;
+    typedef std::tr1::unordered_set<std::string> TopicSet;
+    typedef boost::shared_ptr<TopicSet> TopicSetPtr;
+    typedef std::tr1::unordered_map<HostAddress, TopicSetPtr, HostAddressHash> Host2TopicsMap;
+    Host2TopicsMap host2topics;
+    boost::shared_mutex host2topics_lock;
+  private:
+    // write the request to target channel
+    void submitTo(const PubSubDataPtr& op, const DuplexChannelPtr& channel);
+
+    const Configuration& conf;
+    bool sslEnabled;
+    SSLContextFactoryPtr sslCtxFactory;
+
+    // whether the channel manager is shutting down
+    bool closed;
+
+    // counter used for generating transaction ids
+    ClientTxnCounter counterobj;
+
+    // default host
+    HostAddress defaultHost;
+
+    // non-subscription channels
+    std::tr1::unordered_map<HostAddress, DuplexChannelPtr, HostAddressHash > host2channel;
+    boost::shared_mutex host2channel_lock;
+
+    // maintain all established channels
+    typedef std::tr1::unordered_set<DuplexChannelPtr, DuplexChannelPtrHash > ChannelMap;
+    ChannelMap allchannels;
+    boost::shared_mutex allchannels_lock;
+
+    // Response Handlers for non-subscription requests
+    ResponseHandlerMap nonSubscriptionHandlers;
+
+    // Subscription Event Emitter
+    SubscriptionEventEmitter eventEmitter;
+  };
+
+  //
+  // Hedwig Client Channel Handler to handle responses received from the channel
+  //
+
   class HedwigClientChannelHandler : public ChannelHandler {
   public:
-    HedwigClientChannelHandler(const ClientImplPtr& client);
+    HedwigClientChannelHandler(const DuplexChannelManagerPtr& channelManager,
+                               ResponseHandlerMap& handlers);
+    virtual ~HedwigClientChannelHandler() {}
     
     virtual void messageReceived(const DuplexChannelPtr& channel, const PubSubResponsePtr& m);
     virtual void channelConnected(const DuplexChannelPtr& channel);
     virtual void channelDisconnected(const DuplexChannelPtr& channel, const std::exception& e);
     virtual void exceptionOccurred(const DuplexChannelPtr& channel, const std::exception& e);
-    
+
+    void close();
   protected:
-    const ClientImplPtr client;
+    // real channel disconnected logic
+    virtual void onChannelDisconnected(const DuplexChannelPtr& channel);
+
+    // real close logic
+    virtual void doClose();
+
+    // channel manager to manage all established channels
+    const DuplexChannelManagerPtr channelManager;
+    ResponseHandlerMap& handlers;
+
+    boost::shared_mutex close_lock;
+    // Boolean indicating if we closed the handler explicitly or not.
+    // If so, we do not need to do the channel disconnected logic here.
+    bool closed;
+    // whether channel is disconnected.
+    bool disconnected;
   };
   
   class PublisherImpl;
   class SubscriberImpl;
-  
+
   /**
      Implementation of the hedwig client. This class takes care of globals such as the topic->host map and the transaction id counter.
   */
@@ -191,29 +470,8 @@ namespace Hedwig {
     Subscriber& getSubscriber();
     Publisher& getPublisher();
 
-    ClientTxnCounter& counter();
-
-    void redirectRequest(const DuplexChannelPtr& channel, PubSubDataPtr& data, const PubSubResponsePtr& response);
-
-    const HostAddress& getHostForTopic(const std::string& topic);
-
-    //DuplexChannelPtr getChannelForTopic(const std::string& topic, OperationCallback& callback);
-    //DuplexChannelPtr createChannelForTopic(const std::string& topic, ChannelHandlerPtr& handler, OperationCallback& callback);
-    DuplexChannelPtr createChannel(const std::string& topic, const ChannelHandlerPtr& handler);    
-    DuplexChannelPtr getChannel(const std::string& topic);
-
-    void setHostForTopic(const std::string& topic, const HostAddress& host);
-
-    void setChannelForHost(const HostAddress& address, const DuplexChannelPtr& channel);
-    void channelDied(const DuplexChannelPtr& channel);
-    void removeAndCloseChannel(const DuplexChannelPtr& channel);
-    bool shuttingDown() const;
-    
     SubscriberImpl& getSubscriberImpl();
     PublisherImpl& getPublisherImpl();
-
-    const Configuration& getConfiguration();
-    boost::asio::io_service& getService();
 
     ~ClientImpl();
   private:
@@ -227,27 +485,8 @@ namespace Hedwig {
     boost::mutex subscribercreate_lock;
     SubscriberImpl* subscriber;
 
-    ClientTxnCounter counterobj;
-
-    typedef boost::shared_ptr<EventDispatcher> EventDispatcherPtr;
-    EventDispatcherPtr dispatcher;
+    // channel manager manage all channels for the client
     DuplexChannelManagerPtr channelManager;
-
-    typedef std::tr1::unordered_multimap<HostAddress, std::string, HostAddressHash > Host2TopicsMap;
-    Host2TopicsMap host2topics;
-    boost::shared_mutex host2topics_lock;
-    HostAddress defaultHost;
-
-    std::tr1::unordered_map<HostAddress, DuplexChannelPtr, HostAddressHash > host2channel;
-    boost::shared_mutex host2channel_lock;
-    std::tr1::unordered_map<std::string, HostAddress> topic2host;
-    boost::shared_mutex topic2host_lock;
-
-    typedef std::tr1::unordered_set<DuplexChannelPtr, DuplexChannelPtrHash > ChannelMap;
-    ChannelMap allchannels;
-    boost::shared_mutex allchannels_lock;
-
-    bool shuttingDownFlag;
   };
 };
 #endif

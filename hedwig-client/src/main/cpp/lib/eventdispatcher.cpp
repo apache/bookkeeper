@@ -66,11 +66,13 @@ EventDispatcher::EventDispatcher(const Configuration& conf)
   num_threads = conf.getInt(Configuration::NUM_DISPATCH_THREADS,
                             DEFAULT_NUM_DISPATCH_THREADS);
   if (0 == num_threads) {
+    LOG4CXX_ERROR(logger, "Number of threads in dispatcher is zero");
     throw std::runtime_error("number of threads in dispatcher is zero");
   }
   for (size_t i = 0; i < num_threads; i++) {
     services.push_back(IOServicePtr(new IOService()));
   }
+  LOG4CXX_DEBUG(logger, "Created EventDispatcher " << this);
 }
 
 void EventDispatcher::run_forever(IOServicePtr service, size_t idx) {

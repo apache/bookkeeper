@@ -51,7 +51,10 @@ namespace Hedwig {
 
     virtual void stopDelivery(const std::string& topic, const std::string& subscriberId) = 0;
 
+    virtual bool hasSubscription(const std::string& topic, const std::string& subscriberId) = 0;
     virtual void closeSubscription(const std::string& topic, const std::string& subscriberId) = 0;
+    virtual void asyncCloseSubscription(const std::string& topic, const std::string& subscriberId,
+                                        const OperationCallbackPtr& callback) = 0;
 
     //
     // API to register/unregister subscription listeners for receiving

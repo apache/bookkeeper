@@ -30,131 +30,254 @@
 #endif
 
 #include <deque>
+#include <iostream>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/thread/shared_mutex.hpp>
 
 namespace Hedwig {
-  class SubscriberWriteCallback : public OperationCallback {
-  public:
-    SubscriberWriteCallback(const ClientImplPtr& client, const PubSubDataPtr& data);
 
-    void operationComplete();
-    void operationFailed(const std::exception& exception);
-  private:
-    const ClientImplPtr client;
-    const PubSubDataPtr data;
-  };
-  
-  class UnsubscribeWriteCallback : public OperationCallback {
-  public:
-    UnsubscribeWriteCallback(const ClientImplPtr& client, const PubSubDataPtr& data);
-
-    void operationComplete();
-    void operationFailed(const std::exception& exception);
-  private:
-    const ClientImplPtr client;
-    const PubSubDataPtr data;
-  };
+  class ActiveSubscriber;
+  typedef boost::shared_ptr<ActiveSubscriber> ActiveSubscriberPtr;
 
   class ConsumeWriteCallback : public OperationCallback {
   public:
-    ConsumeWriteCallback(const ClientImplPtr& client, const PubSubDataPtr& data);
-    ~ConsumeWriteCallback();
+    ConsumeWriteCallback(const ActiveSubscriberPtr& activeSubscriber,
+                         const PubSubDataPtr& data,
+                         int retrywait);
+    virtual ~ConsumeWriteCallback();
 
     void operationComplete();
     void operationFailed(const std::exception& exception);
-    
-    static void timerComplete(const ClientImplPtr& client, const PubSubDataPtr& data, const boost::system::error_code& error);
+
+    static void timerComplete(const ActiveSubscriberPtr& activeSubscriber,
+                              const PubSubDataPtr& data,
+                              const boost::system::error_code& error);
   private:
-    const ClientImplPtr client;
+    const ActiveSubscriberPtr activeSubscriber;
     const PubSubDataPtr data;
-    };
-
-  class SubscriberReconnectCallback : public ResponseCallback {
-  public: 
-    SubscriberReconnectCallback(const ClientImplPtr& client, const PubSubDataPtr& origData);
-
-    void operationComplete(const ResponseBody & resp);
-    void operationFailed(const std::exception& exception);
-  private:
-    const ClientImplPtr client;
-    const PubSubDataPtr origData;
+    int retrywait;
   };
 
   class SubscriberClientChannelHandler;
   typedef boost::shared_ptr<SubscriberClientChannelHandler> SubscriberClientChannelHandlerPtr;
 
   class SubscriberConsumeCallback : public OperationCallback {
-  public: 
-    SubscriberConsumeCallback(const ClientImplPtr& client, const SubscriberClientChannelHandlerPtr& handler, const PubSubDataPtr& data, const PubSubResponsePtr& m);
-
+  public:
+    SubscriberConsumeCallback(const DuplexChannelManagerPtr& channelManager,
+                              const ActiveSubscriberPtr& activeSubscriber,
+                              const PubSubResponsePtr& m);
     void operationComplete();
     void operationFailed(const std::exception& exception);
-    static void timerComplete(const SubscriberClientChannelHandlerPtr handler, 
-			      const PubSubResponsePtr m, 
-			      const boost::system::error_code& error);
-
+    static void timerComplete(const ActiveSubscriberPtr activeSubscriber,
+                              const PubSubResponsePtr m,
+                              const boost::system::error_code& error);
   private:
-    const ClientImplPtr client;
-    const SubscriberClientChannelHandlerPtr handler;
-    
-    const PubSubDataPtr data;
+    const DuplexChannelManagerPtr channelManager;
+    const ActiveSubscriberPtr activeSubscriber;
     const PubSubResponsePtr m;
   };
 
-  class SubscriberClientChannelHandler : public HedwigClientChannelHandler, 
-					 public boost::enable_shared_from_this<SubscriberClientChannelHandler> {
-  public: 
-    SubscriberClientChannelHandler(const ClientImplPtr& client, SubscriberImpl& subscriber,
-                                   const PubSubDataPtr& data);
-    ~SubscriberClientChannelHandler();
-
-    void messageReceived(const DuplexChannelPtr& channel, const PubSubResponsePtr& m);
-    void channelDisconnected(const DuplexChannelPtr& channel, const std::exception& e);
-
-    void startDelivery(const MessageHandlerCallbackPtr& handler);
-    void stopDelivery();
-
-    void handoverDelivery(const SubscriberClientChannelHandlerPtr& newHandler);
-
-    void setChannel(const DuplexChannelPtr& channel);
-    DuplexChannelPtr& getChannel();
-
-    void reconnect(const DuplexChannelPtr& channel, const std::exception& e);
-
-    static void reconnectTimerComplete(const SubscriberClientChannelHandlerPtr handler, const DuplexChannelPtr channel, const std::exception e, 
-				       const boost::system::error_code& error);
-
-    void close();
+  class CloseSubscriptionForUnsubscribeCallback : public OperationCallback {
+  public:
+    CloseSubscriptionForUnsubscribeCallback(const DuplexChannelManagerPtr& channelManager,
+                                            const std::string& topic,
+                                            const std::string& subscriberId,
+                                            const OperationCallbackPtr& unsubCb);
+    virtual void operationComplete();
+    virtual void operationFailed(const std::exception& exception);
   private:
+    const DuplexChannelManagerPtr channelManager;
+    const std::string topic;
+    const std::string subscriberId;
+    const OperationCallbackPtr unsubCb;
+  };
 
-    SubscriberImpl& subscriber;
+  // A instance handle all actions belongs to a subscription
+  class ActiveSubscriber : public boost::enable_shared_from_this<ActiveSubscriber> {
+  public:
+    ActiveSubscriber(const PubSubDataPtr& data,
+                     const AbstractDuplexChannelPtr& channel,
+                     const SubscriptionPreferencesPtr& preferences,
+                     const DuplexChannelManagerPtr& channelManager);
+    virtual ~ActiveSubscriber() {}
+
+    // Get the topic
+    const std::string& getTopic() const;
+
+    // Get the subscriber id
+    const std::string& getSubscriberId() const;
+
+    inline MessageHandlerCallbackPtr getMessageHandler() const {
+      return handler;
+    }
+
+    inline const AbstractDuplexChannelPtr& getChannel() const {
+      return channel;
+    }
+
+    // Deliver a received message
+    void deliverMessage(const PubSubResponsePtr& m);
+
+    //
+    // Start Delivery. If filter is null, just start delivery w/o filter 
+    // otherwise start delivery with the given filter.
+    // 
+    void startDelivery(const MessageHandlerCallbackPtr& handler,
+                       const ClientMessageFilterPtr& filter);
+
+    // Stop Delivery
+    virtual void stopDelivery();
+
+    // Consume message
+    void consume(const MessageSeqId& messageSeqId);
+
+    // Process Event received from subscription channel
+    void processEvent(const std::string &topic, const std::string &subscriberId,
+                      const SubscriptionEvent event);
+
+    // handover message delivery to other subscriber
+    void handoverDelivery();
+
+    // Is resubscribe required
+    inline bool isResubscribeRequired() {
+      return origData->getSubscriptionOptions().enableresubscribe();
+    }
+
+    // Resubscribe the subscriber
+    void resubscribe();
+
+    // Close the ActiveSubscriber
+    void close();
+
+    friend std::ostream& operator<<(std::ostream& os, const ActiveSubscriber& subscriber);
+  protected:
+    // Wait to resubscribe
+    void waitToResubscribe();
+
+    void retryTimerComplete(const boost::system::error_code& error);
+
+    // Start Delivery with a message filter
+    virtual void doStartDelivery(const MessageHandlerCallbackPtr& handler,
+                                 const ClientMessageFilterPtr& filter);
+
+    // Stop Delivery
+    virtual void doStopDelivery();
+
+    // Queue message when message handler is not ready
+    virtual void queueMessage(const PubSubResponsePtr& m);
+
+    AbstractDuplexChannelPtr channel;
+
     boost::shared_mutex queue_lock;
     std::deque<PubSubResponsePtr> queue;
 
-    MessageHandlerCallbackPtr handler;
-    PubSubDataPtr origData;
-    DuplexChannelPtr channel;
-    bool closed;
+  private:
+    enum DeliveryState {
+      STARTING_DELIVERY,
+      STARTED_DELIVERY,
+      STOPPED_DELIVERY,
+    };
 
-    boost::shared_mutex disconnected_lock;
+    inline void setDeliveryState(DeliveryState state) {
+      {
+        boost::lock_guard<boost::shared_mutex> lock(deliverystate_lock);
+        deliverystate = state;
+      }
+    }
+
+    boost::shared_mutex deliverystate_lock;
+    DeliveryState deliverystate;
+
+    // Keep original handler and filter to handover when resubscribed
+    MessageHandlerCallbackPtr origHandler;
+    ClientMessageFilterPtr origFilter;
+
+    MessageHandlerCallbackPtr handler;
+
+    const PubSubDataPtr origData;
+    const SubscriptionPreferencesPtr preferences;
+
+    DuplexChannelManagerPtr channelManager;
+
+    // variables used for resubscribe
     bool should_wait;
-    bool disconnected;
-    typedef boost::shared_ptr<boost::asio::deadline_timer> ReconnectTimerPtr;
-    ReconnectTimerPtr reconnectTimer;
+    typedef boost::shared_ptr<boost::asio::deadline_timer> RetryTimerPtr;
+    RetryTimerPtr retryTimer;
   };
 
-  struct SubscriptionListenerPtrHash : public std::unary_function<SubscriptionListenerPtr, size_t> {
-    size_t operator()(const Hedwig::SubscriptionListenerPtr& listener) const {
-      return reinterpret_cast<size_t>(listener.get());
+  class ResubscribeCallback : public ResponseCallback {
+  public:
+    explicit ResubscribeCallback(const ActiveSubscriberPtr& activeSubscriber);
+
+    virtual void operationComplete(const ResponseBody & resp);
+    virtual void operationFailed(const std::exception& exception);
+
+  private:
+    const ActiveSubscriberPtr activeSubscriber;
+  };
+
+  class SubscriberClientChannelHandler : public HedwigClientChannelHandler,
+      public boost::enable_shared_from_this<SubscriberClientChannelHandler> {
+  public:
+    SubscriberClientChannelHandler(const DuplexChannelManagerPtr& channelManager,
+                                   ResponseHandlerMap& handlers);
+    virtual ~SubscriberClientChannelHandler();
+
+    // Deliver a received message to given message handler
+    virtual void deliverMessage(const TopicSubscriber& ts,
+                                const PubSubResponsePtr& m) = 0;
+
+    //
+    // Start Delivery for a given topic subscriber. If the filter is null,
+    // start delivery w/o filtering; otherwise start delivery with the
+    // given message filter.
+    //
+    virtual void startDelivery(const TopicSubscriber& ts,
+                               const MessageHandlerCallbackPtr& handler,
+                               const ClientMessageFilterPtr& filter) = 0;
+
+    // Stop Delivery for a given topic subscriber
+    virtual void stopDelivery(const TopicSubscriber& ts) = 0;
+
+    // Has Subscription on the Channel
+    virtual bool hasSubscription(const TopicSubscriber& ts) = 0;
+
+    // Close Subscription for a given topic subscriber
+    virtual void asyncCloseSubscription(const TopicSubscriber& ts,
+                                        const OperationCallbackPtr& callback) = 0;
+
+    // Consume message for a given topic subscriber
+    virtual void consume(const TopicSubscriber& ts,
+                         const MessageSeqId& messageSeqId) = 0;
+
+    // Message received from the underlying channel
+    virtual void messageReceived(const DuplexChannelPtr& channel, const PubSubResponsePtr& m);
+
+    // Bind the underlying channel to the subscription channel handler
+    inline void setChannel(const AbstractDuplexChannelPtr& channel) {
+      this->channel = channel;
     }
+
+    // Return the underlying channel
+    inline const AbstractDuplexChannelPtr& getChannel() const {
+      return channel;
+    }
+
+  protected:
+    // close logic for subscription channel handler
+    virtual void doClose();
+
+    // Clean the handler status
+    virtual void closeHandler() = 0;
+
+    AbstractDuplexChannelPtr channel;
   };
 
   class SubscriberImpl : public Subscriber {
   public:
-    SubscriberImpl(const ClientImplPtr& client);
+    SubscriberImpl(const DuplexChannelManagerPtr& channelManager);
     ~SubscriberImpl();
 
     void subscribe(const std::string& topic, const std::string& subscriberId, const SubscribeRequest::CreateOrAttach mode);
@@ -174,38 +297,28 @@ namespace Hedwig {
                                  const ClientMessageFilterPtr& filter);
     void stopDelivery(const std::string& topic, const std::string& subscriberId);
 
+    bool hasSubscription(const std::string& topic, const std::string& subscriberId);
     void closeSubscription(const std::string& topic, const std::string& subscriberId);
-
-    void messageHandler(const PubSubResponsePtr& m, const PubSubDataPtr& txn);
-
-    void doSubscribe(const DuplexChannelPtr& channel, const PubSubDataPtr& data, const SubscriberClientChannelHandlerPtr& handler);
-    void doUnsubscribe(const DuplexChannelPtr& channel, const PubSubDataPtr& data);
+    void asyncCloseSubscription(const std::string& topic, const std::string& subscriberId,
+                                const OperationCallbackPtr& callback);
 
     virtual void addSubscriptionListener(SubscriptionListenerPtr& listener);
     virtual void removeSubscriptionListener(SubscriptionListenerPtr& listener);
-    void emitSubscriptionEvent(const std::string& topic,
-                               const std::string& subscriberId,
-                               const SubscriptionEvent event);
 
   private:
-    void setSubscriptionPreferences(const std::string& topic, const std::string& subscriberId,
-                                    const SubscriptionPreferences& preferences);
-    const SubscriptionPreferencesPtr& getSubscriptionPreferences(
-                                    const std::string& topic, const std::string& subscriberId);
-
-  private:
-    const ClientImplPtr client;
-
-    std::tr1::unordered_map<TopicSubscriber, SubscriberClientChannelHandlerPtr, TopicSubscriberHash > topicsubscriber2handler;
-    boost::shared_mutex topicsubscriber2handler_lock;	    
-    std::tr1::unordered_map<TopicSubscriber, SubscriptionPreferencesPtr, TopicSubscriberHash> topicsubscriber2preferences;
-    boost::shared_mutex topicsubscriber2preferences_lock;	    
-
-    typedef std::tr1::unordered_set<SubscriptionListenerPtr, SubscriptionListenerPtrHash> SubscriptionListenerSet;
-    SubscriptionListenerSet listeners;
-    boost::shared_mutex listeners_lock;
+    const DuplexChannelManagerPtr channelManager;
   };
 
+  // Unsubscribe Response Handler
+
+  class UnsubscribeResponseHandler : public ResponseHandler {
+  public:
+    explicit UnsubscribeResponseHandler(const DuplexChannelManagerPtr& channelManager);
+    virtual ~UnsubscribeResponseHandler() {}
+
+    virtual void handleResponse(const PubSubResponsePtr& m, const PubSubDataPtr& txn,
+                                const DuplexChannelPtr& channel);
+  };
 };
 
 #endif

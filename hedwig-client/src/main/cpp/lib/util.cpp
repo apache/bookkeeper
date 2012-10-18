@@ -165,3 +165,19 @@ void ResponseCallbackAdaptor::operationComplete(const ResponseBody& response) {
 void ResponseCallbackAdaptor::operationFailed(const std::exception& exception) {
   opCallbackPtr->operationFailed(exception);
 }
+
+// Help Function
+std::ostream& Hedwig::operator<<(std::ostream& os, const HostAddress& host) {
+  if (host.isNullHost()) {
+    os << "(host:null)";
+  } else {
+    os << "(host:" << host.getAddressString() << ", ip=" << host.ip() << ", port="
+       << host.port() << ", ssl_port=" << host.sslPort() << ")";
+  }
+  return os;
+}
+
+std::ostream& Hedwig::operator<<(std::ostream& os, const TopicSubscriber& ts) {
+  os << "(topic:" << ts.first << ", subscriber:" << ts.second << ")";
+  return os;
+}
