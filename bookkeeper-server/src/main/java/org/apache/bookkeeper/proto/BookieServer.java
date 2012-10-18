@@ -104,6 +104,11 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         }
     }
 
+    //VisibleForTesting
+    public Bookie getBookie() {
+        return bookie;
+    }
+
     public synchronized void shutdown() {
         if (!running) {
             return;
@@ -361,6 +366,15 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         switch (h.getOpCode()) {
         case BookieProtocol.ADDENTRY:
             statType = BKStats.STATS_ADD;
+
+            if (bookie.isReadOnly()) {
+                LOG.warn("BookieServer is running as readonly mode,"
+                        + " so rejecting the request from the client!");
+                src.sendResponse(buildResponse(BookieProtocol.EREADONLY,
+                        h.getVersion(), h.getOpCode(), ledgerId, entryId));
+                break;
+            }
+
             try {
                 TimedCnxn tsrc = new TimedCnxn(src, startTime);
                 if ((flags & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD) {

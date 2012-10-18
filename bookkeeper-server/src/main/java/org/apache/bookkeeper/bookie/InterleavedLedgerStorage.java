@@ -40,8 +40,8 @@ import org.slf4j.LoggerFactory;
 class InterleavedLedgerStorage implements LedgerStorage {
     final static Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
 
-    private EntryLogger entryLogger;
-    private LedgerCache ledgerCache;
+    EntryLogger entryLogger;
+    LedgerCache ledgerCache;
     // This is the thread that garbage collects the entry logs that do not
     // contain any active ledgers in them; and compacts the entry logs that
     // has lower remaining percentage to reclaim disk space.
@@ -50,9 +50,10 @@ class InterleavedLedgerStorage implements LedgerStorage {
     // this indicates that a write has happened since the last flush
     private volatile boolean somethingWritten = false;
 
-    InterleavedLedgerStorage(ServerConfiguration conf, ActiveLedgerManager activeLedgerManager)
-            throws IOException {
-        entryLogger = new EntryLogger(conf);
+    InterleavedLedgerStorage(ServerConfiguration conf,
+            ActiveLedgerManager activeLedgerManager,
+            LedgerDirsManager ledgerDirsManager) throws IOException {
+        entryLogger = new EntryLogger(conf, ledgerDirsManager);
         ledgerCache = new LedgerCacheImpl(conf, activeLedgerManager);
         gcThread = new GarbageCollectorThread(conf, ledgerCache, entryLogger,
                 activeLedgerManager, new EntryLogCompactionScanner());

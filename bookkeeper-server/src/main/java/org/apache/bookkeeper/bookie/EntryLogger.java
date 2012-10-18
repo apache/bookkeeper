@@ -34,16 +34,17 @@ import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.IOUtils;
 
@@ -56,7 +57,10 @@ import org.apache.bookkeeper.util.IOUtils;
  */
 public class EntryLogger {
     private static final Logger LOG = LoggerFactory.getLogger(EntryLogger.class);
-    private File dirs[];
+
+    volatile File currentDir;
+    private LedgerDirsManager ledgerDirsManager;
+    private AtomicBoolean shouldCreateNewEntryLog = new AtomicBoolean(false);
 
     private long logId;
     /**
@@ -105,8 +109,9 @@ public class EntryLogger {
      * Create an EntryLogger that stores it's log files in the given
      * directories
      */
-    public EntryLogger(ServerConfiguration conf) throws IOException {
-        this.dirs = Bookie.getCurrentDirectories(conf.getLedgerDirs());
+    public EntryLogger(ServerConfiguration conf,
+            LedgerDirsManager ledgerDirsManager) throws IOException {
+        this.ledgerDirsManager = ledgerDirsManager;
         // log size limit
         this.logSizeLimit = conf.getEntryLogSizeLimit();
 
@@ -118,7 +123,7 @@ public class EntryLogger {
         LOGFILE_HEADER.put("BKLO".getBytes());
         // Find the largest logId
         logId = -1;
-        for(File dir: dirs) {
+        for (File dir : ledgerDirsManager.getAllLedgerDirs()) {
             if (!dir.exists()) {
                 throw new FileNotFoundException(
                         "Entry log directory does not exist");
@@ -142,16 +147,44 @@ public class EntryLogger {
     }
 
     protected void initialize() throws IOException {
+        // Register listener for disk full notifications.
+        ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         // create a new log to write
         createNewLog();
+    }
+
+    private LedgerDirsListener getLedgerDirsListener() {
+        return new LedgerDirsListener() {
+            @Override
+            public void diskFull(File disk) {
+                // If the current entry log disk is full, then create new entry
+                // log.
+                if (currentDir != null && currentDir.equals(disk)) {
+                    shouldCreateNewEntryLog.set(true);
+                }
+            }
+
+            @Override
+            public void diskFailed(File disk) {
+                // Nothing to handle here. Will be handled in Bookie
+            }
+
+            @Override
+            public void allDisksFull() {
+                // Nothing to handle here. Will be handled in Bookie
+            }
+
+            @Override
+            public void fatalError() {
+                // Nothing to handle here. Will be handled in Bookie
+            }
+        };
     }
 
     /**
      * Creates a new log file
      */
     void createNewLog() throws IOException {
-        List<File> list = Arrays.asList(dirs);
-        Collections.shuffle(list);
         if (logChannel != null) {
             logChannel.flush(true);
         }
@@ -160,21 +193,23 @@ public class EntryLogger {
         File newLogFile = null;
         do {
             String logFileName = Long.toHexString(++logId) + ".log";
-            for (File dir : list) {
-                newLogFile = new File(dir, logFileName);
-                if (newLogFile.exists()) {
-                    LOG.warn("Found existed entry log " + newLogFile
-                           + " when trying to create it as a new log.");
-                    newLogFile = null;
-                    break;
-                }
+            File dir = ledgerDirsManager.pickRandomWritableDir();
+            newLogFile = new File(dir, logFileName);
+            currentDir = dir;
+            if (newLogFile.exists()) {
+                LOG.warn("Found existed entry log " + newLogFile
+                        + " when trying to create it as a new log.");
+                newLogFile = null;
+                continue;
             }
         } while (newLogFile == null);
 
         logChannel = new BufferedChannel(new RandomAccessFile(newLogFile, "rw").getChannel(), 64*1024);
         logChannel.write((ByteBuffer) LOGFILE_HEADER.clear());
         channels.put(logId, logChannel);
-        for(File f: dirs) {
+
+        List<File> listOfDirs = ledgerDirsManager.getWritableLedgerDirs();
+        for (File f : listOfDirs) {
             setLastLogId(f, logId);
         }
     }
@@ -290,8 +325,16 @@ public class EntryLogger {
         }
     }
     synchronized long addEntry(long ledger, ByteBuffer entry) throws IOException {
-        if (logChannel.position() + entry.remaining() + 4 > logSizeLimit) {
+        // Create new log if logSizeLimit reached or current disk is full
+        boolean createNewLog = shouldCreateNewEntryLog.get();
+        if (createNewLog
+                || (logChannel.position() + entry.remaining() + 4 > logSizeLimit)) {
             createNewLog();
+
+            // Reset the flag
+            if (createNewLog) {
+                shouldCreateNewEntryLog.set(false);
+            }
         }
         ByteBuffer buff = ByteBuffer.allocate(4);
         buff.putInt(entry.remaining());
@@ -374,7 +417,7 @@ public class EntryLogger {
      * Whether the log file exists or not.
      */
     boolean logExists(long logId) {
-        for (File d : dirs) {
+        for (File d : ledgerDirsManager.getAllLedgerDirs()) {
             File f = new File(d, Long.toHexString(logId) + ".log");
             if (f.exists()) {
                 return true;
@@ -384,7 +427,7 @@ public class EntryLogger {
     }
 
     private File findFile(long logId) throws FileNotFoundException {
-        for(File d: dirs) {
+        for (File d : ledgerDirsManager.getAllLedgerDirs()) {
             File f = new File(d, Long.toHexString(logId)+".log");
             if (f.exists()) {
                 return f;

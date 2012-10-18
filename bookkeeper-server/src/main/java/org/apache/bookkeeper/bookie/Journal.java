@@ -32,6 +32,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.IOUtils;
@@ -111,7 +112,7 @@ class Journal extends Thread {
             return txnLogPosition;
         }
 
-        synchronized void rollLog() {
+        synchronized void rollLog() throws NoWritableLedgerDirException {
             byte buff[] = new byte[16];
             ByteBuffer bb = ByteBuffer.wrap(buff);
             // we should record <logId, logPosition> marked in markLog
@@ -120,7 +121,9 @@ class Journal extends Thread {
             bb.putLong(lastMark.getTxnLogId());
             bb.putLong(lastMark.getTxnLogPosition());
             LOG.debug("RollLog to persist last marked log : {}", lastMark);
-            for (File dir : ledgerDirectories) {
+            List<File> writableLedgerDirs = ledgerDirsManager
+                    .getWritableLedgerDirs();
+            for (File dir : writableLedgerDirs) {
                 File file = new File(dir, "lastMark");
                 FileOutputStream fos = null;
                 try {
@@ -148,7 +151,7 @@ class Journal extends Thread {
         synchronized void readLog() {
             byte buff[] = new byte[16];
             ByteBuffer bb = ByteBuffer.wrap(buff);
-            for(File dir: ledgerDirectories) {
+            for(File dir: ledgerDirsManager.getAllLedgerDirs()) {
                 File file = new File(dir, "lastMark");
                 try {
                     FileInputStream fis = new FileInputStream(file);
@@ -250,7 +253,6 @@ class Journal extends Thread {
     final int maxBackupJournals;
 
     final File journalDirectory;
-    final File ledgerDirectories[];
     final ServerConfiguration conf;
 
     private LastLogMark lastLogMark = new LastLogMark(0, 0);
@@ -259,12 +261,13 @@ class Journal extends Thread {
     LinkedBlockingQueue<QueueEntry> queue = new LinkedBlockingQueue<QueueEntry>();
 
     volatile boolean running = true;
+    private LedgerDirsManager ledgerDirsManager;
 
-    public Journal(ServerConfiguration conf) {
+    public Journal(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager) {
         super("BookieJournal-" + conf.getBookiePort());
+        this.ledgerDirsManager = ledgerDirsManager;
         this.conf = conf;
         this.journalDirectory = Bookie.getCurrentDirectory(conf.getJournalDir());
-        this.ledgerDirectories = Bookie.getCurrentDirectories(conf.getLedgerDirs());
         this.maxJournalSize = conf.getMaxJournalSize() * MB;
         this.maxBackupJournals = conf.getMaxBackupJournals();
 
@@ -314,7 +317,7 @@ class Journal extends Thread {
      * </p>
      * @see #markLog()
      */
-    public void rollLog() {
+    public void rollLog() throws NoWritableLedgerDirException {
         lastLogMark.rollLog();
     }
 

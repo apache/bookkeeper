@@ -640,7 +640,7 @@ public class BookieShell implements Tool {
 
     private synchronized Journal getJournal() throws IOException {
         if (null == journal) {
-            journal = new Journal(bkConf);
+            journal = new Journal(bkConf, new LedgerDirsManager(bkConf));
         }
         return journal;
     }

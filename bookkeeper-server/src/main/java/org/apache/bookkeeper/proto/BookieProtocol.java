@@ -165,6 +165,10 @@ public interface BookieProtocol {
      */
     public static final int EFENCED = 104;
 
+    /**
+     * The server is running as read-only mode
+     */
+    public static final int EREADONLY = 105;
 
     public static final short FLAG_NONE = 0x0;
     public static final short FLAG_DO_FENCING = 0x0001;
