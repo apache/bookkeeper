@@ -24,7 +24,9 @@ import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.data.TopicSubscriber;
 import org.apache.hedwig.filter.ServerMessageFilter;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionEvent;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
+import org.apache.hedwig.util.Callback;
 
 public class StubDeliveryManager implements DeliveryManager {
 
@@ -62,8 +64,11 @@ public class StubDeliveryManager implements DeliveryManager {
     }
 
     @Override
-    public void stopServingSubscriber(ByteString topic, ByteString subscriberId) {
+    public void stopServingSubscriber(ByteString topic, ByteString subscriberId,
+                                      SubscriptionEvent event,
+                                      Callback<Void> cb, Object ctx) {
         lastRequest.add(new TopicSubscriber(topic, subscriberId));
+        cb.operationFinished(ctx, null);
     }
 
     @Override

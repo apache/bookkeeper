@@ -23,6 +23,7 @@ import org.jboss.netty.channel.Channel;
 
 import org.apache.hedwig.client.data.PubSubData;
 import org.apache.hedwig.client.data.TopicSubscriber;
+import org.apache.hedwig.protocol.PubSubProtocol.CloseSubscriptionRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.ConsumeRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
@@ -90,6 +91,11 @@ public class NetUtils {
             // Set the UnsubscribeRequest into the outer PubSubRequest
             pubsubRequestBuilder.setUnsubscribeRequest(buildUnsubscribeRequest(pubSubData));
             break;
+        case CLOSESUBSCRIPTION:
+            // Set the CloseSubscriptionRequest into the outer PubSubRequest
+            pubsubRequestBuilder.setCloseSubscriptionRequest(
+                buildCloseSubscriptionRequest(pubSubData));
+            break;
         }
 
         // Update the PubSubData with the txnId and the requestWriteTime
@@ -131,6 +137,16 @@ public class NetUtils {
         UnsubscribeRequest.Builder unsubscribeRequestBuilder = UnsubscribeRequest.newBuilder();
         unsubscribeRequestBuilder.setSubscriberId(pubSubData.subscriberId);
         return unsubscribeRequestBuilder;
+    }
+
+    // build closesubscription request
+    private static CloseSubscriptionRequest.Builder
+        buildCloseSubscriptionRequest(PubSubData pubSubData) {
+        // Create the CloseSubscriptionRequest
+        CloseSubscriptionRequest.Builder closeSubscriptionRequestBuilder =
+            CloseSubscriptionRequest.newBuilder();
+        closeSubscriptionRequestBuilder.setSubscriberId(pubSubData.subscriberId);
+        return closeSubscriptionRequestBuilder;
     }
 
     /**

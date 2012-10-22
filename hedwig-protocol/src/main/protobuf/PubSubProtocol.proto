@@ -70,6 +70,9 @@ enum OperationType{
     //the following two are only used for the hedwig proxy
     START_DELIVERY = 4;
     STOP_DELIVERY = 5;
+    // end for requests only used for hedwig proxy
+
+    CLOSESUBSCRIPTION = 6;
 }
 
 /* A PubSubRequest is just a union of the various request types, with
@@ -95,6 +98,7 @@ message PubSubRequest{
     optional UnsubscribeRequest unsubscribeRequest = 55;
     optional StopDeliveryRequest stopDeliveryRequest = 56;
     optional StartDeliveryRequest startDeliveryRequest = 57;
+    optional CloseSubscriptionRequest closeSubscriptionRequest = 58;
 }
 
 
@@ -189,6 +193,10 @@ enum SubscriptionEvent {
     TOPIC_MOVED = 1;
     // subscription is force closed by other subscribers
     SUBSCRIPTION_FORCED_CLOSED = 2;
+}
+
+message CloseSubscriptionRequest {
+    required bytes subscriberId = 2;
 }
 
 message PubSubResponse{

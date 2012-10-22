@@ -56,6 +56,7 @@ import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.common.TerminateJVMExceptionHandler;
 import org.apache.hedwig.server.delivery.DeliveryManager;
 import org.apache.hedwig.server.delivery.FIFODeliveryManager;
+import org.apache.hedwig.server.handlers.CloseSubscriptionHandler;
 import org.apache.hedwig.server.handlers.ConsumeHandler;
 import org.apache.hedwig.server.handlers.Handler;
 import org.apache.hedwig.server.handlers.NettyHandlerBean;
@@ -227,8 +228,11 @@ public class PubSubServer {
         handlers.put(OperationType.PUBLISH, new PublishHandler(tm, pm, conf));
         handlers.put(OperationType.SUBSCRIBE,
                      new SubscribeHandler(conf, tm, dm, pm, sm, subChannelMgr));
-        handlers.put(OperationType.UNSUBSCRIBE, new UnsubscribeHandler(tm, conf, sm, dm));
+        handlers.put(OperationType.UNSUBSCRIBE,
+                     new UnsubscribeHandler(conf, tm, sm, dm, subChannelMgr));
         handlers.put(OperationType.CONSUME, new ConsumeHandler(tm, sm, conf));
+        handlers.put(OperationType.CLOSESUBSCRIPTION,
+                     new CloseSubscriptionHandler(conf, tm, sm, dm, subChannelMgr));
         handlers = Collections.unmodifiableMap(handlers);
         return handlers;
     }

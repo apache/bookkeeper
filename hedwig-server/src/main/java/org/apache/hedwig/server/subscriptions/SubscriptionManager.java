@@ -64,6 +64,21 @@ public interface SubscriptionManager {
             Callback<Void> callback, Object ctx);
 
     /**
+     * Close a particular subscription
+     *
+     * @param topic
+     *          Topic Name
+     * @param subscriberId
+     *          Subscriber Id
+     * @param callback
+     *          Callback
+     * @param ctx
+     *          Callback context
+     */
+    public void closeSubscription(ByteString topic, ByteString subscriberId,
+                                  Callback<Void> callback, Object ctx);
+
+    /**
      * Delete a particular subscription
      *
      * @param topic

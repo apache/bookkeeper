@@ -37,12 +37,14 @@ import com.google.protobuf.ByteString;
 
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.client.data.TopicSubscriber;
+import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.filter.ServerMessageFilter;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.ProtocolVersion;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
 import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionEvent;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.common.UnexpectedError;
@@ -52,11 +54,21 @@ import org.apache.hedwig.server.persistence.MapMethods;
 import org.apache.hedwig.server.persistence.PersistenceManager;
 import org.apache.hedwig.server.persistence.ScanCallback;
 import org.apache.hedwig.server.persistence.ScanRequest;
+import org.apache.hedwig.util.Callback;
 import static org.apache.hedwig.util.VarArgs.va;
 
 public class FIFODeliveryManager implements Runnable, DeliveryManager {
 
     protected static final Logger logger = LoggerFactory.getLogger(FIFODeliveryManager.class);
+
+    private static Callback<Void> NOP_CALLBACK = new Callback<Void>() {
+        @Override
+        public void operationFinished(Object ctx, Void result) {
+        }
+        @Override
+        public void operationFailed(Object ctx, PubSubException exception) {
+        }
+    };
 
     protected interface DeliveryManagerRequest {
         public void performRequest();
@@ -160,11 +172,16 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
         enqueueWithoutFailure(subscriber);
     }
 
-    public void stopServingSubscriber(ByteString topic, ByteString subscriberId) {
-        ActiveSubscriberState subState = subscriberStates.get(new TopicSubscriber(topic, subscriberId));
+    public void stopServingSubscriber(ByteString topic, ByteString subscriberId,
+                                      SubscriptionEvent event,
+                                      Callback<Void> cb, Object ctx) {
+        ActiveSubscriberState subState =
+            subscriberStates.get(new TopicSubscriber(topic, subscriberId));
 
         if (subState != null) {
-            stopServingSubscriber(subState);
+            stopServingSubscriber(subState, event, cb, ctx);
+        } else {
+            cb.operationFinished(ctx, null);
         }
     }
 
@@ -172,10 +189,19 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
      * Due to some error or disconnection or unsusbcribe, someone asks us to
      * stop serving a particular endpoint
      *
-     * @param endPoint
+     * @param subscriber
+     *          Subscriber instance
+     * @param event
+     *          Subscription event indicates why to stop subscriber.
+     * @param cb
+     *          Callback after the subscriber is stopped.
+     * @param ctx
+     *          Callback context
      */
-    protected void stopServingSubscriber(ActiveSubscriberState subscriber) {
-        enqueueWithoutFailure(new StopServingSubscriber(subscriber));
+    protected void stopServingSubscriber(ActiveSubscriberState subscriber,
+                                         SubscriptionEvent event,
+                                         Callback<Void> cb, Object ctx) {
+        enqueueWithoutFailure(new StopServingSubscriber(subscriber, event, cb, ctx));
     }
 
     /**
@@ -376,13 +402,19 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
             }
         }
 
-        public void setNotConnected() {
+        public void setNotConnected(SubscriptionEvent event) {
             // have closed it.
             if (!isConnected()) {
                 return;
             }
             this.connected = false;
-            deliveryEndPoint.close();
+            if (null != event &&
+                (SubscriptionEvent.TOPIC_MOVED == event ||
+                 SubscriptionEvent.SUBSCRIPTION_FORCED_CLOSED == event)) {
+                // for we need to close the underlying when topic moved
+                // or subscription forced closed.
+                deliveryEndPoint.close();
+            }
             // uninitialize filter
             this.filter.uninitialize();
         }
@@ -549,7 +581,11 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
 
 
         public void permanentErrorOnSend() {
-            stopServingSubscriber(this);
+            // the underlying channel is broken, the channel will
+            // be closed in UmbrellaHandler when exception happened.
+            // so we don't need to close the channel again
+            stopServingSubscriber(this, null,
+                                  NOP_CALLBACK, null);
         }
 
         public void transientErrorOnSend() {
@@ -563,10 +599,12 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
         public void performRequest() {
 
             // Put this subscriber in the channel to subscriber mapping
-            ActiveSubscriberState prevSubscriber = subscriberStates.put(new TopicSubscriber(topic, subscriberId), this);
+            ActiveSubscriberState prevSubscriber =
+                subscriberStates.put(new TopicSubscriber(topic, subscriberId), this);
 
             if (prevSubscriber != null) {
-                stopServingSubscriber(prevSubscriber);
+                stopServingSubscriber(prevSubscriber, SubscriptionEvent.SUBSCRIPTION_FORCED_CLOSED,
+                                      NOP_CALLBACK, null);
             }
 
             lastSeqIdCommunicatedExternally = lastLocalSeqIdDelivered;
@@ -589,16 +627,24 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
 
     protected class StopServingSubscriber implements DeliveryManagerRequest {
         ActiveSubscriberState subscriber;
+        SubscriptionEvent event;
+        final Callback<Void> cb;
+        final Object ctx;
 
-        public StopServingSubscriber(ActiveSubscriberState subscriber) {
+        public StopServingSubscriber(ActiveSubscriberState subscriber,
+                                     SubscriptionEvent event,
+                                     Callback<Void> callback, Object ctx) {
             this.subscriber = subscriber;
+            this.event = event;
+            this.cb = callback;
+            this.ctx = ctx;
         }
 
         @Override
         public void performRequest() {
 
             // This will automatically stop delivery, and disconnect the channel
-            subscriber.setNotConnected();
+            subscriber.setNotConnected(event);
 
             // if the subscriber has moved on, a move request for its delivery
             // pointer must be pending in the request queue. Note that the
@@ -609,6 +655,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
                               true,
                               // pruneTopic=
                               true);
+            cb.operationFinished(ctx, null);
         }
 
     }

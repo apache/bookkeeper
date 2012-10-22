@@ -38,6 +38,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionState;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionEvent;
 import org.apache.hedwig.protoextensions.MessageIdUtils;
 import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 import org.apache.hedwig.server.common.ServerConfiguration;
@@ -276,7 +277,8 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                                            + subId.toStringUtf8() + ") when losing topic");
                             }
                             if (null != dm) {
-                                dm.stopServingSubscriber(topic, subId);
+                                dm.stopServingSubscriber(topic, subId, SubscriptionEvent.TOPIC_MOVED,
+                                                         noopCallback, null);
                             }
                         }
                     }
@@ -576,6 +578,28 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
     public void setConsumeSeqIdForSubscriber(ByteString topic, ByteString subscriberId, MessageSeqId consumeSeqId,
             Callback<Void> callback, Object ctx) {
         queuer.pushAndMaybeRun(topic, new ConsumeOp(topic, subscriberId, consumeSeqId, callback, ctx));
+    }
+
+    private class CloseSubscriptionOp extends TopicOpQueuer.AsynchronousOp<Void> {
+
+        public CloseSubscriptionOp(ByteString topic, ByteString subscriberId,
+                                   Callback<Void> callback, Object ctx) {
+            queuer.super(topic, callback, ctx);
+        }
+
+        @Override
+        public void run() {
+            // TODO: BOOKKEEPER-412: we might need to move the loaded subscription
+            //                       to reclaim memory
+            // But for now we do nothing
+            cb.operationFinished(ctx, null);
+        }
+    }
+
+    @Override
+    public void closeSubscription(ByteString topic, ByteString subscriberId,
+                                  Callback<Void> callback, Object ctx) {
+        queuer.pushAndMaybeRun(topic, new CloseSubscriptionOp(topic, subscriberId, callback, ctx));
     }
 
     private class UnsubscribeOp extends TopicOpQueuer.AsynchronousOp<Void> {

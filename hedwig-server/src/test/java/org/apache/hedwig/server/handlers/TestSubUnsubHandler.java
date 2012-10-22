@@ -86,7 +86,7 @@ public class TestSubUnsubHandler extends TestCase {
         pubSubRequestPrototype = PubSubRequest.newBuilder().setProtocolVersion(ProtocolVersion.VERSION_ONE).setType(
                                      OperationType.SUBSCRIBE).setTxnId(0).setTopic(topic).setSubscribeRequest(subRequestPrototype).build();
 
-        ush = new UnsubscribeHandler(tm, conf, sm, dm);
+        ush = new UnsubscribeHandler(conf, tm, sm, dm, subChannelMgr);
     }
 
     @Test

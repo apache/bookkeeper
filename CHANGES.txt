@@ -188,6 +188,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-435: Create SubscriptionChannelManager to manage all subscription channel (sijie via ivank)
 
+        BOOKKEEPER-411: Add CloseSubscription Request for multiplexing support (sijie via ivank)
+
       hedwig-client:
 
         BOOKKEEPER-306: Change C++ client to use gtest for testing (ivank via sijie)

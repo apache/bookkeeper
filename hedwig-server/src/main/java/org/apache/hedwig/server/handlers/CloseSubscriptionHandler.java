@@ -18,15 +18,16 @@
 package org.apache.hedwig.server.handlers;
 
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFutureListener;
+
 import com.google.protobuf.ByteString;
 
-import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.client.data.TopicSubscriber;
 import org.apache.hedwig.exceptions.PubSubException;
+import org.apache.hedwig.protocol.PubSubProtocol.CloseSubscriptionRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionEvent;
-import org.apache.hedwig.protocol.PubSubProtocol.UnsubscribeRequest;
 import org.apache.hedwig.protoextensions.PubSubResponseUtils;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.delivery.DeliveryManager;
@@ -36,50 +37,44 @@ import org.apache.hedwig.server.netty.UmbrellaHandler;
 import org.apache.hedwig.server.subscriptions.SubscriptionManager;
 import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.util.Callback;
-import static org.apache.hedwig.util.VarArgs.va;
 
-public class UnsubscribeHandler extends BaseHandler {
+public class CloseSubscriptionHandler extends BaseHandler {
     SubscriptionManager subMgr;
     DeliveryManager deliveryMgr;
     SubscriptionChannelManager subChannelMgr;
     // op stats
-    final OpStats unsubStats;
+    final OpStats closesubStats;
 
-    public UnsubscribeHandler(ServerConfiguration cfg,
-                              TopicManager tm,
-                              SubscriptionManager subMgr,
-                              DeliveryManager deliveryMgr,
-                              SubscriptionChannelManager subChannelMgr) {
+    public CloseSubscriptionHandler(ServerConfiguration cfg, TopicManager tm,
+                                    SubscriptionManager subMgr,
+                                    DeliveryManager deliveryMgr,
+                                    SubscriptionChannelManager subChannelMgr) {
         super(tm, cfg);
         this.subMgr = subMgr;
         this.deliveryMgr = deliveryMgr;
         this.subChannelMgr = subChannelMgr;
-        unsubStats = ServerStats.getInstance().getOpStats(OperationType.UNSUBSCRIBE);
+        closesubStats = ServerStats.getInstance().getOpStats(OperationType.CLOSESUBSCRIPTION);
     }
 
     @Override
     public void handleRequestAtOwner(final PubSubRequest request, final Channel channel) {
-        if (!request.hasUnsubscribeRequest()) {
+        if (!request.hasCloseSubscriptionRequest()) {
             UmbrellaHandler.sendErrorResponseToMalformedRequest(channel, request.getTxnId(),
-                    "Missing unsubscribe request data");
-            unsubStats.incrementFailedOps();
+                    "Missing closesubscription request data");
+            closesubStats.incrementFailedOps();
             return;
         }
 
-        final UnsubscribeRequest unsubRequest = request.getUnsubscribeRequest();
+        final CloseSubscriptionRequest closesubRequest =
+                request.getCloseSubscriptionRequest();
         final ByteString topic = request.getTopic();
-        final ByteString subscriberId = unsubRequest.getSubscriberId();
+        final ByteString subscriberId = closesubRequest.getSubscriberId();
 
-        final long requestTime = MathUtils.now();
-        subMgr.unsubscribe(topic, subscriberId, new Callback<Void>() {
-            @Override
-            public void operationFailed(Object ctx, PubSubException exception) {
-                channel.write(PubSubResponseUtils.getResponseForException(exception, request.getTxnId()));
-                unsubStats.incrementFailedOps();
-            }
+        final long requestTime = System.currentTimeMillis();
 
+        subMgr.closeSubscription(topic, subscriberId, new Callback<Void>() {
             @Override
-            public void operationFinished(Object ctx, Void resultOfOperation) {
+            public void operationFinished(Object ctx, Void result) {
                 // we should not close the channel in delivery manager
                 // since client waits the response for closeSubscription request
                 // client side would close the channel
@@ -88,7 +83,7 @@ public class UnsubscribeHandler extends BaseHandler {
                     @Override
                     public void operationFailed(Object ctx, PubSubException exception) {
                         channel.write(PubSubResponseUtils.getResponseForException(exception, request.getTxnId()));
-                        unsubStats.incrementFailedOps();
+                        closesubStats.incrementFailedOps();
                     }
                     @Override
                     public void operationFinished(Object ctx, Void resultOfOperation) {
@@ -96,12 +91,15 @@ public class UnsubscribeHandler extends BaseHandler {
                         subChannelMgr.remove(new TopicSubscriber(topic, subscriberId),
                                              channel);
                         channel.write(PubSubResponseUtils.getSuccessResponse(request.getTxnId()));
-                        unsubStats.updateLatency(System.currentTimeMillis() - requestTime);
+                        closesubStats.updateLatency(System.currentTimeMillis() - requestTime);
                     }
-                }, ctx);
+                }, null);
+            }
+            @Override
+            public void operationFailed(Object ctx, PubSubException exception) {
+                channel.write(PubSubResponseUtils.getResponseForException(exception, request.getTxnId()));
+                closesubStats.incrementFailedOps();
             }
         }, null);
-
     }
-
 }

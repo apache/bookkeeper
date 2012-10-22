@@ -19,8 +19,10 @@ package org.apache.hedwig.server.delivery;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionEvent;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
 import org.apache.hedwig.filter.ServerMessageFilter;
+import org.apache.hedwig.util.Callback;
 
 public interface DeliveryManager {
     public void start();
@@ -31,7 +33,17 @@ public interface DeliveryManager {
                                          DeliveryEndPoint endPoint,
                                          ServerMessageFilter filter);
 
-    public void stopServingSubscriber(ByteString topic, ByteString subscriberId);
+    /**
+     * Stop serving a given subscription.
+     *
+     * @param topic
+     *          Topic Name
+     * @param subscriberId
+     *          Subscriber Id
+     */
+    public void stopServingSubscriber(ByteString topic, ByteString subscriberId,
+                                      SubscriptionEvent event,
+                                      Callback<Void> callback, Object ctx);
 
     /**
      * Tell the delivery manager where that a subscriber has consumed
