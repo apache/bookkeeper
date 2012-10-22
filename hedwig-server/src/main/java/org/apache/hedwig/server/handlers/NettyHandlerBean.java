@@ -18,19 +18,15 @@
 
 package org.apache.hedwig.server.handlers;
 
-import java.util.Map;
-
-import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
+import org.apache.hedwig.server.handlers.SubscriptionChannelManager;
 import org.apache.hedwig.server.jmx.HedwigMBeanInfo;
 
 public class NettyHandlerBean implements NettyHandlerMXBean, HedwigMBeanInfo {
 
-    Map<OperationType, Handler> handlers;
-    SubscribeHandler subHandler;
+    SubscriptionChannelManager subChannelMgr;
 
-    public NettyHandlerBean(Map<OperationType, Handler> handlers) {
-        this.handlers = handlers;
-        subHandler = (SubscribeHandler) this.handlers.get(OperationType.SUBSCRIBE);
+   public NettyHandlerBean(SubscriptionChannelManager subChannelMgr) {
+       this.subChannelMgr = subChannelMgr;
     }
 
     @Override
@@ -45,7 +41,7 @@ public class NettyHandlerBean implements NettyHandlerMXBean, HedwigMBeanInfo {
 
     @Override
     public int getNumSubscriptionChannels() {
-        return subHandler.sub2Channel.size();
+        return subChannelMgr.getNumSubscriptionChannels();
     }
 
 }

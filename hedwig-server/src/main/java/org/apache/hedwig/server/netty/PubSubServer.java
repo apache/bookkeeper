@@ -61,6 +61,7 @@ import org.apache.hedwig.server.handlers.Handler;
 import org.apache.hedwig.server.handlers.NettyHandlerBean;
 import org.apache.hedwig.server.handlers.PublishHandler;
 import org.apache.hedwig.server.handlers.SubscribeHandler;
+import org.apache.hedwig.server.handlers.SubscriptionChannelManager;
 import org.apache.hedwig.server.handlers.UnsubscribeHandler;
 import org.apache.hedwig.server.jmx.HedwigMBeanRegistry;
 import org.apache.hedwig.server.meta.MetadataManagerFactory;
@@ -218,24 +219,31 @@ public class PubSubServer {
         return tm;
     }
 
-    protected Map<OperationType, Handler> initializeNettyHandlers(TopicManager tm, DeliveryManager dm,
-            PersistenceManager pm, SubscriptionManager sm) {
+   protected Map<OperationType, Handler> initializeNettyHandlers(
+           TopicManager tm, DeliveryManager dm,
+           PersistenceManager pm, SubscriptionManager sm,
+           SubscriptionChannelManager subChannelMgr) {
         Map<OperationType, Handler> handlers = new HashMap<OperationType, Handler>();
         handlers.put(OperationType.PUBLISH, new PublishHandler(tm, pm, conf));
-        handlers.put(OperationType.SUBSCRIBE, new SubscribeHandler(tm, dm, pm, sm, conf));
+        handlers.put(OperationType.SUBSCRIBE,
+                     new SubscribeHandler(conf, tm, dm, pm, sm, subChannelMgr));
         handlers.put(OperationType.UNSUBSCRIBE, new UnsubscribeHandler(tm, conf, sm, dm));
         handlers.put(OperationType.CONSUME, new ConsumeHandler(tm, sm, conf));
         handlers = Collections.unmodifiableMap(handlers);
         return handlers;
     }
 
-    protected void initializeNetty(SslServerContextFactory sslFactory, Map<OperationType, Handler> handlers) {
+    protected void initializeNetty(SslServerContextFactory sslFactory,
+                                   Map<OperationType, Handler> handlers,
+                                   SubscriptionChannelManager subChannelMgr) {
         boolean isSSLEnabled = (sslFactory != null) ? true : false;
         InternalLoggerFactory.setDefaultFactory(new Log4JLoggerFactory());
         ServerBootstrap bootstrap = new ServerBootstrap(serverChannelFactory);
-        UmbrellaHandler umbrellaHandler = new UmbrellaHandler(allChannels, handlers, isSSLEnabled);
-        PubSubServerPipelineFactory pipeline = new PubSubServerPipelineFactory(umbrellaHandler, sslFactory, conf
-                .getMaximumMessageSize());
+        UmbrellaHandler umbrellaHandler =
+            new UmbrellaHandler(allChannels, handlers, subChannelMgr, isSSLEnabled);
+        PubSubServerPipelineFactory pipeline =
+            new PubSubServerPipelineFactory(umbrellaHandler, sslFactory,
+                                            conf.getMaximumMessageSize());
 
         bootstrap.setPipelineFactory(pipeline);
         bootstrap.setOption("child.tcpNoDelay", true);
@@ -297,14 +305,14 @@ public class PubSubServer {
         unregisterJMX();
     }
 
-    protected void registerJMX(Map<OperationType, Handler> handlers) {
+    protected void registerJMX(SubscriptionChannelManager subChannelMgr) {
         try {
             String jmxName = JMXNAME_PREFIX + conf.getServerPort() + "_"
                                             + conf.getSSLServerPort();
             jmxServerBean = new PubSubServerBean(jmxName);
             HedwigMBeanRegistry.getInstance().register(jmxServerBean, null);
             try {
-                jmxNettyBean = new NettyHandlerBean(handlers);
+                jmxNettyBean = new NettyHandlerBean(subChannelMgr);
                 HedwigMBeanRegistry.getInstance().register(jmxNettyBean, jmxServerBean);
             } catch (Exception e) {
                 logger.warn("Failed to register with JMX", e);
@@ -408,14 +416,17 @@ public class PubSubServer {
                     // Initialize the Netty Handlers (used by the
                     // UmbrellaHandler) once so they can be shared by
                     // both the SSL and non-SSL channels.
-                    Map<OperationType, Handler> handlers = initializeNettyHandlers(tm, dm, pm, sm);
+                    SubscriptionChannelManager subChannelMgr = new SubscriptionChannelManager();
+                    Map<OperationType, Handler> handlers =
+                        initializeNettyHandlers(tm, dm, pm, sm, subChannelMgr);
                     // Initialize Netty for the regular non-SSL channels
-                    initializeNetty(null, handlers);
+                    initializeNetty(null, handlers, subChannelMgr);
                     if (conf.isSSLEnabled()) {
-                        initializeNetty(new SslServerContextFactory(conf), handlers);
+                        initializeNetty(new SslServerContextFactory(conf),
+                                        handlers, subChannelMgr);
                     }
                     // register jmx
-                    registerJMX(handlers);
+                    registerJMX(subChannelMgr);
                 } catch (Exception e) {
                     ConcurrencyUtils.put(queue, Either.right(e));
                     return;

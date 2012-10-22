@@ -48,17 +48,18 @@ import org.apache.hedwig.server.handlers.Handler;
 public class UmbrellaHandler extends SimpleChannelHandler {
     static Logger logger = LoggerFactory.getLogger(UmbrellaHandler.class);
 
-    private Map<OperationType, Handler> handlers;
-    private ChannelGroup allChannels;
-    private ChannelDisconnectListener subscribeHandler;
-    private boolean isSSLEnabled = false;
+    private final Map<OperationType, Handler> handlers;
+    private final ChannelGroup allChannels;
+    private final ChannelDisconnectListener channelDisconnectListener;
+    private final boolean isSSLEnabled; 
 
     public UmbrellaHandler(ChannelGroup allChannels, Map<OperationType, Handler> handlers,
+                           ChannelDisconnectListener channelDisconnectListener,
                            boolean isSSLEnabled) {
         this.allChannels = allChannels;
         this.isSSLEnabled = isSSLEnabled;
         this.handlers = handlers;
-        subscribeHandler = (ChannelDisconnectListener) handlers.get(OperationType.SUBSCRIBE);
+        this.channelDisconnectListener = channelDisconnectListener;
     }
 
     @Override
@@ -116,7 +117,7 @@ public class UmbrellaHandler extends SimpleChannelHandler {
     public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         Channel channel = ctx.getChannel();
         // subscribe handler needs to know about channel disconnects
-        subscribeHandler.channelDisconnected(channel);
+        channelDisconnectListener.channelDisconnected(channel);
         channel.close();
     }
 

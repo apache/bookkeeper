@@ -56,6 +56,7 @@ public class TestSubUnsubHandler extends TestCase {
     SubscribeHandler sh;
     StubDeliveryManager dm;
     StubSubscriptionManager sm;
+    SubscriptionChannelManager subChannelMgr;
     ByteString topic = ByteString.copyFromUtf8("topic");
     WriteRecordingChannel channel;
 
@@ -75,7 +76,8 @@ public class TestSubUnsubHandler extends TestCase {
         dm = new StubDeliveryManager();
         PersistenceManager pm = LocalDBPersistenceManager.instance();
         sm = new StubSubscriptionManager(tm, pm, dm, conf, executor);
-        sh = new SubscribeHandler(tm, dm, pm, sm, conf);
+        subChannelMgr = new SubscriptionChannelManager();
+        sh = new SubscribeHandler(conf, tm, dm, pm, sm, subChannelMgr);
         channel = new WriteRecordingChannel();
 
         subscriberId = ByteString.copyFromUtf8("subId");
@@ -105,8 +107,10 @@ public class TestSubUnsubHandler extends TestCase {
         assertEquals(StatusCode.SUCCESS, ((PubSubResponse) channel.getMessagesWritten().get(0)).getStatusCode());
 
         // make sure the channel was put in the maps
-        assertEquals(new TopicSubscriber(topic, subscriberId), sh.channel2sub.get(channel));
-        assertEquals(channel, sh.sub2Channel.get(new TopicSubscriber(topic, subscriberId)));
+        assertEquals(new TopicSubscriber(topic, subscriberId),
+                     subChannelMgr.channel2sub.get(channel));
+        assertEquals(channel,
+                     subChannelMgr.sub2Channel.get(new TopicSubscriber(topic, subscriberId)));
 
         // make sure delivery was started
         StartServingRequest startRequest = (StartServingRequest) dm.lastRequest.poll();
@@ -134,7 +138,7 @@ public class TestSubUnsubHandler extends TestCase {
         assertEquals(StatusCode.TOPIC_BUSY, ((PubSubResponse) dupChannel.getMessagesWritten().get(0)).getStatusCode());
 
         // after disconnecting the channel, subscribe should work again
-        sh.channelDisconnected(channel);
+        subChannelMgr.channelDisconnected(channel);
 
         dupChannel = new WriteRecordingChannel();
         sh.handleRequestAtOwner(pubSubRequestPrototype, dupChannel);

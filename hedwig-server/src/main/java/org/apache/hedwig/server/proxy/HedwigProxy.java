@@ -39,6 +39,7 @@ import org.jboss.netty.logging.Log4JLoggerFactory;
 import org.apache.hedwig.client.HedwigClient;
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
 import org.apache.hedwig.server.common.TerminateJVMExceptionHandler;
+import org.apache.hedwig.server.handlers.ChannelDisconnectListener;
 import org.apache.hedwig.server.handlers.Handler;
 import org.apache.hedwig.server.netty.PubSubServer;
 import org.apache.hedwig.server.netty.PubSubServerPipelineFactory;
@@ -112,7 +113,10 @@ public class HedwigProxy {
         InternalLoggerFactory.setDefaultFactory(new Log4JLoggerFactory());
         allChannels = new DefaultChannelGroup("hedwigproxy");
         ServerBootstrap bootstrap = new ServerBootstrap(serverSocketChannelFactory);
-        UmbrellaHandler umbrellaHandler = new UmbrellaHandler(allChannels, handlers, false);
+        ChannelDisconnectListener disconnectListener =
+            (ChannelDisconnectListener) handlers.get(OperationType.SUBSCRIBE);
+        UmbrellaHandler umbrellaHandler =
+            new UmbrellaHandler(allChannels, handlers, disconnectListener, false);
         PubSubServerPipelineFactory pipeline = new PubSubServerPipelineFactory(umbrellaHandler, null, cfg
                 .getMaximumMessageSize());
 
