@@ -110,6 +110,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-392: Racey ConcurrentMap usage in java hedwig-client (Stu Hood via sijie)
 
+        BOOKKEEPER-427: TestConcurrentTopicAcquisition hangs every so often (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-302: No more messages delivered when hub server scans messages over two ledgers. (sijie via ivank)

@@ -100,6 +100,7 @@ public class SimpleSubscribeResponseHandler extends SubscribeResponseHandler {
                                              HChannelManager channelManager) {
         super(cfg, channelManager);
         sChannelManager = (SimpleHChannelManager) channelManager;
+        origTopicSubscriber = null;
     }
 
     protected HChannelManager getHChannelManager() {
@@ -484,6 +485,9 @@ public class SimpleSubscribeResponseHandler extends SubscribeResponseHandler {
     @Override
     public void onChannelDisconnected(InetSocketAddress host,
                                       Channel channel) {
+        if (origTopicSubscriber == null) {
+            return;
+        }
         sChannelManager.clearHostForTopic(origTopicSubscriber.getTopic(), host);
         // clear subscription status
         sChannelManager.asyncCloseSubscription(origTopicSubscriber, new Callback<ResponseBody>() {
