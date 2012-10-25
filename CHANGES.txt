@@ -98,6 +98,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-424: Bookie start is failing intermittently when zkclient connection delays (rakeshr via ivank)
 
+        BOOKKEEPER-416: LedgerChecker returns underreplicated fragments for an closed ledger with no entries (ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

@@ -353,6 +353,97 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
                 + result, 3, result.size());
     }
 
+    /**
+     * Tests that LedgerChecker does not return any fragments
+     * from a closed ledger with 0 entries.
+     */
+    @Test(timeout = 3000)
+    public void testClosedEmptyLedger() throws Exception {
+        LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,
+                TEST_LEDGER_PASSWORD);
+        ArrayList<InetSocketAddress> firstEnsemble = lh.getLedgerMetadata()
+                .getEnsembles().get(0L);
+        lh.close();
+
+        InetSocketAddress lastBookieFromEnsemble = firstEnsemble.get(0);
+        LOG.info("Killing " + lastBookieFromEnsemble + " from ensemble="
+                + firstEnsemble);
+        killBookie(lastBookieFromEnsemble);
+
+        //Open ledger separately for Ledger checker.
+        LedgerHandle lh1 =bkc.openLedgerNoRecovery(lh.getId(), BookKeeper.DigestType.CRC32,
+                TEST_LEDGER_PASSWORD);
+
+        Set<LedgerFragment> result = getUnderReplicatedFragments(lh1);
+        assertNotNull("Result shouldn't be null", result);
+        assertEquals("There should be 0 fragment. But returned fragments are "
+                + result, 0, result.size());
+    }
+
+    /**
+     * Tests that LedgerChecker does not return any fragments
+     * from a closed ledger with 0 entries.
+     */
+    @Test(timeout = 3000)
+    public void testClosedSingleEntryLedger() throws Exception {
+        LedgerHandle lh = bkc.createLedger(3, 2, BookKeeper.DigestType.CRC32,
+                TEST_LEDGER_PASSWORD);
+        ArrayList<InetSocketAddress> firstEnsemble = lh.getLedgerMetadata()
+            .getEnsembles().get(0L);
+        lh.addEntry(TEST_LEDGER_ENTRY_DATA);
+        lh.close();
+
+        // kill bookie 2
+        InetSocketAddress lastBookieFromEnsemble = firstEnsemble.get(2);
+        LOG.info("Killing " + lastBookieFromEnsemble + " from ensemble="
+                + firstEnsemble);
+        killBookie(lastBookieFromEnsemble);
+
+        //Open ledger separately for Ledger checker.
+        LedgerHandle lh1 =bkc.openLedgerNoRecovery(lh.getId(), BookKeeper.DigestType.CRC32,
+                TEST_LEDGER_PASSWORD);
+
+        Set<LedgerFragment> result = getUnderReplicatedFragments(lh1);
+        assertNotNull("Result shouldn't be null", result);
+        assertEquals("There should be 0 fragment. But returned fragments are "
+                + result, 0, result.size());
+        lh1.close();
+
+        // kill bookie 1
+        lastBookieFromEnsemble = firstEnsemble.get(1);
+        LOG.info("Killing " + lastBookieFromEnsemble + " from ensemble="
+                + firstEnsemble);
+        killBookie(lastBookieFromEnsemble);
+        startNewBookie();
+
+        //Open ledger separately for Ledger checker.
+        lh1 =bkc.openLedgerNoRecovery(lh.getId(), BookKeeper.DigestType.CRC32,
+                TEST_LEDGER_PASSWORD);
+
+        result = getUnderReplicatedFragments(lh1);
+        assertNotNull("Result shouldn't be null", result);
+        assertEquals("There should be 1 fragment. But returned fragments are "
+                + result, 1, result.size());
+        lh1.close();
+
+        // kill bookie 0
+        lastBookieFromEnsemble = firstEnsemble.get(0);
+        LOG.info("Killing " + lastBookieFromEnsemble + " from ensemble="
+                + firstEnsemble);
+        killBookie(lastBookieFromEnsemble);
+        startNewBookie();
+
+        //Open ledger separately for Ledger checker.
+        lh1 =bkc.openLedgerNoRecovery(lh.getId(), BookKeeper.DigestType.CRC32,
+                TEST_LEDGER_PASSWORD);
+
+        result = getUnderReplicatedFragments(lh1);
+        assertNotNull("Result shouldn't be null", result);
+        assertEquals("There should be 2 fragment. But returned fragments are "
+                + result, 2, result.size());
+        lh1.close();
+    }
+
     private Set<LedgerFragment> getUnderReplicatedFragments(LedgerHandle lh)
             throws InterruptedException {
         LedgerChecker checker = new LedgerChecker(bkc);

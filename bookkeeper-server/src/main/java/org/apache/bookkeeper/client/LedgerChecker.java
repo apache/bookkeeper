@@ -192,7 +192,8 @@ public class LedgerChecker {
 
         /* Checking the last segment of the ledger can be complicated in some cases.
          * In the case that the ledger is closed, we can just check the fragments of
-         * the segment as normal.
+         * the segment as normal, except in the case that no entry was ever written,
+         * to the ledger, in which case we check no fragments.
          * In the case that the ledger is open, but enough entries have been written,
          * for lastAddConfirmed to be set above the start entry of the segment, we
          * can also check as normal.
@@ -203,7 +204,9 @@ public class LedgerChecker {
          * NoSuchEntry we can assume it was never written. If they respond with anything
          * else, we must assume the entry has been written, so we run the check.
          */
-        if (curEntryId != null) {
+        if (curEntryId != null
+            && !(lh.getLastAddConfirmed() == LedgerHandle.INVALID_ENTRY_ID
+                 && lh.getLedgerMetadata().isClosed())) {
             long lastEntry = lh.getLastAddConfirmed();
 
             if (lastEntry < curEntryId) {
