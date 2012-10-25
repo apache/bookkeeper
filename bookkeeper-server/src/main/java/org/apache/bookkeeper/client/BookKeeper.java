@@ -34,6 +34,8 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
+import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -120,24 +122,9 @@ public class BookKeeper {
     public BookKeeper(final ClientConfiguration conf)
             throws IOException, InterruptedException, KeeperException {
         this.conf = conf;
-
-        final CountDownLatch zkConnectLatch = new CountDownLatch(1);
-        this.zk = new ZooKeeper(conf.getZkServers(), conf.getZkTimeout(),
-                new Watcher() {
-                    @Override
-                    public void process(WatchedEvent event) {
-                        // countdown the latch on all events, even if we haven't
-                        // successfully connected.
-                        zkConnectLatch.countDown();
-
-                        // TODO: handle session disconnects and expires
-                        LOG.debug("Process: {} {}", event.getType(), event.getPath());
-                    }
-                });
-        if (!zkConnectLatch.await(conf.getZkTimeout(), TimeUnit.MILLISECONDS)
-            || !zk.getState().isConnected()) {
-            throw KeeperException.create(KeeperException.Code.CONNECTIONLOSS);
-        }
+        ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(conf.getZkTimeout());
+        this.zk = ZkUtils
+                .createConnectedZookeeperClient(conf.getZkServers(), w);
 
         this.channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                                                                 Executors.newCachedThreadPool());

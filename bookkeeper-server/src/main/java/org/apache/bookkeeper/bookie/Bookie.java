@@ -50,6 +50,8 @@ import org.apache.bookkeeper.jmx.BKMBeanRegistry;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,7 +96,6 @@ public class Bookie extends Thread {
 
     // ZooKeeper client instance for the Bookie
     ZooKeeper zk;
-    private volatile boolean isZkExpired = true;
 
     // Running flag
     private volatile boolean running = false;
@@ -467,9 +468,11 @@ public class Bookie extends Thread {
         } catch (IOException ioe) {
             LOG.error("Exception while replaying journals, shutting down", ioe);
             shutdown(ExitCode.BOOKIE_EXCEPTION);
+            return;
         } catch (BookieException be) {
             LOG.error("Exception while replaying journals, shutting down", be);
             shutdown(ExitCode.BOOKIE_EXCEPTION);
+            return;
         }
         // start bookie thread
         super.start();
@@ -574,10 +577,10 @@ public class Bookie extends Thread {
     /**
      * Instantiate the ZooKeeper client for the Bookie.
      */
-    private ZooKeeper instantiateZookeeperClient(ServerConfiguration conf) throws IOException {
+    private ZooKeeper instantiateZookeeperClient(ServerConfiguration conf)
+            throws IOException, InterruptedException, KeeperException {
         if (conf.getZkServers() == null) {
             LOG.warn("No ZK servers passed to Bookie constructor so BookKeeper clients won't know about this server!");
-            isZkExpired = false;
             return null;
         }
         // Create the ZooKeeper client instance
@@ -715,33 +718,21 @@ public class Bookie extends Thread {
      * @return zk client instance
      */
     private ZooKeeper newZookeeper(final String zkServers,
-                                   final int sessionTimeout) throws IOException {
-        ZooKeeper newZk = new ZooKeeper(zkServers, sessionTimeout,
-        new Watcher() {
+            final int sessionTimeout) throws IOException, InterruptedException,
+            KeeperException {
+        ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(conf.getZkTimeout()) {
             @Override
             public void process(WatchedEvent event) {
-                // handle session disconnects and expires
-                if (event.getType()
-                .equals(Watcher.Event.EventType.None)) {
-                    if (event.getState().equals(
-                    Watcher.Event.KeeperState.Disconnected)) {
-                        LOG.warn("ZK client has been disconnected to the ZK server!");
-                    } else if (event.getState().equals(
-                    Watcher.Event.KeeperState.SyncConnected)) {
-                        LOG.info("ZK client has been reconnected to the ZK server!");
-                    }
-                }
                 // Check for expired connection.
-                if (event.getState().equals(
-                Watcher.Event.KeeperState.Expired)) {
+                if (event.getState().equals(Watcher.Event.KeeperState.Expired)) {
                     LOG.error("ZK client connection to the ZK server has expired!");
-                    isZkExpired = true;
                     shutdown(ExitCode.ZK_EXPIRED);
+                } else {
+                    super.process(event);
                 }
             }
-        });
-        isZkExpired = false;
-        return newZk;
+        };
+        return ZkUtils.createConnectedZookeeperClient(zkServers, w);
     }
 
     public boolean isRunning() {

@@ -36,6 +36,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
+import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
@@ -88,7 +89,7 @@ public class BookieInitializationTest {
      * timeout when previous reg node exists in zk. On zNode delete event,
      * should continue startup
      */
-    @Test
+    @Test(timeout = 20000)
     public void testBookieRegistration() throws Exception {
         File tmpDir = File.createTempFile("bookie", "test");
         tmpDir.delete();
@@ -154,7 +155,7 @@ public class BookieInitializationTest {
      * KeeperException.NodeExistsException if the znode still exists even after
      * the zk session timeout.
      */
-    @Test
+    @Test(timeout = 30000)
     public void testRegNodeExistsAfterSessionTimeOut() throws Exception {
         File tmpDir = File.createTempFile("bookie", "test");
         tmpDir.delete();
@@ -209,7 +210,7 @@ public class BookieInitializationTest {
      * Verify duplicate bookie server startup. Should throw
      * java.net.BindException if already BK server is running
      */
-    @Test
+    @Test(timeout = 20000)
     public void testDuplicateBookieServerStartup() throws Exception {
         File tmpDir = File.createTempFile("bookie", "test");
         tmpDir.delete();
@@ -231,6 +232,31 @@ public class BookieInitializationTest {
         } catch (BindException be) {
             Assert.assertTrue("BKServer allowed duplicate startups!", be
                     .getMessage().contains("Address already in use"));
+        }
+    }
+
+    /**
+     * Verify bookie start behaviour when ZK Server is not running.
+     */
+    @Test(timeout = 20000)
+    public void testStartBookieWithoutZKServer() throws Exception {
+        zkutil.killServer();
+
+        File tmpDir = File.createTempFile("bookie", "test");
+        tmpDir.delete();
+        tmpDir.mkdir();
+
+        final ServerConfiguration conf = new ServerConfiguration()
+                .setZkServers(zkutil.getZooKeeperConnectString())
+                .setZkTimeout(5000).setJournalDirName(tmpDir.getPath())
+                .setLedgerDirNames(new String[] { tmpDir.getPath() });
+        try {
+            new Bookie(conf);
+            fail("Should throw ConnectionLossException as ZKServer is not running!");
+        } catch (KeeperException.ConnectionLossException e) {
+            // expected behaviour
+        } finally {
+            FileUtils.deleteDirectory(tmpDir);
         }
     }
 

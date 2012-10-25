@@ -32,6 +32,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -64,9 +65,7 @@ public class AutoRecoveryMain {
             InterruptedException, KeeperException, UnavailableException,
             CompatibilityException {
         this.conf = conf;
-        zk = ZkUtils.createConnectedZookeeperClient(conf.getZkServers(),
-                conf.getZkTimeout());
-        Watcher watcher = new Watcher() {
+        ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(conf.getZkTimeout()) {
             @Override
             public void process(WatchedEvent event) {
                 // Check for expired connection.
@@ -74,10 +73,12 @@ public class AutoRecoveryMain {
                     LOG.error("ZK client connection to the"
                             + " ZK server has expired!");
                     shutdown(ExitCode.ZK_EXPIRED);
+                } else {
+                    super.process(event);
                 }
             }
         };
-        zk.register(watcher);
+        zk = ZkUtils.createConnectedZookeeperClient(conf.getZkServers(), w);
         auditorElector = new AuditorElector(
                 getMyBookieAddress(conf).toString(), conf, zk);
         replicationWorker = new ReplicationWorker(zk, conf,
