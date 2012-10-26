@@ -158,8 +158,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
         for (String child : children) {
             byte[] data = zkc.getData(electionPath + '/' + child, false, null);
             String bookieIP = new String(data);
-            StringBuilder addr = new StringBuilder();
-            StringUtils.addrToString(addr, auditor.getLocalAddress());
+            String addr = StringUtils.addrToString(auditor.getLocalAddress());
             Assert.assertFalse("AuditorElection cleanup fails", bookieIP
                     .contains(addr));
         }
@@ -184,10 +183,9 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
         tmpDirs.remove(indexOfDownBookie);
         startBookie(serverConfiguration);
         // starting corresponding auditor elector
-        StringBuilder sb = new StringBuilder();
-        StringUtils.addrToString(sb, auditor.getLocalAddress());
-        LOG.debug("Performing Auditor Election:" + sb.toString());
-        auditorElectors.get(sb.toString()).doElection();
+        String addr = StringUtils.addrToString(auditor.getLocalAddress());
+        LOG.debug("Performing Auditor Election:" + addr);
+        auditorElectors.get(addr).doElection();
 
         // waiting for new auditor to come
         BookieServer newAuditor = waitForNewAuditor(auditor);
@@ -201,12 +199,10 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
 
     private void startAuditorElectors() throws UnavailableException {
         for (BookieServer bserver : bs) {
-            StringBuilder sb = new StringBuilder();
-            StringBuilder addr = StringUtils.addrToString(sb, bserver
-                    .getLocalAddress());
-            AuditorElector auditorElector = new AuditorElector(addr.toString(),
+            String addr = StringUtils.addrToString(bserver.getLocalAddress());
+            AuditorElector auditorElector = new AuditorElector(addr,
                     baseClientConf, zkc);
-            auditorElectors.put(addr.toString(), auditorElector);
+            auditorElectors.put(addr, auditorElector);
             auditorElector.doElection();
             LOG.debug("Starting Auditor Elector");
         }
@@ -242,14 +238,13 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
     }
 
     private void shudownBookie(BookieServer bkServer) {
-        StringBuilder sb = new StringBuilder();
-        StringUtils.addrToString(sb, bkServer.getLocalAddress());
-        LOG.debug("Shutting down bookie:" + sb.toString());
+        String addr = StringUtils.addrToString(bkServer.getLocalAddress());
+        LOG.debug("Shutting down bookie:" + addr);
 
         // shutdown bookie which is an auditor
         bkServer.shutdown();
         // stopping corresponding auditor elector
-        auditorElectors.get(sb.toString()).shutdown();
+        auditorElectors.get(addr).shutdown();
     }
 
     private BookieServer waitForNewAuditor(BookieServer auditor)

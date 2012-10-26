@@ -20,6 +20,8 @@ package org.apache.bookkeeper.util;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 
 /**
  * Provided utilites for parsing network addresses, ledger-id from node paths
@@ -52,8 +54,8 @@ public class StringUtils {
         return addr;
     }
 
-    public static StringBuilder addrToString(StringBuilder sb, InetSocketAddress addr) {
-        return sb.append(addr.getAddress().getHostAddress()).append(":").append(addr.getPort());
+    public static String addrToString(InetSocketAddress addr) {
+        return addr.getAddress().getHostAddress() + ":" + addr.getPort();
     }
 
     /**

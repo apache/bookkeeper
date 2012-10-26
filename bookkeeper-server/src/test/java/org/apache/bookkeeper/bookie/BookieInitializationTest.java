@@ -79,8 +79,8 @@ public class BookieInitializationTest {
             super(conf);
         }
 
-        void testRegisterBookie(int port) throws IOException {
-            super.registerBookie(port);
+        void testRegisterBookie(ServerConfiguration conf) throws IOException {
+            super.registerBookie(conf);
         }
     }
 
@@ -105,7 +105,7 @@ public class BookieInitializationTest {
 
         MockBookie b = new MockBookie(conf);
         b.zk = zkc;
-        b.testRegisterBookie(conf.getBookiePort());
+        b.testRegisterBookie(conf);
         Stat bkRegNode1 = zkc.exists(bkRegPath, false);
         Assert.assertNotNull("Bookie registration node doesn't exists!",
                 bkRegNode1);
@@ -130,7 +130,7 @@ public class BookieInitializationTest {
             }
         }.start();
         try {
-            b.testRegisterBookie(conf.getBookiePort());
+            b.testRegisterBookie(conf);
         } catch (IOException e) {
             Throwable t = e.getCause();
             if (t instanceof KeeperException) {
@@ -171,7 +171,7 @@ public class BookieInitializationTest {
 
         MockBookie b = new MockBookie(conf);
         b.zk = zkc;
-        b.testRegisterBookie(conf.getBookiePort());
+        b.testRegisterBookie(conf);
         Stat bkRegNode1 = zkc.exists(bkRegPath, false);
         Assert.assertNotNull("Bookie registration node doesn't exists!",
                 bkRegNode1);
@@ -181,7 +181,7 @@ public class BookieInitializationTest {
         createNewZKClient();
         b.zk = newzk;
         try {
-            b.testRegisterBookie(conf.getBookiePort());
+            b.testRegisterBookie(conf);
             fail("Should throw NodeExistsException as the znode is not getting expired");
         } catch (IOException e) {
             Throwable t = e.getCause();

@@ -39,6 +39,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
 
+import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.DataFormats.CookieFormat;
 
@@ -206,7 +207,7 @@ class Cookie {
             throws UnknownHostException {
         Cookie c = new Cookie();
         c.layoutVersion = CURRENT_COOKIE_LAYOUT_VERSION;
-        c.bookieHost = InetAddress.getLocalHost().getHostAddress() + ":" + conf.getBookiePort();
+        c.bookieHost = StringUtils.addrToString(Bookie.getBookieAddress(conf));
         c.journalDir = conf.getJournalDirName();
         StringBuilder b = new StringBuilder();
         String[] dirs = conf.getLedgerDirNames();
@@ -252,6 +253,6 @@ class Cookie {
     private static String getZkPath(ServerConfiguration conf)
             throws UnknownHostException {
         String bookieCookiePath = conf.getZkLedgersRootPath() + "/" + COOKIE_NODE;
-        return bookieCookiePath + "/" + InetAddress.getLocalHost().getHostAddress() + ":" + conf.getBookiePort();
+        return bookieCookiePath + "/" + StringUtils.addrToString(Bookie.getBookieAddress(conf));
     }
 }

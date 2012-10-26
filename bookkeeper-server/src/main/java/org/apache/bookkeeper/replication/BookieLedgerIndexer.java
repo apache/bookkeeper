@@ -80,11 +80,9 @@ public class BookieLedgerIndexer {
                                     .getEnsembles().entrySet()) {
                                 for (InetSocketAddress bookie : ensemble
                                         .getValue()) {
-                                    bookieAddr = new StringBuilder();
-                                    StringUtils
-                                            .addrToString(bookieAddr, bookie);
-                                    putLedger(bookie2ledgersMap, bookieAddr
-                                            .toString(), ledgerId);
+                                    putLedger(bookie2ledgersMap,
+                                              StringUtils.addrToString(bookie),
+                                              ledgerId);
                                 }
                             }
                         } else {

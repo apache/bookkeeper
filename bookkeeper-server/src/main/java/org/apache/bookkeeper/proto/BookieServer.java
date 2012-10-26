@@ -98,7 +98,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
 
     public InetSocketAddress getLocalAddress() {
         try {
-            return new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), conf.getBookiePort());
+            return Bookie.getBookieAddress(conf);
         } catch (UnknownHostException uhe) {
             return nioServerFactory.getLocalAddress();
         }

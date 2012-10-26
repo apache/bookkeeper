@@ -256,7 +256,7 @@ public class LedgerMetadata {
             s.append(lSplitter).append(entry.getKey());
             for (InetSocketAddress addr : entry.getValue()) {
                 s.append(tSplitter);
-                StringUtils.addrToString(s, addr);
+                s.append(StringUtils.addrToString(addr));
             }
         }
 

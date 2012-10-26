@@ -25,13 +25,14 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
-import java.net.UnknownHostException;
 
+import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -80,16 +81,10 @@ public class AutoRecoveryMain {
         };
         zk = ZkUtils.createConnectedZookeeperClient(conf.getZkServers(), w);
         auditorElector = new AuditorElector(
-                getMyBookieAddress(conf).toString(), conf, zk);
+                StringUtils.addrToString(Bookie.getBookieAddress(conf)), conf, zk);
         replicationWorker = new ReplicationWorker(zk, conf,
-                getMyBookieAddress(conf));
+                Bookie.getBookieAddress(conf));
         deathWatcher = new AutoRecoveryDeathWatcher(this);
-    }
-
-    private static InetSocketAddress getMyBookieAddress(ServerConfiguration conf)
-            throws UnknownHostException {
-        return new InetSocketAddress(InetAddress.getLocalHost()
-                .getHostAddress(), conf.getBookiePort());
     }
 
     /*

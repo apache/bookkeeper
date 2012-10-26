@@ -51,6 +51,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -359,6 +360,15 @@ public class Bookie extends Thread {
         }
     }
 
+    /**
+     * Return the configured address of the bookie.
+     */
+    public static InetSocketAddress getBookieAddress(ServerConfiguration conf)
+            throws UnknownHostException {
+        return new InetSocketAddress(InetAddress.getLocalHost()
+                .getHostAddress(), conf.getBookiePort());
+    }
+
     private String getInstanceId(ZooKeeper zk) throws KeeperException,
             InterruptedException {
         String instanceId = null;
@@ -489,7 +499,7 @@ public class Bookie extends Thread {
         // if setting it in bookie thread, the watcher might run before bookie thread.
         running = true;
         try {
-            registerBookie(conf.getBookiePort());
+            registerBookie(conf);
         } catch (IOException e) {
             LOG.error("Couldn't register bookie with zookeeper, shutting down", e);
             shutdown(ExitCode.ZK_REG_FAIL);
@@ -590,11 +600,15 @@ public class Bookie extends Thread {
     /**
      * Register as an available bookie
      */
-    protected void registerBookie(int port) throws IOException {
+    protected void registerBookie(ServerConfiguration conf) throws IOException {
         if (null == zk) {
             // zookeeper instance is null, means not register itself to zk
             return;
         }
+
+        // ZK ephemeral node for this Bookie.
+        String zkBookieRegPath = this.bookieRegistrationPath
+            + StringUtils.addrToString(getBookieAddress(conf));
         final CountDownLatch prevNodeLatch = new CountDownLatch(1);
         try{
             Watcher zkPrevRegNodewatcher = new Watcher() {

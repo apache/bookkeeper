@@ -100,6 +100,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-416: LedgerChecker returns underreplicated fragments for an closed ledger with no entries (ivank)
 
+	BOOKKEEPER-425: Cleanup Bookie id generation (ivank via fpj)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

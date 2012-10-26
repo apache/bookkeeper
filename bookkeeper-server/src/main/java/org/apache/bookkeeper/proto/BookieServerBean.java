@@ -21,6 +21,8 @@ package org.apache.bookkeeper.proto;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import org.apache.bookkeeper.util.StringUtils;
+import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.proto.BKStats;
@@ -80,8 +82,7 @@ public class BookieServerBean implements BookieServerMXBean, BKMBeanInfo {
     @Override
     public String getServerPort() {
         try {
-            return InetAddress.getLocalHost().getHostAddress() + ":"
-                    + conf.getBookiePort();
+            return StringUtils.addrToString(Bookie.getBookieAddress(conf));
         } catch (UnknownHostException e) {
             return "localhost:" + conf.getBookiePort();
         }

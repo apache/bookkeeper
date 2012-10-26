@@ -109,12 +109,10 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
 
     private void startAuditorElectors() throws UnavailableException {
         for (BookieServer bserver : bs) {
-            StringBuilder sb = new StringBuilder();
-            StringBuilder addr = StringUtils.addrToString(sb, bserver
-                    .getLocalAddress());
-            AuditorElector auditorElector = new AuditorElector(addr.toString(),
+            String addr = StringUtils.addrToString(bserver.getLocalAddress());
+            AuditorElector auditorElector = new AuditorElector(addr,
                     baseClientConf, zkc);
-            auditorElectors.put(addr.toString(), auditorElector);
+            auditorElectors.put(addr, auditorElector);
             auditorElector.doElection();
             LOG.debug("Starting Auditor Elector");
         }
@@ -303,14 +301,13 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
 
     private String shutdownBookie(int bkShutdownIndex) throws IOException,
             InterruptedException {
-        StringBuilder bookieAddr = new StringBuilder();
         BookieServer bkServer = bs.get(bkShutdownIndex);
-        StringUtils.addrToString(bookieAddr, bkServer.getLocalAddress());
-        LOG.debug("Shutting down bookie:" + bookieAddr.toString());
+        String bookieAddr = StringUtils.addrToString(bkServer.getLocalAddress());
+        LOG.debug("Shutting down bookie:" + bookieAddr);
         killBookie(bkShutdownIndex);
-        auditorElectors.get(bookieAddr.toString()).shutdown();
-        auditorElectors.remove(bookieAddr.toString());
-        return bookieAddr.toString();
+        auditorElectors.get(bookieAddr).shutdown();
+        auditorElectors.remove(bookieAddr);
+        return bookieAddr;
     }
 
     private LedgerHandle createAndAddEntriesToLedger() throws BKException,
