@@ -32,10 +32,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.meta.ActiveLedgerManager;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,11 +48,15 @@ import org.slf4j.LoggerFactory;
  */
 public class LedgerCacheImpl implements LedgerCache {
     private final static Logger LOG = LoggerFactory.getLogger(LedgerDescriptor.class);
+    private static final String IDX = ".idx";
+    static final String RLOC = ".rloc";
 
-    final File ledgerDirectories[];
+    private LedgerDirsManager ledgerDirsManager;
+    final private AtomicBoolean shouldRelocateIndexFile = new AtomicBoolean(false);
 
-    public LedgerCacheImpl(ServerConfiguration conf, ActiveLedgerManager alm) {
-        this.ledgerDirectories = Bookie.getCurrentDirectories(conf.getLedgerDirs());
+    public LedgerCacheImpl(ServerConfiguration conf, ActiveLedgerManager alm, LedgerDirsManager ledgerDirsManager)
+            throws IOException {
+        this.ledgerDirsManager = ledgerDirsManager;
         this.openFileLimit = conf.getOpenFileLimit();
         this.pageSize = conf.getPageSize();
         this.entriesPerPage = pageSize / 8;
@@ -66,6 +72,7 @@ public class LedgerCacheImpl implements LedgerCache {
         activeLedgerManager = alm;
         // Retrieve all of the active ledgers.
         getActiveLedgers();
+        ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
     }
     /**
      * the list of potentially clean ledgers
@@ -233,14 +240,8 @@ public class LedgerCacheImpl implements LedgerCache {
         sb.append(Integer.toHexString(parent));
         sb.append('/');
         sb.append(Long.toHexString(ledgerId));
-        sb.append(".idx");
+        sb.append(IDX);
         return sb.toString();
-    }
-
-    static final private Random rand = new Random();
-
-    static final private File pickDirs(File dirs[]) {
-        return dirs[rand.nextInt(dirs.length)];
     }
 
     FileInfo getFileInfo(Long ledger, byte masterKey[]) throws IOException {
@@ -252,9 +253,7 @@ public class LedgerCacheImpl implements LedgerCache {
                     if (masterKey == null) {
                         throw new Bookie.NoLedgerException(ledger);
                     }
-                    File dir = pickDirs(ledgerDirectories);
-                    String ledgerName = getLedgerName(ledger);
-                    lf = new File(dir, ledgerName);
+                    lf = getNewLedgerIndexFile(ledger);
                     // A new ledger index file has been created for this Bookie.
                     // Add this new ledger to the set of active ledgers.
                     LOG.debug("New ledger index file created for ledgerId: {}", ledger);
@@ -262,6 +261,10 @@ public class LedgerCacheImpl implements LedgerCache {
                 }
                 evictFileInfoIfNecessary();
                 fi = new FileInfo(lf, masterKey);
+                if (ledgerDirsManager.isDirFull(lf.getParentFile()
+                        .getParentFile().getParentFile())) {
+                    moveLedgerIndexFile(ledger, fi);
+                }
                 fileInfoCache.put(ledger, fi);
                 openLedgers.add(ledger);
             }
@@ -271,6 +274,13 @@ public class LedgerCacheImpl implements LedgerCache {
             return fi;
         }
     }
+
+    private File getNewLedgerIndexFile(Long ledger) throws NoWritableLedgerDirException {
+        File dir = ledgerDirsManager.pickRandomWritableDir();
+        String ledgerName = getLedgerName(ledger);
+        return new File(dir, ledgerName);
+    }
+
     private void updatePage(LedgerEntryPage lep) throws IOException {
         if (!lep.isClean()) {
             throw new IOException("Trying to update a dirty page");
@@ -291,6 +301,32 @@ public class LedgerCacheImpl implements LedgerCache {
         }
     }
 
+    private LedgerDirsListener getLedgerDirsListener() {
+        return new LedgerDirsListener() {
+            @Override
+            public void diskFull(File disk) {
+                // If the current entry log disk is full, then create new entry
+                // log.
+                shouldRelocateIndexFile.set(true);
+            }
+
+            @Override
+            public void diskFailed(File disk) {
+                // Nothing to handle here. Will be handled in Bookie
+            }
+
+            @Override
+            public void allDisksFull() {
+                // Nothing to handle here. Will be handled in Bookie
+            }
+
+            @Override
+            public void fatalError() {
+                // Nothing to handle here. Will be handled in Bookie
+            }
+        };
+    }
+
     @Override
     public void flushLedger(boolean doAll) throws IOException {
         synchronized(dirtyLedgers) {
@@ -307,6 +343,20 @@ public class LedgerCacheImpl implements LedgerCache {
             if (dirtyLedgers.isEmpty()) {
                 return;
             }
+
+            if (shouldRelocateIndexFile.get()) {
+                // if some new dir detected as full, then move all corresponding
+                // open index files to new location
+                for (Long l : dirtyLedgers) {
+                    FileInfo fi = getFileInfo(l, null);
+                    File currentDir = fi.getLf().getParentFile().getParentFile().getParentFile();
+                    if (ledgerDirsManager.isDirFull(currentDir)) {
+                        moveLedgerIndexFile(l, fi);
+                    }
+                }
+                shouldRelocateIndexFile.set(false);
+            }
+
             while(!dirtyLedgers.isEmpty()) {
                 Long l = dirtyLedgers.removeFirst();
 
@@ -325,6 +375,11 @@ public class LedgerCacheImpl implements LedgerCache {
                 }
             }
         }
+    }
+
+    private void moveLedgerIndexFile(Long l, FileInfo fi) throws NoWritableLedgerDirException, IOException {
+        File newLedgerIndexFile = getNewLedgerIndexFile(l);
+        fi.moveToNewLocation(newLedgerIndexFile, fi.getSizeSinceLastwrite());
     }
 
     /**
@@ -578,22 +633,39 @@ public class LedgerCacheImpl implements LedgerCache {
      * BookieServer knows about that have not yet been deleted by the BookKeeper
      * Client. This is called only once during initialization.
      */
-    private void getActiveLedgers() {
+    private void getActiveLedgers() throws IOException {
         // Ledger index files are stored in a file hierarchy with a parent and
         // grandParent directory. We'll have to go two levels deep into these
         // directories to find the index files.
-        for (File ledgerDirectory : ledgerDirectories) {
+        for (File ledgerDirectory : ledgerDirsManager.getAllLedgerDirs()) {
             for (File grandParent : ledgerDirectory.listFiles()) {
                 if (grandParent.isDirectory()) {
                     for (File parent : grandParent.listFiles()) {
                         if (parent.isDirectory()) {
                             for (File index : parent.listFiles()) {
-                                if (!index.isFile() || !index.getName().endsWith(".idx")) {
+                                if (!index.isFile()
+                                        || (!index.getName().endsWith(IDX) && !index.getName().endsWith(RLOC))) {
                                     continue;
                                 }
-                                // We've found a ledger index file. The file name is the
-                                // HexString representation of the ledgerId.
-                                String ledgerIdInHex = index.getName().substring(0, index.getName().length() - 4);
+
+                                // We've found a ledger index file. The file
+                                // name is the HexString representation of the
+                                // ledgerId.
+                                String ledgerIdInHex = index.getName().replace(RLOC, "").replace(IDX, "");
+                                if (index.getName().endsWith(RLOC)) {
+                                    if (findIndexFile(Long.parseLong(ledgerIdInHex)) != null) {
+                                        if (!index.delete()) {
+                                            LOG.warn("Deleting the rloc file " + index + " failed");
+                                        }
+                                        continue;
+                                    } else {
+                                        File dest = new File(index.getParentFile(), ledgerIdInHex + IDX);
+                                        if (!index.renameTo(dest)) {
+                                            throw new IOException("Renaming rloc file " + index
+                                                    + " to index file has failed");
+                                        }
+                                    }
+                                }
                                 activeLedgerManager.addActiveLedger(Long.parseLong(ledgerIdInHex, 16), true);
                             }
                         }
@@ -656,7 +728,7 @@ public class LedgerCacheImpl implements LedgerCache {
 
     private File findIndexFile(long ledgerId) throws IOException {
         String ledgerName = getLedgerName(ledgerId);
-        for(File d: ledgerDirectories) {
+        for (File d : ledgerDirsManager.getAllLedgerDirs()) {
             File lf = new File(d, ledgerName);
             if (lf.exists()) {
                 return lf;

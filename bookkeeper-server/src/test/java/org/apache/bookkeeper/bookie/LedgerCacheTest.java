@@ -23,6 +23,7 @@ package org.apache.bookkeeper.bookie;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -30,6 +31,7 @@ import org.apache.bookkeeper.meta.ActiveLedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -50,6 +52,8 @@ public class LedgerCacheTest extends TestCase {
     ServerConfiguration conf;
     File txnDir, ledgerDir;
 
+    private Bookie bookie;
+
     @Override
     @Before
     public void setUp() throws Exception {
@@ -66,27 +70,34 @@ public class LedgerCacheTest extends TestCase {
         conf.setZkServers(null);
         conf.setJournalDirName(txnDir.getPath());
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
+        bookie = new Bookie(conf);
 
         ledgerManagerFactory =
             LedgerManagerFactory.newLedgerManagerFactory(conf, null);
         activeLedgerManager = ledgerManagerFactory.newActiveLedgerManager();
+        ledgerCache = ((InterleavedLedgerStorage) bookie.ledgerStorage).ledgerCache;
     }
 
     @Override
     @After
     public void tearDown() throws Exception {
+        bookie.ledgerStorage.shutdown();
         activeLedgerManager.close();
         ledgerManagerFactory.uninitialize();
         FileUtils.deleteDirectory(txnDir);
         FileUtils.deleteDirectory(ledgerDir);
     }
 
-    private void newLedgerCache() {
-        ledgerCache = new LedgerCacheImpl(conf, activeLedgerManager);
+    private void newLedgerCache() throws IOException {
+        if (ledgerCache != null) {
+            ledgerCache.close();
+        }
+        ledgerCache = ((InterleavedLedgerStorage) bookie.ledgerStorage).ledgerCache = new LedgerCacheImpl(
+                conf, activeLedgerManager, bookie.getLedgerDirsManager());
     }
 
     @Test
-    public void testAddEntryException() {
+    public void testAddEntryException() throws IOException {
         // set page limitation
         conf.setPageLimit(10);
         // create a ledger cache
@@ -210,5 +221,58 @@ public class LedgerCacheTest extends TestCase {
             LOG.error("Got Exception.", e);
             fail("Failed to add entry.");
         }
+    }
+
+    /**
+     * Test Ledger Cache flush failure
+     */
+    public void testLedgerCacheFlushFailureOnDiskFull() throws Exception {
+        File ledgerDir1 = File.createTempFile("bkTest", ".dir");
+        ledgerDir1.delete();
+        File ledgerDir2 = File.createTempFile("bkTest", ".dir");
+        ledgerDir2.delete();
+        ServerConfiguration conf = new ServerConfiguration();
+        conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(), ledgerDir2.getAbsolutePath() });
+
+        Bookie bookie = new Bookie(conf);
+        InterleavedLedgerStorage ledgerStorage = ((InterleavedLedgerStorage) bookie.ledgerStorage);
+        LedgerCacheImpl ledgerCache = (LedgerCacheImpl) ledgerStorage.ledgerCache;
+        // Create ledger index file
+        ledgerStorage.setMasterKey(1, "key".getBytes());
+
+        FileInfo fileInfo = ledgerCache.getFileInfo(Long.valueOf(1), null);
+
+        // Simulate the flush failure
+        FileInfo newFileInfo = new FileInfo(fileInfo.getLf(), fileInfo.getMasterKey());
+        ledgerCache.fileInfoCache.put(Long.valueOf(1), newFileInfo);
+        // Add entries
+        ledgerStorage.addEntry(generateEntry(1, 1));
+        ledgerStorage.addEntry(generateEntry(1, 2));
+        ledgerStorage.flush();
+
+        ledgerStorage.addEntry(generateEntry(1, 3));
+        // add the dir to failed dirs
+        bookie.getLedgerDirsManager().addToFilledDirs(
+                newFileInfo.getLf().getParentFile().getParentFile().getParentFile());
+        File before = newFileInfo.getLf();
+        // flush after disk is added as failed.
+        ledgerStorage.flush();
+        File after = newFileInfo.getLf();
+
+        assertFalse("After flush index file should be changed", before.equals(after));
+        // Verify written entries
+        Assert.assertArrayEquals(generateEntry(1, 1).array(), ledgerStorage.getEntry(1, 1).array());
+        Assert.assertArrayEquals(generateEntry(1, 2).array(), ledgerStorage.getEntry(1, 2).array());
+        Assert.assertArrayEquals(generateEntry(1, 3).array(), ledgerStorage.getEntry(1, 3).array());
+    }
+
+    private ByteBuffer generateEntry(long ledger, long entry) {
+        byte[] data = ("ledger-" + ledger + "-" + entry).getBytes();
+        ByteBuffer bb = ByteBuffer.wrap(new byte[8 + 8 + data.length]);
+        bb.putLong(ledger);
+        bb.putLong(entry);
+        bb.put(data);
+        bb.flip();
+        return bb;
     }
 }

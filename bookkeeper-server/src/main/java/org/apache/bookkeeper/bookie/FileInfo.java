@@ -54,7 +54,7 @@ class FileInfo {
     static final int NO_MASTER_KEY = -1;
 
     private FileChannel fc;
-    private final File lf;
+    private File lf;
     byte[] masterKey;
 
     /**
@@ -67,6 +67,7 @@ class FileInfo {
     private long size;
     private int useCount;
     private boolean isClosed;
+    private long sizeSinceLastwrite;
 
     // file access mode
     protected String mode;
@@ -78,6 +79,14 @@ class FileInfo {
         mode = "rw";
     }
 
+    public File getLf() {
+        return lf;
+    }
+
+    public long getSizeSinceLastwrite() {
+        return sizeSinceLastwrite;
+    }
+
     synchronized public void readHeader() throws IOException {
         if (lf.exists()) {
             if (fc != null) {
@@ -86,6 +95,7 @@ class FileInfo {
 
             fc = new RandomAccessFile(lf, mode).getChannel();
             size = fc.size();
+            sizeSinceLastwrite = size;
 
             // avoid hang on reading partial index
             ByteBuffer bb = ByteBuffer.allocate((int)(Math.min(size, START_OF_DATA)));
@@ -220,7 +230,59 @@ class FileInfo {
                 size = newsize;
             }
         }
+        sizeSinceLastwrite = fc.size();
         return total;
+    }
+
+    /**
+     * Copies current file contents upto specified size to the target file and
+     * deletes the current file. If size not known then pass size as
+     * Long.MAX_VALUE to copy complete file.
+     */
+    public synchronized void moveToNewLocation(File newFile, long size) throws IOException {
+        checkOpen(false);
+        if (size > fc.size()) {
+            size = fc.size();
+        }
+        File rlocFile = new File(newFile.getParentFile(), newFile.getName() + LedgerCacheImpl.RLOC);
+        if (!rlocFile.exists()) {
+            checkParents(rlocFile);
+            if (!rlocFile.createNewFile()) {
+                throw new IOException("Creating new cache index file " + rlocFile + " failed ");
+            }
+        }
+        // copy contents from old.idx to new.idx.rloc
+        FileChannel newFc = new RandomAccessFile(rlocFile, "rw").getChannel();
+        try {
+            long written = 0;
+            while (written < size) {
+                long count = fc.transferTo(written, size, newFc);
+                if (count <= 0) {
+                    throw new IOException("Copying to new location " + rlocFile + " failed");
+                }
+                written += count;
+            }
+            if (written <= 0 && size > 0) {
+                throw new IOException("Copying to new location " + rlocFile + " failed");
+            }
+        } finally {
+            newFc.force(true);
+            newFc.close();
+        }
+        // delete old.idx
+        fc.close();
+        if (!delete()) {
+            LOG.error("Failed to delete the previous index file " + lf);
+            throw new IOException("Failed to delete the previous index file " + lf);
+        }
+
+        // rename new.idx.rloc to new.idx
+        if (!rlocFile.renameTo(newFile)) {
+            LOG.error("Failed to rename " + rlocFile + " to " + newFile);
+            throw new IOException("Failed to rename " + rlocFile + " to " + newFile);
+        }
+        fc = new RandomAccessFile(newFile, mode).getChannel();
+        lf = newFile;
     }
 
     synchronized public byte[] getMasterKey() throws IOException {

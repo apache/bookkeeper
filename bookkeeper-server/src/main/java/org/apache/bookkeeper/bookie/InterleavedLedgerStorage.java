@@ -54,7 +54,7 @@ class InterleavedLedgerStorage implements LedgerStorage {
             ActiveLedgerManager activeLedgerManager,
             LedgerDirsManager ledgerDirsManager) throws IOException {
         entryLogger = new EntryLogger(conf, ledgerDirsManager);
-        ledgerCache = new LedgerCacheImpl(conf, activeLedgerManager);
+        ledgerCache = new LedgerCacheImpl(conf, activeLedgerManager, ledgerDirsManager);
         gcThread = new GarbageCollectorThread(conf, ledgerCache, entryLogger,
                 activeLedgerManager, new EntryLogCompactionScanner());
     }
