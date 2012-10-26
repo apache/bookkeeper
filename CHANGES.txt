@@ -196,6 +196,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-411: Add CloseSubscription Request for multiplexing support (sijie via ivank)
 
+        BOOKKEEPER-441: InMemorySubscriptionManager should back up top2sub2seq before change it (Yixue via ivank)
+
       hedwig-client:
 
         BOOKKEEPER-306: Change C++ client to use gtest for testing (ivank via sijie)

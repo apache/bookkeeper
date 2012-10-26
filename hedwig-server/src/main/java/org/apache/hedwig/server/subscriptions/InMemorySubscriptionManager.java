@@ -30,6 +30,9 @@ import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.util.Callback;
 
 public class InMemorySubscriptionManager extends AbstractSubscriptionManager {
+    // Backup for top2sub2seq
+    final ConcurrentHashMap<ByteString, Map<ByteString, InMemorySubscriptionState>> top2sub2seqBackup =
+        new ConcurrentHashMap<ByteString, Map<ByteString, InMemorySubscriptionState>>();
 
     public InMemorySubscriptionManager(ServerConfiguration conf,
                                        TopicManager tm, PersistenceManager pm,
@@ -72,19 +75,22 @@ public class InMemorySubscriptionManager extends AbstractSubscriptionManager {
 
     @Override
     public void lostTopic(ByteString topic) {
-        // Intentionally do nothing, so that we dont lose in-memory information
+        // Backup topic-sub2seq map for readSubscriptions
+        final Map<ByteString, InMemorySubscriptionState> sub2seq = top2sub2seq.get(topic);
+        if (null != sub2seq)
+            top2sub2seqBackup.put(topic, sub2seq);
+
         if (logger.isDebugEnabled()) {
             logger.debug("InMemorySubscriptionManager is losing topic " + topic.toStringUtf8());
         }
-        queuer.pushAndMaybeRun(topic, new ReleaseOp(topic, noopCallback, null, false));
+        queuer.pushAndMaybeRun(topic, new ReleaseOp(topic, noopCallback, null));
     }
 
     @Override
     protected void readSubscriptions(ByteString topic,
                                      Callback<Map<ByteString, InMemorySubscriptionState>> cb, Object ctx) {
-        // Since we don't lose in-memory information on lostTopic, we can just
-        // return that back
-        Map<ByteString, InMemorySubscriptionState> topicSubs = top2sub2seq.get(topic);
+        // Since we backed up in-memory information on lostTopic, we can just return that back
+        Map<ByteString, InMemorySubscriptionState> topicSubs = top2sub2seqBackup.remove(topic);
 
         if (topicSubs != null) {
             cb.operationFinished(ctx, topicSubs);

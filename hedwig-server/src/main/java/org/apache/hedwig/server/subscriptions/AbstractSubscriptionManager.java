@@ -236,12 +236,8 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
 
     class ReleaseOp extends TopicOpQueuer.AsynchronousOp<Void> {
 
-        final boolean removeStates;
-
-        public ReleaseOp(final ByteString topic, final Callback<Void> cb, Object ctx,
-                         boolean removeStates) {
+        public ReleaseOp(final ByteString topic, final Callback<Void> cb, Object ctx) {
             queuer.super(topic, cb, ctx);
-            this.removeStates = removeStates;
         }
 
         @Override
@@ -263,12 +259,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
 
                 private void finish() {
                     // tell delivery manager to stop delivery for subscriptions of this topic
-                    final Map<ByteString, InMemorySubscriptionState> topicSubscriptions;
-                    if (removeStates) {
-                        topicSubscriptions = top2sub2seq.remove(topic);
-                    } else {
-                        topicSubscriptions = top2sub2seq.get(topic);
-                    }
+                    final Map<ByteString, InMemorySubscriptionState> topicSubscriptions = top2sub2seq.remove(topic);
                     // no subscriptions now, it may be removed by other release ops
                     if (null != topicSubscriptions) {
                         for (ByteString subId : topicSubscriptions.keySet()) {
@@ -322,7 +313,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
      */
     @Override
     public void lostTopic(ByteString topic) {
-        queuer.pushAndMaybeRun(topic, new ReleaseOp(topic, noopCallback, null, true));
+        queuer.pushAndMaybeRun(topic, new ReleaseOp(topic, noopCallback, null));
     }
 
     private void notifyLastLocalUnsubscribe(ByteString topic) {
