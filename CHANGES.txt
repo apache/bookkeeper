@@ -128,6 +128,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-191: Hub server should change ledger to write, so consumed messages have chance to be garbage collected. (sijie via ivank)
 
+        BOOKKEEPER-439: No more messages delivered after deleted consumed ledgers. (sijie via ivank)
+
     IMPROVEMENTS:
 
       bookkeeper-server:

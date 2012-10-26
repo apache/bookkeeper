@@ -46,6 +46,7 @@ import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.HedwigClient;
 import org.apache.hedwig.protocol.PubSubProtocol.LedgerRange;
+import org.apache.hedwig.protocol.PubSubProtocol.LedgerRanges;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
@@ -638,27 +639,20 @@ public class HedwigConsole {
             return true;
         }
 
-        private void printTopicLedgers(List<LedgerRange> lrs) {
+        private void printTopicLedgers(List<LedgerRange> ranges) {
             System.out.println(">>> Persistence Info <<<");
-            if (null == lrs) {
+            if (null == ranges) {
                 System.out.println("N/A");
                 return;
             }
-            if (lrs.isEmpty()) {
+            if (ranges.isEmpty()) {
                 System.out.println("No Ledger used.");
                 return;
             }
-            Iterator<LedgerRange> lrIterator = lrs.iterator();
-            long startOfLedger = 1;
-            while (lrIterator.hasNext()) {
-                LedgerRange range = lrIterator.next();
-                long endOfLedger = Long.MAX_VALUE;
-                if (range.hasEndSeqIdIncluded()) {
-                    endOfLedger = range.getEndSeqIdIncluded().getLocalComponent();
-                }
-                System.out.println("Ledger " + range.getLedgerId() + " [ " + startOfLedger + " ~ " + (endOfLedger == Long.MAX_VALUE ? "" : endOfLedger) + " ]");
-
-                startOfLedger = endOfLedger + 1;
+            for (LedgerRange range : ranges) {
+                System.out.println("Ledger " + range.getLedgerId() + " [ "
+                                   + range.getStartSeqIdIncluded() + " ~ "
+                                   + range.getEndSeqIdIncluded().getLocalComponent() + " ]");
             }
             System.out.println();
         }

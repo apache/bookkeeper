@@ -549,7 +549,7 @@ public class BookKeeper {
         counter.block(0);
         if (counter.getrc() != BKException.Code.OK) {
             LOG.error("Error deleting ledger " + lId + " : " + counter.getrc());
-            throw BKException.create(Code.ZKException);
+            throw BKException.create(counter.getrc());
         }
     }
 

@@ -352,6 +352,13 @@ public class HedwigAdmin {
         return syncObj.value;
     }
 
+    private static LedgerRange buildLedgerRange(long ledgerId, long startOfLedger, MessageSeqId endOfLedger) {
+        LedgerRange.Builder builder =
+            LedgerRange.newBuilder().setLedgerId(ledgerId).setStartSeqIdIncluded(startOfLedger)
+                       .setEndSeqIdIncluded(endOfLedger);
+        return builder.build();
+    }
+
     /**
      * Return the ledger range forming the topic
      *
@@ -387,49 +394,54 @@ public class HedwigAdmin {
         if (null == ranges) {
             return null;
         }
+        List<LedgerRange> results = new ArrayList<LedgerRange>();
         List<LedgerRange> lrs = ranges.getRangesList();
-        if (lrs.isEmpty()) {
-            return lrs;
-        }
-        // try to check last ledger (it may still open)
-        LedgerRange lastRange = lrs.get(lrs.size() - 1);
-        if (lastRange.hasEndSeqIdIncluded()) {
-            return lrs;
-        }
-        // read last confirmed of the opened ledger
-        try {
-            List<LedgerRange> newLrs = new ArrayList<LedgerRange>();
-            newLrs.addAll(lrs);
-            lrs = newLrs;
-            MessageSeqId lastSeqId;
-            if (lrs.size() == 1) {
-                lastSeqId = MessageSeqId.newBuilder().setLocalComponent(1).build();
-            } else {
-                lastSeqId = lrs.get(lrs.size() - 2).getEndSeqIdIncluded();
+        long startSeqId = 1L;
+        if (!lrs.isEmpty()) {
+            LedgerRange range = lrs.get(0);
+            if (!range.hasStartSeqIdIncluded() && range.hasEndSeqIdIncluded()) {
+                long ledgerId = range.getLedgerId();
+                try {
+                    LedgerHandle lh = bk.openLedgerNoRecovery(ledgerId, DigestType.CRC32, passwd);
+                    long numEntries = lh.readLastConfirmed() + 1;
+                    long endOfLedger = range.getEndSeqIdIncluded().getLocalComponent();
+                    startSeqId = endOfLedger - numEntries + 1;
+                } catch (BKException.BKNoSuchLedgerExistsException be) {
+                    // ignore it
+                }
             }
-            LedgerRange newLastRange = refreshLastLedgerRange(lastSeqId, lastRange);
-            lrs.set(lrs.size() - 1, newLastRange);
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        return lrs;
-    }
+        Iterator<LedgerRange> lrIter = lrs.iterator();
+        while (lrIter.hasNext()) {
+            LedgerRange range = lrIter.next();
+            if (range.hasEndSeqIdIncluded()) {
+                long endOfLedger = range.getEndSeqIdIncluded().getLocalComponent();
+                if (range.hasStartSeqIdIncluded()) {
+                    startSeqId = range.getStartSeqIdIncluded();
+                } else {
+                    range = buildLedgerRange(range.getLedgerId(), startSeqId, range.getEndSeqIdIncluded());
+                }
+                results.add(range);
+                if (startSeqId < endOfLedger + 1) {
+                    startSeqId = endOfLedger + 1;
+                }
+                continue;
+            }
+            if (lrIter.hasNext()) {
+                throw new IllegalStateException("Ledger " + range.getLedgerId() + " for topic " + topic.toString()
+                                                + " is not the last one but still does not have an end seq-id");
+            }
 
-    /**
-     * Refresh last ledger range to get lastConfirmed entry, which make it available to read
-     *
-     * @param lastSeqId
-     *            Last sequence id of previous ledger
-     * @param oldRange
-     *            Ledger range to set lastConfirmed entry
-     */
-    LedgerRange refreshLastLedgerRange(MessageSeqId lastSeqId, LedgerRange oldRange)
-        throws BKException, KeeperException, InterruptedException {
-        LedgerHandle lh = bk.openLedgerNoRecovery(oldRange.getLedgerId(), DigestType.CRC32, passwd);
-        long lastConfirmed = lh.readLastConfirmed();
-        MessageSeqId newSeqId = MessageSeqId.newBuilder().mergeFrom(lastSeqId)
-                                .setLocalComponent(lastSeqId.getLocalComponent() + lastConfirmed).build();
-        return LedgerRange.newBuilder().mergeFrom(oldRange).setEndSeqIdIncluded(newSeqId).build();
+            if (range.hasStartSeqIdIncluded()) {
+                startSeqId = range.getStartSeqIdIncluded();
+            }
+
+            LedgerHandle lh = bk.openLedgerNoRecovery(range.getLedgerId(), DigestType.CRC32, passwd);
+            long endOfLedger = startSeqId + lh.readLastConfirmed();
+            MessageSeqId endSeqId = MessageSeqId.newBuilder().setLocalComponent(endOfLedger).build();
+            results.add(buildLedgerRange(range.getLedgerId(), startSeqId, endSeqId));
+        }
+        return results;
     }
 
     /**
