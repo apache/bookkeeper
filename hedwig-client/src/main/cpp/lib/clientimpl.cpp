@@ -119,15 +119,22 @@ void ResponseHandler::redirectRequest(const PubSubResponsePtr& response,
 
   HostAddress h;
   bool redirectToDefaultHost = true;
-  if (response->has_statusmsg()) {
-    try {
-      h = HostAddress::fromString(response->statusmsg());
-      redirectToDefaultHost = false;
-    } catch (std::exception& e) {
+  try {
+    if (response->has_statusmsg()) {
+      try {
+        h = HostAddress::fromString(response->statusmsg());
+        redirectToDefaultHost = false;
+      } catch (std::exception& e) {
+        h = channelManager->getDefaultHost();
+      }
+    } else {
       h = channelManager->getDefaultHost();
     }
-  } else {
-    h = channelManager->getDefaultHost();
+  } catch (std::exception& e) {
+    LOG4CXX_ERROR(logger, "Failed to retrieve redirected host of request " << *data
+                          << " : " << e.what());
+    data->getCallback()->operationFailed(InvalidRedirectException());
+    return;
   }
   if (data->hasTriedServer(h)) {
     LOG4CXX_ERROR(logger, "We've been told to try request [" << data->getTxnId() << "] with [" 
@@ -330,15 +337,15 @@ DuplexChannelManagerPtr DuplexChannelManager::create(const Configuration& conf) 
 }
 
 DuplexChannelManager::DuplexChannelManager(const Configuration& conf)
-  : dispatcher(new EventDispatcher(conf)), conf(conf), closed(false), counterobj() {
+  : dispatcher(new EventDispatcher(conf)), conf(conf), closed(false), counterobj(),
+    defaultHostAddress(conf.get(Configuration::DEFAULT_SERVER,
+                                DEFAULT_SERVER_DEFAULT_VAL)) {
   sslEnabled = conf.getBool(Configuration::SSL_ENABLED, DEFAULT_SSL_ENABLED); 
-  defaultHost = HostAddress::fromString(conf.get(Configuration::DEFAULT_SERVER,
-                                                 DEFAULT_SERVER_DEFAULT_VAL));
   if (sslEnabled) {
     sslCtxFactory = SSLContextFactoryPtr(new SSLContextFactory(conf));
   }
   LOG4CXX_DEBUG(logger, "Created DuplexChannelManager " << this << " with default server "
-                        << defaultHost);
+                        << defaultHostAddress);
 }
 
 DuplexChannelManager::~DuplexChannelManager() {
@@ -362,7 +369,13 @@ void DuplexChannelManager::submitOp(const PubSubDataPtr& op) {
   switch (op->getType()) {
   case PUBLISH:
   case UNSUBSCRIBE:
-    channel = getNonSubscriptionChannel(op->getTopic());  
+    try {
+      channel = getNonSubscriptionChannel(op->getTopic());  
+    } catch (std::exception& e) {
+      LOG4CXX_ERROR(logger, "Failed to submit request " << *op << " : " << e.what());
+      op->getCallback()->operationFailed(e);
+      return;
+    }
     break;
   default:
     TopicSubscriber ts(op->getTopic(), op->getSubscriberId());
@@ -418,14 +431,21 @@ void DuplexChannelManager::submitOpThruChannel(const PubSubDataPtr& op,
 // Submit a pub/sub request to default server
 void DuplexChannelManager::submitOpToDefaultServer(const PubSubDataPtr& op) {
   DuplexChannelPtr channel;
-  switch (op->getType()) {
-  case PUBLISH:
-  case UNSUBSCRIBE:
-    channel = createNonSubscriptionChannel(defaultHost);
-    break;
-  default:
-    channel = createSubscriptionChannel(defaultHost);
-    break;
+  try {
+    switch (op->getType()) {
+    case PUBLISH:
+    case UNSUBSCRIBE:
+      channel = createNonSubscriptionChannel(getDefaultHost());
+      break;
+    default:
+      channel = createSubscriptionChannel(getDefaultHost());
+      break;
+    }
+  } catch (std::exception& e) {
+    LOG4CXX_ERROR(logger, "Failed to create channel to default host " << defaultHostAddress
+                          << " for request " << op << " : " << e.what());
+    op->getCallback()->operationFailed(e);
+    return;
   }
   OperationCallbackPtr connectCallback(new DefaultServerConnectCallback(shared_from_this(),
                                                                         channel, op));

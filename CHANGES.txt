@@ -120,6 +120,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-427: TestConcurrentTopicAcquisition hangs every so often (ivank)
 
+        BOOKKEEPER-434: [Hedwig CPP Client] Delay resolving default host until necessary. (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-302: No more messages delivered when hub server scans messages over two ledgers. (sijie via ivank)

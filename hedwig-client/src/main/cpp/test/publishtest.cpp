@@ -156,6 +156,44 @@ TEST(PublishTest, testMultipleAsyncPublish) {
   delete client;
   delete conf;
 }
+
+class UnresolvedDefaultHostCallback : public Hedwig::OperationCallback {
+public:
+  UnresolvedDefaultHostCallback(SimpleWaitCondition* cond) : cond(cond) {}
+
+  virtual void operationComplete() {
+    cond->setSuccess(false);
+    cond->notify();
+  }
+
+  virtual void operationFailed(const std::exception& exception) {
+    LOG4CXX_ERROR(logger, "Failed with exception : " << exception.what());
+    cond->setSuccess(exception.what() == Hedwig::HostResolutionException().what());
+    cond->notify();
+  }
+
+private:
+  SimpleWaitCondition *cond;
+};
+
+TEST(PublishTest, testPublishWithUnresolvedDefaultHost) {
+  std::string invalidHost("");
+  Hedwig::Configuration* conf = new TestServerConfiguration(invalidHost);
+  
+  SimpleWaitCondition* cond = new SimpleWaitCondition();
+  Hedwig::Client* client = new Hedwig::Client(*conf);
+  Hedwig::Publisher& pub = client->getPublisher();
+  Hedwig::OperationCallbackPtr testcb(new UnresolvedDefaultHostCallback(cond));
+
+  pub.asyncPublish("testTopic", "testPublishWithUnresolvedDefaultHost", testcb);
+  
+  cond->wait();
+  ASSERT_TRUE(cond->wasSuccess());
+  
+  delete cond;
+  delete client;
+  delete conf;
+}
   /*  void simplePublish() {
     LOG4CXX_DEBUG(logger, ">>> simplePublish");
     SimpleWaitCondition* cond = new SimpleWaitCondition();

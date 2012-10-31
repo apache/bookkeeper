@@ -270,7 +270,9 @@ namespace Hedwig {
     long nextTxnId();
 
     // return default host
-    inline const HostAddress& getDefaultHost() { return defaultHost; }
+    inline const HostAddress getDefaultHost() {
+      return HostAddress::fromString(defaultHostAddress);
+    }
 
     // set the owner host of a topic
     void setHostForTopic(const std::string& topic, const HostAddress& host);
@@ -402,8 +404,7 @@ namespace Hedwig {
     // counter used for generating transaction ids
     ClientTxnCounter counterobj;
 
-    // default host
-    HostAddress defaultHost;
+    std::string defaultHostAddress;
 
     // non-subscription channels
     std::tr1::unordered_map<HostAddress, DuplexChannelPtr, HostAddressHash > host2channel;

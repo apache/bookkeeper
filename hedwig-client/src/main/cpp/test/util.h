@@ -142,6 +142,9 @@ public:
   TestServerConfiguration() : address("localhost:4081:9877"),
                               syncTimeout(10000), numThreads(2) {}
 
+  TestServerConfiguration(std::string& defaultServer) :
+    address(defaultServer), syncTimeout(10000), numThreads(2) {}
+
   TestServerConfiguration(int syncTimeout, int numThreads = 2)
     : address("localhost:4081:9877"), syncTimeout(syncTimeout), numThreads(numThreads) {}
   
