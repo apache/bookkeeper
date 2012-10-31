@@ -102,6 +102,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-425: Cleanup Bookie id generation (ivank via fpj)
 
+        BOOKKEEPER-430: Remove manual bookie registration from overview (fpj via ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

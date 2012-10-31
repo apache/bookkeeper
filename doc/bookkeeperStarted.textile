@@ -54,7 +54,9 @@ p. ZooKeeper stores metadata on behalf of BookKeeper clients and bookies. To get
 
 #  @/ledgers @ 
 #  @/ledgers/available @ 
-# For each bookie, we add one znode such that the name of the znode is the concatenation of the machine name and the port number that the bookie is listening on. For example, if a bookie is running on bookie.foo.com an is listening on port 3181, we add a znode  @/ledgers/available/bookie.foo.com:3181@ . 
+
+p. We provide a way of bootstrapping it automatically. See the "Admin Guide":./bookkeeperConfig.html for a description of how to bootstrap automatically, and in particular the shell metaformat command.
+ 
 
 h1. Example
 
