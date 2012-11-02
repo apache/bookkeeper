@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef SIMPLE_SUBSCRIBE_IMPL_H
-#define SIMPLE_SUBSCRIBE_IMPL_H
+#ifndef MULTIPLEX_SUBSCRIBE_IMPL_H
+#define MULTIPLEX_SUBSCRIBE_IMPL_H
 
 #include <boost/thread/mutex.hpp>
 
@@ -25,49 +25,21 @@
 
 namespace Hedwig {
 
-  class SimpleActiveSubscriber : public ActiveSubscriber {
+  class MultiplexDuplexChannelManager;
+  typedef boost::shared_ptr<MultiplexDuplexChannelManager> MultiplexDuplexChannelManagerPtr;
+
+  // Multiplex Subscription Channel Handler : multiple subscription per channel
+  class MultiplexSubscriberClientChannelHandler : public SubscriberClientChannelHandler {
   public:
-    SimpleActiveSubscriber(const PubSubDataPtr& data,
-                           const AbstractDuplexChannelPtr& channel,
-                           const SubscriptionPreferencesPtr& preferences,
-                           const DuplexChannelManagerPtr& channelManager);
+    MultiplexSubscriberClientChannelHandler(const MultiplexDuplexChannelManagerPtr& channelManager,
+                                            ResponseHandlerMap& handlers);
+    virtual ~MultiplexSubscriberClientChannelHandler() {}
 
-  protected:
-    virtual void doStartDelivery(const MessageHandlerCallbackPtr& handler,
-                                 const ClientMessageFilterPtr& filter);
+    // remove a given topic subscriber
+    void removeActiveSubscriber(const TopicSubscriber& ts);
 
-    // Stop Delivery
-    virtual void doStopDelivery();
-              
-    // Queue message when message handler is not ready
-    virtual void queueMessage(const PubSubResponsePtr& m);
-
-  private:
-    std::size_t maxQueueLen;
-  };
-
-  class CloseSubscriptionCallback : public OperationCallback {
-  public:
-    explicit CloseSubscriptionCallback(const ActiveSubscriberPtr& activeSubscriber,
-                                       const SubscriptionEvent event);
-
-    virtual void operationComplete();
-    virtual void operationFailed(const std::exception& exception);
-  private:
-    void finish();
-    const ActiveSubscriberPtr activeSubscriber;
-    const SubscriptionEvent event;
-  };
-
-  // Simple Subscription Channel Handler : One subscription per channel
-  class SimpleSubscriberClientChannelHandler : public SubscriberClientChannelHandler {
-  public:
-    SimpleSubscriberClientChannelHandler(const DuplexChannelManagerPtr& channelManager,
-                                         ResponseHandlerMap& handlers);
-    virtual ~SimpleSubscriberClientChannelHandler() {}
-
-    // Set the subscriber serving on this channel
-    bool setActiveSubscriber(const PubSubDataPtr& op,
+    // Add the subscriber serving on this channel
+    bool addActiveSubscriber(const PubSubDataPtr& op,
                              const SubscriptionPreferencesPtr& preferences);
 
     virtual void handleSubscriptionEvent(const TopicSubscriber& ts,
@@ -103,35 +75,43 @@ namespace Hedwig {
     virtual void closeHandler();
 
   private:
-    inline void clearActiveSubscriber() {
-      boost::lock_guard<boost::shared_mutex> lock(subscriber_lock);
-      subscriber = ActiveSubscriberPtr();
+    inline const ActiveSubscriberPtr& getActiveSubscriber(const TopicSubscriber& ts) {
+      boost::shared_lock<boost::shared_mutex> lock(subscribers_lock);
+      return activeSubscribers[ts];
     }
 
-    inline const ActiveSubscriberPtr& getActiveSubscriber() {
-      boost::shared_lock<boost::shared_mutex> lock(subscriber_lock);
-      return subscriber;
-    }
+    typedef std::tr1::unordered_map<TopicSubscriber, ActiveSubscriberPtr, TopicSubscriberHash>
+    ActiveSubscriberMap;
 
-    ActiveSubscriberPtr subscriber;
-    boost::shared_mutex subscriber_lock;
+    ActiveSubscriberMap activeSubscribers;
+    boost::shared_mutex subscribers_lock;
+
+    const MultiplexDuplexChannelManagerPtr mChannelManager;
   };
 
-  typedef boost::shared_ptr<SimpleSubscriberClientChannelHandler>
-    SimpleSubscriberClientChannelHandlerPtr;
+  typedef boost::shared_ptr<MultiplexSubscriberClientChannelHandler>
+    MultiplexSubscriberClientChannelHandlerPtr;
 
   //
-  // Simple Duplex Channel Manager
+  // Multiplex Duplex Channel Manager
   //
 
-  class SimpleDuplexChannelManager : public DuplexChannelManager {
+  class MultiplexDuplexChannelManager : public DuplexChannelManager {
   public:
-    explicit SimpleDuplexChannelManager(const Configuration& conf);
-    virtual ~SimpleDuplexChannelManager();
+    explicit MultiplexDuplexChannelManager(const Configuration& conf);
+    virtual ~MultiplexDuplexChannelManager();
 
-    bool storeSubscriptionChannelHandler(const TopicSubscriber& ts,
-                                         const PubSubDataPtr& txn,
-                                         const SimpleSubscriberClientChannelHandlerPtr& handler);
+    bool storeSubscriptionChannelHandler(
+      const TopicSubscriber& ts, const PubSubDataPtr& txn,
+      const MultiplexSubscriberClientChannelHandlerPtr& handler);
+
+    bool removeSubscriptionChannelHandler(
+      const TopicSubscriber& ts,
+      const MultiplexSubscriberClientChannelHandlerPtr& handler);
+
+    bool removeSubscriptionChannelHandler(
+      const HostAddress& addr,
+      const MultiplexSubscriberClientChannelHandlerPtr& handler);
 
     // Get the subscription channel handler for a given subscription
     virtual SubscriberClientChannelHandlerPtr
@@ -162,35 +142,52 @@ namespace Hedwig {
                                                       bool doConnect);
 
   private:
-    const SimpleSubscriberClientChannelHandlerPtr&
-    getSimpleSubscriptionChannelHandler(const TopicSubscriber& ts);
-
-    std::tr1::unordered_map<TopicSubscriber, SimpleSubscriberClientChannelHandlerPtr, TopicSubscriberHash > topicsubscriber2handler;
-    boost::shared_mutex topicsubscriber2handler_lock;
+    std::tr1::unordered_map<HostAddress, MultiplexSubscriberClientChannelHandlerPtr, HostAddressHash> subhandlers;
+    boost::shared_mutex subhandlers_lock;
+    // A inverse mapping for all available topic subscribers
+    std::tr1::unordered_map<TopicSubscriber, MultiplexSubscriberClientChannelHandlerPtr, TopicSubscriberHash> subscribers;
+    boost::shared_mutex subscribers_lock;
 
     // Response Handlers for subscription requests
     ResponseHandlerMap subscriptionHandlers;
   };
 
-  typedef boost::shared_ptr<SimpleDuplexChannelManager> SimpleDuplexChannelManagerPtr;
-
   // Subscribe Response Handler
 
-  class SimpleSubscribeResponseHandler : public ResponseHandler {
+  class MultiplexSubscribeResponseHandler : public ResponseHandler {
   public:
-    explicit SimpleSubscribeResponseHandler(
-      const SimpleDuplexChannelManagerPtr& channelManager);
+    explicit MultiplexSubscribeResponseHandler(const MultiplexDuplexChannelManagerPtr& channelManager);
 
-    virtual ~SimpleSubscribeResponseHandler() {}
+    virtual ~MultiplexSubscribeResponseHandler() {}
 
     virtual void handleResponse(const PubSubResponsePtr& m, const PubSubDataPtr& txn,
                                 const DuplexChannelPtr& channel);
 
   private:
     void handleSuccessResponse(const PubSubResponsePtr& m, const PubSubDataPtr& txn,
-                               const SimpleSubscriberClientChannelHandlerPtr& handler);
-    const SimpleDuplexChannelManagerPtr sChannelManager;
+                               const MultiplexSubscriberClientChannelHandlerPtr& handler);
+    const MultiplexDuplexChannelManagerPtr mChannelManager;
   };
+
+  // Callback delegation to remove subscription from a channel
+
+  class RemoveSubscriptionCallback : public ResponseCallback {
+  public:
+    explicit RemoveSubscriptionCallback(
+      const MultiplexDuplexChannelManagerPtr& channelManager,
+      const MultiplexSubscriberClientChannelHandlerPtr& handler,
+      const TopicSubscriber& ts, const OperationCallbackPtr& callback);
+
+    virtual void operationComplete(const ResponseBody& response);
+    virtual void operationFailed(const std::exception& exception);
+  private:
+    const MultiplexDuplexChannelManagerPtr channelManager;
+    const MultiplexSubscriberClientChannelHandlerPtr handler;
+    const TopicSubscriber topicSubscriber;
+    const OperationCallbackPtr callback;
+  };
+
+
 } /* Namespace Hedwig */
 
 #endif

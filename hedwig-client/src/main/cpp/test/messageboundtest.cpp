@@ -74,7 +74,7 @@ protected:
 };
 
 void sendXExpectLastY(Hedwig::Publisher& pub, Hedwig::Subscriber& sub, const std::string& topic, 
-		      const std::string& subid, int X, int Y) {
+                      const std::string& subid, int X, int Y) {
   for (int i = 0; i < X;) {
     std::stringstream oss;
     oss << i;

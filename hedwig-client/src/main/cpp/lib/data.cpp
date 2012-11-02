@@ -37,7 +37,8 @@ const char* OPERATION_TYPE_NAMES[] = {
   stringify( CONSUME ),
   stringify( UNSUBSCRIBE ),
   stringify( START_DELIVERY ),
-  stringify( STOP_DELIVERY )
+  stringify( STOP_DELIVERY ),
+  stringify( CLOSESUBSCRIPTION )
 };
 
 PubSubDataPtr PubSubData::forPublishRequest(long txnid, const std::string& topic, const Message& body,
@@ -67,6 +68,18 @@ PubSubDataPtr PubSubData::forUnsubscribeRequest(long txnid, const std::string& s
                                                 const ResponseCallbackPtr& callback) {
   PubSubDataPtr ptr(new PubSubData());
   ptr->type = UNSUBSCRIBE;
+  ptr->txnid = txnid;
+  ptr->subscriberid = subscriberid;
+  ptr->topic = topic;
+  ptr->callback = callback;
+  return ptr;  
+}
+
+PubSubDataPtr PubSubData::forCloseSubscriptionRequest(
+  long txnid, const std::string& subscriberid, const std::string& topic,
+  const ResponseCallbackPtr& callback) {
+  PubSubDataPtr ptr(new PubSubData());
+  ptr->type = CLOSESUBSCRIPTION;
   ptr->txnid = txnid;
   ptr->subscriberid = subscriberid;
   ptr->topic = topic;
@@ -122,6 +135,9 @@ void PubSubData::setPreferencesForSubRequest(SubscribeRequest * subreq,
   if (options.has_options()) {
     preferences->mutable_options()->CopyFrom(options.options());
   }
+  if (options.has_messagewindowsize()) {
+    preferences->set_messagewindowsize(options.messagewindowsize());
+  }
 }
 
 const PubSubRequestPtr PubSubData::getRequest() {
@@ -159,6 +175,11 @@ const PubSubRequestPtr PubSubData::getRequest() {
     
     Hedwig::UnsubscribeRequest* unsubreq = request->mutable_unsubscriberequest();
     unsubreq->set_subscriberid(subscriberid);    
+  } else if (type == CLOSESUBSCRIPTION) {
+    LOG4CXX_DEBUG(logger, "Creating closeSubscription request");
+    
+    Hedwig::CloseSubscriptionRequest* closesubreq = request->mutable_closesubscriptionrequest();
+    closesubreq->set_subscriberid(subscriberid);    
   } else {
     LOG4CXX_ERROR(logger, "Tried to create a request message for the wrong type [" << type << "]");
     throw UnknownRequestException();
@@ -239,6 +260,7 @@ std::ostream& Hedwig::operator<<(std::ostream& os, const PubSubData& data) {
   switch (type) {
   case SUBSCRIBE:
   case UNSUBSCRIBE:
+  case CLOSESUBSCRIPTION:
     os << ", subscriber:" << data.getSubscriberId() << ")";
     break;
   case CONSUME:

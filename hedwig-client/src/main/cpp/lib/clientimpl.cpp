@@ -24,6 +24,7 @@
 #include "publisherimpl.h"
 #include "subscriberimpl.h"
 #include "simplesubscriberimpl.h"
+#include "multiplexsubscriberimpl.h"
 #include <log4cxx/logger.h>
 
 static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("hedwig."__FILE__));
@@ -331,8 +332,14 @@ void SubscriptionEventEmitter::emitSubscriptionEvent(
 //
 
 DuplexChannelManagerPtr DuplexChannelManager::create(const Configuration& conf) {
-  DuplexChannelManagerPtr manager(new SimpleDuplexChannelManager(conf));
-  LOG4CXX_DEBUG(logger, "Created DuplexChannelManager " << manager);
+  DuplexChannelManager * managerPtr;
+  if (conf.getBool(Configuration::ENABLE_MULTIPLEXING, false)) {
+    managerPtr = new MultiplexDuplexChannelManager(conf);
+  } else {
+    managerPtr = new SimpleDuplexChannelManager(conf);
+  }
+  DuplexChannelManagerPtr manager(managerPtr);
+  LOG4CXX_DEBUG(logger, "Created DuplexChannelManager " << manager.get());
   return manager;
 }
 
@@ -572,11 +579,6 @@ void DuplexChannelManager::setHostForTopic(const std::string& topic, const HostA
   LOG4CXX_DEBUG(logger, "Set ownership of topic " << topic << " to " << host << ".");
 }
 
-const HostAddress& DuplexChannelManager::getHostForTopic(const std::string& topic) {
-  boost::shared_lock<boost::shared_mutex> t2hlock(topic2host_lock);
-  return topic2host[topic];
-}
-
 void DuplexChannelManager::clearAllTopicsForHost(const HostAddress& addr) {
   // remove topic mapping
   boost::lock_guard<boost::shared_mutex> h2tlock(host2topics_lock);
@@ -600,7 +602,15 @@ void DuplexChannelManager::clearHostForTopic(const std::string& topic,
   if (iter != host2topics.end()) {
     iter->second->erase(topic);
   }
-  topic2host.erase(topic);
+  HostAddress existed = topic2host[topic];
+  if (existed == addr) {
+    topic2host.erase(topic);
+  }
+}
+
+const HostAddress& DuplexChannelManager::getHostForTopic(const std::string& topic) {
+  boost::shared_lock<boost::shared_mutex> t2hlock(topic2host_lock);
+  return topic2host[topic];
 }
 
 /**

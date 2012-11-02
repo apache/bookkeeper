@@ -75,6 +75,10 @@ namespace Hedwig {
                                                const ResponseCallbackPtr& callback);
     static PubSubDataPtr forConsumeRequest(long txnid, const std::string& subscriberid, const std::string& topic, const MessageSeqId msgid);
 
+    static PubSubDataPtr forCloseSubscriptionRequest(long txnid, const std::string& subscriberid,
+                                                     const std::string& topic,
+                                                     const ResponseCallbackPtr& callback);
+
     ~PubSubData();
 
     OperationType getType() const;

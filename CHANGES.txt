@@ -226,6 +226,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-368: Implementing multiplexing java client. (sijie via ivank)
 
+        BOOKKEEPER-370: implement multiplexing cpp client. (sijie via ivank)
+
 Release 4.1.0 - 2012-06-07
 
   Non-backward compatible changes:

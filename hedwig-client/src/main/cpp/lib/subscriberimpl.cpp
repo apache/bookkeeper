@@ -322,8 +322,15 @@ void ActiveSubscriber::processEvent(const std::string &topic, const std::string 
     return;
   }
   // resumbit the subscribe request
-  if (TOPIC_MOVED == event) {
+  switch (event) {
+  case TOPIC_MOVED:
+  case SUBSCRIPTION_FORCED_CLOSED:
     resubscribe();
+    break;
+  default:
+    LOG4CXX_ERROR(logger, "Received unknown subscription event " << event
+                          << " for (topic:" << topic << ", subscriber:" << subscriberId << ").");
+    break;
   }
 }
 
@@ -390,9 +397,21 @@ void SubscriberClientChannelHandler::messageReceived(const DuplexChannelPtr& cha
     TopicSubscriber ts(m->topic(), m->subscriberid());
     // dispatch the message to target topic subscriber.
     deliverMessage(ts, m);
-  } else {
-    HedwigClientChannelHandler::messageReceived(channel, m);
+    return;
   }
+  if (m->has_responsebody()) {
+    const ResponseBody& respBody = m->responsebody();
+    if (respBody.has_subscriptionevent()) {
+      const SubscriptionEventResponse& eventResp =
+        respBody.subscriptionevent(); 
+      // dispatch the event
+      TopicSubscriber ts(m->topic(), m->subscriberid());
+      handleSubscriptionEvent(ts, eventResp.event());
+      return;
+    }
+  }
+  
+  HedwigClientChannelHandler::messageReceived(channel, m);
 }
 
 void SubscriberClientChannelHandler::doClose() {
@@ -551,7 +570,10 @@ bool SubscriberImpl::hasSubscription(const std::string& topic, const std::string
   // Get the subscriber channel handler
   SubscriberClientChannelHandlerPtr handler =
     channelManager->getSubscriptionChannelHandler(ts);
-  return 0 != handler.get();
+  if (!handler.get()) {
+    return false;
+  }
+  return handler->hasSubscription(ts);
 }
 
 void SubscriberImpl::closeSubscription(const std::string& topic, const std::string& subscriberId) {
@@ -591,6 +613,44 @@ UnsubscribeResponseHandler::UnsubscribeResponseHandler(const DuplexChannelManage
 void UnsubscribeResponseHandler::handleResponse(const PubSubResponsePtr& m,
                                                 const PubSubDataPtr& txn,
                                                 const DuplexChannelPtr& channel) {
+  switch (m->statuscode()) {
+  case SUCCESS:
+    if (m->has_responsebody()) {
+      txn->getCallback()->operationComplete(m->responsebody());
+    } else {
+      txn->getCallback()->operationComplete(ResponseBody());
+    }
+    break;
+  case SERVICE_DOWN:
+    LOG4CXX_ERROR(logger, "Server responsed with SERVICE_DOWN for " << txn->getTxnId());
+    txn->getCallback()->operationFailed(ServiceDownException());
+    break;
+  case CLIENT_ALREADY_SUBSCRIBED:
+  case TOPIC_BUSY:
+    txn->getCallback()->operationFailed(AlreadySubscribedException());
+    break;
+  case CLIENT_NOT_SUBSCRIBED:
+    txn->getCallback()->operationFailed(NotSubscribedException());
+    break;
+  case NOT_RESPONSIBLE_FOR_TOPIC:
+    redirectRequest(m, txn, channel);
+    break;
+  default:
+    LOG4CXX_ERROR(logger, "Unexpected response " << m->statuscode() << " for " << txn->getTxnId());
+    txn->getCallback()->operationFailed(UnexpectedResponseException());
+    break;
+  }
+}
+
+//
+// CloseSubscription Response Handler
+//
+CloseSubscriptionResponseHandler::CloseSubscriptionResponseHandler(
+  const DuplexChannelManagerPtr& channelManager) : ResponseHandler(channelManager) {}
+
+void CloseSubscriptionResponseHandler::handleResponse(
+  const PubSubResponsePtr& m, const PubSubDataPtr& txn,
+  const DuplexChannelPtr& channel) {
   switch (m->statuscode()) {
   case SUCCESS:
     if (m->has_responsebody()) {

@@ -30,13 +30,23 @@ static log4cxx::LoggerPtr utillogger(log4cxx::Logger::getLogger("hedwig."__FILE_
 class SimpleWaitCondition {
 public:
  SimpleWaitCondition() : flag(false), success(false) {};
-  ~SimpleWaitCondition() { wait(); }
+  ~SimpleWaitCondition() {}
 
   void wait() {
     boost::unique_lock<boost::mutex> lock(mut);
     while(!flag)
     {
         cond.wait(lock);
+    }
+  }
+
+  void timed_wait(uint64_t milliseconds) {
+    boost::mutex::scoped_lock lock(mut);
+    if (!flag) {
+      LOG4CXX_DEBUG(utillogger, "wait for " << milliseconds << " ms.");
+      if (!cond.timed_wait(lock, boost::posix_time::milliseconds(milliseconds))) {
+        LOG4CXX_DEBUG(utillogger, "Timeout wait for " << milliseconds << " ms.");
+      }
     }
   }
 
@@ -115,7 +125,9 @@ private:
 
 class TestSubscriptionListener : public Hedwig::SubscriptionListener {
 public:
-  TestSubscriptionListener(SimpleWaitCondition* cond) : cond(cond) {
+  TestSubscriptionListener(SimpleWaitCondition* cond,
+                           const Hedwig::SubscriptionEvent event)
+    : cond(cond), expectedEvent(event) {
     LOG4CXX_DEBUG(utillogger, "Created TestSubscriptionListener " << this);
   }
 
@@ -125,7 +137,7 @@ public:
                             const Hedwig::SubscriptionEvent event) {
     LOG4CXX_DEBUG(utillogger, "Received event " << event << " for (topic:" << topic
                               << ", subscriber:" << subscriberId << ") from listener " << this);
-    if (Hedwig::TOPIC_MOVED == event) {
+    if (expectedEvent == event) {
       if (cond) {
         cond->setSuccess(true);
         cond->notify();
@@ -135,6 +147,7 @@ public:
 
 private:
   SimpleWaitCondition *cond;
+  const Hedwig::SubscriptionEvent expectedEvent;
 };
 
 class TestServerConfiguration : public Hedwig::Configuration {
@@ -170,6 +183,8 @@ public:
   virtual bool getBool(const std::string& key, bool defaultVal) const {
     if (key == Configuration::SSL_ENABLED) {
       return isSSL;
+    } else if (key == Configuration::ENABLE_MULTIPLEXING) {    
+      return multiplexing;
     }
     return defaultVal;
   }
@@ -177,6 +192,7 @@ public:
   // for testing
   static bool isSSL;
   static std::string certFile;
+  static bool multiplexing;
 private:
   const std::string address;
   const int syncTimeout;

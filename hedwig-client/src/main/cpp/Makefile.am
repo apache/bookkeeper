@@ -31,8 +31,14 @@ EXTRA_DIST = $(DX_CONFIG) doc/html
 check:
 	cd test; make check
 
-sslcheck:
-	cd test; make sslcheck
+simplesslcheck:
+	cd test; make simplesslcheck
 
 simplecheck:
 	cd test; make simplecheck
+
+multiplexsslcheck:
+	cd test; make multiplexsslcheck
+
+multiplexcheck:
+	cd test; make multiplexcheck

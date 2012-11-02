@@ -31,10 +31,17 @@ runtest() {
 
     stop_cluster;
     start_cluster;
-    if [ "z$1" != "z" ]; then
-      ../test/hedwigtest -s true
+
+    if [ "z$2" != "z" ]; then
+      ../test/hedwigtest -s true -m true
     else
-      ../test/hedwigtest
+      if [ "z$1" == "zssl" ]; then
+        ../test/hedwigtest -s true
+      elif [ "z$1" == "zmultiplex" ]; then
+        ../test/hedwigtest -m true
+      else
+        ../test/hedwigtest
+      fi
     fi
 
     RESULT=$?
@@ -61,6 +68,13 @@ EOF
     fi
 
     exit $RESULT
+}
+
+runall() {
+    runtest;
+    runtest ssl;
+    runtest multiplex;
+    runtest ssl multiplex;
 }
 
 singletest() {
@@ -108,8 +122,14 @@ case "$1" in
     simple-test)
         runtest
         ;;
-    ssl-test)
+    ssl-simple-test)
         runtest ssl
+        ;;
+    multiplex-test)
+        runtest multiplex
+        ;;
+    ssl-multiplex-test)
+        runtest ssl multiplex
         ;;
     setup-delays)
 	setup_delays $2
@@ -118,8 +138,7 @@ case "$1" in
 	clear_delays
 	;;
     all)
-	runtest
-	runtest ssl
+        runall
 	;;
     singletest)
 	singletest $2

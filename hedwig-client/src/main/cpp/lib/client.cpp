@@ -41,6 +41,7 @@ const std::string Configuration::NUM_DISPATCH_THREADS = "hedwig.cpp.num_dispatch
 const std::string Configuration::SUBSCRIPTION_MESSAGE_BOUND = "hedwig.cpp.subscription_message_bound";
 const std::string Configuration::SSL_ENABLED = "hedwig.cpp.ssl_enabled";
 const std::string Configuration::SSL_PEM_FILE = "hedwig.cpp.ssl_pem";
+const std::string Configuration::ENABLE_MULTIPLEXING = "hedwig.cpp.enable_multiplexing";
 
 Client::Client(const Configuration& conf) {
   LOG4CXX_DEBUG(logger, "Client::Client (" << this << ")");

@@ -216,7 +216,8 @@ TEST(SubscribeTest, testAsyncSubcribeForceAttach) {
 
   SimpleWaitCondition* lcond1 = new SimpleWaitCondition();
   std::auto_ptr<SimpleWaitCondition> lcond1ptr(lcond1);
-  Hedwig::SubscriptionListenerPtr listener1(new TestSubscriptionListener(lcond1));
+  Hedwig::SubscriptionListenerPtr listener1(
+    new TestSubscriptionListener(lcond1, Hedwig::SUBSCRIPTION_FORCED_CLOSED));
 
   Hedwig::SubscriptionOptions options;
   options.set_createorattach(Hedwig::SubscribeRequest::CREATE_OR_ATTACH);
@@ -235,7 +236,8 @@ TEST(SubscribeTest, testAsyncSubcribeForceAttach) {
   std::auto_ptr<SimpleWaitCondition> cond2ptr(cond2);
   Hedwig::OperationCallbackPtr testcb2(new TestCallback(cond2));
 
-  Hedwig::SubscriptionListenerPtr listener2(new TestSubscriptionListener(0));
+  Hedwig::SubscriptionListenerPtr listener2(
+    new TestSubscriptionListener(0, Hedwig::SUBSCRIPTION_FORCED_CLOSED));
 
   sub2.addSubscriptionListener(listener2);
 

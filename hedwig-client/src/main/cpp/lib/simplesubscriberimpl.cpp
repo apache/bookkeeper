@@ -61,8 +61,9 @@ void SimpleActiveSubscriber::queueMessage(const PubSubResponsePtr& m) {
   }
 }
 
-CloseSubscriptionCallback::CloseSubscriptionCallback(const ActiveSubscriberPtr& activeSubscriber)
-  : activeSubscriber(activeSubscriber) {
+CloseSubscriptionCallback::CloseSubscriptionCallback(const ActiveSubscriberPtr& activeSubscriber,
+                                                     const SubscriptionEvent event)
+  : activeSubscriber(activeSubscriber), event(event) {
 }
 
 void CloseSubscriptionCallback::operationComplete() {
@@ -77,7 +78,7 @@ void CloseSubscriptionCallback::finish() {
   // Process the disconnect logic after cleaning up
   activeSubscriber->processEvent(activeSubscriber->getTopic(),
                                  activeSubscriber->getSubscriberId(),
-                                 TOPIC_MOVED);
+                                 event);
 }
 
 SimpleSubscriberClientChannelHandler::SimpleSubscriberClientChannelHandler(
@@ -95,6 +96,30 @@ bool SimpleSubscriberClientChannelHandler::setActiveSubscriber(
   subscriber = ActiveSubscriberPtr(new SimpleActiveSubscriber(op, channel, preferences,
                                                               channelManager));
   return true;
+}
+
+void SimpleSubscriberClientChannelHandler::handleSubscriptionEvent(
+  const TopicSubscriber& ts, const SubscriptionEvent event) {
+  ActiveSubscriberPtr as = getActiveSubscriber();
+  if (!as.get()) {
+    LOG4CXX_ERROR(logger, "No Active Subscriber found alive on channel " << channel.get()
+                          << " receiving subscription event " << event);
+    return;
+  }
+  if (!as->isResubscribeRequired() &&
+      (TOPIC_MOVED == event || SUBSCRIPTION_FORCED_CLOSED == event)) {
+    // topic has moved
+    if (TOPIC_MOVED == event) {
+      // remove topic mapping
+      channelManager->clearHostForTopic(as->getTopic(), getChannel()->getHostAddress());
+    }
+    // close subscription to clean status
+    OperationCallbackPtr closeCb(new CloseSubscriptionCallback(as, event));
+    TopicSubscriber ts(as->getTopic(), as->getSubscriberId());
+    channelManager->asyncCloseSubscription(ts, closeCb);
+  } else {
+    as->processEvent(ts.first, ts.second, event);
+  }
 }
 
 void SimpleSubscriberClientChannelHandler::deliverMessage(const TopicSubscriber& ts,
@@ -174,7 +199,7 @@ void SimpleSubscriberClientChannelHandler::onChannelDisconnected(
   // Otherwise, we would cleanup the old channel then notify with a TOPIC_MOVED event
   LOG4CXX_INFO(logger, "Tell " << *as << " his channel " << channel.get() << " is disconnected.");
   if (!as->isResubscribeRequired()) {
-    OperationCallbackPtr closeCb(new CloseSubscriptionCallback(as));
+    OperationCallbackPtr closeCb(new CloseSubscriptionCallback(as, TOPIC_MOVED));
     TopicSubscriber ts(as->getTopic(), as->getSubscriberId());
     channelManager->asyncCloseSubscription(ts, closeCb);
   } else {

@@ -177,7 +177,7 @@ std::ostream& Hedwig::operator<<(std::ostream& os, const HostAddress& host) {
   return os;
 }
 
-std::ostream& Hedwig::operator<<(std::ostream& os, const TopicSubscriber& ts) {
+std::ostream& std::operator<<(std::ostream& os, const TopicSubscriber& ts) {
   os << "(topic:" << ts.first << ", subscriber:" << ts.second << ")";
   return os;
 }

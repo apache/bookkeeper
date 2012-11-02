@@ -38,8 +38,6 @@
 
 namespace Hedwig {
   typedef std::pair<const std::string, const std::string> TopicSubscriber;
-  // Help Function to print topicSubscriber
-  std::ostream& operator<<(std::ostream& os, const TopicSubscriber& ts);
 
   /**
      Representation of a hosts address
@@ -118,6 +116,13 @@ namespace Hedwig {
       return type;
     }
   };
+};
+
+// Since TopicSubscriber is an typedef of std::pair. so log4cxx would lookup 'operator<<'
+// in std namespace.
+namespace std {
+  // Help Function to print topicSubscriber
+  std::ostream& operator<<(std::ostream& os, const Hedwig::TopicSubscriber& ts);
 };
 
 #endif

@@ -18,7 +18,7 @@
 
 if HAVE_GTEST
 bin_PROGRAMS = hedwigtest
-hedwigtest_SOURCES = main.cpp utiltest.cpp publishtest.cpp subscribetest.cpp pubsubtest.cpp messageboundtest.cpp messagefiltertest.cpp
+hedwigtest_SOURCES = main.cpp utiltest.cpp publishtest.cpp subscribetest.cpp pubsubtest.cpp messageboundtest.cpp messagefiltertest.cpp throttledeliverytest.cpp multiplextest.cpp
 hedwigtest_CPPFLAGS = -I$(top_srcdir)/inc $(DEPS_CFLAGS) $(GTEST_CPPFLAGS) $(BOOST_CPPFLAGS)
 hedwigtest_CXXFLAGS = $(GTEST_CXXFLAGS)
 hedwigtest_LDADD = $(DEPS_LIBS) $(GTEST_LIBS) -L$(top_builddir)/lib -lhedwig01
@@ -27,11 +27,17 @@ hedwigtest_LDFLAGS = -no-undefined $(BOOST_ASIO_LIB) $(BOOST_LDFLAGS) $(BOOST_TH
 check: hedwigtest
 	bash ../scripts/tester.sh all
 
-sslcheck: hedwigtest
-	bash ../scripts/tester.sh ssl-test
+simplesslcheck: hedwigtest
+	bash ../scripts/tester.sh ssl-simple-test
 
 simplecheck: hedwigtest
 	bash ../scripts/tester.sh simple-test
+
+multiplexsslcheck: hedwigtest
+	bash ../scripts/tester.sh ssl-multiplex-test
+
+multiplexcheck: hedwigtest
+	bash ../scripts/tester.sh multiplex-test
 
 else
 check:

@@ -225,6 +225,9 @@ namespace Hedwig {
                                    ResponseHandlerMap& handlers);
     virtual ~SubscriberClientChannelHandler();
 
+    virtual void handleSubscriptionEvent(const TopicSubscriber& ts,
+                                         const SubscriptionEvent event) = 0;
+
     // Deliver a received message to given message handler
     virtual void deliverMessage(const TopicSubscriber& ts,
                                 const PubSubResponsePtr& m) = 0;
@@ -315,6 +318,17 @@ namespace Hedwig {
   public:
     explicit UnsubscribeResponseHandler(const DuplexChannelManagerPtr& channelManager);
     virtual ~UnsubscribeResponseHandler() {}
+
+    virtual void handleResponse(const PubSubResponsePtr& m, const PubSubDataPtr& txn,
+                                const DuplexChannelPtr& channel);
+  };
+
+  // CloseSubscription Response Handler 
+
+  class CloseSubscriptionResponseHandler : public ResponseHandler {
+  public:
+    explicit CloseSubscriptionResponseHandler(const DuplexChannelManagerPtr& channelManager);
+    virtual ~CloseSubscriptionResponseHandler() {}
 
     virtual void handleResponse(const PubSubResponsePtr& m, const PubSubDataPtr& txn,
                                 const DuplexChannelPtr& channel);

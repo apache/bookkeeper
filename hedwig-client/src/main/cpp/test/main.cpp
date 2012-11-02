@@ -36,6 +36,7 @@
 
 bool TestServerConfiguration::isSSL = false;
 std::string TestServerConfiguration::certFile = "";
+bool TestServerConfiguration::multiplexing = false;
 
 int main( int argc, char **argv)
 {
@@ -54,7 +55,7 @@ int main( int argc, char **argv)
 
   // Enable SSL for testing
   int opt;
-  while((opt = getopt(argc,argv,"s:c:")) > 0) {
+  while((opt = getopt(argc,argv,"s:c:m:")) > 0) {
     switch(opt) {
     case 's':
       if (std::string(optarg) == "true") {
@@ -62,6 +63,14 @@ int main( int argc, char **argv)
         TestServerConfiguration::isSSL = true;
       } else {
         TestServerConfiguration::isSSL = false;
+      }
+      break;
+    case 'm':
+      if (std::string(optarg) == "true") {
+        std::cout << "run in multiplexing mode ..." << std::endl;
+        TestServerConfiguration::multiplexing = true;
+      } else {
+        TestServerConfiguration::multiplexing = false;
       }
       break;
     case 'c':
