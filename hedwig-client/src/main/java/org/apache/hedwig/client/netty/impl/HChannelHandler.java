@@ -43,7 +43,9 @@ import org.apache.hedwig.exceptions.PubSubException.UncertainStateException;
 import org.apache.hedwig.exceptions.PubSubException.UnexpectedConditionException;
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
+import org.apache.hedwig.protocol.PubSubProtocol.ResponseBody;
 import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionEventResponse;
 import static org.apache.hedwig.util.VarArgs.va;
 
 @ChannelPipelineCoverage("all")
@@ -117,6 +119,27 @@ public class HChannelHandler extends SimpleChannelHandler {
                 subHandler.handleSubscribeMessage(response);
             }
             return;
+        }
+
+        // Process Subscription Events
+        if (response.hasResponseBody()) {
+            ResponseBody resp = response.getResponseBody();
+            // A special subscription event indicates the state of a subscriber
+            if (resp.hasSubscriptionEvent()) {
+                if (null == subHandler) {
+                    logger.error("Received subscription event from a non-subscription channel : {}",
+                                 response); 
+                } else {
+                    SubscriptionEventResponse eventResp = resp.getSubscriptionEvent();
+                    logger.debug("Received subscription event {} for (topic:{}, subscriber:{}).",
+                                 va(eventResp.getEvent(), response.getTopic(),
+                                    response.getSubscriberId()));
+                    subHandler.handleSubscriptionEvent(response.getTopic(),
+                                                       response.getSubscriberId(),
+                                                       eventResp.getEvent());
+                }
+                return;
+            }
         }
 
         // Response is an ack to a prior PubSubRequest so first retrieve the

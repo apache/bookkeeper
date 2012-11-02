@@ -17,11 +17,15 @@
  */
 package org.apache.hedwig.protoextensions;
 
+import com.google.protobuf.ByteString;
+
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.ProtocolVersion;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
 import org.apache.hedwig.protocol.PubSubProtocol.ResponseBody;
 import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionEvent;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionEventResponse;
 
 public class PubSubResponseUtils {
 
@@ -47,4 +51,18 @@ public class PubSubResponseUtils {
         return getBasicBuilder(e.getCode()).setStatusMsg(e.getMessage()).setTxnId(txnId).build();
     }
 
+    public static PubSubResponse getResponseForSubscriptionEvent(ByteString topic,
+                                                                 ByteString subscriberId,
+                                                                 SubscriptionEvent event) {
+        SubscriptionEventResponse.Builder eventBuilder =
+            SubscriptionEventResponse.newBuilder().setEvent(event);
+        ResponseBody.Builder respBuilder =
+            ResponseBody.newBuilder().setSubscriptionEvent(eventBuilder);
+        PubSubResponse response = PubSubResponse.newBuilder()
+                                  .setProtocolVersion(ProtocolVersion.VERSION_ONE)
+                                  .setStatusCode(StatusCode.SUCCESS).setTxnId(0)
+                                  .setTopic(topic).setSubscriberId(subscriberId)
+                                  .setResponseBody(respBuilder).build();
+        return response;
+    }
 }

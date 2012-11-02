@@ -17,6 +17,8 @@
  */
 package org.apache.hedwig.server.handlers;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
@@ -26,6 +28,9 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 
 import org.apache.hedwig.client.data.TopicSubscriber;
+import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionEvent;
+import org.apache.hedwig.protoextensions.PubSubResponseUtils;
 import org.apache.hedwig.util.Callback;
 import static org.apache.hedwig.util.VarArgs.va;
 
@@ -33,24 +38,30 @@ public class SubscriptionChannelManager implements ChannelDisconnectListener {
 
     static Logger logger = LoggerFactory.getLogger(SubscriptionChannelManager.class);
 
-    private static ChannelFutureListener CLOSE_OLD_CHANNEL_LISTENER =
-    new ChannelFutureListener() {
+    static class CloseSubscriptionListener implements ChannelFutureListener {
+
+        final TopicSubscriber ts;
+
+        CloseSubscriptionListener(TopicSubscriber topicSubscriber) {
+            this.ts = topicSubscriber;
+        }
+
         @Override
         public void operationComplete(ChannelFuture future) throws Exception {
             if (!future.isSuccess()) {
-                logger.warn("Failed to close old subscription channel.");
+                logger.warn("Failed to write response to close old subscription {}.", ts);
             } else {
-                logger.debug("Close old subscription channel succeed.");
+                logger.debug("Close old subscription {} succeed.", ts);
             }
         }
     };
 
     final ConcurrentHashMap<TopicSubscriber, Channel> sub2Channel;
-    final ConcurrentHashMap<Channel, TopicSubscriber> channel2sub;
+    final ConcurrentHashMap<Channel, Set<TopicSubscriber>> channel2sub;
 
     public SubscriptionChannelManager() {
         sub2Channel = new ConcurrentHashMap<TopicSubscriber, Channel>();
-        channel2sub = new ConcurrentHashMap<Channel, TopicSubscriber>();
+        channel2sub = new ConcurrentHashMap<Channel, Set<TopicSubscriber>>();
     }
 
     @Override
@@ -58,9 +69,12 @@ public class SubscriptionChannelManager implements ChannelDisconnectListener {
         // Evils of synchronized programming: there is a race between a channel
         // getting disconnected, and us adding it to the maps when a subscribe
         // succeeds
+        Set<TopicSubscriber> topicSubs;
         synchronized (channel) {
-            TopicSubscriber topicSub = channel2sub.remove(channel);
-            if (topicSub != null) {
+            topicSubs = channel2sub.remove(channel);
+        }
+        if (topicSubs != null) {
+            for (TopicSubscriber topicSub : topicSubs) {
                 logger.info("Subscription channel {} for {} is disconnected.",
                             va(channel.getRemoteAddress(), topicSub));
                 // remove entry only currently mapped to given value.
@@ -93,15 +107,30 @@ public class SubscriptionChannelManager implements ChannelDisconnectListener {
         // to the 2 maps
         synchronized (channel) {
             Channel oldChannel = sub2Channel.putIfAbsent(topicSub, channel);
-            if (null != oldChannel) {
+            // if a subscribe request send from same channel,
+            // we treated it a success action.
+            if (null != oldChannel && !oldChannel.equals(channel)) {
                 boolean subSuccess = false;
                 if (forceAttach) {
-                    // it is safe to close old channel here since new channel will be put
-                    // in sub2Channel / channel2Sub so there is no race between channel
-                    // getting disconnected and it.
-                    ChannelFuture future = oldChannel.close();
-                    future.addListener(CLOSE_OLD_CHANNEL_LISTENER);
-                    logger.info("Subscribe request for ({}) from channel ({}) kills old channel ({}).",
+                    // it is safe to close old subscription here since the new subscription
+                    // has come from other channel succeed.
+                    synchronized (oldChannel) {
+                        Set<TopicSubscriber> oldTopicSubs = channel2sub.get(oldChannel);
+                        if (null != oldTopicSubs) {
+                            if (!oldTopicSubs.remove(topicSub)) {
+                                logger.warn("Failed to remove old subscription ({}) due to it isn't on channel ({}).",
+                                            va(topicSub, oldChannel));
+                            } else if (oldTopicSubs.isEmpty()) {
+                                channel2sub.remove(oldChannel);
+                            }
+                        }
+                    }
+                    PubSubResponse resp = PubSubResponseUtils.getResponseForSubscriptionEvent(
+                        topicSub.getTopic(), topicSub.getSubscriberId(),
+                        SubscriptionEvent.SUBSCRIPTION_FORCED_CLOSED
+                    );
+                    oldChannel.write(resp).addListener(new CloseSubscriptionListener(topicSub));
+                    logger.info("Subscribe request for ({}) from channel ({}) closes old subscripiton on channel ({}).",
                                 va(topicSub, channel, oldChannel));
                     // try replace the oldChannel
                     // if replace failure, it migth caused because channelDisconnect callback
@@ -125,7 +154,12 @@ public class SubscriptionChannelManager implements ChannelDisconnectListener {
             }
             // channel2sub is just a cache, so we can add to it
             // without synchronization
-            channel2sub.put(channel, topicSub);
+            Set<TopicSubscriber> topicSubs = channel2sub.get(channel);
+            if (null == topicSubs) {
+                topicSubs = new HashSet<TopicSubscriber>();
+                channel2sub.put(channel, topicSubs); 
+            }
+            topicSubs.add(topicSub);
             return null;
         }
     }
@@ -140,9 +174,14 @@ public class SubscriptionChannelManager implements ChannelDisconnectListener {
      */
     public void remove(TopicSubscriber topicSub, Channel channel) {
         synchronized (channel) {
-            if (!channel2sub.remove(channel, topicSub)) {
-                logger.warn("Failed to remove subscription ({}) due to it isn't on channel ({}).",
-                            va(topicSub, channel));
+            Set<TopicSubscriber> topicSubs = channel2sub.get(channel);
+            if (null != topicSubs) {
+                if (!topicSubs.remove(topicSub)) {
+                    logger.warn("Failed to remove subscription ({}) due to it isn't on channel ({}).",
+                                va(topicSub, channel));
+                } else if (topicSubs.isEmpty()) {
+                    channel2sub.remove(channel);
+                }
             }
             if (!sub2Channel.remove(topicSub, channel)) {
                 logger.warn("Failed to remove channel ({}) due to it isn't ({})'s channel.",

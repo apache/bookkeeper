@@ -156,8 +156,9 @@ public class SubscribeHandler extends BaseHandler {
                     logger.error(errMsg, re);
                     PubSubException pse = new PubSubException.InvalidMessageFilterException(errMsg, re);
                     subStats.incrementFailedOps();
-                    channel.write(PubSubResponseUtils.getResponseForException(pse, request.getTxnId()))
-                    .addListener(ChannelFutureListener.CLOSE);
+                    // we should not close the subscription channel, just response error
+                    // client decide to close it or not.
+                    channel.write(PubSubResponseUtils.getResponseForException(pse, request.getTxnId()));
                     return;
                 } catch (Throwable t) {
                     String errMsg = "Failed to instantiate message filter for (topic:" + topic.toStringUtf8()

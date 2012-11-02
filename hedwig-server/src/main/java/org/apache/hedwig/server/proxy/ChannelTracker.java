@@ -88,7 +88,15 @@ public class ChannelTracker implements ChannelDisconnectListener {
 
     }
 
-    public synchronized void aboutToUnsubscribe(ByteString topic, ByteString subscriberId) {
+    public void aboutToCloseSubscription(ByteString topic, ByteString subscriberId) {
+        removeSubscriber(topic, subscriberId);
+    } 
+
+    public void aboutToUnsubscribe(ByteString topic, ByteString subscriberId) {
+        removeSubscriber(topic, subscriberId);
+    }
+
+    private synchronized void removeSubscriber(ByteString topic, ByteString subscriberId) {
         TopicSubscriber topicSub = new TopicSubscriber(topic, subscriberId);
 
         Channel channel = topicSub2Channel.remove(topicSub);

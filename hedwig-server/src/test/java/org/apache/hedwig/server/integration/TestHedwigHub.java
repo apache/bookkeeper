@@ -80,13 +80,22 @@ public class TestHedwigHub extends HedwigHubTestBase {
 
     @Parameters
     public static Collection<Object[]> configs() {
-        return Arrays.asList(new Object[][] { { Mode.PROXY }, { Mode.REGULAR }, { Mode.SSL }});
+        return Arrays.asList(new Object[][] {
+                                { Mode.PROXY, false },
+                                { Mode.PROXY, true },
+                                { Mode.REGULAR, false },
+                                { Mode.REGULAR, true },
+                                { Mode.SSL, false },
+                                { Mode.SSL, true }
+                             });
     }
 
     protected Mode mode;
+    protected boolean isMultiplexingEnabled;
 
-    public TestHedwigHub(Mode mode) {
+    public TestHedwigHub(Mode mode, boolean isMultiplexingEnabled) {
         this.mode = mode;
+        this.isMultiplexingEnabled = isMultiplexingEnabled;
     }
 
     protected HedwigProxy proxy;
@@ -182,6 +191,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
     }
 
     class TestClientConfiguration extends ClientConfiguration {
+
         @Override
         public InetSocketAddress getDefaultServerHost() {
             if (mode == Mode.PROXY) {
@@ -197,6 +207,11 @@ public class TestHedwigHub extends HedwigHubTestBase {
                 return true;
             else
                 return false;
+        }
+
+        @Override
+        public boolean isMultiplexingEnabled() {
+            return isMultiplexingEnabled;
         }
     }
 

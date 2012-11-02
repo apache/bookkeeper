@@ -17,6 +17,8 @@
  */
 package org.apache.hedwig.client;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -27,6 +29,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.api.MessageHandler;
@@ -47,6 +52,7 @@ import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.ConcurrencyUtils;
 import org.apache.hedwig.util.SubscriptionListener;
 
+@RunWith(Parameterized.class)
 public class TestPubSubClient extends PubSubServerStandAloneTestBase {
 
     private static final int RETENTION_SECS_VALUE = 10;
@@ -150,11 +156,27 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
         }
     }
 
+    @Parameters
+    public static Collection<Object[]> configs() {
+        return Arrays.asList(new Object[][] { { true }, { false } });
+    }
+
+    protected boolean isMultiplexingEnabled;
+
+    public TestPubSubClient(boolean isMultiplexingEnabled) {
+        this.isMultiplexingEnabled = isMultiplexingEnabled;
+    }
+
     @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        client = new HedwigClient(new ClientConfiguration());
+        client = new HedwigClient(new ClientConfiguration() {
+            @Override
+            public boolean isMultiplexingEnabled() {
+                return TestPubSubClient.this.isMultiplexingEnabled;
+            }
+        });
         publisher = client.getPublisher();
         subscriber = client.getSubscriber();
     }
@@ -509,7 +531,7 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
         SynchronousQueue<Boolean> consumeQueue2 = new SynchronousQueue<Boolean>();
         subscriber2.startDelivery(topic, subscriberId, new TestMessageHandler(consumeQueue2));
 
-        assertEquals(SubscriptionEvent.TOPIC_MOVED, eventQueue.take());
+        assertEquals(SubscriptionEvent.SUBSCRIPTION_FORCED_CLOSED, eventQueue.take());
         assertTrue(eventQueue2.isEmpty());
 
         // Now publish some messages for the topic to be consumed by the

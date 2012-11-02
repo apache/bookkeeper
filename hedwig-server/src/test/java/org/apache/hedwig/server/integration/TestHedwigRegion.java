@@ -17,6 +17,8 @@
  */
 package org.apache.hedwig.server.integration;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.SynchronousQueue;
@@ -24,10 +26,14 @@ import java.util.concurrent.SynchronousQueue;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.HedwigClient;
 import org.apache.hedwig.client.api.Publisher;
+import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.server.HedwigRegionTestBase;
@@ -35,6 +41,7 @@ import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.integration.TestHedwigHub.TestCallback;
 import org.apache.hedwig.server.integration.TestHedwigHub.TestMessageHandler;
 
+@RunWith(Parameterized.class)
 public class TestHedwigRegion extends HedwigRegionTestBase {
 
     // SynchronousQueues to verify async calls
@@ -54,10 +61,33 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
         public int getRetryRemoteSubscribeThreadRunInterval() {
             return TEST_RETRY_REMOTE_SUBSCRIBE_INTERVAL_VALUE;
         }
+
+    }
+
+    protected class NewRegionClientConfiguration extends ClientConfiguration {
+        @Override
+        public boolean isMultiplexingEnabled() {
+            return isMultiplexingEnabled;
+        }
     }
 
     protected ServerConfiguration getServerConfiguration(int serverPort, int sslServerPort, String regionName) {
         return new NewRegionServerConfiguration(serverPort, sslServerPort, regionName);
+    }
+
+    protected ClientConfiguration getRegionClientConfiguration() {
+        return new NewRegionClientConfiguration();
+    }
+
+    @Parameters
+    public static Collection<Object[]> configs() {
+        return Arrays.asList(new Object[][] { { false }, { true } });
+    }
+
+    protected boolean isMultiplexingEnabled;
+
+    public TestHedwigRegion(boolean isMultiplexingEnabled) {
+        this.isMultiplexingEnabled = isMultiplexingEnabled;
     }
 
     @Override

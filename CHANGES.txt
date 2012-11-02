@@ -224,6 +224,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-369: re-factor hedwig cpp client to provide better interface to support both one-subscription-per-channel and multiple-subscriptions-per-channel. (sijie via ivank)
 
+        BOOKKEEPER-368: Implementing multiplexing java client. (sijie via ivank)
+
 Release 4.1.0 - 2012-06-07
 
   Non-backward compatible changes:

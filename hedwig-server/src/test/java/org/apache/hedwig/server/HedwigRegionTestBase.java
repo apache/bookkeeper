@@ -166,6 +166,11 @@ public abstract class HedwigRegionTestBase extends TestCase {
         return new RegionClientConfiguration(serverPort, sslServerPort);
     }
 
+    // Method to get a ClientConfiguration for the Cross Region Hedwig Client.
+    protected ClientConfiguration getRegionClientConfiguration() {
+        return new ClientConfiguration();
+    }
+
     @Override
     @Before
     public void setUp() throws Exception {
@@ -237,7 +242,8 @@ public abstract class HedwigRegionTestBase extends TestCase {
                     getServerConfiguration(initialServerPort
                                            + (j + i * numServersPerRegion),
                                            initialSSLServerPort + (j + i * numServersPerRegion),
-                                           regionName));
+                                           regionName),
+                    getRegionClientConfiguration());
             serversList.add(s);
             s.start();
         }

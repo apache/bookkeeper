@@ -247,6 +247,21 @@ public class SimpleSubscribeResponseHandler extends SubscribeResponseHandler {
     }
 
     @Override
+    public void handleSubscriptionEvent(ByteString topic, ByteString subscriberId,
+                                        SubscriptionEvent event) {
+        Channel channel;
+        synchronized (this) {
+            channel = subscribeChannel;
+        }
+        if (null == channel) {
+            logger.warn("No subscription channel found when receiving subscription event {} for (topic:{}, subscriber:{}).",
+                        va(event, topic, subscriberId));
+            return;
+        }
+        processSubscriptionEvent(event, NetUtils.getHostFromChannel(channel), channel);
+    }
+
+    @Override
     protected void asyncMessageDeliver(TopicSubscriber topicSubscriber,
                                        Message message) {
         if (logger.isDebugEnabled()) {
@@ -488,7 +503,20 @@ public class SimpleSubscribeResponseHandler extends SubscribeResponseHandler {
         if (origTopicSubscriber == null) {
             return;
         }
-        sChannelManager.clearHostForTopic(origTopicSubscriber.getTopic(), host);
+        processSubscriptionEvent(SubscriptionEvent.TOPIC_MOVED, host, channel);
+    }
+
+    private void processSubscriptionEvent(final SubscriptionEvent event, InetSocketAddress host,
+                                          final Channel channel) {
+        if (SubscriptionEvent.TOPIC_MOVED != event &&
+            SubscriptionEvent.SUBSCRIPTION_FORCED_CLOSED != event) {
+            logger.warn("Ignore subscription event {} received from channel {}.",
+                        event, channel);
+            return;
+        }
+        if (SubscriptionEvent.TOPIC_MOVED == event) {
+            sChannelManager.clearHostForTopic(origTopicSubscriber.getTopic(), host);
+        }
         // clear subscription status
         sChannelManager.asyncCloseSubscription(origTopicSubscriber, new Callback<ResponseBody>() {
 
@@ -530,10 +558,10 @@ public class SimpleSubscribeResponseHandler extends SubscribeResponseHandler {
                                  origTopicSubscriber, origSubData);
                     sChannelManager.submitOpToDefaultServer(origSubData);
                 } else {
-                    logger.info("Subscription channel for ({}) is disconnected.",
-                                origTopicSubscriber);
+                    logger.info("Subscription channel {} for ({}) is disconnected.",
+                                channel, origTopicSubscriber);
                     sChannelManager.getSubscriptionEventEmitter().emitSubscriptionEvent(
-                        origSubData.topic, origSubData.subscriberId, SubscriptionEvent.TOPIC_MOVED);
+                        origSubData.topic, origSubData.subscriberId, event);
                 }
             }
         }, null);

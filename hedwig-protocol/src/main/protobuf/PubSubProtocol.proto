@@ -178,6 +178,9 @@ message UnsubscribeRequest{
     required bytes subscriberId = 2;
 }
 
+message CloseSubscriptionRequest {
+    required bytes subscriberId = 2;
+}
 
 message StopDeliveryRequest{
     required bytes subscriberId = 2;
@@ -195,16 +198,16 @@ enum SubscriptionEvent {
     SUBSCRIPTION_FORCED_CLOSED = 2;
 }
 
-message CloseSubscriptionRequest {
-    required bytes subscriberId = 2;
+// a response carries an event for a subscription sent to client
+message SubscriptionEventResponse {
+    optional SubscriptionEvent event = 1;
 }
 
 message PubSubResponse{
     required ProtocolVersion protocolVersion = 1;
     required StatusCode statusCode = 2;
     required uint64 txnId = 3;
-    
-    
+
     optional string statusMsg = 4;
     //in case of a status code of NOT_RESPONSIBLE_FOR_TOPIC, the status
     //message will contain the name of the host actually responsible 
@@ -231,6 +234,7 @@ message SubscribeResponse {
 message ResponseBody {
     optional PublishResponse publishResponse = 1;
     optional SubscribeResponse subscribeResponse = 2;
+    optional SubscriptionEventResponse subscriptionEvent = 3;
 }
 
 

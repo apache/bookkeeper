@@ -106,7 +106,8 @@ public class HedwigProxy {
         handlers.put(OperationType.CONSUME, new ProxyConsumeHandler(client.getSubscriber()));
         handlers.put(OperationType.STOP_DELIVERY, new ProxyStopDeliveryHandler(client.getSubscriber(), tracker));
         handlers.put(OperationType.START_DELIVERY, new ProxyStartDeliveryHandler(client.getSubscriber(), tracker));
-
+        handlers.put(OperationType.CLOSESUBSCRIPTION,
+                     new ProxyCloseSubscriptionHandler(client.getSubscriber(), tracker));
     }
 
     protected void initializeNetty() {

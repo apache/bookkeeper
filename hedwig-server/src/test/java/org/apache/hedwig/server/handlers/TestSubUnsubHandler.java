@@ -17,6 +17,8 @@
  */
 package org.apache.hedwig.server.handlers;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import org.junit.Test;
@@ -107,7 +109,9 @@ public class TestSubUnsubHandler extends TestCase {
         assertEquals(StatusCode.SUCCESS, ((PubSubResponse) channel.getMessagesWritten().get(0)).getStatusCode());
 
         // make sure the channel was put in the maps
-        assertEquals(new TopicSubscriber(topic, subscriberId),
+        Set<TopicSubscriber> topicSubs = new HashSet<TopicSubscriber>();
+        topicSubs.add(new TopicSubscriber(topic, subscriberId));
+        assertEquals(topicSubs,
                      subChannelMgr.channel2sub.get(channel));
         assertEquals(channel,
                      subChannelMgr.sub2Channel.get(new TopicSubscriber(topic, subscriberId)));

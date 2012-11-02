@@ -29,6 +29,7 @@ import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.api.Client;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.netty.impl.simple.SimpleHChannelManager;
+import org.apache.hedwig.client.netty.impl.multiplex.MultiplexHChannelManager;
 
 /**
  * This is a top level Hedwig Client class that encapsulates the common
@@ -73,8 +74,11 @@ public class HedwigClientImpl implements Client {
     protected HedwigClientImpl(ClientConfiguration cfg, ChannelFactory socketFactory) {
         this.cfg = cfg;
         this.socketFactory = socketFactory;
-        channelManager = new SimpleHChannelManager(cfg, socketFactory);
-
+        if (cfg.isMultiplexingEnabled()) {
+            channelManager = new MultiplexHChannelManager(cfg, socketFactory);
+        } else {
+            channelManager = new SimpleHChannelManager(cfg, socketFactory);
+        }
         pub = new HedwigPublisher(this);
         sub = new HedwigSubscriber(this);
     }

@@ -17,6 +17,8 @@
  */
 package org.apache.hedwig.server.delivery;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -25,6 +27,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -44,6 +49,7 @@ import org.apache.hedwig.server.HedwigHubTestBase;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.util.Callback;
 
+@RunWith(Parameterized.class)
 public class TestThrottlingDelivery extends HedwigHubTestBase {
 
     private static final int DEFAULT_MESSAGE_WINDOW_SIZE = 10;
@@ -84,6 +90,11 @@ public class TestThrottlingDelivery extends HedwigHubTestBase {
         @Override
         public boolean isAutoSendConsumeMessageEnabled() {
             return false;
+        }
+
+        @Override
+        public boolean isMultiplexingEnabled() {
+            return isMultiplexingEnabled;
         }
     }
 
@@ -152,6 +163,17 @@ public class TestThrottlingDelivery extends HedwigHubTestBase {
 
         sub.stopDelivery(topic, subid);
         sub.closeSubscription(topic, subid);
+    }
+
+    @Parameters
+    public static Collection<Object[]> configs() {
+        return Arrays.asList(new Object[][] { { false }, { true } });
+    }
+
+    protected boolean isMultiplexingEnabled;
+
+    public TestThrottlingDelivery(boolean isMultiplexingEnabled) {
+        this.isMultiplexingEnabled = isMultiplexingEnabled;
     }
 
     @Override

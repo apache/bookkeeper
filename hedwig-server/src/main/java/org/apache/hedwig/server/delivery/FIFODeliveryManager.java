@@ -46,6 +46,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
 import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionEvent;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
+import org.apache.hedwig.protoextensions.PubSubResponseUtils;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.common.UnexpectedError;
 import org.apache.hedwig.server.netty.ServerStats;
@@ -411,9 +412,25 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
             if (null != event &&
                 (SubscriptionEvent.TOPIC_MOVED == event ||
                  SubscriptionEvent.SUBSCRIPTION_FORCED_CLOSED == event)) {
-                // for we need to close the underlying when topic moved
-                // or subscription forced closed.
-                deliveryEndPoint.close();
+                // we should not close the channel now after enabling multiplexing
+                PubSubResponse response = PubSubResponseUtils.getResponseForSubscriptionEvent(
+                    topic, subscriberId, event
+                );
+                deliveryEndPoint.send(response, new DeliveryCallback() {
+                    @Override
+                    public void sendingFinished() {
+                        // do nothing now
+                    }
+                    @Override
+                    public void transientErrorOnSend() {
+                        // do nothing now
+                    }
+                    @Override
+                    public void permanentErrorOnSend() {
+                        // if channel is broken, close the channel
+                        deliveryEndPoint.close();
+                    }
+                });
             }
             // uninitialize filter
             this.filter.uninitialize();
@@ -527,8 +544,11 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
              * The method below will invoke our sendingFinished() method when
              * done
              */
-            PubSubResponse response = PubSubResponse.newBuilder().setProtocolVersion(ProtocolVersion.VERSION_ONE)
-                                      .setStatusCode(StatusCode.SUCCESS).setTxnId(0).setMessage(message).build();
+            PubSubResponse response = PubSubResponse.newBuilder()
+                                      .setProtocolVersion(ProtocolVersion.VERSION_ONE)
+                                      .setStatusCode(StatusCode.SUCCESS).setTxnId(0)
+                                      .setMessage(message).setTopic(topic)
+                                      .setSubscriberId(subscriberId).build();
 
             deliveryEndPoint.send(response, //
                                   // callback =
