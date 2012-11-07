@@ -42,8 +42,6 @@ public class LedgerEntry {
     long length;
     ChannelBufferInputStream entryDataStream;
 
-    int nextReplicaIndexToReadFrom = 0;
-
     LedgerEntry(long lId, long eId) {
         this.ledgerId = lId;
         this.entryId = eId;

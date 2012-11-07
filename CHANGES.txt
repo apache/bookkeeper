@@ -178,6 +178,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-346: Detect IOExceptions in LedgerCache and bookie should look at next ledger dir(if any) (Vinay via ivank)
 
+        BOOKKEEPER-444: Refactor pending read op to make speculative reads possible (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)
