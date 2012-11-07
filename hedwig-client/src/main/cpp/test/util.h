@@ -183,7 +183,7 @@ public:
   virtual bool getBool(const std::string& key, bool defaultVal) const {
     if (key == Configuration::SSL_ENABLED) {
       return isSSL;
-    } else if (key == Configuration::ENABLE_MULTIPLEXING) {    
+    } else if (key == Configuration::SUBSCRIPTION_CHANNEL_SHARING_ENABLED) {    
       return multiplexing;
     }
     return defaultVal;

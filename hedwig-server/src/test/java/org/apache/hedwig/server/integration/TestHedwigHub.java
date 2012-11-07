@@ -91,11 +91,11 @@ public class TestHedwigHub extends HedwigHubTestBase {
     }
 
     protected Mode mode;
-    protected boolean isMultiplexingEnabled;
+    protected boolean isSubscriptionChannelSharingEnabled;
 
-    public TestHedwigHub(Mode mode, boolean isMultiplexingEnabled) {
+    public TestHedwigHub(Mode mode, boolean isSubscriptionChannelSharingEnabled) {
         this.mode = mode;
-        this.isMultiplexingEnabled = isMultiplexingEnabled;
+        this.isSubscriptionChannelSharingEnabled = isSubscriptionChannelSharingEnabled;
     }
 
     protected HedwigProxy proxy;
@@ -210,8 +210,8 @@ public class TestHedwigHub extends HedwigHubTestBase {
         }
 
         @Override
-        public boolean isMultiplexingEnabled() {
-            return isMultiplexingEnabled;
+        public boolean isSubscriptionChannelSharingEnabled() {
+            return isSubscriptionChannelSharingEnabled;
         }
     }
 

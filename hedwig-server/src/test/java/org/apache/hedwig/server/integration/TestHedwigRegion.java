@@ -66,8 +66,8 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
 
     protected class NewRegionClientConfiguration extends ClientConfiguration {
         @Override
-        public boolean isMultiplexingEnabled() {
-            return isMultiplexingEnabled;
+        public boolean isSubscriptionChannelSharingEnabled() {
+            return isSubscriptionChannelSharingEnabled;
         }
     }
 
@@ -84,10 +84,10 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
         return Arrays.asList(new Object[][] { { false }, { true } });
     }
 
-    protected boolean isMultiplexingEnabled;
+    protected boolean isSubscriptionChannelSharingEnabled;
 
-    public TestHedwigRegion(boolean isMultiplexingEnabled) {
-        this.isMultiplexingEnabled = isMultiplexingEnabled;
+    public TestHedwigRegion(boolean isSubscriptionChannelSharingEnabled) {
+        this.isSubscriptionChannelSharingEnabled = isSubscriptionChannelSharingEnabled;
     }
 
     @Override

@@ -74,7 +74,7 @@ public class HedwigClientImpl implements Client {
     protected HedwigClientImpl(ClientConfiguration cfg, ChannelFactory socketFactory) {
         this.cfg = cfg;
         this.socketFactory = socketFactory;
-        if (cfg.isMultiplexingEnabled()) {
+        if (cfg.isSubscriptionChannelSharingEnabled()) {
             channelManager = new MultiplexHChannelManager(cfg, socketFactory);
         } else {
             channelManager = new SimpleHChannelManager(cfg, socketFactory);

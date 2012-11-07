@@ -333,7 +333,7 @@ void SubscriptionEventEmitter::emitSubscriptionEvent(
 
 DuplexChannelManagerPtr DuplexChannelManager::create(const Configuration& conf) {
   DuplexChannelManager * managerPtr;
-  if (conf.getBool(Configuration::ENABLE_MULTIPLEXING, false)) {
+  if (conf.getBool(Configuration::SUBSCRIPTION_CHANNEL_SHARING_ENABLED, false)) {
     managerPtr = new MultiplexDuplexChannelManager(conf);
   } else {
     managerPtr = new SimpleDuplexChannelManager(conf);

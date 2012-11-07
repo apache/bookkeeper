@@ -161,10 +161,10 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
         return Arrays.asList(new Object[][] { { true }, { false } });
     }
 
-    protected boolean isMultiplexingEnabled;
+    protected boolean isSubscriptionChannelSharingEnabled;
 
-    public TestPubSubClient(boolean isMultiplexingEnabled) {
-        this.isMultiplexingEnabled = isMultiplexingEnabled;
+    public TestPubSubClient(boolean isSubscriptionChannelSharingEnabled) {
+        this.isSubscriptionChannelSharingEnabled = isSubscriptionChannelSharingEnabled;
     }
 
     @Override
@@ -173,8 +173,8 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
         super.setUp();
         client = new HedwigClient(new ClientConfiguration() {
             @Override
-            public boolean isMultiplexingEnabled() {
-                return TestPubSubClient.this.isMultiplexingEnabled;
+            public boolean isSubscriptionChannelSharingEnabled() {
+                return TestPubSubClient.this.isSubscriptionChannelSharingEnabled;
             }
         });
         publisher = client.getPublisher();

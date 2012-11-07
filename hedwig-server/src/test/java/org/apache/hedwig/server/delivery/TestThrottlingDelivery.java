@@ -93,8 +93,8 @@ public class TestThrottlingDelivery extends HedwigHubTestBase {
         }
 
         @Override
-        public boolean isMultiplexingEnabled() {
-            return isMultiplexingEnabled;
+        public boolean isSubscriptionChannelSharingEnabled() {
+            return isSubscriptionChannelSharingEnabled;
         }
     }
 
@@ -170,10 +170,10 @@ public class TestThrottlingDelivery extends HedwigHubTestBase {
         return Arrays.asList(new Object[][] { { false }, { true } });
     }
 
-    protected boolean isMultiplexingEnabled;
+    protected boolean isSubscriptionChannelSharingEnabled;
 
-    public TestThrottlingDelivery(boolean isMultiplexingEnabled) {
-        this.isMultiplexingEnabled = isMultiplexingEnabled;
+    public TestThrottlingDelivery(boolean isSubscriptionChannelSharingEnabled) {
+        this.isSubscriptionChannelSharingEnabled = isSubscriptionChannelSharingEnabled;
     }
 
     @Override

@@ -229,7 +229,7 @@ public class TestMultiplexing extends HedwigHubTestBase {
         super.setUp();
         client = new HedwigClient(new ClientConfiguration() {
             @Override
-            public boolean isMultiplexingEnabled() {
+            public boolean isSubscriptionChannelSharingEnabled() {
                 return true;
             }
             @Override
