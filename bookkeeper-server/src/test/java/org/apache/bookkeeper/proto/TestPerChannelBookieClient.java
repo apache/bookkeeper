@@ -20,9 +20,12 @@
  */
 package org.apache.bookkeeper.proto;
 
+import org.apache.bookkeeper.auth.ClientAuthProvider;
+import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
@@ -37,6 +40,8 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.protobuf.ExtensionRegistry;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -54,9 +59,15 @@ import static org.junit.Assert.*;
 public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
     private final static Logger LOG = LoggerFactory.getLogger(TestPerChannelBookieClient.class);
 
-    public TestPerChannelBookieClient() {
+    ExtensionRegistry extRegistry = ExtensionRegistry.newInstance();
+    ClientAuthProvider.Factory authProvider;
+
+    public TestPerChannelBookieClient() throws Exception {
         super(1);
+        authProvider = AuthProviderFactoryFactory.newClientAuthProviderFactory(
+                new ClientConfiguration(), extRegistry);
     }
+
 
     /**
      * Test that a race does not exist between connection completion
@@ -74,7 +85,8 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
 
         BookieSocketAddress addr = getBookie(0);
         for (int i = 0; i < 1000; i++) {
-            PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory, addr);
+            PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory, addr,
+                    authProvider, extRegistry);
             client.connectIfNeededAndDoOp(new GenericCallback<PerChannelBookieClient>() {
                     @Override
                     public void operationComplete(int rc, PerChannelBookieClient client) {
@@ -118,7 +130,8 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
 
         BookieSocketAddress addr = getBookie(0);
         for (int i = 0; i < 100; i++) {
-            PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory, addr);
+            PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory, addr,
+                                                                       authProvider, extRegistry);
             for (int j = i; j < 10; j++) {
                 client.connectIfNeededAndDoOp(nullop);
             }
@@ -150,7 +163,8 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         OrderedSafeExecutor executor = getOrderedSafeExecutor();
         BookieSocketAddress addr = getBookie(0);
 
-        final PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory, addr);
+        final PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory,
+                addr, authProvider, extRegistry);
         final AtomicBoolean shouldFail = new AtomicBoolean(false);
         final AtomicBoolean inconsistent = new AtomicBoolean(false);
         final AtomicBoolean running = new AtomicBoolean(true);
@@ -247,7 +261,8 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         final OrderedSafeExecutor executor = getOrderedSafeExecutor();
         BookieSocketAddress addr = getBookie(0);
 
-        final PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory, addr);
+        final PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory,
+                addr, authProvider, extRegistry);
         final CountDownLatch completion = new CountDownLatch(1);
         final ReadEntryCallback cb = new ReadEntryCallback() {
                 @Override

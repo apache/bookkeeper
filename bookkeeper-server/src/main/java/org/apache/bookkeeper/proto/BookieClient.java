@@ -28,8 +28,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
+import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -52,6 +55,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.protobuf.ExtensionRegistry;
 
 /**
  * Implements the client-side part of the BookKeeper protocol.
@@ -60,11 +64,18 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 public class BookieClient implements PerChannelBookieClientFactory {
     static final Logger LOG = LoggerFactory.getLogger(BookieClient.class);
 
-    final OrderedSafeExecutor executor;
-    final ClientSocketChannelFactory channelFactory;
+    // This is global state that should be across all BookieClients
+    AtomicLong totalBytesOutstanding = new AtomicLong();
+
+    OrderedSafeExecutor executor;
+    ClientSocketChannelFactory channelFactory;
     final ConcurrentHashMap<BookieSocketAddress, PerChannelBookieClientPool> channels =
             new ConcurrentHashMap<BookieSocketAddress, PerChannelBookieClientPool>();
     final HashedWheelTimer requestTimer;
+
+    final private ClientAuthProvider.Factory authProviderFactory;
+    final private ExtensionRegistry registry;
+
     private final ClientConfiguration conf;
     private volatile boolean closed;
     private final ReentrantReadWriteLock closeLock;
@@ -73,17 +84,22 @@ public class BookieClient implements PerChannelBookieClientFactory {
 
     private final long bookieErrorThresholdPerInterval;
 
-    public BookieClient(ClientConfiguration conf, ClientSocketChannelFactory channelFactory, OrderedSafeExecutor executor) {
+    public BookieClient(ClientConfiguration conf, ClientSocketChannelFactory channelFactory,
+            OrderedSafeExecutor executor) throws IOException {
         this(conf, channelFactory, executor, NullStatsLogger.INSTANCE);
     }
 
-    public BookieClient(ClientConfiguration conf, ClientSocketChannelFactory channelFactory, OrderedSafeExecutor executor,
-                        StatsLogger statsLogger) {
+    public BookieClient(ClientConfiguration conf, ClientSocketChannelFactory channelFactory,
+                        OrderedSafeExecutor executor, StatsLogger statsLogger) throws IOException {
         this.conf = conf;
         this.channelFactory = channelFactory;
         this.executor = executor;
         this.closed = false;
         this.closeLock = new ReentrantReadWriteLock();
+
+        this.registry = ExtensionRegistry.newInstance();
+        this.authProviderFactory = AuthProviderFactoryFactory.newClientAuthProviderFactory(conf, registry);
+
         this.statsLogger = statsLogger;
         this.numConnectionsPerBookie = conf.getNumChannelsPerBookie();
         this.requestTimer = new HashedWheelTimer(
@@ -120,8 +136,8 @@ public class BookieClient implements PerChannelBookieClientFactory {
 
     @Override
     public PerChannelBookieClient create(BookieSocketAddress address, PerChannelBookieClientPool pcbcPool) {
-        return new PerChannelBookieClient(conf, executor, channelFactory, address,
-                                          requestTimer, statsLogger, pcbcPool);
+        return new PerChannelBookieClient(conf, executor, channelFactory, address, requestTimer, statsLogger,
+                authProviderFactory, registry, pcbcPool);
     }
 
     private PerChannelBookieClientPool lookupClient(BookieSocketAddress addr, Object key) {
@@ -133,7 +149,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                     return null;
                 }
                 PerChannelBookieClientPool newClientPool =
-                        new DefaultPerChannelBookieClientPool(this, addr, numConnectionsPerBookie);
+                    new DefaultPerChannelBookieClientPool(this, addr, numConnectionsPerBookie);
                 PerChannelBookieClientPool oldClientPool = channels.putIfAbsent(addr, newClientPool);
                 if (null == oldClientPool) {
                     clientPool = newClientPool;

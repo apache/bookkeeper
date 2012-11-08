@@ -122,6 +122,9 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     protected final static String LEDGER_STORAGE_CLASS = "ledgerStorageClass";
 
+    // Bookie auth provider factory class name
+    protected final static String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
+
     /**
      * Construct a default configuration object
      */
@@ -1566,4 +1569,25 @@ public class ServerConfiguration extends AbstractConfiguration {
         }
     }
 
+    /*
+     * Set the bookie authentication provider factory class name.
+     * If this is not set, no authentication will be used
+     *
+     * @param factoryClass
+     *          the bookie authentication provider factory class name
+     * @return void
+     */
+    public void setBookieAuthProviderFactoryClass(String factoryClass) {
+        setProperty(BOOKIE_AUTH_PROVIDER_FACTORY_CLASS, factoryClass);
+    }
+
+    /**
+     * Get the bookie authentication provider factory class name.
+     * If this returns null, no authentication will take place.
+     *
+     * @return the bookie authentication provider factory class name or null.
+     */
+    public String getBookieAuthProviderFactoryClass() {
+        return getString(BOOKIE_AUTH_PROVIDER_FACTORY_CLASS, null);
+    }
 }

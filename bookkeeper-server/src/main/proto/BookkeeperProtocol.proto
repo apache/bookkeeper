@@ -55,6 +55,8 @@ enum OperationType {
     // Not supported yet.
     RANGE_READ_ENTRY = 3;
     RANGE_ADD_ENTRY = 4;
+
+    AUTH = 5;
 }
 
 /**
@@ -71,6 +73,7 @@ message Request {
     // Requests
     optional ReadRequest readRequest = 100;
     optional AddRequest addRequest = 101;
+    optional AuthMessage authRequest = 102;
 }
 
 message ReadRequest {
@@ -105,7 +108,7 @@ message Response {
     // Response
     optional ReadResponse readResponse = 100;
     optional AddResponse addResponse = 101;
-
+    optional AuthMessage authResponse = 102;
 }
 
 message ReadResponse {
@@ -119,4 +122,13 @@ message AddResponse {
     required StatusCode status = 1;
     required int64 ledgerId = 2;
     required int64 entryId = 3;
+}
+
+/**
+ * Extendible message which auth mechanisms
+ * can use to carry their payload.
+ */
+message AuthMessage {
+    required string authPluginName = 1;
+    extensions 1000 to max;
 }

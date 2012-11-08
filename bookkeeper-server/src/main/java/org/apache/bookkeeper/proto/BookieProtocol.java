@@ -24,6 +24,8 @@ package org.apache.bookkeeper.proto;
 import org.jboss.netty.buffer.ChannelBuffer;
 import java.nio.ByteBuffer;
 
+import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
+
 /**
  * The packets of the Bookie protocol all have a 4-byte integer indicating the
  * type of request or response at the very beginning of the packet followed by a
@@ -131,6 +133,13 @@ public interface BookieProtocol {
      * the ledger number and entry number as well.)
      */
     public static final byte READENTRY = 2;
+
+    /**
+     * Auth message. This code is for passing auth messages between the auth
+     * providers on the client and bookie. The message payload is determined
+     * by the auth providers themselves.
+     */
+    public static final byte AUTH = 3;
 
     /**
      * The error code that indicates success
@@ -273,6 +282,19 @@ public interface BookieProtocol {
         }
     }
 
+    static class AuthRequest extends Request {
+        final AuthMessage authMessage;
+
+        AuthRequest(byte protocolVersion, AuthMessage authMessage) {
+            super(protocolVersion, AUTH, -1, -1, FLAG_NONE, null);
+            this.authMessage = authMessage;
+        }
+
+        AuthMessage getAuthMessage() {
+            return authMessage;
+        }
+    }
+
     static class Response {
         final byte protocolVersion;
         final byte opCode;
@@ -343,4 +365,18 @@ public interface BookieProtocol {
             super(protocolVersion, ADDENTRY, errorCode, ledgerId, entryId);
         }
     }
+
+    static class AuthResponse extends Response {
+        final AuthMessage authMessage;
+
+        AuthResponse(byte protocolVersion, AuthMessage authMessage) {
+            super(protocolVersion, AUTH, EOK, -1, -1);
+            this.authMessage = authMessage;
+        }
+
+        AuthMessage getAuthMessage() {
+            return authMessage;
+        }
+    }
+
 }

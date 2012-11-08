@@ -176,12 +176,14 @@ public final class BookkeeperProtocol {
     ADD_ENTRY(1, 2),
     RANGE_READ_ENTRY(2, 3),
     RANGE_ADD_ENTRY(3, 4),
+    AUTH(4, 5),
     ;
     
     public static final int READ_ENTRY_VALUE = 1;
     public static final int ADD_ENTRY_VALUE = 2;
     public static final int RANGE_READ_ENTRY_VALUE = 3;
     public static final int RANGE_ADD_ENTRY_VALUE = 4;
+    public static final int AUTH_VALUE = 5;
     
     
     public final int getNumber() { return value; }
@@ -192,6 +194,7 @@ public final class BookkeeperProtocol {
         case 2: return ADD_ENTRY;
         case 3: return RANGE_READ_ENTRY;
         case 4: return RANGE_ADD_ENTRY;
+        case 5: return AUTH;
         default: return null;
       }
     }
@@ -222,7 +225,7 @@ public final class BookkeeperProtocol {
     }
     
     private static final OperationType[] VALUES = {
-      READ_ENTRY, ADD_ENTRY, RANGE_READ_ENTRY, RANGE_ADD_ENTRY, 
+      READ_ENTRY, ADD_ENTRY, RANGE_READ_ENTRY, RANGE_ADD_ENTRY, AUTH, 
     };
     
     public static OperationType valueOf(
@@ -756,6 +759,11 @@ public final class BookkeeperProtocol {
     boolean hasAddRequest();
     org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest getAddRequest();
     org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequestOrBuilder getAddRequestOrBuilder();
+    
+    // optional .AuthMessage authRequest = 102;
+    boolean hasAuthRequest();
+    org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage getAuthRequest();
+    org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessageOrBuilder getAuthRequestOrBuilder();
   }
   public static final class Request extends
       com.google.protobuf.GeneratedMessage
@@ -825,10 +833,24 @@ public final class BookkeeperProtocol {
       return addRequest_;
     }
     
+    // optional .AuthMessage authRequest = 102;
+    public static final int AUTHREQUEST_FIELD_NUMBER = 102;
+    private org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage authRequest_;
+    public boolean hasAuthRequest() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    public org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage getAuthRequest() {
+      return authRequest_;
+    }
+    public org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessageOrBuilder getAuthRequestOrBuilder() {
+      return authRequest_;
+    }
+    
     private void initFields() {
       header_ = org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader.getDefaultInstance();
       readRequest_ = org.apache.bookkeeper.proto.BookkeeperProtocol.ReadRequest.getDefaultInstance();
       addRequest_ = org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest.getDefaultInstance();
+      authRequest_ = org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.getDefaultInstance();
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -855,6 +877,12 @@ public final class BookkeeperProtocol {
           return false;
         }
       }
+      if (hasAuthRequest()) {
+        if (!getAuthRequest().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -870,6 +898,9 @@ public final class BookkeeperProtocol {
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeMessage(101, addRequest_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeMessage(102, authRequest_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -891,6 +922,10 @@ public final class BookkeeperProtocol {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(101, addRequest_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(102, authRequest_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -1011,6 +1046,7 @@ public final class BookkeeperProtocol {
           getHeaderFieldBuilder();
           getReadRequestFieldBuilder();
           getAddRequestFieldBuilder();
+          getAuthRequestFieldBuilder();
         }
       }
       private static Builder create() {
@@ -1037,6 +1073,12 @@ public final class BookkeeperProtocol {
           addRequestBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000004);
+        if (authRequestBuilder_ == null) {
+          authRequest_ = org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.getDefaultInstance();
+        } else {
+          authRequestBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
       
@@ -1099,6 +1141,14 @@ public final class BookkeeperProtocol {
         } else {
           result.addRequest_ = addRequestBuilder_.build();
         }
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        if (authRequestBuilder_ == null) {
+          result.authRequest_ = authRequest_;
+        } else {
+          result.authRequest_ = authRequestBuilder_.build();
+        }
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1124,6 +1174,9 @@ public final class BookkeeperProtocol {
         if (other.hasAddRequest()) {
           mergeAddRequest(other.getAddRequest());
         }
+        if (other.hasAuthRequest()) {
+          mergeAuthRequest(other.getAuthRequest());
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -1145,6 +1198,12 @@ public final class BookkeeperProtocol {
         }
         if (hasAddRequest()) {
           if (!getAddRequest().isInitialized()) {
+            
+            return false;
+          }
+        }
+        if (hasAuthRequest()) {
+          if (!getAuthRequest().isInitialized()) {
             
             return false;
           }
@@ -1200,6 +1259,15 @@ public final class BookkeeperProtocol {
               }
               input.readMessage(subBuilder, extensionRegistry);
               setAddRequest(subBuilder.buildPartial());
+              break;
+            }
+            case 818: {
+              org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.Builder subBuilder = org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.newBuilder();
+              if (hasAuthRequest()) {
+                subBuilder.mergeFrom(getAuthRequest());
+              }
+              input.readMessage(subBuilder, extensionRegistry);
+              setAuthRequest(subBuilder.buildPartial());
               break;
             }
           }
@@ -1476,6 +1544,96 @@ public final class BookkeeperProtocol {
           addRequest_ = null;
         }
         return addRequestBuilder_;
+      }
+      
+      // optional .AuthMessage authRequest = 102;
+      private org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage authRequest_ = org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage, org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.Builder, org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessageOrBuilder> authRequestBuilder_;
+      public boolean hasAuthRequest() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage getAuthRequest() {
+        if (authRequestBuilder_ == null) {
+          return authRequest_;
+        } else {
+          return authRequestBuilder_.getMessage();
+        }
+      }
+      public Builder setAuthRequest(org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage value) {
+        if (authRequestBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          authRequest_ = value;
+          onChanged();
+        } else {
+          authRequestBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000008;
+        return this;
+      }
+      public Builder setAuthRequest(
+          org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.Builder builderForValue) {
+        if (authRequestBuilder_ == null) {
+          authRequest_ = builderForValue.build();
+          onChanged();
+        } else {
+          authRequestBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000008;
+        return this;
+      }
+      public Builder mergeAuthRequest(org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage value) {
+        if (authRequestBuilder_ == null) {
+          if (((bitField0_ & 0x00000008) == 0x00000008) &&
+              authRequest_ != org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.getDefaultInstance()) {
+            authRequest_ =
+              org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.newBuilder(authRequest_).mergeFrom(value).buildPartial();
+          } else {
+            authRequest_ = value;
+          }
+          onChanged();
+        } else {
+          authRequestBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000008;
+        return this;
+      }
+      public Builder clearAuthRequest() {
+        if (authRequestBuilder_ == null) {
+          authRequest_ = org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.getDefaultInstance();
+          onChanged();
+        } else {
+          authRequestBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000008);
+        return this;
+      }
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.Builder getAuthRequestBuilder() {
+        bitField0_ |= 0x00000008;
+        onChanged();
+        return getAuthRequestFieldBuilder().getBuilder();
+      }
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessageOrBuilder getAuthRequestOrBuilder() {
+        if (authRequestBuilder_ != null) {
+          return authRequestBuilder_.getMessageOrBuilder();
+        } else {
+          return authRequest_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage, org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.Builder, org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessageOrBuilder> 
+          getAuthRequestFieldBuilder() {
+        if (authRequestBuilder_ == null) {
+          authRequestBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage, org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.Builder, org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessageOrBuilder>(
+                  authRequest_,
+                  getParentForChildren(),
+                  isClean());
+          authRequest_ = null;
+        }
+        return authRequestBuilder_;
       }
       
       // @@protoc_insertion_point(builder_scope:Request)
@@ -2792,6 +2950,11 @@ public final class BookkeeperProtocol {
     boolean hasAddResponse();
     org.apache.bookkeeper.proto.BookkeeperProtocol.AddResponse getAddResponse();
     org.apache.bookkeeper.proto.BookkeeperProtocol.AddResponseOrBuilder getAddResponseOrBuilder();
+    
+    // optional .AuthMessage authResponse = 102;
+    boolean hasAuthResponse();
+    org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage getAuthResponse();
+    org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessageOrBuilder getAuthResponseOrBuilder();
   }
   public static final class Response extends
       com.google.protobuf.GeneratedMessage
@@ -2871,11 +3034,25 @@ public final class BookkeeperProtocol {
       return addResponse_;
     }
     
+    // optional .AuthMessage authResponse = 102;
+    public static final int AUTHRESPONSE_FIELD_NUMBER = 102;
+    private org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage authResponse_;
+    public boolean hasAuthResponse() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    public org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage getAuthResponse() {
+      return authResponse_;
+    }
+    public org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessageOrBuilder getAuthResponseOrBuilder() {
+      return authResponse_;
+    }
+    
     private void initFields() {
       header_ = org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader.getDefaultInstance();
       status_ = org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode.EOK;
       readResponse_ = org.apache.bookkeeper.proto.BookkeeperProtocol.ReadResponse.getDefaultInstance();
       addResponse_ = org.apache.bookkeeper.proto.BookkeeperProtocol.AddResponse.getDefaultInstance();
+      authResponse_ = org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.getDefaultInstance();
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -2906,6 +3083,12 @@ public final class BookkeeperProtocol {
           return false;
         }
       }
+      if (hasAuthResponse()) {
+        if (!getAuthResponse().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -2924,6 +3107,9 @@ public final class BookkeeperProtocol {
       }
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         output.writeMessage(101, addResponse_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeMessage(102, authResponse_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -2949,6 +3135,10 @@ public final class BookkeeperProtocol {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(101, addResponse_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(102, authResponse_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -3069,6 +3259,7 @@ public final class BookkeeperProtocol {
           getHeaderFieldBuilder();
           getReadResponseFieldBuilder();
           getAddResponseFieldBuilder();
+          getAuthResponseFieldBuilder();
         }
       }
       private static Builder create() {
@@ -3097,6 +3288,12 @@ public final class BookkeeperProtocol {
           addResponseBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000008);
+        if (authResponseBuilder_ == null) {
+          authResponse_ = org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.getDefaultInstance();
+        } else {
+          authResponseBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000010);
         return this;
       }
       
@@ -3163,6 +3360,14 @@ public final class BookkeeperProtocol {
         } else {
           result.addResponse_ = addResponseBuilder_.build();
         }
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        if (authResponseBuilder_ == null) {
+          result.authResponse_ = authResponse_;
+        } else {
+          result.authResponse_ = authResponseBuilder_.build();
+        }
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -3191,6 +3396,9 @@ public final class BookkeeperProtocol {
         if (other.hasAddResponse()) {
           mergeAddResponse(other.getAddResponse());
         }
+        if (other.hasAuthResponse()) {
+          mergeAuthResponse(other.getAuthResponse());
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -3216,6 +3424,12 @@ public final class BookkeeperProtocol {
         }
         if (hasAddResponse()) {
           if (!getAddResponse().isInitialized()) {
+            
+            return false;
+          }
+        }
+        if (hasAuthResponse()) {
+          if (!getAuthResponse().isInitialized()) {
             
             return false;
           }
@@ -3282,6 +3496,15 @@ public final class BookkeeperProtocol {
               }
               input.readMessage(subBuilder, extensionRegistry);
               setAddResponse(subBuilder.buildPartial());
+              break;
+            }
+            case 818: {
+              org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.Builder subBuilder = org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.newBuilder();
+              if (hasAuthResponse()) {
+                subBuilder.mergeFrom(getAuthResponse());
+              }
+              input.readMessage(subBuilder, extensionRegistry);
+              setAuthResponse(subBuilder.buildPartial());
               break;
             }
           }
@@ -3582,6 +3805,96 @@ public final class BookkeeperProtocol {
           addResponse_ = null;
         }
         return addResponseBuilder_;
+      }
+      
+      // optional .AuthMessage authResponse = 102;
+      private org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage authResponse_ = org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage, org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.Builder, org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessageOrBuilder> authResponseBuilder_;
+      public boolean hasAuthResponse() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage getAuthResponse() {
+        if (authResponseBuilder_ == null) {
+          return authResponse_;
+        } else {
+          return authResponseBuilder_.getMessage();
+        }
+      }
+      public Builder setAuthResponse(org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage value) {
+        if (authResponseBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          authResponse_ = value;
+          onChanged();
+        } else {
+          authResponseBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000010;
+        return this;
+      }
+      public Builder setAuthResponse(
+          org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.Builder builderForValue) {
+        if (authResponseBuilder_ == null) {
+          authResponse_ = builderForValue.build();
+          onChanged();
+        } else {
+          authResponseBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000010;
+        return this;
+      }
+      public Builder mergeAuthResponse(org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage value) {
+        if (authResponseBuilder_ == null) {
+          if (((bitField0_ & 0x00000010) == 0x00000010) &&
+              authResponse_ != org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.getDefaultInstance()) {
+            authResponse_ =
+              org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.newBuilder(authResponse_).mergeFrom(value).buildPartial();
+          } else {
+            authResponse_ = value;
+          }
+          onChanged();
+        } else {
+          authResponseBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000010;
+        return this;
+      }
+      public Builder clearAuthResponse() {
+        if (authResponseBuilder_ == null) {
+          authResponse_ = org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.getDefaultInstance();
+          onChanged();
+        } else {
+          authResponseBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000010);
+        return this;
+      }
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.Builder getAuthResponseBuilder() {
+        bitField0_ |= 0x00000010;
+        onChanged();
+        return getAuthResponseFieldBuilder().getBuilder();
+      }
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessageOrBuilder getAuthResponseOrBuilder() {
+        if (authResponseBuilder_ != null) {
+          return authResponseBuilder_.getMessageOrBuilder();
+        } else {
+          return authResponse_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage, org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.Builder, org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessageOrBuilder> 
+          getAuthResponseFieldBuilder() {
+        if (authResponseBuilder_ == null) {
+          authResponseBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage, org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.Builder, org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessageOrBuilder>(
+                  authResponse_,
+                  getParentForChildren(),
+                  isClean());
+          authResponse_ = null;
+        }
+        return authResponseBuilder_;
       }
       
       // @@protoc_insertion_point(builder_scope:Response)
@@ -4625,6 +4938,404 @@ public final class BookkeeperProtocol {
     // @@protoc_insertion_point(class_scope:AddResponse)
   }
   
+  public interface AuthMessageOrBuilder extends
+      com.google.protobuf.GeneratedMessage.
+          ExtendableMessageOrBuilder<AuthMessage> {
+    
+    // required string authPluginName = 1;
+    boolean hasAuthPluginName();
+    String getAuthPluginName();
+  }
+  public static final class AuthMessage extends
+      com.google.protobuf.GeneratedMessage.ExtendableMessage<
+        AuthMessage> implements AuthMessageOrBuilder {
+    // Use AuthMessage.newBuilder() to construct.
+    private AuthMessage(Builder builder) {
+      super(builder);
+    }
+    private AuthMessage(boolean noInit) {}
+    
+    private static final AuthMessage defaultInstance;
+    public static AuthMessage getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public AuthMessage getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.bookkeeper.proto.BookkeeperProtocol.internal_static_AuthMessage_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.bookkeeper.proto.BookkeeperProtocol.internal_static_AuthMessage_fieldAccessorTable;
+    }
+    
+    private int bitField0_;
+    // required string authPluginName = 1;
+    public static final int AUTHPLUGINNAME_FIELD_NUMBER = 1;
+    private java.lang.Object authPluginName_;
+    public boolean hasAuthPluginName() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public String getAuthPluginName() {
+      java.lang.Object ref = authPluginName_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          authPluginName_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getAuthPluginNameBytes() {
+      java.lang.Object ref = authPluginName_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        authPluginName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    
+    private void initFields() {
+      authPluginName_ = "";
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasAuthPluginName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!extensionsAreInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+    
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      com.google.protobuf.GeneratedMessage
+        .ExtendableMessage<org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage>.ExtensionWriter extensionWriter =
+          newExtensionWriter();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getAuthPluginNameBytes());
+      }
+      extensionWriter.writeUntil(536870912, output);
+      getUnknownFields().writeTo(output);
+    }
+    
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+    
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, getAuthPluginNameBytes());
+      }
+      size += extensionsSerializedSize();
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+    
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+    
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+    
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.ExtendableBuilder<
+          org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage, Builder> implements org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessageOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.bookkeeper.proto.BookkeeperProtocol.internal_static_AuthMessage_descriptor;
+      }
+      
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.bookkeeper.proto.BookkeeperProtocol.internal_static_AuthMessage_fieldAccessorTable;
+      }
+      
+      // Construct using org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+      
+      public Builder clear() {
+        super.clear();
+        authPluginName_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
+        return this;
+      }
+      
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.getDescriptor();
+      }
+      
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage getDefaultInstanceForType() {
+        return org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.getDefaultInstance();
+      }
+      
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage build() {
+        org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+      
+      private org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return result;
+      }
+      
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage buildPartial() {
+        org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage result = new org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.authPluginName_ = authPluginName_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+      
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage) {
+          return mergeFrom((org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+      
+      public Builder mergeFrom(org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage other) {
+        if (other == org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.getDefaultInstance()) return this;
+        if (other.hasAuthPluginName()) {
+          setAuthPluginName(other.getAuthPluginName());
+        }
+        this.mergeExtensionFields(other);
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+      
+      public final boolean isInitialized() {
+        if (!hasAuthPluginName()) {
+          
+          return false;
+        }
+        if (!extensionsAreInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder(
+            this.getUnknownFields());
+        while (true) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              this.setUnknownFields(unknownFields.build());
+              onChanged();
+              return this;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                this.setUnknownFields(unknownFields.build());
+                onChanged();
+                return this;
+              }
+              break;
+            }
+            case 10: {
+              bitField0_ |= 0x00000001;
+              authPluginName_ = input.readBytes();
+              break;
+            }
+          }
+        }
+      }
+      
+      private int bitField0_;
+      
+      // required string authPluginName = 1;
+      private java.lang.Object authPluginName_ = "";
+      public boolean hasAuthPluginName() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      public String getAuthPluginName() {
+        java.lang.Object ref = authPluginName_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          authPluginName_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
+      }
+      public Builder setAuthPluginName(String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        authPluginName_ = value;
+        onChanged();
+        return this;
+      }
+      public Builder clearAuthPluginName() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        authPluginName_ = getDefaultInstance().getAuthPluginName();
+        onChanged();
+        return this;
+      }
+      void setAuthPluginName(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000001;
+        authPluginName_ = value;
+        onChanged();
+      }
+      
+      // @@protoc_insertion_point(builder_scope:AuthMessage)
+    }
+    
+    static {
+      defaultInstance = new AuthMessage(true);
+      defaultInstance.initFields();
+    }
+    
+    // @@protoc_insertion_point(class_scope:AuthMessage)
+  }
+  
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_BKPacketHeader_descriptor;
   private static
@@ -4660,6 +5371,11 @@ public final class BookkeeperProtocol {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_AddResponse_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_AuthMessage_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_AuthMessage_fieldAccessorTable;
   
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -4672,33 +5388,36 @@ public final class BookkeeperProtocol {
       "\n\'src/main/proto/BookkeeperProtocol.prot" +
       "o\"e\n\016BKPacketHeader\022!\n\007version\030\001 \002(\0162\020.P" +
       "rotocolVersion\022!\n\toperation\030\002 \002(\0162\016.Oper" +
-      "ationType\022\r\n\005txnId\030\003 \002(\004\"n\n\007Request\022\037\n\006h" +
-      "eader\030\001 \002(\0132\017.BKPacketHeader\022!\n\013readRequ" +
-      "est\030d \001(\0132\014.ReadRequest\022\037\n\naddRequest\030e " +
-      "\001(\0132\013.AddRequest\"~\n\013ReadRequest\022\037\n\004flag\030" +
-      "d \001(\0162\021.ReadRequest.Flag\022\020\n\010ledgerId\030\001 \002" +
-      "(\003\022\017\n\007entryId\030\002 \002(\003\022\021\n\tmasterKey\030\003 \001(\014\"\030" +
-      "\n\004Flag\022\020\n\014FENCE_LEDGER\020\001\"\212\001\n\nAddRequest\022",
-      "\036\n\004flag\030d \001(\0162\020.AddRequest.Flag\022\020\n\010ledge" +
-      "rId\030\001 \002(\003\022\017\n\007entryId\030\002 \002(\003\022\021\n\tmasterKey\030" +
-      "\003 \002(\014\022\014\n\004body\030\004 \002(\014\"\030\n\004Flag\022\020\n\014RECOVERY_" +
-      "ADD\020\001\"\220\001\n\010Response\022\037\n\006header\030\001 \002(\0132\017.BKP" +
-      "acketHeader\022\033\n\006status\030\002 \002(\0162\013.StatusCode" +
-      "\022#\n\014readResponse\030d \001(\0132\r.ReadResponse\022!\n" +
-      "\013addResponse\030e \001(\0132\014.AddResponse\"\\\n\014Read" +
-      "Response\022\033\n\006status\030\001 \002(\0162\013.StatusCode\022\020\n" +
-      "\010ledgerId\030\002 \002(\003\022\017\n\007entryId\030\003 \002(\003\022\014\n\004body" +
-      "\030\004 \001(\014\"M\n\013AddResponse\022\033\n\006status\030\001 \002(\0162\013.",
-      "StatusCode\022\020\n\010ledgerId\030\002 \002(\003\022\017\n\007entryId\030" +
-      "\003 \002(\003*F\n\017ProtocolVersion\022\017\n\013VERSION_ONE\020" +
-      "\001\022\017\n\013VERSION_TWO\020\002\022\021\n\rVERSION_THREE\020\003*\206\001" +
-      "\n\nStatusCode\022\007\n\003EOK\020\000\022\016\n\tENOLEDGER\020\222\003\022\r\n" +
-      "\010ENOENTRY\020\223\003\022\014\n\007EBADREQ\020\224\003\022\010\n\003EIO\020\365\003\022\010\n\003" +
-      "EUA\020\366\003\022\020\n\013EBADVERSION\020\367\003\022\014\n\007EFENCED\020\370\003\022\016" +
-      "\n\tEREADONLY\020\371\003*Y\n\rOperationType\022\016\n\nREAD_" +
-      "ENTRY\020\001\022\r\n\tADD_ENTRY\020\002\022\024\n\020RANGE_READ_ENT" +
-      "RY\020\003\022\023\n\017RANGE_ADD_ENTRY\020\004B\037\n\033org.apache." +
-      "bookkeeper.protoH\001"
+      "ationType\022\r\n\005txnId\030\003 \002(\004\"\221\001\n\007Request\022\037\n\006" +
+      "header\030\001 \002(\0132\017.BKPacketHeader\022!\n\013readReq" +
+      "uest\030d \001(\0132\014.ReadRequest\022\037\n\naddRequest\030e" +
+      " \001(\0132\013.AddRequest\022!\n\013authRequest\030f \001(\0132\014" +
+      ".AuthMessage\"~\n\013ReadRequest\022\037\n\004flag\030d \001(" +
+      "\0162\021.ReadRequest.Flag\022\020\n\010ledgerId\030\001 \002(\003\022\017" +
+      "\n\007entryId\030\002 \002(\003\022\021\n\tmasterKey\030\003 \001(\014\"\030\n\004Fl",
+      "ag\022\020\n\014FENCE_LEDGER\020\001\"\212\001\n\nAddRequest\022\036\n\004f" +
+      "lag\030d \001(\0162\020.AddRequest.Flag\022\020\n\010ledgerId\030" +
+      "\001 \002(\003\022\017\n\007entryId\030\002 \002(\003\022\021\n\tmasterKey\030\003 \002(" +
+      "\014\022\014\n\004body\030\004 \002(\014\"\030\n\004Flag\022\020\n\014RECOVERY_ADD\020" +
+      "\001\"\264\001\n\010Response\022\037\n\006header\030\001 \002(\0132\017.BKPacke" +
+      "tHeader\022\033\n\006status\030\002 \002(\0162\013.StatusCode\022#\n\014" +
+      "readResponse\030d \001(\0132\r.ReadResponse\022!\n\013add" +
+      "Response\030e \001(\0132\014.AddResponse\022\"\n\014authResp" +
+      "onse\030f \001(\0132\014.AuthMessage\"\\\n\014ReadResponse" +
+      "\022\033\n\006status\030\001 \002(\0162\013.StatusCode\022\020\n\010ledgerI",
+      "d\030\002 \002(\003\022\017\n\007entryId\030\003 \002(\003\022\014\n\004body\030\004 \001(\014\"M" +
+      "\n\013AddResponse\022\033\n\006status\030\001 \002(\0162\013.StatusCo" +
+      "de\022\020\n\010ledgerId\030\002 \002(\003\022\017\n\007entryId\030\003 \002(\003\"0\n" +
+      "\013AuthMessage\022\026\n\016authPluginName\030\001 \002(\t*\t\010\350" +
+      "\007\020\200\200\200\200\002*F\n\017ProtocolVersion\022\017\n\013VERSION_ON" +
+      "E\020\001\022\017\n\013VERSION_TWO\020\002\022\021\n\rVERSION_THREE\020\003*" +
+      "\206\001\n\nStatusCode\022\007\n\003EOK\020\000\022\016\n\tENOLEDGER\020\222\003\022" +
+      "\r\n\010ENOENTRY\020\223\003\022\014\n\007EBADREQ\020\224\003\022\010\n\003EIO\020\365\003\022\010" +
+      "\n\003EUA\020\366\003\022\020\n\013EBADVERSION\020\367\003\022\014\n\007EFENCED\020\370\003" +
+      "\022\016\n\tEREADONLY\020\371\003*c\n\rOperationType\022\016\n\nREA",
+      "D_ENTRY\020\001\022\r\n\tADD_ENTRY\020\002\022\024\n\020RANGE_READ_E" +
+      "NTRY\020\003\022\023\n\017RANGE_ADD_ENTRY\020\004\022\010\n\004AUTH\020\005B\037\n" +
+      "\033org.apache.bookkeeper.protoH\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -4718,7 +5437,7 @@ public final class BookkeeperProtocol {
           internal_static_Request_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_Request_descriptor,
-              new java.lang.String[] { "Header", "ReadRequest", "AddRequest", },
+              new java.lang.String[] { "Header", "ReadRequest", "AddRequest", "AuthRequest", },
               org.apache.bookkeeper.proto.BookkeeperProtocol.Request.class,
               org.apache.bookkeeper.proto.BookkeeperProtocol.Request.Builder.class);
           internal_static_ReadRequest_descriptor =
@@ -4742,7 +5461,7 @@ public final class BookkeeperProtocol {
           internal_static_Response_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_Response_descriptor,
-              new java.lang.String[] { "Header", "Status", "ReadResponse", "AddResponse", },
+              new java.lang.String[] { "Header", "Status", "ReadResponse", "AddResponse", "AuthResponse", },
               org.apache.bookkeeper.proto.BookkeeperProtocol.Response.class,
               org.apache.bookkeeper.proto.BookkeeperProtocol.Response.Builder.class);
           internal_static_ReadResponse_descriptor =
@@ -4761,6 +5480,14 @@ public final class BookkeeperProtocol {
               new java.lang.String[] { "Status", "LedgerId", "EntryId", },
               org.apache.bookkeeper.proto.BookkeeperProtocol.AddResponse.class,
               org.apache.bookkeeper.proto.BookkeeperProtocol.AddResponse.Builder.class);
+          internal_static_AuthMessage_descriptor =
+            getDescriptor().getMessageTypes().get(7);
+          internal_static_AuthMessage_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_AuthMessage_descriptor,
+              new java.lang.String[] { "AuthPluginName", },
+              org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.class,
+              org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage.Builder.class);
           return null;
         }
       };

@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperClientStats;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -79,6 +80,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.ExtensionRegistry;
 
 /**
  * This class manages all details of connection to a particular bookie. It also
@@ -134,15 +136,27 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     private final ClientConfiguration conf;
 
     private final PerChannelBookieClientPool pcbcPool;
+    private final ClientAuthProvider.Factory authProviderFactory;
+    private final ExtensionRegistry extRegistry;
 
     public PerChannelBookieClient(OrderedSafeExecutor executor, ClientSocketChannelFactory channelFactory,
                                   BookieSocketAddress addr) {
-        this(new ClientConfiguration(), executor, channelFactory, addr, null, NullStatsLogger.INSTANCE, null);
+        this(new ClientConfiguration(), executor, channelFactory, addr, null, NullStatsLogger.INSTANCE, null, null, null);
+    }
+
+    public PerChannelBookieClient(OrderedSafeExecutor executor, ClientSocketChannelFactory channelFactory,
+                                  BookieSocketAddress addr,
+                                  ClientAuthProvider.Factory authProviderFactory,
+                                  ExtensionRegistry extRegistry) {
+        this(new ClientConfiguration(), executor, channelFactory, addr, null, NullStatsLogger.INSTANCE,
+                authProviderFactory, extRegistry, null);
     }
 
     public PerChannelBookieClient(ClientConfiguration conf, OrderedSafeExecutor executor,
                                   ClientSocketChannelFactory channelFactory, BookieSocketAddress addr,
                                   HashedWheelTimer requestTimer, StatsLogger parentStatsLogger,
+                                  ClientAuthProvider.Factory authProviderFactory,
+                                  ExtensionRegistry extRegistry,
                                   PerChannelBookieClientPool pcbcPool) {
         this.conf = conf;
         this.addr = addr;
@@ -152,6 +166,9 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         this.requestTimer = requestTimer;
         this.addEntryTimeout = conf.getAddEntryTimeout();
         this.readEntryTimeout = conf.getReadEntryTimeout();
+
+        this.authProviderFactory = authProviderFactory;
+        this.extRegistry = extRegistry;
 
         StringBuilder nameBuilder = new StringBuilder();
         nameBuilder.append(addr.getHostname().replace('.', '_').replace('-', '_'))
@@ -656,8 +673,9 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
         pipeline.addLast("lengthbasedframedecoder", new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 0, 4, 0, 4));
         pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
-        pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.RequestEncoder());
-        pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.ResponseDecoder());
+        pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.RequestEncoder(extRegistry));
+        pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.ResponseDecoder(extRegistry));
+        pipeline.addLast("authHandler", new AuthHandler.ClientSideHandler(authProviderFactory, txnIdGenerator));
         pipeline.addLast("mainhandler", this);
         return pipeline;
     }
@@ -696,6 +714,16 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         if (t instanceof CorruptedFrameException || t instanceof TooLongFrameException) {
             LOG.error("Corrupted frame received from bookie: {}",
                       e.getChannel().getRemoteAddress());
+            return;
+        }
+
+        if (t instanceof AuthHandler.AuthenticationException) {
+            LOG.error("Error authenticating connection", t);
+            errorOutOutstandingEntries(BKException.Code.UnauthorizedAccessException);
+            Channel c = ctx.getChannel();
+            if (c != null) {
+                closeChannel(c);
+            }
             return;
         }
 

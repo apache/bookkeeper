@@ -81,6 +81,9 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
     protected final static String TASK_EXECUTION_WARN_TIME_MICROS = "taskExecutionWarnTimeMicros";
 
+    // Client auth provider factory class name
+    protected final static String CLIENT_AUTH_PROVIDER_FACTORY_CLASS = "clientAuthProviderFactoryClass";
+
     /**
      * Construct a default client-side configuration
      */
@@ -700,7 +703,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Check if bookie health check is enabled.
-     * 
+     *
      * @return
      */
     public boolean isBookieHealthCheckEnabled() {
@@ -709,15 +712,15 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Enables the bookie health check.
-     * 
+     *
      * <p>
      * If the number of read/write errors for a bookie exceeds {@link #getBookieErrorThresholdPerInterval()} per
      * interval, that bookie is quarantined for {@link #getBookieQuarantineTimeSeconds()} seconds. During this
      * quarantined period, the client will try not to use this bookie when creating new ensembles.
      * </p>
-     * 
+     *
      * By default, the bookie health check is <b>disabled</b>.
-     * 
+     *
      * @return client configuration
      */
     public ClientConfiguration enableBookieHealthCheck() {
@@ -727,7 +730,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Get the bookie health check interval in seconds.
-     * 
+     *
      * @return
      */
     public int getBookieHealthCheckIntervalSeconds() {
@@ -736,11 +739,11 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Set the bookie health check interval. Default is 60 seconds.
-     * 
+     *
      * <p>
      * Note: Please {@link #enableBookieHealthCheck()} to use this configuration.
      * </p>
-     * 
+     *
      * @param interval
      * @param unit
      * @return client configuration
@@ -752,7 +755,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Get the error threshold for a bookie to be quarantined.
-     * 
+     *
      * @return
      */
     public long getBookieErrorThresholdPerInterval() {
@@ -762,11 +765,11 @@ public class ClientConfiguration extends AbstractConfiguration {
     /**
      * Set the error threshold per interval ({@link #getBookieHealthCheckIntervalSeconds()}) for a bookie before it is
      * quarantined. Default is 100 errors per minute.
-     * 
+     *
      * <p>
      * Note: Please {@link #enableBookieHealthCheck()} to use this configuration.
      * </p>
-     * 
+     *
      * @param threshold
      * @param unit
      * @return client configuration
@@ -778,7 +781,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Get the time for which a bookie will be quarantined.
-     * 
+     *
      * @return
      */
     public int getBookieQuarantineTimeSeconds() {
@@ -787,11 +790,11 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Set the time for which a bookie will be quarantined. Default is 30 minutes.
-     * 
+     *
      * <p>
      * Note: Please {@link #enableBookieHealthCheck()} to use this configuration.
      * </p>
-     * 
+     *
      * @param quarantineTime
      * @param unit
      * @return client configuration
@@ -799,5 +802,29 @@ public class ClientConfiguration extends AbstractConfiguration {
     public ClientConfiguration setBookieQuarantineTime(int quarantineTime, TimeUnit unit) {
         setProperty(BOOKIE_QUARANTINE_TIME_SECONDS, unit.toSeconds(quarantineTime));
         return this;
+    }
+
+    /**
+     * Set the client authentication provider factory class name.
+     * If this is not set, no authentication will be used
+     *
+     * @param factoryClass
+     *          the client authentication provider factory class name
+     * @return client configuration
+     */
+    public ClientConfiguration setClientAuthProviderFactoryClass(
+            String factoryClass) {
+        setProperty(CLIENT_AUTH_PROVIDER_FACTORY_CLASS, factoryClass);
+        return this;
+    }
+
+    /**
+     * Get the client authentication provider factory class name. If this returns null, no authentication will take
+     * place.
+     *
+     * @return the client authentication provider factory class name or null.
+     */
+    public String getClientAuthProviderFactoryClass() {
+        return getString(CLIENT_AUTH_PROVIDER_FACTORY_CLASS, null);
     }
 }
