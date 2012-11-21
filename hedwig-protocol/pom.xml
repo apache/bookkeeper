@@ -97,12 +97,10 @@
                 <id>default-cli</id>
                 <configuration>
                   <target>
-		    <echo message="foo" />
                     <exec executable="protoc" failonerror="true">
                       <arg value="--java_out=src/main/java" />
                       <arg value="src/main/protobuf/PubSubProtocol.proto" />
                     </exec>
-		    <echo message="bar" />
                   </target>
                 </configuration>
                 <goals>

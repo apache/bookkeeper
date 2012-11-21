@@ -108,6 +108,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)
 
+        BOOKKEEPER-468: Remove <echo> from protobuf generation in hedwig (ivank)
+
       hedwig-client:
 
         BOOKKEEPER-274: Hedwig cpp client library should not link to cppunit which is just used for test. (sijie via ivank)
