@@ -104,6 +104,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-430: Remove manual bookie registration from overview (fpj via ivank)
 
+        BOOKKEEPER-466: ZooKeeper test utility sets the port number as the tickTime (ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)
