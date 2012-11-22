@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -25,7 +25,7 @@ ZKCLIENT=org.apache.zookeeper.ZooKeeperMain
 check_bk_down() {
     NUM_UP=100
     for i in 0 1 2 3 4 5 6 7 8 9; do
-	NUM_UP=`sh $BKSCRIPT $ZKCLIENT ls /ledgers/available 2> /dev/null | awk 'BEGIN{SERVERS=0} /^\[/ { gsub(/[,\[\]]/, ""); SERVERS=NF} END{ print SERVERS }'`
+	NUM_UP=`$BKSCRIPT $ZKCLIENT ls /ledgers/available 2> /dev/null | awk 'BEGIN{SERVERS=0} /^\[/ { gsub(/[,\[\]]/, ""); SERVERS=NF} END{ print SERVERS }'`
 	if [ $NUM_UP == 0 ]; then
 	    break;
 	fi
@@ -42,7 +42,7 @@ check_bk_up() {
     NUM_BOOKIES=$1
     NUM_UP=0
     for i in 0 1 2 3 4 5 6 7 8 9; do
-	NUM_UP=`sh $BKSCRIPT $ZKCLIENT ls /ledgers/available 2> /dev/null | awk 'BEGIN{SERVERS=0} /^\[/ { gsub(/[,\[\]]/, ""); SERVERS=NF} END{ print SERVERS }'`
+	NUM_UP=`$BKSCRIPT $ZKCLIENT ls /ledgers/available 2> /dev/null | awk 'BEGIN{SERVERS=0} /^\[/ { gsub(/[,\[\]]/, ""); SERVERS=NF} END{ print SERVERS }'`
 	if [ $NUM_UP == $NUM_BOOKIES ]; then
 	    break;
 	fi
@@ -59,7 +59,7 @@ check_hw_down() {
     REGION=$1
     NUM_UP=100
     for i in 0 1 2 3 4 5 6 7 8 9; do
-	NUM_UP=`sh $BKSCRIPT $ZKCLIENT ls /hedwig/$REGION/hosts 2> /dev/null | awk 'BEGIN{SERVERS=0} /^\[/ { gsub(/[,\[\]]/, ""); SERVERS=NF} END{ print SERVERS }'`
+	NUM_UP=`$BKSCRIPT $ZKCLIENT ls /hedwig/$REGION/hosts 2> /dev/null | awk 'BEGIN{SERVERS=0} /^\[/ { gsub(/[,\[\]]/, ""); SERVERS=NF} END{ print SERVERS }'`
 	if [ $NUM_UP == 0 ]; then
 	    break;
 	fi
@@ -77,7 +77,7 @@ check_hw_up() {
     NUM_SERVERS=$2
     NUM_UP=0
     for i in 0 1 2 3 4 5 6 7 8 9; do
-	NUM_UP=`sh $BKSCRIPT $ZKCLIENT ls /hedwig/$REGION/hosts 2> /dev/null | awk 'BEGIN{SERVERS=0} /^\[/ { gsub(/[,\[\]]/, ""); SERVERS=NF} END{ print SERVERS }'`
+	NUM_UP=`$BKSCRIPT $ZKCLIENT ls /hedwig/$REGION/hosts 2> /dev/null | awk 'BEGIN{SERVERS=0} /^\[/ { gsub(/[,\[\]]/, ""); SERVERS=NF} END{ print SERVERS }'`
 	if [ $NUM_UP == $NUM_SERVERS ]; then
 	    break;
 	fi
@@ -132,7 +132,7 @@ cert_path=$PWD/../../../../../hedwig-server/src/main/resources/server.p12
 password=eUySvp2phM2Wk
 region=$REGION
 EOF
-    sh $HWSCRIPT server 2>&1 > hwoutput.$COUNT.log &
+    $HWSCRIPT server 2>&1 > hwoutput.$COUNT.log &
     echo $! > hwprocess.$COUNT.pid
 }
 
@@ -141,7 +141,7 @@ start_cluster() {
 	stop_cluster;
     fi
 
-    sh $BKSCRIPT localbookie 3 2>&1 > bkoutput.log &
+    $BKSCRIPT localbookie 3 2>&1 > bkoutput.log &
     echo $! > bkprocess.pid
     check_bk_up 3
 

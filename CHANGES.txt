@@ -128,6 +128,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-452: Rename ClientConfiguration multiplexing_enabled to subscription_connection_sharing_enabled (sijie via ivank)
 
+        BOOKKEEPER-454: hedwig c++ tester script assumes sh is bash (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-302: No more messages delivered when hub server scans messages over two ledgers. (sijie via ivank)
