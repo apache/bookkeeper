@@ -30,6 +30,7 @@ import org.apache.hedwig.server.HedwigHubTestBase;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.ConcurrencyUtils;
+import org.apache.hedwig.util.HedwigSocketAddress;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -129,7 +130,7 @@ public class TestUpdateSubscriptionState extends HedwigHubTestBase {
         return new NewHubServerConfiguration(serverPort, sslServerPort);
     }
 
-    protected class TestClientConfiguration extends ClientConfiguration {
+    protected class TestClientConfiguration extends HubClientConfiguration {
         @Override
         public boolean isAutoSendConsumeMessageEnabled() {
             return true;

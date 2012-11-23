@@ -85,7 +85,7 @@ public class TestConcurrentTopicAcquisition extends HedwigHubTestBase {
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        client = new HedwigClient(new ClientConfiguration());
+        client = new HedwigClient(new HubClientConfiguration());
 
         publisher = client.getPublisher();
         subscriber = client.getSubscriber();

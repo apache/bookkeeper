@@ -146,13 +146,16 @@ public class TestMessageFilter extends HedwigHubTestBase {
         }
     }
 
+    public TestMessageFilter() {
+        super(1);
+    }
+
     @Override
     @Before
     public void setUp() throws Exception {
-        numServers = 1;
         super.setUp();
 
-        conf = new ClientConfiguration() {
+        conf = new HubClientConfiguration() {
             @Override
             public boolean isAutoSendConsumeMessageEnabled() {
                 return false;

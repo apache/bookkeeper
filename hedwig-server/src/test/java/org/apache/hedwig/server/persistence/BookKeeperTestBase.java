@@ -25,6 +25,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.bookkeeper.test.PortManager;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -89,8 +91,6 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
     // BookKeeper Server variables
     private List<BookieServer> bookiesList;
     private List<ServerConfiguration> bkConfsList;
-    private int initialPort = 5000;
-    private int nextPort = initialPort;
 
     // String constants used for creating the bookie server files.
     private static final String PREFIX = "bookie";
@@ -198,10 +198,11 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
     }
     
     public void startUpNewBookieServer() throws Exception {
+        int port = PortManager.nextFreePort();
         File tmpDir = FileUtils.createTempDirectory(
-                PREFIX + (nextPort - initialPort), SUFFIX);
+                PREFIX + port, SUFFIX);
         ServerConfiguration conf = newServerConfiguration(
-                nextPort++, hostPort, tmpDir, new File[] { tmpDir });
+                port, hostPort, tmpDir, new File[] { tmpDir });
         bookiesList.add(startBookie(conf));
         bkConfsList.add(conf);
     }

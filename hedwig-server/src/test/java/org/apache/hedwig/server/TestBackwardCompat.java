@@ -34,6 +34,10 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import org.apache.bookkeeper.test.ZooKeeperUtil;
+import org.apache.bookkeeper.test.PortManager;
+
+import org.apache.hedwig.util.HedwigSocketAddress;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.slf4j.Logger;
@@ -54,9 +58,6 @@ public class TestBackwardCompat extends TestCase {
         int numBookies;
         List<org.apache.hw_v4_0_0.bookkeeper.conf.ServerConfiguration> bkConfs;
         List<org.apache.hw_v4_0_0.bookkeeper.proto.BookieServer> bks;
-
-        private int initialPort = 5000;
-        private int nextPort = initialPort;
 
         BookKeeperCluster400(int numBookies) {
             this.numBookies = numBookies;
@@ -83,10 +84,11 @@ public class TestBackwardCompat extends TestCase {
         }
 
         protected void startBookieServer() throws Exception {
+            int port = PortManager.nextFreePort();
             File tmpDir = org.apache.hw_v4_0_0.hedwig.util.FileUtils.createTempDirectory(
-                getClass().getName() + (nextPort - initialPort), "test");
+                getClass().getName() + port, "test");
             org.apache.hw_v4_0_0.bookkeeper.conf.ServerConfiguration conf = newServerConfiguration(
-                nextPort++, zkUtil.getZooKeeperConnectString(), tmpDir, new File[] { tmpDir });
+                port, zkUtil.getZooKeeperConnectString(), tmpDir, new File[] { tmpDir });
             bks.add(startBookie(conf));
             bkConfs.add(conf);
         }
@@ -129,11 +131,21 @@ public class TestBackwardCompat extends TestCase {
         org.apache.hw_v4_0_0.hedwig.server.common.ServerConfiguration conf;
         org.apache.hw_v4_0_0.hedwig.server.netty.PubSubServer server;
 
-        Server400(final String zkHosts) {
+        Server400(final String zkHosts, final int port, final int sslPort) {
             conf = new org.apache.hw_v4_0_0.hedwig.server.common.ServerConfiguration() {
                 @Override
                 public String getZkHost() {
                     return zkHosts;
+                }
+
+                @Override
+                public int getServerPort() {
+                    return port;
+                }
+
+                @Override
+                public int getSSLServerPort() {
+                    return sslPort;
                 }
             };
         }
@@ -155,8 +167,14 @@ public class TestBackwardCompat extends TestCase {
         org.apache.hw_v4_0_0.hedwig.client.api.Publisher publisher;
         org.apache.hw_v4_0_0.hedwig.client.api.Subscriber subscriber;
 
-        Client400() {
-            conf = new org.apache.hw_v4_0_0.hedwig.client.conf.ClientConfiguration();
+        Client400(final String connectString) {
+            conf = new org.apache.hw_v4_0_0.hedwig.client.conf.ClientConfiguration() {
+                    @Override
+                    protected org.apache.hw_v4_0_0.hedwig.util.HedwigSocketAddress
+                        getDefaultServerHedwigSocketAddress() {
+                        return new org.apache.hw_v4_0_0.hedwig.util.HedwigSocketAddress(connectString);
+                    }
+                };
             client = new org.apache.hw_v4_0_0.hedwig.client.HedwigClient(conf);
             publisher = client.getPublisher();
             subscriber = client.getSubscriber();
@@ -184,9 +202,6 @@ public class TestBackwardCompat extends TestCase {
         List<org.apache.hw_v4_1_0.bookkeeper.conf.ServerConfiguration> bkConfs;
         List<org.apache.hw_v4_1_0.bookkeeper.proto.BookieServer> bks;
 
-        private int initialPort = 5000;
-        private int nextPort = initialPort;
-
         BookKeeperCluster410(int numBookies) {
             this.numBookies = numBookies;
         }
@@ -212,10 +227,11 @@ public class TestBackwardCompat extends TestCase {
         }
 
         protected void startBookieServer() throws Exception {
+            int port = PortManager.nextFreePort();
             File tmpDir = org.apache.hw_v4_1_0.hedwig.util.FileUtils.createTempDirectory(
-                getClass().getName() + (nextPort - initialPort), "test");
+                getClass().getName() + port, "test");
             org.apache.hw_v4_1_0.bookkeeper.conf.ServerConfiguration conf = newServerConfiguration(
-                nextPort++, zkUtil.getZooKeeperConnectString(), tmpDir, new File[] { tmpDir });
+                    port, zkUtil.getZooKeeperConnectString(), tmpDir, new File[] { tmpDir });
             bks.add(startBookie(conf));
             bkConfs.add(conf);
         }
@@ -258,7 +274,7 @@ public class TestBackwardCompat extends TestCase {
         org.apache.hw_v4_1_0.hedwig.server.common.ServerConfiguration conf;
         org.apache.hw_v4_1_0.hedwig.server.netty.PubSubServer server;
 
-        Server410(final String zkHosts) {
+        Server410(final String zkHosts, final int port, final int sslPort) {
             conf = new org.apache.hw_v4_1_0.hedwig.server.common.ServerConfiguration() {
                 @Override
                 public int getConsumeInterval() {
@@ -267,6 +283,16 @@ public class TestBackwardCompat extends TestCase {
                 @Override
                 public String getZkHost() {
                     return zkHosts;
+                }
+
+                @Override
+                public int getServerPort() {
+                    return port;
+                }
+
+                @Override
+                public int getSSLServerPort() {
+                    return sslPort;
                 }
             };
         }
@@ -324,7 +350,7 @@ public class TestBackwardCompat extends TestCase {
             }
         }
 
-        Client410() {
+        Client410(final String connectString) {
             conf = new org.apache.hw_v4_1_0.hedwig.client.conf.ClientConfiguration() {
                 @Override
                 public boolean isAutoSendConsumeMessageEnabled() {
@@ -333,6 +359,11 @@ public class TestBackwardCompat extends TestCase {
                 @Override
                 public int getConsumedMessagesBufferSize() {
                     return 1;
+                }
+                @Override
+                protected org.apache.hw_v4_1_0.hedwig.util.HedwigSocketAddress
+                    getDefaultServerHedwigSocketAddress() {
+                    return new org.apache.hw_v4_1_0.hedwig.util.HedwigSocketAddress(connectString);
                 }
             };
             client = new org.apache.hw_v4_1_0.hedwig.client.HedwigClient(conf);
@@ -438,8 +469,6 @@ public class TestBackwardCompat extends TestCase {
         List<org.apache.bookkeeper.conf.ServerConfiguration> bkConfs;
         List<org.apache.bookkeeper.proto.BookieServer> bks;
 
-        private int initialPort = 5000;
-        private int nextPort = initialPort;
 
         BookKeeperClusterCurrent(int numBookies) {
             this.numBookies = numBookies;
@@ -466,10 +495,11 @@ public class TestBackwardCompat extends TestCase {
         }
 
         protected void startBookieServer() throws Exception {
+            int port = PortManager.nextFreePort();
             File tmpDir = org.apache.hedwig.util.FileUtils.createTempDirectory(
-                getClass().getName() + (nextPort - initialPort), "test");
+                getClass().getName() + port, "test");
             org.apache.bookkeeper.conf.ServerConfiguration conf = newServerConfiguration(
-                nextPort++, zkUtil.getZooKeeperConnectString(), tmpDir, new File[] { tmpDir });
+                port, zkUtil.getZooKeeperConnectString(), tmpDir, new File[] { tmpDir });
             bks.add(startBookie(conf));
             bkConfs.add(conf);
         }
@@ -509,7 +539,7 @@ public class TestBackwardCompat extends TestCase {
         org.apache.hedwig.server.common.ServerConfiguration conf;
         org.apache.hedwig.server.netty.PubSubServer server;
 
-        ServerCurrent(final String zkHosts) {
+        ServerCurrent(final String zkHosts, final int port, final int sslPort) {
             conf = new org.apache.hedwig.server.common.ServerConfiguration() {
                 @Override
                 public int getConsumeInterval() {
@@ -519,6 +549,16 @@ public class TestBackwardCompat extends TestCase {
                 @Override
                 public String getZkHost() {
                     return zkHosts;
+                }
+
+                @Override
+                public int getServerPort() {
+                    return port;
+                }
+
+                @Override
+                public int getSSLServerPort() {
+                    return sslPort;
                 }
             };
         }
@@ -576,11 +616,11 @@ public class TestBackwardCompat extends TestCase {
             }
         }
 
-        ClientCurrent() {
-            this(true);
+        ClientCurrent(final String connectString) {
+            this(true, connectString);
         }
 
-        ClientCurrent(final boolean autoConsumeEnabled) {
+        ClientCurrent(final boolean autoConsumeEnabled, final String connectString) {
             conf = new org.apache.hedwig.client.conf.ClientConfiguration() {
                 @Override
                 public boolean isAutoSendConsumeMessageEnabled() {
@@ -589,6 +629,10 @@ public class TestBackwardCompat extends TestCase {
                 @Override
                 public int getConsumedMessagesBufferSize() {
                     return 1;
+                }
+                @Override
+                protected HedwigSocketAddress getDefaultServerHedwigSocketAddress() {
+                    return new HedwigSocketAddress(connectString);
                 }
             };
             client = new org.apache.hedwig.client.HedwigClient(conf);
@@ -833,12 +877,15 @@ public class TestBackwardCompat extends TestCase {
         ByteString topic = ByteString.copyFromUtf8("testMessageBoundCompat");
         ByteString subid = ByteString.copyFromUtf8("mysub");
 
+        int port = PortManager.nextFreePort();
+        int sslPort = PortManager.nextFreePort();
+
         // start bookkeeper 400
         BookKeeperCluster400 bkc400 = new BookKeeperCluster400(3);
         bkc400.start();
 
         // start 400 server
-        Server400 s400 = new Server400(zkUtil.getZooKeeperConnectString());
+        Server400 s400 = new Server400(zkUtil.getZooKeeperConnectString(), port, sslPort);
         s400.start();
 
         org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions options5cur =
@@ -846,7 +893,7 @@ public class TestBackwardCompat extends TestCase {
             .setCreateOrAttach(org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach.CREATE_OR_ATTACH)
             .setMessageBound(5).build();
 
-        ClientCurrent ccur = new ClientCurrent();
+        ClientCurrent ccur = new ClientCurrent("localhost:" + port + ":" + sslPort);
         ccur.subscribe(topic, subid, options5cur);
         ccur.closeSubscription(topic, subid);
         ccur.sendXExpectLastY(topic, subid, 50, 50);
@@ -860,7 +907,7 @@ public class TestBackwardCompat extends TestCase {
         bkc410.start();
 
         // start 410 server
-        Server410 s410 = new Server410(zkUtil.getZooKeeperConnectString());
+        Server410 s410 = new Server410(zkUtil.getZooKeeperConnectString(), port, sslPort);
         s410.start();
 
         ccur.subscribe(topic, subid, options5cur);
@@ -876,7 +923,7 @@ public class TestBackwardCompat extends TestCase {
         bkccur.start();
 
         // start current server
-        ServerCurrent scur = new ServerCurrent(zkUtil.getZooKeeperConnectString());
+        ServerCurrent scur = new ServerCurrent(zkUtil.getZooKeeperConnectString(), port, sslPort);
         scur.start();
 
         ccur.subscribe(topic, subid, options5cur);
@@ -907,12 +954,15 @@ public class TestBackwardCompat extends TestCase {
         BookKeeperCluster410 bkc410 = new BookKeeperCluster410(3);
         bkc410.start();
 
+        int port = PortManager.nextFreePort();
+        int sslPort = PortManager.nextFreePort();
+
         // start 410 server
-        Server410 s410 = new Server410(zkUtil.getZooKeeperConnectString());
+        Server410 s410 = new Server410(zkUtil.getZooKeeperConnectString(), port, sslPort);
         s410.start();
 
-        ClientCurrent ccur = new ClientCurrent();
-        Client410 c410 = new Client410();
+        ClientCurrent ccur = new ClientCurrent("localhost:"+port+":"+sslPort);
+        Client410 c410 = new Client410("localhost:"+port+":"+sslPort);
 
         // client c410 could publish message to 410 server
         assertNull(c410.publish(topic, data));
@@ -924,7 +974,7 @@ public class TestBackwardCompat extends TestCase {
         s410.stop();
 
         // start current server
-        ServerCurrent scur = new ServerCurrent(zkUtil.getZooKeeperConnectString());
+        ServerCurrent scur = new ServerCurrent(zkUtil.getZooKeeperConnectString(), port, sslPort);
         scur.start();
 
         // client c410 could publish message to 410 server
@@ -956,15 +1006,18 @@ public class TestBackwardCompat extends TestCase {
         BookKeeperCluster410 bkc410 = new BookKeeperCluster410(3);
         bkc410.start();
 
+        int port = PortManager.nextFreePort();
+        int sslPort = PortManager.nextFreePort();
+
         // start 410 server
-        Server410 s410 = new Server410(zkUtil.getZooKeeperConnectString());
+        Server410 s410 = new Server410(zkUtil.getZooKeeperConnectString(), port, sslPort);
         s410.start();
 
-        Client410 c410 = new Client410();
+        Client410 c410 = new Client410("localhost:"+port+":"+sslPort);
         c410.subscribe(topic, sub410);
         c410.closeSubscription(topic, sub410);
 
-        ClientCurrent ccur = new ClientCurrent();
+        ClientCurrent ccur = new ClientCurrent("localhost:"+port+":"+sslPort);
         ccur.subscribe(topic, subcur);
         ccur.closeSubscription(topic, subcur);
 
@@ -974,7 +1027,8 @@ public class TestBackwardCompat extends TestCase {
         s410.stop();
 
         // start current server
-        ServerCurrent scur = new ServerCurrent(zkUtil.getZooKeeperConnectString());
+        ServerCurrent scur = new ServerCurrent(zkUtil.getZooKeeperConnectString(),
+                                               port, sslPort);
         scur.start();
 
         c410.subscribe(topic, sub410);
@@ -1013,8 +1067,12 @@ public class TestBackwardCompat extends TestCase {
         BookKeeperClusterCurrent bkccur= new BookKeeperClusterCurrent(3);
         bkccur.start();
 
+        int port = PortManager.nextFreePort();
+        int sslPort = PortManager.nextFreePort();
+
         // start hub server
-        ServerCurrent scur = new ServerCurrent(zkUtil.getZooKeeperConnectString());
+        ServerCurrent scur = new ServerCurrent(zkUtil.getZooKeeperConnectString(),
+                                               port, sslPort);
         scur.start();
 
         org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions options5cur =
@@ -1030,7 +1088,7 @@ public class TestBackwardCompat extends TestCase {
             .setCreateOrAttach(org.apache.hw_v4_1_0.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach.CREATE_OR_ATTACH)
             .setMessageBound(20).build();
 
-        Client410 c410 = new Client410();
+        Client410 c410 = new Client410("localhost:"+port+":"+sslPort);
         c410.subscribe(topic, subid, options20v410);
         c410.closeSubscription(topic, subid);
         c410.sendXExpectLastY(topic, subid, 50, 20);
@@ -1040,7 +1098,7 @@ public class TestBackwardCompat extends TestCase {
         // the message bound isn't updated.
         c410.sendXExpectLastY(topic, subid, 50, 20);
 
-        ClientCurrent ccur = new ClientCurrent();
+        ClientCurrent ccur = new ClientCurrent("localhost:"+port+":"+sslPort);
         ccur.subscribe(topic, subid, options5cur);
         ccur.closeSubscription(topic, subid);
         // the message bound should be updated.
@@ -1070,11 +1128,14 @@ public class TestBackwardCompat extends TestCase {
         BookKeeperCluster410 bkc410 = new BookKeeperCluster410(3);
         bkc410.start();
 
+        int port = PortManager.nextFreePort();
+        int sslPort = PortManager.nextFreePort();
+
         // start hub server 410
-        Server410 s410 = new Server410(zkUtil.getZooKeeperConnectString());
+        Server410 s410 = new Server410(zkUtil.getZooKeeperConnectString(), port, sslPort);
         s410.start();
 
-        ClientCurrent ccur = new ClientCurrent();
+        ClientCurrent ccur = new ClientCurrent("localhost:"+port+":"+sslPort);
         ccur.subscribe(topic, subid);
         ccur.closeSubscription(topic, subid);
 
@@ -1108,11 +1169,14 @@ public class TestBackwardCompat extends TestCase {
         BookKeeperCluster410 bkc410 = new BookKeeperCluster410(3);
         bkc410.start();
 
+        int port = PortManager.nextFreePort();
+        int sslPort = PortManager.nextFreePort();
+
         // start hub server 410
-        Server410 s410 = new Server410(zkUtil.getZooKeeperConnectString());
+        Server410 s410 = new Server410(zkUtil.getZooKeeperConnectString(), port, sslPort);
         s410.start();
 
-        ClientCurrent ccur = new ClientCurrent(false);
+        ClientCurrent ccur = new ClientCurrent(false, "localhost:"+port+":"+sslPort);
         ccur.throttleX41(topic, subid, 10);
 
         ccur.close();

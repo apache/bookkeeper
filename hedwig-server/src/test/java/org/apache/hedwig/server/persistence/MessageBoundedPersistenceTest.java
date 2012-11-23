@@ -71,7 +71,7 @@ public class MessageBoundedPersistenceTest extends HedwigHubTestBase {
         return new SmallReadAheadServerConfiguration(serverPort, sslServerPort);
     }
 
-    private class MessageBoundClientConfiguration extends ClientConfiguration {
+    private class MessageBoundClientConfiguration extends HubClientConfiguration {
         final int messageBound;
 
         public MessageBoundClientConfiguration(int bound) {
@@ -152,7 +152,7 @@ public class MessageBoundedPersistenceTest extends HedwigHubTestBase {
     public void testMultipleSubscribers() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("multiSubTopic");
 
-        Client client = new HedwigClient(new ClientConfiguration());
+        Client client = new HedwigClient(new HubClientConfiguration());
         Publisher pub = client.getPublisher();
         Subscriber sub = client.getSubscriber();
 
@@ -194,7 +194,7 @@ public class MessageBoundedPersistenceTest extends HedwigHubTestBase {
     public void testUpdateMessageBound() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("UpdateMessageBound");
 
-        Client client = new HedwigClient(new ClientConfiguration());
+        Client client = new HedwigClient(new HubClientConfiguration());
         Publisher pub = client.getPublisher();
         Subscriber sub = client.getSubscriber();
 

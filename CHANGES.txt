@@ -146,6 +146,8 @@ Trunk (unreleased changes)
 
     IMPROVEMENTS:
 
+      BOOKKEEPER-467: Allocate ports for testing dynamically (ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-328: Bookie DeathWatcher is missing thread name (Rakesh via sijie)

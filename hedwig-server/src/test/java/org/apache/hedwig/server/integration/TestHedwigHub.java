@@ -60,6 +60,8 @@ import org.apache.hedwig.server.proxy.ProxyConfiguration;
 import org.apache.hedwig.server.regions.HedwigHubClient;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.ConcurrencyUtils;
+import org.apache.hedwig.util.HedwigSocketAddress;
+import org.apache.bookkeeper.test.PortManager;
 
 @RunWith(Parameterized.class)
 public class TestHedwigHub extends HedwigHubTestBase {
@@ -94,12 +96,25 @@ public class TestHedwigHub extends HedwigHubTestBase {
     protected boolean isSubscriptionChannelSharingEnabled;
 
     public TestHedwigHub(Mode mode, boolean isSubscriptionChannelSharingEnabled) {
+        super(3);
         this.mode = mode;
         this.isSubscriptionChannelSharingEnabled = isSubscriptionChannelSharingEnabled;
     }
 
     protected HedwigProxy proxy;
-    protected ProxyConfiguration proxyConf = new ProxyConfiguration();
+    protected ProxyConfiguration proxyConf = new ProxyConfiguration() {
+            final int proxyPort = PortManager.nextFreePort();
+
+            @Override
+            public HedwigSocketAddress getDefaultServerHedwigSocketAddress() {
+                return serverAddresses.get(0);
+            }
+
+            @Override
+            public int getProxyPort() {
+                return proxyPort;
+            }
+        };
 
     // SynchronousQueues to verify async calls
     private final SynchronousQueue<Boolean> queue = new SynchronousQueue<Boolean>();
@@ -190,7 +205,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         }
     }
 
-    class TestClientConfiguration extends ClientConfiguration {
+    class TestClientConfiguration extends HubClientConfiguration {
 
         @Override
         public InetSocketAddress getDefaultServerHost() {
@@ -223,7 +238,6 @@ public class TestHedwigHub extends HedwigHubTestBase {
     @Override
     @Before
     public void setUp() throws Exception {
-        numServers = 3;
         super.setUp();
         if (mode == Mode.PROXY) {
             proxy = new HedwigProxy(proxyConf);
@@ -676,7 +690,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
     // subscriberId to be in the "hub" specific format.
     @Test
     public void testSyncHubSubscribeWithInvalidSubscriberId() throws Exception {
-        Client hubClient = new HedwigHubClient(new ClientConfiguration());
+        Client hubClient = new HedwigHubClient(new HubClientConfiguration());
         Subscriber hubSubscriber = hubClient.getSubscriber();
         boolean subscribeSuccess = false;
         try {
@@ -692,7 +706,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
 
     @Test
     public void testAsyncHubSubscribeWithInvalidSubscriberId() throws Exception {
-        Client hubClient = new HedwigHubClient(new ClientConfiguration());
+        Client hubClient = new HedwigHubClient(new HubClientConfiguration());
         Subscriber hubSubscriber = hubClient.getSubscriber();
         hubSubscriber.asyncSubscribe(getTopic(0), localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(
                                          queue), null);
@@ -702,7 +716,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
 
     @Test
     public void testSyncHubUnsubscribeWithInvalidSubscriberId() throws Exception {
-        Client hubClient = new HedwigHubClient(new ClientConfiguration());
+        Client hubClient = new HedwigHubClient(new HubClientConfiguration());
         Subscriber hubSubscriber = hubClient.getSubscriber();
         boolean unsubscribeSuccess = false;
         try {
@@ -718,7 +732,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
 
     @Test
     public void testAsyncHubUnsubscribeWithInvalidSubscriberId() throws Exception {
-        Client hubClient = new HedwigHubClient(new ClientConfiguration());
+        Client hubClient = new HedwigHubClient(new HubClientConfiguration());
         Subscriber hubSubscriber = hubClient.getSubscriber();
         hubSubscriber.asyncUnsubscribe(getTopic(0), localSubscriberId, new TestCallback(queue), null);
         assertFalse(queue.take());

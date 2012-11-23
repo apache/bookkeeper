@@ -66,7 +66,7 @@ public class TestThrottlingDelivery extends HedwigHubTestBase {
         }
     }
 
-    protected class ThrottleDeliveryClientConfiguration extends ClientConfiguration {
+    protected class ThrottleDeliveryClientConfiguration extends HubClientConfiguration {
 
         int messageWindowSize;
 
@@ -173,13 +173,13 @@ public class TestThrottlingDelivery extends HedwigHubTestBase {
     protected boolean isSubscriptionChannelSharingEnabled;
 
     public TestThrottlingDelivery(boolean isSubscriptionChannelSharingEnabled) {
+        super(1);
         this.isSubscriptionChannelSharingEnabled = isSubscriptionChannelSharingEnabled;
     }
 
     @Override
     @Before
     public void setUp() throws Exception {
-        numServers = 1;
         super.setUp();
     }
 

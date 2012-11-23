@@ -24,8 +24,11 @@ import org.slf4j.LoggerFactory;
 import org.junit.After;
 import org.junit.Before;
 
+import org.apache.bookkeeper.test.PortManager;
+
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.netty.PubSubServer;
+import org.apache.hedwig.util.HedwigSocketAddress;
 
 /**
  * This is a base class for any tests that need a StandAlone PubSubServer setup.
@@ -35,9 +38,22 @@ public abstract class PubSubServerStandAloneTestBase extends TestCase {
     protected static Logger logger = LoggerFactory.getLogger(PubSubServerStandAloneTestBase.class);
 
     protected class StandAloneServerConfiguration extends ServerConfiguration {
+        final int port = PortManager.nextFreePort();
+        final int sslPort = PortManager.nextFreePort();
+
         @Override
         public boolean isStandalone() {
             return true;
+        }
+
+        @Override
+        public int getServerPort() {
+            return port;
+        }
+
+        @Override
+        public int getSSLServerPort() {
+            return sslPort;
         }
     }
 
@@ -46,6 +62,7 @@ public abstract class PubSubServerStandAloneTestBase extends TestCase {
     }
 
     protected PubSubServer server;
+    protected HedwigSocketAddress defaultAddress;
 
     @Override
     @Before
@@ -65,10 +82,19 @@ public abstract class PubSubServerStandAloneTestBase extends TestCase {
     }
 
     protected void startHubServer() throws Exception {
-        startHubServer(getStandAloneServerConfiguration());
+        ServerConfiguration conf = getStandAloneServerConfiguration();
+        defaultAddress = new HedwigSocketAddress("localhost", conf.getServerPort(),
+                                                 conf.getSSLServerPort());
+        startHubServer(conf);
+    }
+
+    protected HedwigSocketAddress getDefaultHedwigAddress() {
+        return defaultAddress;
     }
 
     protected void startHubServer(ServerConfiguration conf) throws Exception {
+        defaultAddress = new HedwigSocketAddress("localhost", conf.getServerPort(),
+                                                 conf.getSSLServerPort());
         server = new PubSubServer(conf);
         server.start();
     }

@@ -27,9 +27,13 @@ import org.slf4j.LoggerFactory;
 import org.junit.After;
 import org.junit.Before;
 
+import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.netty.PubSubServer;
 import org.apache.hedwig.server.persistence.BookKeeperTestBase;
+import org.apache.hedwig.util.HedwigSocketAddress;
+
+import org.apache.bookkeeper.test.PortManager;
 
 /**
  * This is a base class for any tests that need a Hedwig Hub(s) setup with an
@@ -50,10 +54,9 @@ public abstract class HedwigHubTestBase extends TestCase {
     // PubSubServer variables
     // Default number of PubSubServer hubs to setup. Extending classes can
     // override this.
-    protected int numServers = 1;
-    protected int initialServerPort = 4080;
-    protected int initialSSLServerPort = 9876;
+    protected final int numServers;
     protected List<PubSubServer> serversList;
+    protected List<HedwigSocketAddress> serverAddresses;
 
     public HedwigHubTestBase() {
         this(1);
@@ -61,6 +64,12 @@ public abstract class HedwigHubTestBase extends TestCase {
 
     protected HedwigHubTestBase(int numServers) {
         this.numServers = numServers;
+
+        serverAddresses = new LinkedList<HedwigSocketAddress>();
+        for (int i = 0; i < numServers; i++) {
+            serverAddresses.add(new HedwigSocketAddress("localhost",
+                                        PortManager.nextFreePort(), PortManager.nextFreePort()));
+        }
     }
 
     // Default child class of the ServerConfiguration to be used here.
@@ -106,6 +115,13 @@ public abstract class HedwigHubTestBase extends TestCase {
         }
     }
 
+    public class HubClientConfiguration extends ClientConfiguration {
+        @Override
+        public HedwigSocketAddress getDefaultServerHedwigSocketAddress() {
+            return serverAddresses.get(0);
+        }
+    }
+
     // Method to get a ServerConfiguration for the PubSubServers created using
     // the specified ports. Extending child classes can override this. This
     // default implementation will return the HubServerConfiguration object
@@ -117,9 +133,11 @@ public abstract class HedwigHubTestBase extends TestCase {
     protected void startHubServers() throws Exception {
         // Now create the PubSubServer Hubs
         serversList = new LinkedList<PubSubServer>();
+
         for (int i = 0; i < numServers; i++) {
-            PubSubServer s = new PubSubServer(
-                    getServerConfiguration(initialServerPort + i, initialSSLServerPort + i));
+            ServerConfiguration conf = getServerConfiguration(serverAddresses.get(i).getPort(),
+                                                              serverAddresses.get(i).getSSLPort());
+            PubSubServer s = new PubSubServer(conf);
             serversList.add(s);
             s.start();
         }

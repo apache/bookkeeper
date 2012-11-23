@@ -25,6 +25,7 @@ import java.net.MalformedURLException;
 
 import junit.framework.Assert;
 
+import org.apache.bookkeeper.test.PortManager;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.netty.PubSubServer;
@@ -62,8 +63,14 @@ public class TestPubSubServerStartup {
 
     private void instantiateAndDestroyPubSubServer() throws IOException, InterruptedException, ConfigurationException,
         MalformedURLException, Exception {
-        String hedwigParams = "default_server_host=localhost:4080\n" + "zookeeper_connection_string=localhost:2181\n"
-                              + "zk_timeout=2000\n";
+        int zkPort = PortManager.nextFreePort();
+        int hwPort = PortManager.nextFreePort();
+        int hwSSLPort = PortManager.nextFreePort();
+        String hedwigParams = "default_server_host=localhost:" + hwPort + "\n"
+            + "zk_host=localhost:" + zkPort + "\n"
+            + "server_port=" + hwPort + "\n"
+            + "ssl_server_port=" + hwSSLPort + "\n"
+            + "zk_timeout=2000\n";
 
         File hedwigConfigFile = new File(System.getProperty("java.io.tmpdir") + "/hedwig.cfg");
         writeStringToFile(hedwigParams, hedwigConfigFile);
@@ -73,19 +80,19 @@ public class TestPubSubServerStartup {
         zkTmpDir.delete();
         zkTmpDir.mkdir();
 
-        ZooKeeperServer zks = new ZooKeeperServer(zkTmpDir, zkTmpDir, 2181);
+        ZooKeeperServer zks = new ZooKeeperServer(zkTmpDir, zkTmpDir, zkPort);
 
         NIOServerCnxnFactory serverFactory = new NIOServerCnxnFactory();
-        serverFactory.configure(new InetSocketAddress(2181), 100);
+        serverFactory.configure(new InetSocketAddress(zkPort), 100);
         serverFactory.startup(zks);
 
-        boolean b = ClientBase.waitForServerUp("127.0.0.1:2181", 5000);
+        boolean b = ClientBase.waitForServerUp("127.0.0.1:" + zkPort, 5000);
         ServerConfiguration serverConf = new ServerConfiguration();
         serverConf.loadConf(hedwigConfigFile.toURI().toURL());
 
         logger.info("Zookeeper server up and running!");
 
-        ZooKeeper zkc = new ZooKeeper("127.0.0.1", 2181, null);
+        ZooKeeper zkc = new ZooKeeper("127.0.0.1:" + zkPort, 5000, null);
 
         // initialize the zk client with (fake) values
         zkc.create("/ledgers", new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
@@ -109,7 +116,7 @@ public class TestPubSubServerStartup {
 
         zkTmpDir.delete();
 
-        ClientBase.waitForServerDown("localhost:2181", 10000);
+        ClientBase.waitForServerDown("localhost:" + zkPort, 10000);
 
     }
 

@@ -40,6 +40,7 @@ import org.apache.hedwig.server.HedwigRegionTestBase;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.integration.TestHedwigHub.TestCallback;
 import org.apache.hedwig.server.integration.TestHedwigHub.TestMessageHandler;
+import org.apache.hedwig.util.HedwigSocketAddress;
 
 @RunWith(Parameterized.class)
 public class TestHedwigRegion extends HedwigRegionTestBase {
@@ -68,6 +69,10 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
         @Override
         public boolean isSubscriptionChannelSharingEnabled() {
             return isSubscriptionChannelSharingEnabled;
+        }
+        @Override
+        public HedwigSocketAddress getDefaultServerHedwigSocketAddress() {
+            return regionHubAddresses.get(0).get(0);
         }
     }
 

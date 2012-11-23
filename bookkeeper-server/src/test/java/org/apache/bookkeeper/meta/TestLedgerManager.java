@@ -196,12 +196,13 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         private final CyclicBarrier barrier;
         private ZooKeeper zkc;
         
-        CreateLMThread(String root, String factoryCls, CyclicBarrier barrier) throws Exception {
+        CreateLMThread(String zkConnectString, String root,
+                       String factoryCls, CyclicBarrier barrier) throws Exception {
             this.factoryCls = factoryCls;
             this.barrier = barrier;
             this.root = root;
             final CountDownLatch latch = new CountDownLatch(1);
-            zkc = new ZooKeeper("127.0.0.1", 10000, new Watcher() {
+            zkc = new ZooKeeper(zkConnectString, 10000, new Watcher() {
                     public void process(WatchedEvent event) {
                         latch.countDown();
                     }
@@ -248,7 +249,8 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         CyclicBarrier barrier = new CyclicBarrier(numThreads+1);
         List<CreateLMThread> threads = new ArrayList<CreateLMThread>(numThreads);
         for (int i = 0; i < numThreads; i++) {
-            CreateLMThread t = new CreateLMThread(root0, FlatLedgerManagerFactory.class.getName(), barrier);
+            CreateLMThread t = new CreateLMThread(zkUtil.getZooKeeperConnectString(),
+                    root0, FlatLedgerManagerFactory.class.getName(), barrier);
             t.start();
             threads.add(t);
         }
@@ -277,14 +279,15 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         CyclicBarrier barrier = new CyclicBarrier(numThreadsEach*2+1);
         List<CreateLMThread> threadsA = new ArrayList<CreateLMThread>(numThreadsEach);
         for (int i = 0; i < numThreadsEach; i++) {
-            CreateLMThread t = new CreateLMThread(root0, FlatLedgerManagerFactory.class.getName(), barrier);
+            CreateLMThread t = new CreateLMThread(zkUtil.getZooKeeperConnectString(),
+                    root0, FlatLedgerManagerFactory.class.getName(), barrier);
             t.start();
             threadsA.add(t);
         }
         List<CreateLMThread> threadsB = new ArrayList<CreateLMThread>(numThreadsEach);
         for (int i = 0; i < numThreadsEach; i++) {
-            CreateLMThread t = new CreateLMThread(root0, 
-                    HierarchicalLedgerManagerFactory.class.getName(), barrier);
+            CreateLMThread t = new CreateLMThread(zkUtil.getZooKeeperConnectString(),
+                    root0, HierarchicalLedgerManagerFactory.class.getName(), barrier);
             t.start();
             threadsB.add(t);
         }

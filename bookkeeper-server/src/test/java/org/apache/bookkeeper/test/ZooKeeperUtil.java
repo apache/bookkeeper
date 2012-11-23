@@ -49,7 +49,7 @@ public class ZooKeeperUtil {
     static final Logger LOG = LoggerFactory.getLogger(ZooKeeperUtil.class);
 
     // ZooKeeper related variables
-    protected static Integer ZooKeeperDefaultPort = 2181;
+    protected final static Integer zooKeeperPort = PortManager.nextFreePort();
     private final InetSocketAddress zkaddr;
 
     protected ZooKeeperServer zks;
@@ -59,8 +59,8 @@ public class ZooKeeperUtil {
     private final String connectString;
 
     public ZooKeeperUtil() {
-        zkaddr = new InetSocketAddress(ZooKeeperDefaultPort);
-        connectString= "localhost:" + ZooKeeperDefaultPort;
+        zkaddr = new InetSocketAddress(zooKeeperPort);
+        connectString= "localhost:" + zooKeeperPort;
     }
 
     public ZooKeeper getZooKeeperClient() {

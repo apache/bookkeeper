@@ -54,14 +54,17 @@ public class TestDeadlock extends HedwigHubTestBase {
     ByteString topic = ByteString.copyFromUtf8("DeadLockTopic");
     ByteString subscriberId = ByteString.copyFromUtf8("dl");
 
+    public TestDeadlock() {
+        super(1);
+    }
+
     @Override
     @Before
     public void setUp() throws Exception {
-        numServers = 1;
         numBookies = 1;
         readDelay = 1000L; // 1s
         super.setUp();
-        client = new HedwigClient(new ClientConfiguration());
+        client = new HedwigClient(new HubClientConfiguration());
         publisher = client.getPublisher();
         subscriber = client.getSubscriber();
     }

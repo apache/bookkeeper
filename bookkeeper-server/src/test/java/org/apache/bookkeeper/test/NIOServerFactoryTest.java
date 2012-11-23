@@ -47,10 +47,11 @@ public class NIOServerFactoryTest extends TestCase {
     @Test
     public void testProblemProcessor() throws Exception {
         ServerConfiguration conf = new ServerConfiguration();
-        conf.setBookiePort(22334);
+        int port = PortManager.nextFreePort();
+        conf.setBookiePort(port);
         NIOServerFactory factory = new NIOServerFactory(conf, problemProcessor);
         factory.start();
-        Socket s = new Socket("127.0.0.1", 22334);
+        Socket s = new Socket("127.0.0.1", port);
         s.setSoTimeout(5000);
         try {
             s.getOutputStream().write("\0\0\0\4\0\0\0\1".getBytes());

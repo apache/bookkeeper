@@ -57,7 +57,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
                 }
             }
 
-            ServerConfiguration conf = newServerConfiguration(initialPort + 1,
+            ServerConfiguration conf = newServerConfiguration(PortManager.nextFreePort(),
                                                               zkUtil.getZooKeeperConnectString(), f, new File[] { f });
             server = new BookieServer(conf);
             server.start();

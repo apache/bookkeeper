@@ -51,6 +51,7 @@ import org.apache.hedwig.server.PubSubServerStandAloneTestBase;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.ConcurrencyUtils;
 import org.apache.hedwig.util.SubscriptionListener;
+import org.apache.hedwig.util.HedwigSocketAddress;
 
 @RunWith(Parameterized.class)
 public class TestPubSubClient extends PubSubServerStandAloneTestBase {
@@ -172,6 +173,11 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
     public void setUp() throws Exception {
         super.setUp();
         client = new HedwigClient(new ClientConfiguration() {
+            @Override
+            public HedwigSocketAddress getDefaultServerHedwigSocketAddress() {
+                return getDefaultHedwigAddress();
+            }
+
             @Override
             public boolean isSubscriptionChannelSharingEnabled() {
                 return TestPubSubClient.this.isSubscriptionChannelSharingEnabled;
@@ -516,7 +522,12 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
         subscriber.startDelivery(topic, subscriberId, new TestMessageHandler());
 
         // new a client
-        HedwigClient client2 = new HedwigClient(new ClientConfiguration());
+        HedwigClient client2 = new HedwigClient(new ClientConfiguration() {
+                @Override
+                public HedwigSocketAddress getDefaultServerHedwigSocketAddress() {
+                    return getDefaultHedwigAddress();
+                }
+            });
         Subscriber subscriber2 = client2.getSubscriber();
         Publisher publisher2 = client2.getPublisher();
         SynchronousQueue<SubscriptionEvent> eventQueue2 =
@@ -553,8 +564,24 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
 
     @Test
     public void testSyncSubscribeWithListenerWhenReleasingTopic() throws Exception {
+        client.close();
+
         tearDownHubServer();
         startHubServer(new RetentionServerConfiguration());
+        client = new HedwigClient(new ClientConfiguration() {
+            @Override
+            public HedwigSocketAddress getDefaultServerHedwigSocketAddress() {
+                return getDefaultHedwigAddress();
+            }
+
+            @Override
+            public boolean isSubscriptionChannelSharingEnabled() {
+                return TestPubSubClient.this.isSubscriptionChannelSharingEnabled;
+            }
+        });
+        publisher = client.getPublisher();
+        subscriber = client.getSubscriber();
+
         ByteString topic = ByteString.copyFromUtf8("mySyncSubscribeWithListenerWhenReleasingTopic");
         ByteString subscriberId = ByteString.copyFromUtf8("mysub");
         subscriber.addSubscriptionListener(new TestSubscriptionListener());

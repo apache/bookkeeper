@@ -29,6 +29,7 @@ import org.junit.Before;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.util.ConcurrencyUtils;
 import org.apache.hedwig.util.Callback;
+import org.apache.bookkeeper.test.PortManager;
 
 /**
  * This is a base class for any tests that need a ZooKeeper client/server setup.
@@ -78,6 +79,7 @@ public abstract class ZooKeeperTestBase extends ClientBase {
     @Override
     @Before
     public void setUp() throws Exception {
+        hostPort = "127.0.0.1:" + PortManager.nextFreePort();
         super.setUp();
         zk = createClient();
     }

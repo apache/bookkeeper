@@ -225,9 +225,8 @@ public class TestMultiplexing extends HedwigHubTestBase {
     @Override
     @Before
     public void setUp() throws Exception {
-        numServers = 1;
         super.setUp();
-        client = new HedwigClient(new ClientConfiguration() {
+        client = new HedwigClient(new HubClientConfiguration() {
             @Override
             public boolean isSubscriptionChannelSharingEnabled() {
                 return true;

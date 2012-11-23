@@ -46,6 +46,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
+import org.apache.bookkeeper.test.PortManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +56,7 @@ public class UpgradeTest {
 
     ZooKeeperUtil zkutil;
     ZooKeeper zkc = null;
+    final static int bookiePort = PortManager.nextFreePort();
 
     @Before
     public void setupZooKeeper() throws Exception {
@@ -166,7 +168,7 @@ public class UpgradeTest {
             .setZkServers(zkServers)
             .setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir })
-            .setBookiePort(3181);
+            .setBookiePort(bookiePort);
         Bookie b = null;
         try {
             b = new Bookie(conf);
@@ -223,7 +225,7 @@ public class UpgradeTest {
             .setZkServers(zkutil.getZooKeeperConnectString())
             .setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir })
-            .setBookiePort(3181);
+            .setBookiePort(bookiePort);
         FileSystemUpgrade.upgrade(conf); // should work fine with current directory
         Bookie b = new Bookie(conf);
         b.start();

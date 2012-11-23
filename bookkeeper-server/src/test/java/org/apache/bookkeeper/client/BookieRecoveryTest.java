@@ -245,6 +245,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
 
         // Shutdown the first bookie server
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
+        int initialPort = bsConfs.get(0).getBookiePort();
         bs.get(0).shutdown();
         bs.remove(0);
 
@@ -298,6 +299,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
 
         // Shutdown the first bookie server
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
+        int initialPort = bsConfs.get(0).getBookiePort();
         bs.get(0).shutdown();
         bs.remove(0);
 
@@ -352,6 +354,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
 
         // Shutdown the first bookie server
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
+        int initialPort = bsConfs.get(0).getBookiePort();
         bs.get(0).shutdown();
         bs.remove(0);
 
@@ -395,6 +398,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
 
         // Shutdown the first bookie server
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
+        int initialPort = bsConfs.get(0).getBookiePort();
         bs.get(0).shutdown();
         bs.remove(0);
 
@@ -694,6 +698,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
 
         // Shutdown the first bookie server
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
+        int initialPort = bsConfs.get(0).getBookiePort();
         bs.get(0).shutdown();
         bs.remove(0);
 

@@ -36,6 +36,8 @@ import org.apache.hedwig.server.netty.PubSubServer;
 import org.apache.hedwig.server.persistence.BookKeeperTestBase;
 import org.apache.hedwig.util.HedwigSocketAddress;
 
+import org.apache.bookkeeper.test.PortManager;
+
 /**
  * This is a base class for any tests that need a Hedwig Region(s) setup with a
  * number of Hedwig hubs per region, an associated HedwigClient per region and
@@ -58,14 +60,16 @@ public abstract class HedwigRegionTestBase extends TestCase {
     // override this.
     protected int numRegions = 2;
     protected int numServersPerRegion = 1;
-    protected int initialServerPort = 4080;
-    protected int initialSSLServerPort = 9876;
+
     // Map with keys being Region names and values being the list of Hedwig
     // Hubs (PubSubServers) for that particular region.
     protected Map<String, List<PubSubServer>> regionServersMap;
     // Map with keys being Region names and values being the Hedwig Client
     // instance.
     protected Map<String, HedwigClient> regionClientsMap;
+
+    protected Map<String, Integer> regionNameToIndexMap;
+    protected Map<Integer, List<HedwigSocketAddress>> regionHubAddresses;
 
     // String constant used as the prefix for the region names.
     protected static final String REGION_PREFIX = "region";
@@ -89,14 +93,15 @@ public abstract class HedwigRegionTestBase extends TestCase {
         protected void setRegionList() {
             List<String> myRegionList = new LinkedList<String>();
             for (int i = 0; i < numRegions; i++) {
-                int curDefaultServerPort = initialServerPort + (i * numServersPerRegion);
-                int curDefaultSSLServerPort = initialSSLServerPort + (i * numServersPerRegion);
+                int curDefaultServerPort = regionHubAddresses.get(i).get(0).getPort();
+                int curDefaultSSLServerPort = regionHubAddresses.get(i).get(0).getSSLPort();
                 // Add this region default server port if it is for a region
                 // other than its own.
-                if (curDefaultServerPort > serverPort
-                        || Math.abs(serverPort - curDefaultServerPort) >= numServersPerRegion)
+                if (regionNameToIndexMap.get(regionName) != i) {
                     myRegionList.add("localhost:" + curDefaultServerPort + ":" + curDefaultSSLServerPort);
+                }
             }
+
             regionList = myRegionList;
         }
 
@@ -168,7 +173,12 @@ public abstract class HedwigRegionTestBase extends TestCase {
 
     // Method to get a ClientConfiguration for the Cross Region Hedwig Client.
     protected ClientConfiguration getRegionClientConfiguration() {
-        return new ClientConfiguration();
+        return new ClientConfiguration() {
+            @Override
+            public HedwigSocketAddress getDefaultServerHedwigSocketAddress() {
+                return regionHubAddresses.get(0).get(0);
+            }
+        };
     }
 
     @Override
@@ -181,6 +191,19 @@ public abstract class HedwigRegionTestBase extends TestCase {
         // Create the Hedwig PubSubServer Hubs for all of the regions
         regionServersMap = new HashMap<String, List<PubSubServer>>(numRegions, 1.0f);
         regionClientsMap = new HashMap<String, HedwigClient>(numRegions, 1.0f);
+
+        regionHubAddresses = new HashMap<Integer, List<HedwigSocketAddress>>(numRegions, 1.0f);
+        for (int i = 0; i < numRegions; i++) {
+            List<HedwigSocketAddress> addresses = new LinkedList<HedwigSocketAddress>();
+            for (int j = 0; j < numServersPerRegion; j++) {
+                HedwigSocketAddress a = new HedwigSocketAddress("localhost",
+                        PortManager.nextFreePort(), PortManager.nextFreePort());
+                addresses.add(a);
+            }
+            regionHubAddresses.put(i, addresses);
+        }
+        regionNameToIndexMap = new HashMap<String, Integer>();
+
         for (int i = 0; i < numRegions; i++) {
             startRegion(i);
         }
@@ -230,18 +253,21 @@ public abstract class HedwigRegionTestBase extends TestCase {
 
     protected void startRegion(int i) throws Exception {
         String regionName = REGION_PREFIX + i;
+        regionNameToIndexMap.put(regionName, i);
+
         if (logger.isDebugEnabled()) {
             logger.debug("Start region : " + regionName);
         }
+
         List<PubSubServer> serversList = new LinkedList<PubSubServer>();
         // For the current region, create the necessary amount of hub
         // servers. We will basically increment through the port numbers
         // starting from the initial ones defined.
         for (int j = 0; j < numServersPerRegion; j++) {
+            HedwigSocketAddress a = regionHubAddresses.get(i).get(j);
             PubSubServer s = new PubSubServer(
-                    getServerConfiguration(initialServerPort
-                                           + (j + i * numServersPerRegion),
-                                           initialSSLServerPort + (j + i * numServersPerRegion),
+                    getServerConfiguration(a.getPort(),
+                                           a.getSSLPort(),
                                            regionName),
                     getRegionClientConfiguration());
             serversList.add(s);
@@ -251,8 +277,9 @@ public abstract class HedwigRegionTestBase extends TestCase {
         regionServersMap.put(regionName, serversList);
         // Create a Hedwig Client that points to the first Hub server
         // created in the loop above for the current region.
-        HedwigClient regionClient = new HedwigClient(getClientConfiguration(initialServerPort
-                + (i * numServersPerRegion), initialSSLServerPort + (i * numServersPerRegion)));
+        HedwigClient regionClient = new HedwigClient(
+                getClientConfiguration(regionHubAddresses.get(i).get(0).getPort(),
+                                       regionHubAddresses.get(i).get(0).getSSLPort()));
         regionClientsMap.put(regionName, regionClient);
     }
 }

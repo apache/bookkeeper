@@ -31,6 +31,7 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Test;
 
+import org.apache.bookkeeper.test.PortManager;
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.HedwigClient;
@@ -125,7 +126,7 @@ public class TestPubSubServer extends PubSubServerStandAloneTestBase {
 
         SynchronousQueue<Throwable> queue = new SynchronousQueue<Throwable>();
         RecordingUncaughtExceptionHandler uncaughtExceptionHandler = new RecordingUncaughtExceptionHandler(queue);
-        final int port = 9876;
+        final int port = PortManager.nextFreePort();
 
         PubSubServer server = startServer(uncaughtExceptionHandler, port, new TopicManagerInstantiator() {
 
@@ -155,8 +156,8 @@ public class TestPubSubServer extends PubSubServerStandAloneTestBase {
 
         SynchronousQueue<Throwable> queue = new SynchronousQueue<Throwable>();
         RecordingUncaughtExceptionHandler uncaughtExceptionHandler = new RecordingUncaughtExceptionHandler(queue);
-        final int port = 9876;
-        final String hostPort = "127.0.0.1:33221";
+        final int port = PortManager.nextFreePort();
+        final String hostPort = "127.0.0.1:" + PortManager.nextFreePort();
 
         PubSubServer server = startServer(uncaughtExceptionHandler, port, new TopicManagerInstantiator() {
 
