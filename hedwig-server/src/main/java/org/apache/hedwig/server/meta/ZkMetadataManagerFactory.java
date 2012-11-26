@@ -37,6 +37,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.LedgerRanges;
@@ -383,7 +384,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
 
         @Override
         public void createSubscriptionData(final ByteString topic, final ByteString subscriberId, final SubscriptionData data,
-                                           final Callback<Void> callback, final Object ctx) {
+                                           final Callback<Version> callback, final Object ctx) {
             ZkUtils.createFullPathOptimistic(zk, topicSubscriberPath(topic, subscriberId), data.toByteArray(),
             Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT, new SafeAsyncZKCallback.StringCallback() {
 
@@ -401,7 +402,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                                          + " subscriberId: " + subscriberId.toStringUtf8() + " data: "
                                          + SubscriptionStateUtils.toString(data));
                         }
-                        callback.operationFinished(ctx, null);
+                        callback.operationFinished(ctx, new ZkVersion(0));
                     } else {
                         KeeperException ke = ZkUtils.logErrorAndCreateZKException(
                                                  "Could not record new subscription for topic: " + topic.toStringUtf8()
@@ -414,15 +415,30 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
 
         @Override
         public void updateSubscriptionData(final ByteString topic, final ByteString subscriberId, final SubscriptionData data,
-                                           final Callback<Void> callback, final Object ctx) {
+                                           final Version version, final Callback<Version> callback, final Object ctx) {
             throw new UnsupportedOperationException("ZooKeeper based metadata manager doesn't support partial update!");
         }
 
         @Override
         public void replaceSubscriptionData(final ByteString topic, final ByteString subscriberId, final SubscriptionData data,
-                                            final Callback<Void> callback, final Object ctx) {
-            zk.setData(topicSubscriberPath(topic, subscriberId), data.toByteArray(), -1,
-            new SafeAsyncZKCallback.StatCallback() {
+                                            final Version version, final Callback<Version> callback, final Object ctx) {
+            int znodeVersion = -1;
+            if (Version.NEW == version) {
+                callback.operationFailed(ctx, 
+                        new PubSubException.BadVersionException("Can not replace Version.New subscription data"));
+                return;
+            } else if (Version.ANY != version) {
+                if (!(version instanceof ZkVersion)) {
+                    callback.operationFailed(ctx, new PubSubException.UnexpectedConditionException(
+                                                  "Invalid version provided to replace subscription data for topic  " 
+                                                  + topic.toStringUtf8() + " subscribe id: " + subscriberId));
+                    return;
+                } else {
+                    znodeVersion = ((ZkVersion)version).getZnodeVersion();
+                }
+            }
+            zk.setData(topicSubscriberPath(topic, subscriberId), data.toByteArray(), 
+                    znodeVersion, new SafeAsyncZKCallback.StatCallback() {
                 @Override
                 public void safeProcessResult(int rc, String path, Object ctx, Stat stat) {
                     if (rc == Code.NONODE.intValue()) {
@@ -430,6 +446,12 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                         callback.operationFailed(ctx, PubSubException.create(StatusCode.NO_SUBSCRIPTION_STATE,
                                                       "No subscription state found for (topic:" + topic.toStringUtf8() + ", subscriber:"
                                                       + subscriberId.toStringUtf8() + ")."));
+                        return;
+                    } else if (rc == Code.BadVersion) {
+                        // bad version
+                        callback.operationFailed(ctx, PubSubException.create(StatusCode.BAD_VERSION,
+                                                      "Bad version provided to replace subscription data of topic " 
+                                                      + topic.toStringUtf8() + " subscriberId " + subscriberId));
                         return;
                     } else if (rc != Code.OK.intValue()) {
                         KeeperException e = ZkUtils.logErrorAndCreateZKException("Topic: " + topic.toStringUtf8()
@@ -444,16 +466,33 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                                          + SubscriptionStateUtils.toString(data));
                         }
 
-                        callback.operationFinished(ctx, null);
+                        callback.operationFinished(ctx, new ZkVersion(stat.getVersion()));
                     }
                 }
             }, ctx);
         }
 
         @Override
-        public void deleteSubscriptionData(final ByteString topic, final ByteString subscriberId,
+        public void deleteSubscriptionData(final ByteString topic, final ByteString subscriberId, Version version,
                                            final Callback<Void> callback, Object ctx) {
-            zk.delete(topicSubscriberPath(topic, subscriberId), -1, new SafeAsyncZKCallback.VoidCallback() {
+            
+            int znodeVersion = -1;
+            if (Version.NEW == version) {
+                callback.operationFailed(ctx, 
+                        new PubSubException.BadVersionException("Can not delete Version.New subscription data"));
+                return;
+            } else if (Version.ANY != version) {
+                if (!(version instanceof ZkVersion)) {
+                    callback.operationFailed(ctx, new PubSubException.UnexpectedConditionException(
+                                                  "Invalid version provided to delete subscription data for topic  " 
+                                                  + topic.toStringUtf8() + " subscribe id: " + subscriberId));
+                    return;
+                } else {
+                    znodeVersion = ((ZkVersion)version).getZnodeVersion();
+                }
+            }
+            
+            zk.delete(topicSubscriberPath(topic, subscriberId), znodeVersion, new SafeAsyncZKCallback.VoidCallback() {
                 @Override
                 public void safeProcessResult(int rc, String path, Object ctx) {
                     if (rc == Code.NONODE.intValue()) {
@@ -461,6 +500,12 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                         callback.operationFailed(ctx, PubSubException.create(StatusCode.NO_SUBSCRIPTION_STATE,
                                                       "No subscription state found for (topic:" + topic.toStringUtf8() + ", subscriber:"
                                                       + subscriberId.toStringUtf8() + ")."));
+                        return;
+                    } else if (rc == Code.BadVersion) {
+                        // bad version
+                        callback.operationFailed(ctx, PubSubException.create(StatusCode.BAD_VERSION,
+                                                      "Bad version provided to delete subscription data of topic " 
+                                                      + topic.toStringUtf8() + " subscriberId " + subscriberId));
                         return;
                     } else if (rc == Code.OK.intValue()) {
                         if (logger.isDebugEnabled()) {
@@ -481,7 +526,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
 
         @Override
         public void readSubscriptionData(final ByteString topic, final ByteString subscriberId,
-                                         final Callback<SubscriptionData> callback, final Object ctx) {
+                                         final Callback<Versioned<SubscriptionData>> callback, final Object ctx) {
             zk.getData(topicSubscriberPath(topic, subscriberId), false, new SafeAsyncZKCallback.DataCallback() {
                 @Override
                 public void safeProcessResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
@@ -496,10 +541,12 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                         callback.operationFailed(ctx, new PubSubException.ServiceDownException(e));
                         return;
                     }
-
-                    SubscriptionData subData;
+                    
+                    Versioned<SubscriptionData> subData;
                     try {
-                        subData = SubscriptionStateUtils.parseSubscriptionData(data);
+                        subData = new Versioned<SubscriptionData>(
+                                        SubscriptionStateUtils.parseSubscriptionData(data), 
+                                        new ZkVersion(stat.getVersion()));
                     } catch (InvalidProtocolBufferException ex) {
                         String msg = "Failed to deserialize subscription data for topic: " + topic.toStringUtf8()
                                      + " subscriberId: " + subscriberId.toStringUtf8();
@@ -511,7 +558,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                     if (logger.isDebugEnabled()) {
                         logger.debug("Found subscription while acquiring topic: " + topic.toStringUtf8()
                                      + " subscriberId: " + subscriberId.toStringUtf8()
-                                     + " data: " + SubscriptionStateUtils.toString(subData));
+                                     + " data: " + SubscriptionStateUtils.toString(subData.getValue()));
                     }
                     callback.operationFinished(ctx, subData);
                 }
@@ -520,7 +567,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
 
         @Override
         public void readSubscriptions(final ByteString topic,
-                                      final Callback<Map<ByteString, SubscriptionData>> cb, final Object ctx) {
+                                      final Callback<Map<ByteString, Versioned<SubscriptionData>>> cb, final Object ctx) {
             String topicSubscribersPath = topicSubscribersPath(new StringBuilder(), topic).toString();
             zk.getChildren(topicSubscribersPath, false, new SafeAsyncZKCallback.ChildrenCallback() {
                 @Override
@@ -533,7 +580,8 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                         return;
                     }
 
-                    final Map<ByteString, SubscriptionData> topicSubs = new ConcurrentHashMap<ByteString, SubscriptionData>();
+                    final Map<ByteString, Versioned<SubscriptionData>> topicSubs = 
+                            new ConcurrentHashMap<ByteString, Versioned<SubscriptionData>>();
 
                     if (rc == Code.NONODE.intValue() || children.size() == 0) {
                         if (logger.isDebugEnabled()) {
@@ -567,9 +615,11 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                                     return;
                                 }
 
-                                SubscriptionData subData;
+                                Versioned<SubscriptionData> subData;
                                 try {
-                                    subData = SubscriptionStateUtils.parseSubscriptionData(data);
+                                    subData = new Versioned<SubscriptionData>(
+                                            SubscriptionStateUtils.parseSubscriptionData(data), 
+                                            new ZkVersion(stat.getVersion()));
                                 } catch (InvalidProtocolBufferException ex) {
                                     String msg = "Failed to deserialize subscription data for topic: " + topic.toStringUtf8()
                                                  + " subscriberId: " + subscriberId.toStringUtf8();
@@ -581,7 +631,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                                 if (logger.isDebugEnabled()) {
                                     logger.debug("Found subscription while acquiring topic: " + topic.toStringUtf8()
                                                  + " subscriberId: " + child + "state: "
-                                                 + SubscriptionStateUtils.toString(subData));
+                                                 + SubscriptionStateUtils.toString(subData.getValue()));
                                 }
 
                                 topicSubs.put(subscriberId, subData);

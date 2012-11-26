@@ -21,7 +21,6 @@
 package org.apache.hedwig.server.meta;
 
 import java.util.Map;
-import java.util.concurrent.SynchronousQueue;
 
 import com.google.protobuf.ByteString;
 
@@ -35,7 +34,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionState;
 import org.apache.hedwig.server.topics.HubInfo;
-import org.apache.hedwig.server.meta.MetadataManagerFactory;
+import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.Either;
 import org.apache.hedwig.util.HedwigSocketAddress;
 
@@ -234,35 +233,46 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
         ByteString topic = ByteString.copyFromUtf8("testSubscriptionData");
         ByteString subid = ByteString.copyFromUtf8("mysub");
 
-        StubCallback<Void> callback = new StubCallback<Void>();
-        StubCallback<SubscriptionData> readCallback = new StubCallback<SubscriptionData>();
-        StubCallback<Map<ByteString, SubscriptionData>> subsCallback
-            = new StubCallback<Map<ByteString, SubscriptionData>>();
+        final StubCallback<Version> callback = new StubCallback<Version>();
+        StubCallback<Versioned<SubscriptionData>> readCallback = new StubCallback<Versioned<SubscriptionData>>();
+        StubCallback<Map<ByteString, Versioned<SubscriptionData>>> subsCallback
+            = new StubCallback<Map<ByteString, Versioned<SubscriptionData>>>();
 
         subManager.readSubscriptionData(topic, subid, readCallback, null);
-        Either<SubscriptionData, PubSubException> readRes = readCallback.queue.take();
+        Either<Versioned<SubscriptionData>, PubSubException> readRes = readCallback.queue.take();
         Assert.assertEquals("Found inconsistent subscription state", null, readRes.left());
         Assert.assertEquals("Should not fail with PubSubException", null, readRes.right());
 
         // read non-existed subscription state
         subManager.readSubscriptions(topic, subsCallback, null);
-        Either<Map<ByteString, SubscriptionData>, PubSubException> res = subsCallback.queue.take();
+        Either<Map<ByteString, Versioned<SubscriptionData>>, PubSubException> res = subsCallback.queue.take();
         Assert.assertEquals("Found more than 0 subscribers", 0, res.left().size());
         Assert.assertEquals("Should not fail with PubSubException", null, res.right());
 
         // update non-existed subscription state
         if (subManager.isPartialUpdateSupported()) {
-            subManager.updateSubscriptionData(topic, subid, SubscriptionData.getDefaultInstance(),
-                                              callback, null);
+            subManager.updateSubscriptionData(topic, subid, 
+                    SubscriptionData.getDefaultInstance(), Version.ANY, callback, null);
         } else {
-            subManager.replaceSubscriptionData(topic, subid, SubscriptionData.getDefaultInstance(),
-                                               callback, null);
+            subManager.replaceSubscriptionData(topic, subid, 
+                    SubscriptionData.getDefaultInstance(), Version.ANY, callback, null);
         }
         Assert.assertTrue("Should fail to update a non-existed subscriber with PubSubException",
                           callback.queue.take().right() instanceof PubSubException.NoSubscriptionStateException);
 
+        Callback<Void> voidCallback = new Callback<Void>() {
+            @Override
+            public void operationFinished(Object ctx, Void resultOfOperation) {
+                callback.operationFinished(ctx, null);
+            }
+            @Override
+            public void operationFailed(Object ctx, PubSubException exception) {
+                callback.operationFailed(ctx, exception);
+            }
+        }; 
+        
         // delete non-existed subscription state
-        subManager.deleteSubscriptionData(topic, subid, callback, null);
+        subManager.deleteSubscriptionData(topic, subid, Version.ANY, voidCallback, null);
         Assert.assertTrue("Should fail to delete a non-existed subscriber with PubSubException",
                           callback.queue.take().right() instanceof PubSubException.NoSubscriptionStateException);
 
@@ -276,15 +286,19 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
 
         // create a subscription state
         subManager.createSubscriptionData(topic, subid, data, callback, null);
+        Either<Version, PubSubException> cbResult = callback.queue.take();
+        Version v1 = cbResult.left();
         Assert.assertEquals("Should not fail with PubSubException",
-                            null, callback.queue.take().right());
+                            null, cbResult.right());
 
         // read subscriptions
         subManager.readSubscriptions(topic, subsCallback, null);
         res = subsCallback.queue.take();
         Assert.assertEquals("Should find just 1 subscriber", 1, res.left().size());
         Assert.assertEquals("Should not fail with PubSubException", null, res.right());
-        SubscriptionData imss = res.left().get(subid);
+        Versioned<SubscriptionData> versionedSubData = res.left().get(subid);
+        Assert.assertEquals(Version.Occurred.CONCURRENTLY, v1.compare(versionedSubData.getVersion()));
+        SubscriptionData imss = versionedSubData.getValue();
         Assert.assertEquals("Found inconsistent subscription state",
                             data, imss);
         Assert.assertEquals("Found inconsistent last consumed seq id",
@@ -298,32 +312,46 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
 
         stateBuilder = SubscriptionState.newBuilder(data.getState()).setMsgId(msgId);
         data = SubscriptionData.newBuilder().setState(stateBuilder).build();
-
+        
         // update subscription state
         if (subManager.isPartialUpdateSupported()) {
-            subManager.updateSubscriptionData(topic, subid, data, callback, null);
+            subManager.updateSubscriptionData(topic, subid, data, versionedSubData.getVersion(), callback, null);
         } else {
-            subManager.replaceSubscriptionData(topic, subid, data, callback, null);
+            subManager.replaceSubscriptionData(topic, subid, data, versionedSubData.getVersion(), callback, null);
         }
-        Assert.assertEquals("Fail to update a subscription state", null, callback.queue.take().right());
-
+        cbResult = callback.queue.take();
+        Assert.assertEquals("Fail to update a subscription state", null, cbResult.right());
+        Version v2 = cbResult.left();
         // read subscription state
         subManager.readSubscriptionData(topic, subid, readCallback, null);
         Assert.assertEquals("Found inconsistent subscription state",
-                            data, readCallback.queue.take().left());
-
+                            data, readCallback.queue.take().left().getValue());
+        
         // read subscriptions again
         subManager.readSubscriptions(topic, subsCallback, null);
         res = subsCallback.queue.take();
         Assert.assertEquals("Should find just 1 subscriber", 1, res.left().size());
         Assert.assertEquals("Should not fail with PubSubException", null, res.right());
-        imss = res.left().get(subid);
+        versionedSubData = res.left().get(subid);
+        Assert.assertEquals(Version.Occurred.CONCURRENTLY, v2.compare(versionedSubData.getVersion()));
+        imss = res.left().get(subid).getValue();
         Assert.assertEquals("Found inconsistent subscription state",
                             data, imss);
         Assert.assertEquals("Found inconsistent last consumed seq id",
                             seqId, imss.getState().getMsgId().getLocalComponent());
 
-        subManager.deleteSubscriptionData(topic, subid, callback, null);
+        // update or replace subscription data with bad version
+        if (subManager.isPartialUpdateSupported()) {
+            subManager.updateSubscriptionData(topic, subid, data, v1, callback, null);
+        } else {
+            subManager.replaceSubscriptionData(topic, subid, data, v1, callback, null);
+        }
+        Assert.assertTrue(callback.queue.take().right() instanceof PubSubException.BadVersionException);
+        
+        // delete with bad version
+        subManager.deleteSubscriptionData(topic, subid, v1, voidCallback, null);
+        Assert.assertTrue(callback.queue.take().right() instanceof PubSubException.BadVersionException);
+        subManager.deleteSubscriptionData(topic, subid, res.left().get(subid).getVersion(), voidCallback, null);
         Assert.assertEquals("Fail to delete an existed subscriber", null, callback.queue.take().right());
 
         // read subscription states again

@@ -146,6 +146,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-439: No more messages delivered after deleted consumed ledgers. (sijie via ivank)
 
+        BOOKKEEPER-440: Make Write/Delete SubscriptionData Restricted to Version (Fangmin Lv via ivank)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-467: Allocate ports for testing dynamically (ivank)

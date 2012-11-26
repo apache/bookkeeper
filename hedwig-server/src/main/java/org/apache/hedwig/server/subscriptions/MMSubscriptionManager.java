@@ -32,6 +32,8 @@ import org.apache.hedwig.server.meta.SubscriptionDataManager;
 import org.apache.hedwig.server.persistence.PersistenceManager;
 import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.util.Callback;
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 
 /**
  * MetaManager-based subscription manager.
@@ -52,18 +54,41 @@ public class MMSubscriptionManager extends AbstractSubscriptionManager {
     @Override
     protected void readSubscriptions(final ByteString topic,
                                      final Callback<Map<ByteString, InMemorySubscriptionState>> cb, final Object ctx) {
-        subManager.readSubscriptions(topic, new Callback<Map<ByteString, SubscriptionData>>() {
+        subManager.readSubscriptions(topic, new Callback<Map<ByteString, Versioned<SubscriptionData>>>() {
             @Override
             public void operationFailed(Object ctx, PubSubException pse) {
                 cb.operationFailed(ctx, pse);
             }
             @Override
-            public void operationFinished(Object ctx, Map<ByteString, SubscriptionData> subs) {
+            public void operationFinished(Object ctx, Map<ByteString, Versioned<SubscriptionData>> subs) {
                 Map<ByteString, InMemorySubscriptionState> results = new ConcurrentHashMap<ByteString, InMemorySubscriptionState>();
-                for (Map.Entry<ByteString, SubscriptionData> subEntry : subs.entrySet()) {
-                    results.put(subEntry.getKey(), new InMemorySubscriptionState(subEntry.getValue()));
+                for (Map.Entry<ByteString, Versioned<SubscriptionData>> subEntry : subs.entrySet()) {
+                    Versioned<SubscriptionData> vv = subEntry.getValue();
+                    results.put(subEntry.getKey(), new InMemorySubscriptionState(vv.getValue(), vv.getVersion()));
                 }
                 cb.operationFinished(ctx, results);
+            }
+        }, ctx);
+    }
+
+    @Override
+    protected void readSubscriptionData(final ByteString topic, final ByteString subscriberId,
+                                        final Callback<InMemorySubscriptionState> cb, final Object ctx) {
+        subManager.readSubscriptionData(topic, subscriberId, new Callback<Versioned<SubscriptionData>>() {
+            @Override
+            public void operationFinished(Object ctx,
+                    Versioned<SubscriptionData> subData) {
+                if (null != subData) {
+                    cb.operationFinished(ctx, 
+                            new InMemorySubscriptionState(subData.getValue(), subData.getVersion()));
+                } else {
+                    cb.operationFinished(ctx, new InMemorySubscriptionState(
+                            SubscriptionData.getDefaultInstance(), Version.NEW));
+                }
+            }
+            @Override
+            public void operationFailed(Object ctx, PubSubException exception) {
+                cb.operationFailed(ctx, exception);
             }
         }, ctx);
     }
@@ -75,26 +100,26 @@ public class MMSubscriptionManager extends AbstractSubscriptionManager {
 
     @Override
     protected void createSubscriptionData(final ByteString topic, final ByteString subscriberId,
-                                          final SubscriptionData subData, final Callback<Void> callback, final Object ctx) {
+                                          final SubscriptionData subData, final Callback<Version> callback, final Object ctx) {
         subManager.createSubscriptionData(topic, subscriberId, subData, callback, ctx);
     }
 
     @Override
-    protected void replaceSubscriptionData(final ByteString topic, final ByteString subscriberId,
-                                           final SubscriptionData subData, final Callback<Void> callback, final Object ctx) {
-        subManager.replaceSubscriptionData(topic, subscriberId, subData, callback, ctx);
+    protected void replaceSubscriptionData(final ByteString topic, final ByteString subscriberId, final SubscriptionData subData, 
+                                           final Version version, final Callback<Version> callback, final Object ctx) {
+        subManager.replaceSubscriptionData(topic, subscriberId, subData, version, callback, ctx);
     }
 
     @Override
-    protected void updateSubscriptionData(final ByteString topic, final ByteString subscriberId,
-                                          final SubscriptionData subData, final Callback<Void> callback, final Object ctx) {
-        subManager.updateSubscriptionData(topic, subscriberId, subData, callback, ctx);
+    protected void updateSubscriptionData(final ByteString topic, final ByteString subscriberId, final SubscriptionData subData, 
+                                          final Version version, final Callback<Version> callback, final Object ctx) {
+        subManager.updateSubscriptionData(topic, subscriberId, subData, version, callback, ctx);
     }
 
     @Override
-    protected void deleteSubscriptionData(final ByteString topic, final ByteString subscriberId,
+    protected void deleteSubscriptionData(final ByteString topic, final ByteString subscriberId, Version version,
                                           final Callback<Void> callback, final Object ctx) {
-        subManager.deleteSubscriptionData(topic, subscriberId, callback, ctx);
+        subManager.deleteSubscriptionData(topic, subscriberId, version, callback, ctx);
     }
 
     @Override

@@ -31,6 +31,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
+
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest;
@@ -323,7 +327,10 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
 
     protected abstract void readSubscriptions(final ByteString topic,
             final Callback<Map<ByteString, InMemorySubscriptionState>> cb, final Object ctx);
-
+    
+    protected abstract void readSubscriptionData(final ByteString topic, final ByteString subscriberId, 
+            final Callback<InMemorySubscriptionState> cb, Object ctx);
+    
     private class SubscribeOp extends TopicOpQueuer.AsynchronousOp<SubscriptionData> {
         SubscribeRequest subRequest;
         MessageSeqId consumeSeqId;
@@ -428,21 +435,21 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                 SubscriptionData.newBuilder().setState(stateBuilder).setPreferences(preferencesBuilder);
             final SubscriptionData subData = subDataBuilder.build();
 
-            createSubscriptionData(topic, subscriberId, subData, new Callback<Void>() {
+            createSubscriptionData(topic, subscriberId, subData, new Callback<Version>() {
                 @Override
                 public void operationFailed(Object ctx, PubSubException exception) {
                     cb.operationFailed(ctx, exception);
                 }
 
                 @Override
-                public void operationFinished(Object ctx, Void resultOfOperation) {
+                public void operationFinished(Object ctx, final Version version) {
                     Callback<Void> cb2 = new Callback<Void>() {
                         @Override
                         public void operationFailed(final Object ctx, final PubSubException exception) {
                             logger.error("subscription for subscriber " + subscriberId.toStringUtf8() + " to topic "
                                          + topic.toStringUtf8() + " failed due to failed listener callback", exception);
                             // should remove subscription when synchronized cross-region subscription failed
-                            deleteSubscriptionData(topic, subscriberId, new Callback<Void>() {
+                            deleteSubscriptionData(topic, subscriberId, version, new Callback<Void>() {
                                 @Override
                                 public void operationFinished(Object context,
                                         Void resultOfOperation) {
@@ -463,7 +470,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
 
                         @Override
                         public void operationFinished(Object ctx, Void resultOfOperation) {
-                            topicSubscriptions.put(subscriberId, new InMemorySubscriptionState(subData));
+                            topicSubscriptions.put(subscriberId, new InMemorySubscriptionState(subData, version));
 
                             updateMessageBound(topic);
 
@@ -477,7 +484,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                         && !hasLocalSubscriptions(topicSubscriptions))
                         notifyFirstLocalSubscribe(topic, subRequest.getSynchronous(), cb2, ctx);
                     else
-                        cb2.operationFinished(ctx, resultOfOperation);
+                        cb2.operationFinished(ctx, null);
                 }
             }, ctx);
         }
@@ -613,8 +620,9 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                 cb.operationFailed(ctx, new PubSubException.ClientNotSubscribedException(""));
                 return;
             }
-
-            deleteSubscriptionData(topic, subscriberId, new Callback<Void>() {
+            
+            deleteSubscriptionData(topic, subscriberId, topicSubscriptions.get(subscriberId).getVersion(),
+                    new Callback<Void>() {
                 @Override
                 public void operationFailed(Object ctx, PubSubException exception) {
                     cb.operationFailed(ctx, exception);
@@ -679,44 +687,100 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
         }
     }
 
-    private void updateSubscriptionState(ByteString topic, ByteString subscriberId,
-                                         InMemorySubscriptionState state,
-                                         Callback<Void> callback, Object ctx) {
+    private void updateSubscriptionState(final ByteString topic, final ByteString subscriberId,
+                                         final InMemorySubscriptionState state,
+                                         final Callback<Void> callback, Object ctx) {
         SubscriptionData subData;
+        Callback<Version> cb = new Callback<Version>() {
+            @Override
+            public void operationFinished(Object ctx, Version version) {
+                state.setVersion(version);
+                callback.operationFinished(ctx, null);
+            }
+            @Override
+            public void operationFailed(Object ctx, PubSubException exception) {
+                if (exception instanceof PubSubException.BadVersionException) {
+                    readSubscriptionData(topic, subscriberId, new Callback<InMemorySubscriptionState>() {
+                        @Override
+                        public void operationFinished(Object ctx,
+                                InMemorySubscriptionState resultOfOperation) {
+                            state.setVersion(resultOfOperation.getVersion());
+                            updateSubscriptionState(topic, subscriberId, state, callback, ctx);
+                        }
+                        @Override
+                        public void operationFailed(Object ctx,
+                                PubSubException exception) {
+                            callback.operationFailed(ctx, exception);
+                        }
+                    }, ctx);
+                    
+                    return;
+                } 
+                callback.operationFailed(ctx, exception);
+            }
+        };
         if (isPartialUpdateSupported()) {
             subData = SubscriptionData.newBuilder().setState(state.getSubscriptionState()).build();
-            updateSubscriptionData(topic, subscriberId, subData, callback, ctx);
+            updateSubscriptionData(topic, subscriberId, subData, state.getVersion(), cb, ctx);
         } else {
             subData = state.toSubscriptionData();
-            replaceSubscriptionData(topic, subscriberId, subData, callback, ctx);
+            replaceSubscriptionData(topic, subscriberId, subData, state.getVersion(), cb, ctx);
         }
     }
 
-    private void updateSubscriptionPreferences(ByteString topic, ByteString subscriberId,
-                                               InMemorySubscriptionState state,
-                                               Callback<Void> callback, Object ctx) {
+    private void updateSubscriptionPreferences(final ByteString topic, final ByteString subscriberId,
+                                               final InMemorySubscriptionState state,
+                                               final Callback<Void> callback, Object ctx) {
         SubscriptionData subData;
+        Callback<Version> cb = new Callback<Version>() {
+            @Override
+            public void operationFinished(Object ctx, Version version) {
+                state.setVersion(version);
+                callback.operationFinished(ctx, null);
+            }
+            @Override
+            public void operationFailed(Object ctx, PubSubException exception) {
+                if (exception instanceof PubSubException.BadVersionException) {
+                    readSubscriptionData(topic, subscriberId, new Callback<InMemorySubscriptionState>() {
+                        @Override
+                        public void operationFinished(Object ctx,
+                                InMemorySubscriptionState resultOfOperation) {
+                            state.setVersion(resultOfOperation.getVersion());
+                            updateSubscriptionPreferences(topic, subscriberId, state, callback, ctx);
+                        }
+                        @Override
+                        public void operationFailed(Object ctx,
+                                PubSubException exception) {
+                            callback.operationFailed(ctx, exception);
+                        }
+                    }, ctx);
+                    
+                    return;
+                } 
+                callback.operationFailed(ctx, exception);
+            }
+        };
         if (isPartialUpdateSupported()) {
             subData = SubscriptionData.newBuilder().setPreferences(state.getSubscriptionPreferences()).build();
-            updateSubscriptionData(topic, subscriberId, subData, callback, ctx);
+            updateSubscriptionData(topic, subscriberId, subData, state.getVersion(), cb, ctx);
         } else {
             subData = state.toSubscriptionData();
-            replaceSubscriptionData(topic, subscriberId, subData, callback, ctx);
+            replaceSubscriptionData(topic, subscriberId, subData, state.getVersion(), cb, ctx);
         }
     }
 
     protected abstract boolean isPartialUpdateSupported();
 
     protected abstract void createSubscriptionData(final ByteString topic, ByteString subscriberId,
-            SubscriptionData data, Callback<Void> callback, Object ctx);
+            SubscriptionData data, Callback<Version> callback, Object ctx);
 
     protected abstract void updateSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData data,
-            Callback<Void> callback, Object ctx);
+            Version version, Callback<Version> callback, Object ctx);
 
     protected abstract void replaceSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData data,
-            Callback<Void> callback, Object ctx);
+            Version version, Callback<Version> callback, Object ctx);
 
-    protected abstract void deleteSubscriptionData(ByteString topic, ByteString subscriberId, Callback<Void> callback,
+    protected abstract void deleteSubscriptionData(ByteString topic, ByteString subscriberId, Version version, Callback<Void> callback,
             Object ctx);
 
 }

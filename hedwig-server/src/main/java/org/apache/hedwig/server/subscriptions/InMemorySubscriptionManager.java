@@ -22,6 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
 import com.google.protobuf.ByteString;
+
+import org.apache.bookkeeper.versioning.Version;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.delivery.DeliveryManager;
@@ -43,13 +45,13 @@ public class InMemorySubscriptionManager extends AbstractSubscriptionManager {
 
     @Override
     protected void createSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData subData,
-                                           Callback<Void> callback, Object ctx) {
+                                           Callback<Version> callback, Object ctx) {
         // nothing to do, in-memory info is already recorded by base class
         callback.operationFinished(ctx, null);
     }
 
     @Override
-    protected void deleteSubscriptionData(ByteString topic, ByteString subscriberId, Callback<Void> callback,
+    protected void deleteSubscriptionData(ByteString topic, ByteString subscriberId, Version version, Callback<Void> callback,
                                           Object ctx) {
         // nothing to do, in-memory info is already deleted by base class
         callback.operationFinished(ctx, null);
@@ -62,13 +64,13 @@ public class InMemorySubscriptionManager extends AbstractSubscriptionManager {
 
     @Override
     protected void updateSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData data,
-                                          Callback<Void> callback, Object ctx) {
+                                          Version version, Callback<Version> callback, Object ctx) {
         throw new UnsupportedOperationException("Doesn't support partial update");
     }
 
     @Override
     protected void replaceSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData data,
-                                           Callback<Void> callback, Object ctx) {
+                                           Version version, Callback<Version> callback, Object ctx) {
         // nothing to do, in-memory info is already updated by base class
         callback.operationFinished(ctx, null);
     }
@@ -98,6 +100,20 @@ public class InMemorySubscriptionManager extends AbstractSubscriptionManager {
             cb.operationFinished(ctx, new ConcurrentHashMap<ByteString, InMemorySubscriptionState>());
         }
 
+    }
+
+    @Override
+    protected void readSubscriptionData(ByteString topic,
+            ByteString subscriberId, Callback<InMemorySubscriptionState> cb, Object ctx) {
+        // Since we backed up in-memory information on lostTopic, we can just return that back
+        InMemorySubscriptionState subState = top2sub2seqBackup.get(topic).remove(subscriberId);
+        
+        if (subState != null) {
+            cb.operationFinished(ctx, subState);
+        } else {
+            cb.operationFinished(ctx, new InMemorySubscriptionState(
+                    SubscriptionData.getDefaultInstance(), Version.NEW));
+        }
     }
 
 }

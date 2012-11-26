@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -44,6 +45,7 @@ import org.apache.hedwig.server.meta.MetadataManagerFactory;
 import org.apache.hedwig.server.meta.SubscriptionDataManager;
 import org.apache.hedwig.server.meta.TopicOwnershipManager;
 import org.apache.hedwig.server.meta.TopicPersistenceManager;
+import org.apache.hedwig.server.subscriptions.InMemorySubscriptionState;
 import org.apache.hedwig.server.topics.HubInfo;
 import org.apache.hedwig.server.topics.HubLoad;
 import org.apache.hedwig.util.Callback;
@@ -457,10 +459,16 @@ public class HedwigAdmin {
 
         final SyncObj<Map<ByteString, SubscriptionData>> syncObj =
             new SyncObj<Map<ByteString, SubscriptionData>>();
-        sdm.readSubscriptions(topic, new Callback<Map<ByteString, SubscriptionData>>() {
+        sdm.readSubscriptions(topic, new Callback<Map<ByteString, Versioned<SubscriptionData>>>() {
             @Override
-            public void operationFinished(Object ctx, Map<ByteString, SubscriptionData> result) {
-                syncObj.success(result);
+            public void operationFinished(Object ctx, Map<ByteString, Versioned<SubscriptionData>> result) {
+                // It was just used to console tool to print some information, so don't need to return version for it
+                // just keep the getTopicSubscriptions interface as before
+                Map<ByteString, SubscriptionData> subs = new ConcurrentHashMap<ByteString, SubscriptionData>();
+                for (Map.Entry<ByteString, Versioned<SubscriptionData>> subEntry : result.entrySet()) {
+                    subs.put(subEntry.getKey(), subEntry.getValue().getValue());
+                }
+                syncObj.success(subs);
             }
             @Override
             public void operationFailed(Object ctx, PubSubException pse) {
@@ -489,10 +497,14 @@ public class HedwigAdmin {
      */
     public SubscriptionData getSubscription(ByteString topic, ByteString subscriber) throws Exception {
         final SyncObj<SubscriptionData> syncObj = new SyncObj<SubscriptionData>();
-        sdm.readSubscriptionData(topic, subscriber, new Callback<SubscriptionData>() {
+        sdm.readSubscriptionData(topic, subscriber, new Callback<Versioned<SubscriptionData>>() {
             @Override
-            public void operationFinished(Object ctx, SubscriptionData result) {
-                syncObj.success(result);
+            public void operationFinished(Object ctx, Versioned<SubscriptionData> result) {
+                if (null == result) {
+                    syncObj.success(null);
+                } else {
+                    syncObj.success(result.getValue());
+                }
             }
             @Override
             public void operationFailed(Object ctx, PubSubException pse) {

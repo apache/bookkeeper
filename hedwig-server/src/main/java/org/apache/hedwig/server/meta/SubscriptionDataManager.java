@@ -22,6 +22,8 @@ import java.util.Map;
 
 import com.google.protobuf.ByteString;
 
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.server.subscriptions.InMemorySubscriptionState;
@@ -42,14 +44,14 @@ public interface SubscriptionDataManager extends Closeable {
      * @param data 
      *          Subscription data
      * @param callback
-     *          Callback when subscription state created.
+     *          Callback when subscription state created. New version would be returned.
      *          {@link PubSubException.SubscriptionStateExistsException} is returned when subscription state
      *          existed before.
      * @param ctx
      *          Context of the callback
      */
     public void createSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData data,
-                                       Callback<Void> callback, Object ctx);
+                                       Callback<Version> callback, Object ctx);
 
     /**
      * Whether the metadata manager supports partial update.
@@ -71,15 +73,18 @@ public interface SubscriptionDataManager extends Closeable {
      *          the part of data to update. The implementation should not replace
      *          existing subscription data with <i>dataToUpdate</i> directly.
      *          E.g. if there is only state in it, you should update state only.
+     * @param version
+     *          Current version of subscription data.
      * @param callback
-     *          Callback when subscription state updated.
+     *          Callback when subscription state updated. New version would be returned.
+     *          {@link PubSubException.BadVersionException} is returned when version doesn't match,
      *          {@link PubSubException.NoSubscriptionStateException} is returned when no subscription state
      *          is found.
      * @param ctx
      *          Context of the callback
      */
-    public void updateSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData dataToUpdate,
-                                       Callback<Void> callback, Object ctx);
+    public void updateSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData dataToUpdate, 
+                                       Version version, Callback<Version> callback, Object ctx);
 
     /**
      * Replace subscription data.
@@ -90,13 +95,18 @@ public interface SubscriptionDataManager extends Closeable {
      *          Subscriber id
      * @param dataToReplace
      *          Subscription data to replace.
+     * @param version
+     *          Current version of subscription data.
      * @param callback
-     *          Callback when subscription state updated.
+     *          Callback when subscription state updated. New version would be returned.
+     *          {@link PubSubException.BadVersionException} is returned when version doesn't match,
+     *          {@link PubSubException.NoSubscriptionStateException} is returned when no subscription state
+     *          is found.
      * @param ctx
      *          Context of the callback
      */
     public void replaceSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData dataToReplace,
-                                        Callback<Void> callback, Object ctx);
+                                        Version version, Callback<Version> callback, Object ctx);
 
     /**
      * Remove subscription data.
@@ -105,18 +115,21 @@ public interface SubscriptionDataManager extends Closeable {
      *          Topic name
      * @param subscriberId
      *          Subscriber id
+     * @param version
+     *          Current version of subscription data.
      * @param callback
      *          Callback when subscription state deleted
+     *          {@link PubSubException.BadVersionException} is returned when version doesn't match,
      *          {@link PubSubException.NoSubscriptionStateException} is returned when no subscription state
      *          is found.
      * @param ctx
      *          Context of the callback
      */
-    public void deleteSubscriptionData(ByteString topic, ByteString subscriberId,
+    public void deleteSubscriptionData(ByteString topic, ByteString subscriberId, Version version,
                                        Callback<Void> callback, Object ctx);
 
     /**
-     * Read subscription data.
+     * Read subscription data with version.
      *
      * @param topic
      *          Topic Name
@@ -129,7 +142,7 @@ public interface SubscriptionDataManager extends Closeable {
      *          Context of the callback
      */
     public void readSubscriptionData(ByteString topic, ByteString subscriberId,
-                                     Callback<SubscriptionData> callback, Object ctx);
+                                     Callback<Versioned<SubscriptionData>> callback, Object ctx);
 
     /**
      * Read all subscriptions of a topic.
@@ -137,10 +150,10 @@ public interface SubscriptionDataManager extends Closeable {
      * @param topic
      *          Topic name
      * @param callback
-     *          Callback to return subscriptions
+     *          Callback to return subscriptions with version information
      * @param ctx
      *          Contxt of the callback
      */
-    public void readSubscriptions(ByteString topic, Callback<Map<ByteString, SubscriptionData>> cb,
+    public void readSubscriptions(ByteString topic, Callback<Map<ByteString, Versioned<SubscriptionData>>> cb,
                                   Object ctx);
 }
