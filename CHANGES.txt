@@ -106,6 +106,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-466: ZooKeeper test utility sets the port number as the tickTime (ivank)
 
+        BOOKKEEPER-460: LedgerDeleteTest checks wrong place for log file (Fangmin Lv via ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

@@ -22,9 +22,9 @@ package org.apache.bookkeeper.test;
  */
 
 import java.io.File;
-
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.util.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.junit.Before;
@@ -106,10 +106,8 @@ public class LedgerDeleteTest extends MultiLedgerManagerTestCase {
 
         // Verify that the first entry log (0.log) has been deleted from all of the Bookie Servers.
         for (File ledgerDirectory : tmpDirs) {
-            for (File f : ledgerDirectory.listFiles()) {
-                assertFalse("Found the entry log file (0.log) that should have been deleted in ledgerDirectory: "
-                            + ledgerDirectory, f.isFile() && f.getName().equals("0.log"));
-            }
+            assertFalse("Found the entry log file (0.log) that should have been deleted in ledgerDirectory: "
+                + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0));
         }
     }
 
@@ -147,10 +145,8 @@ public class LedgerDeleteTest extends MultiLedgerManagerTestCase {
          * entry logs should be deleted.
          */
         for (File ledgerDirectory : tmpDirs) {
-            for (File f : ledgerDirectory.listFiles()) {
-                assertFalse("Found the entry log file ([0,1].log) that should have been deleted in ledgerDirectory: "
-                            + ledgerDirectory, f.isFile() && (f.getName().equals("0.log") || f.getName().equals("1.log")));
-            }
+            assertFalse("Found the entry log file ([0,1].log) that should have been deleted in ledgerDirectory: "
+                + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1));
         }
     }
 

@@ -28,6 +28,7 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.TestUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -132,27 +133,6 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         }
     }
 
-    private boolean[] checkLogFiles(File ledgerDirectory, int numFiles) {
-        boolean[] hasLogFiles = new boolean[numFiles];
-        Arrays.fill(hasLogFiles, false);
-        for (File f : Bookie.getCurrentDirectory(ledgerDirectory).listFiles()) {
-            LOG.info("Checking file : " + f);
-            if (f.isFile()) {
-                String name = f.getName();
-                if (!name.endsWith(".log")) {
-                    continue;
-                }
-                String idString = name.split("\\.")[0];
-                int id = Integer.parseInt(idString, 16);
-                if (id >= numFiles) {
-                    continue;
-                }
-                hasLogFiles[id] = true; 
-            }
-        }
-        return hasLogFiles;
-    }
-
     @Test
     public void testDisableCompaction() throws Exception {
         // prepare data
@@ -175,8 +155,8 @@ public class CompactionTest extends BookKeeperClusterTestCase {
 
         // entry logs ([0,1].log) should not be compacted.
         for (File ledgerDirectory : tmpDirs) {
-            boolean[] hasLogFiles = checkLogFiles(ledgerDirectory, 2);
-            assertTrue("Not Found entry log file ([0,1].log that should have been compacted in ledgerDirectory: " + ledgerDirectory, hasLogFiles[0] & hasLogFiles[1]);
+            assertTrue("Not Found entry log file ([0,1].log that should have been compacted in ledgerDirectory: "
+                            + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, false, 0, 1));
         }
     }
 
@@ -205,8 +185,8 @@ public class CompactionTest extends BookKeeperClusterTestCase {
 
         // entry logs ([0,1,2].log) should be compacted.
         for (File ledgerDirectory : tmpDirs) {
-            boolean[] hasLog = checkLogFiles(ledgerDirectory, 3); 
-            assertFalse("Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: " + ledgerDirectory, hasLog[0] | hasLog[1] | hasLog[2]);
+            assertFalse("Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: " 
+                            + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1, 2));
         }
 
         // even entry log files are removed, we still can access entries for ledger1
@@ -240,9 +220,8 @@ public class CompactionTest extends BookKeeperClusterTestCase {
 
         // entry logs ([0,1,2].log) should be compacted
         for (File ledgerDirectory : tmpDirs) {
-            boolean[] hasLogFiles = checkLogFiles(ledgerDirectory, 3); 
             assertFalse("Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: "
-                      + ledgerDirectory, hasLogFiles[0] | hasLogFiles[1] | hasLogFiles[2]);
+                      + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1, 2));
         }
 
         // even entry log files are removed, we still can access entries for ledger2
@@ -268,9 +247,8 @@ public class CompactionTest extends BookKeeperClusterTestCase {
 
         // entry logs ([0,1,2].log) should not be compacted
         for (File ledgerDirectory : tmpDirs) {
-            boolean[] hasLogFiles = checkLogFiles(ledgerDirectory, 3); 
             assertTrue("Not Found entry log file ([1,2].log that should have been compacted in ledgerDirectory: "
-                     + ledgerDirectory, hasLogFiles[0] & hasLogFiles[1] & hasLogFiles[2]);
+                     + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, false, 0, 1, 2));
         }
     }
 
@@ -304,12 +282,10 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         // entry logs (0.log) should not be compacted
         // entry logs ([1,2,3].log) should be compacted.
         for (File ledgerDirectory : tmpDirs) {
-            boolean[] hasLog = checkLogFiles(ledgerDirectory, 4);
-            
             assertTrue("Not Found entry log file ([0].log that should have been compacted in ledgerDirectory: "
-                     + ledgerDirectory, hasLog[0]);
+                     + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0));
             assertFalse("Found entry log file ([1,2,3].log that should have not been compacted in ledgerDirectory: "
-                      + ledgerDirectory, hasLog[1] | hasLog[2] | hasLog[3]);
+                      + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 1, 2, 3));
         }
 
         // even entry log files are removed, we still can access entries for ledger1
