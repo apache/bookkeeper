@@ -108,6 +108,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-460: LedgerDeleteTest checks wrong place for log file (Fangmin Lv via ivank)
 
+	BOOKKEEPER-477: In ReadOnlyBookieTest, we should wait for the bookie to die before asserting on it (ivank via fpj)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

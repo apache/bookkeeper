@@ -109,6 +109,10 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
             // Expected
         }
 
+        // wait for up to 10 seconds for bookie to shut down
+        for (int i = 0; i < 10 && bookie.isAlive(); i++) {
+            Thread.sleep(1000);
+        }
         assertFalse("Bookie should shutdown if readOnlyMode not enabled",
                 bookie.isAlive());
     }
