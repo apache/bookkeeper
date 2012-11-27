@@ -115,6 +115,7 @@
             <exclude>CHANGES.txt</exclude>
             <exclude>**/README</exclude>
             <exclude>**/apidocs/*</exclude>
+	    <exclude>test-patch/**/*</exclude>
           </excludes>
         </configuration>
       </plugin>

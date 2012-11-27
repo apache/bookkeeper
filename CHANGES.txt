@@ -152,6 +152,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-467: Allocate ports for testing dynamically (ivank)
 
+      BOOKKEEPER-471: Add scripts for preCommit testing (ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-328: Bookie DeathWatcher is missing thread name (Rakesh via sijie)
