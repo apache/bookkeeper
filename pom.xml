@@ -64,6 +64,7 @@
         <version>2.9</version>
         <configuration>
           <argLine>-Djava.net.preferIPv4Stack=true</argLine>
+	  <redirectTestOutputToFile>true</redirectTestOutputToFile>
         </configuration>
       </plugin>
       <plugin>

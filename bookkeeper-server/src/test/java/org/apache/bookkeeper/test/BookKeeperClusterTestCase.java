@@ -73,6 +73,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
     @Before
     @Override
     public void setUp() throws Exception {
+        LOG.info("Setting up test {}", getName());
         try {
             // start zookeeper service
             startZKCluster();
@@ -92,6 +93,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
         stopBKCluster();
         // stop zookeeper service
         stopZKCluster();
+        LOG.info("Tearing down test {}", getName());
     }
 
     /**
