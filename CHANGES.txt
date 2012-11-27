@@ -228,6 +228,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-441: InMemorySubscriptionManager should back up top2sub2seq before change it (Yixue via ivank)
 
+	BOOKKEEPER-479: Fix apache-rat issues in tree (ivank via fpj)
+
       hedwig-client:
 
         BOOKKEEPER-306: Change C++ client to use gtest for testing (ivank via sijie)
