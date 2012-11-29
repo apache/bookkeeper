@@ -42,6 +42,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.meta.MetadataManagerFactory;
+import org.apache.hedwig.server.meta.FactoryLayout;
 import org.apache.hedwig.server.meta.SubscriptionDataManager;
 import org.apache.hedwig.server.meta.TopicOwnershipManager;
 import org.apache.hedwig.server.meta.TopicPersistenceManager;
@@ -221,6 +222,15 @@ public class HedwigAdmin {
      */
     public ServerConfiguration getHubServerConf() {
         return serverConf;
+    }
+
+    /**
+     * Return metadata manager factory.
+     *
+     * @return metadata manager factory instance.
+     */
+    public MetadataManagerFactory getMetadataManagerFactory() {
+        return mmFactory;
     }
 
     /**
@@ -519,5 +529,21 @@ public class HedwigAdmin {
         }
 
         return syncObj.value;
+    }
+
+    /**
+     * Format metadata for Hedwig.
+     */
+    public void format() throws Exception {
+        // format metadata first
+        mmFactory.format(serverConf, zk);
+        LOG.info("Formatted Hedwig metadata successfully.");
+        // remove metadata layout
+        FactoryLayout.deleteLayout(zk, serverConf);
+        LOG.info("Removed old factory layout.");
+        // create new metadata manager factory and write new metadata layout
+        MetadataManagerFactory.createMetadataManagerFactory(serverConf, zk,
+            serverConf.getMetadataManagerFactoryClass());
+        LOG.info("Created new factory layout.");
     }
 }

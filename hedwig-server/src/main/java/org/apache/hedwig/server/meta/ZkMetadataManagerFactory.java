@@ -29,8 +29,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.KeeperException.Code;
+import org.apache.zookeeper.ZKUtil;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.data.Stat;
 import com.google.protobuf.ByteString;
@@ -822,6 +823,19 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                     }
                 }
             }, ctx);
+        }
+    }
+
+    @Override
+    public void format(ServerConfiguration cfg, ZooKeeper zk) throws IOException {
+        try {
+            ZKUtil.deleteRecursive(zk, cfg.getZkTopicsPrefix(new StringBuilder()).toString());
+        } catch (KeeperException.NoNodeException e) {
+            logger.debug("Hedwig root node doesn't exist in zookeeper to delete");
+        } catch (KeeperException ke) {
+            throw new IOException(ke);
+        } catch (InterruptedException ie) {
+            throw new IOException(ie);
         }
     }
 }

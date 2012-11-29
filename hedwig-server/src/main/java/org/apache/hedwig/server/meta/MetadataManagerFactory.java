@@ -100,6 +100,16 @@ public abstract class MetadataManagerFactory {
     public abstract TopicOwnershipManager newTopicOwnershipManager();
 
     /**
+     * Format the metadata for Hedwig.
+     *
+     * @param cfg
+     *          Configuration instance
+     * @param zk
+     *          ZooKeeper instance
+     */
+    public abstract void format(ServerConfiguration cfg, ZooKeeper zk) throws IOException;
+
+    /**
      * Create new Metadata Manager Factory.
      *
      * @param conf
@@ -118,38 +128,11 @@ public abstract class MetadataManagerFactory {
         } catch (Exception e) {
             throw new IOException("Failed to get metadata manager factory class from configuration : ", e);
         }
-
-        MetadataManagerFactory managerFactory;
-
         // check that the configured manager is
         // compatible with the existing layout
         FactoryLayout layout = FactoryLayout.readLayout(zk, conf);
         if (layout == null) { // no existing layout
-            // use default manager if no one provided
-            if (factoryClass == null) {
-                factoryClass = ZkMetadataManagerFactory.class;
-            }
-            try {
-                managerFactory = ReflectionUtils.newInstance(factoryClass);
-            } catch (Throwable t) {
-                throw new IOException("Fail to instantiate metadata manager factory : " + factoryClass, t);
-            }
-            ManagerMeta managerMeta = ManagerMeta.newBuilder()
-                                      .setManagerImpl(factoryClass.getName())
-                                      .setManagerVersion(managerFactory.getCurrentVersion())
-                                      .build();
-            layout = new FactoryLayout(managerMeta);
-            try {
-                layout.store(zk, conf);
-            } catch (KeeperException.NodeExistsException nee) {
-                FactoryLayout layout2 = FactoryLayout.readLayout(zk, conf);
-                if (!layout2.equals(layout)) {
-                    throw new IOException("Contention writing to layout to zookeeper, "
-                            + " other layout " + layout2 + " is incompatible with our "
-                            + "layout " + layout);
-                }
-            }
-            return managerFactory.initialize(conf, zk, layout.getManagerMeta().getManagerVersion());
+            return createMetadataManagerFactory(conf, zk, factoryClass);
         }
         LOG.debug("read meta layout {}", layout);
 
@@ -172,11 +155,59 @@ public abstract class MetadataManagerFactory {
             }
         }
         // instantiate the metadata manager factory
+        MetadataManagerFactory managerFactory;
         try {
             managerFactory = ReflectionUtils.newInstance(factoryClass);
         } catch (Throwable t) {
             throw new IOException("Failed to instantiate metadata manager factory : " + factoryClass, t);
         }
         return managerFactory.initialize(conf, zk, layout.getManagerMeta().getManagerVersion());
+    }
+
+    /**
+     * Create metadata manager factory and write factory layout to ZooKeeper.
+     *
+     * @param cfg
+     *          Server Configuration object.
+     * @param zk
+     *          ZooKeeper instance.
+     * @param factoryClass
+     *          Metadata Manager Factory Class.
+     * @return metadata manager factory instance.
+     * @throws IOException
+     * @throws KeeperException
+     * @throws InterruptedException
+     */
+    public static MetadataManagerFactory createMetadataManagerFactory(
+            ServerConfiguration cfg, ZooKeeper zk,
+            Class<? extends MetadataManagerFactory> factoryClass)
+            throws IOException, KeeperException, InterruptedException {
+        // use default manager if no one provided
+        if (factoryClass == null) {
+            factoryClass = ZkMetadataManagerFactory.class;
+        }
+
+        MetadataManagerFactory managerFactory;
+        try {
+            managerFactory = ReflectionUtils.newInstance(factoryClass);
+        } catch (Throwable t) {
+            throw new IOException("Fail to instantiate metadata manager factory : " + factoryClass, t);
+        }
+        ManagerMeta managerMeta = ManagerMeta.newBuilder()
+                                  .setManagerImpl(factoryClass.getName())
+                                  .setManagerVersion(managerFactory.getCurrentVersion())
+                                  .build();
+        FactoryLayout layout = new FactoryLayout(managerMeta);
+        try {
+            layout.store(zk, cfg);
+        } catch (KeeperException.NodeExistsException nee) {
+            FactoryLayout layout2 = FactoryLayout.readLayout(zk, cfg);
+            if (!layout2.equals(layout)) {
+                throw new IOException("Contention writing to layout to zookeeper, "
+                        + " other layout " + layout2 + " is incompatible with our "
+                        + "layout " + layout);
+            }
+        }
+        return managerFactory.initialize(cfg, zk, layout.getManagerMeta().getManagerVersion());
     }
 }

@@ -260,6 +260,16 @@ public final class HedwigCommands {
         "  hello",
     };
 
+    /* FORMAT: format metadata for Hedwig */
+    static final String FORMAT = "format";
+    static final String FORMAT_DESC = "format metadata for Hedwig";
+    static final String[] FORMAT_USAGE = new String[] {
+        "usage: format [-force]",
+        "",
+        "  [-force] : Format metadata for Hedwig w/o confirmation.",
+    };
+
+
     //
     // List other useful commands
     //
@@ -314,6 +324,7 @@ public final class HedwigCommands {
         CMD_SHOW (SHOW, SHOW_DESC, SHOW_USAGE),
         CMD_DESCRIBE (DESCRIBE, DESCRIBE_DESC, DESCRIBE_USAGE),
         CMD_READTOPIC (READTOPIC, READTOPIC_DESC, READTOPIC_USAGE),
+        CMD_FORMAT (FORMAT, FORMAT_DESC, FORMAT_USAGE),
         CMD_SET (SET, SET_DESC, SET_USAGE),
         CMD_HISTORY (HISTORY, HISTORY_DESC, HISTORY_USAGE),
         CMD_REDO (REDO, REDO_DESC, REDO_USAGE),
@@ -387,6 +398,7 @@ public final class HedwigCommands {
         addCommand(COMMAND.CMD_DESCRIBE);
 
         addCommand(COMMAND.CMD_READTOPIC);
+        addCommand(COMMAND.CMD_FORMAT);
         addCommand(COMMAND.CMD_SET);
         addCommand(COMMAND.CMD_HISTORY);
         addCommand(COMMAND.CMD_REDO);

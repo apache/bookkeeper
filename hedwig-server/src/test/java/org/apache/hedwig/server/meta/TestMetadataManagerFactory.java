@@ -96,6 +96,10 @@ public class TestMetadataManagerFactory extends ZooKeeperTestBase {
         public TopicOwnershipManager newTopicOwnershipManager() {
             return null;
         }
+
+        public void format(ServerConfiguration cfg, ZooKeeper zk) throws IOException {
+            // do nothing
+        }
     }
 
     private void writeFactoryLayout(ServerConfiguration conf,

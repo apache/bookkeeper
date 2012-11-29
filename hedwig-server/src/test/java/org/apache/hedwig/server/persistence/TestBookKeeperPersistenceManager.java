@@ -167,6 +167,11 @@ public class TestBookKeeperPersistenceManager extends TestCase {
         public TopicOwnershipManager newTopicOwnershipManager() {
             return factory.newTopicOwnershipManager();
         }
+
+        @Override
+        public void format(ServerConfiguration cfg, ZooKeeper zk) throws IOException {
+            factory.format(cfg, zk);
+        }
     }
 
     public TestBookKeeperPersistenceManager(boolean removeStartSeqId) {

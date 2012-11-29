@@ -146,4 +146,21 @@ public class FactoryLayout {
 
         return new FactoryLayout(meta);
     }
+
+    /**
+     * Remove the factory layout from ZooKeeper.
+     *
+     * @param zk
+     *          ZooKeeper instance
+     * @param cfg
+     *          Server configuration object
+     * @throws KeeperException
+     * @throws InterruptedException
+     */
+    public static void deleteLayout(ZooKeeper zk, ServerConfiguration cfg)
+            throws KeeperException, InterruptedException {
+        String factoryLayoutPath = getFactoryLayoutPath(new StringBuilder(), cfg);
+        zk.delete(factoryLayoutPath, -1);
+    }
+
 }

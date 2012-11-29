@@ -672,6 +672,31 @@ public class HedwigConsole {
 
     }
 
+    class FormatCmd implements MyCommand {
+
+        @Override
+        public boolean runCmd(String[] args) throws Exception {
+            boolean force = false;
+            if (args.length >= 2 && "-force".equals(args[1])) {
+                force = true;
+            }
+            boolean doFormat = true;
+            System.out.println("You ask to format hedwig metadata stored in "
+                               + admin.getMetadataManagerFactory().getClass().getName() + ".");
+            if (!force) {
+                doFormat = continueOrQuit();
+            }
+            if (doFormat) {
+                admin.format();
+                System.out.println("Formatted hedwig metadata successfully.");
+            } else {
+                System.out.println("Given up formatting hedwig metadata.");
+            }
+            return true;
+        }
+
+    }
+
     protected Map<String, MyCommand> buildMyCommands() {
         Map<String, MyCommand> cmds =
                 new HashMap<String, MyCommand>();
@@ -694,6 +719,7 @@ public class HedwigConsole {
         cmds.put(SHOW, new ShowCmd());
         cmds.put(DESCRIBE, new DescribeCmd());
         cmds.put(READTOPIC, new ReadTopicCmd());
+        cmds.put(FORMAT, new FormatCmd());
 
         return cmds;
     }
@@ -879,7 +905,7 @@ public class HedwigConsole {
     }
 
     protected boolean continueOrQuit() throws IOException {
-        System.out.println("Press <Return> for more, or Q to cancel ...");
+        System.out.println("Press <Return> to continue, or Q to cancel ...");
         int ch;
         if (null != console) {
             ch = console.readCharacter(CONTINUE_OR_QUIT);
