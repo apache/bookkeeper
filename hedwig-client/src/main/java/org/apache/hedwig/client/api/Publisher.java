@@ -67,7 +67,8 @@ public interface Publisher {
   /**
    * Publishes a message asynchronously on the given topic.
    * This method, unlike {@link #asyncPublish(ByteString, PubSubProtocol.Message, Callback, Object)},
-   * allows for the callback to retrieve {@link PubSubProtocol.PublishResponse} which was returned by the server.
+   * allows for the callback to retrieve {@link org.apache.hedwig.protocol.PubSubProtocol.PublishResponse}
+   * which was returned by the server.
    *
    *
    *

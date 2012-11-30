@@ -96,8 +96,7 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *
      * @param lmType
      *          Ledger Manager Type
-     * @return void
-     * @deprecated replaced by {@link #setLedgerManagerFactoryClass()}
+     * @deprecated replaced by {@link #setLedgerManagerFactoryClass}
      */
     @Deprecated
     public void setLedgerManagerType(String lmType) {
@@ -121,7 +120,6 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *
      * @param factoryClassName
      *          Ledger Manager Factory Class Name
-     * @return void
      */
     public void setLedgerManagerFactoryClassName(String factoryClassName) {
         setProperty(LEDGER_MANAGER_FACTORY_CLASS, factoryClassName);
@@ -132,7 +130,6 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *
      * @param factoryClass
      *          Ledger Manager Factory Class
-     * @return void
      */
     public void setLedgerManagerFactoryClass(Class<? extends LedgerManagerFactory> factoryClass) {
         setProperty(LEDGER_MANAGER_FACTORY_CLASS, factoryClass.getName());

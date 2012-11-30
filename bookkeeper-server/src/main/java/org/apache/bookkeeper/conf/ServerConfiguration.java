@@ -563,7 +563,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * crashed and therefore fences the ledger, preventing any further writes to
      * that ledger.
      * 
-     * @see LedgerHandle#openLedger
+     * @see org.apache.bookkeeper.client.BookKeeper#openLedger
      */
     public void setOpenLedgerRereplicationGracePeriod(String waitTime) {
         setProperty(OPEN_LEDGER_REREPLICATION_GRACE_PERIOD, waitTime);

@@ -644,7 +644,7 @@ public class BookKeeperAdmin {
      * 
      * @param lh
      *            - ledgerHandle
-     * @param lf
+     * @param ledgerFragment
      *            - LedgerFragment to replicate
      * @param targetBookieAddress
      *            - target Bookie, to where entries should be replicated.

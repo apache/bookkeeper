@@ -131,7 +131,7 @@ public class LedgerFragment {
     /**
      * Gets the ensemble of fragment
      * 
-     * @return
+     * @return the ensemble for the segment which this fragment is a part of
      */
     public List<InetSocketAddress> getEnsemble() {
         return this.ensemble;
