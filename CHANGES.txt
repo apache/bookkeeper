@@ -238,6 +238,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-487: Add existed hub server settings to configuration template file (sijie via ivank)
 
+        BOOKKEEPER-389: add documentation for message filter. (sijie via ivank)
+
       hedwig-client:
 
         BOOKKEEPER-306: Change C++ client to use gtest for testing (ivank via sijie)

@@ -37,6 +37,7 @@ h1. Apache Hedwig documentation
 * "Building Hedwig, or how to set up Hedwig":./hedwigBuild.html
 * "User's Guide, or how to program against the Hedwig API and how to run it":./hedwigUser.html
 * "Developer's Guide, or Hedwig internals and hacking details":./hedwigDesign.html
+* "Message Filtering":./hedwigMessageFilter.html
 
 h2. Hedwig Admin & Ops
 
