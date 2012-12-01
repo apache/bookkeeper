@@ -110,6 +110,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-477: In ReadOnlyBookieTest, we should wait for the bookie to die before asserting on it (ivank via fpj)
 
+	BOOKKEEPER-485: TestFencing hung (ivank via fpj)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

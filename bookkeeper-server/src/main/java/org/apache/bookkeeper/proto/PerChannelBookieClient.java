@@ -115,7 +115,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     }
 
     private void connect() {
-        LOG.debug("Connecting to bookie: {}", addr);
+        LOG.info("Connecting to bookie: {}", addr);
 
         // Set up the ClientBootStrap so we can create a new Channel connection
         // to the bookie.
@@ -134,11 +134,16 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
                 synchronized (PerChannelBookieClient.this) {
 
-                    if (future.isSuccess()) {
+                    if (future.isSuccess() && state == ConnectionState.CONNECTING) {
                         LOG.info("Successfully connected to bookie: " + addr);
                         rc = BKException.Code.OK;
                         channel = future.getChannel();
                         state = ConnectionState.CONNECTED;
+                    } else if (future.isSuccess() && state == ConnectionState.DISCONNECTED) {
+                        LOG.error("Closed before connection completed, clean up: " + addr);
+                        future.getChannel().close();
+                        rc = BKException.Code.BookieHandleNotAvailableException;
+                        channel = null;
                     } else {
                         LOG.error("Could not connect to bookie: " + addr);
                         rc = BKException.Code.BookieHandleNotAvailableException;
@@ -334,6 +339,9 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     }
 
     public void close() {
+        synchronized (this) {
+            state = ConnectionState.DISCONNECTED;
+        }
         if (channel != null) {
             channel.close().awaitUninterruptibly();
         }
