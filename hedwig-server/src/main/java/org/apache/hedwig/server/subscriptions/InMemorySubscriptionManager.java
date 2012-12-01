@@ -106,7 +106,13 @@ public class InMemorySubscriptionManager extends AbstractSubscriptionManager {
     protected void readSubscriptionData(ByteString topic,
             ByteString subscriberId, Callback<InMemorySubscriptionState> cb, Object ctx) {
         // Since we backed up in-memory information on lostTopic, we can just return that back
-        InMemorySubscriptionState subState = top2sub2seqBackup.get(topic).remove(subscriberId);
+        Map<ByteString, InMemorySubscriptionState> sub2seqBackup = top2sub2seqBackup.get(topic);
+        if (sub2seqBackup == null) {
+            cb.operationFinished(ctx, new InMemorySubscriptionState(
+                    SubscriptionData.getDefaultInstance(), Version.NEW));
+            return;
+        }
+        InMemorySubscriptionState subState = sub2seqBackup.remove(subscriberId);
         
         if (subState != null) {
             cb.operationFinished(ctx, subState);

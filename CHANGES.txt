@@ -150,6 +150,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-440: Make Write/Delete SubscriptionData Restricted to Version (Fangmin Lv via ivank)
 
+        BOOKKEEPER-482: Precommit is reporting findbugs errors in trunk (ivank via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-467: Allocate ports for testing dynamically (ivank)
