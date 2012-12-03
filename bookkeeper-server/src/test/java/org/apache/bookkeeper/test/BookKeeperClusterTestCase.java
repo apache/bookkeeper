@@ -234,7 +234,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
     public CountDownLatch sleepBookie(InetSocketAddress addr, final int seconds)
             throws InterruptedException, IOException {
         final CountDownLatch l = new CountDownLatch(1);
-        final String name = "BookieJournal-" + addr.getPort();
+        final String name = "NIOServerFactory-" + addr.getPort();
         Thread[] allthreads = new Thread[Thread.activeCount()];
         Thread.enumerate(allthreads);
         for (final Thread t : allthreads) {
@@ -271,7 +271,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      */
     public void sleepBookie(InetSocketAddress addr, final CountDownLatch l)
             throws InterruptedException, IOException {
-        final String name = "BookieJournal-" + addr.getPort();
+        final String name = "NIOServerFactory-" + addr.getPort();
         Thread[] allthreads = new Thread[Thread.activeCount()];
         Thread.enumerate(allthreads);
         for (final Thread t : allthreads) {
