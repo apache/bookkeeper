@@ -32,6 +32,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-32: Clean up LOG.debug statements (Stu Hood via sijie)
 
+      BOOKKEEPER-484: Misc fixes for test scripts (ivank via fpj)
+
       bookkeeper-server:
 
         BOOKKEEPER-183: Provide tools to read/check data files in bookie server (sijie via ivank)

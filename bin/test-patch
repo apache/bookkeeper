@@ -252,7 +252,7 @@ downloadPatch () {
     if [[ `grep -c 'Patch Available' ${jiraPage}` == 0 ]] ; then
         echo "$JIRAISSUE is not \"Patch Available\".  Exiting."
         echo
-        cleanupAndExit 1
+        exit 1
     fi
     relativePatchURL=`grep -o '"/jira/secure/attachment/[0-9]*/[^"]*' ${jiraPage} \
         | grep -v -e 'htm[l]*$' | sort | tail -1 \
@@ -265,9 +265,10 @@ downloadPatch () {
         echo
         cleanupAndExit 1
     fi
+    PATCHNAME=$(echo $patchURL | sed 's/.*\///g')
     echo "JIRA ${JIRAISSUE}, patch downloaded at `date` from ${patchURL}" 
     echo
-    echo "Patch <a href=\"$relativePatchURL\">$relativePatchURL</a> downloaded at $(date)" >> ${SUMMARYFILE}
+    echo "Patch [$PATCHNAME|$patchURL] downloaded at $(date)" >> ${SUMMARYFILE}
     echo "" >> ${SUMMARYFILE}
 }
 ###############################################################################
@@ -347,6 +348,8 @@ echo
 
 parseArgs "$@"
 
+prepareSCM
+
 prepareTestPatchDirs
 
 echo "" > ${SUMMARYFILE}
@@ -366,8 +369,6 @@ else
     echo "Testing patch ${PATCHFILE}" >> ${SUMMARYFILE}
     echo "" >> ${SUMMARYFILE}
 fi
-
-prepareSCM
 
 echo "" >> ${SUMMARYFILE}
 
