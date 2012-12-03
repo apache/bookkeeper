@@ -160,6 +160,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-482: Precommit is reporting findbugs errors in trunk (ivank via sijie)
 
+        BOOKKEEPER-442: Failed to deliver messages due to inconsistency between SubscriptionState and LedgerRanges. (jiannan via ivank)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-467: Allocate ports for testing dynamically (ivank)

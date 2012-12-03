@@ -34,7 +34,8 @@ public class InMemorySubscriptionState {
     SubscriptionState subscriptionState;
     SubscriptionPreferences subscriptionPreferences;
     MessageSeqId lastConsumeSeqId;
-	Version version;
+    Version version;
+    long lastPersistedSeqId;
 
     public InMemorySubscriptionState(SubscriptionData subscriptionData, Version version, MessageSeqId lastConsumeSeqId) {
         this.subscriptionState = subscriptionData.getState();
@@ -50,6 +51,7 @@ public class InMemorySubscriptionState {
         }
         this.lastConsumeSeqId = lastConsumeSeqId;
         this.version = version;
+        this.lastPersistedSeqId = subscriptionState.getMsgId().getLocalComponent();
     }
 
     public InMemorySubscriptionState(SubscriptionData subscriptionData, Version version) {
@@ -123,6 +125,14 @@ public class InMemorySubscriptionState {
         }
         subscriptionState = SubscriptionState.newBuilder(subscriptionState).setMsgId(lastConsumeSeqId).build();
         return true;
+    }
+
+    public long getLastPersistedSeqId() {
+        return lastPersistedSeqId;
+    }
+
+    public void setLastPersistedSeqId(long lastPersistedSeqId) {
+        this.lastPersistedSeqId = lastPersistedSeqId;
     }
 
     /**

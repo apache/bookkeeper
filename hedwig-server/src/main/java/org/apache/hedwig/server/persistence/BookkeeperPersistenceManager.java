@@ -231,6 +231,19 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
         }
 
         protected void read(final InMemoryLedgerRange imlr, final long startSeqId, final long endSeqId) {
+            // Verify whether startSeqId falls in ledger range.
+            // Only the left endpoint of range needs to be checked.
+            if (imlr.getStartSeqIdIncluded() > startSeqId) {
+                logger.error(
+                        "Invalid RangeScan read, startSeqId {} doesn't fall in ledger range [{} ~ {}]",
+                        va(startSeqId, imlr.getStartSeqIdIncluded(), imlr.range.hasEndSeqIdIncluded() ? imlr.range
+                                .getEndSeqIdIncluded().getLocalComponent() : ""));
+                request.callback.scanFailed(request.ctx, new PubSubException.UnexpectedConditionException("Scan request is out of range"));
+
+                // try release topic to reset the state
+                lostTopic(topic);
+                return;
+            }
 
             if (imlr.handle == null) {
 

@@ -129,24 +129,24 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
 
                 long minConsumedMessage = Long.MAX_VALUE;
                 boolean hasBound = true;
-                // Loop through all subscribers to the current topic to find the
-                // minimum consumed message id. The consume pointers are
-                // persisted lazily so we'll use the stale in-memory value
-                // instead. This keeps things consistent in case of a server
-                // crash.
+                // Loop through all subscribers on the current topic to find the
+                // minimum persisted message id. The reason not using in-memory
+                // consumed message id is LedgerRangs and InMemorySubscriptionState
+                // may be inconsistent in case of a server crash.
                 for (InMemorySubscriptionState curSubscription : topicSubscriptions.values()) {
-                    if (curSubscription.getSubscriptionState().getMsgId().getLocalComponent() < minConsumedMessage)
-                        minConsumedMessage = curSubscription.getSubscriptionState().getMsgId().getLocalComponent();
+                    if (curSubscription.getLastPersistedSeqId() < minConsumedMessage) {
+                        minConsumedMessage = curSubscription.getLastPersistedSeqId();
+                    }
                     hasBound = hasBound && curSubscription.getSubscriptionPreferences().hasMessageBound();
                 }
                 boolean callPersistenceManager = true;
-                // Don't call the PersistenceManager if nobody is subscribed to
-                // the topic yet, or the consume pointer has not changed since
-                // the last time, or if this is the initial subscription.
+                // Call the PersistenceManager if nobody subscribes to the topic
+                // yet, or the consume pointer has moved ahead since the last
+                // time, or if this is the initial subscription.
                 Long minConsumedFromMap = topic2MinConsumedMessagesMap.get(topic);
                 if (topicSubscriptions.isEmpty()
-                    || (minConsumedFromMap != null && minConsumedFromMap.equals(minConsumedMessage))
-                    || minConsumedMessage == 0) {
+                    || (minConsumedFromMap != null && minConsumedFromMap < minConsumedMessage)
+                    || (minConsumedFromMap == null && minConsumedMessage != 0)) {
                     topic2MinConsumedMessagesMap.put(topic, minConsumedMessage);
                     pm.consumedUntil(topic, minConsumedMessage);
                 } else if (hasBound) {
@@ -547,14 +547,25 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                 return;
             }
 
-            InMemorySubscriptionState subState = topicSubs.get(subscriberId);
+            final InMemorySubscriptionState subState = topicSubs.get(subscriberId);
             if (subState == null) {
                 cb.operationFinished(ctx, null);
                 return;
             }
 
             if (subState.setLastConsumeSeqId(consumeSeqId, cfg.getConsumeInterval())) {
-                updateSubscriptionState(topic, subscriberId, subState, cb, ctx);
+                updateSubscriptionState(topic, subscriberId, subState, new Callback<Void>() {
+                    @Override
+                    public void operationFinished(Object ctx, Void resultOfOperation) {
+                        subState.setLastPersistedSeqId(consumeSeqId.getLocalComponent());
+                        cb.operationFinished(ctx, resultOfOperation);
+                    }
+
+                    @Override
+                    public void operationFailed(Object ctx, PubSubException exception) {
+                        cb.operationFailed(ctx, exception);
+                    }
+                }, ctx);
             } else {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Only advanced consume pointer in memory, will persist later, topic: "
