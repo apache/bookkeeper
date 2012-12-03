@@ -114,6 +114,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-351: asyncAddEntry should not throw an exception (Matteo Merli via sijie)
 
+        BOOKKEEPER-291: BKMBeanRegistry uses log4j directly (fpj via ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

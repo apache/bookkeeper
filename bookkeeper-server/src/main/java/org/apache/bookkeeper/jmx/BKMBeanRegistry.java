@@ -21,7 +21,8 @@ package org.apache.bookkeeper.jmx;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.jmx.MBeanRegistry;
 import org.apache.zookeeper.jmx.ZKMBeanInfo;
 
@@ -32,7 +33,7 @@ import org.apache.zookeeper.jmx.ZKMBeanInfo;
  * will be stored in the zookeeper data tree instance as a virtual data tree.
  */
 public class BKMBeanRegistry extends MBeanRegistry {
-    static final Logger LOG = Logger.getLogger(BKMBeanRegistry.class);
+    static final Logger LOG = LoggerFactory.getLogger(BKMBeanRegistry.class);
     
     static final String DOMAIN = "org.apache.BookKeeperService";
 
