@@ -15,23 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.metastore.mock;
+package org.apache.bookkeeper.metastore;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.bookkeeper.metastore.MetaStore;
-import org.apache.bookkeeper.metastore.MetastoreException;
-import org.apache.bookkeeper.metastore.MetastoreTable;
-import org.apache.bookkeeper.metastore.MetastoreScannableTable;
 import org.apache.commons.configuration.Configuration;
 
-public class MockMetaStore implements MetaStore {
+public class InMemoryMetaStore implements MetaStore {
 
     static final int CUR_VERSION = 1;
 
-    static Map<String, MockMetastoreTable> tables =
-        new HashMap<String, MockMetastoreTable>();
+    static Map<String, InMemoryMetastoreTable> tables =
+        new HashMap<String, InMemoryMetastoreTable>();
 
     // for test
     public static void reset() {
@@ -61,18 +57,18 @@ public class MockMetaStore implements MetaStore {
 
     @Override
     public MetastoreTable createTable(String name) {
-        return createMockTable(name);
+        return createInMemoryTable(name);
     }
 
     @Override
     public MetastoreScannableTable createScannableTable(String name) {
-        return createMockTable(name);
+        return createInMemoryTable(name);
     }
 
-    private MockMetastoreTable createMockTable(String name) {
-        MockMetastoreTable t = tables.get(name);
+    private InMemoryMetastoreTable createInMemoryTable(String name) {
+        InMemoryMetastoreTable t = tables.get(name);
         if (t == null) {
-            t = new MockMetastoreTable(this, name);
+            t = new InMemoryMetastoreTable(this, name);
             tables.put(name, t);
         }
         return t;

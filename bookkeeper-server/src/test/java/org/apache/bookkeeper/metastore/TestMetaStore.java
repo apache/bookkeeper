@@ -31,10 +31,9 @@ import java.util.TreeMap;
 
 import junit.framework.TestCase;
 
+import org.apache.bookkeeper.metastore.InMemoryMetastoreTable.MetadataVersion;
 import org.apache.bookkeeper.metastore.MSException.Code;
 import org.apache.bookkeeper.metastore.MetastoreScannableTable.Order;
-import org.apache.bookkeeper.metastore.mock.MockMetaStore;
-import org.apache.bookkeeper.metastore.mock.MockMetastoreTable.MockVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -156,7 +155,7 @@ public class TestMetaStore extends TestCase {
     protected MetastoreScannableTableAsyncToSyncConverter myTable;
 
     protected String getMetaStoreName() {
-        return MockMetaStore.class.getName();
+        return InMemoryMetaStore.class.getName();
     }
 
     protected Configuration getConfiguration() {
@@ -164,24 +163,24 @@ public class TestMetaStore extends TestCase {
     }
 
     protected Version newBadVersion() {
-        return new MockVersion(-1);
+        return new MetadataVersion(-1);
     }
 
     protected Version nextVersion(Version version) {
         if (Version.NEW == version) {
-            return new MockVersion(0);
+            return new MetadataVersion(0);
         }
         if (Version.ANY == version) {
             return Version.ANY;
         }
-        assertTrue(version instanceof MockVersion);
-        return new MockVersion(((MockVersion) version).incrementVersion());
+        assertTrue(version instanceof MetadataVersion);
+        return new MetadataVersion(((MetadataVersion) version).incrementVersion());
     }
 
     private void checkVersion(Version v) {
         assertNotNull(v);
         if (v != Version.NEW && v != Version.ANY) {
-            assertTrue(v instanceof MockVersion);
+            assertTrue(v instanceof MetadataVersion);
         }
     }
 

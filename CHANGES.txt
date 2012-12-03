@@ -116,6 +116,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-291: BKMBeanRegistry uses log4j directly (fpj via ivank)
 
+        BOOKKEEPER-459: Rename metastore mock implementation to InMemory implementation (jiannan via ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

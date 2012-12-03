@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.metastore.mock;
+package org.apache.bookkeeper.metastore;
 
 import java.util.NavigableMap;
 import java.util.Set;
@@ -24,27 +24,23 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.bookkeeper.metastore.MSException.Code;
-import org.apache.bookkeeper.metastore.MetastoreCallback;
-import org.apache.bookkeeper.metastore.MetastoreCursor;
-import org.apache.bookkeeper.metastore.MetastoreScannableTable;
-import org.apache.bookkeeper.metastore.Value;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 
-public class MockMetastoreTable implements MetastoreScannableTable {
+public class InMemoryMetastoreTable implements MetastoreScannableTable {
 
-    public static class MockVersion implements Version {
+    public static class MetadataVersion implements Version {
         int version;
 
-        public MockVersion(int v) {
+        public MetadataVersion(int v) {
             this.version = v;
         }
 
-        public MockVersion(MockVersion v) {
+        public MetadataVersion(MetadataVersion v) {
             this.version = v.version;
         }
 
-        public synchronized MockVersion incrementVersion() {
+        public synchronized MetadataVersion incrementVersion() {
             ++version;
             return this;
         }
@@ -58,10 +54,10 @@ public class MockMetastoreTable implements MetastoreScannableTable {
                 return Occurred.AFTER;
             } else if (v == Version.ANY) {
                 return Occurred.CONCURRENTLY;
-            } else if (!(v instanceof MockVersion)) {
+            } else if (!(v instanceof MetadataVersion)) {
                 throw new IllegalArgumentException("Invalid version type");
             }
-            MockVersion mv = (MockVersion)v;
+            MetadataVersion mv = (MetadataVersion)v;
             int res = version - mv.version;
             if (res == 0) {
                 return Occurred.CONCURRENTLY;
@@ -75,10 +71,10 @@ public class MockMetastoreTable implements MetastoreScannableTable {
         @Override
         public boolean equals(Object obj) {
             if (null == obj ||
-                !(obj instanceof MockVersion)) {
+                !(obj instanceof MetadataVersion)) {
                 return false;
             }
-            MockVersion v = (MockVersion)obj;
+            MetadataVersion v = (MetadataVersion)obj;
             return 0 == (version - v.version);
         }
 
@@ -97,7 +93,7 @@ public class MockMetastoreTable implements MetastoreScannableTable {
     private TreeMap<String, Versioned<Value>> map = null;
     private ScheduledExecutorService scheduler;
 
-    public MockMetastoreTable(MockMetaStore metastore, String name) {
+    public InMemoryMetastoreTable(InMemoryMetaStore metastore, String name) {
         this.map = new TreeMap<String, Versioned<Value>>();
         this.name = name;
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -124,8 +120,8 @@ public class MockMetastoreTable implements MetastoreScannableTable {
             throw new NullPointerException("Version isn't allowed to be null.");
         }
         if (Version.ANY != version && Version.NEW != version) {
-            if (version instanceof MockVersion) {
-                version = new MockVersion(((MockVersion)version).version);
+            if (version instanceof MetadataVersion) {
+                version = new MetadataVersion(((MetadataVersion)version).version);
             } else {
                 throw new IllegalStateException("Wrong version type.");
             }
@@ -160,7 +156,7 @@ public class MockMetastoreTable implements MetastoreScannableTable {
             cb.complete(Code.IllegalOp.getCode(), null, ctx);
             return;
         }
-        Versioned<Value> vv = mockGet(key);
+        Versioned<Value> vv = get(key);
         int rc = null == vv ? Code.NoKey.getCode() : Code.OK.getCode();
         if (vv != null) {
             vv = cloneValue(vv.getValue(), vv.getVersion(), fields);
@@ -178,7 +174,7 @@ public class MockMetastoreTable implements MetastoreScannableTable {
                     cb.complete(Code.IllegalOp.getCode(), null, ctx);
                     return;
                 }
-                Result<Version> result = mockPut(key, value, version);
+                Result<Version> result = put(key, value, version);
                 cb.complete(result.code.getCode(), result.value, ctx);
             }
         });
@@ -193,7 +189,7 @@ public class MockMetastoreTable implements MetastoreScannableTable {
                     cb.complete(Code.IllegalOp.getCode(), null, ctx);
                     return;
                 }
-                Code code = mockRemove(key, version);
+                Code code = remove(key, version);
                 cb.complete(code.getCode(), null, ctx);
             }
         });
@@ -229,18 +225,18 @@ public class MockMetastoreTable implements MetastoreScannableTable {
         scheduler.submit(new Runnable() {
             @Override
             public void run() {
-                Result<MetastoreCursor> result = mockOpenCursor(firstKey, firstInclusive, lastKey, lastInclusive,
+                Result<MetastoreCursor> result = openCursor(firstKey, firstInclusive, lastKey, lastInclusive,
                         order, fields);
                 cb.complete(result.code.getCode(), result.value, ctx);
             }
         });
     }
 
-    private synchronized Versioned<Value> mockGet(String key) {
+    private synchronized Versioned<Value> get(String key) {
         return map.get(key);
     }
 
-    private synchronized Code mockRemove(String key, Version version) {
+    private synchronized Code remove(String key, Version version) {
         Versioned<Value> vv = map.get(key);
         if (null == vv) {
             return Code.NoKey;
@@ -262,16 +258,16 @@ public class MockMetastoreTable implements MetastoreScannableTable {
         }
     }
 
-    private synchronized Result<Version> mockPut(String key, Value value, Version version) {
+    private synchronized Result<Version> put(String key, Value value, Version version) {
         Versioned<Value> vv = map.get(key);
         if (vv == null) {
             if (Version.NEW != version) {
                 return new Result<Version>(Code.NoKey, null);
             }
             vv = cloneValue(value, version, ALL_FIELDS);
-            vv.setVersion(new MockVersion(0));
+            vv.setVersion(new MetadataVersion(0));
             map.put(key, vv);
-            return new Result<Version>(Code.OK, new MockVersion(0));
+            return new Result<Version>(Code.OK, new MetadataVersion(0));
         }
         if (Version.NEW == version) {
             return new Result<Version>(Code.KeyExists, null);
@@ -279,12 +275,12 @@ public class MockMetastoreTable implements MetastoreScannableTable {
         if (Version.Occurred.CONCURRENTLY != vv.getVersion().compare(version)) {
             return new Result<Version>(Code.BadVersion, null);
         }
-        vv.setVersion(((MockVersion)vv.getVersion()).incrementVersion());
+        vv.setVersion(((MetadataVersion)vv.getVersion()).incrementVersion());
         vv.setValue(vv.getValue().merge(value));
-        return new Result<Version>(Code.OK, new MockVersion((MockVersion)vv.getVersion()));
+        return new Result<Version>(Code.OK, new MetadataVersion((MetadataVersion)vv.getVersion()));
     }
 
-    private synchronized Result<MetastoreCursor> mockOpenCursor(
+    private synchronized Result<MetastoreCursor> openCursor(
             String firstKey, boolean firstInclusive,
             String lastKey, boolean lastInclusive,
             Order order, Set<String> fields) {
@@ -329,7 +325,7 @@ public class MockMetastoreTable implements MetastoreScannableTable {
         if (!isLegalCursor || null == myMap) {
             return new Result<MetastoreCursor>(Code.IllegalOp, null);
         }
-        MetastoreCursor cursor = new MockMetastoreCursor(
+        MetastoreCursor cursor = new InMemoryMetastoreCursor(
                 myMap.subMap(firstKey, firstInclusive, lastKey, lastInclusive), fields, scheduler);
         return new Result<MetastoreCursor>(Code.OK, cursor);
     }

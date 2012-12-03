@@ -15,9 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.metastore.mock;
+package org.apache.bookkeeper.metastore;
 
-import static org.apache.bookkeeper.metastore.mock.MockMetastoreTable.cloneValue;
+import static org.apache.bookkeeper.metastore.InMemoryMetastoreTable.cloneValue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,20 +28,16 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 
-import org.apache.bookkeeper.metastore.MSException;
 import org.apache.bookkeeper.metastore.MSException.Code;
-import org.apache.bookkeeper.metastore.MetastoreCursor;
-import org.apache.bookkeeper.metastore.MetastoreTableItem;
-import org.apache.bookkeeper.metastore.Value;
 import org.apache.bookkeeper.versioning.Versioned;
 
-class MockMetastoreCursor implements MetastoreCursor {
+class InMemoryMetastoreCursor implements MetastoreCursor {
 
     private final ScheduledExecutorService scheduler;
     private final Iterator<Map.Entry<String, Versioned<Value>>> iter;
     private final Set<String> fields;
 
-    public MockMetastoreCursor(NavigableMap<String, Versioned<Value>> map, Set<String> fields,
+    public InMemoryMetastoreCursor(NavigableMap<String, Versioned<Value>> map, Set<String> fields,
             ScheduledExecutorService scheduler) {
         this.iter = map.entrySet().iterator();
         this.fields = fields;
