@@ -29,17 +29,22 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.AsyncCallback.ChildrenCallback;
 import org.apache.zookeeper.KeeperException.Code;
+import org.apache.zookeeper.KeeperException.NodeExistsException;
+import org.apache.zookeeper.ZooDefs.Ids;
 
 /**
  * This class is responsible for maintaining a consistent view of what bookies
@@ -67,12 +72,14 @@ class BookieWatcher implements Watcher, ChildrenCallback {
             readBookies();
         }
     };
+    private ReadOnlyBookieWatcher readOnlyBookieWatcher;
 
-    public BookieWatcher(ClientConfiguration conf, BookKeeper bk) {
+    public BookieWatcher(ClientConfiguration conf, BookKeeper bk) throws KeeperException, InterruptedException {
         this.bk = bk;
         // ZK bookie registration path
         this.bookieRegistrationPath = conf.getZkAvailableBookiesPath();
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
+        readOnlyBookieWatcher = new ReadOnlyBookieWatcher(conf, bk);
     }
 
     public void halt() {
@@ -102,6 +109,27 @@ class BookieWatcher implements Watcher, ChildrenCallback {
             return;
         }
 
+        // Just exclude the 'readonly' znode to exclude r-o bookies from
+        // available nodes list.
+        children.remove(Bookie.READONLY);
+
+        HashSet<InetSocketAddress> newBookieAddrs = convertToBookieAddresses(children);
+
+        final HashSet<InetSocketAddress> deadBookies;
+        synchronized (this) {
+            deadBookies = (HashSet<InetSocketAddress>)knownBookies.clone();
+            deadBookies.removeAll(newBookieAddrs);
+            // No need to close readonly bookie clients.
+            deadBookies.removeAll(readOnlyBookieWatcher.getReadOnlyBookies());
+            knownBookies = newBookieAddrs;
+        }
+
+        if (bk.getBookieClient() != null) {
+            bk.getBookieClient().closeClients(deadBookies);
+        }
+    }
+
+    private static HashSet<InetSocketAddress> convertToBookieAddresses(List<String> children) {
         // Read the bookie addresses into a set for efficient lookup
         HashSet<InetSocketAddress> newBookieAddrs = new HashSet<InetSocketAddress>();
         for (String bookieAddrString : children) {
@@ -114,17 +142,7 @@ class BookieWatcher implements Watcher, ChildrenCallback {
             }
             newBookieAddrs.add(bookieAddr);
         }
-
-        final HashSet<InetSocketAddress> deadBookies;
-        synchronized (this) {
-            deadBookies = (HashSet<InetSocketAddress>)knownBookies.clone();
-            deadBookies.removeAll(newBookieAddrs);
-            knownBookies = newBookieAddrs;
-        }
-
-        if (bk.getBookieClient() != null) {
-            bk.getBookieClient().closeClients(deadBookies);
-        }
+        return newBookieAddrs;
     }
 
     /**
@@ -133,6 +151,9 @@ class BookieWatcher implements Watcher, ChildrenCallback {
      * @throws KeeperException
      */
     public void readBookiesBlocking() throws InterruptedException, KeeperException {
+        // Read readonly bookies first
+        readOnlyBookieWatcher.readROBookiesBlocking();
+
         final LinkedBlockingQueue<Integer> queue = new LinkedBlockingQueue<Integer>();
         readBookies(new ChildrenCallback() {
             public void processResult(int rc, String path, Object ctx, List<String> children) {
@@ -213,4 +234,82 @@ class BookieWatcher implements Watcher, ChildrenCallback {
         throw new BKNotEnoughBookiesException();
     }
 
+    /**
+     * Watcher implementation to watch the readonly bookies under
+     * &lt;available&gt;/readonly
+     */
+    private static class ReadOnlyBookieWatcher implements Watcher, ChildrenCallback {
+
+        private final static Logger LOG = LoggerFactory.getLogger(ReadOnlyBookieWatcher.class);
+        private HashSet<InetSocketAddress> readOnlyBookies = new HashSet<InetSocketAddress>();
+        private BookKeeper bk;
+        private String readOnlyBookieRegPath;
+
+        public ReadOnlyBookieWatcher(ClientConfiguration conf, BookKeeper bk) throws KeeperException,
+                InterruptedException {
+            this.bk = bk;
+            readOnlyBookieRegPath = conf.getZkAvailableBookiesPath() + "/" + Bookie.READONLY;
+            if (null == bk.getZkHandle().exists(readOnlyBookieRegPath, false)) {
+                try {
+                    bk.getZkHandle().create(readOnlyBookieRegPath, new byte[0], Ids.OPEN_ACL_UNSAFE,
+                            CreateMode.PERSISTENT);
+                } catch (NodeExistsException e) {
+                    // this node is just now created by someone.
+                }
+            }
+        }
+
+        @Override
+        public void process(WatchedEvent event) {
+            readROBookies();
+        }
+
+        // read the readonly bookies in blocking fashion. Used only for first
+        // time.
+        void readROBookiesBlocking() throws InterruptedException, KeeperException {
+
+            final LinkedBlockingQueue<Integer> queue = new LinkedBlockingQueue<Integer>();
+            readROBookies(new ChildrenCallback() {
+                public void processResult(int rc, String path, Object ctx, List<String> children) {
+                    try {
+                        ReadOnlyBookieWatcher.this.processResult(rc, path, ctx, children);
+                        queue.put(rc);
+                    } catch (InterruptedException e) {
+                        logger.error("Interruped when trying to read readonly bookies in a blocking fashion");
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+            int rc = queue.take();
+
+            if (rc != KeeperException.Code.OK.intValue()) {
+                throw KeeperException.create(Code.get(rc));
+            }
+        }
+
+        // Read children and register watcher for readonly bookies path
+        void readROBookies(ChildrenCallback callback) {
+            bk.getZkHandle().getChildren(this.readOnlyBookieRegPath, this, callback, null);
+        }
+
+        void readROBookies() {
+            readROBookies(this);
+        }
+
+        @Override
+        public void processResult(int rc, String path, Object ctx, List<String> children) {
+            if (rc != Code.OK.intValue()) {
+                LOG.error("Not able to read readonly bookies : ", KeeperException.create(Code.get(rc)));
+                return;
+            }
+
+            HashSet<InetSocketAddress> newReadOnlyBookies = convertToBookieAddresses(children);
+            readOnlyBookies = newReadOnlyBookies;
+        }
+
+        // returns the readonly bookies
+        public HashSet<InetSocketAddress> getReadOnlyBookies() {
+            return readOnlyBookies;
+        }
+    }
 }

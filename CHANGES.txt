@@ -118,6 +118,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-459: Rename metastore mock implementation to InMemory implementation (jiannan via ivank)
 
+        BOOKKEEPER-347: Provide mechanism to detect r-o bookie by the bookie clients (Vinay via ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

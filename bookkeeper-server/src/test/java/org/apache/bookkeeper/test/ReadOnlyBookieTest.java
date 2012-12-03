@@ -167,4 +167,21 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         bsConfs.add(newConf);
         bs.add(startBookie(newConf));
     }
+
+    /**
+     * Test ledger creation with readonly bookies
+     */
+    public void testLedgerCreationShouldFailWithReadonlyBookie() throws Exception {
+        killBookie(1);
+        baseConf.setReadOnlyModeEnabled(true);
+        startNewBookie();
+        bs.get(1).getBookie().transitionToReadOnlyMode();
+        try {
+            bkc.readBookiesBlocking();
+            bkc.createLedger(2, 2, DigestType.CRC32, "".getBytes());
+            fail("Must throw exception, as there is one readonly bookie");
+        } catch (BKException e) {
+            // Expected
+        }
+    }
 }

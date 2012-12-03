@@ -373,6 +373,10 @@ public class BookKeeperAdmin {
                         return;
                     }
                     for (String bookieNode : children) {
+                        if (Bookie.READONLY.equals(bookieNode)) {
+                            // exclude the readonly node from available bookies.
+                            continue;
+                        }
                         String parts[] = bookieNode.split(COLON);
                         if (parts.length < 2) {
                             LOG.error("Bookie Node retrieved from ZK has invalid name format: " + bookieNode);

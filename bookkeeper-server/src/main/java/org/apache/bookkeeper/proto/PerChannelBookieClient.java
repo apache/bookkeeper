@@ -558,6 +558,9 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         case BookieProtocol.EUA:
             rc = BKException.Code.UnauthorizedAccessException;
             break;
+        case BookieProtocol.EREADONLY:
+            rc = BKException.Code.WriteOnReadOnlyBookieException;
+            break;
         default:
             LOG.error("Add for ledger: " + ledgerId + ", entry: " + entryId + " failed on bookie: " + addr
                       + " with code: " + rc);

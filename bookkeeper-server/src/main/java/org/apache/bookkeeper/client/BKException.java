@@ -84,6 +84,8 @@ public abstract class BKException extends Exception {
             return new BKUnauthorizedAccessException();
         case Code.UnclosedFragmentException:
             return new BKUnclosedFragmentException();
+        case Code.WriteOnReadOnlyBookieException:
+            return new BKWriteOnReadOnlyBookieException();
         default:
             return new BKIllegalOpException();
         }
@@ -117,6 +119,7 @@ public abstract class BKException extends Exception {
         int LedgerFencedException = -101;
         int UnauthorizedAccessException = -102;
         int UnclosedFragmentException = -103;
+        int WriteOnReadOnlyBookieException = -104;
     }
 
     public void setCode(int code) {
@@ -171,6 +174,8 @@ public abstract class BKException extends Exception {
             return "Attempted to access ledger using the wrong password";
         case Code.UnclosedFragmentException:
             return "Attempting to use an unclosed fragment; This is not safe";
+        case Code.WriteOnReadOnlyBookieException:
+            return "Attempting to write on ReadOnly bookie";
         default:
             return "Invalid operation";
         }
@@ -299,6 +304,12 @@ public abstract class BKException extends Exception {
     public static class BKUnclosedFragmentException extends BKException {
         public BKUnclosedFragmentException() {
             super(Code.UnclosedFragmentException);
+        }
+    }
+
+    public static class BKWriteOnReadOnlyBookieException extends BKException {
+        public BKWriteOnReadOnlyBookieException() {
+            super(Code.WriteOnReadOnlyBookieException);
         }
     }
 }

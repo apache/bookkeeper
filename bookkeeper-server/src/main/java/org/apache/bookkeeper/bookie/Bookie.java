@@ -65,6 +65,8 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.Watcher.Event.EventType;
 
+import com.google.common.annotations.VisibleForTesting;
+
 /**
  * Implements a bookie.
  *
@@ -657,7 +659,8 @@ public class Bookie extends Thread {
     /*
      * Transition the bookie to readOnly mode
      */
-    void transitionToReadOnlyMode() {
+    @VisibleForTesting
+    public void transitionToReadOnlyMode() {
         if (!readOnly.compareAndSet(false, true)) {
             return;
         }
@@ -682,11 +685,11 @@ public class Bookie extends Thread {
                     // this node is just now created by someone.
                 }
             }
+            // Create the readonly node
+            zk.create(this.bookieRegistrationPath + READONLY + "/" + getMyId(), new byte[0], Ids.OPEN_ACL_UNSAFE,
+                    CreateMode.EPHEMERAL);
             // Clear the current registered node
             zk.delete(zkBookieRegPath, -1);
-            // Create the readonly node
-            zk.create(this.bookieRegistrationPath + READONLY + "/" + getMyId(),
-                    new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
         } catch (IOException e) {
             LOG.error("Error in transition to ReadOnly Mode."
                     + " Shutting down", e);
