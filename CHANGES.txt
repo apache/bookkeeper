@@ -112,6 +112,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-485: TestFencing hung (ivank via fpj)
 
+        BOOKKEEPER-351: asyncAddEntry should not throw an exception (Matteo Merli via sijie)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

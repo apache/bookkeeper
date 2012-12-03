@@ -22,8 +22,10 @@ package org.apache.bookkeeper.client;
 */
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.test.BaseTestCase;
 import org.apache.zookeeper.ZooKeeper;
@@ -31,6 +33,7 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.KeeperException;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -147,4 +150,31 @@ public class BookKeeperTest extends BaseTestCase {
             bkc.close();
         }
     }
+
+    /**
+     * Tests that when trying to use a closed BK client object we get
+     * a callback error and not an InterruptedException.
+     * @throws Exception
+     */
+    @Test
+    public void testAsyncReadWithError() throws Exception {
+        LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
+        bkc.close();
+
+        final AtomicInteger result = new AtomicInteger(0);
+        final CountDownLatch counter = new CountDownLatch(1);
+
+        // Try to write, we shoud get and error callback but not an exception
+        lh.asyncAddEntry("test".getBytes(), new AddCallback() {
+            public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+                result.set(rc);
+                counter.countDown();
+            }
+        }, null);
+
+        counter.await();
+
+        Assert.assertTrue(result.get() != 0);
+    }
+
 }

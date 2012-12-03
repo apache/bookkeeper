@@ -526,7 +526,8 @@ public class LedgerHandle {
             });
         } catch (RuntimeException e) {
             opCounterSem.release();
-            throw e;
+            cb.addComplete(BKException.Code.InterruptedException,
+                    LedgerHandle.this, INVALID_ENTRY_ID, ctx);
         }
     }
 
