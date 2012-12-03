@@ -1033,7 +1033,8 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                             final Version expectedVersionOfLedgersNode, final TopicInfo topicInfo,
                             final long startSeqId, final boolean changeLedger,
                             final Callback<Void> cb, final Object ctx) {
-        bk.asyncCreateLedger(cfg.getBkEnsembleSize(), cfg.getBkQuorumSize(), DigestType.CRC32, passwd,
+        bk.asyncCreateLedger(cfg.getBkEnsembleSize(), cfg.getBkWriteQuorumSize(),
+                             cfg.getBkAckQuorumSize(), DigestType.CRC32, passwd,
         new SafeAsynBKCallback.CreateCallback() {
             AtomicBoolean processed = new AtomicBoolean(false);
 

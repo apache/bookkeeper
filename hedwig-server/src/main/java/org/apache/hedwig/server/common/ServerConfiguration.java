@@ -59,7 +59,10 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String INTER_REGION_SSL_ENABLED = "inter_region_ssl_enabled";
     protected final static String MESSAGES_CONSUMED_THREAD_RUN_INTERVAL = "messages_consumed_thread_run_interval";
     protected final static String BK_ENSEMBLE_SIZE = "bk_ensemble_size";
+    @Deprecated
     protected final static String BK_QUORUM_SIZE = "bk_quorum_size";
+    protected final static String BK_WRITE_QUORUM_SIZE = "bk_write_quorum_size";
+    protected final static String BK_ACK_QUORUM_SIZE = "bk_ack_quorum_size";
     protected final static String RETRY_REMOTE_SUBSCRIBE_THREAD_RUN_INTERVAL = "retry_remote_subscribe_thread_run_interval";
     protected final static String DEFAULT_MESSAGE_WINDOW_SIZE =
         "default_message_window_size";
@@ -302,8 +305,35 @@ public class ServerConfiguration extends AbstractConfiguration {
     // This parameter is used when Bookkeeper is the persistence store
     // and indicates what the quorum size is (i.e. how many redundant
     // copies of each ledger entry is written).
-    public int getBkQuorumSize() {
+    protected int getBkQuorumSize() {
         return conf.getInt(BK_QUORUM_SIZE, 2);
+    }
+
+    /**
+     * Get the write quorum size for BookKeeper client, which is used to
+     * indicate how many redundant copies of each ledger entry is written.
+     *
+     * @return write quorum size for BookKeeper client.
+     */
+    public int getBkWriteQuorumSize() {
+        if (conf.containsKey(BK_WRITE_QUORUM_SIZE)) {
+            return conf.getInt(BK_WRITE_QUORUM_SIZE, 2);
+        } else {
+            return getBkQuorumSize();
+        }
+    }
+
+    /**
+     * Get the ack quorum size for BookKeeper client.
+     *
+     * @return ack quorum size for BookKeeper client.
+     */
+    public int getBkAckQuorumSize() {
+        if (conf.containsKey(BK_ACK_QUORUM_SIZE)) {
+            return conf.getInt(BK_ACK_QUORUM_SIZE, 2);
+        } else {
+            return getBkQuorumSize();
+        }
     }
 
     /**
@@ -336,9 +366,14 @@ public class ServerConfiguration extends AbstractConfiguration {
             }
         }
         // Validate that the Bookkeeper ensemble size >= quorum size.
-        if (getBkEnsembleSize() < getBkQuorumSize()) {
+        if (getBkEnsembleSize() < getBkWriteQuorumSize()) {
             throw new ConfigurationException("BK ensemble size (" + getBkEnsembleSize()
-                                             + ") is less than the quorum size (" + getBkQuorumSize() + ")");
+                                             + ") is less than the write quorum size (" + getBkWriteQuorumSize() + ")");
+        }
+
+        if (getBkWriteQuorumSize() < getBkAckQuorumSize()) {
+            throw new ConfigurationException("BK write quorum size (" + getBkWriteQuorumSize()
+                                             + ") is less than the ack quorum size (" + getBkAckQuorumSize() + ")");
         }
 
         // add other checks here
