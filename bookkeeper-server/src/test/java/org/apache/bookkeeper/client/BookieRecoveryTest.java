@@ -720,43 +720,44 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
     @Test
     public void testSyncBookieRecoveryToRandomBookiesCheckForDupes() throws Exception {
         Random r = new Random();
-        for (int i = 0; i < 10; i++) {
-            // Create the ledgers
-            int numLedgers = 3;
-            List<LedgerHandle> lhs = createLedgers(numLedgers, numBookies, 2);
 
-            // Write the entries for the ledgers with dummy values.
-            int numMsgs = 100;
-            writeEntriestoLedgers(numMsgs, 0, lhs);
+        // Create the ledgers
+        int numLedgers = 3;
+        List<LedgerHandle> lhs = createLedgers(numLedgers, numBookies, 2);
 
-            // Shutdown the first bookie server
-            LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
-            int removeIndex = r.nextInt(bs.size());
-            InetSocketAddress bookieSrc = bs.get(removeIndex).getLocalAddress();
-            bs.get(removeIndex).shutdown();
-            bs.remove(removeIndex);
+        // Write the entries for the ledgers with dummy values.
+        int numMsgs = 10;
+        writeEntriestoLedgers(numMsgs, 0, lhs);
 
-            // Startup three new bookie servers
-            startNewBookie();
+        // Shutdown the first bookie server
+        LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
+        int removeIndex = r.nextInt(bs.size());
+        InetSocketAddress bookieSrc = bs.get(removeIndex).getLocalAddress();
+        bs.get(removeIndex).shutdown();
+        bs.remove(removeIndex);
 
-            // Write some more entries for the ledgers so a new ensemble will be
-            // created for them.
-            writeEntriestoLedgers(numMsgs, numMsgs, lhs);
+        // Startup new bookie server
+        startNewBookie();
 
-            // Call the async recover bookie method.
-            LOG.info("Now recover the data on the killed bookie (" + bookieSrc
-                     + ") and replicate it to a random available one");
-            // Initiate the sync object
-            sync.value = false;
-            bkAdmin.recoverBookieData(bookieSrc, null);
-            assertFalse("Dupes exist in ensembles", findDupesInEnsembles(lhs));
+        // Write some more entries for the ledgers so a new ensemble will be
+        // created for them.
+        writeEntriestoLedgers(numMsgs, numMsgs, lhs);
 
-            // Write some more entries to ensure fencing hasn't broken stuff
-            writeEntriestoLedgers(numMsgs, numMsgs*2, lhs);
-            for (LedgerHandle lh : lhs) {
-                assertTrue("Not fully replicated", verifyFullyReplicated(lh, numMsgs*3));
-                lh.close();
-            }
+        // Call the async recover bookie method.
+        LOG.info("Now recover the data on the killed bookie (" + bookieSrc
+                 + ") and replicate it to a random available one");
+        // Initiate the sync object
+        sync.value = false;
+        bkAdmin.recoverBookieData(bookieSrc, null);
+
+        assertFalse("Dupes exist in ensembles", findDupesInEnsembles(lhs));
+
+        // Write some more entries to ensure fencing hasn't broken stuff
+        writeEntriestoLedgers(numMsgs, numMsgs*2, lhs);
+
+        for (LedgerHandle lh : lhs) {
+            assertTrue("Not fully replicated", verifyFullyReplicated(lh, numMsgs*3));
+            lh.close();
         }
     }
 
