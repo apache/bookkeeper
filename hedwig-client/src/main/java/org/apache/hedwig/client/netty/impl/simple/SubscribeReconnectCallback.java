@@ -84,7 +84,11 @@ class SubscribeReconnectCallback implements Callback<ResponseBody> {
         // a topic subscription has failed. So instead, we'll just keep
         // retrying in the background until success.
         logger.error("Subscribe reconnect failed with error: ", exception);
-        retrySubscribeRequest();
+        // we don't retry subscribe request is channel manager is closing
+        // otherwise it might overflow the stack.
+        if (!channelManager.isClosed()) {
+            retrySubscribeRequest();
+        }
     }
 
     private void retrySubscribeRequest() {

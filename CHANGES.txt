@@ -146,6 +146,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-454: hedwig c++ tester script assumes sh is bash (ivank)
 
+        BOOKKEEPER-470: Possible infinite loop in simple.SubscribeReconnectCallback (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-302: No more messages delivered when hub server scans messages over two ledgers. (sijie via ivank)
