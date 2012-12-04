@@ -66,6 +66,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String RETRY_REMOTE_SUBSCRIBE_THREAD_RUN_INTERVAL = "retry_remote_subscribe_thread_run_interval";
     protected final static String DEFAULT_MESSAGE_WINDOW_SIZE =
         "default_message_window_size";
+    protected final static String NUM_READAHEAD_CACHE_THREADS = "num_readahead_cache_threads";
 
     protected final static String MAX_ENTRIES_PER_LEDGER = "max_entries_per_ledger";
 
@@ -377,6 +378,15 @@ public class ServerConfiguration extends AbstractConfiguration {
         }
 
         // add other checks here
+    }
+
+    /**
+     * Get number of read ahead cache threads.
+     *
+     * @return number of read ahead cache threads.
+     */
+    public int getNumReadAheadCacheThreads() {
+        return conf.getInt(NUM_READAHEAD_CACHE_THREADS, Runtime.getRuntime().availableProcessors());
     }
 
     /**

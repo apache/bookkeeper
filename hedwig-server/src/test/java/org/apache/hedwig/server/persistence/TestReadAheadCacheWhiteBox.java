@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.protobuf.ByteString;
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.hedwig.HelperMethods;
 import org.apache.hedwig.StubCallback;
 import org.apache.hedwig.StubScanCallback;
@@ -50,6 +51,12 @@ public class TestReadAheadCacheWhiteBox {
 
         @Override
         protected void enqueueWithoutFailure(CacheRequest obj) {
+            // make it perform in the same thread
+            obj.performRequest();
+        }
+
+        @Override
+        protected void enqueueWithoutFailureByTopic(ByteString topic, final CacheRequest obj) {
             // make it perform in the same thread
             obj.performRequest();
         }
@@ -145,7 +152,7 @@ public class TestReadAheadCacheWhiteBox {
         for (Message m : messages) {
             persistMessage(m);
         }
-        assertEquals((long) NUM_MESSAGES * MSG_SIZE, cacheBasedPersistenceManager.presentCacheSize);
+        assertEquals((long) NUM_MESSAGES * MSG_SIZE, cacheBasedPersistenceManager.presentCacheSize.get());
         long middle = messages.size() / 2;
         cacheBasedPersistenceManager.deliveredUntil(topic, middle);
 
@@ -162,7 +169,7 @@ public class TestReadAheadCacheWhiteBox {
         assertTrue(cacheBasedPersistenceManager.cache.isEmpty());
         assertTrue(cacheBasedPersistenceManager.timeIndexOfAddition.isEmpty());
         assertTrue(cacheBasedPersistenceManager.orderedIndexOnSeqId.isEmpty());
-        assertTrue(0 == cacheBasedPersistenceManager.presentCacheSize);
+        assertTrue(0 == cacheBasedPersistenceManager.presentCacheSize.get());
 
     }
 
@@ -231,9 +238,9 @@ public class TestReadAheadCacheWhiteBox {
     @Test
     public void testAddMessageToCache() {
         CacheKey key = new CacheKey(topic, 1);
-        cacheBasedPersistenceManager.addMessageToCache(key, messages.get(0), System.currentTimeMillis());
+        cacheBasedPersistenceManager.addMessageToCache(key, messages.get(0), MathUtils.now());
         assertEquals(1, cacheBasedPersistenceManager.cache.size());
-        assertEquals(MSG_SIZE, cacheBasedPersistenceManager.presentCacheSize);
+        assertEquals(MSG_SIZE, cacheBasedPersistenceManager.presentCacheSize.get());
         assertEquals(1, cacheBasedPersistenceManager.orderedIndexOnSeqId.get(topic).size());
         assertTrue(cacheBasedPersistenceManager.orderedIndexOnSeqId.get(topic).contains(1L));
 
@@ -244,7 +251,7 @@ public class TestReadAheadCacheWhiteBox {
     @Test
     public void testRemoveMessageFromCache() {
         CacheKey key = new CacheKey(topic, 1);
-        cacheBasedPersistenceManager.addMessageToCache(key, messages.get(0), System.currentTimeMillis());
+        cacheBasedPersistenceManager.addMessageToCache(key, messages.get(0), MathUtils.now());
         cacheBasedPersistenceManager.removeMessageFromCache(key, new Exception(), true, true);
         assertTrue(cacheBasedPersistenceManager.cache.isEmpty());
         assertTrue(cacheBasedPersistenceManager.orderedIndexOnSeqId.isEmpty());

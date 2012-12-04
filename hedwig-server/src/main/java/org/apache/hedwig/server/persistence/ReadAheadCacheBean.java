@@ -48,7 +48,7 @@ public class ReadAheadCacheBean implements ReadAheadCacheMXBean,
 
     @Override
     public long getPresentCacheSize() {
-        return cache.presentCacheSize;
+        return cache.presentCacheSize.get();
     }
 
     @Override
