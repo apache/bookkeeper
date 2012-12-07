@@ -194,6 +194,7 @@ public class MultiplexHChannelManager extends AbstractHChannelManager {
         startDelivery(topicSubscriber, messageHandler, false);
     }
 
+    @Override
     protected void restartDelivery(TopicSubscriber topicSubscriber)
         throws ClientNotSubscribedException, AlreadyStartDeliveryException {
         startDelivery(topicSubscriber, null, true);

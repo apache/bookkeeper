@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hedwig.client.netty.impl.multiplex;
+package org.apache.hedwig.client.netty.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,13 +41,13 @@ class ResubscribeCallback implements Callback<ResponseBody> {
     // Private member variables
     private final TopicSubscriber origTopicSubscriber;
     private final PubSubData origSubData;
-    private final MultiplexHChannelManager channelManager;
+    private final AbstractHChannelManager channelManager;
     private final long retryWaitTime;
 
     // Constructor
     ResubscribeCallback(TopicSubscriber origTopicSubscriber,
                         PubSubData origSubData,
-                        MultiplexHChannelManager channelManager,
+                        AbstractHChannelManager channelManager,
                         long retryWaitTime) {
         this.origTopicSubscriber = origTopicSubscriber;
         this.origSubData = origSubData;
@@ -90,6 +90,9 @@ class ResubscribeCallback implements Callback<ResponseBody> {
     }
 
     private void retrySubscribeRequest() {
+        if (channelManager.isClosed()) {
+            return;
+        }
         origSubData.clearServersList();
         logger.debug("Resubmit subscribe request for {} in {} ms later.",
                      va(origTopicSubscriber, retryWaitTime));

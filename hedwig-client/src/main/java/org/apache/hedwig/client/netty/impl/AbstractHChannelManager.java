@@ -573,6 +573,9 @@ public abstract class AbstractHChannelManager implements HChannelManager {
         }
     }
 
+    protected abstract void restartDelivery(TopicSubscriber topicSubscriber)
+        throws ClientNotSubscribedException, AlreadyStartDeliveryException;
+
     /**
      * Chekout the pub/sub requests on subscription channels.
      */
