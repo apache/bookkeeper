@@ -78,4 +78,37 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         channelFactory.releaseExternalResources();
         executor.shutdown();
     }
+
+    /**
+     * Test race scenario found in {@link https://issues.apache.org/jira/browse/BOOKKEEPER-5}
+     * where multiple clients try to connect a channel simultaneously. If not synchronised
+     * correctly, this causes the netty channel to get orphaned.
+     */
+    @Test(timeout=60000)
+    public void testConnectRace() {
+        GenericCallback<Void> nullop = new GenericCallback<Void>() {
+            @Override
+            public void operationComplete(int rc, Void result) {
+                // do nothing, we don't care about doing anything with the connection,
+                // we just want to trigger it connecting.
+            }
+        };
+        ClientSocketChannelFactory channelFactory
+            = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
+                                                Executors.newCachedThreadPool());
+        OrderedSafeExecutor executor = new OrderedSafeExecutor(1);
+
+        InetSocketAddress addr = getBookie(0);
+        AtomicLong bytesOutstanding = new AtomicLong(0);
+        for (int i = 0; i < 100; i++) {
+            PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory,
+                                                                       addr, bytesOutstanding);
+            for (int j = i; j < 10; j++) {
+                client.connectIfNeededAndDoOp(nullop);
+            }
+            client.close();
+        }
+        channelFactory.releaseExternalResources();
+        executor.shutdown();
+    }
 }

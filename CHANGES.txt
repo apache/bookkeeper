@@ -126,6 +126,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-431: Duplicate definition of COOKIES_NODE (uma via fpj)
 
+	BOOKKEEPER-474:  BookieReadWriteTest#testShutdown doesn't make sense (ivank via fpj)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)
