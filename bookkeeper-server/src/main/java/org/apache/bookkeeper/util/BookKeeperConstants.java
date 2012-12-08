@@ -39,7 +39,7 @@ public class BookKeeperConstants {
     public static final String COOKIE_NODE = "cookies";
     public static final String UNDER_REPLICATION_NODE = "underreplication";
     public static final String DISABLE_NODE = "disable";
-    public static final String ZK_LEDGERS_ROOT_PATH_DEFAULT = "/ledgers";
+    public static final String DEFAULT_ZK_LEDGERS_ROOT_PATH = "/ledgers";
     public static final String LAYOUT_ZNODE = "LAYOUT";
     public static final String INSTANCEID = "INSTANCEID";
 }

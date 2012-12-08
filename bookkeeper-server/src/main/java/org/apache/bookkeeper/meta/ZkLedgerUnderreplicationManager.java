@@ -106,7 +106,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                 + BookKeeperConstants.UNDER_REPLICATION_NODE;
         layoutZNode = basePath + '/' + BookKeeperConstants.LAYOUT_ZNODE;
         urLedgerPath = basePath
-                + BookKeeperConstants.ZK_LEDGERS_ROOT_PATH_DEFAULT;
+                + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
         urLockPath = basePath + "/locks";
 
         idExtractionPattern = Pattern.compile("urL(\\d+)$");

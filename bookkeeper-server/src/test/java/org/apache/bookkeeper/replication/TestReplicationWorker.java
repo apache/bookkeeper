@@ -69,7 +69,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
         basePath = baseClientConf.getZkLedgersRootPath() + '/'
                 + BookKeeperConstants.UNDER_REPLICATION_NODE
-                + BookKeeperConstants.ZK_LEDGERS_ROOT_PATH_DEFAULT;
+                + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
         baseConf.setRereplicationEntryBatchSize(3);
     }
 

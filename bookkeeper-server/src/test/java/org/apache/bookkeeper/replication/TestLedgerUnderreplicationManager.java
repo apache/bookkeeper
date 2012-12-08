@@ -106,7 +106,7 @@ public class TestLedgerUnderreplicationManager {
         basePath = conf.getZkLedgersRootPath() + '/'
                 + BookKeeperConstants.UNDER_REPLICATION_NODE;
         urLedgerPath = basePath
-                + BookKeeperConstants.ZK_LEDGERS_ROOT_PATH_DEFAULT;
+                + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
     }
 
     @After
