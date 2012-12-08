@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.BookKeeper.SyncOpenCallback;
@@ -38,6 +37,7 @@ import org.apache.bookkeeper.client.LedgerFragmentReplicator.SingleFragmentCallb
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
@@ -56,9 +56,6 @@ import org.slf4j.LoggerFactory;
  */
 public class BookKeeperAdmin {
     private static Logger LOG = LoggerFactory.getLogger(BookKeeperAdmin.class);
-
-    static final String COLON = ":";
-
     // ZK client instance
     private ZooKeeper zk;
     // ZK ledgers related String constants
@@ -373,11 +370,12 @@ public class BookKeeperAdmin {
                         return;
                     }
                     for (String bookieNode : children) {
-                        if (Bookie.READONLY.equals(bookieNode)) {
+                        if (BookKeeperConstants.READONLY
+                                        .equals(bookieNode)) {
                             // exclude the readonly node from available bookies.
                             continue;
                         }
-                        String parts[] = bookieNode.split(COLON);
+                        String parts[] = bookieNode.split(BookKeeperConstants.COLON);
                         if (parts.length < 2) {
                             LOG.error("Bookie Node retrieved from ZK has invalid name format: " + bookieNode);
                             cb.recoverComplete(BKException.Code.ZKException, context);
@@ -754,16 +752,17 @@ public class BookKeeperAdmin {
 
             // Clear the INSTANCEID
             try {
-                zkc.delete(conf.getZkLedgersRootPath() + "/" + Bookie.INSTANCEID, -1);
+                zkc.delete(conf.getZkLedgersRootPath() + "/"
+                        + BookKeeperConstants.INSTANCEID, -1);
             } catch (KeeperException.NoNodeException e) {
                 LOG.debug("INSTANCEID not exists in zookeeper to delete");
             }
 
             // create INSTANCEID
             String instanceId = UUID.randomUUID().toString();
-            zkc.create(conf.getZkLedgersRootPath() + "/" + Bookie.INSTANCEID,
-                    instanceId.getBytes(), Ids.OPEN_ACL_UNSAFE,
-                    CreateMode.PERSISTENT);
+            zkc.create(conf.getZkLedgersRootPath() + "/"
+                    + BookKeeperConstants.INSTANCEID, instanceId.getBytes(),
+                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 
             LOG.info("Successfully formatted BookKeeper metadata");
         } finally {

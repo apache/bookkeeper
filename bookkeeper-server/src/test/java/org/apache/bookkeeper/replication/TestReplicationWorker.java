@@ -36,8 +36,8 @@ import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.test.MultiLedgerManagerTestCase;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.zookeeper.KeeperException;
@@ -68,8 +68,8 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
         basePath = baseClientConf.getZkLedgersRootPath() + '/'
-                + ZkLedgerUnderreplicationManager.UNDER_REPLICATION_NODE
-                + "/ledgers";
+                + BookKeeperConstants.UNDER_REPLICATION_NODE
+                + BookKeeperConstants.ZK_LEDGERS_ROOT_PATH_DEFAULT;
         baseConf.setRereplicationEntryBatchSize(3);
     }
 

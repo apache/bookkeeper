@@ -20,6 +20,7 @@ package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
 
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.Ids;
@@ -36,8 +37,7 @@ import org.slf4j.LoggerFactory;
 class LedgerLayout {
     static final Logger LOG = LoggerFactory.getLogger(LedgerLayout.class);
 
-    // Znode name to store layout information
-    public static final String LAYOUT_ZNODE = "LAYOUT";
+   
     // version of compability layout version
     public static final int LAYOUT_MIN_COMPAT_VERSION = 1;
     // version of ledger layout metadata
@@ -52,7 +52,7 @@ class LedgerLayout {
      */
     public static LedgerLayout readLayout(final ZooKeeper zk, final String ledgersRoot)
             throws IOException, KeeperException {
-        String ledgersLayout = ledgersRoot + "/" + LAYOUT_ZNODE;
+        String ledgersLayout = ledgersRoot + "/" + BookKeeperConstants.LAYOUT_ZNODE;
 
         try {
             LedgerLayout layout;
@@ -141,9 +141,10 @@ class LedgerLayout {
      */
     public void store(final ZooKeeper zk, String ledgersRoot) 
             throws IOException, KeeperException, InterruptedException {
-        String ledgersLayout = ledgersRoot + "/" + LAYOUT_ZNODE;
-        zk.create(ledgersLayout, serialize(), 
-                  Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        String ledgersLayout = ledgersRoot + "/"
+                + BookKeeperConstants.LAYOUT_ZNODE;
+        zk.create(ledgersLayout, serialize(), Ids.OPEN_ACL_UNSAFE,
+                CreateMode.PERSISTENT);
     }
 
     /**
@@ -151,7 +152,8 @@ class LedgerLayout {
      */
     public void delete(final ZooKeeper zk, String ledgersRoot)
             throws KeeperException, InterruptedException {
-        String ledgersLayout = ledgersRoot + "/" + LAYOUT_ZNODE;
+        String ledgersLayout = ledgersRoot + "/"
+                + BookKeeperConstants.LAYOUT_ZNODE;
         zk.delete(ledgersLayout, -1);
     }
 

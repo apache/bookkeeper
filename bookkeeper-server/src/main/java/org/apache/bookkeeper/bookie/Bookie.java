@@ -48,6 +48,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.jmx.BKMBeanRegistry;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -73,8 +74,6 @@ import com.google.common.annotations.VisibleForTesting;
  */
 
 public class Bookie extends Thread {
-    public static final String INSTANCEID = "INSTANCEID";
-    public static final String READONLY = "readonly";
 
     static Logger LOG = LoggerFactory.getLogger(Bookie.class);
 
@@ -93,7 +92,6 @@ public class Bookie extends Thread {
 
     // ZK registration path for this bookie
     private final String bookieRegistrationPath;
-    static final String CURRENT_DIR = "current";
 
     private LedgerDirsManager ledgerDirsManager;
 
@@ -262,7 +260,8 @@ public class Bookie extends Thread {
     public static void checkDirectoryStructure(File dir) throws IOException {
         if (!dir.exists()) {
             File parent = dir.getParentFile();
-            File preV3versionFile = new File(dir.getParent(), Cookie.VERSION_FILENAME);
+            File preV3versionFile = new File(dir.getParent(),
+                    BookKeeperConstants.VERSION_FILENAME);
 
             final AtomicBoolean oldDataExists = new AtomicBoolean(false);
             parent.list(new FilenameFilter() {
@@ -376,7 +375,7 @@ public class Bookie extends Thread {
         String instanceId = null;
         try {
             byte[] data = zk.getData(conf.getZkLedgersRootPath() + "/"
-                    + INSTANCEID, false, null);
+                    + BookKeeperConstants.INSTANCEID, false, null);
             instanceId = new String(data);
         } catch (KeeperException.NoNodeException e) {
             LOG.warn("INSTANCEID not exists in zookeeper. Not considering it for data verification");
@@ -389,7 +388,7 @@ public class Bookie extends Thread {
     }
 
     public static File getCurrentDirectory(File dir) {
-        return new File(dir, CURRENT_DIR);
+        return new File(dir, BookKeeperConstants.CURRENT_DIR);
     }
 
     public static File[] getCurrentDirectories(File[] dirs) {
@@ -675,19 +674,20 @@ public class Bookie extends Thread {
         LOG.info("Transitioning Bookie to ReadOnly mode,"
                 + " and will serve only read requests from clients!");
         try {
-            if (null == zk
-                    .exists(this.bookieRegistrationPath + READONLY, false)) {
+            if (null == zk.exists(this.bookieRegistrationPath
+                    + BookKeeperConstants.READONLY, false)) {
                 try {
-                    zk.create(this.bookieRegistrationPath + READONLY,
-                            new byte[0], Ids.OPEN_ACL_UNSAFE,
-                            CreateMode.PERSISTENT);
+                    zk.create(this.bookieRegistrationPath
+                            + BookKeeperConstants.READONLY, new byte[0],
+                            Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
                 } catch (NodeExistsException e) {
                     // this node is just now created by someone.
                 }
             }
             // Create the readonly node
-            zk.create(this.bookieRegistrationPath + READONLY + "/" + getMyId(), new byte[0], Ids.OPEN_ACL_UNSAFE,
-                    CreateMode.EPHEMERAL);
+            zk.create(this.bookieRegistrationPath
+                    + BookKeeperConstants.READONLY + "/" + getMyId(),
+                    new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
             // Clear the current registered node
             zk.delete(zkBookieRegPath, -1);
         } catch (IOException e) {

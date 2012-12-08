@@ -27,6 +27,7 @@ import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.AsyncCallback;
@@ -79,7 +80,8 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
     public FlatLedgerManager(AbstractConfiguration conf, ZooKeeper zk) {
         super(conf, zk);
 
-        ledgerPrefix = ledgerRootPath + "/" + LEDGER_NODE_PREFIX;
+        ledgerPrefix = ledgerRootPath + "/"
+                + BookKeeperConstants.LEDGER_NODE_PREFIX;
     }
 
     @Override

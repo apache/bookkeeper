@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.Map;
 
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.BKException;
@@ -31,6 +30,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.versioning.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,11 +50,6 @@ import org.apache.zookeeper.data.Stat;
 abstract class AbstractZkLedgerManager implements LedgerManager, ActiveLedgerManager {
 
     static Logger LOG = LoggerFactory.getLogger(AbstractZkLedgerManager.class);
-
-    // Ledger Node Prefix
-    static public final String LEDGER_NODE_PREFIX = "L";
-    static final String AVAILABLE_NODE = "available";
-    static final String COOKIES_NODE = "cookies";
 
     protected final AbstractConfiguration conf;
     protected final ZooKeeper zk;
@@ -348,12 +343,11 @@ abstract class AbstractZkLedgerManager implements LedgerManager, ActiveLedgerMan
      * @return true  if the znode is a special znode otherwise false
      */
     protected boolean isSpecialZnode(String znode) {
-        if (AVAILABLE_NODE.equals(znode)
-                || COOKIES_NODE.equals(znode)
-                || LedgerLayout.LAYOUT_ZNODE.equals(znode)
-                || Bookie.INSTANCEID.equals(znode)
-                || ZkLedgerUnderreplicationManager.UNDER_REPLICATION_NODE
-                        .equals(znode)) {
+        if (BookKeeperConstants.AVAILABLE_NODE.equals(znode)
+                || BookKeeperConstants.COOKIE_NODE.equals(znode)
+                || BookKeeperConstants.LAYOUT_ZNODE.equals(znode)
+                || BookKeeperConstants.INSTANCEID.equals(znode)
+                || BookKeeperConstants.UNDER_REPLICATION_NODE.equals(znode)) {
             return true;
         }
         return false;

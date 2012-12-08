@@ -27,6 +27,7 @@ import java.io.Serializable;
 
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.commons.lang.StringUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -86,7 +87,8 @@ public class AuditorElector {
         this.bookieId = bookieId;
         this.conf = conf;
         this.zkc = zkc;
-        basePath = conf.getZkLedgersRootPath() + "/underreplication";
+        basePath = conf.getZkLedgersRootPath() + '/'
+                + BookKeeperConstants.UNDER_REPLICATION_NODE;
         electionPath = basePath + "/auditorelection";
         createElectorPath();
     }

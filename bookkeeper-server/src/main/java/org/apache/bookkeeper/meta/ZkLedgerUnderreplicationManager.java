@@ -21,6 +21,7 @@ package org.apache.bookkeeper.meta;
 import org.apache.bookkeeper.replication.ReplicationEnableCb;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat;
@@ -73,8 +74,6 @@ import org.slf4j.LoggerFactory;
 public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationManager {
     static final Logger LOG = LoggerFactory.getLogger(ZkLedgerUnderreplicationManager.class);
     static final Charset UTF8 = Charset.forName("UTF-8");
-    public static final String UNDER_REPLICATION_NODE = "underreplication";
-    static final String DISABLE_NODE = "disable";
     static final String LAYOUT="BASIC";
     static final int LAYOUT_VERSION=1;
 
@@ -104,9 +103,10 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     public ZkLedgerUnderreplicationManager(AbstractConfiguration conf, ZooKeeper zkc)
             throws KeeperException, InterruptedException, ReplicationException.CompatibilityException {
         basePath = conf.getZkLedgersRootPath() + '/'
-                + ZkLedgerUnderreplicationManager.UNDER_REPLICATION_NODE;
-        layoutZNode = basePath + '/' + LedgerLayout.LAYOUT_ZNODE;
-        urLedgerPath = basePath + "/ledgers";
+                + BookKeeperConstants.UNDER_REPLICATION_NODE;
+        layoutZNode = basePath + '/' + BookKeeperConstants.LAYOUT_ZNODE;
+        urLedgerPath = basePath
+                + BookKeeperConstants.ZK_LEDGERS_ROOT_PATH_DEFAULT;
         urLockPath = basePath + "/locks";
 
         idExtractionPattern = Pattern.compile("urL(\\d+)$");
@@ -448,8 +448,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         LOG.debug("disableLedegerReplication()");
         try {
             ZkUtils.createFullPathOptimistic(zkc, basePath + '/'
-                    + ZkLedgerUnderreplicationManager.DISABLE_NODE, ""
-                    .getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                    + BookKeeperConstants.DISABLE_NODE, "".getBytes(),
+                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             LOG.info("Auto ledger re-replication is disabled!");
         } catch (KeeperException ke) {
             LOG.error("Exception while stopping replication", ke);
@@ -467,8 +467,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             throws ReplicationException.UnavailableException {
         LOG.debug("enableLedegerReplication()");
         try {
-            zkc.delete(basePath + '/'
-                    + ZkLedgerUnderreplicationManager.DISABLE_NODE, -1);
+            zkc.delete(basePath + '/' + BookKeeperConstants.DISABLE_NODE, -1);
             LOG.info("Resuming automatic ledger re-replication");
         } catch (KeeperException ke) {
             LOG.error("Exception while resuming ledger replication", ke);
@@ -486,7 +485,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             throws ReplicationException.UnavailableException {
         LOG.debug("isLedgerReplicationEnabled()");
         try {
-            if (null != zkc.exists(basePath + '/' + DISABLE_NODE, false)) {
+            if (null != zkc.exists(basePath + '/'
+                    + BookKeeperConstants.DISABLE_NODE, false)) {
                 return false;
             }
             return true;
@@ -514,7 +514,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             }
         };
         try {
-            if (null == zkc.exists(basePath + '/' + DISABLE_NODE, w)) {
+            if (null == zkc.exists(basePath + '/'
+                    + BookKeeperConstants.DISABLE_NODE, w)) {
                 cb.operationComplete(0, null);
                 return;
             }

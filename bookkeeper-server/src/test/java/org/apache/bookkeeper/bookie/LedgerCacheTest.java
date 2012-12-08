@@ -29,6 +29,7 @@ import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.ActiveLedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -64,7 +65,7 @@ public class LedgerCacheTest extends TestCase {
         ledgerDir.delete();
         ledgerDir.mkdir();
         // create current dir
-        new File(ledgerDir, Bookie.CURRENT_DIR).mkdir();
+        new File(ledgerDir, BookKeeperConstants.CURRENT_DIR).mkdir();
 
         conf = new ServerConfiguration();
         conf.setZkServers(null);

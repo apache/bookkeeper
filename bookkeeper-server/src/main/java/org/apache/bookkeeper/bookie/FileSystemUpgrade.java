@@ -1,4 +1,4 @@
-/*
+/**
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.HardLink;
 
 import org.apache.commons.io.FileUtils;
@@ -28,7 +29,6 @@ import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.ParseException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +55,6 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.KeeperException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Application for upgrading the bookkeeper filesystem
@@ -110,7 +109,8 @@ public class FileSystemUpgrade {
 
     private static int detectPreviousVersion(File directory) throws IOException {
         String[] files = directory.list(BOOKIE_FILES_FILTER);
-        File v2versionFile = new File(directory, Cookie.VERSION_FILENAME);
+        File v2versionFile = new File(directory,
+                BookKeeperConstants.VERSION_FILENAME);
         if (files.length == 0 && !v2versionFile.exists()) { // no old data, so we're ok
             return Cookie.CURRENT_COOKIE_LAYOUT_VERSION;
         }
@@ -198,7 +198,7 @@ public class FileSystemUpgrade {
                     continue;
                 }
                 try {
-                    File curDir = new File(d, Bookie.CURRENT_DIR);
+                    File curDir = new File(d, BookKeeperConstants.CURRENT_DIR);
                     File tmpDir = new File(d, "upgradeTmp." + System.nanoTime());
                     deferredMoves.put(curDir, tmpDir);
                     if (!tmpDir.mkdirs()) {
@@ -260,7 +260,8 @@ public class FileSystemUpgrade {
                 int version = detectPreviousVersion(d);
                 if (version < 3) {
                     if (version == 2) {
-                        File v2versionFile = new File(d, Cookie.VERSION_FILENAME);
+                        File v2versionFile = new File(d,
+                                BookKeeperConstants.VERSION_FILENAME);
                         if (!v2versionFile.delete()) {
                             LOG.warn("Could not delete old version file {}", v2versionFile);
                         }
@@ -297,7 +298,8 @@ public class FileSystemUpgrade {
                     int version = detectPreviousVersion(d);
 
                     if (version <= Cookie.CURRENT_COOKIE_LAYOUT_VERSION) {
-                        File curDir = new File(d, Bookie.CURRENT_DIR);
+                        File curDir = new File(d,
+                                BookKeeperConstants.CURRENT_DIR);
                         FileUtils.deleteDirectory(curDir);
                     } else {
                         throw new BookieException.UpgradeException(
@@ -334,7 +336,8 @@ public class FileSystemUpgrade {
         root.addAppender(new org.apache.log4j.ConsoleAppender(
                                  new org.apache.log4j.PatternLayout("%-5p [%t]: %m%n")));
         root.setLevel(org.apache.log4j.Level.ERROR);
-        root.getLogger(FileSystemUpgrade.class).setLevel(org.apache.log4j.Level.INFO);
+        org.apache.log4j.Logger.getLogger(FileSystemUpgrade.class).setLevel(
+                org.apache.log4j.Level.INFO);
 
         final Options opts = new Options();
         opts.addOption("c", "conf", true, "Configuration for Bookie");

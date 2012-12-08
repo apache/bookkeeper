@@ -30,9 +30,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.util.StringUtils;
 import org.slf4j.Logger;
@@ -111,7 +111,7 @@ class BookieWatcher implements Watcher, ChildrenCallback {
 
         // Just exclude the 'readonly' znode to exclude r-o bookies from
         // available nodes list.
-        children.remove(Bookie.READONLY);
+        children.remove(BookKeeperConstants.READONLY);
 
         HashSet<InetSocketAddress> newBookieAddrs = convertToBookieAddresses(children);
 
@@ -248,7 +248,8 @@ class BookieWatcher implements Watcher, ChildrenCallback {
         public ReadOnlyBookieWatcher(ClientConfiguration conf, BookKeeper bk) throws KeeperException,
                 InterruptedException {
             this.bk = bk;
-            readOnlyBookieRegPath = conf.getZkAvailableBookiesPath() + "/" + Bookie.READONLY;
+            readOnlyBookieRegPath = conf.getZkAvailableBookiesPath() + "/"
+                    + BookKeeperConstants.READONLY;
             if (null == bk.getZkHandle().exists(readOnlyBookieRegPath, false)) {
                 try {
                     bk.getZkHandle().create(readOnlyBookieRegPath, new byte[0], Ids.OPEN_ACL_UNSAFE,

@@ -75,7 +75,6 @@ public class BookieLedgerIndexer {
                     public void operationComplete(final int rc,
                             LedgerMetadata ledgerMetadata) {
                         if (rc == BKException.Code.OK) {
-                            StringBuilder bookieAddr;
                             for (Map.Entry<Long, ArrayList<InetSocketAddress>> ensemble : ledgerMetadata
                                     .getEnsembles().entrySet()) {
                                 for (InetSocketAddress bookie : ensemble

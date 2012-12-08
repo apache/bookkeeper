@@ -22,8 +22,8 @@
 package org.apache.bookkeeper.replication;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.nio.charset.Charset;
@@ -46,11 +46,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.lang.StringUtils;
@@ -104,8 +104,9 @@ public class TestLedgerUnderreplicationManager {
         lmf1 = LedgerManagerFactory.newLedgerManagerFactory(conf, zkc1);
         lmf2 = LedgerManagerFactory.newLedgerManagerFactory(conf, zkc2);
         basePath = conf.getZkLedgersRootPath() + '/'
-                + ZkLedgerUnderreplicationManager.UNDER_REPLICATION_NODE;
-        urLedgerPath = basePath + "/ledgers";
+                + BookKeeperConstants.UNDER_REPLICATION_NODE;
+        urLedgerPath = basePath
+                + BookKeeperConstants.ZK_LEDGERS_ROOT_PATH_DEFAULT;
     }
 
     @After

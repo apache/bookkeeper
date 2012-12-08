@@ -124,6 +124,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-475: BookieRecoveryTest#testSyncBookieRecoveryToRandomBookiesCheckForDupes() iterates too much (ivank via fpj)
 
+	BOOKKEEPER-431: Duplicate definition of COOKIES_NODE (uma via fpj)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

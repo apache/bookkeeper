@@ -1,4 +1,4 @@
-/*
+/**
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -30,7 +30,6 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.StringReader;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import org.apache.zookeeper.ZooKeeper;
@@ -39,6 +38,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
 
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.DataFormats.CookieFormat;
@@ -65,8 +65,6 @@ class Cookie {
     static Logger LOG = LoggerFactory.getLogger(Cookie.class);
 
     static final int CURRENT_COOKIE_LAYOUT_VERSION = 4;
-    static final String COOKIE_NODE = "cookies";
-    static final String VERSION_FILENAME = "VERSION";
     private int layoutVersion = 0;
     private String bookieHost = null;
     private String journalDir = null;
@@ -155,7 +153,8 @@ class Cookie {
     }
 
     void writeToDirectory(File directory) throws IOException {
-        File versionFile = new File(directory, VERSION_FILENAME);
+        File versionFile = new File(directory,
+                BookKeeperConstants.VERSION_FILENAME);
 
         FileOutputStream fos = new FileOutputStream(versionFile);
         BufferedWriter bw = null;
@@ -172,7 +171,8 @@ class Cookie {
 
     void writeToZooKeeper(ZooKeeper zk, ServerConfiguration conf)
             throws KeeperException, InterruptedException, UnknownHostException {
-        String bookieCookiePath = conf.getZkLedgersRootPath() + "/" + COOKIE_NODE;
+        String bookieCookiePath = conf.getZkLedgersRootPath() + "/"
+                + BookKeeperConstants.COOKIE_NODE;
         String zkPath = getZkPath(conf);
         byte[] data = toString().getBytes();
         if (znodeVersion != -1) {
@@ -237,7 +237,8 @@ class Cookie {
     }
 
     static Cookie readFromDirectory(File directory) throws IOException {
-        File versionFile = new File(directory, VERSION_FILENAME);
+        File versionFile = new File(directory,
+                BookKeeperConstants.VERSION_FILENAME);
         BufferedReader reader = new BufferedReader(new FileReader(versionFile));
         try {
             return parse(reader);
@@ -252,7 +253,8 @@ class Cookie {
 
     private static String getZkPath(ServerConfiguration conf)
             throws UnknownHostException {
-        String bookieCookiePath = conf.getZkLedgersRootPath() + "/" + COOKIE_NODE;
+        String bookieCookiePath = conf.getZkLedgersRootPath() + "/"
+                + BookKeeperConstants.COOKIE_NODE;
         return bookieCookiePath + "/" + StringUtils.addrToString(Bookie.getBookieAddress(conf));
     }
 }

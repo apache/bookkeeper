@@ -31,6 +31,7 @@ import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.AsyncCallback;
@@ -198,10 +199,11 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
         String ledgerIdStr = StringUtils.getZKStringId(ledgerId);
         // do 2-4-4 split
         StringBuilder sb = new StringBuilder();
-        sb.append(ledgerRootPath).append("/")
-          .append(ledgerIdStr.substring(0, 2)).append("/")
-          .append(ledgerIdStr.substring(2, 6)).append("/")
-          .append(LEDGER_NODE_PREFIX).append(ledgerIdStr.substring(6, 10));
+        sb.append(ledgerRootPath).append("/").append(
+                ledgerIdStr.substring(0, 2)).append("/").append(
+                ledgerIdStr.substring(2, 6)).append("/").append(
+                BookKeeperConstants.LEDGER_NODE_PREFIX).append(
+                ledgerIdStr.substring(6, 10));
         return sb.toString();
     }
 
@@ -215,8 +217,8 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
         if (hierarchicalParts.length != 3) {
             throw new IOException("it is not a valid hierarchical path name : " + pathName);
         }
-        hierarchicalParts[2] =
-            hierarchicalParts[2].substring(LEDGER_NODE_PREFIX.length());
+        hierarchicalParts[2] = hierarchicalParts[2]
+                .substring(BookKeeperConstants.LEDGER_NODE_PREFIX.length());
         return getLedgerId(hierarchicalParts);
     }
 
