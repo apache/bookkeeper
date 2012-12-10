@@ -63,6 +63,7 @@ public class EntryLogger {
     private AtomicBoolean shouldCreateNewEntryLog = new AtomicBoolean(false);
 
     private long logId;
+
     /**
      * The maximum size of a entry logger file.
      */
@@ -121,6 +122,7 @@ public class EntryLogger {
         // so there can be race conditions when entry logs are rolled over and
         // this header buffer is cleared before writing it into the new logChannel.
         LOGFILE_HEADER.put("BKLO".getBytes());
+
         // Find the largest logId
         logId = -1;
         for (File dir : ledgerDirsManager.getAllLedgerDirs()) {
@@ -190,28 +192,28 @@ public class EntryLogger {
         }
 
         // It would better not to overwrite existing entry log files
-        File newLogFile = null;
+        String logFileName = null;
         do {
-            String logFileName = Long.toHexString(++logId) + ".log";
-            File dir = ledgerDirsManager.pickRandomWritableDir();
-            newLogFile = new File(dir, logFileName);
-            currentDir = dir;
-            if (newLogFile.exists()) {
-                LOG.warn("Found existed entry log " + newLogFile
-                        + " when trying to create it as a new log.");
-                newLogFile = null;
-                continue;
+            logFileName = Long.toHexString(++logId) + ".log";
+            for (File dir : ledgerDirsManager.getAllLedgerDirs()) {
+                File newLogFile = new File(dir, logFileName);
+                if (newLogFile.exists()) {
+                    LOG.warn("Found existed entry log " + newLogFile
+                           + " when trying to create it as a new log.");
+                    logFileName = null;
+                    break;
+                }
             }
-        } while (newLogFile == null);
+        } while (logFileName == null);
 
+        // Update last log id first
+        currentDir = ledgerDirsManager.pickRandomWritableDir();
+        setLastLogId(currentDir, logId);
+
+        File newLogFile = new File(currentDir, logFileName);
         logChannel = new BufferedChannel(new RandomAccessFile(newLogFile, "rw").getChannel(), 64*1024);
         logChannel.write((ByteBuffer) LOGFILE_HEADER.clear());
         channels.put(logId, logChannel);
-
-        List<File> listOfDirs = ledgerDirsManager.getWritableLedgerDirs();
-        for (File f : listOfDirs) {
-            setLastLogId(f, logId);
-        }
     }
 
     /**

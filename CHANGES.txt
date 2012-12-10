@@ -128,6 +128,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-474:  BookieReadWriteTest#testShutdown doesn't make sense (ivank via fpj)
 
+	BOOKKEEPER-465: CreateNewLog may overwrite lastLogId with smaller value (yixue, fpj via fpj)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)
