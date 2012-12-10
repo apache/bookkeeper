@@ -130,6 +130,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-465: CreateNewLog may overwrite lastLogId with smaller value (yixue, fpj via fpj)
 
+	BOOKKEEPER-498: BookieRecoveryTest.tearDown NPE (fpj)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

@@ -118,7 +118,9 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
     @Override
     public void tearDown() throws Exception {
         // Release any resources used by the BookKeeperTools instance.
-        bkAdmin.close();
+        if(bkAdmin != null){
+            bkAdmin.close();
+        }
         super.tearDown();
     }
 
