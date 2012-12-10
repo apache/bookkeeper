@@ -226,6 +226,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-204: Provide a MetaStore interface, and a mock implementation. (Jiannan Wang via ivank)
 
+	BOOKKEEPER-469: Remove System.out.println from TestLedgerManager (ivank via fpj)
+
       hedwig-server:
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)

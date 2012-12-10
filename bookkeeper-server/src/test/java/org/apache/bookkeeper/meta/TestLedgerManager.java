@@ -86,6 +86,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
             LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
             fail("Shouldn't reach here");
         } catch (Exception e) {
+            LOG.error("Received exception", e);
             assertTrue("Invalid exception", 
                        e.getMessage().contains("does not match existing layout"));
         }
@@ -101,6 +102,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
             LedgerManagerFactory f = LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
             fail("Shouldn't reach here");
         } catch (Exception e) {
+            LOG.error("Received exception", e);
             assertTrue("Invalid exception",
                     e.getMessage().contains("Failed to get ledger manager factory class from configuration"));
         }
@@ -141,6 +143,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
             LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
             fail("Shouldn't reach here");
         } catch (Exception e) {
+            LOG.error("Received exception", e);
             assertTrue("Invalid exception", 
                        e.getMessage().contains("does not match existing layout"));
         }
@@ -166,6 +169,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
             LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
             fail("Shouldn't reach here");
         } catch (Exception e) {
+            LOG.error("Received exception", e);
             assertTrue("Invalid exception", 
                     e.getMessage().contains("Failed to instantiate ledger manager factory"));
         }
@@ -183,7 +187,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
             LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
             fail("Shouldn't reach here");
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            LOG.error("Received exception", e);
             assertTrue("Invalid exception", 
                     e.getMessage().contains("Incompatible layout version found"));
         }
