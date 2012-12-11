@@ -141,32 +141,67 @@ public class ServerConfiguration extends AbstractConfiguration {
         return myRegionByteString;
     }
 
+    /**
+     * Maximum number of messages to read ahead. Default is 10.
+     * 
+     * @return int
+     */
     public int getReadAheadCount() {
         return conf.getInt(READAHEAD_COUNT, 10);
     }
 
+    /**
+     * Maximum number of bytes to read ahead. Default is 4MB.
+     * 
+     * @return long
+     */
     public long getReadAheadSizeBytes() {
         return conf.getLong(READAHEAD_SIZE, 4 * 1024 * 1024); // 4M
     }
 
+    /**
+     * Maximum cache size. By default is the smallest of 2G or
+     * half the heap size.
+     * 
+     * @return long
+     */
     public long getMaximumCacheSize() {
         // 2G or half of the maximum amount of memory the JVM uses
         return conf.getLong(CACHE_SIZE, Math.min(2 * 1024L * 1024L * 1024L, Runtime.getRuntime().maxMemory() / 2));
     }
 
-    // After a scan of a log fails, how long before we retry (in msec)
+    /**
+     * After a scan of a log fails, how long before we retry (in msec)
+     * 
+     * @return long
+     */
     public long getScanBackoffPeriodMs() {
         return conf.getLong(SCAN_BACKOFF_MSEC, 1000);
     }
-
+    
+    /**
+     * Returns server port.
+     * 
+     * @return int
+     */
     public int getServerPort() {
         return conf.getInt(SERVER_PORT, 4080);
     }
 
+    /**
+     * Returns SSL server port.
+     * 
+     * @return int
+     */
     public int getSSLServerPort() {
         return conf.getInt(SSL_SERVER_PORT, 9876);
     }
 
+    /**
+     * Returns ZooKeeper path prefix.
+     * 
+     * @return string
+     */
     public String getZkPrefix() {
         return conf.getString(ZK_PREFIX, "/hedwig");
     }
@@ -205,24 +240,49 @@ public class ServerConfiguration extends AbstractConfiguration {
         return myServerAddress;
     }
 
+    /**
+     * Return ZooKeeper list of servers. Default is localhost.
+     * 
+     * @return String
+     */
     public String getZkHost() {
         return conf.getString(ZK_HOST, "localhost");
     }
 
+    /**
+     * Return ZooKeeper session timeout. Default is 2s.
+     * 
+     * @return int
+     */
     public int getZkTimeout() {
         return conf.getInt(ZK_TIMEOUT, 2000);
     }
 
+    /** 
+     * Returns true if read-ahead enabled. Default is true.
+     * 
+     * @return boolean
+     */
     public boolean getReadAheadEnabled() {
         return conf.getBoolean(READAHEAD_ENABLED, true)
             || conf.getBoolean("readhead_enabled");
         // the key was misspelt in a previous version, so compensate here
     }
 
+    /**
+     * Returns true if standalone. Default is false.
+     * 
+     * @return boolean
+     */
     public boolean isStandalone() {
         return conf.getBoolean(STANDALONE, false);
     }
 
+    /**
+     * Returns list of regions. 
+     * 
+     * @return List<String>
+     */
     public List<String> getRegions() {
         if (regionList == null) {
             refreshRegionList();
@@ -230,12 +290,20 @@ public class ServerConfiguration extends AbstractConfiguration {
         return regionList;
     }
 
-    // This is the name of the SSL certificate if available as a resource.
+    /**
+     *  Returns the name of the SSL certificate if available as a resource.
+     * 
+     * @return String
+     */
     public String getCertName() {
         return conf.getString(CERT_NAME, "");
     }
 
-    // This is the path to the SSL certificate if it is available as a file.
+    /**
+     * This is the path to the SSL certificate if it is available as a file.
+     * 
+     * @return String
+     */
     public String getCertPath() {
         return conf.getString(CERT_PATH, "");
     }
@@ -255,57 +323,110 @@ public class ServerConfiguration extends AbstractConfiguration {
             throw new ConfigurationException("SSL Certificate configuration does not have resource name or path set!");
     }
 
+    /**
+     * Returns the password used for BookKeeper ledgers. Default
+     * is the empty string.
+     * 
+     * @return
+     */
     public String getPassword() {
         return conf.getString(PASSWORD, "");
     }
 
+    /**
+     * Returns true if SSL is enabled. Default is false.
+     * 
+     * @return boolean
+     */
     public boolean isSSLEnabled() {
         return conf.getBoolean(SSL_ENABLED, false);
     }
 
+    /**
+     * Gets the number of messages consumed before persisting
+     * information about consumed messages. A value greater than
+     * one avoids persisting information about consumed messages
+     * upon every consumed message. Default is 50.
+     * 
+     * @return int
+     */
     public int getConsumeInterval() {
         return conf.getInt(CONSUME_INTERVAL, 50);
     }
 
+    /**
+     * Returns the interval to release a topic. If this
+     * parameter is greater than zero, then schedule a
+     * task to release an owned topic. Default is 0 (never released).
+     * 
+     * @return int
+     */
     public int getRetentionSecs() {
         return conf.getInt(RETENTION_SECS, 0);
     }
 
+    /**
+     * True if SSL is enabled across regions.
+     * 
+     * @return boolean
+     */
     public boolean isInterRegionSSLEnabled() {
         return conf.getBoolean(INTER_REGION_SSL_ENABLED, false);
     }
 
-    // This parameter is used to determine how often we run the
-    // SubscriptionManager's Messages Consumed timer task thread (in
-    // milliseconds).
+    /**
+     * This parameter is used to determine how often we run the 
+     * SubscriptionManager's Messages Consumed timer task thread 
+     * (in milliseconds).
+     * 
+     * @return int
+     */
     public int getMessagesConsumedThreadRunInterval() {
         return conf.getInt(MESSAGES_CONSUMED_THREAD_RUN_INTERVAL, 60000);
     }
 
-    // This parameter is used to determine how often we run a thread
-    // to retry those failed remote subscriptions in asynchronous mode
-    // (in milliseconds).
+    /**
+     * This parameter is used to determine how often we run a thread
+     * to retry those failed remote subscriptions in asynchronous mode
+     * (in milliseconds).
+     * 
+     * @return int
+     */
     public int getRetryRemoteSubscribeThreadRunInterval() {
         return conf.getInt(RETRY_REMOTE_SUBSCRIBE_THREAD_RUN_INTERVAL, 120000);
     }
 
-    // This parameter is for setting the default maximum number of messages which
-    // can be delivered to a subscriber without being consumed.
-    // we pause messages delivery to a subscriber when reaching the window size
+    /**
+     * This parameter is for setting the default maximum number of messages which
+     * can be delivered to a subscriber without being consumed.
+     * we pause messages delivery to a subscriber when reaching the window size
+     * 
+     * @return int
+     */
     public int getDefaultMessageWindowSize() {
         return conf.getInt(DEFAULT_MESSAGE_WINDOW_SIZE, 0);
     }
 
-    // This parameter is used when Bookkeeper is the persistence store
-    // and indicates what the ensemble size is (i.e. how many bookie
-    // servers to stripe the ledger entries across).
+    /**
+     * This parameter is used when Bookkeeper is the persistence
+     * store and indicates what the ensemble size is (i.e. how
+     * many bookie servers to stripe the ledger entries across).
+     * 
+     * @return int
+     */
     public int getBkEnsembleSize() {
         return conf.getInt(BK_ENSEMBLE_SIZE, 3);
     }
 
-    // This parameter is used when Bookkeeper is the persistence store
-    // and indicates what the quorum size is (i.e. how many redundant
-    // copies of each ledger entry is written).
+
+    /**
+     * This parameter is used when Bookkeeper is the persistence store
+     * and indicates what the quorum size is (i.e. how many redundant
+     * copies of each ledger entry is written).
+     * 
+     * @return int
+     */
+    @Deprecated
     protected int getBkQuorumSize() {
         return conf.getInt(BK_QUORUM_SIZE, 2);
     }

@@ -188,6 +188,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-476: Log to file during tests (ivank via fpj)
 
+      BOOKKEEPER-491: Hedwig doc for configuration (fpj, sijie via fpj)
+
       bookkeeper-server:
 
         BOOKKEEPER-328: Bookie DeathWatcher is missing thread name (Rakesh via sijie)
