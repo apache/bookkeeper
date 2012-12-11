@@ -60,6 +60,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String OPEN_LEDGER_REREPLICATION_GRACE_PERIOD = "openLedgerRereplicationGracePeriod";
     //ReadOnly mode support on all disk full
     protected final static String READ_ONLY_MODE_ENABLED = "readOnlyModeEnabled";
+    //Disk utilization
     protected final static String DISK_USAGE_THRESHOLD = "diskUsageThreshold";
     protected final static String DISK_CHECK_INTERVAL = "diskCheckInterval";
 
@@ -557,13 +558,15 @@ public class ServerConfiguration extends AbstractConfiguration {
      * fencing and rereplicating a ledger fragment which is still being written
      * to, on bookie failure.
      * 
-     * The grace period allows the writer to detect the bookie failure, and and
-     * start writing to another ledger fragment. If the writer writes nothing
+     * The grace period allows the writer to detect the bookie failure, and
+     * start replicating the ledger fragment. If the writer writes nothing
      * during the grace period, the rereplication worker assumes that it has
-     * crashed and therefore fences the ledger, preventing any further writes to
-     * that ledger.
+     * crashed and fences the ledger, preventing any further writes to that 
+     * ledger.
      * 
      * @see org.apache.bookkeeper.client.BookKeeper#openLedger
+     * 
+     * @param waitTime time to wait before replicating ledger fragment
      */
     public void setOpenLedgerRereplicationGracePeriod(String waitTime) {
         setProperty(OPEN_LEDGER_REREPLICATION_GRACE_PERIOD, waitTime);
@@ -573,6 +576,8 @@ public class ServerConfiguration extends AbstractConfiguration {
      * Get the grace period which the rereplication worker to wait before
      * fencing and rereplicating a ledger fragment which is still being written
      * to, on bookie failure.
+     * 
+     * @return long
      */
     public long getOpenLedgerRereplicationGracePeriod() {
         return getLong(OPEN_LEDGER_REREPLICATION_GRACE_PERIOD, 30000);
@@ -580,6 +585,10 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Set the ReadOnlyModeEnabled status
+     * 
+     * @param enabled enables read-only mode.
+     * 
+     * @return ServerConfiguration 
      */
     public ServerConfiguration setReadOnlyModeEnabled(boolean enabled) {
         setProperty(READ_ONLY_MODE_ENABLED, enabled);
@@ -588,14 +597,20 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Get ReadOnlyModeEnabled status
+     * 
+     * @return boolean
      */
     public boolean isReadOnlyModeEnabled() {
         return getBoolean(READ_ONLY_MODE_ENABLED, false);
     }
 
     /**
-     * Set the Disk free space threshold in Bytes after which disk will be
-     * considered as full during diskcheck.
+     * Set the Disk free space threshold as a fraction of the total
+     * after which disk will be considered as full during disk check.
+     * 
+     * @param threshold threshold to declare a disk full
+     * 
+     * @return ServerConfiguration
      */
     public ServerConfiguration setDiskUsageThreshold(float threshold) {
         setProperty(DISK_USAGE_THRESHOLD, threshold);
@@ -603,7 +618,9 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Returns disk free space threshold. By default 100MB
+     * Returns disk free space threshold. By default it is 0.95.
+     * 
+     * @return float
      */
     public float getDiskUsageThreshold() {
         return getFloat(DISK_USAGE_THRESHOLD, 0.95f);
@@ -611,6 +628,10 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Set the disk checker interval to monitor ledger disk space
+     * 
+     * @param interval interval between disk checks for space.
+     * 
+     * @return ServerConfiguration
      */
     public ServerConfiguration setDiskCheckInterval(int interval) {
         setProperty(DISK_CHECK_INTERVAL, interval);
@@ -619,6 +640,8 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Get the disk checker interval
+     * 
+     * @return int
      */
     public int getDiskCheckInterval() {
         return getInt(DISK_CHECK_INTERVAL, 10 * 1000);

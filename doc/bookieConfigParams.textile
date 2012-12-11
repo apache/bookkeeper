@@ -14,38 +14,58 @@ h1. Bookie Configuration Parameters
 
 This page contains detailed information about configuration parameters used for configuring a bookie server. There is an example in "bookkeeper-server/conf/bk_server.conf". 
 
-h3. General parameters
+h2. Server parameters
 
-| @zkServers@ | A list of one of more servers on which zookeeper is running. The server list can be comma separated values, e.g., zk1:2181,zk2:2181,zk3:2181 |
-| @zkTimeout@ | ZooKeeper client session timeout in milliseconds. Bookie server will exit if it received SESSION_EXPIRED because it was partitioned off from ZooKeeper for more than the session timeout JVM garbage collection, disk I/O will cause SESSION_EXPIRED. Increment this value could help avoiding this issue. The default value is 10,000. |
 | @bookiePort@        |Port that bookie server listens on. The default value is 3181.|
-| @journalDir@        | Directory Bookkeeper outputs its write ahead log, ideally in a dedicated device. The default value is "/tmp/bk-txn". |
-| @ledgerDirs@        | Directory Bookkeeper outputs ledger snapshots could define multiple directories to store snapshots, comma separated. For example: /tmp/bk1-data,/tmp/bk2-data. Ideally ledger dirs and journal dir are each in a differet device, which reduce the contention between random i/o and sequential write. It is possible to run with a single disk,  but performance will be significantly lower.|
+| @journalDirectory@        | Directory to which Bookkeeper outputs its write ahead log, ideally on a dedicated device. The default value is "/tmp/bk-txn". |
+| @ledgerDirectories@        | Directory to which Bookkeeper outputs ledger snapshots.  Multiple directories can be defined, separated by comma, e.g. /tmp/bk1-data,/tmp/bk2-data. Ideally ledger dirs and journal dir are each on a differet device, which reduces the contention between random I/O and sequential writes. It is possible to run with a single disk,  but performance will be significantly lower.|
 | @logSizeLimit@      | Maximum file size of entry logger, in bytes. A new entry log file will be created when the old one reaches the file size limitation. The default value is 2GB. |
-| @journalMaxSizeMB@  |  Maximum file size of journal file, in mega bytes. A new journal file will be created when the old one reaches the file size limitation. The default value is 2kB. |
+| @journalMaxSizeMB@  |  Maximum file size of journal file, in megabytes. A new journal file will be created when the old one reaches the file size limitation. The default value is 2kB. |
 | @journalMaxBackups@ |  Max number of old journal file to keep. Keeping a number of old journal files might help data recovery in some special cases. The default value is 5. |
 | @gcWaitTime@        | Interval to trigger next garbage collection, in milliseconds. Since garbage collection is running in the background, running the garbage collector too frequently hurts performance. It is best to set its value high enough if there is sufficient disk capacity.|
 | @flushInterval@ | Interval to flush ledger index pages to disk, in milliseconds. Flushing index files will introduce random disk I/O. Consequently, it is important to have journal dir and ledger dirs each on different devices. However,  if it necessary to have journal dir and ledger dirs on the same device, one option is to increment the flush interval to get higher performance. Upon a failure, the bookie will take longer to recover. |
 | @bookieDeathWatchInterval@ | Interval to check whether a bookie is dead or not, in milliseconds. |
 
-h3. NIO server settings
+h2. NIO server settings
 
 | @serverTcpNoDelay@ | This settings is used to enabled/disabled Nagle's algorithm, which is a means of improving the efficiency of TCP/IP networks by reducing the number of packets that need to be sent over the network. If you are sending many small messages, such that more than one can fit in a single IP packet, setting server.tcpnodelay to false to enable Nagle algorithm can provide better performance. Default value is true. |
 
-h3. Ledger cache settings
+h2. Ledger cache settings
 
 | @openFileLimit@ | Maximum number of ledger index files that can be opened in a bookie. If the number of ledger index files reaches this limit, the bookie starts to flush some ledger indexes from memory to disk. If flushing happens too frequently, then performance is affected. You can tune this number to improve performance according. |
 | @pageSize@ | Size of an index page in ledger cache, in bytes. A larger index page can improve performance when writing page to disk, which is efficient when you have small number of ledgers and these ledgers have a similar number of entries. With a large number of ledgers and a few entries per ledger, a smaller index page would improves memory usage. |
 | @pageLimit@ | Maximum number of index pages to store in the ledger cache. If the number of index pages reaches this limit, bookie server starts to flush ledger indexes from memory to disk. Incrementing this value is an option when flushing becomes frequent. It is important to make sure, though, that pageLimit*pageSize is not more than JVM max memory limit; otherwise it will raise an OutOfMemoryException. In general, incrementing pageLimit, using smaller index page would gain better performance in the case of a large number of ledgers with few entries per ledger. If pageLimit is -1, a bookie uses 1/3 of the JVM memory to compute the maximum number of index pages. |
 
-h3. Ledger manager settings
+h2. Ledger manager settings
 
 | @ledgerManagerType@ | What kind of ledger manager is used to manage how ledgers are stored, managed and garbage collected. See "BookKeeper Internals":./bookkeeperInternals.html for detailed info. Default is flat. |
 | @zkLedgersRootPath@ | Root zookeeper path to store ledger metadata. Default is /ledgers. |
 
-h3. Entry Log compaction settings
+h2. Entry Log compaction settings
 
 | @minorCompactionInterval@ | Interval to run minor compaction, in seconds. If it is set to less than or equal to zero, then minor compaction is disabled. Default is 1 hour. |
 | @minorCompactionThreshold@ | Entry log files with remaining size under this threshold value will be compacted in a minor compaction. If it is set to less than or equal to zero, the minor compaction is disabled. Default is 0.2 |
 | @majorCompactionInterval@ | Interval to run major compaction, in seconds. If it is set to less than or equal to zero, then major compaction is disabled. Default is 1 day. |
 | @majorCompactionThreshold@ | Entry log files with remaining size below this threshold value will be compacted in a major compaction. Those entry log files whose remaining size percentage is still higher than the threshold value will never be compacted. If it is set to less than or equal to zero, the major compaction is disabled. Default is 0.8. |
+
+h2. Statistics
+
+| @enableStatistics@ | Enables the collection of statistics. Default is on. |
+
+h2. Auto-replication
+
+| @openLedgerRereplicationGracePeriod@ | This is the grace period which the rereplication worker waits before fencing and replicating a ledger fragment which is still being written to upon a bookie failure. The default is 30s. |
+
+h2. Read-only mode support
+
+| @readOnlyModeEnabled@ | Enables/disables the read-only Bookie feature. A bookie goes into read-only mode when it finds integrity issues with stored data. If @readOnlyModeEnabled@ is false, the bookie shuts down if it finds integrity issues. By default it is enabled. |
+
+h2. Disk utilization
+
+| @diskUsageThreshold@ | Fraction of the total utilized usable disk space to declare the disk full. The total available disk space is obtained with File.getUsableSpace(). Default is 0.95. |
+| @diskCheckInterval@ | Interval between consecutive checks of disk utilization. Default is 10s. |
+
+h2. ZooKeeper parameters
+
+| @zkServers@ | A list of one or more servers on which zookeeper is running. The server list is comma separated, e.g., zk1:2181,zk2:2181,zk3:2181 |
+| @zkTimeout@ | ZooKeeper client session timeout in milliseconds. Bookie server will exit if it received SESSION_EXPIRED because it was partitioned off from ZooKeeper for more than the session timeout. JVM garbage collection or disk I/O can cause SESSION_EXPIRED. Increment this value could help avoiding this issue. The default value is 10,000. |
