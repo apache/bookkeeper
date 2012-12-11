@@ -18,7 +18,7 @@ h2. Server parameters
 
 | @bookiePort@        |Port that bookie server listens on. The default value is 3181.|
 | @journalDirectory@        | Directory to which Bookkeeper outputs its write ahead log, ideally on a dedicated device. The default value is "/tmp/bk-txn". |
-| @ledgerDirectories@        | Directory to which Bookkeeper outputs ledger snapshots.  Multiple directories can be defined, separated by comma, e.g. /tmp/bk1-data,/tmp/bk2-data. Ideally ledger dirs and journal dir are each on a differet device, which reduces the contention between random I/O and sequential writes. It is possible to run with a single disk,  but performance will be significantly lower.|
+| @ledgerDirectories@        | Directory to which Bookkeeper outputs ledger snapshots.  Multiple directories can be defined, separated by comma, e.g. /tmp/bk1-data,/tmp/bk2-data. Ideally ledger dirs and journal dir are each on a different device, which reduces the contention between random I/O and sequential writes. It is possible to run with a single disk,  but performance will be significantly lower.|
 | @logSizeLimit@      | Maximum file size of entry logger, in bytes. A new entry log file will be created when the old one reaches the file size limitation. The default value is 2GB. |
 | @journalMaxSizeMB@  |  Maximum file size of journal file, in megabytes. A new journal file will be created when the old one reaches the file size limitation. The default value is 2kB. |
 | @journalMaxBackups@ |  Max number of old journal file to keep. Keeping a number of old journal files might help data recovery in some special cases. The default value is 5. |
