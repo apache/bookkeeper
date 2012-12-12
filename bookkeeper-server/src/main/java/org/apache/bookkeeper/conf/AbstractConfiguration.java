@@ -53,6 +53,10 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     protected final static String AVAILABLE_NODE = "available";
     protected final static String REREPLICATION_ENTRY_BATCH_SIZE = "rereplicationEntryBatchSize";
 
+    // Metastore settings, only being used when LEDGER_MANAGER_FACTORY_CLASS is MSLedgerManagerFactory
+    protected final static String METASTORE_IMPL_CLASS = "metastoreImplClass";
+    protected final static String METASTORE_MAX_ENTRIES_PER_SCAN = "metastoreMaxEntriesPerScan";
+
     protected AbstractConfiguration() {
         super();
         // add configuration for system properties
@@ -190,5 +194,43 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      */
     public long getRereplicationEntryBatchSize() {
         return getLong(REREPLICATION_ENTRY_BATCH_SIZE, 10);
+    }
+
+    /**
+     * Get metastore implementation class.
+     *
+     * @return metastore implementation class name.
+     */
+    public String getMetastoreImplClass() {
+        return getString(METASTORE_IMPL_CLASS);
+    }
+
+    /**
+     * Set metastore implementation class.
+     *
+     * @param metastoreImplClass
+     *          Metastore implementation Class name.
+     */
+    public void setMetastoreImplClass(String metastoreImplClass) {
+        setProperty(METASTORE_IMPL_CLASS, metastoreImplClass);
+    }
+
+    /**
+     * Get max entries per scan in metastore.
+     *
+     * @return max entries per scan in metastore.
+     */
+    public int getMetastoreMaxEntriesPerScan() {
+        return getInt(METASTORE_MAX_ENTRIES_PER_SCAN, 50);
+    }
+
+    /**
+     * Set max entries per scan in metastore.
+     *
+     * @param maxEntries
+     *          Max entries per scan in metastore.
+     */
+    public void setMetastoreMaxEntriesPerScan(int maxEntries) {
+        setProperty(METASTORE_MAX_ENTRIES_PER_SCAN, maxEntries);
     }
 }

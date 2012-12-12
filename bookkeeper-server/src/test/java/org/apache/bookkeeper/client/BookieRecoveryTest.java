@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.test.MultiLedgerManagerMultiDigestTestCase;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.MSLedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
@@ -794,6 +795,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         adminConf.setZkServers(zkUtil.getZooKeeperConnectString());
         adminConf.setBookieRecoveryDigestType(digestCorrect);
         adminConf.setBookieRecoveryPasswd(passwdBad);
+        setMetastoreImplClass(adminConf);
 
         BookKeeperAdmin bka = new BookKeeperAdmin(adminConf);
         bka.recoverBookieData(bookieSrc, null);
@@ -816,6 +818,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         // Try to recover with no password in conf
         adminConf = new ClientConfiguration();
         adminConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        setMetastoreImplClass(adminConf);
 
         bka = new BookKeeperAdmin(adminConf);
         bka.recoverBookieData(bookieSrc, null);
@@ -832,6 +835,13 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
      */
     @Test
     public void ensurePasswordUsedForOldLedgers() throws Exception {
+        // This test bases on creating old ledgers in version 4.1.0, which only
+        // supports ZooKeeper based flat and hierarchical LedgerManagerFactory.
+        // So we ignore it for MSLedgerManagerFactory.
+        if (MSLedgerManagerFactory.class.getName().equals(ledgerManagerFactory)) {
+            return;
+        }
+
         // stop all bookies
         // and wipe the ledger layout so we can use an old client
         zkUtil.getZooKeeperClient().delete("/ledgers/LAYOUT", -1);

@@ -49,6 +49,7 @@ public abstract class MultiLedgerManagerMultiDigestTestCase extends BookKeeperCl
         String[] ledgerManagers = {
             "org.apache.bookkeeper.meta.FlatLedgerManagerFactory",
             "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory",
+            "org.apache.bookkeeper.meta.MSLedgerManagerFactory",
         };
         ArrayList<Object[]> cfgs = new ArrayList<Object[]>(ledgerManagers.length);
         DigestType[] digestTypes = new DigestType[] { DigestType.MAC, DigestType.CRC32 };

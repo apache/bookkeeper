@@ -221,7 +221,7 @@ public class TestMetaStore extends TestCase {
     }
 
     protected Integer getRandom() {
-        return (int)Math.random()*65536;
+        return (int)(Math.random()*65536);
     }
 
     protected Versioned<Value> getRecord(String recordId) throws Exception {

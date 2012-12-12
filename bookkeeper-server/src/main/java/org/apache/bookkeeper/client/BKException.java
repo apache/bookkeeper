@@ -62,6 +62,8 @@ public abstract class BKException extends Exception {
             return new BKBookieHandleNotAvailableException();
         case Code.ZKException:
             return new ZKException();
+        case Code.MetaStoreException:
+            return new MetaStoreException();
         case Code.LedgerRecoveryException:
             return new BKLedgerRecoveryException();
         case Code.LedgerClosedException:
@@ -114,6 +116,7 @@ public abstract class BKException extends Exception {
         int InterruptedException = -15;
         int ProtocolVersionException = -16;
         int MetadataVersionException = -17;
+        int MetaStoreException = -18;
 
         int IllegalOpException = -100;
         int LedgerFencedException = -101;
@@ -152,6 +155,8 @@ public abstract class BKException extends Exception {
             return "Bookie handle is not available";
         case Code.ZKException:
             return "Error while using ZooKeeper";
+        case Code.MetaStoreException:
+            return "Error while using MetaStore";
         case Code.LedgerRecoveryException:
             return "Error while recovering ledger";
         case Code.LedgerClosedException:
@@ -262,6 +267,12 @@ public abstract class BKException extends Exception {
     public static class ZKException extends BKException {
         public ZKException() {
             super(Code.ZKException);
+        }
+    }
+
+    public static class MetaStoreException extends BKException {
+        public MetaStoreException() {
+            super(Code.MetaStoreException);
         }
     }
 

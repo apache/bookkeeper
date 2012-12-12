@@ -32,6 +32,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.MSLedgerManagerFactory;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.test.MultiLedgerManagerTestCase;
 import org.apache.commons.io.FileUtils;
@@ -132,6 +133,13 @@ public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
      */
     @Test
     public void testWithoutZookeeper() throws Exception {
+        // This test case is for ledger metadata that stored in ZooKeeper. As
+        // far as MSLedgerManagerFactory, ledger metadata are stored in other
+        // storage. So this test is not suitable for MSLedgerManagerFactory.
+        if (newLedgerManagerFactory instanceof MSLedgerManagerFactory) {
+            return;
+        }
+
         for (int i = 0; i < numberOfLedgers; i++) {
             createAndAddEntriesToLedger().close();
         }
@@ -141,7 +149,7 @@ public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
         stopZKCluster();
         try {
             bookieLedgerIndex.getBookieToLedgerIndex();
-            fail("Must throw exception as bookies are not running!");
+            fail("Must throw exception as zookeeper are not running!");
         } catch (BKAuditException bkAuditException) {
             // expected behaviour
         }

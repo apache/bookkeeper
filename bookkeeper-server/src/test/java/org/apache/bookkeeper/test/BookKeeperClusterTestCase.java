@@ -30,8 +30,10 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.bookkeeper.client.BookKeeperTestClient;
+import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.metastore.InMemoryMetaStore;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.commons.io.FileUtils;
@@ -74,6 +76,10 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
     @Override
     public void setUp() throws Exception {
         LOG.info("Setting up test {}", getName());
+        InMemoryMetaStore.reset();
+        setMetastoreImplClass(baseConf);
+        setMetastoreImplClass(baseClientConf);
+
         try {
             // start zookeeper service
             startZKCluster();
@@ -382,4 +388,9 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
 
         return server;
     }
+
+    public void setMetastoreImplClass(AbstractConfiguration conf) {
+        conf.setMetastoreImplClass(InMemoryMetaStore.class.getName());
+    }
+
 }
