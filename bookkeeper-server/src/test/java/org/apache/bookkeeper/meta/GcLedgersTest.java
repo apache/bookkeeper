@@ -101,15 +101,15 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         // random remove several ledgers
         for (int i=0; i<numRemovedLedgers; i++) {
             long ledgerId = tmpList.get(i);
-            getLedgerManager().deleteLedger(ledgerId, new GenericCallback<Void>() {
-                @Override
-                public void operationComplete(int rc, Void result) {
-                    synchronized (removedLedgers) {
-                        removedLedgers.notify();
-                    }
-                }
-            });
             synchronized (removedLedgers) {
+                getLedgerManager().deleteLedger(ledgerId, new GenericCallback<Void>() {
+                        @Override
+                        public void operationComplete(int rc, Void result) {
+                            synchronized (removedLedgers) {
+                                removedLedgers.notify();
+                            }
+                        }
+                    });
                 removedLedgers.wait();
             }
             removedLedgers.add(ledgerId);
