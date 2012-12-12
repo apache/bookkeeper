@@ -115,8 +115,35 @@ public class LedgerDirsManager {
      * Returns one of the ledger dir from writable dirs list randomly.
      */
     File pickRandomWritableDir() throws NoWritableLedgerDirException {
+        return pickRandomWritableDir(null);
+    }
+
+    /**
+     * Pick up a writable dir from available dirs list randomly. The <code>excludedDir</code>
+     * will not be pickedup.
+     *
+     * @param excludedDir
+     *          The directory to exclude during pickup.
+     * @throws NoWritableLedgerDirException if there is no writable dir available.
+     */
+    File pickRandomWritableDir(File excludedDir) throws NoWritableLedgerDirException {
         List<File> writableDirs = getWritableLedgerDirs();
-        return writableDirs.get(rand.nextInt(writableDirs.size()));
+
+        final int start = rand.nextInt(writableDirs.size());
+        int idx = start;
+        File candidate = writableDirs.get(idx);
+        while (null != excludedDir && excludedDir.equals(candidate)) {
+            idx = (idx + 1) % writableDirs.size();
+            if (idx == start) {
+                // after searching all available dirs,
+                // no writable dir is found
+                throw new NoWritableLedgerDirException("No writable directories found from "
+                        + " available writable dirs (" + writableDirs + ") : exclude dir "
+                        + excludedDir);
+            }
+            candidate = writableDirs.get(idx);
+        }
+        return candidate;
     }
 
     public void addLedgerDirsListener(LedgerDirsListener listener) {

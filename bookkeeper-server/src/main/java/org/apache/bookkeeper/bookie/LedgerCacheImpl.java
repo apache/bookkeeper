@@ -253,7 +253,7 @@ public class LedgerCacheImpl implements LedgerCache {
                     if (masterKey == null) {
                         throw new Bookie.NoLedgerException(ledger);
                     }
-                    lf = getNewLedgerIndexFile(ledger);
+                    lf = getNewLedgerIndexFile(ledger, null);
                     // A new ledger index file has been created for this Bookie.
                     // Add this new ledger to the set of active ledgers.
                     LOG.debug("New ledger index file created for ledgerId: {}", ledger);
@@ -261,8 +261,7 @@ public class LedgerCacheImpl implements LedgerCache {
                 }
                 evictFileInfoIfNecessary();
                 fi = new FileInfo(lf, masterKey);
-                if (ledgerDirsManager.isDirFull(lf.getParentFile()
-                        .getParentFile().getParentFile())) {
+                if (ledgerDirsManager.isDirFull(getLedgerDirForLedger(fi))) {
                     moveLedgerIndexFile(ledger, fi);
                 }
                 fileInfoCache.put(ledger, fi);
@@ -275,8 +274,19 @@ public class LedgerCacheImpl implements LedgerCache {
         }
     }
 
-    private File getNewLedgerIndexFile(Long ledger) throws NoWritableLedgerDirException {
-        File dir = ledgerDirsManager.pickRandomWritableDir();
+    /**
+     * Get a new index file for ledger excluding directory <code>excludedDir</code>.
+     *
+     * @param ledger
+     *          Ledger id.
+     * @param excludedDir
+     *          The ledger directory to exclude.
+     * @return new index file object.
+     * @throws NoWritableLedgerDirException if there is no writable dir available.
+     */
+    private File getNewLedgerIndexFile(Long ledger, File excludedDir)
+    throws NoWritableLedgerDirException {
+        File dir = ledgerDirsManager.pickRandomWritableDir(excludedDir);
         String ledgerName = getLedgerName(ledger);
         return new File(dir, ledgerName);
     }
@@ -349,7 +359,7 @@ public class LedgerCacheImpl implements LedgerCache {
                 // open index files to new location
                 for (Long l : dirtyLedgers) {
                     FileInfo fi = getFileInfo(l, null);
-                    File currentDir = fi.getLf().getParentFile().getParentFile().getParentFile();
+                    File currentDir = getLedgerDirForLedger(fi);
                     if (ledgerDirsManager.isDirFull(currentDir)) {
                         moveLedgerIndexFile(l, fi);
                     }
@@ -377,8 +387,18 @@ public class LedgerCacheImpl implements LedgerCache {
         }
     }
 
+    /**
+     * Get the ledger directory that the ledger index belongs to.
+     *
+     * @param fi File info of a ledger
+     * @return ledger directory that the ledger belongs to.
+     */
+    private File getLedgerDirForLedger(FileInfo fi) {
+        return fi.getLf().getParentFile().getParentFile().getParentFile();
+    }
+
     private void moveLedgerIndexFile(Long l, FileInfo fi) throws NoWritableLedgerDirException, IOException {
-        File newLedgerIndexFile = getNewLedgerIndexFile(l);
+        File newLedgerIndexFile = getNewLedgerIndexFile(l, getLedgerDirForLedger(fi));
         fi.moveToNewLocation(newLedgerIndexFile, fi.getSizeSinceLastwrite());
     }
 

@@ -134,6 +134,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-497: GcLedgersTest has a potential race (ivank via sijie)
 
+        BOOKKEEPER-493: moveLedgerIndexFile might have chance pickup same directory (sijie via ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)
