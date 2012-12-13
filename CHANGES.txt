@@ -533,7 +533,9 @@ Release 4.1.0 - 2012-06-07
         BOOKKEEPER-97: collect pub/sub/consume statistics on hub server (sijie via ivank)
 
 	BOOKKEEPER-269: Review documentation for hedwig console client (sijie via fpj)
-	
+
+        BOOKKEEPER-262: Implement a meta store based hedwig metadata manager. (jiannan via ivank)
+
       hedwig-client/
 
 	BOOKKEEPER-271: Review documentation for message bounding (ivank via fpj)

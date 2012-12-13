@@ -23,6 +23,7 @@ package org.apache.hedwig.server.meta;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.apache.bookkeeper.metastore.InMemoryMetaStore;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.meta.MetadataManagerFactory;
 import org.apache.hedwig.server.meta.ZkMetadataManagerFactory;
@@ -49,12 +50,15 @@ public abstract class MetadataManagerFactoryTestCase extends ZooKeeperTestBase {
         super();
         conf = new ServerConfiguration();
         conf.setMetadataManagerFactoryName(metadataManagerFactoryCls);
+        conf.getConf().setProperty("metastore_impl_class", InMemoryMetaStore.class.getName());
+        InMemoryMetaStore.reset();
     }
 
     @Parameters
     public static Collection<Object[]> configs() {
         return Arrays.asList(new Object[][] {
-            { ZkMetadataManagerFactory.class.getName() }
+            { ZkMetadataManagerFactory.class.getName() },
+            { MsMetadataManagerFactory.class.getName() },
         });
     }
 

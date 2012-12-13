@@ -74,6 +74,10 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String METADATA_MANAGER_BASED_TOPIC_MANAGER_ENABLED = "metadata_manager_based_topic_manager_enabled";
     protected final static String METADATA_MANAGER_FACTORY_CLASS = "metadata_manager_factory_class";
 
+    // metastore settings, only being used when METADATA_MANAGER_FACTORY_CLASS is MsMetadataManagerFactory
+    protected final static String METASTORE_IMPL_CLASS = "metastore_impl_class";
+    protected final static String METASTORE_MAX_ENTRIES_PER_SCAN = "metastoreMaxEntriesPerScan";
+
     private static ClassLoader defaultLoader;
     static {
         defaultLoader = Thread.currentThread().getContextClassLoader();
@@ -541,5 +545,23 @@ public class ServerConfiguration extends AbstractConfiguration {
     public ServerConfiguration setMetadataManagerFactoryName(String managerClsName) {
         conf.setProperty(METADATA_MANAGER_FACTORY_CLASS, managerClsName);
         return this;
+    }
+
+    /**
+     * Get metastore implementation class.
+     *
+     * @return metastore implementation class name.
+     */
+    public String getMetastoreImplClass() {
+        return conf.getString(METASTORE_IMPL_CLASS);
+    }
+
+    /**
+     * Get max entries per scan in metastore.
+     *
+     * @return max entries per scan in metastore.
+     */
+    public int getMetastoreMaxEntriesPerScan() {
+        return conf.getInt(METASTORE_MAX_ENTRIES_PER_SCAN, 50);
     }
 }
