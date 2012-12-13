@@ -29,13 +29,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
+import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.metastore.InMemoryMetaStore;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
@@ -389,8 +390,31 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
         return server;
     }
 
+    /**
+     * Start a bookie with the given bookie instance.
+     */
+    protected BookieServer startBookie(ServerConfiguration conf, final Bookie b)
+            throws IOException, InterruptedException, KeeperException, BookieException {
+        BookieServer server = new BookieServer(conf) {
+            @Override
+            protected Bookie newBookie(ServerConfiguration conf) {
+                return b;
+            }
+        };
+        server.start();
+
+        int port = conf.getBookiePort();
+        while(bkc.getZkHandle().exists("/ledgers/available/" + InetAddress.getLocalHost().getHostAddress() + ":" + port, false) == null) {
+            Thread.sleep(500);
+        }
+
+        bkc.readBookiesBlocking();
+        LOG.info("New bookie on port " + port + " has been created.");
+
+        return server;
+    }
+
     public void setMetastoreImplClass(AbstractConfiguration conf) {
         conf.setMetastoreImplClass(InMemoryMetaStore.class.getName());
     }
-
 }

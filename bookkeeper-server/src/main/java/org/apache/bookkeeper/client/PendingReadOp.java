@@ -52,12 +52,14 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     long numPendingEntries;
     long startEntryId;
     long endEntryId;
+    final int maxMissedReadsAllowed;
 
     private class LedgerEntryRequest extends LedgerEntry {
         int nextReplicaIndexToReadFrom = 0;
         AtomicBoolean complete = new AtomicBoolean(false);
 
         int firstError = BKException.Code.OK;
+        int numMissedEntryReads = 0;
 
         final ArrayList<InetSocketAddress> ensemble;
 
@@ -71,6 +73,14 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             if (nextReplicaIndexToReadFrom >= lh.metadata.getWriteQuorumSize()) {
                 // we are done, the read has failed from all replicas, just fail the
                 // read
+
+                // Do it a bit perssimistically, only when finished trying all replicas
+                // to check whether we received more missed reads than maxMissedReadsAllowed
+                if (BKException.Code.BookieHandleNotAvailableException == firstError &&
+                    numMissedEntryReads > maxMissedReadsAllowed) {
+                    firstError = BKException.Code.NoSuchEntryException;
+                }
+
                 submitCallback(firstError);
                 return;
             }
@@ -88,8 +98,17 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         }
 
         void logErrorAndReattemptRead(String errMsg, int rc) {
-            if (firstError == BKException.Code.OK) {
+            if (BKException.Code.OK == firstError ||
+                BKException.Code.NoSuchEntryException == firstError) {
                 firstError = rc;
+            } else if (BKException.Code.BookieHandleNotAvailableException == firstError &&
+                       BKException.Code.NoSuchEntryException != rc) {
+                // if other exception rather than NoSuchEntryException is returned
+                // we need to update firstError to indicate that it might be a valid read but just failed.
+                firstError = rc;
+            }
+            if (BKException.Code.NoSuchEntryException == rc) {
+                ++numMissedEntryReads;
             }
 
             int bookieIndex = lh.distributionSchedule.getWriteSet(entryId).get(nextReplicaIndexToReadFrom - 1);
@@ -141,6 +160,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         this.startEntryId = startEntryId;
         this.endEntryId = endEntryId;
         numPendingEntries = endEntryId - startEntryId + 1;
+        maxMissedReadsAllowed = lh.metadata.getWriteQuorumSize() - lh.metadata.getAckQuorumSize();
     }
 
     public void initiate() throws InterruptedException {
@@ -174,20 +194,6 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         final LedgerEntryRequest entry = (LedgerEntryRequest) ctx;
 
         lh.opCounterSem.release();
-
-        // if we just read only one entry, and this entry is not existed (in recoveryRead case)
-        // we don't need to do ReattemptRead, otherwise we could not handle following case:
-        //
-        // an empty ledger with quorum (bk1, bk2), bk2 is failed forever.
-        // bk1 return NoLedgerException, client do ReattemptRead to bk2 but bk2 isn't connected
-        // so the read 0 entry would failed. this ledger could never be closed.
-        if (startEntryId == endEntryId) {
-            if (BKException.Code.NoSuchLedgerExistsException == rc ||
-                BKException.Code.NoSuchEntryException == rc) {
-                submitCallback(rc);
-                return;
-            }
-        }
 
         if (rc != BKException.Code.OK) {
             entry.logErrorAndReattemptRead("Error: " + BKException.getMessage(rc), rc);

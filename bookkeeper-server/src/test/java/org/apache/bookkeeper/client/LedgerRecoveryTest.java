@@ -1,4 +1,4 @@
-package org.apache.bookkeeper.test;
+package org.apache.bookkeeper.client;
 
 /*
  *
@@ -21,10 +21,21 @@ package org.apache.bookkeeper.test;
  *
  */
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+
 import org.junit.*;
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.test.BaseTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -141,6 +152,63 @@ public class LedgerRecoveryTest extends BaseTestCase {
         // start a new bookie server
         startNewBookie();
 
+        LedgerHandle afterlh = bkc.openLedger(beforelh.getId(), digestType, "".getBytes());
+
+        /*
+         * Check if has recovered properly.
+         */
+        assertEquals(numEntries - 1, afterlh.getLastAddConfirmed());
+    }
+
+    @Test
+    public void testLedgerRecoveryWithSlowBookie() throws Exception {
+        for (int i = 0; i < 3; i++) {
+            LOG.info("TestLedgerRecoveryWithAckQuorum @ slow bookie {}", i);
+            ledgerRecoveryWithSlowBookie(3, 3, 2, 1, i);
+        }
+    }
+
+    private void ledgerRecoveryWithSlowBookie(int ensembleSize, int writeQuorumSize,
+        int ackQuorumSize, int numEntries, int slowBookieIdx) throws Exception {
+
+        // Create a ledger
+        LedgerHandle beforelh = null;
+        beforelh = bkc.createLedger(ensembleSize, writeQuorumSize, ackQuorumSize,
+                                    digestType, "".getBytes());
+
+        // kill first bookie server to start a fake one to simulate a slow bookie
+        // and failed to add entry on crash
+        // until write succeed
+        InetSocketAddress host = beforelh.getLedgerMetadata().currentEnsemble.get(slowBookieIdx);
+        ServerConfiguration conf = killBookie(host);
+
+        Bookie fakeBookie = new Bookie(conf) {
+            @Override
+            public void addEntry(ByteBuffer entry, WriteCallback cb, Object ctx, byte[] masterKey)
+                    throws IOException, BookieException {
+                // drop request to simulate a slow and failed bookie
+            }
+        };
+        bsConfs.add(conf);
+        bs.add(startBookie(conf, fakeBookie));
+
+        // avoid not-enough-bookies case
+        startNewBookie();
+
+        // write would still succeed with 2 bookies ack
+        String tmp = "BookKeeper is cool!";
+        for (int i = 0; i < numEntries; i++) {
+            beforelh.addEntry(tmp.getBytes());
+        }
+
+        conf = killBookie(host);
+        bsConfs.add(conf);
+        // the bookie goes normally
+        bs.add(startBookie(conf));
+
+        /*
+         * Try to open ledger.
+         */
         LedgerHandle afterlh = bkc.openLedger(beforelh.getId(), digestType, "".getBytes());
 
         /*
