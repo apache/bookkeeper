@@ -96,18 +96,25 @@ checkForWarnings() {
     fi
 }
 ###############################################################################
-
+copyRatFiles() {
+    TAG=$1
+    rm -f ${REPORTDIR}/${TASKNAME}-$TAG.txt
+    for f in $(find . -name rat.txt); do
+        cat $f >> ${REPORTDIR}/${TASKNAME}-$TAG.txt
+    done
+}
+###############################################################################
 
 parseArgs "$@"
 
 case $OP in
 pre)
     mvn apache-rat:check ${MVNPASSTHRU} > $STDOUT
-    cp target/rat.txt ${REPORTDIR}/${TASKNAME}-clean.txt
+    copyRatFiles clean
     ;;
 post)
     mvn apache-rat:check ${MVNPASSTHRU} > $STDOUT
-    cp target/rat.txt ${REPORTDIR}/${TASKNAME}-patch.txt
+    copyRatFiles patch
     ;;
 report)
     checkForWarnings

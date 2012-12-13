@@ -34,6 +34,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-484: Misc fixes for test scripts (ivank via fpj)
 
+      BOOKKEEPER-483: precommit tests only check toplevel rat file, not the one for submodules. (ivank via fpj)
+
       bookkeeper-server:
 
         BOOKKEEPER-183: Provide tools to read/check data files in bookie server (sijie via ivank)
