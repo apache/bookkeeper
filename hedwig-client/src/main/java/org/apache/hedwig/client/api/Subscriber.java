@@ -59,7 +59,12 @@ public interface Subscriber {
      *             If the subscriberId is not valid. We may want to set aside
      *             certain formats of subscriberId's for different purposes.
      *             e.g. local vs. hub subscriber
+     * @deprecated As of BookKeeper 4.2.0, replaced by
+     *             {@link Subscriber#subscribe(com.google.protobuf.ByteString,
+     *                                         com.google.protobuf.ByteString,
+     *                                         PubSubProtocol.SubscriptionOptions)}
      */
+    @Deprecated
     public void subscribe(ByteString topic, ByteString subscriberId, CreateOrAttach mode)
             throws CouldNotConnectException, ClientAlreadySubscribedException, ServiceDownException,
         InvalidSubscriberIdException;
@@ -82,7 +87,12 @@ public interface Subscriber {
      * @param context
      *            Calling context that the Callback needs since this is done
      *            asynchronously.
+     * @deprecated As of BookKeeper 4.2.0, replaced by
+     *             {@link Subscriber#asyncSubscribe(com.google.protobuf.ByteString,
+     *                                              com.google.protobuf.ByteString,
+     *                                              PubSubProtocol.SubscriptionOptions,Callback,Object)}
      */
+    @Deprecated
     public void asyncSubscribe(ByteString topic, ByteString subscriberId, CreateOrAttach mode, Callback<Void> callback,
                                Object context);
 

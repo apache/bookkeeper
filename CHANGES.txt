@@ -306,6 +306,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-453: Extract commonality from MultiplexSubscribeResponseHandler and SimpleSubscribeResponseHandler and put into an abstract class  (sijie via ivank)
 
+        BOOKKEEPER-404: Deprecate non-SubscriptionOptions Subscriber Apis (ivank via sijie)
+
 Release 4.1.0 - 2012-06-07
 
   Non-backward compatible changes:
