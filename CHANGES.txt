@@ -522,6 +522,8 @@ Release 4.1.0 - 2012-06-07
 
 	BOOKKEEPER-270: Review documentation on bookie cookie (ivank via fpj)
 
+        BOOKKEEPER-341: add documentation for bookkeeper ledger manager interface. (sijie via ivank)
+
       hedwig-server/
 
         BOOKKEEPER-77: Add a console client for hedwig (Sijie Guo via ivank)

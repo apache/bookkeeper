@@ -26,6 +26,7 @@ h1. Apache BookKeeper documentation
 * "BookKeeper Internals":./bookkeeperInternals.html
 * "Bookie Recovery":./bookieRecovery.html
 * "Using BookKeeper stream library":./bookkeeperStream.html
+* "BookKeeper Metadata Management":./bookkeeperMetadata.html
 
 h2. BookKeeper Admin & Ops
 
