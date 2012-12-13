@@ -186,6 +186,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-461: Delivery throughput degrades when there are lots of publishers w/ high traffic. (sijie via ivank)
 
+	BOOKKEEPER-458:  Annoy BKReadException error when changing ledger. (jiannan via fpj)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-467: Allocate ports for testing dynamically (ivank)

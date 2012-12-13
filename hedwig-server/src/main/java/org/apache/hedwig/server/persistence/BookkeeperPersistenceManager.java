@@ -1062,6 +1062,7 @@ public class BookkeeperPersistenceManager implements PersistenceManagerWithRange
                 LedgerRange lastRange = LedgerRange.newBuilder().setLedgerId(lh.getId())
                                         .setStartSeqIdIncluded(startSeqId).build();
                 topicInfo.currentLedgerRange = new InMemoryLedgerRange(lastRange, lh);
+                topicInfo.lastEntryIdAckedInCurrentLedger = -1;
 
                 // Persist the fact that we started this new
                 // ledger to ZK
