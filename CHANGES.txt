@@ -448,6 +448,8 @@ Release 4.1.0 - 2012-06-07
 
         BOOKKEEPER-288: NOTICE files don't have the correct year (ivank via sijie)
 
+        BOOKKEEPER-408: BookieReadWriteTest will enter the endless loop and will not leave out (ivank)
+
       hedwig-client/
 
         BOOKKEEPER-217: NPE in hedwig client when enable DEBUG (sijie via ivank)

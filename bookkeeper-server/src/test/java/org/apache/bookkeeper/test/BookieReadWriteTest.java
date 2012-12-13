@@ -34,7 +34,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.Arrays;
 import java.util.concurrent.Semaphore;
-
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
@@ -72,7 +72,6 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
     byte[] ledgerPassword = "aaa".getBytes();
     LedgerHandle lh, lh2;
     long ledgerId;
-    Enumeration<LedgerEntry> ls;
 
     // test related variables
     int numEntriesToWrite = 200;
@@ -90,19 +89,34 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
     }
-    // Synchronization
-    SyncObj sync;
-    Set<Object> syncObjs;
 
     class SyncObj {
         long lastConfirmed;
         volatile int counter;
         boolean value;
+        AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
+        Enumeration<LedgerEntry> ls = null;
 
         public SyncObj() {
             counter = 0;
             lastConfirmed = LedgerHandle.INVALID_ENTRY_ID;
             value = false;
+        }
+
+        void setReturnCode(int rc) {
+            this.rc.compareAndSet(BKException.Code.OK, rc);
+        }
+
+        int getReturnCode() {
+            return rc.get();
+        }
+
+        void setLedgerEntries(Enumeration<LedgerEntry> ls) {
+            this.ls = ls;
+        }
+
+        Enumeration<LedgerEntry> getLedgerEntries() {
+            return ls;
         }
     }
 
@@ -171,6 +185,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
 
     @Test
     public void testReadWriteAsyncSingleClient() throws IOException {
+        SyncObj sync = new SyncObj();
         try {
             // Create a ledger
             lh = bkc.createLedger(digestType, ledgerPassword);
@@ -193,6 +208,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
                     LOG.debug("Entries counter = " + sync.counter);
                     sync.wait();
                 }
+                assertEquals("Error adding", BKException.Code.OK, sync.getReturnCode());
             }
 
             LOG.debug("*** WRITE COMPLETE ***");
@@ -213,6 +229,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
                 while (sync.value == false) {
                     sync.wait();
                 }
+                assertEquals("Error reading", BKException.Code.OK, sync.getReturnCode());
             }
 
             LOG.debug("*** READ COMPLETE ***");
@@ -220,6 +237,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             // at this point, Enumeration<LedgerEntry> ls is filled with the returned
             // values
             int i = 0;
+            Enumeration<LedgerEntry> ls = sync.getLedgerEntries();
             while (ls.hasMoreElements()) {
                 ByteBuffer origbb = ByteBuffer.wrap(entries.get(i));
                 Integer origEntry = origbb.getInt();
@@ -253,6 +271,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
      */
     @Test
     public void testReadWriteRangeAsyncSingleClient() throws IOException {
+        SyncObj sync = new SyncObj();
         try {
             // Create a ledger
             lh = bkc.createLedger(digestType, ledgerPassword);
@@ -273,6 +292,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
                     LOG.debug("Entries counter = " + sync.counter);
                     sync.wait();
                 }
+                assertEquals("Error adding", BKException.Code.OK, sync.getReturnCode());
             }
 
             try {
@@ -327,6 +347,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
                 while (sync.value == false) {
                     sync.wait();
                 }
+                assertEquals("Error reading", BKException.Code.OK, sync.getReturnCode());
             }
 
             LOG.debug("*** READ COMPLETE ***");
@@ -334,6 +355,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             // at this point, Enumeration<LedgerEntry> ls is filled with the returned
             // values
             int i = 0;
+            Enumeration<LedgerEntry> ls = sync.getLedgerEntries();
             while (ls.hasMoreElements()) {
                 byte[] expected = null;
                 byte[] entry = ls.nextElement().getEntry();
@@ -382,11 +404,9 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
 
         @Override
         public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
-            if(rc != BKException.Code.OK) {
-                fail("Return code is not OK: " + rc);
-            }
-
-            ls = seq;
+            SyncObj sync = (SyncObj)ctx;
+            sync.setLedgerEntries(seq);
+            sync.setReturnCode(rc);
             synchronized(sync) {
                 sync.counter += throttle;
                 sync.notify();
@@ -415,6 +435,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
     @Test
     public void testReadWriteAsyncSingleClientThrottle() throws
         IOException, NoSuchFieldException, IllegalAccessException {
+        SyncObj sync = new SyncObj();
         try {
 
             Integer throttle = 100;
@@ -465,6 +486,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
                     LOG.debug("Entries counter = " + sync.counter);
                     sync.wait();
                 }
+                assertEquals("Error adding", BKException.Code.OK, sync.getReturnCode());
             }
 
             LOG.debug("*** WRITE COMPLETE ***");
@@ -491,6 +513,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
                     LOG.info("Entries counter = " + sync.counter);
                     sync.wait();
                 }
+                assertEquals("Error reading", BKException.Code.OK, sync.getReturnCode());
             }
 
             LOG.debug("*** READ COMPLETE ***");
@@ -507,6 +530,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
 
     @Test
     public void testSyncReadAsyncWriteStringsSingleClient() throws IOException {
+        SyncObj sync = new SyncObj();
         LOG.info("TEST READ WRITE STRINGS MIXED SINGLE CLIENT");
         String charset = "utf-8";
         LOG.debug("Default charset: " + Charset.defaultCharset());
@@ -529,6 +553,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
                     LOG.debug("Entries counter = " + sync.counter);
                     sync.wait();
                 }
+                assertEquals("Error adding", BKException.Code.OK, sync.getReturnCode());
             }
 
             LOG.debug("*** ASYNC WRITE COMPLETE ***");
@@ -543,7 +568,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             assertTrue("Verifying number of entries written", lh.getLastAddConfirmed() == (numEntriesToWrite - 1));
 
             // read entries
-            ls = lh.readEntries(0, numEntriesToWrite - 1);
+            Enumeration<LedgerEntry> ls = lh.readEntries(0, numEntriesToWrite - 1);
 
             LOG.debug("*** SYNC READ COMPLETE ***");
 
@@ -598,7 +623,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             LOG.debug("Number of entries written: " + lh.getLastAddConfirmed());
             assertTrue("Verifying number of entries written", lh.getLastAddConfirmed() == (numEntriesToWrite - 1));
 
-            ls = lh.readEntries(0, numEntriesToWrite - 1);
+            Enumeration<LedgerEntry> ls = lh.readEntries(0, numEntriesToWrite - 1);
             int i = 0;
             while (ls.hasMoreElements()) {
                 ByteBuffer origbb = ByteBuffer.wrap(entries.get(i++));
@@ -647,7 +672,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             LOG.debug("Number of entries written: " + lh.getLastAddConfirmed());
             assertTrue("Verifying number of entries written", lh.getLastAddConfirmed() == numEntriesToWrite);
 
-            ls = lh.readEntries(0, numEntriesToWrite - 1);
+            Enumeration<LedgerEntry> ls = lh.readEntries(0, numEntriesToWrite - 1);
             int i = 0;
             while (ls.hasMoreElements()) {
                 ByteBuffer result = ByteBuffer.wrap(ls.nextElement().getEntry());
@@ -694,7 +719,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             assertTrue("Verifying number of entries written lh2 (" + lh2.getLastAddConfirmed() + ")", lh2
                        .getLastAddConfirmed() == (numEntriesToWrite - 1));
 
-            ls = lh.readEntries(0, numEntriesToWrite - 1);
+            Enumeration<LedgerEntry> ls = lh.readEntries(0, numEntriesToWrite - 1);
             int i = 0;
             while (ls.hasMoreElements()) {
                 ByteBuffer result = ByteBuffer.wrap(ls.nextElement().getEntry());
@@ -723,6 +748,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
 
     @Test
     public void testReadWriteAsyncLength() throws IOException {
+        SyncObj sync = new SyncObj();
         try {
             // Create a ledger
             lh = bkc.createLedger(digestType, ledgerPassword);
@@ -745,6 +771,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
                     LOG.debug("Entries counter = " + sync.counter);
                     sync.wait();
                 }
+                assertEquals("Error adding", BKException.Code.OK, sync.getReturnCode());
             }
             long length = numEntriesToWrite * 4;
             assertTrue("Ledger length before closing: " + lh.getLength(), lh.getLength() == length);
@@ -844,6 +871,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
                     LOG.debug("Counter = " + sync.lastConfirmed);
                     sync.wait();
                 }
+                assertEquals("Error reading", BKException.Code.OK, sync.getReturnCode());
             }
 
             assertTrue("Last confirmed add: " + sync.lastConfirmed, sync.lastConfirmed == (numEntriesToWrite - 2));
@@ -1039,6 +1067,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
                     LOG.debug("Counter = " + sync.lastConfirmed);
                     sync.wait();
                 }
+                assertEquals("Error reading", BKException.Code.OK, sync.getReturnCode());
             }
 
             assertTrue("Last confirmed add: " + sync.lastConfirmed, sync.lastConfirmed == (numEntriesToWrite - 2));
@@ -1058,22 +1087,19 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
 
     @Override
     public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-        if(rc != BKException.Code.OK) fail("Return code is not OK: " + rc);
-
-        SyncObj x = (SyncObj) ctx;
-
-        synchronized (x) {
-            x.counter++;
-            x.notify();
+        SyncObj sync = (SyncObj) ctx;
+        sync.setReturnCode(rc);
+        synchronized (sync) {
+            sync.counter++;
+            sync.notify();
         }
     }
 
     @Override
     public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
-        if(rc != BKException.Code.OK) fail("Return code is not OK: " + rc);
-
-        ls = seq;
-
+        SyncObj sync = (SyncObj) ctx;
+        sync.setLedgerEntries(seq);
+        sync.setReturnCode(rc);
         synchronized (sync) {
             sync.value = true;
             sync.notify();
@@ -1083,7 +1109,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
     @Override
     public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
         SyncObj sync = (SyncObj) ctx;
-
+        sync.setReturnCode(rc);
         synchronized(sync) {
             sync.lastConfirmed = lastConfirmed;
             sync.notify();
@@ -1098,8 +1124,6 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
         // Number Generator
         entries = new ArrayList<byte[]>(); // initialize the entries list
         entriesSize = new ArrayList<Integer>();
-        sync = new SyncObj(); // initialize the synchronization data structure
-
     }
 
     /* Clean up a directory recursively */
