@@ -382,7 +382,8 @@ public class LedgerHandle {
         }
 
         try {
-            new PendingReadOp(this, firstEntry, lastEntry, cb, ctx).initiate();
+            new PendingReadOp(this, bk.scheduler,
+                              firstEntry, lastEntry, cb, ctx).initiate();
         } catch (InterruptedException e) {
             cb.readComplete(BKException.Code.InterruptedException, this, null, ctx);
         }

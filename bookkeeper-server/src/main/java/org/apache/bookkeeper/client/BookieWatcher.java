@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executors;
+
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -61,10 +61,10 @@ class BookieWatcher implements Watcher, ChildrenCallback {
     static final Set<InetSocketAddress> EMPTY_SET = new HashSet<InetSocketAddress>();
     public static int ZK_CONNECT_BACKOFF_SEC = 1;
 
-    BookKeeper bk;
-    ScheduledExecutorService scheduler;
+    final BookKeeper bk;
 
     HashSet<InetSocketAddress> knownBookies = new HashSet<InetSocketAddress>();
+    final ScheduledExecutorService scheduler;
 
     SafeRunnable reReadTask = new SafeRunnable() {
         @Override
@@ -74,16 +74,14 @@ class BookieWatcher implements Watcher, ChildrenCallback {
     };
     private ReadOnlyBookieWatcher readOnlyBookieWatcher;
 
-    public BookieWatcher(ClientConfiguration conf, BookKeeper bk) throws KeeperException, InterruptedException {
+    public BookieWatcher(ClientConfiguration conf,
+                         ScheduledExecutorService scheduler,
+                         BookKeeper bk) throws KeeperException, InterruptedException  {
         this.bk = bk;
         // ZK bookie registration path
         this.bookieRegistrationPath = conf.getZkAvailableBookiesPath();
-        this.scheduler = Executors.newSingleThreadScheduledExecutor();
+        this.scheduler = scheduler;
         readOnlyBookieWatcher = new ReadOnlyBookieWatcher(conf, bk);
-    }
-
-    public void halt() {
-        scheduler.shutdown();
     }
 
     public void readBookies() {

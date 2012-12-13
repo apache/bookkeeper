@@ -138,6 +138,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-365: Ledger will never recover if one of the quorum bookie is down forever and others dont have entry (sijie via ivank)
 
+        BOOKKEEPER-336: bookie readEntries is taking more time if the ensemble has failed bookie(s) (ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

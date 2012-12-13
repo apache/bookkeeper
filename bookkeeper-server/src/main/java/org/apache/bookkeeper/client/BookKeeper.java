@@ -23,6 +23,7 @@ package org.apache.bookkeeper.client;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
@@ -75,6 +76,7 @@ public class BookKeeper {
     final BookieWatcher bookieWatcher;
 
     final OrderedSafeExecutor mainWorkerPool;
+    final ScheduledExecutorService scheduler;
 
     // Ledger manager responsible for how to store ledger meta data
     final LedgerManagerFactory ledgerManagerFactory;
@@ -125,9 +127,11 @@ public class BookKeeper {
 
         this.channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                                                                 Executors.newCachedThreadPool());
+        this.scheduler = Executors.newSingleThreadScheduledExecutor();
+
         mainWorkerPool = new OrderedSafeExecutor(conf.getNumWorkerThreads());
         bookieClient = new BookieClient(conf, channelFactory, mainWorkerPool);
-        bookieWatcher = new BookieWatcher(conf, this);
+        bookieWatcher = new BookieWatcher(conf, scheduler, this);
         bookieWatcher.readBookiesBlocking();
 
         ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, zk);
@@ -187,10 +191,11 @@ public class BookKeeper {
         this.conf = conf;
         this.zk = zk;
         this.channelFactory = channelFactory;
+        this.scheduler = Executors.newSingleThreadScheduledExecutor();
 
         mainWorkerPool = new OrderedSafeExecutor(conf.getNumWorkerThreads());
         bookieClient = new BookieClient(conf, channelFactory, mainWorkerPool);
-        bookieWatcher = new BookieWatcher(conf, this);
+        bookieWatcher = new BookieWatcher(conf, scheduler, this);
         bookieWatcher.readBookiesBlocking();
 
         ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, zk);
@@ -562,7 +567,7 @@ public class BookKeeper {
         } catch (IOException ie) {
             LOG.error("Failed to close ledger manager : ", ie);
         }
-        bookieWatcher.halt();
+        scheduler.shutdown();
         if (ownChannelFactory) {
             channelFactory.releaseExternalResources();
         }

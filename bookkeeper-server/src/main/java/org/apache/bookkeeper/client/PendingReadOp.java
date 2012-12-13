@@ -21,11 +21,19 @@ package org.apache.bookkeeper.client;
  *
  */
 import java.net.InetSocketAddress;
-import java.util.ArrayDeque;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledFuture;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
 import java.util.Queue;
+import java.util.BitSet;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.List;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
@@ -45,7 +53,11 @@ import org.jboss.netty.buffer.ChannelBufferInputStream;
 class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     Logger LOG = LoggerFactory.getLogger(PendingReadOp.class);
 
+    final int speculativeReadTimeout;
+    final private ScheduledExecutorService scheduler;
+    private ScheduledFuture<?> speculativeTask = null;
     Queue<LedgerEntryRequest> seq;
+    Set<InetSocketAddress> heardFromHosts;
     ReadCallback cb;
     Object ctx;
     LedgerHandle lh;
@@ -54,7 +66,8 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     long endEntryId;
     final int maxMissedReadsAllowed;
 
-    private class LedgerEntryRequest extends LedgerEntry {
+    class LedgerEntryRequest extends LedgerEntry {
+        final static int NOT_FOUND = -1;
         int nextReplicaIndexToReadFrom = 0;
         AtomicBoolean complete = new AtomicBoolean(false);
 
@@ -62,14 +75,77 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         int numMissedEntryReads = 0;
 
         final ArrayList<InetSocketAddress> ensemble;
+        final List<Integer> writeSet;
+        final BitSet sentReplicas;
+        final BitSet erroredReplicas;
 
         LedgerEntryRequest(ArrayList<InetSocketAddress> ensemble, long lId, long eId) {
             super(lId, eId);
 
             this.ensemble = ensemble;
+            this.writeSet = lh.distributionSchedule.getWriteSet(entryId);
+            this.sentReplicas = new BitSet(lh.getLedgerMetadata().getWriteQuorumSize());
+            this.erroredReplicas = new BitSet(lh.getLedgerMetadata().getWriteQuorumSize());
         }
 
-        void sendNextRead() {
+        private int getReplicaIndex(InetSocketAddress host) {
+            int bookieIndex = ensemble.indexOf(host);
+            if (bookieIndex == -1) {
+                return NOT_FOUND;
+            }
+            return writeSet.indexOf(bookieIndex);
+        }
+
+        private BitSet getSentToBitSet() {
+            BitSet b = new BitSet(ensemble.size());
+
+            for (int i = 0; i < sentReplicas.length(); i++) {
+                if (sentReplicas.get(i)) {
+                    b.set(writeSet.get(i));
+                }
+            }
+            return b;
+        }
+
+        private BitSet getHeardFromBitSet(Set<InetSocketAddress> heardFromHosts) {
+            BitSet b = new BitSet(ensemble.size());
+            for (InetSocketAddress i : heardFromHosts) {
+                int index = ensemble.indexOf(i);
+                if (index != -1) {
+                    b.set(index);
+                }
+            }
+            return b;
+        }
+
+        private boolean readsOutstanding() {
+            return (sentReplicas.cardinality() - erroredReplicas.cardinality()) > 0;
+        }
+
+        /**
+         * Send to next replica speculatively, if required and possible.
+         * This returns the host we may have sent to for unit testing.
+         * @return host we sent to if we sent. null otherwise.
+         */
+        synchronized InetSocketAddress maybeSendSpeculativeRead(Set<InetSocketAddress> heardFromHosts) {
+            if (nextReplicaIndexToReadFrom >= lh.getLedgerMetadata().getWriteQuorumSize()) {
+                return null;
+            }
+
+            BitSet sentTo = getSentToBitSet();
+            BitSet heardFrom = getHeardFromBitSet(heardFromHosts);
+            sentTo.and(heardFrom);
+
+            // only send another read, if we have had no response at all (even for other entries)
+            // from any of the other bookies we have sent the request to
+            if (sentTo.cardinality() == 0) {
+                return sendNextRead();
+            } else {
+                return null;
+            }
+        }
+
+        synchronized InetSocketAddress sendNextRead() {
             if (nextReplicaIndexToReadFrom >= lh.metadata.getWriteQuorumSize()) {
                 // we are done, the read has failed from all replicas, just fail the
                 // read
@@ -82,22 +158,27 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
                 }
 
                 submitCallback(firstError);
-                return;
+                return null;
             }
 
+            int replica = nextReplicaIndexToReadFrom;
             int bookieIndex = lh.distributionSchedule.getWriteSet(entryId).get(nextReplicaIndexToReadFrom);
             nextReplicaIndexToReadFrom++;
 
             try {
-                sendReadTo(ensemble.get(bookieIndex), this);
+                InetSocketAddress to = ensemble.get(bookieIndex);
+                sendReadTo(to, this);
+                sentReplicas.set(replica);
+                return to;
             } catch (InterruptedException ie) {
                 LOG.error("Interrupted reading entry " + this, ie);
                 Thread.currentThread().interrupt();
                 submitCallback(BKException.Code.ReadException);
+                return null;
             }
         }
 
-        void logErrorAndReattemptRead(String errMsg, int rc) {
+        synchronized void logErrorAndReattemptRead(InetSocketAddress host, String errMsg, int rc) {
             if (BKException.Code.OK == firstError ||
                 BKException.Code.NoSuchEntryException == firstError) {
                 firstError = rc;
@@ -113,18 +194,27 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
             int bookieIndex = lh.distributionSchedule.getWriteSet(entryId).get(nextReplicaIndexToReadFrom - 1);
             LOG.error(errMsg + " while reading entry: " + entryId + " ledgerId: " + lh.ledgerId + " from bookie: "
-                      + ensemble.get(bookieIndex));
+                      + host);
 
-            sendNextRead();
+            int replica = getReplicaIndex(host);
+            if (replica == NOT_FOUND) {
+                LOG.error("Received error from a host which is not in the ensemble {} {}.", host, ensemble);
+                return;
+            }
+            erroredReplicas.set(replica);
+
+            if (!readsOutstanding()) {
+                sendNextRead();
+            }
         }
 
         // return true if we managed to complete the entry
-        boolean complete(final ChannelBuffer buffer) {
+        boolean complete(InetSocketAddress host, final ChannelBuffer buffer) {
             ChannelBufferInputStream is;
             try {
                 is = lh.macManager.verifyDigestAndReturnData(entryId, buffer);
             } catch (BKDigestMatchException e) {
-                logErrorAndReattemptRead("Mac mismatch", BKException.Code.DigestMatchException);
+                logErrorAndReattemptRead(host, "Mac mismatch", BKException.Code.DigestMatchException);
                 return false;
             }
 
@@ -151,22 +241,38 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         }
     }
 
-    PendingReadOp(LedgerHandle lh, long startEntryId, long endEntryId, ReadCallback cb, Object ctx) {
-
-        seq = new ArrayDeque<LedgerEntryRequest>((int) (endEntryId - startEntryId));
+    PendingReadOp(LedgerHandle lh, ScheduledExecutorService scheduler,
+                  long startEntryId, long endEntryId, ReadCallback cb, Object ctx) {
+        seq = new ArrayBlockingQueue<LedgerEntryRequest>((int) ((endEntryId + 1) - startEntryId));
         this.cb = cb;
         this.ctx = ctx;
         this.lh = lh;
         this.startEntryId = startEntryId;
         this.endEntryId = endEntryId;
+        this.scheduler = scheduler;
         numPendingEntries = endEntryId - startEntryId + 1;
         maxMissedReadsAllowed = lh.metadata.getWriteQuorumSize() - lh.metadata.getAckQuorumSize();
+        speculativeReadTimeout = lh.bk.getConf().getSpeculativeReadTimeout();
+        heardFromHosts = new HashSet<InetSocketAddress>();
     }
 
     public void initiate() throws InterruptedException {
         long nextEnsembleChange = startEntryId, i = startEntryId;
 
         ArrayList<InetSocketAddress> ensemble = null;
+
+        if (speculativeReadTimeout > 0) {
+            speculativeTask = scheduler.scheduleWithFixedDelay(new Runnable() {
+                    public void run() {
+                        for (LedgerEntryRequest r : seq) {
+                            if (!r.isComplete()) {
+                                r.maybeSendSpeculativeRead(heardFromHosts);
+                            }
+                        }
+                    }
+                }, speculativeReadTimeout, speculativeReadTimeout, TimeUnit.MILLISECONDS);
+        }
+
         do {
             LOG.debug("Acquiring lock: {}", i);
 
@@ -182,25 +288,38 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         } while (i <= endEntryId);
     }
 
+    private static class ReadContext {
+        final InetSocketAddress to;
+        final LedgerEntryRequest entry;
+
+        ReadContext(InetSocketAddress to, LedgerEntryRequest entry) {
+            this.to = to;
+            this.entry = entry;
+        }
+    }
+
     void sendReadTo(InetSocketAddress to, LedgerEntryRequest entry) throws InterruptedException {
         lh.opCounterSem.acquire();
 
         lh.bk.bookieClient.readEntry(to, lh.ledgerId, entry.entryId, 
-                                     this, entry);
+                                     this, new ReadContext(to, entry));
     }
 
     @Override
     public void readEntryComplete(int rc, long ledgerId, final long entryId, final ChannelBuffer buffer, Object ctx) {
-        final LedgerEntryRequest entry = (LedgerEntryRequest) ctx;
+        final ReadContext rctx = (ReadContext)ctx;
+        final LedgerEntryRequest entry = rctx.entry;
 
         lh.opCounterSem.release();
 
         if (rc != BKException.Code.OK) {
-            entry.logErrorAndReattemptRead("Error: " + BKException.getMessage(rc), rc);
+            entry.logErrorAndReattemptRead(rctx.to, "Error: " + BKException.getMessage(rc), rc);
             return;
         }
 
-        if (entry.complete(buffer)) {
+        heardFromHosts.add(rctx.to);
+
+        if (entry.complete(rctx.to, buffer)) {
             numPendingEntries--;
         }
 
@@ -213,6 +332,9 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     }
 
     private void submitCallback(int code) {
+        if (speculativeTask != null) {
+            speculativeTask.cancel(true);
+        }
         cb.readComplete(code, lh, PendingReadOp.this, PendingReadOp.this.ctx);
     }
     public boolean hasMoreElements() {
