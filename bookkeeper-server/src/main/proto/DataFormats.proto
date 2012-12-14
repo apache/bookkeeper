@@ -75,3 +75,10 @@ message CookieFormat {
 message LockDataFormat {
     optional string bookieId = 1;
 }
+
+/**
+ * Debug information for auditor votes
+ */
+message AuditorVoteFormat {
+    optional string bookieId = 1;
+}

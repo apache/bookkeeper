@@ -25,6 +25,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.io.Serializable;
 
+import org.apache.bookkeeper.proto.DataFormats.AuditorVoteFormat;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.util.BookKeeperConstants;
@@ -36,6 +37,9 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.ZooDefs.Ids;
+import com.google.protobuf.TextFormat;
+import static com.google.common.base.Charsets.UTF_8;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,7 +126,10 @@ public class AuditorElector {
             if (children.get(AUDITOR_INDEX).equals(voteNode)) {
                 // update the auditor bookie id in the election path. This is
                 // done for debugging purpose
-                zkc.setData(getVotePath(""), bookieId.getBytes(), -1);
+                AuditorVoteFormat.Builder builder = AuditorVoteFormat.newBuilder()
+                    .setBookieId(bookieId);
+
+                zkc.setData(getVotePath(""), TextFormat.printToString(builder.build()).getBytes(UTF_8), -1);
                 auditor = new Auditor(bookieId, conf, zkc);
                 auditor.start();
             } else {
@@ -150,8 +157,10 @@ public class AuditorElector {
 
     private void createMyVote() throws KeeperException, InterruptedException {
         if (null == myVote || null == zkc.exists(myVote, false)) {
+            AuditorVoteFormat.Builder builder = AuditorVoteFormat.newBuilder()
+                .setBookieId(bookieId);
             myVote = zkc.create(getVotePath(PATH_SEPARATOR + VOTE_PREFIX),
-                    bookieId.getBytes(), Ids.OPEN_ACL_UNSAFE,
+                    TextFormat.printToString(builder.build()).getBytes(UTF_8), Ids.OPEN_ACL_UNSAFE,
                     CreateMode.EPHEMERAL_SEQUENTIAL);
         }
     }

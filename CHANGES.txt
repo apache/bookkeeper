@@ -250,6 +250,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-205: implement a MetaStore based ledger manager for bookkeeper client. (jiannan via ivank)
 
+        BOOKKEEPER-426: Make auditor Vote znode store a protobuf containing the host that voted (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)
