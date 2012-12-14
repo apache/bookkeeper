@@ -252,7 +252,7 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-426: Make auditor Vote znode store a protobuf containing the host that voted (ivank)
 
-	BOOKKEEPER-428: Expose command options in bookie scripts to disable/enable auto recovery temporarily (ivank via fpj)
+	BOOKKEEPER-428: Expose command options in bookie scripts to disable/enable auto recovery temporarily (rakesh,ivank via fpj)
 
       hedwig-server:
 
