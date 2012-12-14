@@ -452,6 +452,8 @@ Release 4.1.0 - 2012-06-07
 
         BOOKKEEPER-408: BookieReadWriteTest will enter the endless loop and will not leave out (ivank)
 
+	BOOKKEEPER-504: Fix findbugs warning in PendingReadOp (fpj via ivank)
+
       hedwig-client/
 
         BOOKKEEPER-217: NPE in hedwig client when enable DEBUG (sijie via ivank)

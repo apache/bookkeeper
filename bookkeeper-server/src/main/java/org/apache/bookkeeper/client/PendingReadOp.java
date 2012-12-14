@@ -192,7 +192,6 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
                 ++numMissedEntryReads;
             }
 
-            int bookieIndex = lh.distributionSchedule.getWriteSet(entryId).get(nextReplicaIndexToReadFrom - 1);
             LOG.error(errMsg + " while reading entry: " + entryId + " ledgerId: " + lh.ledgerId + " from bookie: "
                       + host);
 
