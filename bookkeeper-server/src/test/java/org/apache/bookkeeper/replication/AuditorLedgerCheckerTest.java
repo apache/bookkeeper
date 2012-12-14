@@ -254,7 +254,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         }
     }
 
-    @Test//(timeout = 30000)
+    @Test(timeout = 30000)
     public void testToggleLedgerReplication() throws Exception {
         LedgerHandle lh1 = createAndAddEntriesToLedger();
         ledgerList.add(lh1.getId());
@@ -277,6 +277,26 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         urLedgerMgr.enableLedgerReplication();
         assertTrue("Ledger replication is not disabled!", urReplicaLatch.await(
                 5, TimeUnit.SECONDS));
+    }
+
+    @Test(timeout = 20000)
+    public void testDuplicateEnDisableAutoRecovery() throws Exception {
+        urLedgerMgr.disableLedgerReplication();
+        try {
+            urLedgerMgr.disableLedgerReplication();
+            fail("Must throw exception, since AutoRecovery is already disabled");
+        } catch (UnavailableException e) {
+            assertTrue("AutoRecovery is not disabled previously!",
+                    e.getCause() instanceof KeeperException.NodeExistsException);
+        }
+        urLedgerMgr.enableLedgerReplication();
+        try {
+            urLedgerMgr.enableLedgerReplication();
+            fail("Must throw exception, since AutoRecovery is already enabled");
+        } catch (UnavailableException e) {
+            assertTrue("AutoRecovery is not enabled previously!",
+                    e.getCause() instanceof KeeperException.NoNodeException);
+        }
     }
 
     private CountDownLatch registerUrLedgerWatcher(int count)
