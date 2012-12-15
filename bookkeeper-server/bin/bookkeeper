@@ -132,6 +132,10 @@ fi
 COMMAND=$1
 shift
 
+if [ $COMMAND == "shell" ]; then
+    DEFAULT_LOG_CONF=$BK_HOME/conf/log4j.shell.properties
+fi
+
 if [ -z "$BOOKIE_CONF" ]; then
     BOOKIE_CONF=$DEFAULT_CONF
 fi
@@ -141,10 +145,9 @@ if [ -z "$BOOKIE_LOG_CONF" ]; then
 fi
 
 BOOKIE_CLASSPATH="$BOOKIE_JAR:$BOOKIE_CLASSPATH:$BOOKIE_EXTRA_CLASSPATH"
-if [ "$BOOKIE_LOG_CONF" != "" ]; then
-    BOOKIE_CLASSPATH="`dirname $BOOKIE_LOG_CONF`:$BOOKIE_CLASSPATH"
-    OPTS="$OPTS -Dlog4j.configuration=`basename $BOOKIE_LOG_CONF`"
-fi
+BOOKIE_CLASSPATH="`dirname $BOOKIE_LOG_CONF`:$BOOKIE_CLASSPATH"
+OPTS="$OPTS -Dlog4j.configuration=`basename $BOOKIE_LOG_CONF`"
+
 OPTS="-cp $BOOKIE_CLASSPATH $OPTS $BOOKIE_EXTRA_OPTS"
 
 OPTS="$OPTS $BOOKIE_EXTRA_OPTS"
