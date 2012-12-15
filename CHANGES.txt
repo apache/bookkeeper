@@ -142,6 +142,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-336: bookie readEntries is taking more time if the ensemble has failed bookie(s) (ivank)
 
+        BOOKKEEPER-512: BookieZkExpireTest fails periodically (ivank via sijie)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

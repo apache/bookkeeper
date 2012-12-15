@@ -37,6 +37,9 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
 
     public BookieZKExpireTest() {
         super(0);
+        // 6000 is minimum due to default tick time
+        baseConf.setZkTimeout(6000);
+        baseClientConf.setZkTimeout(6000);
     }
 
     @Test
@@ -62,7 +65,13 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             server = new BookieServer(conf);
             server.start();
 
-            Thread.sleep(10);
+            int secondsToWait = 5;
+            while (!server.isRunning()) {
+                Thread.sleep(1000);
+                if (secondsToWait-- <= 0) {
+                    fail("Bookie never started");
+                }
+            }
             Thread sendthread = null;
             threadCount = Thread.activeCount();
             threads = new Thread[threadCount*2];
@@ -77,11 +86,19 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             assertNotNull("Send thread not found", sendthread);
 
             sendthread.suspend();
-            Thread.sleep(2*10000);
+            Thread.sleep(2*conf.getZkTimeout());
             sendthread.resume();
 
             // allow watcher thread to run
-            Thread.sleep(3000);
+            secondsToWait = 20;
+            while (server.isBookieRunning()
+                   || server.isNioServerRunning()
+                   || server.isRunning()) {
+                Thread.sleep(1000);
+                if (secondsToWait-- <= 0) {
+                    break;
+                }
+            }
             assertFalse("Bookie should have shutdown on losing zk session", server.isBookieRunning());
             assertFalse("Nio Server should have shutdown on losing zk session", server.isNioServerRunning());
             assertFalse("Bookie Server should have shutdown on losing zk session", server.isRunning());
