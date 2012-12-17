@@ -258,6 +258,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-511: BookieShell is very noisy (ivank via sijie)
 
+        BOOKKEEPER-375: Document about Auto replication service in BK (umamahesh via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)

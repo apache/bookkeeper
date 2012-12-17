@@ -115,6 +115,31 @@ The mechanism to prevent the bookie from starting up in the case of configuratio
 # A strict subset of the ledger devices (among multiple ledger devices) has been replaced, consequently making the content of the replaced devices unavailable;
 # A strict subset of the ledger directories has been accidentally deleted.
 
+h2. Running Autorecovery nodes
+
+To run autorecovery nodes, we execute the following command in every Bookie node:
+ @bookkeeper-server/bin/bookkeeper autorecovery@
+
+Configuration parameters for autorecovery can be set in *bookkeeper-server/conf/bk_server.conf*.
+
+Important parameters are:
+
+* @rereplicationEntryBatchSize@ specifies the number of entries which a replication will rereplicate in parallel. The default value is 10. A larger value for this parameter will increase the speed at which autorecovery occurs but will increate the memory requirement of the autorecovery process, and create more load on the cluster.
+
+* @openLedgerRereplicationGracePeriod@, is the amount of time, in milliseconds, which a recovery worker will wait before recovering a ledger segment which has no defined ended, i.e. the client is still writing to that segment. If the client is still active, it should detect the bookie failure, and start writing to a new ledger segment, and a new ensemble, which doesn't include the failed bookie. Creating new ledger segment will define the end of the previous segment. If, after the grace period, the ledger segment's end has not been defined, we assume the writing client has crashed. The ledger is fenced and the client is blocked from writing any more entries to the ledger. The default value is 30000ms.
+
+h3. Disabling Autorecovery during maintenance
+
+It is useful to disable autorecovery during maintenance, for example, to avoid a Bookie's data being unnecessarily rereplicated when it is only being taken down for a short period to update the software, or change the configuration.
+
+To disable autorecovery, run:
+@bookkeeper-server/bin/bookkeeper shell autorecovery -disable@
+
+To reenable, run:
+@bookkeeper-server/bin/bookkeeper shell autorecovery -enable@
+
+Autorecovery enable/disable only needs to be run once for the whole cluster, and not individually on each Bookie in the cluster.
+
 h2. Setting up a test ensemble
 
 Sometimes it is useful to run a ensemble of bookies on your local machine for testing. We provide a utility for doing this. It will set up N bookies, and a zookeeper instance locally. The data on these bookies and of the zookeeper instance are not persisted over restarts, so obviously this should never be used in a production environment. To run a test ensemble of 10 bookies, do the following:
