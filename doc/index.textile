@@ -45,3 +45,7 @@ h2. Hedwig Admin & Ops
 
 * "Hedwig Console":./hedwigConsole.html
 * "Hedwig JMX":./hedwigJMX.html
+
+h1. Metastore documentation
+
+* "Metastore Interface":./metastore.textile

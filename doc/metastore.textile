@@ -1,0 +1,47 @@
+Title:        Metastore Interface
+Notice: Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License. You may
+        obtain a copy of the License at "http://www.apache.org/licenses/LICENSE-2.0":http://www.apache.org/licenses/LICENSE-2.0.
+        .
+        .
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+        implied. See the License for the specific language governing permissions
+        and limitations under the License.
+        .
+        .
+
+h1. Metastore Interface
+
+Although Apache BookKeeper provides "LedgerManager":./bookkeeperMetadata.html and "Hedwig Metadata Managers":./hedwigMetadata.html for users to plugin different metadata storages for both BookKeeper and Hedwig, it is quite difficult to implement a correct and efficient manager version based on the knowledge for both projects. The __MetaStore__ interface extracts the commonality of the metadata storage interfaces and is provided for users to focus on adapting the underlying storage itself w/o having to worry about the detailed logic for BookKeeper and Hedwig.
+
+h2. MetaStore
+
+The __MetaStore__ interface provide users with access to __MetastoreTable__s used for BookKeeper and Hedwig metadata management. There are two kinds of table defined in a __MetaStore__, __MetastoreTable__ which provides basic __PUT__,__GET__,__REMOVE__,__SCAN__ operations and which does not assume any ordering requirements from the underlying storage; and __MetastoreScannableTable__ which is derived from __MetastoreTable__, but *does* assume that data is stored in key order in the underlying storage.
+
+* @getName@: Return the name of the __MetaStore__.
+* @getVersion@: Return current __MetaStore__ plugin version.
+* @init@: Initialize the __MetaStore__ library with the given configuration and its version.
+* @close@: Close the __MetaStore__, freeing all resources. i.e. release all the open connections and occupied memory etc.
+* @createTable@: Create a table instance to access the data stored in it. A table name is given to locate the table. An __MetastoreTable__ object is returned.
+* @createScannableTable@: Similar as __createTable__, but returns __MetastoreScannableTable__ rather then __MetastoreTable__ object. If the underlying table is not an ordered table, __MetastoreException__ should be thrown.
+
+h2. MetaStore Table
+
+__MetastoreTable__ is a basic unit in a __MetaStore__, which is used to handle different types of metadata, i.e. A __MetastoreTable__ is used to store metadata for ledgers, while the other __MetastoreTable__ is used to store metadata for topic persistence info. The interface for a __MetastoreTable__ is quite simple:
+
+* @get@: Retrieve a entry by a given __key__. __OK__ and its current version in metadata storage is returned when succeed. __NoKey__ returned for a non-existent key. If __fields__ are specified, return only the specified fields for the key.
+* @put@: Put the given __value__ associated with __key__ with given __version__. The value is only updated when the given __version__ equals the current version in metadata storage. A new __version__ should be returned when updated successfully. __NoKey__ is returned for a non-existent key, __BadVersion__ is returned when an update is attempted with a __version__ which does not match the one in the metadata store.
+* @remove@: Remove the given __value__ associated with __key__. The value is only removed when the given __version__ equals its current version in metadata storage. __NoKey__ is returned for a non-existent key, __BadVersion__ is returned when remove is attempted with a __version__ which does not match.
+* @openCursor@: Open a __cursor__ to iterate over all the entries of a table. The returned cursor doesn't need to guarantee any order and transaction.
+
+h2. MetaStore Scannable Table
+
+__MetastoreScannableTable__ is identical to a __MetastoreTable__ except that it provides an addition interface to iterate over entries in the table in key order.
+
+* @openCursor@: Open a __cursor__ to iterate over all the entries of a table between the key range of __firstKey__ and __lastKey__.
+
+h2. How to organize your metadata.
+
+Some metadata in Hedwig and BookKeeper does not need to be stored in the order of the ledger id or the topic. You could use kind of hash table to store metadata for them. These metadata are topic ownership and topic persistence info. Besides that, subscription state and ledger metadata must be stored in key order due to the current logic in Hedwig/BookKeeper.
