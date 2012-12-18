@@ -33,7 +33,7 @@ public class LedgerDescriptorReadOnlyImpl extends LedgerDescriptorImpl {
     }
 
     @Override
-    void setFenced() throws IOException {
+    boolean setFenced() throws IOException {
         assert false;
         throw new IOException("Invalid action on read only descriptor");
     }

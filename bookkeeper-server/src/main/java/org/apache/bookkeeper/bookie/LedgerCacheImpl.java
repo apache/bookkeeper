@@ -414,6 +414,15 @@ public class LedgerCacheImpl implements LedgerCache {
         synchronized(this) {
             HashMap<Long, LedgerEntryPage> pageMap = pages.get(l);
             if (pageMap == null || pageMap.isEmpty()) {
+                FileInfo fi = null;
+                try {
+                    fi = getFileInfo(l, null);
+                    fi.flushHeader();
+                } finally {
+                    if (null != fi) {
+                        fi.release();
+                    }
+                }
                 return;
             }
             firstEntryList = new LinkedList<Long>();
@@ -451,6 +460,8 @@ public class LedgerCacheImpl implements LedgerCache {
                     });
             ArrayList<Integer> versions = new ArrayList<Integer>(entries.size());
             fi = getFileInfo(l, null);
+            // flush the header if necessary
+            fi.flushHeader();
             int start = 0;
             long lastOffset = -1;
             for(int i = 0; i < entries.size(); i++) {
@@ -785,6 +796,38 @@ public class LedgerCacheImpl implements LedgerCache {
                 LOG.info("Ledger {} is evicted from file info cache.",
                          ledgerToRemove);
                 fileInfoCache.remove(ledgerToRemove).close(true);
+            }
+        }
+    }
+
+    @Override
+    public boolean setFenced(long ledgerId) throws IOException {
+        FileInfo fi = null;
+        try {
+            fi = getFileInfo(ledgerId, null);
+            if (null != fi) {
+                return fi.setFenced();
+            }
+            return false;
+        } finally {
+            if (null != fi) {
+                fi.release();
+            }
+        }
+    }
+
+    @Override
+    public boolean isFenced(long ledgerId) throws IOException {
+        FileInfo fi = null;
+        try {
+            fi = getFileInfo(ledgerId, null);
+            if (null != fi) {
+                return fi.isFenced();
+            }
+            return false;
+        } finally {
+            if (null != fi) {
+                fi.release();
             }
         }
     }

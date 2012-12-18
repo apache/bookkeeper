@@ -30,6 +30,10 @@ import java.io.IOException;
  * head scheduling.
  */
 interface LedgerCache extends Closeable {
+
+    boolean setFenced(long ledgerId) throws IOException;
+    boolean isFenced(long ledgerId) throws IOException;
+
     void setMasterKey(long ledgerId, byte[] masterKey) throws IOException;
     byte[] readMasterKey(long ledgerId) throws IOException, BookieException;
     boolean ledgerExists(long ledgerId) throws IOException;

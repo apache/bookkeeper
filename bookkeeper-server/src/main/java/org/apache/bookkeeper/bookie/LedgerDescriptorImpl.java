@@ -38,7 +38,6 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
     final LedgerStorage ledgerStorage;
     private long ledgerId;
 
-    volatile private boolean fenced = false;
     final byte[] masterKey;
 
     LedgerDescriptorImpl(byte[] masterKey, long ledgerId, LedgerStorage ledgerStorage) {
@@ -60,13 +59,13 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
     }
 
     @Override
-    void setFenced() throws IOException {
-        fenced = true;
+    boolean setFenced() throws IOException {
+        return ledgerStorage.setFenced(ledgerId);
     }
 
     @Override
-    boolean isFenced() {
-        return fenced;
+    boolean isFenced() throws IOException {
+        return ledgerStorage.isFenced(ledgerId);
     }
 
     @Override

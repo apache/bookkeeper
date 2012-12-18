@@ -26,6 +26,10 @@ import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.zookeeper.KeeperException;
 
@@ -399,13 +403,14 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
             LOG.debug("Received new read request: {}, {}", ledgerId, entryId);
             int errorCode = BookieProtocol.EIO;
             try {
+                Future<Boolean> fenceResult = null;
                 if ((flags & BookieProtocol.FLAG_DO_FENCING) == BookieProtocol.FLAG_DO_FENCING) {
                     LOG.warn("Ledger " + ledgerId + " fenced by " + src.getPeerName());
                     if (h.getVersion() >= 2) {
                         masterKey = new byte[BookieProtocol.MASTER_KEY_LENGTH];
                         packet.get(masterKey, 0, BookieProtocol.MASTER_KEY_LENGTH);
 
-                        bookie.fenceLedger(ledgerId, masterKey);
+                        fenceResult = bookie.fenceLedger(ledgerId, masterKey);
                     } else {
                         LOG.error("Password not provided, Not safe to fence {}", ledgerId);
                         throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
@@ -413,8 +418,49 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
                 }
                 rsp[1] = bookie.readEntry(ledgerId, entryId);
                 LOG.debug("##### Read entry ##### {}", rsp[1].remaining());
-                errorCode = BookieProtocol.EOK;
-                success = true;
+                if (null != fenceResult) {
+                    // TODO:
+                    // currently we don't have readCallback to run in separated read
+                    // threads. after BOOKKEEPER-429 is complete, we could improve
+                    // following code to make it not wait here
+                    //
+                    // For now, since we only try to wait after read entry. so writing
+                    // to journal and read entry are executed in different thread
+                    // it would be fine.
+                    try {
+                        Boolean fenced = fenceResult.get(1000, TimeUnit.MILLISECONDS);
+                        if (null == fenced || !fenced) {
+                            // if failed to fence, fail the read request to make it retry.
+                            errorCode = BookieProtocol.EIO;
+                            success = false;
+                            rsp[1] = null;
+                        } else {
+                            errorCode = BookieProtocol.EOK;
+                            success = true;
+                        }
+                    } catch (InterruptedException ie) {
+                        LOG.error("Interrupting fence read entry (lid:" + ledgerId
+                                  + ", eid:" + entryId + ") :", ie);
+                        errorCode = BookieProtocol.EIO;
+                        success = false;
+                        rsp[1] = null;
+                    } catch (ExecutionException ee) {
+                        LOG.error("Failed to fence read entry (lid:" + ledgerId
+                                  + ", eid:" + entryId + ") :", ee);
+                        errorCode = BookieProtocol.EIO;
+                        success = false;
+                        rsp[1] = null;
+                    } catch (TimeoutException te) {
+                        LOG.error("Timeout to fence read entry (lid:" + ledgerId
+                                  + ", eid:" + entryId + ") :", te);
+                        errorCode = BookieProtocol.EIO;
+                        success = false;
+                        rsp[1] = null;
+                    }
+                } else {
+                    errorCode = BookieProtocol.EOK;
+                    success = true;
+                }
             } catch (Bookie.NoLedgerException e) {
                 if (LOG.isTraceEnabled()) {
                     LOG.error("Error reading " + entryId + "@" + ledgerId, e);

@@ -377,4 +377,32 @@ public class TestFencing extends BaseTestCase {
         writelh.addEntry(tmp.getBytes());
     }
 
+    @Test
+    public void testFencingAndRestartBookies() throws Exception {
+        LedgerHandle writelh = null;
+        writelh = bkc.createLedger(digestType, "password".getBytes());
+
+        String tmp = "BookKeeper is cool!";
+        for (int i = 0; i < 10; i++) {
+            writelh.addEntry(tmp.getBytes());
+        }
+
+        /*
+         * Try to open ledger.
+         */
+        LedgerHandle readlh = bkc.openLedger(writelh.getId(), digestType,
+                                             "password".getBytes());
+
+        restartBookies();
+
+        try {
+            writelh.addEntry(tmp.getBytes());
+            LOG.error("Should have thrown an exception");
+            fail("Should have thrown an exception when trying to write");
+        } catch (BKException.BKLedgerFencedException e) {
+            // correct behaviour
+        }
+
+        readlh.close();
+    }
 }

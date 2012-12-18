@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -89,6 +90,7 @@ public class Bookie extends Thread {
     final HandleFactory handles;
 
     static final long METAENTRY_ID_LEDGER_KEY = -0x1000;
+    static final long METAENTRY_ID_FENCE_KEY  = -0x2000;
 
     // ZK registration path for this bookie
     private final String bookieRegistrationPath;
@@ -152,6 +154,75 @@ public class Bookie extends Thread {
                 LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
                           new Object[] { entryId, ledgerId, addr, rc });
             }
+        }
+    }
+
+    final static Future<Boolean> SUCCESS_FUTURE = new Future<Boolean>() {
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) { return false; }
+        @Override
+        public Boolean get() { return true; }
+        @Override
+        public Boolean get(long timeout, TimeUnit unit) { return true; }
+        @Override
+        public boolean isCancelled() { return false; }
+        @Override
+        public boolean isDone() {
+            return true;
+        }
+    };
+
+    static class CountDownLatchFuture<T> implements Future<T> {
+
+        T value = null;
+        volatile boolean done = false;
+        CountDownLatch latch = new CountDownLatch(1);
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) { return false; }
+        @Override
+        public T get() throws InterruptedException {
+            latch.await();
+            return value;
+        }
+        @Override
+        public T get(long timeout, TimeUnit unit) throws InterruptedException {
+            latch.await(timeout, unit);
+            return value;
+        }
+
+        @Override
+        public boolean isCancelled() { return false; }
+
+        @Override
+        public boolean isDone() {
+            return done;
+        }
+
+        void setDone(T value) {
+            this.value = value;
+            done = true;
+            latch.countDown();
+        }
+    }
+
+    static class FutureWriteCallback implements WriteCallback {
+
+        CountDownLatchFuture<Boolean> result =
+            new CountDownLatchFuture<Boolean>();
+
+        @Override
+        public void writeComplete(int rc, long ledgerId, long entryId,
+                                  InetSocketAddress addr, Object ctx) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
+                          new Object[] { entryId, ledgerId, addr, rc });
+            }
+            result.setDone(0 == rc);
+        }
+
+        public Future<Boolean> getResult() {
+            return result;
         }
     }
 
@@ -448,6 +519,19 @@ public class Bookie extends Thread {
                             masterKeyCache.put(ledgerId, masterKey);
                         } else {
                             throw new IOException("Invalid journal. Contains journalKey "
+                                    + " but layout version (" + journalVersion
+                                    + ") is too old to hold this");
+                        }
+                    } else if (entryId == METAENTRY_ID_FENCE_KEY) {
+                        if (journalVersion >= 4) {
+                            byte[] key = masterKeyCache.get(ledgerId);
+                            if (key == null) {
+                                key = ledgerStorage.readMasterKey(ledgerId);
+                            }
+                            LedgerDescriptor handle = handles.getHandle(ledgerId, key);
+                            handle.setFenced();
+                        } else {
+                            throw new IOException("Invalid journal. Contains fenceKey "
                                     + " but layout version (" + journalVersion
                                     + ") is too old to hold this");
                         }
@@ -934,10 +1018,26 @@ public class Bookie extends Thread {
      * This method is idempotent. Once a ledger is fenced, it can
      * never be unfenced. Fencing a fenced ledger has no effect.
      */
-    public void fenceLedger(long ledgerId, byte[] masterKey) throws IOException, BookieException {
+    public Future<Boolean> fenceLedger(long ledgerId, byte[] masterKey) throws IOException, BookieException {
         LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
+        boolean success;
         synchronized (handle) {
-            handle.setFenced();
+            success = handle.setFenced();
+        }
+        if (success) {
+            // fenced first time, we should add the key to journal ensure we can rebuild
+            ByteBuffer bb = ByteBuffer.allocate(8 + 8);
+            bb.putLong(ledgerId);
+            bb.putLong(METAENTRY_ID_FENCE_KEY);
+            bb.flip();
+
+            FutureWriteCallback fwc = new FutureWriteCallback();
+            LOG.debug("record fenced state for ledger {} in journal.", ledgerId);
+            journal.logAddEntry(bb, fwc, null);
+            return fwc.getResult();
+        } else {
+            // already fenced
+            return SUCCESS_FUTURE;
         }
     }
 

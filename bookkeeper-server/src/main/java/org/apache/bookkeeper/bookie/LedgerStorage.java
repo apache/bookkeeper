@@ -50,6 +50,24 @@ interface LedgerStorage {
     boolean ledgerExists(long ledgerId) throws IOException;
 
     /**
+     * Fenced the ledger id in ledger storage.
+     *
+     * @param ledgerId
+     *          Ledger Id.
+     * @throws IOException when failed to fence the ledger.
+     */
+    boolean setFenced(long ledgerId) throws IOException;
+
+    /**
+     * Check whether the ledger is fenced in ledger storage or not.
+     *
+     * @param ledgerId
+     *          Ledger ID.
+     * @throws IOException
+     */
+    boolean isFenced(long ledgerId) throws IOException;
+
+    /**
      * Set the master key for a ledger
      */
     void setMasterKey(long ledgerId, byte[] masterKey) throws IOException;

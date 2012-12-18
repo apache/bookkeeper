@@ -54,8 +54,8 @@ public abstract class LedgerDescriptor {
 
     abstract long getLedgerId();
 
-    abstract void setFenced() throws IOException;
-    abstract boolean isFenced();
+    abstract boolean setFenced() throws IOException;
+    abstract boolean isFenced() throws IOException;
 
     abstract long addEntry(ByteBuffer entry) throws IOException;
     abstract ByteBuffer readEntry(long entryId) throws IOException;

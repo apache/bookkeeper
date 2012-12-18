@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
  * <li>magic bytes: 4 bytes, 'BKLE', version: 4 bytes
  * <li>len of master key: indicates length of master key. -1 means no master key stored in header.
  * <li>master key: master key
+ * <li>state: bit map to indicate the state, 32 bits.
  * </ul>
  * <b>Index page</b> is a fixed-length page, which contains serveral entries which point to the offsets of data stored in entry loggers.
  * </p>
@@ -52,6 +53,7 @@ class FileInfo {
     static Logger LOG = LoggerFactory.getLogger(FileInfo.class);
 
     static final int NO_MASTER_KEY = -1;
+    static final int STATE_FENCED_BIT = 0x1;
 
     private FileChannel fc;
     private File lf;
@@ -68,6 +70,10 @@ class FileInfo {
     private int useCount;
     private boolean isClosed;
     private long sizeSinceLastwrite;
+
+    // bit map for states of the ledger.
+    private int stateBits;
+    private boolean needFlushHeader = false;
 
     // file access mode
     protected String mode;
@@ -118,6 +124,8 @@ class FileInfo {
             }
             masterKey = new byte[length];
             bb.get(masterKey);
+            stateBits = bb.getInt();
+            needFlushHeader = false;
         } else {
             throw new IOException("Ledger index file does not exist");
         }
@@ -163,9 +171,41 @@ class FileInfo {
         bb.putInt(headerVersion);
         bb.putInt(masterKey.length);
         bb.put(masterKey);
+        bb.putInt(stateBits);
         bb.rewind();
         fc.position(0);
         fc.write(bb);
+    }
+
+    synchronized public boolean isFenced() throws IOException {
+        checkOpen(false);
+        return (stateBits & STATE_FENCED_BIT) == STATE_FENCED_BIT;
+    }
+
+    /**
+     * @return true if set fence succeed, otherwise false when
+     * it already fenced or failed to set fenced.
+     */
+    synchronized public boolean setFenced() throws IOException {
+        checkOpen(false);
+        LOG.debug("Try to set fenced state in file info {} : state bits {}.", lf, stateBits);
+        if ((stateBits & STATE_FENCED_BIT) != STATE_FENCED_BIT) {
+            // not fenced yet
+            stateBits |= STATE_FENCED_BIT;
+            needFlushHeader = true;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    // flush the header when header is changed
+    synchronized public void flushHeader() throws IOException {
+        if (needFlushHeader) {
+            checkOpen(true);
+            writeHeader();
+            needFlushHeader = false;
+        }
     }
 
     synchronized public long size() throws IOException {

@@ -148,6 +148,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-496: Ensure that the auditor and replication worker will shutdown if they lose their ZK session (ivank)
 
+        BOOKKEEPER-500: Fencing doesn't work when restarting bookies. (sijie via ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

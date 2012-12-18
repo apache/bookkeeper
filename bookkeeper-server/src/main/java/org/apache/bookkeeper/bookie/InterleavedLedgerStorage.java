@@ -78,6 +78,16 @@ class InterleavedLedgerStorage implements LedgerStorage {
     }
 
     @Override
+    public boolean setFenced(long ledgerId) throws IOException {
+        return ledgerCache.setFenced(ledgerId);
+    }
+
+    @Override
+    public boolean isFenced(long ledgerId) throws IOException {
+        return ledgerCache.isFenced(ledgerId);
+    }
+
+    @Override
     public void setMasterKey(long ledgerId, byte[] masterKey) throws IOException {
         ledgerCache.setMasterKey(ledgerId, masterKey);
     }
