@@ -255,13 +255,8 @@ public class TestBookKeeperPersistenceManager extends TestCase {
         });
     }
 
-    @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
-
-        // delay read response for 2s.
-        bktb = new BookKeeperTestBase(numBookies, readDelay);
+    private void startCluster(long delay) throws Exception {
+        bktb = new BookKeeperTestBase(numBookies, 0L);
         bktb.setUp();
 
         conf = new ServerConfiguration() {
@@ -294,9 +289,7 @@ public class TestBookKeeperPersistenceManager extends TestCase {
         sm = new MMSubscriptionManager(conf, metadataManagerFactory, tm, manager, null, scheduler);
     }
 
-    @Override
-    @After
-    public void tearDown() throws Exception {
+    private void stopCluster() throws Exception {
         tm.stop();
         manager.stop();
         sm.stop();
@@ -304,6 +297,19 @@ public class TestBookKeeperPersistenceManager extends TestCase {
         metadataManagerFactory.shutdown();
         scheduler.shutdown();
         bktb.tearDown();
+    }
+
+    @Override
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+        startCluster(0L);
+    }
+
+    @Override
+    @After
+    public void tearDown() throws Exception {
+        stopCluster();
         super.tearDown();
     }
 
@@ -521,6 +527,9 @@ public class TestBookKeeperPersistenceManager extends TestCase {
 
     @Test
     public void testScanMessagesOnTwoLedgers() throws Exception {
+        stopCluster();
+        startCluster(readDelay);
+
         ByteString topic = ByteString.copyFromUtf8("TestScanMessagesOnTwoLedgers");
 
         List<Message> msgs = new ArrayList<Message>();

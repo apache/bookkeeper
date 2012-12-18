@@ -208,6 +208,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         }
 
         // return true if we managed to complete the entry
+        // return false if the read entry is not complete or it is already completed before
         boolean complete(InetSocketAddress host, final ChannelBuffer buffer) {
             ChannelBufferInputStream is;
             try {
@@ -263,10 +264,19 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         if (speculativeReadTimeout > 0) {
             speculativeTask = scheduler.scheduleWithFixedDelay(new Runnable() {
                     public void run() {
+                        int x = 0;
                         for (LedgerEntryRequest r : seq) {
                             if (!r.isComplete()) {
-                                r.maybeSendSpeculativeRead(heardFromHosts);
+                                if (null != r.maybeSendSpeculativeRead(heardFromHosts)) {
+                                    LOG.debug("Send speculative read for {}. Hosts heard are {}.",
+                                              r, heardFromHosts);
+                                    ++x;
+                                }
                             }
+                        }
+                        if (x > 0) {
+                            LOG.info("Send {} speculative reads for ledger {} ({}, {}). Hosts heard are {}.",
+                                     new Object[] { x, lh.getId(), startEntryId, endEntryId, heardFromHosts });
                         }
                     }
                 }, speculativeReadTimeout, speculativeReadTimeout, TimeUnit.MILLISECONDS);
@@ -320,10 +330,9 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
         if (entry.complete(rctx.to, buffer)) {
             numPendingEntries--;
-        }
-
-        if (numPendingEntries == 0) {
-            submitCallback(BKException.Code.OK);
+            if (numPendingEntries == 0) {
+                submitCallback(BKException.Code.OK);
+            }
         }
 
         if(numPendingEntries < 0)
@@ -333,6 +342,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     private void submitCallback(int code) {
         if (speculativeTask != null) {
             speculativeTask.cancel(true);
+            speculativeTask = null;
         }
         cb.readComplete(code, lh, PendingReadOp.this, PendingReadOp.this.ctx);
     }

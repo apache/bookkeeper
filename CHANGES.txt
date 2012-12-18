@@ -144,6 +144,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-512: BookieZkExpireTest fails periodically (ivank via sijie)
 
+        BOOKKEEPER-509: TestBookKeeperPersistenceManager failed on latest trunk (sijie via ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)
