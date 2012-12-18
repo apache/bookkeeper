@@ -283,10 +283,12 @@ public class ReplicationWorker implements Runnable {
      * Stop the replication worker service
      */
     public void shutdown() {
-        if (!workerRunning) {
-            return;
+        synchronized (this) {
+            if (!workerRunning) {
+                return;
+            }
+            workerRunning = false;
         }
-        workerRunning = false;
         try {
             underreplicationManager.close();
         } catch (UnavailableException e) {

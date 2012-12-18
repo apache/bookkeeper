@@ -23,6 +23,7 @@ package org.apache.bookkeeper.replication;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -74,7 +75,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
     private HashMap<String, AuditorElector> auditorElectors = new HashMap<String, AuditorElector>();
     private LedgerUnderreplicationManager urLedgerMgr;
     private Set<Long> urLedgerList;
-    private Map<Long, String> urLedgerData;
+
     private List<Long> ledgerList;
 
     public AuditorLedgerCheckerTest(String ledgerManagerFactoryClass)
@@ -97,28 +98,27 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         startAuditorElectors();
         rng = new Random(System.currentTimeMillis()); // Initialize the Random
         urLedgerList = new HashSet<Long>();
-        urLedgerData = new HashMap<Long, String>();
         ledgerList = new ArrayList<Long>(2);
     }
 
     @Override
     public void tearDown() throws Exception {
-        super.tearDown();
         stopAuditorElectors();
+        super.tearDown();
     }
 
-    private void startAuditorElectors() throws UnavailableException {
+    private void startAuditorElectors() throws Exception {
         for (BookieServer bserver : bs) {
             String addr = StringUtils.addrToString(bserver.getLocalAddress());
             AuditorElector auditorElector = new AuditorElector(addr,
                     baseClientConf, zkc);
             auditorElectors.put(addr, auditorElector);
-            auditorElector.doElection();
+            auditorElector.start();
             LOG.debug("Starting Auditor Elector");
         }
     }
 
-    private void stopAuditorElectors() {
+    private void stopAuditorElectors() throws Exception {
         for (AuditorElector auditorElector : auditorElectors.values()) {
             auditorElector.shutdown();
             LOG.debug("Stopping Auditor Elector!");
@@ -145,7 +145,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for ledgers to be marked as under replicated");
         underReplicaLatch.await(5, TimeUnit.SECONDS);
-
+        Map<Long, String> urLedgerData = getUrLedgerData(urLedgerList);
         assertEquals("Missed identifying under replicated ledgers", 1,
                 urLedgerList.size());
 
@@ -191,6 +191,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for ledgers to be marked as under replicated");
         underReplicaLatch.await(5, TimeUnit.SECONDS);
+        Map<Long, String> urLedgerData = getUrLedgerData(urLedgerList);
 
         assertEquals("Missed identifying under replicated ledgers", 2,
                 urLedgerList.size());
@@ -225,8 +226,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         // failing first bookie
         shutdownBookie(bs.size() - 1);
         // simulate re-replication
-        doLedgerRereplication(lh1.getId());
-        doLedgerRereplication(lh2.getId());
+        doLedgerRereplication(lh1.getId(), lh2.getId());
 
         // failing another bookie
         CountDownLatch underReplicaLatch = registerUrLedgerWatcher(ledgerList
@@ -236,6 +236,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for ledgers to be marked as under replicated");
         underReplicaLatch.await(5, TimeUnit.SECONDS);
+        Map<Long, String> urLedgerData = getUrLedgerData(urLedgerList);
 
         assertEquals("Missed identifying under replicated ledgers", 2,
                 urLedgerList.size());
@@ -275,7 +276,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
 
         // enabling ledger replication
         urLedgerMgr.enableLedgerReplication();
-        assertTrue("Ledger replication is not disabled!", urReplicaLatch.await(
+        assertTrue("Ledger replication is not enabled!", urReplicaLatch.await(
                 5, TimeUnit.SECONDS));
     }
 
@@ -304,19 +305,21 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         final CountDownLatch underReplicaLatch = new CountDownLatch(count);
         for (Long ledgerId : ledgerList) {
             Watcher urLedgerWatcher = new ChildWatcher(underReplicaLatch);
-            String znode = String.format("%s/urL%010d", getParentZnodePath(
-                    UNDERREPLICATED_PATH, ledgerId), ledgerId);
+            String znode = ZkLedgerUnderreplicationManager.getUrLedgerZnode(UNDERREPLICATED_PATH,
+                                                                            ledgerId);
             zkc.exists(znode, urLedgerWatcher);
         }
         return underReplicaLatch;
     }
 
-    private void doLedgerRereplication(long ledgerId)
+    private void doLedgerRereplication(Long... ledgerIds)
             throws UnavailableException {
-        urLedgerMgr.getLedgerToRereplicate();
-        urLedgerMgr.markLedgerReplicated(ledgerId);
-        urLedgerMgr.releaseUnderreplicatedLedger(ledgerId);
-        urLedgerData.clear();
+        for (int i = 0; i < ledgerIds.length; i++) {
+            long lid = urLedgerMgr.getLedgerToRereplicate();
+            assertTrue("Received unexpected ledgerid", Arrays.asList(ledgerIds).contains(lid));
+            urLedgerMgr.markLedgerReplicated(lid);
+            urLedgerMgr.releaseUnderreplicatedLedger(lid);
+        }
     }
 
     private String shutdownBookie(int bkShutdownIndex) throws IOException,
@@ -350,14 +353,16 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         }
     }
 
-    private String getParentZnodePath(String base, long ledgerId) {
-        String subdir1 = String.format("%04x", ledgerId >> 48 & 0xffff);
-        String subdir2 = String.format("%04x", ledgerId >> 32 & 0xffff);
-        String subdir3 = String.format("%04x", ledgerId >> 16 & 0xffff);
-        String subdir4 = String.format("%04x", ledgerId & 0xffff);
-
-        return String.format("%s/%s/%s/%s/%s", base, subdir1, subdir2, subdir3,
-                subdir4);
+    private Map<Long, String> getUrLedgerData(Set<Long> urLedgerList)
+            throws KeeperException, InterruptedException {
+        Map<Long, String> urLedgerData = new HashMap<Long, String>();
+        for (Long ledgerId : urLedgerList) {
+            String znode = ZkLedgerUnderreplicationManager.getUrLedgerZnode(UNDERREPLICATED_PATH,
+                                                                            ledgerId);
+            byte[] data = zkc.getData(znode, false, null);
+            urLedgerData.put(ledgerId, new String(data));
+        }
+        return urLedgerData;
     }
 
     private class ChildWatcher implements Watcher {
@@ -369,21 +374,11 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
 
         @Override
         public void process(WatchedEvent event) {
-            LOG.debug("Recieved notification for the ledger path : "
+            LOG.info("Received notification for the ledger path : "
                     + event.getPath());
             for (Long ledgerId : ledgerList) {
                 if (event.getPath().contains(ledgerId + "")) {
                     urLedgerList.add(Long.valueOf(ledgerId));
-                    try {
-                        byte[] data = zkc.getData(event.getPath(), this, null);
-                        urLedgerData.put(ledgerId, new String(data));
-                    } catch (KeeperException e) {
-                        LOG.error("Exception while reading data from znode :"
-                                + event.getPath());
-                    } catch (InterruptedException e) {
-                        LOG.error("Exception while reading data from znode :"
-                                + event.getPath());
-                    }
                 }
             }
             LOG.debug("Count down and waiting for next notification");

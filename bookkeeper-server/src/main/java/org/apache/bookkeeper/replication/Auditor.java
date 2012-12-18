@@ -23,9 +23,13 @@ package org.apache.bookkeeper.replication;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
 
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -39,6 +43,7 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.Watcher.Event.EventType;
+import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,22 +54,30 @@ import org.slf4j.LoggerFactory;
  * re-replication activities by keeping all the corresponding ledgers of the
  * failed bookie as underreplicated znode in zk.
  */
-public class Auditor extends Thread implements Watcher {
+public class Auditor implements Watcher {
     private static final Logger LOG = LoggerFactory.getLogger(Auditor.class);
-    private final LinkedBlockingQueue<EventType> bookieNotifications = new LinkedBlockingQueue<EventType>();
+
     private final AbstractConfiguration conf;
     private final ZooKeeper zkc;
     private BookieLedgerIndexer bookieLedgerIndexer;
     private LedgerUnderreplicationManager ledgerUnderreplicationManager;
-    private volatile boolean running = true;
+    private final ExecutorService executor;
+    private List<String> knownBookies = new ArrayList<String>();
 
-    public Auditor(String bookieIdentifier, AbstractConfiguration conf,
+    public Auditor(final String bookieIdentifier, AbstractConfiguration conf,
             ZooKeeper zkc) throws UnavailableException {
-        setName("AuditorBookie-" + bookieIdentifier);
-        setDaemon(true);
         this.conf = conf;
         this.zkc = zkc;
         initialize(conf, zkc);
+
+        executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+                @Override
+                public Thread newThread(Runnable r) {
+                    Thread t = new Thread(r, "AuditorBookie-" + bookieIdentifier);
+                    t.setDaemon(true);
+                    return t;
+                }
+            });
     }
 
     private void initialize(AbstractConfiguration conf, ZooKeeper zkc)
@@ -94,53 +107,91 @@ public class Auditor extends Thread implements Watcher {
         }
     }
 
-    @Override
-    public void run() {
-        LOG.info("I'm starting as Auditor Bookie");
-        try {
-            // on startup watching available bookie and based on the
-            // available bookies determining the bookie failures.
-            List<String> knownBookies = getAvailableBookies();
-            auditingBookies(knownBookies);
-
-            while (true) {
-                // wait for bookie join/failure notifications
-                bookieNotifications.take();
-
-                // check whether ledger replication is enabled
-                waitIfLedgerReplicationDisabled();
-
-                List<String> availableBookies = getAvailableBookies();
-
-                // casting to String, as knownBookies and availableBookies
-                // contains only String values
-                // find new bookies(if any) and update the known bookie list
-                Collection<String> newBookies = CollectionUtils.subtract(
-                        availableBookies, knownBookies);
-                knownBookies.addAll(newBookies);
-
-                // find lost bookies(if any)
-                Collection<String> lostBookies = CollectionUtils.subtract(
-                        knownBookies, availableBookies);
-
-                if (lostBookies.size() > 0) {
-                    knownBookies.removeAll(lostBookies);
-                    Map<String, Set<Long>> ledgerDetails = generateBookie2LedgersIndex();
-                    handleLostBookies(lostBookies, ledgerDetails);
-                }
+    private void submitShutdownTask() {
+        synchronized (this) {
+            if (executor.isShutdown()) {
+                return;
             }
-        } catch (KeeperException ke) {
-            LOG.error("Exception while watching available bookies", ke);
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-            LOG.error("Interrupted while watching available bookies ", ie);
-        } catch (BKAuditException bke) {
-            LOG.error("Exception while watching available bookies", bke);
-        } catch (UnavailableException ue) {
-            LOG.error("Exception while watching available bookies", ue);
+            executor.submit(new Runnable() {
+                    public void run() {
+                        synchronized (Auditor.this) {
+                            executor.shutdown();
+                        }
+                    }
+                });
         }
+    }
 
-        shutdown();
+    private synchronized void submitAuditTask() {
+        synchronized (this) {
+            if (executor.isShutdown()) {
+                return;
+            }
+            executor.submit(new Runnable() {
+                    public void run() {
+                        try {
+                            waitIfLedgerReplicationDisabled();
+
+                            List<String> availableBookies = getAvailableBookies();
+
+                            // casting to String, as knownBookies and availableBookies
+                            // contains only String values
+                            // find new bookies(if any) and update the known bookie list
+                            Collection<String> newBookies = CollectionUtils.subtract(
+                                    availableBookies, knownBookies);
+                            knownBookies.addAll(newBookies);
+
+                            // find lost bookies(if any)
+                            Collection<String> lostBookies = CollectionUtils.subtract(
+                                    knownBookies, availableBookies);
+
+                            if (lostBookies.size() > 0) {
+                                knownBookies.removeAll(lostBookies);
+                                Map<String, Set<Long>> ledgerDetails = generateBookie2LedgersIndex();
+                                handleLostBookies(lostBookies, ledgerDetails);
+                            }
+                        } catch (KeeperException ke) {
+                            LOG.error("Exception while watching available bookies", ke);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            LOG.error("Interrupted while watching available bookies ", ie);
+                        } catch (BKAuditException bke) {
+                            LOG.error("Exception while watching available bookies", bke);
+                        } catch (UnavailableException ue) {
+                            LOG.error("Exception while watching available bookies", ue);
+                        }
+                    }
+                });
+        }
+    }
+
+    public void start() {
+        LOG.info("I'm starting as Auditor Bookie");
+        // on startup watching available bookie and based on the
+        // available bookies determining the bookie failures.
+        synchronized (this) {
+            if (executor.isShutdown()) {
+                return;
+            }
+            executor.submit(new Runnable() {
+                    public void run() {
+                        try {
+                            knownBookies = getAvailableBookies();
+                            auditingBookies(knownBookies);
+                        } catch (KeeperException ke) {
+                            LOG.error("Exception while watching available bookies", ke);
+                            submitShutdownTask();
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            LOG.error("Interrupted while watching available bookies ", ie);
+                            submitShutdownTask();
+                        } catch (BKAuditException bke) {
+                            LOG.error("Exception while watching available bookies", bke);
+                            submitShutdownTask();
+                        }
+                    }
+                });
+        }
     }
 
     private void waitIfLedgerReplicationDisabled() throws UnavailableException,
@@ -214,9 +265,11 @@ public class Auditor extends Thread implements Watcher {
     @Override
     public void process(WatchedEvent event) {
         // listen children changed event from ZooKeeper
-        if (event.getType() == EventType.NodeChildrenChanged) {
-            if (running)
-                bookieNotifications.add(event.getType());
+        if (event.getState() == KeeperState.Disconnected
+                || event.getState() == KeeperState.Expired) {
+            submitShutdownTask();
+        } else if (event.getType() == EventType.NodeChildrenChanged) {
+            submitAuditTask();
         }
     }
 
@@ -224,14 +277,14 @@ public class Auditor extends Thread implements Watcher {
      * Shutdown the auditor
      */
     public void shutdown() {
-        if (!running) {
-            return;
-        }
-        running = false;
-        LOG.info("Shutting down " + getName());
-        this.interrupt();
+        LOG.info("Shutting down auditor");
+        submitShutdownTask();
+
         try {
-            this.join();
+            while (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+                LOG.warn("Executor not shutting down, interrupting");
+                executor.shutdownNow();
+            }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             LOG.warn("Interrupted while shutting down auditor bookie", ie);
@@ -244,6 +297,6 @@ public class Auditor extends Thread implements Watcher {
      * @return auditor status
      */
     public boolean isRunning() {
-        return running;
+        return !executor.isShutdown();
     }
 }

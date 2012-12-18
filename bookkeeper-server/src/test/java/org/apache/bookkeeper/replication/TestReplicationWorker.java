@@ -486,6 +486,39 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
 
     }
 
+    /**
+     * Test that the replication worker will shutdown if it lose its zookeeper session
+     */
+    @Test(timeout=30000)
+    public void testRWZKSessionLost() throws Exception {
+        ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(10000);
+        ZooKeeper zk = ZkUtils.createConnectedZookeeperClient(
+                zkUtil.getZooKeeperConnectString(), w);
+
+        try {
+            ReplicationWorker rw = new ReplicationWorker(zk, baseConf, getBookie(0));
+            rw.start();
+            for (int i = 0; i < 10; i++) {
+                if (rw.isRunning()) {
+                    break;
+                }
+                Thread.sleep(1000);
+            }
+            assertTrue("Replication worker should be running", rw.isRunning());
+            stopZKCluster();
+
+            for (int i = 0; i < 10; i++) {
+                if (!rw.isRunning()) {
+                    break;
+                }
+                Thread.sleep(1000);
+            }
+            assertFalse("Replication worker should have shut down", rw.isRunning());
+        } finally {
+            zk.close();
+        }
+    }
+
     private void killAllBookies(LedgerHandle lh, InetSocketAddress excludeBK)
             throws InterruptedException {
         // Killing all bookies except newly replicated bookie

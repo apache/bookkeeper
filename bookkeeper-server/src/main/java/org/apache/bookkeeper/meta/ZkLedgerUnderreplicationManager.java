@@ -191,7 +191,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         }
     }
 
-    private String getParentZnodePath(String base, long ledgerId) {
+    public static String getParentZnodePath(String base, long ledgerId) {
         String subdir1 = String.format("%04x", ledgerId >> 48 & 0xffff);
         String subdir2 = String.format("%04x", ledgerId >> 32 & 0xffff);
         String subdir3 = String.format("%04x", ledgerId >> 16 & 0xffff);
@@ -201,8 +201,12 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                              base, subdir1, subdir2, subdir3, subdir4);
     }
 
+    public static String getUrLedgerZnode(String base, long ledgerId) {
+        return String.format("%s/urL%010d", getParentZnodePath(base, ledgerId), ledgerId);
+    }
+
     private String getUrLedgerZnode(long ledgerId) {
-        return String.format("%s/urL%010d", getParentZnodePath(urLedgerPath, ledgerId), ledgerId);
+        return getUrLedgerZnode(urLedgerPath, ledgerId);
     }
 
 
@@ -376,7 +380,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                         public void process(WatchedEvent e) {
                             if (e.getType() == Watcher.Event.EventType.NodeChildrenChanged
                                 || e.getType() == Watcher.Event.EventType.NodeDeleted
-                                || e.getType() == Watcher.Event.EventType.NodeCreated) {
+                                || e.getType() == Watcher.Event.EventType.NodeCreated
+                                || e.getState() == Watcher.Event.KeeperState.Expired
+                                || e.getState() == Watcher.Event.KeeperState.Disconnected) {
                                 changedLatch.countDown();
                             }
                         }
