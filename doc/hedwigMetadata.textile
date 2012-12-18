@@ -1,0 +1,123 @@
+Title:        Hedwig Metadata Management
+Notice: Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License. You may
+        obtain a copy of the License at "http://www.apache.org/licenses/LICENSE-2.0":http://www.apache.org/licenses/LICENSE-2.0.
+        .
+        .
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+        implied. See the License for the specific language governing permissions
+        and limitations under the License.
+        .
+        .
+
+h1. Metadata Management
+
+There are two classes of metadata that need to be managed in Hedwig: one is the __list of available hubs__, which is used to track server availability (ZooKeeper is designed naturally for this); while the other is for data structures to track __topic states__ and __subscription states__. This second class can be handled by any key/value store which provides ah __CAS (Compare And Set)__ operation. The metadata in this class are:
+
+* @Topic Ownership@: tracks which hub server is assigned to serve requests for a specific topic.
+* @Topic Persistence Info@: records what __bookkeeper ledgers__ are used to store messages for a specific topic and their message id ranges.
+* @Subscription Data@: records the preferences and subscription state for a specific subscription (topic, subscriber).
+
+Each kind of metadata is handled by a specific metadata manager. They are __TopicOwnershipManager__, __TopicPersistenceManager__ and __SubscriptionDataManager__.
+
+h2. Topic Ownership Management
+
+There are two ways to management topic ownership. One is leveraging ZooKeeper's ephemeral znodes to record the topic's owner info as a child ephemeral znode under its topic znode. When a hub server, owning a specific topic, crashes, the ephemeral znode which signifies topic ownership will be deleted due to the loss of the zookeeper session. Other hubs can then be assigned the ownership of the topic. The other one is to leverage the __CAS__ operation provided by key/value stores to do leader election. __CAS__ doesn't require the underlying key/value store to provide functionality similar to ZooKeeper's ephemeral nodes. With __CAS__ it is possible to guarantee that only one hub server gains the ownership for a specific topic, which is more scalable and generic solution.
+
+The implementation of a __TopicOwnershipManager__ is required to implement following methods:
+
+<pre><code>
+
+public void readOwnerInfo(ByteString topic, Callback<Versioned<HubInfo>> callback, Object ctx);
+
+public void writeOwnerInfo(ByteString topic, HubInfo owner, Version version,
+                           Callback<Version> callback, Object ctx);
+
+public void deleteOwnerInfo(ByteString topic, Version version,
+                            Callback<Void> callback, Object ctx);
+
+</code></pre>
+
+* @readOwnerInfo@: Read the owner info from the underlying key/value store. The implementation should take the responsibility of deserializing the metadata into a __HubInfo__ object identifying a hub server. Also, its current __version__ needs to be returned for future updates. If there is no owner info found for a topic, null value is returned.
+
+* @writeOwnerInfo@: Write the owner info into the underlying key/value store with the given __version__. If the current __version__ in underlying key/value store doesn't equal to the provided __version__, the write should be rejected with __BadVersionException__. The new __version__ should be returned for a successful write. __NoTopicOwnerInfoException__ is returned if no owner info found for a topic.
+
+* @deleteOwnerInfo@: Delete the owner info from key/value store with the given __version__. The owner info should be removed if the current __version__ in key/value store is equal to the provided __version__. Otherwise, the deletion should be rejected with __BadVersionException__. __NoTopicOwnerInfoException__ is returned if no owner info is found for the topic.
+
+h2. Topic Persistence Info Management
+
+Similar as __TopicOwnershipManager__, an implementation of __TopicPersistenceManager__ is required to implement READ/WRITE/DELETE interfaces as below:
+
+<pre><code>
+public void readTopicPersistenceInfo(ByteString topic,
+                                     Callback<Versioned<LedgerRanges>> callback, Object ctx);
+
+public void writeTopicPersistenceInfo(ByteString topic, LedgerRanges ranges, Version version,
+                                      Callback<Version> callback, Object ctx);
+
+public void deleteTopicPersistenceInfo(ByteString topic, Version version,
+                                       Callback<Void> callback, Object ctx);
+</code></pre>
+
+* @readTopicPersistenceInfo@: Read the persistence info from the underlying key/value store. The implementation should take the responsibility of deserializing the metadata into a __LedgerRanges__ object includes the ledgers used to store messages. Also, its current __version__ needs to be returned for future updates. If there is no persistence info found for a topic, a null value is returned.
+
+* @writeTopicPersistenceInfo@: Write the persistence info into the underlying key/value store with the given __version__. If the current __version__ in the underlying key/value store doesn't equal the provided __version__, the write should be rejected with __BadVersionException__. The new __version__ should be returned on a successful write. __NoTopicPersistenceInfoException__ is returned if no persistence info is found for a topic.
+
+* @deleteTopicPersistenceInfo@: Delete the persistence info from the key/value store with the given __version__. The owner info should be removed if the current __version__ in the key/value store equals the provided __version__. Otherwise, the deletion should be rejected with __BadVersionException__. __NoTopicPersistenceInfoException__ is returned if no persistence info is found for a topic.
+
+h2. Subscription Data Management
+
+__SubscriptionDataManager__ has similar READ/CREATE/WRITE/DELETE interfaces as other managers. Besides that, the implementation needs to implement __READ SUBSCRIPTIONS__ interface, which is to fetch all the subscriptions for a given topic.
+
+<pre><code>
+public void createSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData data,
+                                   Callback<Version> callback, Object ctx);
+
+public boolean isPartialUpdateSupported();
+
+public void updateSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData dataToUpdate, 
+                                   Version version, Callback<Version> callback, Object ctx);
+
+public void replaceSubscriptionData(ByteString topic, ByteString subscriberId, SubscriptionData dataToReplace,
+                                    Version version, Callback<Version> callback, Object ctx);
+
+public void deleteSubscriptionData(ByteString topic, ByteString subscriberId, Version version,
+                                   Callback<Void> callback, Object ctx);
+
+public void readSubscriptionData(ByteString topic, ByteString subscriberId,
+                                 Callback<Versioned<SubscriptionData>> callback, Object ctx);
+
+public void readSubscriptions(ByteString topic, Callback<Map<ByteString, Versioned<SubscriptionData>>> cb,
+                              Object ctx);
+</code></pre>
+
+h3. Create/Update Subscriptions
+
+The metadata for a subscription includes two parts, one is preferences and the other one is subscription state. __SubscriptionPreferences__ tracks all the preferences for a subscriber (etc. Application could store its customized preferences for message filtering), while __SubscriptionState__ is used internally to track the message consumption state for a given subscriber. These two kinds of metadata are quite different: __SubscriptionPreferences__ is not updated
+frequently while __SubscriptionState__ is be updated frequently when messages are consumed. If the underlying key/value store supports independent field update for a given key (subscription), __SubscriptionPreferences__ and __SubscriptionState__ could be stored as two different fields for a given subscription. In this case __isPartialUpdateSupported__ should return true. Otherwise, __isPartialUpdateSupported__ should return false and the implementation should serialize/deserialize __SubscriptionData__ as an opaque blob.
+
+* @createSubscriptionData@: Create a subscription entry for a given topic. The initial __version__ would be returned for a success creation. __SubscriptionStateExistsException__ is returned if the subscription entry already exists.
+
+* @updateSubscriptionData/replaceSubscriptionData@: Update/replace the subscription data in the underlying key/value store with the given __version__. If the current __version__ in underlying key/value store doesn't equal to the provided __version__, the update should be rejected with __BadVersionException__. The new __version__ should be returned for a successful write. __NoSubscriptionStateException__ is returned if no subscription entry is found for a subscription (topic, subscriber).
+
+h3. Read Subscriptions
+
+* @readSubscriptionData@: Read the subscription data from the underlying key/value store. The implementation should take the responsibility of deserializing the metadata into a __SubscriptionData__ object including its preferences and subscription state. Also, its current __version__ needs to be returned for future updates. If there is no subscription data found for a subscription, a null value is returned.
+
+* @readSubscriptions@: Read all the subscription data from key/value store for a given topic. The implementation should take the responsibility of managing all subscription for a topic for efficient access.  An empty map is returned if there are no subscriptions found for a given topic.
+
+h3. Delete Subscription
+
+* @deleteSubscriptionData@: Delete the subscription data from the key/value store with given __version__ for a specific subscription (topic, subscriber). The subscription info should be removed if current __version__ in key/value store equals the provided __version__. Otherwise, the deletion should be rejected with __BadVersionException__. __NoSubscriptionStateException__ is returned if no subscription data is found for a subscription (topic, subscriber).
+
+h1. How to choose a key/value store for Hedwig.
+
+From the interface, several requirements needs to meet before picking up a key/value store for Hedwig:
+
+* @CAS@: The ability to do strict updates according to specific condition, i.e. a specific version (ZooKeeper) and same content (HBase).
+* @Optimized for Writes@: The metadata access pattern for Hedwig is read first and continuous updates.
+* @Optimized for retrieving all subscriptions for a topic@: Either hierarchical structures to maintain such relationships (ZooKeeper), or ordered key/value storage to cluster the subscription for a topic together, would provide efficient subscription data management.
+
+__ZooKeeper__ is the default implementation for Hedwig metadata management, which holds data in memory and provides filesystem-like namespace, meeting the above requirements. __ZooKeeper__ is suitable for most Hedwig usecases. However, if your application needs to manage millions of topics/subscriptions, a more scalable solution would be __HBase__, which also meet the above requirements.

@@ -40,6 +40,7 @@ h1. Apache Hedwig documentation
 * "Developer's Guide, or Hedwig internals and hacking details":./hedwigDesign.html
 * "Configuration parameters":./hedwigParams.html
 * "Message Filtering":./hedwigMessageFilter.html
+* "Hedwig Metadata Management":./hedwigMetadata.html
 
 h2. Hedwig Admin & Ops
 
