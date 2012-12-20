@@ -111,11 +111,6 @@ class PendingAddOp implements WriteCallback {
     public void writeComplete(int rc, long ledgerId, long entryId, InetSocketAddress addr, Object ctx) {
         int bookieIndex = (Integer) ctx;
 
-        if (!lh.metadata.currentEnsemble.get(bookieIndex).equals(addr)) {
-            // ensemble has already changed, failure of this addr is immaterial
-            LOG.warn("Write did not succeed: " + ledgerId + ", " + entryId + ". But we have already fixed it.");
-            return;
-        }
 
         switch (rc) {
         case BKException.Code.OK:

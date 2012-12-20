@@ -150,6 +150,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-500: Fencing doesn't work when restarting bookies. (sijie via ivank)
 
+        BOOKKEEPER-520: BookieFailureTest hangs on precommit build (ivank via sijie)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

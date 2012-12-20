@@ -60,7 +60,6 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
     byte[] ledgerPassword = "aaa".getBytes();
     LedgerHandle lh, lh2;
     long ledgerId;
-    Enumeration<LedgerEntry> ls;
 
     // test related variables
     int numEntriesToWrite = 200;
@@ -70,17 +69,17 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
     ArrayList<Integer> entriesSize;
     DigestType digestType;
 
-    // Synchronization
-    SyncObj sync;
-    Set<Object> syncObjs;
-
     class SyncObj {
         int counter;
         boolean value;
+        boolean failureOccurred;
+        Enumeration<LedgerEntry> ls;
 
         public SyncObj() {
             counter = 0;
             value = false;
+            failureOccurred = false;
+            ls = null;
         }
     }
 
@@ -151,11 +150,10 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
             numScanned++;
         }
         assertEquals(numEntries, numScanned);
-
-
     }
 
     void auxTestReadWriteAsyncSingleClient(BookieServer bs) throws IOException {
+        SyncObj sync = new SyncObj();
         try {
             // Create a ledger
             lh = bkc.createLedger(3, 2, digestType, ledgerPassword);
@@ -181,7 +179,8 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
             synchronized (sync) {
                 while (sync.counter < numEntriesToWrite) {
                     LOG.debug("Entries counter = " + sync.counter);
-                    sync.wait();
+                    sync.wait(10000);
+                    assertFalse("Failure occurred during write", sync.failureOccurred);
                 }
             }
 
@@ -206,6 +205,7 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
                 while (sync.value == false) {
                     sync.wait(10000);
                     assertTrue("Haven't received entries", sync.value);
+                    assertFalse("Failure occurred during read", sync.failureOccurred);
                 }
             }
 
@@ -214,10 +214,10 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
             // at this point, Enumeration<LedgerEntry> ls is filled with the returned
             // values
             int i = 0;
-            while (ls.hasMoreElements()) {
+            while (sync.ls.hasMoreElements()) {
                 ByteBuffer origbb = ByteBuffer.wrap(entries.get(i));
                 Integer origEntry = origbb.getInt();
-                byte[] entry = ls.nextElement().getEntry();
+                byte[] entry = sync.ls.nextElement().getEntry();
                 ByteBuffer result = ByteBuffer.wrap(entry);
 
                 Integer retrEntry = result.getInt();
@@ -246,9 +246,11 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
 
     @Override
     public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-        if (rc != 0)
-            fail("Failed to write entry: " + entryId);
         SyncObj x = (SyncObj) ctx;
+        if (rc != 0) {
+            LOG.error("Failure during add {} {}", entryId, rc);
+            x.failureOccurred = true;
+        }
         synchronized (x) {
             x.counter++;
             x.notify();
@@ -257,14 +259,16 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
 
     @Override
     public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
-        if (rc != 0)
-            fail("Failed to write entry");
-        ls = seq;
-        synchronized (sync) {
-            sync.value = true;
-            sync.notify();
+        SyncObj x = (SyncObj) ctx;
+        if (rc != 0) {
+            LOG.error("Failure during add {}", rc);
+            x.failureOccurred = true;
         }
-
+        synchronized (x) {
+            x.value = true;
+            x.ls = seq;
+            x.notify();
+        }
     }
 
     @Before
@@ -276,7 +280,6 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
         // Number Generator
         entries = new ArrayList<byte[]>(); // initialize the entries list
         entriesSize = new ArrayList<Integer>();
-        sync = new SyncObj(); // initialize the synchronization data structure
 
         zkc.close();
     }
