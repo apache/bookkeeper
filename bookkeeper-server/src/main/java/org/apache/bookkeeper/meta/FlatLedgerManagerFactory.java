@@ -69,11 +69,6 @@ class FlatLedgerManagerFactory extends LedgerManagerFactory {
     }
 
     @Override
-    public ActiveLedgerManager newActiveLedgerManager() {
-        return new FlatLedgerManager(conf, zk);
-    }
-
-    @Override
     public LedgerUnderreplicationManager newLedgerUnderreplicationManager()
             throws KeeperException, InterruptedException, ReplicationException.CompatibilityException {
         return new ZkLedgerUnderreplicationManager(conf, zk);

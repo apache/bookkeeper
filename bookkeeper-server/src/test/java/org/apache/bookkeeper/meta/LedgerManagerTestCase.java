@@ -24,8 +24,8 @@ package org.apache.bookkeeper.meta;
 import java.util.Arrays;
 import java.util.Collection;
 
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.SnapshotMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,8 +36,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import junit.framework.TestCase;
-
 /**
  * Test case to run over serveral ledger managers
  */
@@ -47,10 +45,11 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
 
     LedgerManagerFactory ledgerManagerFactory;
     LedgerManager ledgerManager = null;
-    ActiveLedgerManager activeLedgerManager = null;
+    SnapshotMap<Long, Boolean> activeLedgers = null;
 
     public LedgerManagerTestCase(Class<? extends LedgerManagerFactory> lmFactoryCls) {
         super(0);
+        activeLedgers = new SnapshotMap<Long, Boolean>();
         baseConf.setLedgerManagerFactoryClass(lmFactoryCls);
     }
 
@@ -59,13 +58,6 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
             ledgerManager = ledgerManagerFactory.newLedgerManager();
         }
         return ledgerManager;
-    }
-
-    public ActiveLedgerManager getActiveLedgerManager() {
-        if (null == activeLedgerManager) {
-            activeLedgerManager = ledgerManagerFactory.newActiveLedgerManager();
-        }
-        return activeLedgerManager;
     }
 
     @Parameters
@@ -88,9 +80,6 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
     public void tearDown() throws Exception {
         if (null != ledgerManager) {
             ledgerManager.close();
-        }
-        if (null != activeLedgerManager) {
-            activeLedgerManager.close();
         }
         ledgerManagerFactory.uninitialize();
         super.tearDown();

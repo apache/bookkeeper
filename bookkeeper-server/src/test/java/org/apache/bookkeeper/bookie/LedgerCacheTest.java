@@ -27,9 +27,9 @@ import java.nio.ByteBuffer;
 
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.ActiveLedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.util.BookKeeperConstants;
+import org.apache.bookkeeper.util.SnapshotMap;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -47,7 +47,7 @@ import junit.framework.TestCase;
 public class LedgerCacheTest extends TestCase {
     static Logger LOG = LoggerFactory.getLogger(LedgerCacheTest.class);
 
-    ActiveLedgerManager activeLedgerManager;
+    SnapshotMap<Long, Boolean> activeLedgers;
     LedgerManagerFactory ledgerManagerFactory;
     LedgerCache ledgerCache;
     ServerConfiguration conf;
@@ -75,7 +75,7 @@ public class LedgerCacheTest extends TestCase {
 
         ledgerManagerFactory =
             LedgerManagerFactory.newLedgerManagerFactory(conf, null);
-        activeLedgerManager = ledgerManagerFactory.newActiveLedgerManager();
+        activeLedgers = new SnapshotMap<Long, Boolean>();
         ledgerCache = ((InterleavedLedgerStorage) bookie.ledgerStorage).ledgerCache;
     }
 
@@ -83,7 +83,6 @@ public class LedgerCacheTest extends TestCase {
     @After
     public void tearDown() throws Exception {
         bookie.ledgerStorage.shutdown();
-        activeLedgerManager.close();
         ledgerManagerFactory.uninitialize();
         FileUtils.deleteDirectory(txnDir);
         FileUtils.deleteDirectory(ledgerDir);
@@ -94,7 +93,7 @@ public class LedgerCacheTest extends TestCase {
             ledgerCache.close();
         }
         ledgerCache = ((InterleavedLedgerStorage) bookie.ledgerStorage).ledgerCache = new LedgerCacheImpl(
-                conf, activeLedgerManager, bookie.getLedgerDirsManager());
+                conf, activeLedgers, bookie.getLedgerDirsManager());
     }
 
     @Test

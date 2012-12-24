@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.Map;
 
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.client.LedgerMetadata;
@@ -32,6 +31,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,16 +47,13 @@ import org.apache.zookeeper.data.Stat;
 /**
  * Abstract ledger manager based on zookeeper, which provides common methods such as query zk nodes.
  */
-abstract class AbstractZkLedgerManager implements LedgerManager, ActiveLedgerManager {
+abstract class AbstractZkLedgerManager implements LedgerManager {
 
     static Logger LOG = LoggerFactory.getLogger(AbstractZkLedgerManager.class);
 
     protected final AbstractConfiguration conf;
     protected final ZooKeeper zk;
     protected final String ledgerRootPath;
-
-    // A sorted map to stored all active ledger ids
-    protected final SnapshotMap<Long, Boolean> activeLedgers;
 
     /**
      * ZooKeeper-based Ledger Manager Constructor
@@ -70,8 +67,6 @@ abstract class AbstractZkLedgerManager implements LedgerManager, ActiveLedgerMan
         this.conf = conf;
         this.zk = zk;
         this.ledgerRootPath = conf.getZkLedgersRootPath();
-
-        activeLedgers = new SnapshotMap<Long, Boolean>();
     }
 
     /**
@@ -93,9 +88,32 @@ abstract class AbstractZkLedgerManager implements LedgerManager, ActiveLedgerMan
      */
     protected abstract long getLedgerId(String ledgerPath) throws IOException;
 
+    /**
+     * Removes ledger metadata from ZooKeeper if version matches.
+     *
+     * @param   ledgerId    ledger identifier
+     * @param   version     local version of metadata znode
+     * @param   cb          callback object
+     */
     @Override
-    public void deleteLedger(final long ledgerId, final GenericCallback<Void> cb) {
-        zk.delete(getLedgerPath(ledgerId), -1, new VoidCallback() {
+    public void removeLedgerMetadata(final long ledgerId, final Version version,
+            final GenericCallback<Void> cb) {
+        int znodeVersion = -1;
+        if (Version.NEW == version) {
+            LOG.error("Request to delete ledger {} metadata with version set to the initial one", ledgerId);
+            cb.operationComplete(BKException.Code.MetadataVersionException, (Void)null);
+            return;
+        } else if (Version.ANY != version) {
+            if (!(version instanceof ZkVersion)) {
+                LOG.info("Not an instance of ZKVersion: {}", ledgerId);
+                cb.operationComplete(BKException.Code.MetadataVersionException, (Void)null);
+                return;
+            } else {
+                znodeVersion = ((ZkVersion)version).getZnodeVersion();
+            }
+        }
+
+        zk.delete(getLedgerPath(ledgerId), znodeVersion, new VoidCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx) {
                 int bkRc;
@@ -174,112 +192,6 @@ abstract class AbstractZkLedgerManager implements LedgerManager, ActiveLedgerMan
     }
 
     /**
-     * Get all the ledgers in a single zk node
-     *
-     * @param nodePath
-     *          Zookeeper node path
-     * @param getLedgersCallback
-     *          callback function to process ledgers in a single node
-     */
-    protected void asyncGetLedgersInSingleNode(final String nodePath, final GenericCallback<HashSet<Long>> getLedgersCallback) {
-        // First sync ZK to make sure we're reading the latest active/available ledger nodes.
-        zk.sync(nodePath, new AsyncCallback.VoidCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx) {
-                LOG.debug("Sync node path {} return : {}", path, rc);
-                if (rc != Code.OK.intValue()) {
-                    LOG.error("ZK error syncing the ledgers node when getting children: ", KeeperException
-                            .create(KeeperException.Code.get(rc), path));
-                    getLedgersCallback.operationComplete(rc, null);
-                    return;
-                }
-                // Sync has completed successfully so now we can poll ZK
-                // and read in the latest set of active ledger nodes.
-                doAsyncGetLedgersInSingleNode(nodePath, getLedgersCallback);
-            }
-        }, null);
-    }
-
-    private void doAsyncGetLedgersInSingleNode(final String nodePath,
-                                               final GenericCallback<HashSet<Long>> getLedgersCallback) {
-        zk.getChildren(nodePath, false, new AsyncCallback.ChildrenCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx, List<String> ledgerNodes) {
-                if (rc != Code.OK.intValue()) {
-                    LOG.error("Error polling ZK for the available ledger nodes: ", KeeperException
-                            .create(KeeperException.Code.get(rc), path));
-                    getLedgersCallback.operationComplete(rc, null);
-                    return;
-                }
-                LOG.debug("Retrieved current set of ledger nodes: {}", ledgerNodes);
-                // Convert the ZK retrieved ledger nodes to a HashSet for easier comparisons.
-                HashSet<Long> allActiveLedgers = new HashSet<Long>(ledgerNodes.size(), 1.0f);
-                for (String ledgerNode : ledgerNodes) {
-                    if (isSpecialZnode(ledgerNode)) {
-                        continue;
-                    }
-                    try {
-                        // convert the node path to ledger id according to different ledger manager implementation
-                        allActiveLedgers.add(getLedgerId(path + "/" + ledgerNode));
-                    } catch (IOException ie) {
-                        LOG.warn("Error extracting ledgerId from ZK ledger node: " + ledgerNode);
-                        // This is a pretty bad error as it indicates a ledger node in ZK
-                        // has an incorrect format. For now just continue and consider
-                        // this as a non-existent ledger.
-                        continue;
-                    }
-                }
-
-                getLedgersCallback.operationComplete(rc, allActiveLedgers);
-
-            }
-        }, null);
-    }
-
-    private static class GetLedgersCtx {
-        int rc;
-        boolean done = false;
-        HashSet<Long> ledgers = null;
-    }
-
-    /**
-     * Get all the ledgers in a single zk node
-     *
-     * @param nodePath
-     *          Zookeeper node path
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    protected HashSet<Long> getLedgersInSingleNode(final String nodePath)
-        throws IOException, InterruptedException {
-        final GetLedgersCtx ctx = new GetLedgersCtx();
-        LOG.debug("Try to get ledgers of node : {}", nodePath);
-        asyncGetLedgersInSingleNode(nodePath, new GenericCallback<HashSet<Long>>() {
-                @Override
-                public void operationComplete(int rc, HashSet<Long> zkActiveLedgers) {
-                    synchronized (ctx) {
-                        if (Code.OK.intValue() == rc) {
-                            ctx.ledgers = zkActiveLedgers;
-                        }
-                        ctx.rc = rc;
-                        ctx.done = true;
-                        ctx.notifyAll();
-                    }
-                }
-            });
-
-        synchronized (ctx) {
-            while (ctx.done == false) {
-                ctx.wait();
-            }
-        }
-        if (Code.OK.intValue() != ctx.rc) {
-            throw new IOException("Error on getting ledgers from node " + nodePath);
-        }
-        return ctx.ledgers;
-    }
-
-    /**
      * Process ledgers in a single zk node.
      *
      * <p>
@@ -309,14 +221,15 @@ abstract class AbstractZkLedgerManager implements LedgerManager, ActiveLedgerMan
             final String path, final Processor<Long> processor,
             final AsyncCallback.VoidCallback finalCb, final Object ctx,
             final int successRc, final int failureRc) {
-        asyncGetLedgersInSingleNode(path, new GenericCallback<HashSet<Long>>() {
+        ZkUtils.getChildrenInSingleNode(zk, path, new GenericCallback<List<String>>() {
             @Override
-            public void operationComplete(int rc, HashSet<Long> zkActiveLedgers) {
+            public void operationComplete(int rc, List<String> ledgerNodes) {
                 if (Code.OK.intValue() != rc) {
                     finalCb.processResult(failureRc, null, ctx);
                     return;
                 }
 
+                Set<Long> zkActiveLedgers = ledgerListToSet(ledgerNodes, path);
                 LOG.debug("Processing ledgers: {}", zkActiveLedgers);
 
                 // no ledgers found, return directly
@@ -353,43 +266,36 @@ abstract class AbstractZkLedgerManager implements LedgerManager, ActiveLedgerMan
         return false;
     }
 
-    @Override
-    public void close() {
-    }
-
-    @Override
-    public void addActiveLedger(long ledgerId, boolean active) {
-        activeLedgers.put(ledgerId, active);
-    }
-
-    @Override
-    public void removeActiveLedger(long ledgerId) {
-        activeLedgers.remove(ledgerId);
-    }
-
-    @Override
-    public boolean containsActiveLedger(long ledgerId) {
-        return activeLedgers.containsKey(ledgerId);
-    }
-
     /**
-     * Do garbage collecting comparing hosted ledgers and zk ledgers
+     * Convert the ZK retrieved ledger nodes to a HashSet for easier comparisons.
      *
-     * @param gc
-     *          Garbage collector to do garbage collection when found inactive/deleted ledgers
-     * @param bkActiveLedgers
-     *          Active ledgers hosted in bookie server
-     * @param zkAllLedgers
-     *          All ledgers stored in zookeeper
+     * @param ledgerNodes
+     *          zk ledger nodes
+     * @param path
+     *          the prefix path of the ledger nodes
+     * @return ledger id hash set
      */
-    void doGc(GarbageCollector gc, Map<Long, Boolean> bkActiveLedgers, Set<Long> zkAllLedgers) {
-        // remove any active ledgers that doesn't exist in zk
-        for (Long bkLid : bkActiveLedgers.keySet()) {
-            if (!zkAllLedgers.contains(bkLid)) {
-                // remove it from current active ledger
-                bkActiveLedgers.remove(bkLid);
-                gc.gc(bkLid);
+    protected Set<Long> ledgerListToSet(List<String> ledgerNodes, String path) {
+        Set<Long> zkActiveLedgers = new HashSet<Long>(ledgerNodes.size(), 1.0f);
+        for (String ledgerNode : ledgerNodes) {
+            if (isSpecialZnode(ledgerNode)) {
+                continue;
+            }
+            try {
+                // convert the node path to ledger id according to different ledger manager implementation
+                zkActiveLedgers.add(getLedgerId(path + "/" + ledgerNode));
+            } catch (IOException e) {
+                LOG.warn("Error extracting ledgerId from ZK ledger node: " + ledgerNode);
+                // This is a pretty bad error as it indicates a ledger node in ZK
+                // has an incorrect format. For now just continue and consider
+                // this as a non-existent ledger.
+                continue;
             }
         }
+        return zkActiveLedgers;
+    }
+
+    @Override
+    public void close() {
     }
 }

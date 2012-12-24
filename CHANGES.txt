@@ -270,6 +270,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-490: add documentation for MetaStore interface (sijie, ivank via sijie)
 
+        BOOKKEEPER-463: Refactor garbage collection code for ease to plugin different GC algorithm. (Fangmin, ivank, fpj via sijie)
+
       hedwig-server:
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)

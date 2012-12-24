@@ -26,8 +26,10 @@ import java.io.IOException;
 
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.ActiveLedgerManager;
+import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.util.SnapshotMap;
+import org.apache.zookeeper.ZooKeeper;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +44,10 @@ class InterleavedLedgerStorage implements LedgerStorage {
 
     EntryLogger entryLogger;
     LedgerCache ledgerCache;
+
+    // A sorted map to stored all active ledger ids
+    protected final SnapshotMap<Long, Boolean> activeLedgers;
+
     // This is the thread that garbage collects the entry logs that do not
     // contain any active ledgers in them; and compacts the entry logs that
     // has lower remaining percentage to reclaim disk space.
@@ -51,15 +57,16 @@ class InterleavedLedgerStorage implements LedgerStorage {
     private volatile boolean somethingWritten = false;
 
     InterleavedLedgerStorage(ServerConfiguration conf,
-            ActiveLedgerManager activeLedgerManager,
-            LedgerDirsManager ledgerDirsManager) throws IOException {
+            LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager)
+			throws IOException {
+        activeLedgers = new SnapshotMap<Long, Boolean>();
         entryLogger = new EntryLogger(conf, ledgerDirsManager);
-        ledgerCache = new LedgerCacheImpl(conf, activeLedgerManager, ledgerDirsManager);
+        ledgerCache = new LedgerCacheImpl(conf, activeLedgers, ledgerDirsManager);
         gcThread = new GarbageCollectorThread(conf, ledgerCache, entryLogger,
-                activeLedgerManager, new EntryLogCompactionScanner());
+                activeLedgers, new EntryLogCompactionScanner(), ledgerManager);
     }
 
-    @Override    
+    @Override
     public void start() {
         gcThread.start();
     }

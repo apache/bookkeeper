@@ -17,20 +17,17 @@
  */
 package org.apache.bookkeeper.meta;
 
-import static org.apache.bookkeeper.metastore.MetastoreScannableTable.EMPTY_END_KEY;
 import static org.apache.bookkeeper.metastore.MetastoreTable.ALL_FIELDS;
 import static org.apache.bookkeeper.metastore.MetastoreTable.NON_FIELDS;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.NavigableMap;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
@@ -43,7 +40,6 @@ import org.apache.bookkeeper.metastore.MetastoreCursor.ReadEntriesCallback;
 import org.apache.bookkeeper.metastore.MetastoreException;
 import org.apache.bookkeeper.metastore.MetastoreFactory;
 import org.apache.bookkeeper.metastore.MetastoreScannableTable;
-import org.apache.bookkeeper.metastore.MetastoreScannableTable.Order;
 import org.apache.bookkeeper.metastore.MetastoreTableItem;
 import org.apache.bookkeeper.metastore.Value;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -171,8 +167,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         }
     }
 
-    static abstract class AbstractMsLedgerManager implements Closeable {
-
+    static class MsLedgerManager implements LedgerManager {
         final ZooKeeper zk;
         final AbstractConfiguration conf;
 
@@ -180,7 +175,17 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         final MetastoreScannableTable ledgerTable;
         final int maxEntriesPerScan;
 
-        AbstractMsLedgerManager(final AbstractConfiguration conf, final ZooKeeper zk, final MetaStore metastore) {
+        static final String IDGEN_ZNODE = "ms-idgen";
+        static final String IDGENERATION_PREFIX = "/" + IDGEN_ZNODE + "/ID-";
+
+        // Path to generate global id
+        private final String idGenPath;
+
+        // we use this to prevent long stack chains from building up in
+        // callbacks
+        ScheduledExecutorService scheduler;
+
+        MsLedgerManager(final AbstractConfiguration conf, final ZooKeeper zk, final MetaStore metastore) {
             this.conf = conf;
             this.zk = zk;
             this.metastore = metastore;
@@ -194,29 +199,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
             }
             // configuration settings
             maxEntriesPerScan = conf.getMetastoreMaxEntriesPerScan();
-        }
 
-        @Override
-        public void close() {
-            ledgerTable.close();
-        }
-
-    }
-
-    static class MsLedgerManager extends AbstractMsLedgerManager implements LedgerManager {
-
-        static final String IDGEN_ZNODE = "ms-idgen";
-        static final String IDGENERATION_PREFIX = "/" + IDGEN_ZNODE + "/ID-";
-
-        // Path to generate global id
-        private final String idGenPath;
-
-        // we use this to prevent long stack chains from building up in
-        // callbacks
-        ScheduledExecutorService scheduler;
-
-        MsLedgerManager(final AbstractConfiguration conf, final ZooKeeper zk, final MetaStore metastore) {
-            super(conf, zk, metastore);
             this.idGenPath = conf.getZkLedgersRootPath() + IDGENERATION_PREFIX;
             this.scheduler = Executors.newSingleThreadScheduledExecutor();
         }
@@ -228,7 +211,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
             } catch (Exception e) {
                 LOG.warn("Error when closing MsLedgerManager : ", e);
             }
-            super.close();
+            ledgerTable.close();
         }
 
         @Override
@@ -305,7 +288,8 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         }
 
         @Override
-        public void deleteLedger(final long ledgerId, final GenericCallback<Void> cb) {
+        public void removeLedgerMetadata(final long ledgerId, final Version version,
+                                         final GenericCallback<Void> cb) {
             MetastoreCallback<Void> msCallback = new MetastoreCallback<Void>() {
                 @Override
                 public void complete(int rc, Void value, Object ctx) {
@@ -321,7 +305,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                     cb.operationComplete(bkRc, (Void) null);
                 }
             };
-            ledgerTable.remove(ledgerId2Key(ledgerId), Version.ANY, msCallback, null);
+            ledgerTable.remove(ledgerId2Key(ledgerId), version, msCallback, null);
         }
 
         @Override
@@ -475,140 +459,66 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
             };
             cursor.asyncReadEntries(maxEntriesPerScan, msCallback, null);
         }
-    }
 
-    static class MsActiveLedgerManager extends AbstractMsLedgerManager implements ActiveLedgerManager {
+        class MSLedgerRangeIterator implements LedgerRangeIterator {
+            final CountDownLatch openCursorLatch = new CountDownLatch(1);
+            MetastoreCursor cursor = null;
 
-        // A sorted map to stored all active ledger ids
-        protected final SnapshotMap<Long, Boolean> activeLedgers;
-
-        MsActiveLedgerManager(final AbstractConfiguration conf, final ZooKeeper zk, final MetaStore metastore) {
-            super(conf, zk, metastore);
-            activeLedgers = new SnapshotMap<Long, Boolean>();
-        }
-
-        @Override
-        public void addActiveLedger(long ledgerId, boolean active) {
-            activeLedgers.put(ledgerId, active);
-        }
-
-        @Override
-        public void removeActiveLedger(long ledgerId) {
-            activeLedgers.remove(ledgerId);
-        }
-
-        @Override
-        public boolean containsActiveLedger(long ledgerId) {
-            return activeLedgers.containsKey(ledgerId);
-        }
-
-        @Override
-        public void garbageCollectLedgers(GarbageCollector gc) {
-            LOG.debug("Start garbage collect ledgers.");
-            NavigableMap<Long, Boolean> snapshot = activeLedgers.snapshot();
-            Long nextLedger = 0L;
-            int numRetries = 3;
-            do {
-                nextLedger = doGcLedgers(nextLedger, snapshot, gc);
-            } while (null != nextLedger && --numRetries > 0);
-            LOG.debug("End garbage collect ledgers.");
-        }
-
-        /**
-         * Do garbage collection starting from <code>startLedger</code>.
-         *
-         * @param startLedgerId
-         *            Start Ledger id
-         * @param snapshot
-         *            Current snapshot of active ledgers
-         * @param gc
-         *            Garbage collector
-         * @return null if finished scanning all ledgers, the next ledger id to
-         *         scan
-         */
-        private Long doGcLedgers(Long startLedgerId, NavigableMap<Long, Boolean> snapshot, GarbageCollector gc) {
-            final SyncResult<MetastoreCursor> result = new SyncResult<MetastoreCursor>();
-            MetastoreCallback<MetastoreCursor> openCursorCb = new MetastoreCallback<MetastoreCursor>() {
-                @Override
-                public void complete(int rc, MetastoreCursor cursor, Object ctx) {
-                    result.complete(rc, cursor);
-                }
-            };
-            ledgerTable.openCursor(ledgerId2Key(startLedgerId), true, EMPTY_END_KEY, true, Order.ASC, NON_FIELDS,
-                    openCursorCb, null);
-            result.block();
-            if (MSException.Code.OK.getCode() != result.getRetCode()) {
-                LOG.warn("Failed to open metastore cursor to run garbage collection : ",
-                        MSException.create(MSException.Code.get(result.getRetCode())));
-                // failed to open a cursor, not continue until next gc
-                return null;
+            MSLedgerRangeIterator() {
+                MetastoreCallback<MetastoreCursor> openCursorCb = new MetastoreCallback<MetastoreCursor>() {
+                    @Override
+                    public void complete(int rc, MetastoreCursor newCursor, Object ctx) {
+                        if (MSException.Code.OK.getCode() != rc) {
+                            LOG.error("Error opening cursor for ledger range iterator {}", rc);
+                        } else {
+                            cursor = newCursor;
+                        }
+                        openCursorLatch.countDown();
+                    }
+                };
+                ledgerTable.openCursor(NON_FIELDS, openCursorCb, null);
             }
 
-            MetastoreCursor cursor = result.getResult();
-
-            while (cursor.hasMoreEntries()) {
-                Iterator<MetastoreTableItem> entries;
+            @Override
+            public boolean hasNext() {
                 try {
-                    entries = cursor.readEntries(maxEntriesPerScan);
-                } catch (MSException mse) {
-                    LOG.warn("Exception when garbage collecting deleted ledgers : ", mse);
-                    return startLedgerId;
+                    openCursorLatch.await();
+                } catch (InterruptedException ie) {
+                    LOG.error("Interrupted waiting for cursor to open", ie);
+                    Thread.currentThread().interrupt();
+                    return false;
                 }
-
-                if (!entries.hasNext()) {
-                    continue;
+                if (cursor == null) {
+                    return false;
                 }
-
-                SortedSet<Long> msActiveLedgers = entries2Ledgers(entries);
-
-                Long endLedgerId = msActiveLedgers.last();
-                Map<Long, Boolean> bkActiveLedgers = snapshot.subMap(startLedgerId, true, endLedgerId, true);
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("All active ledgers from Metastore between {} and {} : {}", new Object[] { startLedgerId,
-                            endLedgerId, msActiveLedgers });
-                    LOG.debug("Current active ledgers from Bookie between {} and {} : {}", new Object[] {
-                            startLedgerId, endLedgerId, bkActiveLedgers });
-                }
-                doGc(gc, bkActiveLedgers, msActiveLedgers);
-                // move the pointer
-                startLedgerId = endLedgerId + 1;
+                return cursor.hasMoreEntries();
             }
-            doGc(gc, snapshot.tailMap(startLedgerId), new TreeSet<Long>());
-            return null;
+
+            @Override
+            public LedgerRange next() throws IOException {
+                try {
+                    Set<Long> ledgerIds = new TreeSet<Long>();
+                    Iterator<MetastoreTableItem> iter = cursor.readEntries(maxEntriesPerScan);
+                    while (iter.hasNext()) {
+                        ledgerIds.add(key2LedgerId(iter.next().getKey()));
+                    }
+                    return new LedgerRange(ledgerIds);
+                } catch (MSException mse) {
+                    LOG.error("Exception occurred reading from metastore", mse);
+                    throw new IOException("Couldn't read from metastore", mse);
+                }
+            }
         }
 
-        /**
-         * Do garbage collecting comparing hosted ledgers and metastore ledgers
-         *
-         * @param gc
-         *            Garbage collector to do garbage collection when found
-         *            inactive/deleted ledgers
-         * @param bkActiveLedgers
-         *            Active ledgers hosted in bookie server
-         * @param msAllLedgers
-         *            All ledgers stored in metastore
-         */
-        void doGc(GarbageCollector gc, Map<Long, Boolean> bkActiveLedgers, Set<Long> msAllLedgers) {
-            // remove any active ledgers that doesn't exist in zk
-            for (Long bkLid : bkActiveLedgers.keySet()) {
-                if (!msAllLedgers.contains(bkLid)) {
-                    // remove it from current active ledger
-                    LOG.debug("gc ledger: {}", bkLid);
-                    bkActiveLedgers.remove(bkLid);
-                    gc.gc(bkLid);
-                }
-            }
+        @Override
+        public LedgerRangeIterator getLedgerRanges() {
+            return new MSLedgerRangeIterator();
         }
     }
 
     @Override
     public LedgerManager newLedgerManager() {
         return new MsLedgerManager(conf, zk, metastore);
-    }
-
-    @Override
-    public ActiveLedgerManager newActiveLedgerManager() {
-        return new MsActiveLedgerManager(conf, zk, metastore);
     }
 
     @Override

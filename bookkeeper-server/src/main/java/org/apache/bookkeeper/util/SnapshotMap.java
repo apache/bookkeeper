@@ -1,4 +1,4 @@
-package org.apache.bookkeeper.meta;
+package org.apache.bookkeeper.util;
 
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,7 +18,6 @@ package org.apache.bookkeeper.meta;
  * limitations under the License.
  */
 
-import java.io.IOException;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -29,7 +28,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * A snapshotable map.
  */
-class SnapshotMap<K, V> {
+public class SnapshotMap<K, V> {
     // stores recent updates
     volatile Map<K, V> updates;
     volatile Map<K, V> updatesToMerge;

@@ -30,11 +30,13 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.bookkeeper.bookie.GarbageCollector;
+import org.apache.bookkeeper.bookie.ScanAndCompareGarbageCollector;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.meta.ActiveLedgerManager.GarbageCollector;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.versioning.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +63,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
                 @Override
                 public void operationComplete(int rc, Long ledgerId) {
                     if (rc == BKException.Code.OK) {
-                        getActiveLedgerManager().addActiveLedger(ledgerId, true);
+                        activeLedgers.put(ledgerId, true);
                         createdLedgers.add(ledgerId);
                     }
                     synchronized (expected) {
@@ -102,7 +104,8 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         for (int i=0; i<numRemovedLedgers; i++) {
             long ledgerId = tmpList.get(i);
             synchronized (removedLedgers) {
-                getLedgerManager().deleteLedger(ledgerId, new GenericCallback<Void>() {
+                getLedgerManager().removeLedgerMetadata(ledgerId, Version.ANY,
+                    new GenericCallback<Void>() {
                         @Override
                         public void operationComplete(int rc, Void result) {
                             synchronized (removedLedgers) {
@@ -118,14 +121,15 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         final CountDownLatch inGcProgress = new CountDownLatch(1);
         final CountDownLatch createLatch = new CountDownLatch(1);
         final CountDownLatch endLatch = new CountDownLatch(2);
-
+        final GarbageCollector garbageCollector =
+                new ScanAndCompareGarbageCollector(getLedgerManager(), activeLedgers);
         Thread gcThread = new Thread() {
             @Override
             public void run() {
-                getActiveLedgerManager().garbageCollectLedgers(new GarbageCollector() {
+                garbageCollector.gc(new GarbageCollector.GarbageCleaner() {
                     boolean paused = false;
                     @Override
-                    public void gc(long ledgerId) {
+                    public void clean(long ledgerId) {
                         if (!paused) {
                             inGcProgress.countDown();
                             try {
@@ -165,10 +169,10 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         // test ledgers
         for (Long ledger : removedLedgers) {
-            assertFalse(getActiveLedgerManager().containsActiveLedger(ledger));
+            assertFalse(activeLedgers.containsKey(ledger));
         }
         for (Long ledger : createdLedgers) {
-            assertTrue(getActiveLedgerManager().containsActiveLedger(ledger));
+            assertTrue(activeLedgers.containsKey(ledger));
         }
     }
 }

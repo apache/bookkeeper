@@ -23,6 +23,7 @@ package org.apache.bookkeeper.client;
 
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
+import org.apache.bookkeeper.versioning.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +66,7 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
     public void initiate() {
         // Asynchronously delete the ledger from meta manager
         // When this completes, it will invoke the callback method below.
-        bk.getLedgerManager().deleteLedger(ledgerId, this);
+        bk.getLedgerManager().removeLedgerMetadata(ledgerId, Version.ANY, this);
     }
 
     /**

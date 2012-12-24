@@ -32,9 +32,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
+import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.ActiveLedgerManager;
+import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.util.SnapshotMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,8 +73,7 @@ public class GarbageCollectorThread extends Thread {
 
     // Ledger Cache Handle
     final LedgerCache ledgerCache;
-
-    final ActiveLedgerManager activeLedgerManager;
+    final SnapshotMap<Long, Boolean> activeLedgers;
 
     // flag to ensure gc thread will not be interrupted during compaction
     // to reduce the risk getting entry log corrupted
@@ -82,6 +83,9 @@ public class GarbageCollectorThread extends Thread {
 
     // track the last scanned successfully log id
     long scannedLogId = 0;
+
+    final GarbageCollector garbageCollector;
+    final GarbageCleaner garbageCleaner;
 
     /**
      * A scanner wrapper to check whether a ledger is alive in an entry log file
@@ -114,19 +118,37 @@ public class GarbageCollectorThread extends Thread {
      * @throws IOException
      */
     public GarbageCollectorThread(ServerConfiguration conf,
-                                  LedgerCache ledgerCache,
+                                  final LedgerCache ledgerCache,
                                   EntryLogger entryLogger,
-                                  ActiveLedgerManager activeLedgerManager,
-                                  EntryLogScanner scanner)
+                                  SnapshotMap<Long, Boolean> activeLedgers,
+                                  EntryLogScanner scanner,
+                                  LedgerManager ledgerManager)
         throws IOException {
         super("GarbageCollectorThread");
 
         this.ledgerCache = ledgerCache;
         this.entryLogger = entryLogger;
-        this.activeLedgerManager = activeLedgerManager;
+        this.activeLedgers = activeLedgers;
         this.scanner = scanner;
 
         this.gcWaitTime = conf.getGcWaitTime();
+
+        this.garbageCleaner = new GarbageCollector.GarbageCleaner() {
+            @Override
+            public void clean(long ledgerId) {
+                try {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("delete ledger : " + ledgerId);
+                    }
+                    ledgerCache.deleteLedger(ledgerId);
+                } catch (IOException e) {
+                    LOG.error("Exception when deleting the ledger index file on the Bookie: ", e);
+                }
+            }
+        };
+
+        this.garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, activeLedgers);
+
         // compaction parameters
         minorCompactionThreshold = conf.getMinorCompactionThreshold();
         minorCompactionInterval = conf.getMinorCompactionInterval() * SECOND;
@@ -223,17 +245,7 @@ public class GarbageCollectorThread extends Thread {
      * Do garbage collection ledger index files
      */
     private void doGcLedgers() {
-        activeLedgerManager.garbageCollectLedgers(
-        new ActiveLedgerManager.GarbageCollector() {
-            @Override
-            public void gc(long ledgerId) {
-                try {
-                    ledgerCache.deleteLedger(ledgerId);
-                } catch (IOException e) {
-                    LOG.error("Exception when deleting the ledger index file on the Bookie: ", e);
-                }
-            }
-        });
+        garbageCollector.gc(garbageCleaner);
     }
 
     /**
@@ -245,7 +257,7 @@ public class GarbageCollectorThread extends Thread {
             EntryLogMetadata meta = entryLogMetaMap.get(entryLogId);
             for (Long entryLogLedger : meta.ledgersMap.keySet()) {
                 // Remove the entry log ledger from the set if it isn't active.
-                if (!activeLedgerManager.containsActiveLedger(entryLogLedger)) {
+                if (!activeLedgers.containsKey(entryLogLedger)) {
                     meta.removeLedger(entryLogLedger);
                 }
             }

@@ -22,16 +22,15 @@ import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.Set;
-import java.util.Map;
-import java.util.NavigableMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
-import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.AsyncCallback;
@@ -58,25 +57,7 @@ import org.slf4j.LoggerFactory;
  * <pre>(ledgersRootPath)/level1/level2/L(level3)</pre>
  * E.g Ledger 0000000001 is split into 3 parts <i>00</i>, <i>0000</i>, <i>0001</i>, which is stored in
  * <i>(ledgersRootPath)/00/0000/L0001</i>. So each znode could have at most 10000 ledgers, which avoids
- * failed to get children list of a too big znode during garbage collection.
- * <p>
- * All actived ledgers found in bookie server is managed in a sorted map, which ease us to pick
- * up all actived ledgers belongs to (level1, level2).
- * </p>
- * <p>
- * Garbage collection in HierarchicalLedgerManager is processed node by node as below:
- * <ul>
- * fetching all level1 nodes, by calling zk#getChildren(ledgerRootPath).
- * <ul>
- * for each level1 node, fetching their level2 nodes, by calling zk#getChildren(ledgerRootPath + "/" + level1)
- * <li> fetch all existed ledgers from zookeeper in level1/level2 node, said <b>zkActiveLedgers</b>
- * <li> fetch all active ledgers from bookie server in level1/level2, said <b>bkActiveLedgers</b>
- * <li> loop over <b>bkActiveLedgers</b> to find those ledgers aren't existed in <b>zkActiveLedgers</b>, do garbage collection on them.
- * </ul>
- * </ul>
- * Since garbage collection is running in background, HierarchicalLedgerManager did gc on single hash
- * node at a time to avoid consuming too much resources.
- * </p>
+ * errors during garbage collection due to lists of children that are too long.
  */
 class HierarchicalLedgerManager extends AbstractZkLedgerManager {
 
@@ -196,15 +177,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
 
     @Override
     public String getLedgerPath(long ledgerId) {
-        String ledgerIdStr = StringUtils.getZKStringId(ledgerId);
-        // do 2-4-4 split
-        StringBuilder sb = new StringBuilder();
-        sb.append(ledgerRootPath).append("/").append(
-                ledgerIdStr.substring(0, 2)).append("/").append(
-                ledgerIdStr.substring(2, 6)).append("/").append(
-                BookKeeperConstants.LEDGER_NODE_PREFIX).append(
-                ledgerIdStr.substring(6, 10));
-        return sb.toString();
+        return ledgerRootPath + StringUtils.getHierarchicalLedgerPath(ledgerId);
     }
 
     @Override
@@ -213,26 +186,12 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
             throw new IOException("it is not a valid hashed path name : " + pathName);
         }
         String hierarchicalPath = pathName.substring(ledgerRootPath.length() + 1);
-        String[] hierarchicalParts = hierarchicalPath.split("/");
-        if (hierarchicalParts.length != 3) {
-            throw new IOException("it is not a valid hierarchical path name : " + pathName);
-        }
-        hierarchicalParts[2] = hierarchicalParts[2]
-                .substring(BookKeeperConstants.LEDGER_NODE_PREFIX.length());
-        return getLedgerId(hierarchicalParts);
+        return StringUtils.stringToHierarchicalLedgerId(hierarchicalPath);
     }
 
     // get ledger from all level nodes
     private long getLedgerId(String...levelNodes) throws IOException {
-        try {
-            StringBuilder sb = new StringBuilder();
-            for (String node : levelNodes) {
-                sb.append(node);
-            }
-            return Long.parseLong(sb.toString());
-        } catch (NumberFormatException e) {
-            throw new IOException(e);
-        }
+        return StringUtils.stringToHierarchicalLedgerId(levelNodes);
     }
 
     //
@@ -333,71 +292,6 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
         }, null);
     }
 
-    @Override
-    public void garbageCollectLedgers(GarbageCollector gc) {
-        if (null == zk) {
-            LOG.warn("Skip garbage collecting ledgers because there is no ZooKeeper handle.");
-            return;
-        }
-        // create a snapshot before garbage collection
-        NavigableMap<Long, Boolean> snapshot = activeLedgers.snapshot();
-        try {
-            List<String> l1Nodes = zk.getChildren(ledgerRootPath, null);
-            for (String l1Node : l1Nodes) {
-                if (isSpecialZnode(l1Node)) {
-                    continue;
-                }
-                try {
-                    List<String> l2Nodes = zk.getChildren(ledgerRootPath + "/" + l1Node, null);
-                    for (String l2Node : l2Nodes) {
-                        doGcByLevel(gc, l1Node, l2Node, snapshot);
-                    }
-                } catch (Exception e) {
-                    LOG.warn("Exception during garbage collecting ledgers for " + l1Node
-                             + " of " + ledgerRootPath, e);
-                }
-            }
-        } catch (Exception e) {
-            LOG.warn("Exception during garbage collecting inactive/deleted ledgers", e);
-        }
-    }
-
-    /**
-     * Garbage collection a single node level1/level2
-     *
-     * @param gc
-     *          Garbage collector
-     * @param level1
-     *          1st level node name
-     * @param level2
-     *          2nd level node name
-     * @param snapshot
-     *          Snapshot of the active ledgers map.
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    void doGcByLevel(GarbageCollector gc, final String level1, final String level2,
-                     NavigableMap snapshot)
-        throws IOException, InterruptedException {
-
-        StringBuilder nodeBuilder = new StringBuilder();
-        nodeBuilder.append(ledgerRootPath).append("/")
-                   .append(level1).append("/").append(level2);
-        String nodePath = nodeBuilder.toString();
-
-        Set<Long> zkActiveLedgers = getLedgersInSingleNode(nodePath);
-        // get hosted ledgers in /level1/level2
-        long startLedgerId = getStartLedgerIdByLevel(level1, level2);
-        long endLedgerId = getEndLedgerIdByLevel(level1, level2);
-        Map<Long, Boolean> bkActiveLedgers = snapshot.subMap(startLedgerId, true, endLedgerId, true);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("For hash node: " + level1 + "/" + level2 + ": All active ledgers from ZK: "
-                      + zkActiveLedgers + ". Current active ledgers from Bookie: "+ bkActiveLedgers);
-        }
-
-        doGc(gc, bkActiveLedgers, zkActiveLedgers);
-    }
-
     /**
      * Process list one by one in asynchronize way. Process will be stopped immediately
      * when error occurred.
@@ -473,5 +367,100 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
     @Override
     protected boolean isSpecialZnode(String znode) {
         return IDGEN_ZNODE.equals(znode) || super.isSpecialZnode(znode);
+    }
+
+    @Override
+    public LedgerRangeIterator getLedgerRanges() {
+        return new HierarchicalLedgerRangeIterator();
+    }
+
+    /**
+     * Iterator through each metadata bucket with hierarchical mode
+     */
+    private class HierarchicalLedgerRangeIterator implements LedgerRangeIterator {
+        private Iterator<String> l1NodesIter = null;
+        private Iterator<String> l2NodesIter = null;
+        private String curL1Nodes = "";
+        private boolean hasMoreElement = true;
+
+        /**
+         * iterate next level1 znode
+         *
+         * @return false if have visited all level1 nodes
+         * @throws InterruptedException/KeeperException if error occurs reading zookeeper children
+         */
+        private boolean nextL1Node() throws KeeperException, InterruptedException {
+            l2NodesIter = null;
+            while (l2NodesIter == null) {
+                if (l1NodesIter.hasNext()) {
+                    curL1Nodes = l1NodesIter.next();
+                } else {
+                    return false;
+                }
+                if (isSpecialZnode(curL1Nodes)) {
+                    continue;
+                }
+                List<String> l2Nodes = zk.getChildren(ledgerRootPath + "/" + curL1Nodes, null);
+                l2NodesIter = l2Nodes.iterator();
+                if (!l2NodesIter.hasNext()) {
+                    l2NodesIter = null;
+                    continue;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public boolean hasNext() throws IOException {
+            try {
+                if (l1NodesIter == null) {
+                    l1NodesIter = zk.getChildren(ledgerRootPath, null).iterator();
+                    hasMoreElement = nextL1Node();
+                } else if (!l2NodesIter.hasNext()) {
+                    hasMoreElement = nextL1Node();
+                }
+            } catch (Exception e) {
+                throw new IOException("Error when check more elements", e);
+            }
+            return hasMoreElement;
+        }
+
+        @Override
+        public LedgerRange next() throws IOException {
+            if (!hasMoreElement) {
+                throw new NoSuchElementException();
+            }
+            return getLedgerRangeByLevel(curL1Nodes, l2NodesIter.next());
+        }
+
+        /**
+         * Get a single node level1/level2
+         *
+         * @param level1
+         *          1st level node name
+         * @param level2
+         *          2nd level node name
+         * @throws IOException
+         */
+        LedgerRange getLedgerRangeByLevel(final String level1, final String level2)
+                throws IOException {
+            StringBuilder nodeBuilder = new StringBuilder();
+            nodeBuilder.append(ledgerRootPath).append("/")
+                       .append(level1).append("/").append(level2);
+            String nodePath = nodeBuilder.toString();
+            List<String> ledgerNodes = null;
+            try {
+                ledgerNodes = ZkUtils.getChildrenInSingleNode(zk, nodePath);
+            } catch (InterruptedException e) {
+                throw new IOException("Error when get child nodes from zk", e);
+            }
+            Set<Long> zkActiveLedgers = ledgerListToSet(ledgerNodes, nodePath);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("All active ledgers from ZK for hash node "
+                          + level1 + "/" + level2 + " : " + zkActiveLedgers);
+            }
+            return new LedgerRange(zkActiveLedgers,
+                    getStartLedgerIdByLevel(level1, level2), getEndLedgerIdByLevel(level1, level2));
+        }
     }
 }

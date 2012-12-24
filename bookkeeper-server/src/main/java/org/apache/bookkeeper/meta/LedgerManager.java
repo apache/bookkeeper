@@ -19,11 +19,15 @@ package org.apache.bookkeeper.meta;
  */
 
 import java.io.Closeable;
+import java.io.IOException;
+import java.util.Set;
 
 import org.apache.zookeeper.AsyncCallback;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
+import org.apache.bookkeeper.versioning.Version;
 
 /**
  * LedgerManager takes responsibility of ledger management in client side.
@@ -41,18 +45,25 @@ public interface LedgerManager extends Closeable {
      *        Metadata provided when creating a new ledger
      * @param cb
      *        Callback when creating a new ledger.
+     *        {@link BKException.Code.ZKException} return code when can't generate
+     *        or extract new ledger id
      */
-    public abstract void createLedger(LedgerMetadata metadata, GenericCallback<Long> cb);
+    public void createLedger(LedgerMetadata metadata, GenericCallback<Long> cb);
 
     /**
-     * Delete a specified ledger by ledgerId.
+     * Remove a specified ledger metadata by ledgerId and version.
      *
      * @param ledgerId
      *          Ledger Id
+     * @param version
+     *          Ledger metadata version
      * @param cb
-     *          Callback when deleted ledger.
+     *          Callback when removed ledger metadata.
+     *          {@link BKException.Code.MetadataVersionException} return code when version doesn't match,
+     *          {@link BKException.Code.NoSuchLedgerExistsException} return code when ledger doesn't exist,
+     *          {@link BKException.Code.ZKException} return code when other issues happen.
      */
-    public abstract void deleteLedger(long ledgerId, GenericCallback<Void> cb);
+    public void removeLedgerMetadata(long ledgerId, Version version, GenericCallback<Void> vb);
 
     /**
      * Read ledger metadata of a specified ledger.
@@ -61,8 +72,10 @@ public interface LedgerManager extends Closeable {
      *          Ledger Id
      * @param readCb
      *          Callback when read ledger metadata.
+     *          {@link BKException.Code.NoSuchLedgerExistsException} return code when ledger doesn't exist,
+     *          {@link BKException.Code.ZKException} return code when other issues happen.
      */
-    public abstract void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> readCb);
+    public void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> readCb);
 
     /**
      * Write ledger metadata.
@@ -73,8 +86,10 @@ public interface LedgerManager extends Closeable {
      *          Ledger Metadata to write
      * @param cb
      *          Callback when finished writing ledger metadata.
+     *          {@link BKException.Code.MetadataVersionException} return code when version doesn't match,
+     *          {@link BKException.Code.ZKException} return code when other issues happen.
      */
-    public abstract void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<Void> cb);
+    public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<Void> cb);
 
     /**
      * Loop to process all ledgers.
@@ -99,4 +114,79 @@ public interface LedgerManager extends Closeable {
      */
     public void asyncProcessLedgers(Processor<Long> processor, AsyncCallback.VoidCallback finalCb,
                                     Object context, int successRc, int failureRc);
+
+    /**
+     * Loop to scan a range of metadata from metadata storage
+     *
+     * @return will return a iterator of the Ranges
+     */
+    public LedgerRangeIterator getLedgerRanges();
+
+    /*
+     * Used to represent the Ledgers range returned from the
+     * current scan.
+     */
+    public static class LedgerRange {
+        // ledger start and end ranges
+        private final long start;
+        private final long end;
+        public final static long NOLIMIT = -1;
+
+        // returned ledgers
+        private Set<Long> ledgers;
+
+        public LedgerRange(Set<Long> ledgers) {
+            this(ledgers, NOLIMIT, NOLIMIT);
+        }
+
+        public LedgerRange(Set<Long> ledgers, long start) {
+            this(ledgers, start, NOLIMIT);
+        }
+
+        public LedgerRange(Set<Long> ledgers, long start, long end) {
+            this.ledgers = ledgers;
+            this.start = start;
+            this.end = end;
+        }
+
+        public Long start() {
+            return this.start;
+        }
+
+        public Long end() {
+            return this.end;
+        }
+
+        public Set<Long> getLedgers() {
+            return this.ledgers;
+        }
+    }
+
+    /**
+     * Interface of the ledger meta range iterator from
+     * storage (e.g. in ZooKeeper or other key/value store)
+     */
+    interface LedgerRangeIterator {
+
+        /**
+         * @return true if there are records in the ledger metadata store. false
+         * only when there are indeed no records in ledger metadata store.
+         * @throws IOException thrown when there is any problem accessing the ledger
+         * metadata store. It is critical that it doesn't return false in the case
+         * in the case it fails to access the ledger metadata store. Otherwise it
+         * will end up deleting all ledgers by accident.
+         */
+        public boolean hasNext() throws IOException;
+
+        /**
+         * Get the next element.
+         *
+         * @return the next element.
+         * @throws IOException thrown when there is a problem accessing the ledger
+         * metadata store. It is critical that it doesn't return false in the case
+         * in the case it fails to access the ledger metadata store. Otherwise it
+         * will end up deleting all ledgers by accident.
+         */
+        public LedgerRange next() throws IOException;
+    }
 }

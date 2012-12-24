@@ -19,7 +19,7 @@ package org.apache.bookkeeper.meta;
  */
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import org.apache.bookkeeper.client.BKException;
@@ -27,7 +27,6 @@ import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
-import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.AsyncCallback;
@@ -46,18 +45,6 @@ import org.slf4j.LoggerFactory;
  * <p>
  * All ledgers' metadata are put in a single zk node, created using zk sequential node.
  * Each ledger node is prefixed with 'L'.
- * </p>
- * <p>
- * All actived ledgers found in bookie server side is managed in a hash map.
- * </p>
- * <p>
- * Garbage collection in FlatLedgerManager is procssed as below:
- * <ul>
- * <li> fetch all existed ledgers from zookeeper, said <b>zkActiveLedgers</b>
- * <li> fetch all active ledgers from bookie server, said <b>bkActiveLedgers</b>
- * <li> loop over <b>bkActiveLedgers</b> to find those ledgers aren't existed in
- * <b>zkActiveLedgers</b>, do garbage collection on them.
- * </ul>
  * </p>
  */
 class FlatLedgerManager extends AbstractZkLedgerManager {
@@ -80,8 +67,7 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
     public FlatLedgerManager(AbstractConfiguration conf, ZooKeeper zk) {
         super(conf, zk);
 
-        ledgerPrefix = ledgerRootPath + "/"
-                + BookKeeperConstants.LEDGER_NODE_PREFIX;
+        ledgerPrefix = ledgerRootPath + "/" + StringUtils.LEDGER_NODE_PREFIX;
     }
 
     @Override
@@ -139,24 +125,29 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
     }
 
     @Override
-    public void garbageCollectLedgers(GarbageCollector gc) {
-        if (null == zk) {
-            LOG.warn("Skip garbage collecting ledgers because there is no ZooKeeper handle.");
-            return;
-        }
-        try {
-            // create a snapshot first
-            Map<Long, Boolean> bkActiveLedgers = activeLedgers.snapshot();
-            Set<Long> zkActiveLedgers = getLedgersInSingleNode(ledgerRootPath);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("All active ledgers from ZK: {}. Current active ledgers from Bookie: {}.",
-                    zkActiveLedgers, bkActiveLedgers.keySet());
+    public LedgerRangeIterator getLedgerRanges() {
+        return new LedgerRangeIterator() {
+            // single iterator, can visit only one time
+            boolean hasMoreElement = true;
+            @Override
+            public boolean hasNext() {
+                return hasMoreElement;
             }
-            doGc(gc, bkActiveLedgers, zkActiveLedgers);
-        } catch (IOException ie) {
-            LOG.warn("Error during garbage collecting ledgers from " + ledgerRootPath, ie);
-        } catch (InterruptedException inte) {
-            LOG.warn("Interrupted during garbage collecting ledgers from " + ledgerRootPath, inte);
-        }
+            @Override
+            public LedgerRange next() throws IOException {
+                if (!hasMoreElement) {
+                    throw new NoSuchElementException();
+                }
+                hasMoreElement = false;
+                Set<Long> zkActiveLedgers;
+                try {
+                    zkActiveLedgers = ledgerListToSet(
+                            ZkUtils.getChildrenInSingleNode(zk, ledgerRootPath), ledgerRootPath);
+                } catch (InterruptedException e) {
+                    throw new IOException("Error when get child nodes from zk", e);
+                }
+                return new LedgerRange(zkActiveLedgers);
+            }
+        };
     }
 }

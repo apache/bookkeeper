@@ -39,7 +39,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.bookkeeper.meta.ActiveLedgerManager;
+import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
@@ -82,8 +82,8 @@ public class Bookie extends Thread {
     final ServerConfiguration conf;
 
     final SyncThread syncThread;
-    final LedgerManagerFactory activeLedgerManagerFactory;
-    final ActiveLedgerManager activeLedgerManager;
+    final LedgerManagerFactory ledgerManagerFactory;
+    final LedgerManager ledgerManager;
     final LedgerStorage ledgerStorage;
     final Journal journal;
 
@@ -478,17 +478,14 @@ public class Bookie extends Thread {
         this.conf = conf;
         this.journalDirectory = getCurrentDirectory(conf.getJournalDir());
         this.ledgerDirsManager = new LedgerDirsManager(conf);
-
         // instantiate zookeeper client to initialize ledger manager
         this.zk = instantiateZookeeperClient(conf);
         checkEnvironment(this.zk);
-
-        activeLedgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, this.zk);
-        activeLedgerManager = activeLedgerManagerFactory.newActiveLedgerManager();
-
+        ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, this.zk);
+        LOG.info("instantiate ledger manager {}", ledgerManagerFactory.getClass().getName());
+        ledgerManager = ledgerManagerFactory.newLedgerManager();
         syncThread = new SyncThread(conf);
-        ledgerStorage = new InterleavedLedgerStorage(conf, activeLedgerManager,
-                ledgerDirsManager);
+        ledgerStorage = new InterleavedLedgerStorage(conf, ledgerManager, ledgerDirsManager);
         handles = new HandleFactoryImpl(ledgerStorage);
         // instantiate the journal
         journal = new Journal(conf, ledgerDirsManager);
@@ -910,8 +907,8 @@ public class Bookie extends Thread {
 
                 // close Ledger Manager
                 try {
-                    activeLedgerManager.close();
-                    activeLedgerManagerFactory.uninitialize();
+                    ledgerManager.close();
+                    ledgerManagerFactory.uninitialize();
                 } catch (IOException ie) {
                     LOG.error("Failed to close active ledger manager : ", ie);
                 }

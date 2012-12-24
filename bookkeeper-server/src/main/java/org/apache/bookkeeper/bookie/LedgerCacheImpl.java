@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.bookkeeper.meta.ActiveLedgerManager;
+import org.apache.bookkeeper.util.SnapshotMap;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -54,7 +54,8 @@ public class LedgerCacheImpl implements LedgerCache {
     private LedgerDirsManager ledgerDirsManager;
     final private AtomicBoolean shouldRelocateIndexFile = new AtomicBoolean(false);
 
-    public LedgerCacheImpl(ServerConfiguration conf, ActiveLedgerManager alm, LedgerDirsManager ledgerDirsManager)
+    public LedgerCacheImpl(ServerConfiguration conf, SnapshotMap<Long, Boolean> activeLedgers,
+            LedgerDirsManager ledgerDirsManager)
             throws IOException {
         this.ledgerDirsManager = ledgerDirsManager;
         this.openFileLimit = conf.getOpenFileLimit();
@@ -69,7 +70,7 @@ public class LedgerCacheImpl implements LedgerCache {
         }
         LOG.info("maxMemory = " + Runtime.getRuntime().maxMemory());
         LOG.info("openFileLimit is " + openFileLimit + ", pageSize is " + pageSize + ", pageLimit is " + pageLimit);
-        activeLedgerManager = alm;
+        this.activeLedgers = activeLedgers;
         // Retrieve all of the active ledgers.
         getActiveLedgers();
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
@@ -90,7 +91,7 @@ public class LedgerCacheImpl implements LedgerCache {
 
     // Manage all active ledgers in LedgerManager
     // so LedgerManager has knowledge to garbage collect inactive/deleted ledgers
-    final ActiveLedgerManager activeLedgerManager;
+    final SnapshotMap<Long, Boolean> activeLedgers;
 
     final int openFileLimit;
     final int pageSize;
@@ -257,7 +258,7 @@ public class LedgerCacheImpl implements LedgerCache {
                     // A new ledger index file has been created for this Bookie.
                     // Add this new ledger to the set of active ledgers.
                     LOG.debug("New ledger index file created for ledgerId: {}", ledger);
-                    activeLedgerManager.addActiveLedger(ledger, true);
+                    activeLedgers.put(ledger, true);
                 }
                 evictFileInfoIfNecessary();
                 fi = new FileInfo(lf, masterKey);
@@ -697,7 +698,7 @@ public class LedgerCacheImpl implements LedgerCache {
                                         }
                                     }
                                 }
-                                activeLedgerManager.addActiveLedger(Long.parseLong(ledgerIdInHex, 16), true);
+                                activeLedgers.put(Long.parseLong(ledgerIdInHex, 16), true);
                             }
                         }
                     }
@@ -739,7 +740,7 @@ public class LedgerCacheImpl implements LedgerCache {
         }
 
         // Remove it from the active ledger manager
-        activeLedgerManager.removeActiveLedger(ledgerId);
+        activeLedgers.remove(ledgerId);
 
         // Now remove it from all the other lists and maps.
         // These data structures need to be synchronized first before removing entries.

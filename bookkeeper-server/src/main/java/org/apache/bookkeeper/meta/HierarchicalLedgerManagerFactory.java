@@ -69,11 +69,6 @@ class HierarchicalLedgerManagerFactory extends LedgerManagerFactory {
     }
 
     @Override
-    public ActiveLedgerManager newActiveLedgerManager() {
-        return new HierarchicalLedgerManager(conf, zk);
-    }
-
-    @Override
     public LedgerUnderreplicationManager newLedgerUnderreplicationManager()
             throws KeeperException, InterruptedException, ReplicationException.CompatibilityException{
         return new ZkLedgerUnderreplicationManager(conf, zk);
