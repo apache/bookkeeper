@@ -26,6 +26,8 @@ import org.junit.Before;
 
 import org.apache.bookkeeper.test.PortManager;
 
+import org.apache.hedwig.client.conf.ClientConfiguration;
+import org.apache.hedwig.server.LoggingExceptionHandler;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.netty.PubSubServer;
 import org.apache.hedwig.util.HedwigSocketAddress;
@@ -95,7 +97,7 @@ public abstract class PubSubServerStandAloneTestBase extends TestCase {
     protected void startHubServer(ServerConfiguration conf) throws Exception {
         defaultAddress = new HedwigSocketAddress("localhost", conf.getServerPort(),
                                                  conf.getSSLServerPort());
-        server = new PubSubServer(conf);
+        server = new PubSubServer(conf, new ClientConfiguration(), new LoggingExceptionHandler());
         server.start();
     }
 

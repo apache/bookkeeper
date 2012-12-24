@@ -25,6 +25,8 @@ import java.net.MalformedURLException;
 
 import junit.framework.Assert;
 
+import org.apache.hedwig.client.conf.ClientConfiguration;
+import org.apache.hedwig.server.LoggingExceptionHandler;
 import org.apache.bookkeeper.test.PortManager;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.hedwig.server.common.ServerConfiguration;
@@ -102,7 +104,7 @@ public class TestPubSubServerStartup {
         PubSubServer hedwigServer = null;
         try {
             logger.info("starting hedwig broker!");
-            hedwigServer = new PubSubServer(serverConf);
+            hedwigServer = new PubSubServer(serverConf, new ClientConfiguration(), new LoggingExceptionHandler());
             hedwigServer.start();
         } catch (Exception e) {
             e.printStackTrace();

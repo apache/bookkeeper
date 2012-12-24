@@ -42,6 +42,7 @@ import org.apache.hedwig.server.PubSubServerStandAloneTestBase;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.topics.AbstractTopicManager;
 import org.apache.hedwig.server.topics.TopicManager;
+import org.apache.hedwig.server.LoggingExceptionHandler;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.HedwigSocketAddress;
 import org.apache.hedwig.zookeeper.SafeAsyncZKCallback;
@@ -51,11 +52,11 @@ public class TestPubSubServer extends PubSubServerStandAloneTestBase {
     @Test
     public void testSecondServer() throws Exception {
         PubSubServer server1 = new PubSubServer(new StandAloneServerConfiguration() {
-            @Override
-            public int getServerPort() {
-                return super.getServerPort() + 1;
-            }
-        });
+                @Override
+                public int getServerPort() {
+                    return super.getServerPort() + 1;
+                }
+            }, new ClientConfiguration(), new LoggingExceptionHandler());
         server1.start();
         server1.shutdown();
     }

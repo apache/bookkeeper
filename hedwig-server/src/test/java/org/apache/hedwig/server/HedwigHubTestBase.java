@@ -137,7 +137,7 @@ public abstract class HedwigHubTestBase extends TestCase {
         for (int i = 0; i < numServers; i++) {
             ServerConfiguration conf = getServerConfiguration(serverAddresses.get(i).getPort(),
                                                               serverAddresses.get(i).getSSLPort());
-            PubSubServer s = new PubSubServer(conf);
+            PubSubServer s = new PubSubServer(conf, new ClientConfiguration(), new LoggingExceptionHandler());
             serversList.add(s);
             s.start();
         }

@@ -26,9 +26,6 @@ import java.util.concurrent.SynchronousQueue;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.api.MessageHandler;
@@ -62,9 +59,9 @@ import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.ConcurrencyUtils;
 import org.apache.hedwig.util.HedwigSocketAddress;
 import org.apache.bookkeeper.test.PortManager;
+import org.apache.hedwig.server.LoggingExceptionHandler;
 
-@RunWith(Parameterized.class)
-public class TestHedwigHub extends HedwigHubTestBase {
+public abstract class TestHedwigHub extends HedwigHubTestBase {
 
     // Client side variables
     protected HedwigClient client;
@@ -79,18 +76,6 @@ public class TestHedwigHub extends HedwigHubTestBase {
     enum Mode {
         REGULAR, PROXY, SSL
     };
-
-    @Parameters
-    public static Collection<Object[]> configs() {
-        return Arrays.asList(new Object[][] {
-                                { Mode.PROXY, false },
-                                { Mode.PROXY, true },
-                                { Mode.REGULAR, false },
-                                { Mode.REGULAR, true },
-                                { Mode.SSL, false },
-                                { Mode.SSL, true }
-                             });
-    }
 
     protected Mode mode;
     protected boolean isSubscriptionChannelSharingEnabled;
@@ -240,7 +225,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
     public void setUp() throws Exception {
         super.setUp();
         if (mode == Mode.PROXY) {
-            proxy = new HedwigProxy(proxyConf);
+            proxy = new HedwigProxy(proxyConf, new LoggingExceptionHandler());
             proxy.start();
         }
         client = new HedwigClient(getClientConfiguration());
@@ -349,7 +334,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
 
     // This tests out the manual sending of consume messages to the server
     // instead of relying on the automatic sending by the client lib for it.
-    @Test
+    @Test(timeout=10000)
     public void testManualConsumeClient() throws Exception {
         HedwigClient myClient = new HedwigClient(new TestClientConfiguration() {
             @Override
@@ -396,7 +381,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         myClient.close();
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testAttachToSubscriptionSuccess() throws Exception {
         ByteString topic = getTopic(0);
         subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
@@ -419,20 +404,20 @@ public class TestHedwigHub extends HedwigHubTestBase {
         }
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testServerRedirect() throws Exception {
         int batchSize = 10;
         publishBatch(batchSize, true, false, 0);
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testSubscribeAndConsume() throws Exception {
         int batchSize = 10;
         subscribeToTopics(batchSize);
         publishBatch(batchSize, true, true, 0);
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testServerFailoverPublishOnly() throws Exception {
         int batchSize = 10;
         publishBatch(batchSize, true, false, 0);
@@ -440,7 +425,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         publishBatch(batchSize, true, false, 1);
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testServerFailover() throws Exception {
         int batchSize = 10;
         subscribeToTopics(batchSize);
@@ -449,7 +434,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         publishBatch(batchSize, true, true, 1);
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testUnsubscribe() throws Exception {
         ByteString topic = getTopic(0);
         subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
@@ -481,7 +466,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         assertFalse(consumeQueue.take());
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testSyncUnsubscribeWithoutSubscription() throws Exception {
         boolean unsubscribeSuccess = false;
         try {
@@ -494,13 +479,13 @@ public class TestHedwigHub extends HedwigHubTestBase {
         assertTrue(unsubscribeSuccess);
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testAsyncUnsubscribeWithoutSubscription() throws Exception {
         subscriber.asyncUnsubscribe(getTopic(0), localSubscriberId, new TestCallback(queue), null);
         assertFalse(queue.take());
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testCloseSubscription() throws Exception {
         ByteString topic = getTopic(0);
         subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
@@ -532,7 +517,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         assertFalse(consumeQueue.take());
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testStartDeliveryTwice() throws Exception {
         ByteString topic = getTopic(0);
         subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
@@ -546,7 +531,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         }
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testStopDelivery() throws Exception {
         ByteString topic = getTopic(0);
         subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
@@ -587,7 +572,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         }
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testConsumedMessagesInOrder() throws Exception {
         ByteString topic = getTopic(0);
         subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
@@ -608,7 +593,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         }
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testCreateSubscriptionFailure() throws Exception {
         ByteString topic = getTopic(0);
         subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
@@ -622,7 +607,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         assertFalse(queue.take());
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testCreateSubscriptionSuccess() throws Exception {
         ByteString topic = getTopic(0);
         subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE, new TestCallback(queue), null);
@@ -636,7 +621,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         }
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testAttachToSubscriptionFailure() throws Exception {
         ByteString topic = getTopic(0);
         subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.ATTACH, new TestCallback(queue), null);
@@ -646,7 +631,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
     // The following 4 tests are to make sure that the subscriberId validation
     // works when it is a local subscriber and we're expecting the subscriberId
     // to be in the "local" specific format.
-    @Test
+    @Test(timeout=10000)
     public void testSyncSubscribeWithInvalidSubscriberId() throws Exception {
         boolean subscribeSuccess = false;
         try {
@@ -659,14 +644,14 @@ public class TestHedwigHub extends HedwigHubTestBase {
         assertTrue(subscribeSuccess);
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testAsyncSubscribeWithInvalidSubscriberId() throws Exception {
         subscriber.asyncSubscribe(getTopic(0), hubSubscriberId, CreateOrAttach.CREATE_OR_ATTACH,
                                   new TestCallback(queue), null);
         assertFalse(queue.take());
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testSyncUnsubscribeWithInvalidSubscriberId() throws Exception {
         boolean unsubscribeSuccess = false;
         try {
@@ -679,7 +664,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         assertTrue(unsubscribeSuccess);
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testAsyncUnsubscribeWithInvalidSubscriberId() throws Exception {
         subscriber.asyncUnsubscribe(getTopic(0), hubSubscriberId, new TestCallback(queue), null);
         assertFalse(queue.take());
@@ -688,7 +673,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
     // The following 4 tests are to make sure that the subscriberId validation
     // also works when it is a hub subscriber and we're expecting the
     // subscriberId to be in the "hub" specific format.
-    @Test
+    @Test(timeout=10000)
     public void testSyncHubSubscribeWithInvalidSubscriberId() throws Exception {
         Client hubClient = new HedwigHubClient(new HubClientConfiguration());
         Subscriber hubSubscriber = hubClient.getSubscriber();
@@ -704,7 +689,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         hubClient.close();
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testAsyncHubSubscribeWithInvalidSubscriberId() throws Exception {
         Client hubClient = new HedwigHubClient(new HubClientConfiguration());
         Subscriber hubSubscriber = hubClient.getSubscriber();
@@ -714,7 +699,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         hubClient.close();
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testSyncHubUnsubscribeWithInvalidSubscriberId() throws Exception {
         Client hubClient = new HedwigHubClient(new HubClientConfiguration());
         Subscriber hubSubscriber = hubClient.getSubscriber();
@@ -730,7 +715,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         hubClient.close();
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testAsyncHubUnsubscribeWithInvalidSubscriberId() throws Exception {
         Client hubClient = new HedwigHubClient(new HubClientConfiguration());
         Subscriber hubSubscriber = hubClient.getSubscriber();
@@ -739,7 +724,7 @@ public class TestHedwigHub extends HedwigHubTestBase {
         hubClient.close();
     }
 
-    @Test
+    @Test(timeout=10000)
     public void testPublishWithBookKeeperError() throws Exception {
         int batchSize = 10;
         publishBatch(batchSize, true, false, 0);

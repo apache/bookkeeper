@@ -35,6 +35,7 @@ import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.netty.PubSubServer;
 import org.apache.hedwig.server.persistence.BookKeeperTestBase;
 import org.apache.hedwig.util.HedwigSocketAddress;
+import org.apache.hedwig.server.LoggingExceptionHandler;
 
 import org.apache.bookkeeper.test.PortManager;
 
@@ -269,7 +270,8 @@ public abstract class HedwigRegionTestBase extends TestCase {
                     getServerConfiguration(a.getPort(),
                                            a.getSSLPort(),
                                            regionName),
-                    getRegionClientConfiguration());
+                    getRegionClientConfiguration(),
+                    new LoggingExceptionHandler());
             serversList.add(s);
             s.start();
         }

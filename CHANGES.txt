@@ -316,6 +316,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-342: add documentation for hedwig metadata manager interface. (sijie, ivank via sijie)
 
+        BOOKKEEPER-522: TestHedwigHub is failing silently on Jenkins (ivank via sijie)
+
       hedwig-client:
 
         BOOKKEEPER-306: Change C++ client to use gtest for testing (ivank via sijie)
