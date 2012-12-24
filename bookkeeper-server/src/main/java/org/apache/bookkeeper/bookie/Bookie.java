@@ -133,10 +133,15 @@ public class Bookie extends Thread {
         private long ledgerId;
         private long entryId;
         public NoEntryException(long ledgerId, long entryId) {
-            super("Entry " + entryId + " not found in " + ledgerId);
+            this("Entry " + entryId + " not found in " + ledgerId, ledgerId, entryId);
+        }
+
+        public NoEntryException(String msg, long ledgerId, long entryId) {
+            super(msg);
             this.ledgerId = ledgerId;
             this.entryId = entryId;
         }
+
         public long getLedger() {
             return ledgerId;
         }

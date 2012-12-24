@@ -349,7 +349,7 @@ public class EntryLogger {
         return (logId << 32L) | pos;
     }
 
-    byte[] readEntry(long ledgerId, long entryId, long location) throws IOException {
+    byte[] readEntry(long ledgerId, long entryId, long location) throws IOException, Bookie.NoEntryException {
         long entryLogId = location >> 32L;
         long pos = location & 0xffffffffL;
         ByteBuffer sizeBuff = ByteBuffer.allocate(4);
@@ -363,7 +363,8 @@ public class EntryLogger {
             throw newe;
         }
         if (fc.read(sizeBuff, pos) != sizeBuff.capacity()) {
-            throw new IOException("Short read from entrylog " + entryLogId);
+            throw new Bookie.NoEntryException("Short read from entrylog " + entryLogId,
+                                              ledgerId, entryId);
         }
         pos += 4;
         sizeBuff.flip();
@@ -377,7 +378,16 @@ public class EntryLogger {
         ByteBuffer buff = ByteBuffer.wrap(data);
         int rc = fc.read(buff, pos);
         if ( rc != data.length) {
-            throw new IOException("Short read for " + ledgerId + "@" + entryId + " in " + entryLogId + "@" + pos + "("+rc+"!="+data.length+")");
+            // Note that throwing NoEntryException here instead of IOException is not
+            // without risk. If all bookies in a quorum throw this same exception
+            // the client will assume that it has reached the end of the ledger.
+            // However, this may not be the case, as a very specific error condition
+            // could have occurred, where the length of the entry was corrupted on all
+            // replicas. However, the chance of this happening is very very low, so
+            // returning NoEntryException is mostly safe.
+            throw new Bookie.NoEntryException("Short read for " + ledgerId + "@"
+                                              + entryId + " in " + entryLogId + "@"
+                                              + pos + "("+rc+"!="+data.length+")", ledgerId, entryId);
         }
         buff.flip();
         long thisLedgerId = buff.getLong();

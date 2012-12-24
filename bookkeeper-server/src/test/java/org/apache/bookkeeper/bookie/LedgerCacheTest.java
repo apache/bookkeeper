@@ -50,6 +50,7 @@ public class LedgerCacheTest extends TestCase {
     SnapshotMap<Long, Boolean> activeLedgers;
     LedgerManagerFactory ledgerManagerFactory;
     LedgerCache ledgerCache;
+    Thread flushThread;
     ServerConfiguration conf;
     File txnDir, ledgerDir;
 
@@ -82,6 +83,10 @@ public class LedgerCacheTest extends TestCase {
     @Override
     @After
     public void tearDown() throws Exception {
+        if (flushThread != null) {
+            flushThread.interrupt();
+            flushThread.join();
+        }
         bookie.ledgerStorage.shutdown();
         ledgerManagerFactory.uninitialize();
         FileUtils.deleteDirectory(txnDir);
@@ -94,9 +99,26 @@ public class LedgerCacheTest extends TestCase {
         }
         ledgerCache = ((InterleavedLedgerStorage) bookie.ledgerStorage).ledgerCache = new LedgerCacheImpl(
                 conf, activeLedgers, bookie.getLedgerDirsManager());
+        flushThread = new Thread() {
+                public void run() {
+                    while (true) {
+                        try {
+                            sleep(conf.getFlushInterval());
+                            ledgerCache.flushLedger(true);
+                        } catch (InterruptedException ie) {
+                            // killed by teardown
+                            Thread.currentThread().interrupt();
+                            return;
+                        } catch (Exception e) {
+                            LOG.error("Exception in flush thread", e);
+                        }
+                    }
+                }
+            };
+        flushThread.start();
     }
 
-    @Test
+    @Test(timeout=30000)
     public void testAddEntryException() throws IOException {
         // set page limitation
         conf.setPageLimit(10);
@@ -117,7 +139,7 @@ public class LedgerCacheTest extends TestCase {
         }
     }
 
-    @Test
+    @Test(timeout=30000)
     public void testLedgerEviction() throws Exception {
         int numEntries = 10;
         // limit open files & pages
@@ -140,7 +162,7 @@ public class LedgerCacheTest extends TestCase {
         }
     }
 
-    @Test
+    @Test(timeout=30000)
     public void testDeleteLedger() throws Exception {
         int numEntries = 10;
         // limit open files & pages
@@ -175,7 +197,7 @@ public class LedgerCacheTest extends TestCase {
         }
     }
 
-    @Test
+    @Test(timeout=30000)
     public void testPageEviction() throws Exception {
         int numLedgers = 10;
         byte[] masterKey = "blah".getBytes();
@@ -226,6 +248,7 @@ public class LedgerCacheTest extends TestCase {
     /**
      * Test Ledger Cache flush failure
      */
+    @Test(timeout=30000)
     public void testLedgerCacheFlushFailureOnDiskFull() throws Exception {
         File ledgerDir1 = File.createTempFile("bkTest", ".dir");
         ledgerDir1.delete();
@@ -264,6 +287,62 @@ public class LedgerCacheTest extends TestCase {
         Assert.assertArrayEquals(generateEntry(1, 1).array(), ledgerStorage.getEntry(1, 1).array());
         Assert.assertArrayEquals(generateEntry(1, 2).array(), ledgerStorage.getEntry(1, 2).array());
         Assert.assertArrayEquals(generateEntry(1, 3).array(), ledgerStorage.getEntry(1, 3).array());
+    }
+
+    /**
+     * Test that if we are writing to more ledgers than there
+     * are pages, then we will not flush the index before the
+     * entries in the entrylogger have been persisted to disk.
+     * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-447}
+     */
+    @Test(timeout=30000)
+    public void testIndexPageEvictionWriteOrder() throws Exception {
+        final int numLedgers = 10;
+        File journalDir = File.createTempFile("bookie", "journal");
+        journalDir.delete();
+        journalDir.mkdir();
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+
+        File ledgerDir = File.createTempFile("bookie", "ledger");
+        ledgerDir.delete();
+        ledgerDir.mkdir();
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+
+        ServerConfiguration conf = new ServerConfiguration()
+            .setZkServers(null)
+            .setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+            .setFlushInterval(1000)
+            .setPageLimit(1);
+
+        Bookie b = new Bookie(conf);
+        b.start();
+        for (int i = 1; i <= numLedgers; i++) {
+            ByteBuffer packet = generateEntry(i, 1);
+            b.addEntry(packet, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
+        }
+
+        conf = new ServerConfiguration()
+            .setZkServers(null)
+            .setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[] { ledgerDir.getPath() });
+
+        b = new Bookie(conf);
+        for (int i = 1; i <= numLedgers; i++) {
+            try {
+                b.readEntry(i, 1);
+            } catch (Bookie.NoLedgerException nle) {
+                // this is fine, means the ledger was never written to the index cache
+                assertEquals("No ledger should only happen for the last ledger",
+                             i, numLedgers);
+            } catch (Bookie.NoEntryException nee) {
+                // this is fine, means the ledger was written to the index cache, but not
+                // the entry log
+            } catch (IOException ioe) {
+                LOG.info("Shouldn't have received IOException", ioe);
+                fail("Shouldn't throw IOException, should say that entry is not found");
+            }
+        }
     }
 
     private ByteBuffer generateEntry(long ledger, long entry) {
