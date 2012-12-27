@@ -153,6 +153,7 @@ Trunk (unreleased changes)
         BOOKKEEPER-520: BookieFailureTest hangs on precommit build (ivank via sijie)
 
         BOOKKEEPER-447: Bookie can fail to recover if index pages flushed before ledger flush acknowledged (ivank via sijie)
+	BOOKKEEPER-520: BookieFailureTest hangs on precommit build (sijie via fpj, jira reopened)
 
       hedwig-protocol:
 

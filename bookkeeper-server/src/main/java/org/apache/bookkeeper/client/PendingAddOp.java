@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.client;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,7 +15,10 @@ package org.apache.bookkeeper.client;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.client;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.net.InetSocketAddress;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
@@ -42,6 +43,7 @@ class PendingAddOp implements WriteCallback {
     AddCallback cb;
     Object ctx;
     long entryId;
+    Set<Integer> writeSet;
 
     DistributionSchedule.AckSet ackSet;
     boolean completed = false;
@@ -69,6 +71,7 @@ class PendingAddOp implements WriteCallback {
 
     void setEntryId(long entryId) {
         this.entryId = entryId;
+        writeSet = new HashSet<Integer>(lh.distributionSchedule.getWriteSet(entryId));
     }
 
     void sendWriteRequest(int bookieIndex) {
@@ -83,6 +86,24 @@ class PendingAddOp implements WriteCallback {
             // this addOp hasn't yet had its mac computed. When the mac is
             // computed, its write requests will be sent, so no need to send it
             // now
+            return;
+        }
+        // Suppose that unset doesn't happen on the write set of an entry. In this
+        // case we don't need to resend the write request upon an ensemble change.
+        // We do need to invoke #sendAddSuccessCallbacks() for such entries because
+        // they may have already completed, but they are just waiting for the ensemble
+        // to change.
+        // E.g.
+        // ensemble (A, B, C, D), entry k is written to (A, B, D). An ensemble change
+        // happens to replace C with E. Entry k does not complete until C is
+        // replaced with E successfully. When the ensemble change completes, it tries
+        // to unset entry k. C however is not in k's write set, so no entry is written
+        // again, and no one triggers #sendAddSuccessCallbacks. Consequently, k never
+        // completes.
+        //
+        // We call sendAddSuccessCallback when unsetting t cover this case.
+        if (!writeSet.contains(bookieIndex)) {
+            lh.sendAddSuccessCallbacks();
             return;
         }
 
@@ -102,7 +123,7 @@ class PendingAddOp implements WriteCallback {
 
     void initiate(ChannelBuffer toSend) {
         this.toSend = toSend;
-        for (int bookieIndex : lh.distributionSchedule.getWriteSet(entryId)) {
+        for (int bookieIndex : writeSet) {
             sendWriteRequest(bookieIndex);
         }
     }
@@ -130,20 +151,33 @@ class PendingAddOp implements WriteCallback {
             return;
         }
 
+        if (!writeSet.contains(bookieIndex)) {
+            LOG.warn("Received a response for (lid:{}, eid:{}) from {}@{}, but it doesn't belong to {}.",
+                     new Object[] { ledgerId, entryId, addr, bookieIndex, writeSet });
+            return;
+        }
+
         if (ackSet.addBookieAndCheck(bookieIndex) && !completed) {
             completed = true;
 
-            // do some quick checks to see if some adds may have finished. All
-            // this will be checked under locks again
-            if (lh.pendingAddOps.peek() == this) {
-                lh.sendAddSuccessCallbacks();
-            }
+            LOG.debug("Complete (lid:{}, eid:{}).", ledgerId, entryId);
+            // when completed an entry, try to send success add callbacks in order
+            lh.sendAddSuccessCallbacks();
         }
     }
 
     void submitCallback(final int rc) {
         cb.addComplete(rc, lh, entryId, ctx);
         lh.opCounterSem.release();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("PendingAddOp(lid:").append(lh.ledgerId)
+          .append(", eid:").append(entryId).append(", completed:")
+          .append(completed).append(")");
+        return sb.toString();
     }
 
 }

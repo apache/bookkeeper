@@ -107,9 +107,14 @@ public class BookieClient {
 
         client.connectIfNeededAndDoOp(new GenericCallback<Void>() {
             @Override
-            public void operationComplete(int rc, Void result) {
+            public void operationComplete(final int rc, Void result) {
                 if (rc != BKException.Code.OK) {
-                    cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
+                    executor.submitOrdered(ledgerId, new SafeRunnable() {
+                        @Override
+                        public void safeRun() {
+                            cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
+                        }
+                    });
                     return;
                 }
                 client.addEntry(ledgerId, masterKey, entryId, toSend, cb, ctx, options);
@@ -127,9 +132,14 @@ public class BookieClient {
 
         client.connectIfNeededAndDoOp(new GenericCallback<Void>() {
             @Override
-            public void operationComplete(int rc, Void result) {
+            public void operationComplete(final int rc, Void result) {
                 if (rc != BKException.Code.OK) {
-                    cb.readEntryComplete(rc, ledgerId, entryId, null, ctx);
+                    executor.submitOrdered(ledgerId, new SafeRunnable() {
+                        @Override
+                        public void safeRun() {
+                            cb.readEntryComplete(rc, ledgerId, entryId, null, ctx);
+                        }
+                    });
                     return;
                 }
                 client.readEntryAndFenceLedger(ledgerId, masterKey, entryId, cb, ctx);
@@ -143,10 +153,14 @@ public class BookieClient {
 
         client.connectIfNeededAndDoOp(new GenericCallback<Void>() {
             @Override
-            public void operationComplete(int rc, Void result) {
-
+            public void operationComplete(final int rc, Void result) {
                 if (rc != BKException.Code.OK) {
-                    cb.readEntryComplete(rc, ledgerId, entryId, null, ctx);
+                    executor.submitOrdered(ledgerId, new SafeRunnable() {
+                        @Override
+                        public void safeRun() {
+                            cb.readEntryComplete(rc, ledgerId, entryId, null, ctx);
+                        }
+                    });
                     return;
                 }
                 client.readEntry(ledgerId, entryId, cb, ctx);
