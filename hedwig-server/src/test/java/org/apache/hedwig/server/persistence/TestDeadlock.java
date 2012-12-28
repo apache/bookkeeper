@@ -141,7 +141,10 @@ public class TestDeadlock extends HedwigHubTestBase {
                                 publisher.asyncPublish(topic, getMsg(9999), new TestCallback(queue), null);
                             }
                             for (int i=0; i<3; i++) {
-                                assertTrue(queue.take());
+                                if (!queue.take()) {
+                                    logger.error("Error publishing to topic {}", topic);
+                                    ConcurrencyUtils.put(consumeQueue, false);
+                                }
                             }
                         } catch (Exception e) {
                             logger.error("Failed to publish message to obtain permit.");

@@ -155,6 +155,8 @@ Trunk (unreleased changes)
         BOOKKEEPER-447: Bookie can fail to recover if index pages flushed before ledger flush acknowledged (ivank via sijie)
 	BOOKKEEPER-520: BookieFailureTest hangs on precommit build (sijie via fpj, jira reopened)
 
+	BOOKKEEPER-514: TestDeadLock hanging sometimes (ivank, sijie via fpj)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

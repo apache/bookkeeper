@@ -67,27 +67,6 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
       <version>1.6.4</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-       <groupId>org.apache.hadoop</groupId>
-       <artifactId>hadoop-common</artifactId>
-       <version>0.23.1</version>
-       <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-hdfs</artifactId>
-      <version>0.23.1</version>
-      <scope>compile</scope>
-      <!-- commons-daemon has a malformed pom, which can cause the build to fail in an
-           environment which uses an artifactory cache. -->
-      <exclusions>
-        <exclusion>
-          <groupId>commons-daemon</groupId>
-          <artifactId>commons-daemon</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
@@ -113,8 +92,8 @@
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-server</artifactId>
       <version>${project.parent.version}</version>
-      <type>jar</type>
       <scope>compile</scope>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
@@ -133,7 +112,6 @@
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
       <version>1.2.15</version>
-      <scope>provided</scope>
       <exclusions>
 	<exclusion>
 	  <groupId>javax.mail</groupId>
@@ -157,6 +135,26 @@
       <groupId>commons-cli</groupId>
       <artifactId>commons-cli</artifactId>
       <version>1.2</version>
+    </dependency>
+    <dependency>
+       <groupId>org.apache.hadoop</groupId>
+       <artifactId>hadoop-common</artifactId>
+       <version>0.23.1</version>
+       <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-hdfs</artifactId>
+      <version>0.23.1</version>
+      <scope>compile</scope>
+      <!-- commons-daemon has a malformed pom, which can cause the build to fail in an
+           environment which uses an artifactory cache. -->
+      <exclusions>
+        <exclusion>
+          <groupId>commons-daemon</groupId>
+          <artifactId>commons-daemon</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 </project>

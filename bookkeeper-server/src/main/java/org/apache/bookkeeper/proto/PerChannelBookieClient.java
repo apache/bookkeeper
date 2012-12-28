@@ -75,7 +75,6 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     public static final int MAX_FRAME_LENGTH = 2 * 1024 * 1024; // 2M
 
     InetSocketAddress addr;
-    Semaphore opCounterSem = new Semaphore(2000);
     AtomicLong totalBytesOutstanding;
     ClientSocketChannelFactory channelFactory;
     OrderedSafeExecutor executor;

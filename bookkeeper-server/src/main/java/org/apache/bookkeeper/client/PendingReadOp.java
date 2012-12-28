@@ -308,7 +308,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     }
 
     void sendReadTo(InetSocketAddress to, LedgerEntryRequest entry) throws InterruptedException {
-        lh.opCounterSem.acquire();
+        lh.throttler.acquire();
 
         lh.bk.bookieClient.readEntry(to, lh.ledgerId, entry.entryId, 
                                      this, new ReadContext(to, entry));
@@ -318,8 +318,6 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     public void readEntryComplete(int rc, long ledgerId, final long entryId, final ChannelBuffer buffer, Object ctx) {
         final ReadContext rctx = (ReadContext)ctx;
         final LedgerEntryRequest entry = rctx.entry;
-
-        lh.opCounterSem.release();
 
         if (rc != BKException.Code.OK) {
             entry.logErrorAndReattemptRead(rctx.to, "Error: " + BKException.getMessage(rc), rc);

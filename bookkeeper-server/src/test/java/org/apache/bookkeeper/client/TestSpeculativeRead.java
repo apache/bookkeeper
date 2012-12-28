@@ -291,6 +291,7 @@ public class TestSpeculativeRead extends BaseTestCase {
         Set<InetSocketAddress> noHost = new HashSet();
         Set<InetSocketAddress> secondHostOnly = new HashSet();
         secondHostOnly.add(ensemble.get(1));
+        PendingReadOp.LedgerEntryRequest req0 = null, req2 = null, req4 = null;
         try {
             LatchCallback latch0 = new LatchCallback();
             PendingReadOp op = new PendingReadOp(l, bkspec.scheduler,
@@ -298,8 +299,7 @@ public class TestSpeculativeRead extends BaseTestCase {
 
             // if we've already heard from all hosts,
             // we only send the initial read
-            PendingReadOp.LedgerEntryRequest req0
-                = op.new LedgerEntryRequest(ensemble, l.getId(), 0);
+            req0 = op.new LedgerEntryRequest(ensemble, l.getId(), 0);
             assertTrue("Should have sent to first",
                        req0.maybeSendSpeculativeRead(allHosts).equals(ensemble.get(0)));
             assertNull("Should not have sent another",
@@ -307,8 +307,7 @@ public class TestSpeculativeRead extends BaseTestCase {
 
             // if we have heard from some hosts, but not one we have sent to
             // send again
-            PendingReadOp.LedgerEntryRequest req2
-                = op.new LedgerEntryRequest(ensemble, l.getId(), 2);
+            req2 = op.new LedgerEntryRequest(ensemble, l.getId(), 2);
             assertTrue("Should have sent to third",
                        req2.maybeSendSpeculativeRead(noHost).equals(ensemble.get(2)));
             assertTrue("Should have sent to first",
@@ -316,15 +315,25 @@ public class TestSpeculativeRead extends BaseTestCase {
 
             // if we have heard from some hosts, which includes one we sent to
             // do not read again
-            PendingReadOp.LedgerEntryRequest req4
-                = op.new LedgerEntryRequest(ensemble, l.getId(), 4);
+            req4 = op.new LedgerEntryRequest(ensemble, l.getId(), 4);
             assertTrue("Should have sent to second",
                        req4.maybeSendSpeculativeRead(noHost).equals(ensemble.get(1)));
             assertNull("Should not have sent another",
                        req4.maybeSendSpeculativeRead(secondHostOnly));
         } finally {
-            // wait for all ops to complete
-            l.opCounterSem.acquire(bkspec.getConf().getThrottleValue());
+            for (PendingReadOp.LedgerEntryRequest req
+                     : new PendingReadOp.LedgerEntryRequest[] { req0, req2, req4 }) {
+                if (req != null) {
+                    int i = 0;
+                    while (!req.isComplete()) {
+                        if (i++ > 10) {
+                            break; // wait for up to 10 seconds
+                        }
+                        Thread.sleep(1000);
+                    }
+                    assertTrue("Request should be done", req0.isComplete());
+                }
+            }
 
             l.close();
             bkspec.close();

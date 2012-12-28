@@ -28,7 +28,6 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Queue;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
@@ -45,6 +44,8 @@ import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State;
 import org.apache.bookkeeper.util.SafeRunnable;
+
+import com.google.common.util.concurrent.RateLimiter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,8 +69,7 @@ public class LedgerHandle {
     final DigestManager macManager;
     final DistributionSchedule distributionSchedule;
 
-    final Semaphore opCounterSem;
-    private final Integer throttling;
+    final RateLimiter throttler;
 
     /**
      * Invalid entry id. This value is returned from methods which
@@ -96,8 +96,7 @@ public class LedgerHandle {
 
         this.ledgerId = ledgerId;
 
-        this.throttling = bk.getConf().getThrottleValue();
-        this.opCounterSem = new Semaphore(throttling);
+        this.throttler = RateLimiter.create(bk.getConf().getThrottleValue());
 
         macManager = DigestManager.instantiate(ledgerId, password, digestType);
         this.ledgerKey = MacDigestManager.genDigest("ledger", password);
@@ -165,15 +164,6 @@ public class LedgerHandle {
      */
     DigestManager getDigestManager() {
         return macManager;
-    }
-
-    /**
-     * Return total number of available slots.
-     *
-     * @return int    available slots
-     */
-    Semaphore getAvailablePermits() {
-        return this.opCounterSem;
     }
 
     /**
@@ -489,12 +479,7 @@ public class LedgerHandle {
                 "Invalid values for offset("+offset
                 +") or length("+length+")");
         }
-        try {
-            opCounterSem.acquire();
-        } catch (InterruptedException e) {
-            cb.addComplete(BKException.Code.InterruptedException,
-                           LedgerHandle.this, INVALID_ENTRY_ID, ctx);
-        }
+        throttler.acquire();
 
         final long entryId;
         final long currentLength;
@@ -504,7 +489,6 @@ public class LedgerHandle {
             // updating lastAddPushed
             if (metadata.isClosed()) {
                 LOG.warn("Attempt to add to closed ledger: " + ledgerId);
-                LedgerHandle.this.opCounterSem.release();
                 cb.addComplete(BKException.Code.LedgerClosedException,
                                LedgerHandle.this, INVALID_ENTRY_ID, ctx);
                 return;
@@ -526,7 +510,6 @@ public class LedgerHandle {
                 }
             });
         } catch (RuntimeException e) {
-            opCounterSem.release();
             cb.addComplete(BKException.Code.InterruptedException,
                     LedgerHandle.this, INVALID_ENTRY_ID, ctx);
         }
