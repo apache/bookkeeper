@@ -28,7 +28,7 @@ import org.apache.bookkeeper.versioning.Version.Occurred;
 
 public class TestZkVersion {
 
-    @Test
+    @Test(timeout=60000)
     public void testNullZkVersion() {
         ZkVersion zkVersion = new ZkVersion(99);
         try {
@@ -38,7 +38,7 @@ public class TestZkVersion {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testInvalidVersion() {
         ZkVersion zkVersion = new ZkVersion(99);
         try {
@@ -53,7 +53,7 @@ public class TestZkVersion {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testCompare() {
         ZkVersion zv = new ZkVersion(99);
         Assert.assertEquals(Occurred.AFTER, zv.compare(new ZkVersion(98)));

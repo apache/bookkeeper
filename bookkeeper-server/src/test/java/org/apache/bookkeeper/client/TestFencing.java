@@ -56,7 +56,7 @@ public class TestFencing extends BaseTestCase {
      * Basic fencing test. Create ledger, write to it,
      * open ledger, write again (should fail).
      */
-    @Test
+    @Test(timeout=60000)
     public void testBasicFencing() throws Exception {
         /*
          * Create ledger.
@@ -155,7 +155,7 @@ public class TestFencing extends BaseTestCase {
      * All opens should result in a ledger with an equals number of 
      * entries.
      */
-    @Test
+    @Test(timeout=60000)
     public void testManyOpenParallel() throws Exception {
         /*
          * Create ledger.
@@ -204,7 +204,7 @@ public class TestFencing extends BaseTestCase {
      * Test that opening a ledger in norecovery mode
      * doesn't fence off a ledger
      */
-    @Test
+    @Test(timeout=60000)
     public void testNoRecoveryOpen() throws Exception {
         /*
          * Create ledger.
@@ -250,7 +250,7 @@ public class TestFencing extends BaseTestCase {
      * kill a bookie in the ensemble. Recover.
      * Fence the ledger. Kill another bookie. Recover.
      */
-    @Test
+    @Test(timeout=60000)
     public void testFencingInteractionWithBookieRecovery() throws Exception {
         System.setProperty("digestType", digestType.toString());
         System.setProperty("passwd", "testPasswd");
@@ -305,7 +305,7 @@ public class TestFencing extends BaseTestCase {
      * Fence the ledger. Kill a bookie. Recover.
      * Ensure that recover doesn't reallow adding
      */
-    @Test
+    @Test(timeout=60000)
     public void testFencingInteractionWithBookieRecovery2() throws Exception {
         System.setProperty("digestType", digestType.toString());
         System.setProperty("passwd", "testPasswd");
@@ -350,7 +350,7 @@ public class TestFencing extends BaseTestCase {
     /**
      * Test that fencing doesn't work with a bad password
      */
-    @Test
+    @Test(timeout=60000)
     public void testFencingBadPassword() throws Exception {
         /*
          * Create ledger.

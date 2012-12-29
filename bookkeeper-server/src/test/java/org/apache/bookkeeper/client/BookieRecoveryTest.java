@@ -236,7 +236,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
      *
      * @throws Exception
      */
-    @Test
+    @Test(timeout=60000)
     public void testAsyncBookieRecoveryToSpecificBookie() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -290,7 +290,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
      *
      * @throws Exception
      */
-    @Test
+    @Test(timeout=60000)
     public void testAsyncBookieRecoveryToRandomBookies() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -345,7 +345,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
      *
      * @throws Exception
      */
-    @Test
+    @Test(timeout=60000)
     public void testSyncBookieRecoveryToSpecificBookie() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -389,7 +389,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
      *
      * @throws Exception
      */
-    @Test
+    @Test(timeout=60000)
     public void testSyncBookieRecoveryToRandomBookies() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -558,7 +558,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
     /**
      * Test recoverying the closed ledgers when the failed bookie server is in the last ensemble
      */
-    @Test
+    @Test(timeout=60000)
     public void testBookieRecoveryOnClosedLedgers() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -590,7 +590,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testBookieRecoveryOnOpenedLedgers() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -627,7 +627,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testBookieRecoveryOnInRecoveryLedger() throws Exception {
         int numMsgs = 10;
         // Create the ledgers
@@ -689,7 +689,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
 
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testAsyncBookieRecoveryToRandomBookiesNotEnoughBookies() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -720,7 +720,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testSyncBookieRecoveryToRandomBookiesCheckForDupes() throws Exception {
         Random r = new Random();
 
@@ -764,7 +764,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void recoverWithoutPasswordInConf() throws Exception {
         byte[] passwdCorrect = "AAAAAA".getBytes();
         byte[] passwdBad = "BBBBBB".getBytes();
@@ -833,7 +833,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
      * Test that when we try to recover a ledger which doesn't have
      * the password stored in the configuration, we don't succeed
      */
-    @Test
+    @Test(timeout=60000)
     public void ensurePasswordUsedForOldLedgers() throws Exception {
         // This test bases on creating old ledgers in version 4.1.0, which only
         // supports ZooKeeper based flat and hierarchical LedgerManagerFactory.

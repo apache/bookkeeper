@@ -367,12 +367,12 @@ public class TestBookKeeperPersistenceManager extends TestCase {
         return result;
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testScanMessagesOnClosedLedgerAfterDeleteLedger() throws Exception {
         scanMessagesAfterDeleteLedgerTest(2);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testScanMessagesOnUnclosedLedgerAfterDeleteLedger() throws Exception {
         scanMessagesAfterDeleteLedgerTest(1);
     }
@@ -408,7 +408,7 @@ public class TestBookKeeperPersistenceManager extends TestCase {
         assertTrue("Should succeed to scan messages after deleted consumed ledger.", b);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testScanMessagesOnEmptyLedgerAfterDeleteLedger() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestScanMessagesOnEmptyLedgerAfterDeleteLedger");
 
@@ -446,12 +446,12 @@ public class TestBookKeeperPersistenceManager extends TestCase {
         assertTrue("Should succeed to scan messages after deleted consumed ledger.", b);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testFailedToDeleteLedger1() throws Exception {
         failedToDeleteLedgersTest(1);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testFailedToDeleteLedger2() throws Exception {
         // succeed to delete second ledger
         failedToDeleteLedgersTest(2);
@@ -525,7 +525,7 @@ public class TestBookKeeperPersistenceManager extends TestCase {
         assertNull("Should not fail with exception.", failureException);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testScanMessagesOnTwoLedgers() throws Exception {
         stopCluster();
         startCluster(readDelay);
@@ -558,7 +558,7 @@ public class TestBookKeeperPersistenceManager extends TestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testInconsistentSubscriptionStateAndLedgerRanges1() throws Exception {
         // See the comment of inconsistentSubscriptionStateAndLedgerRanges.
         // For this case, Step (2) failed to update subscription state metadata,
@@ -567,7 +567,7 @@ public class TestBookKeeperPersistenceManager extends TestCase {
         inconsistentSubscriptionStateAndLedgerRanges(1);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testInconsistentSubscriptionStateAndLedgerRanges2() throws Exception {
         // See the comment of inconsistentSubscriptionStateAndLedgerRanges.
         // For this case, step (2) failed to update subscription state metadata,
@@ -649,7 +649,7 @@ public class TestBookKeeperPersistenceManager extends TestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     // Add this test case for BOOKKEEPER-458
     public void testReadWhenTopicChangeLedger() throws Exception {
         final ByteString topic = ByteString.copyFromUtf8("testReadWhenTopicChangeLedger");

@@ -102,7 +102,7 @@ public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
      * Verify the bookie-ledger mapping with minimum number of bookies and few
      * ledgers
      */
-    @Test
+    @Test(timeout=60000)
     public void testSimpleBookieLedgerMapping() throws Exception {
 
         for (int i = 0; i < numberOfLedgers; i++) {
@@ -131,7 +131,7 @@ public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
     /**
      * Verify ledger index with failed bookies and throws exception
      */
-    @Test
+    @Test(timeout=60000)
     public void testWithoutZookeeper() throws Exception {
         // This test case is for ledger metadata that stored in ZooKeeper. As
         // far as MSLedgerManagerFactory, ledger metadata are stored in other
@@ -158,7 +158,7 @@ public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
     /**
      * Verify indexing with multiple ensemble reformation
      */
-    @Test
+    @Test(timeout=60000)
     public void testEnsembleReformation() throws Exception {
         try {
             LedgerHandle lh1 = createAndAddEntriesToLedger();

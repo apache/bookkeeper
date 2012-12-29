@@ -36,7 +36,7 @@ import org.junit.Assert;
 
 public class TestFactoryLayout extends ZooKeeperTestBase {
 
-    @Test
+    @Test(timeout=60000)
     public void testFactoryLayout() throws Exception {
         ServerConfiguration conf = new ServerConfiguration();
         conf.setMetadataManagerFactoryName(
@@ -66,7 +66,7 @@ public class TestFactoryLayout extends ZooKeeperTestBase {
         layout.store(zk, conf);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testCorruptedFactoryLayout() throws Exception {
         ServerConfiguration conf = new ServerConfiguration();
         StringBuilder msb = new StringBuilder();

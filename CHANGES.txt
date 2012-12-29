@@ -219,6 +219,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-495: Revise BK config doc (fpj, ivank via fpj)
 
+      BOOKKEEPER-523: Every test should have a timeout (ivank, sijie via fpj)
+
       bookkeeper-server:
 
         BOOKKEEPER-328: Bookie DeathWatcher is missing thread name (Rakesh via sijie)

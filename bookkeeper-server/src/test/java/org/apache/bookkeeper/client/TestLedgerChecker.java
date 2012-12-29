@@ -64,7 +64,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
      * Tests that the LedgerChecker should detect the underReplicated fragments
      * on multiple Bookie crashes
      */
-    @Test
+    @Test(timeout=60000)
     public void testChecker() throws Exception {
 
         LedgerHandle lh = bkc.createLedger(BookKeeper.DigestType.CRC32,

@@ -133,7 +133,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testDisableCompaction() throws Exception {
         // prepare data
         LedgerHandle[] lhs = prepareData(3, false);
@@ -160,7 +160,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testMinorCompaction() throws Exception {
         // prepare data
         LedgerHandle[] lhs = prepareData(3, false);
@@ -194,7 +194,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         verifyLedger(lhs[0].getId(), 0, lhs[0].getLastAddConfirmed());
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testMajorCompaction() throws Exception {
 
         // prepare data
@@ -229,7 +229,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         verifyLedger(lhs[1].getId(), 0, lhs[1].getLastAddConfirmed());
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testMajorCompactionAboveThreshold() throws Exception {
         // prepare data
         LedgerHandle[] lhs = prepareData(3, false);
@@ -252,7 +252,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testCompactionSmallEntryLogs() throws Exception {
 
         // create a ledger to write a few entries

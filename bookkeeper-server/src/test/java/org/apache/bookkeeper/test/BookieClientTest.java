@@ -124,7 +124,7 @@ public class BookieClientTest extends TestCase {
         }
     };
 
-    @Test
+    @Test(timeout=60000)
     public void testWriteGaps() throws Exception {
         final Object notifyObject = new Object();
         byte[] passwd = new byte[20];
@@ -229,7 +229,7 @@ public class BookieClientTest extends TestCase {
         return ChannelBuffers.wrappedBuffer(bb);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testNoLedger() throws Exception {
         ResultStruct arc = new ResultStruct();
         InetSocketAddress addr = new InetSocketAddress("127.0.0.1", port);

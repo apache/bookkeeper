@@ -23,7 +23,7 @@ import org.junit.Assert;
 
 public class TestHubLoad {
 
-    @Test
+    @Test(timeout=60000)
     public void testParseHubLoad() throws Exception {
         HubLoad hubLoad1 = new HubLoad(9999);
 

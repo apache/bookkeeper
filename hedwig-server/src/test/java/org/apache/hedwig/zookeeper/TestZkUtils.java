@@ -26,7 +26,7 @@ import org.junit.Test;
 
 public class TestZkUtils extends ZooKeeperTestBase {
 
-    @Test
+    @Test(timeout=60000)
     public void testCreateFullPathOptimistic() throws Exception {
         testPath("/a/b/c", CreateMode.EPHEMERAL);
 

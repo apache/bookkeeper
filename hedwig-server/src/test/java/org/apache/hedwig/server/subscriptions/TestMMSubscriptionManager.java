@@ -101,7 +101,7 @@ public class TestMMSubscriptionManager extends ZooKeeperTestBase {
 
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testBasics() throws Exception {
 
         ByteString topic1 = ByteString.copyFromUtf8("topic1");

@@ -52,7 +52,7 @@ public class BookKeeperTest extends BaseTestCase {
         this.digestType = digestType;
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testConstructionZkDelay() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
             .setZkServers(zkUtil.getZooKeeperConnectString())
@@ -67,7 +67,7 @@ public class BookKeeperTest extends BaseTestCase {
         bkc.close();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testConstructionNotConnectedExplicitZk() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
             .setZkServers(zkUtil.getZooKeeperConnectString())
@@ -96,7 +96,7 @@ public class BookKeeperTest extends BaseTestCase {
      * Test that bookkeeper is not able to open ledgers if
      * it provides the wrong password or wrong digest
      */
-    @Test
+    @Test(timeout=60000)
     public void testBookkeeperPassword() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
             .setZkServers(zkUtil.getZooKeeperConnectString());
@@ -156,7 +156,7 @@ public class BookKeeperTest extends BaseTestCase {
      * a callback error and not an InterruptedException.
      * @throws Exception
      */
-    @Test
+    @Test(timeout=60000)
     public void testAsyncReadWithError() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
         bkc.close();

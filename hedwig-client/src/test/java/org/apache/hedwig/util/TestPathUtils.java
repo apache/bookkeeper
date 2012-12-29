@@ -25,14 +25,14 @@ import org.junit.Test;
 
 public class TestPathUtils extends TestCase {
 
-    @Test
+    @Test(timeout=60000)
     public void testPrefixes() {
         assertEquals(Arrays.asList(new String[] { "/a", "/a/b", "/a/b/c" }), PathUtils.prefixes("/a/b/c"));
         assertEquals(Arrays.asList(new String[] { "/a", "/a/b", "/a/b/c" }), PathUtils.prefixes("///a///b///c"));
 
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testIsPrefix() {
         String[] paths = new String[] { "/", "/a", "/a/b" };
         for (int i = 0; i < paths.length; i++) {

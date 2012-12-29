@@ -295,7 +295,7 @@ public class TestMetaStore extends TestCase {
     /**
      * Test (get, get partial field, remove) on non-existent element.
      */
-    @Test
+    @Test(timeout=60000)
     public void testNonExistent() throws Exception {
         // get
         try {
@@ -324,7 +324,7 @@ public class TestMetaStore extends TestCase {
     /**
      * Test usage of get operation on (full and partial) fields.
      */
-    @Test
+    @Test(timeout=60000)
     public void testGet() throws Exception {
         Versioned<Value> vv;
 
@@ -371,7 +371,7 @@ public class TestMetaStore extends TestCase {
     /**
      * Test usage of put operation with (full and partial) fields.
      */
-    @Test
+    @Test(timeout=60000)
     public void testPut() throws Exception {
         final Integer counter = getRandom();
         final String name = "put";
@@ -462,7 +462,7 @@ public class TestMetaStore extends TestCase {
      * Test usage of (unconditional remove, BadVersion remove, CorrectVersion
      * remove) operation.
      */
-    @Test
+    @Test(timeout=60000)
     public void testRemove() throws Exception {
         final Integer counter = getRandom();
         final String name = "remove";
@@ -541,7 +541,7 @@ public class TestMetaStore extends TestCase {
     /**
      * Test usage of (scan) operation on (full and partial) fields.
      */
-    @Test
+    @Test(timeout=60000)
     public void testOpenCursor() throws Exception {
 
         TreeMap<String, Value> allValues = Maps.newTreeMap();

@@ -53,7 +53,7 @@ public class TestLedgerDirsManager extends TestCase {
         dirsManager = new LedgerDirsManager(conf);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testPickWritableDirExclusive() throws Exception {
         try {
             dirsManager.pickRandomWritableDir(curDir);
@@ -64,7 +64,7 @@ public class TestLedgerDirsManager extends TestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testNoWritableDir() throws Exception {
         try {
             dirsManager.addToFilledDirs(curDir);

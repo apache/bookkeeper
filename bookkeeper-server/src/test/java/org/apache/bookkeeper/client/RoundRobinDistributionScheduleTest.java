@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 public class RoundRobinDistributionScheduleTest {
     static Logger LOG = LoggerFactory.getLogger(RoundRobinDistributionScheduleTest.class);
 
-    @Test
+    @Test(timeout=60000)
     public void testDistributionSchedule() throws Exception {
         RoundRobinDistributionSchedule schedule = new RoundRobinDistributionSchedule(3, 2, 5);
 

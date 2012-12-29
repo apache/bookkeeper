@@ -28,7 +28,7 @@ import junit.framework.TestCase;
 import org.junit.Test;
 
 public class ConfigurationTest extends TestCase {
-    @Test
+    @Test(timeout=60000)
     public void testConfigurationOverwrite() {
         System.clearProperty("zkServers");
 
@@ -54,7 +54,7 @@ public class ConfigurationTest extends TestCase {
         assertEquals("newserver", conf2.getZkServers());
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testGetZkServers() {
         System.setProperty("zkServers", "server1:port1,server2:port2");
         ServerConfiguration conf = new ServerConfiguration();

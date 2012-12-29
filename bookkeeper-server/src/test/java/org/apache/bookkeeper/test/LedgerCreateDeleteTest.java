@@ -45,7 +45,7 @@ public class LedgerCreateDeleteTest extends BookKeeperClusterTestCase {
         super.setUp();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testCreateDeleteLedgers() throws Exception {
         int numLedgers = 3;
         ArrayList<Long> ledgers = new ArrayList<Long>();

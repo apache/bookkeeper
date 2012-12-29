@@ -87,7 +87,7 @@ public class BookieWriteLedgerTest extends
      * Verify write when few bookie failures in last ensemble and forcing
      * ensemble reformation
      */
-    @Test
+    @Test(timeout=60000)
     public void testWithMultipleBookieFailuresInLastEnsemble() throws Exception {
         // Create a ledger
         lh = bkc.createLedger(5, 4, digestType, ledgerPassword);
@@ -130,7 +130,7 @@ public class BookieWriteLedgerTest extends
     /**
      * Verify asynchronous writing when few bookie failures in last ensemble.
      */
-    @Test
+    @Test(timeout=60000)
     public void testAsyncWritesWithMultipleFailuresInLastEnsemble()
             throws Exception {
         // Create ledgers

@@ -157,7 +157,7 @@ public class TestLedgerUnderreplicationManager {
      * Ensure that getLedgerToReplicate will block until it a ledger
      * becomes available.
      */
-    @Test
+    @Test(timeout=60000)
     public void testBasicInteraction() throws Exception {
         Set<Long> ledgers = new HashSet<Long>();
         ledgers.add(0xdeadbeefL);
@@ -203,7 +203,7 @@ public class TestLedgerUnderreplicationManager {
      * client shouldn't be able to get it. If the first client dies
      * however, the second client should be able to get it.
      */
-    @Test
+    @Test(timeout=60000)
     public void testLocking() throws Exception {
         String missingReplica = "localhost:3181";
 
@@ -240,7 +240,7 @@ public class TestLedgerUnderreplicationManager {
      * acquire a ledger, and that it's not the one that was previously
      * marked as replicated.
      */
-    @Test
+    @Test(timeout=60000)
     public void testMarkingAsReplicated() throws Exception {
         String missingReplica = "localhost:3181";
 
@@ -284,7 +284,7 @@ public class TestLedgerUnderreplicationManager {
      * When a client releases a previously acquired ledger, another
      * client should then be able to acquire it.
      */
-    @Test
+    @Test(timeout=60000)
     public void testRelease() throws Exception {
         String missingReplica = "localhost:3181";
 
@@ -326,7 +326,7 @@ public class TestLedgerUnderreplicationManager {
      * under replicated ledger list when first rereplicating client marks
      * it as replicated.
      */
-    @Test
+    @Test(timeout=60000)
     public void testManyFailures() throws Exception {
         String missingReplica1 = "localhost:3181";
         String missingReplica2 = "localhost:3182";
@@ -356,7 +356,7 @@ public class TestLedgerUnderreplicationManager {
      * the same missing replica twice, only marking as replicated
      * will be enough to remove it from the list.
      */
-    @Test
+    @Test(timeout=60000)
     public void test2reportSame() throws Exception {
         String missingReplica1 = "localhost:3181";
 
@@ -454,7 +454,7 @@ public class TestLedgerUnderreplicationManager {
      * localhost:3181, localhost:318, localhost:31812
      * *******************************************************************
      */
-    @Test
+    @Test(timeout=60000)
     public void testMarkSimilarMissingReplica() throws Exception {
         List<String> missingReplica = new ArrayList<String>();
         missingReplica.add("localhost:3181");
@@ -471,7 +471,7 @@ public class TestLedgerUnderreplicationManager {
      * Test multiple bookie failures for a ledger and marked as underreplicated
      * one after another.
      */
-    @Test
+    @Test(timeout=60000)
     public void testManyFailuresInAnEnsemble() throws Exception {
         List<String> missingReplica = new ArrayList<String>();
         missingReplica.add("localhost:3181");
@@ -596,7 +596,7 @@ public class TestLedgerUnderreplicationManager {
      * Test that the hierarchy gets cleaned up as ledgers
      * are marked as fully replicated
      */
-    @Test
+    @Test(timeout=60000)
     public void testHierarchyCleanup() throws Exception {
         final LedgerUnderreplicationManager replicaMgr = lmf1
             .newLedgerUnderreplicationManager();

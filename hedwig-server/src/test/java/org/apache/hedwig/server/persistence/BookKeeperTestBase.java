@@ -128,7 +128,7 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
     }
 
     // Give junit a fake test so that its happy
-    @Test
+    @Test(timeout=60000)
     public void testNothing() throws Exception {
 
     }

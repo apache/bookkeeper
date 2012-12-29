@@ -252,7 +252,7 @@ public class TestMultiplexing extends HedwigHubTestBase {
         return new TestServerConfiguration(port, sslPort);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testStopDelivery() throws Exception {
         ByteString topic1 = ByteString.copyFromUtf8("testStopDelivery-1");
         ByteString topic2 = ByteString.copyFromUtf8("testStopDelivery-2");
@@ -312,7 +312,7 @@ public class TestMultiplexing extends HedwigHubTestBase {
         csHandler21.checkSecondRun();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testCloseSubscription() throws Exception {
         ByteString topic1 = ByteString.copyFromUtf8("testCloseSubscription-1");
         ByteString topic2 = ByteString.copyFromUtf8("testCloseSubscription-2");
@@ -372,7 +372,7 @@ public class TestMultiplexing extends HedwigHubTestBase {
         csHandler21.checkSecondRun();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testThrottle() throws Exception {
         ByteString topic1 = ByteString.copyFromUtf8("testThrottle-1");
         ByteString topic2 = ByteString.copyFromUtf8("testThrottle-2");

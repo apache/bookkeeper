@@ -83,7 +83,7 @@ public class TestDiskChecker {
     /**
      * Check disk error for valid dir.
      */
-    @Test
+    @Test(timeout=60000)
     public void testCheckDiskErrorForDir() throws Exception {
         File parent = File.createTempFile("DiskCheck", "test");
         parent.delete();

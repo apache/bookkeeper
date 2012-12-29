@@ -46,7 +46,7 @@ public class EntryLogTest extends TestCase {
     public void setUp() throws Exception {
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testCorruptEntryLog() throws Exception {
         File tmpDir = File.createTempFile("bkTest", ".dir");
         tmpDir.delete();
@@ -98,7 +98,7 @@ public class EntryLogTest extends TestCase {
         return bb;
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testMissingLogId() throws Exception {
         File tmpDir = File.createTempFile("entryLogTest", ".dir");
         tmpDir.delete();
@@ -161,7 +161,7 @@ public class EntryLogTest extends TestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     /** Test that EntryLogger Should fail with FNFE, if entry logger directories does not exist*/
     public void testEntryLoggerShouldThrowFNFEIfDirectoriesDoesNotExist()
             throws Exception {
@@ -186,7 +186,7 @@ public class EntryLogTest extends TestCase {
     /**
      * Test to verify the DiskFull during addEntry
      */
-    @Test
+    @Test(timeout=60000)
     public void testAddEntryFailureOnDiskFull() throws Exception {
         File ledgerDir1 = File.createTempFile("bkTest", ".dir");
         ledgerDir1.delete();

@@ -57,7 +57,7 @@ public class TestReadTimeout extends BookKeeperClusterTestCase {
         this.digestType = DigestType.CRC32;
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testReadTimeout() throws Exception {
         final AtomicBoolean completed = new AtomicBoolean(false);
 

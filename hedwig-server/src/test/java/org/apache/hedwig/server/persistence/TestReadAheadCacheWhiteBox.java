@@ -97,7 +97,7 @@ public class TestReadAheadCacheWhiteBox {
 
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testPersistMessage() throws Exception {
         StubCallback<PubSubProtocol.MessageSeqId> callback = new StubCallback<PubSubProtocol.MessageSeqId>();
         PersistRequest request = new PersistRequest(topic, messages.get(0), callback, null);
@@ -128,7 +128,7 @@ public class TestReadAheadCacheWhiteBox {
 
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testScanSingleMessage() throws Exception {
         StubScanCallback callback = new StubScanCallback();
         ScanRequest request = new ScanRequest(topic, 1, callback, null);
@@ -147,7 +147,7 @@ public class TestReadAheadCacheWhiteBox {
 
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testDeliveredUntil() throws Exception {
         for (Message m : messages) {
             persistMessage(m);
@@ -173,7 +173,7 @@ public class TestReadAheadCacheWhiteBox {
 
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testDoReadAhead() {
         StubScanCallback callback = new StubScanCallback();
         ScanRequest request = new ScanRequest(topic, 1, callback, null);
@@ -191,7 +191,7 @@ public class TestReadAheadCacheWhiteBox {
 
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testReadAheadSizeLimit() throws Exception {
         for (Message m : messages) {
             persistMessage(m);
@@ -207,7 +207,7 @@ public class TestReadAheadCacheWhiteBox {
 
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testDoReadAheadStartingFrom() throws Exception {
         persistMessage(messages.get(0));
         int readAheadCount = 5;
@@ -235,7 +235,7 @@ public class TestReadAheadCacheWhiteBox {
         assertEquals(readAheadRequest.messageLimit, readAheadCount);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testAddMessageToCache() {
         CacheKey key = new CacheKey(topic, 1);
         cacheBasedPersistenceManager.addMessageToCache(key, messages.get(0), MathUtils.now());
@@ -248,7 +248,7 @@ public class TestReadAheadCacheWhiteBox {
         assertTrue(cacheBasedPersistenceManager.timeIndexOfAddition.get(value.timeOfAddition).contains(key));
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testRemoveMessageFromCache() {
         CacheKey key = new CacheKey(topic, 1);
         cacheBasedPersistenceManager.addMessageToCache(key, messages.get(0), MathUtils.now());
@@ -258,7 +258,7 @@ public class TestReadAheadCacheWhiteBox {
         assertTrue(cacheBasedPersistenceManager.timeIndexOfAddition.isEmpty());
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testCollectOldCacheEntries() {
         int i = 1;
         for (Message m : messages) {

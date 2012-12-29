@@ -96,31 +96,31 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
      *
      * @throws {@link IOException}
      */
-    @Test
+    @Test(timeout=60000)
     public void testAsyncBK1() throws IOException {
         LOG.info("#### BK1 ####");
         auxTestReadWriteAsyncSingleClient(bs.get(0));
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testAsyncBK2() throws IOException {
         LOG.info("#### BK2 ####");
         auxTestReadWriteAsyncSingleClient(bs.get(1));
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testAsyncBK3() throws IOException {
         LOG.info("#### BK3 ####");
         auxTestReadWriteAsyncSingleClient(bs.get(2));
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testAsyncBK4() throws IOException {
         LOG.info("#### BK4 ####");
         auxTestReadWriteAsyncSingleClient(bs.get(3));
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testBookieRecovery() throws Exception {
         //Shutdown all but 1 bookie
         bs.get(0).shutdown();
@@ -284,7 +284,7 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
         zkc.close();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testLedgerNoRecoveryOpenAfterBKCrashed() throws Exception {
         // Create a ledger
         LedgerHandle beforelh = bkc.createLedger(numBookies, numBookies, digestType, "".getBytes());
@@ -322,7 +322,7 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testLedgerOpenAfterBKCrashed() throws Exception {
         // Create a ledger
         LedgerHandle beforelh = bkc.createLedger(numBookies, numBookies, digestType, "".getBytes());
@@ -370,7 +370,7 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
      * 
      * BOOKKEEPER-326
      */
-    @Test
+    @Test(timeout=60000)
     public void testReadLastConfirmedOp() throws Exception {
         startNewBookie();
         startNewBookie();

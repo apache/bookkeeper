@@ -200,7 +200,7 @@ public class BookieJournalTest {
      * word at the start. This is for versions of bookkeeper before
      * the magic word was introduced
      */
-    @Test
+    @Test(timeout=60000)
     public void testPreV2Journal() throws Exception {
         File journalDir = File.createTempFile("bookie", "journal");
         journalDir.delete();
@@ -239,7 +239,7 @@ public class BookieJournalTest {
      * start the bookie. An admin should look to see what has
      * happened in this case
      */
-    @Test
+    @Test(timeout=60000)
     public void testAllJunkJournal() throws Exception {
         File journalDir = File.createTempFile("bookie", "journal");
         journalDir.delete();
@@ -277,7 +277,7 @@ public class BookieJournalTest {
      * the magic word existed, if the bookie started but nothing was
      * ever written.
      */
-    @Test
+    @Test(timeout=60000)
     public void testEmptyJournal() throws Exception {
         File journalDir = File.createTempFile("bookie", "journal");
         journalDir.delete();
@@ -303,7 +303,7 @@ public class BookieJournalTest {
      * Test that a journal can load if only the magic word and
      * version are there.
      */
-    @Test
+    @Test(timeout=60000)
     public void testHeaderOnlyJournal() throws Exception {
         File journalDir = File.createTempFile("bookie", "journal");
         journalDir.delete();
@@ -329,7 +329,7 @@ public class BookieJournalTest {
      * Test that if a journal has junk at the end, it does not load.
      * If the journal is corrupt like this, admin intervention is needed
      */
-    @Test
+    @Test(timeout=60000)
     public void testJunkEndedJournal() throws Exception {
         File journalDir = File.createTempFile("bookie", "journal");
         journalDir.delete();
@@ -368,7 +368,7 @@ public class BookieJournalTest {
      * should be fine here. The bookie has crashed while writing
      * but so the client has not be notified of success.
      */
-    @Test
+    @Test(timeout=60000)
     public void testTruncatedInLenJournal() throws Exception {
         File journalDir = File.createTempFile("bookie", "journal");
         journalDir.delete();
@@ -416,7 +416,7 @@ public class BookieJournalTest {
      * This is ok, as the client will disregard the entry after looking
      * at its checksum.
      */
-    @Test
+    @Test(timeout=60000)
     public void testTruncatedInEntryJournal() throws Exception {
         File journalDir = File.createTempFile("bookie", "journal");
         journalDir.delete();
@@ -473,7 +473,7 @@ public class BookieJournalTest {
     /**
      * Test partial index (truncate master key) with pre-v3 journals
      */
-    @Test
+    @Test(timeout=60000)
     public void testPartialFileInfoPreV3Journal1() throws Exception {
         testPartialFileInfoPreV3Journal(true);
     }
@@ -481,7 +481,7 @@ public class BookieJournalTest {
     /**
      * Test partial index with pre-v3 journals
      */
-    @Test
+    @Test(timeout=60000)
     public void testPartialFileInfoPreV3Journal2() throws Exception {
         testPartialFileInfoPreV3Journal(false);
     }
@@ -533,7 +533,7 @@ public class BookieJournalTest {
     /**
      * Test partial index (truncate master key) with post-v3 journals
      */
-    @Test
+    @Test(timeout=60000)
     public void testPartialFileInfoPostV3Journal1() throws Exception {
         testPartialFileInfoPostV3Journal(true);
     }
@@ -541,7 +541,7 @@ public class BookieJournalTest {
     /**
      * Test partial index with post-v3 journals
      */
-    @Test
+    @Test(timeout=60000)
     public void testPartialFileInfoPostV3Journal2() throws Exception {
         testPartialFileInfoPostV3Journal(false);
     }

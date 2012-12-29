@@ -85,7 +85,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testGarbageCollectLedgers() throws Exception {
         int numLedgers = 100;
         int numRemovedLedgers = 10;

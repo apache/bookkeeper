@@ -132,7 +132,7 @@ public class MessageBoundedPersistenceTest extends HedwigHubTestBase {
         sub.closeSubscription(topic, subid);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testBasicBounding() throws Exception {
         Client client = new HedwigClient(new MessageBoundClientConfiguration(5));
         Publisher pub = client.getPublisher();
@@ -148,7 +148,7 @@ public class MessageBoundedPersistenceTest extends HedwigHubTestBase {
         client.close();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testMultipleSubscribers() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("multiSubTopic");
 
@@ -190,7 +190,7 @@ public class MessageBoundedPersistenceTest extends HedwigHubTestBase {
         client.close();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testUpdateMessageBound() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("UpdateMessageBound");
 
@@ -229,7 +229,7 @@ public class MessageBoundedPersistenceTest extends HedwigHubTestBase {
         client.close();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testLedgerGC() throws Exception {
         Client client = new HedwigClient(new MessageBoundClientConfiguration());
         Publisher pub = client.getPublisher();

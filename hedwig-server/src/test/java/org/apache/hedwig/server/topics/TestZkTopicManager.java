@@ -105,7 +105,7 @@ public class TestZkTopicManager extends ZooKeeperTestBase {
         super.tearDown();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testGetOwnerSingle() throws Exception {
         tm.getOwner(topic, false, addrCbq, null);
         Assert.assertEquals(me, check(addrCbq.take()));
@@ -135,7 +135,7 @@ public class TestZkTopicManager extends ZooKeeperTestBase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testGetOwnerMulti() throws Exception {
         ServerConfiguration cfg1 = new CustomServerConfiguration(cfg.getServerPort() + 1), cfg2 = new CustomServerConfiguration(
             cfg.getServerPort() + 2);
@@ -186,7 +186,7 @@ public class TestZkTopicManager extends ZooKeeperTestBase {
         tm2.stop();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testLoadBalancing() throws Exception {
         tm.getOwner(topic, false, addrCbq, null);
 
@@ -239,7 +239,7 @@ public class TestZkTopicManager extends ZooKeeperTestBase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testOwnershipChange() throws Exception {
         SynchronousQueue<Pair<ByteString, Boolean>> bsQueue = new SynchronousQueue<Pair<ByteString, Boolean>>();
 
@@ -304,7 +304,7 @@ public class TestZkTopicManager extends ZooKeeperTestBase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testZKClientDisconnected() throws Exception {
         // First assert ownership of the topic
         tm.getOwner(topic, true, addrCbq, null);

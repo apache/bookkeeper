@@ -128,7 +128,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
     /**
      * Test publishing of under replicated ledgers by the auditor bookie
      */
-    @Test
+    @Test(timeout=60000)
     public void testSimpleLedger() throws Exception {
         LedgerHandle lh1 = createAndAddEntriesToLedger();
         Long ledgerId = lh1.getId();
@@ -166,7 +166,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
      * Test once published under replicated ledger should exists even after
      * restarting respective bookie
      */
-    @Test
+    @Test(timeout=60000)
     public void testRestartBookie() throws Exception {
         LedgerHandle lh1 = createAndAddEntriesToLedger();
         ledgerList.add(lh1.getId());
@@ -215,7 +215,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
      * Test publishing of under replicated ledgers when multiple bookie failures
      * one after another.
      */
-    @Test
+    @Test(timeout=60000)
     public void testMultipleBookieFailures() throws Exception {
         LedgerHandle lh1 = createAndAddEntriesToLedger();
         ledgerList.add(lh1.getId());

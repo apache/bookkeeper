@@ -91,7 +91,7 @@ public class TestSubUnsubHandler extends TestCase {
         ush = new UnsubscribeHandler(conf, tm, sm, dm, subChannelMgr);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testNoSubscribeRequest() {
         sh.handleRequestAtOwner(PubSubRequest.newBuilder(pubSubRequestPrototype).clearSubscribeRequest().build(),
                                 channel);
@@ -99,7 +99,7 @@ public class TestSubUnsubHandler extends TestCase {
                      .getStatusCode());
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testSuccessCase() {
         StubCallback<Void> callback = new StubCallback<Void>();
         sm.acquiredTopic(topic, callback, null);

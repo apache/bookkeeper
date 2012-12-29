@@ -55,7 +55,7 @@ public class TestPubSubServerStartup {
      * connected, the pubsub server will fail at startup.
      *
      */
-    @Test
+    @Test(timeout=60000)
     public void testPubSubServerInstantiationWithConfig() throws Exception {
         for (int i = 0; i < 10; i++) {
             logger.info("iteration " + i);

@@ -100,7 +100,7 @@ public class TestConcurrentTopicAcquisition extends HedwigHubTestBase {
         super.tearDown();
     }
     
-    @Test
+    @Test(timeout=60000)
     public void testTopicAcquistion() throws Exception {
         logger.info("Start concurrent topic acquistion test.");
         

@@ -92,7 +92,7 @@ public class LedgerDeleteTest extends MultiLedgerManagerTestCase {
      *
      * @throws Exception
      */
-    @Test
+    @Test(timeout=60000)
     public void testLedgerDelete() throws Exception {
         // Write enough ledger entries so that we roll over the initial entryLog (0.log)
         LedgerHandle[] lhs = writeLedgerEntries(3, 1024, 1024);
@@ -119,7 +119,7 @@ public class LedgerDeleteTest extends MultiLedgerManagerTestCase {
      *
      * @throws Exception
      */
-    @Test
+    @Test(timeout=60000)
     public void testLedgerDeleteWithExistingEntryLogs() throws Exception {
         // Write enough ledger entries so that we roll over the initial entryLog (0.log)
         LedgerHandle[] lhs = writeLedgerEntries(3, 1024, 1024);

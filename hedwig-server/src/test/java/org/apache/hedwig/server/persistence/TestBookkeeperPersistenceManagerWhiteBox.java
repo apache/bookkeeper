@@ -84,7 +84,7 @@ public class TestBookkeeperPersistenceManagerWhiteBox extends TestCase {
         super.tearDown();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testEmptyDirtyLedger() throws Exception {
 
         StubCallback<Void> stubCallback = new StubCallback<Void>();
@@ -99,7 +99,7 @@ public class TestBookkeeperPersistenceManagerWhiteBox extends TestCase {
         assertEquals(0, bkpm.topicInfos.get(topic).ledgerRanges.size());
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testNonEmptyDirtyLedger() throws Exception {
 
         Random r = new Random();
@@ -155,7 +155,7 @@ public class TestBookkeeperPersistenceManagerWhiteBox extends TestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testSyncChangeLedgers() throws Exception {
         int NUM_MESSAGES_TO_TEST = 101;
         int SIZE_OF_MESSAGES_TO_TEST = 100;
@@ -249,7 +249,7 @@ public class TestBookkeeperPersistenceManagerWhiteBox extends TestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testAsyncChangeLedgers() throws Exception {
         int NUM_MESSAGES_TO_TEST = 101;
         int SIZE_OF_MESSAGES_TO_TEST = 100;
@@ -330,7 +330,7 @@ public class TestBookkeeperPersistenceManagerWhiteBox extends TestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testChangeLedgerFailure() throws Exception {
         int NUM_MESSAGES_TO_TEST = 101;
         int SIZE_OF_MESSAGES_TO_TEST = 100;

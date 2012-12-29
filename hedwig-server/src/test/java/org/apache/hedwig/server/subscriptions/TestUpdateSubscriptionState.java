@@ -153,7 +153,7 @@ public class TestUpdateSubscriptionState extends HedwigHubTestBase {
         super.tearDown();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testConsumeWhenTopicRelease() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestConsumeWhenTopicRelease");
         ByteString subId = ByteString.copyFromUtf8("mysub");
@@ -198,7 +198,7 @@ public class TestUpdateSubscriptionState extends HedwigHubTestBase {
         assertTrue(ocm.isInOrder());
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testConsumeWhenHubShutdown() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestConsumeWhenHubShutdown");
         ByteString subId = ByteString.copyFromUtf8("mysub");

@@ -248,7 +248,7 @@ public class TestMessageFilter extends HedwigHubTestBase {
         subscriber.closeSubscription(topic, subid);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testServerSideMessageFilter() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestMessageFilter");
         ByteString subid = ByteString.copyFromUtf8("mysub");
@@ -259,7 +259,7 @@ public class TestMessageFilter extends HedwigHubTestBase {
         receiveNumModM(topic, subid, ModMessageFilter.class.getName(), null, 0, 50, 2, true);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testInvalidServerSideMessageFilter() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestInvalidMessageFilter");
         ByteString subid = ByteString.copyFromUtf8("mysub");
@@ -277,7 +277,7 @@ public class TestMessageFilter extends HedwigHubTestBase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testChangeSubscriptionPreferences() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestChangeSubscriptionPreferences");
         ByteString subid = ByteString.copyFromUtf8("mysub");
@@ -299,7 +299,7 @@ public class TestMessageFilter extends HedwigHubTestBase {
         receiveNumModM(topic, subid, ModMessageFilter.class.getName(), null, 200, 14, 7, true);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testChangeServerSideMessageFilter() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestChangeMessageFilter");
         ByteString subid = ByteString.copyFromUtf8("mysub");
@@ -316,7 +316,7 @@ public class TestMessageFilter extends HedwigHubTestBase {
         receiveNumModM(topic, subid, HeaderMessageFilter.class.getName(), null, 200, 14, 7, true);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testFixInvalidServerSideMessageFilter() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestFixMessageFilter");
         ByteString subid = ByteString.copyFromUtf8("mysub");
@@ -336,7 +336,7 @@ public class TestMessageFilter extends HedwigHubTestBase {
         receiveNumModM(topic, subid, HeaderMessageFilter.class.getName(), null, 0, 33, 3, true);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testNullClientMessageFilter() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestNullClientMessageFilter");
         ByteString subid = ByteString.copyFromUtf8("mysub");
@@ -359,7 +359,7 @@ public class TestMessageFilter extends HedwigHubTestBase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testClientSideMessageFilter() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestClientMessageFilter");
         ByteString subid = ByteString.copyFromUtf8("mysub");
@@ -370,7 +370,7 @@ public class TestMessageFilter extends HedwigHubTestBase {
         receiveNumModM(topic, subid, null, new ModMessageFilter(), 0, 50, 2, true);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testChangeSubscriptionPreferencesForClientFilter() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestChangeSubscriptionPreferencesForClientFilter");
         ByteString subid = ByteString.copyFromUtf8("mysub");
@@ -384,7 +384,7 @@ public class TestMessageFilter extends HedwigHubTestBase {
         receiveNumModM(topic, subid, null, new ModMessageFilter(), 0, 33, 3, true);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testChangeClientSideMessageFilter() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestChangeClientSideMessageFilter");
         ByteString subid = ByteString.copyFromUtf8("mysub");

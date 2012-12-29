@@ -42,7 +42,7 @@ public class CloseTest extends BaseTestCase {
         this.digestType = digestType;
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testClose() throws Exception {
 
         /*
@@ -73,7 +73,7 @@ public class CloseTest extends BaseTestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testCloseByOthers() throws Exception {
 
         int numLedgers = 1;

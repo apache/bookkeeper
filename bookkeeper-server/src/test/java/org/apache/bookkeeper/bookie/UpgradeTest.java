@@ -201,21 +201,21 @@ public class UpgradeTest {
         b = null;
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testUpgradeV1toCurrent() throws Exception {
         String journalDir = newV1JournalDirectory();
         String ledgerDir = newV1LedgerDirectory();
         testUpgradeProceedure(zkutil.getZooKeeperConnectString(), journalDir, ledgerDir);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testUpgradeV2toCurrent() throws Exception {
         String journalDir = newV2JournalDirectory();
         String ledgerDir = newV2LedgerDirectory();
         testUpgradeProceedure(zkutil.getZooKeeperConnectString(), journalDir, ledgerDir);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testUpgradeCurrent() throws Exception {
         String journalDir = newV2JournalDirectory();
         String ledgerDir = newV2LedgerDirectory();
@@ -232,7 +232,7 @@ public class UpgradeTest {
         b.shutdown();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testCommandLine() throws Exception {
         PrintStream origerr = System.err;
         PrintStream origout = System.out;

@@ -65,7 +65,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
     /** 
      * Test bad client configuration
      */
-    @Test
+    @Test(timeout=60000)
     public void testBadConf() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         
@@ -111,7 +111,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
     /**
      * Test bad client configuration
      */
-    @Test
+    @Test(timeout=60000)
     public void testBadConfV1() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
 
@@ -152,7 +152,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
     /**
      * Test bad zk configuration
      */
-    @Test
+    @Test(timeout=60000)
     public void testBadZkContents() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         
@@ -240,7 +240,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
     }
 
     // test concurrent
-    @Test
+    @Test(timeout=60000)
     public void testConcurrent1() throws Exception {
         /// everyone creates the same
         int numThreads = 50;
@@ -270,7 +270,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         assertTrue("Not all ledger managers created", success);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testConcurrent2() throws Exception {
         /// odd create different
         int numThreadsEach = 25;

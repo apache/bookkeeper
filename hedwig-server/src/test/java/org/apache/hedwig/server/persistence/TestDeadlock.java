@@ -210,7 +210,7 @@ public class TestDeadlock extends HedwigHubTestBase {
         return serverConf;
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testDeadlock() throws Exception {
         int numMessages = 5;
 

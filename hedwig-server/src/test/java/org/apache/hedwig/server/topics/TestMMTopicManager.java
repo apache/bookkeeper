@@ -115,7 +115,7 @@ public class TestMMTopicManager extends MetadataManagerFactoryTestCase {
         super.tearDown();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testGetOwnerSingle() throws Exception {
         tm.getOwner(topic, false, addrCbq, null);
         Assert.assertEquals(me, check(addrCbq.take()));
@@ -145,7 +145,7 @@ public class TestMMTopicManager extends MetadataManagerFactoryTestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testGetOwnerMulti() throws Exception {
         ServerConfiguration conf1 = new CustomServerConfiguration(conf.getServerPort() + 1),
                             conf2 = new CustomServerConfiguration(conf.getServerPort() + 2);
@@ -179,7 +179,7 @@ public class TestMMTopicManager extends MetadataManagerFactoryTestCase {
         tm2.stop();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testLoadBalancing() throws Exception {
         tm.getOwner(topic, false, addrCbq, null);
 
@@ -232,7 +232,7 @@ public class TestMMTopicManager extends MetadataManagerFactoryTestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testOwnershipChange() throws Exception {
         SynchronousQueue<Pair<ByteString, Boolean>> bsQueue = new SynchronousQueue<Pair<ByteString, Boolean>>();
 
@@ -296,7 +296,7 @@ public class TestMMTopicManager extends MetadataManagerFactoryTestCase {
         Assert.assertEquals(null, hubInfo);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testZKClientDisconnected() throws Exception {
         // First assert ownership of the topic
         tm.getOwner(topic, true, addrCbq, null);

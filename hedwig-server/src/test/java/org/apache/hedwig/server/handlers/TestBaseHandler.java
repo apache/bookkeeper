@@ -78,7 +78,7 @@ public class TestBaseHandler extends TestCase {
         return (PubSubResponse) message;
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testHandleRequestOnRedirect() throws Exception {
         tm.setShouldOwnEveryNewTopic(false);
         handler.handleRequest(request, channel);
@@ -90,7 +90,7 @@ public class TestBaseHandler extends TestCase {
 
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testHandleRequestOnOwner() throws Exception {
 
         tm.setShouldOwnEveryNewTopic(true);
@@ -100,7 +100,7 @@ public class TestBaseHandler extends TestCase {
 
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testHandleRequestOnError() throws Exception {
 
         tm.setShouldError(true);

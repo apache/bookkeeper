@@ -239,7 +239,7 @@ public abstract class TestPersistenceManagerBlackBox extends TestCase {
         return ByteString.copyFromUtf8("topic" + number);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testPersistenceManager() throws Exception {
         List<Thread> publisherThreads = new LinkedList<Thread>();
         List<Thread> scannerThreads = new LinkedList<Thread>();

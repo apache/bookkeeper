@@ -25,7 +25,7 @@ import junit.framework.TestCase;
 
 public class TestFileUtils extends TestCase {
 
-    @Test
+    @Test(timeout=60000)
     public void testCreateTmpDirectory() throws Exception {
         String prefix = "abc";
         String suffix = "def";

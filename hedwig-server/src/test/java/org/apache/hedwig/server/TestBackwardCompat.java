@@ -872,7 +872,7 @@ public class TestBackwardCompat extends TestCase {
      * 1) message bound doesn't take effects on 4.0.0 server.
      * 2) message bound take effects on both 4.1.0 and current server
      */
-    @Test
+    @Test(timeout=60000)
     public void testMessageBoundCompat() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("testMessageBoundCompat");
         ByteString subid = ByteString.copyFromUtf8("mysub");
@@ -945,7 +945,7 @@ public class TestBackwardCompat extends TestCase {
      * 2) current client could talk with 4.1.0 server,
      *    but no message seq id would be returned
      */
-    @Test
+    @Test(timeout=60000)
     public void testPublishCompat410() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestPublishCompat410");
         ByteString data = ByteString.copyFromUtf8("testdata");
@@ -996,7 +996,7 @@ public class TestBackwardCompat extends TestCase {
      *
      * A current server could read subscription data recorded by 4.1.0 server.
      */
-    @Test
+    @Test(timeout=60000)
     public void testSubscriptionDataCompat410() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestCompat410");
         ByteString sub410 = ByteString.copyFromUtf8("sub410");
@@ -1058,7 +1058,7 @@ public class TestBackwardCompat extends TestCase {
      *
      * A 4.1.0 client could not update message bound, while current could do it.
      */
-    @Test
+    @Test(timeout=60000)
     public void testUpdateMessageBoundCompat410() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestUpdateMessageBoundCompat410");
         ByteString subid = ByteString.copyFromUtf8("mysub");
@@ -1119,7 +1119,7 @@ public class TestBackwardCompat extends TestCase {
      *
      * A current client running message filter would fail on 4.1.0 hub servers.
      */
-    @Test
+    @Test(timeout=60000)
     public void testClientMessageFilterCompat410() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestUpdateMessageBoundCompat410");
         ByteString subid = ByteString.copyFromUtf8("mysub");
@@ -1160,7 +1160,7 @@ public class TestBackwardCompat extends TestCase {
      * Server side throttling does't work when current client connects to old version
      * server.
      */
-    @Test
+    @Test(timeout=60000)
     public void testServerSideThrottleCompat410() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestServerSideThrottleCompat410");
         ByteString subid = ByteString.copyFromUtf8("mysub");

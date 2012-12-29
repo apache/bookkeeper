@@ -188,7 +188,7 @@ public class TestThrottlingDelivery extends HedwigHubTestBase {
         return new ThrottleDeliveryServerConfiguration(port, sslPort);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testServerSideThrottle() throws Exception {
         int messageWindowSize = DEFAULT_MESSAGE_WINDOW_SIZE;
         ThrottleDeliveryClientConfiguration conf =

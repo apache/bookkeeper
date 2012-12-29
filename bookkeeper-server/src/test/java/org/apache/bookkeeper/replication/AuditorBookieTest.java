@@ -80,7 +80,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
      * other than auditor bookie shouldn't initiate re-election and multiple
      * auditors.
      */
-    @Test
+    @Test(timeout=60000)
     public void testEnsureOnlySingleAuditor() throws Exception {
         BookieServer auditor = verifyAuditor();
 
@@ -107,7 +107,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
      * Test Auditor crashes should trigger re-election and another bookie should
      * take over the auditor ship
      */
-    @Test
+    @Test(timeout=60000)
     public void testSuccessiveAuditorCrashes() throws Exception {
         BookieServer auditor = verifyAuditor();
         shutdownBookie(auditor);
@@ -127,7 +127,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
      * Test restarting the entire bookie cluster. It shouldn't create multiple
      * bookie auditors
      */
-    @Test
+    @Test(timeout=60000)
     public void testBookieClusterRestart() throws Exception {
         BookieServer auditor = verifyAuditor();
         for (AuditorElector auditorElector : auditorElectors.values()) {
@@ -148,7 +148,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
     /**
      * Test the vote is deleting from the ZooKeeper during shutdown.
      */
-    @Test
+    @Test(timeout=60000)
     public void testShutdown() throws Exception {
         BookieServer auditor = verifyAuditor();
         shutdownBookie(auditor);
@@ -176,7 +176,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
      * Test restart of the previous Auditor bookie shouldn't initiate
      * re-election and should create new vote after restarting.
      */
-    @Test
+    @Test(timeout=60000)
     public void testRestartAuditorBookieAfterCrashing() throws Exception {
         BookieServer auditor = verifyAuditor();
 
@@ -211,7 +211,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
      * Test that, if an auditor looses its ZK connection/session
      * it will shutdown.
      */
-    @Test
+    @Test(timeout=60000)
     public void testAuditorZKSessionLoss() throws Exception {
         stopZKCluster();
         for (AuditorElector e : auditorElectors.values()) {

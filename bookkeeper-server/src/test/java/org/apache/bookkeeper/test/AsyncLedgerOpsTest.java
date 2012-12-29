@@ -101,7 +101,7 @@ public class AsyncLedgerOpsTest extends MultiLedgerManagerMultiDigestTestCase
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testAsyncCreateClose() throws IOException, BKException {
         try {
 

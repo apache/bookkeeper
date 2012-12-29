@@ -47,7 +47,7 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
         super(metadataManagerFactoryCls);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testOwnerInfo() throws Exception {
         TopicOwnershipManager toManager = metadataManagerFactory.newTopicOwnershipManager();
 
@@ -133,7 +133,7 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
         toManager.close();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testPersistenceInfo() throws Exception {
         TopicPersistenceManager tpManager = metadataManagerFactory.newTopicPersistenceManager();
 
@@ -226,7 +226,7 @@ public class TestMetadataManager extends MetadataManagerFactoryTestCase {
         tpManager.close();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testSubscriptionData() throws Exception {
         SubscriptionDataManager subManager = metadataManagerFactory.newSubscriptionDataManager();
 

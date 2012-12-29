@@ -44,7 +44,7 @@ public class NIOServerFactoryTest extends TestCase {
 
     };
 
-    @Test
+    @Test(timeout=60000)
     public void testProblemProcessor() throws Exception {
         ServerConfiguration conf = new ServerConfiguration();
         int port = PortManager.nextFreePort();

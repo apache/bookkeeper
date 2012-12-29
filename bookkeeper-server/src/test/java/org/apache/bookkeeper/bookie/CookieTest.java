@@ -73,7 +73,7 @@ public class CookieTest {
     /**
      * Test starting bookie with clean state.
      */
-    @Test
+    @Test(timeout=60000)
     public void testCleanStart() throws Exception {
         ServerConfiguration conf = new ServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())
@@ -92,7 +92,7 @@ public class CookieTest {
      * is different to a local cookie, the bookie
      * will fail to start
      */
-    @Test
+    @Test(timeout=60000)
     public void testBadJournalCookie() throws Exception {
         ServerConfiguration conf1 = new ServerConfiguration()
             .setJournalDirName(newDirectory())
@@ -125,7 +125,7 @@ public class CookieTest {
      * the configuration, the bookie will fail to
      * start
      */
-    @Test
+    @Test(timeout=60000)
     public void testDirectoryMissing() throws Exception {
         String[] ledgerDirs = new String[] {
             newDirectory(), newDirectory(), newDirectory() };
@@ -167,7 +167,7 @@ public class CookieTest {
      * preexisting bookie, the bookie will fail
      * to start
      */
-    @Test
+    @Test(timeout=60000)
     public void testDirectoryAdded() throws Exception {
         String ledgerDir0 = newDirectory();
         String journalDir = newDirectory();
@@ -199,7 +199,7 @@ public class CookieTest {
      * Test that if a directory's contents
      * are emptied, the bookie will fail to start
      */
-    @Test
+    @Test(timeout=60000)
     public void testDirectoryCleared() throws Exception {
         String ledgerDir0 = newDirectory();
         String journalDir = newDirectory();
@@ -226,7 +226,7 @@ public class CookieTest {
      * Test that if a bookie's port is changed
      * the bookie will fail to start
      */
-    @Test
+    @Test(timeout=60000)
     public void testBookiePortChanged() throws Exception {
         ServerConfiguration conf = new ServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())
@@ -252,7 +252,7 @@ public class CookieTest {
      * existed in the system, then the bookie will fail
      * to start
      */
-    @Test
+    @Test(timeout=60000)
     public void testNewBookieStartingWithAnotherBookiesPort() throws Exception {
         ServerConfiguration conf = new ServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())
@@ -279,7 +279,7 @@ public class CookieTest {
     /*
      * Test Cookie verification with format.
      */
-    @Test
+    @Test(timeout=60000)
     public void testVerifyCookieWithFormat() throws Exception {
         ClientConfiguration adminConf = new ClientConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString());
@@ -317,7 +317,7 @@ public class CookieTest {
      * Test that if a bookie is started with directories with
      * version 2 data, that it will fail to start (it needs upgrade)
      */
-    @Test
+    @Test(timeout=60000)
     public void testV2data() throws Exception {
         ServerConfiguration conf = new ServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())
@@ -337,7 +337,7 @@ public class CookieTest {
      * Test that if a bookie is started with directories with
      * version 1 data, that it will fail to start (it needs upgrade)
      */
-    @Test
+    @Test(timeout=60000)
     public void testV1data() throws Exception {
         ServerConfiguration conf = new ServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())

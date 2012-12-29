@@ -25,7 +25,7 @@ import org.junit.Assert;
 
 public class TestHubInfo {
 
-    @Test
+    @Test(timeout=60000)
     public void testParseHubInfo() throws Exception {
         HedwigSocketAddress addr = new HedwigSocketAddress("localhost", 9086, 9087);
         HubInfo hubInfo1 = new HubInfo(addr, 9999);

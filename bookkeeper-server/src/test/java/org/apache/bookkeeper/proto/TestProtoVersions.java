@@ -103,7 +103,7 @@ public class TestProtoVersions {
         bc.close();
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testVersions() throws Exception {
         testVersion(BookieProtocol.LOWEST_COMPAT_PROTOCOL_VERSION-1, BKException.Code.ProtocolVersionException);
         testVersion(BookieProtocol.LOWEST_COMPAT_PROTOCOL_VERSION, BKException.Code.NoSuchEntryException);

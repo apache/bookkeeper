@@ -153,7 +153,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
      *
      * @throws Exception
      */
-    @Test
+    @Test(timeout=60000)
     public void testJournalRolling() throws Exception {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Testing Journal Rolling");
@@ -193,7 +193,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
      *
      * @throws Exception
      */
-    @Test
+    @Test(timeout=60000)
     public void testJournalRollingWithoutSyncup() throws Exception {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Testing Journal Rolling without sync up");
@@ -225,7 +225,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
      *
      * @throws Exception
      */
-    @Test
+    @Test(timeout=60000)
     public void testReplayDeletedLedgerJournalEntries() throws Exception {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Testing replaying journal entries whose ledger has been removed.");

@@ -75,7 +75,7 @@ public class CreateNewLogTest {
      * 
      * @throws Exception
      */
-    @Test
+    @Test(timeout=60000)
     public void testCreateNewLog() throws Exception {
         ServerConfiguration conf = new ServerConfiguration();
                      

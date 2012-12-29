@@ -82,23 +82,23 @@ public class LedgerRecoveryTest extends BaseTestCase {
                    afterlh.getLength() == length);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testLedgerRecovery() throws Exception {
         testInternal(100);
 
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testEmptyLedgerRecoveryOne() throws Exception {
         testInternal(1);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testEmptyLedgerRecovery() throws Exception {
         testInternal(0);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testLedgerRecoveryWithWrongPassword() throws Exception {
         // Create a ledger
         byte[] ledgerPassword = "aaaa".getBytes();
@@ -122,7 +122,7 @@ public class LedgerRecoveryTest extends BaseTestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testLedgerRecoveryWithNotEnoughBookies() throws Exception {
         int numEntries = 3;
 
@@ -160,7 +160,7 @@ public class LedgerRecoveryTest extends BaseTestCase {
         assertEquals(numEntries - 1, afterlh.getLastAddConfirmed());
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testLedgerRecoveryWithSlowBookie() throws Exception {
         for (int i = 0; i < 3; i++) {
             LOG.info("TestLedgerRecoveryWithAckQuorum @ slow bookie {}", i);

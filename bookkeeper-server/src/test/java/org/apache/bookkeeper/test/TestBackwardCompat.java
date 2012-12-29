@@ -357,7 +357,7 @@ public class TestBackwardCompat {
     /*
      * Test old cookie accessing the new version formatted cluster.
      */
-    @Test
+    @Test(timeout=60000)
     public void testOldCookieAccessingNewCluster() throws Exception {
         File journalDir = File.createTempFile("bookie", "journal");
         journalDir.delete();
@@ -415,7 +415,7 @@ public class TestBackwardCompat {
      *  - 4.0.0 client will not be able to fence ledgers on current server.
      *  - Current server won't start with 4.0.0 server directories without upgrade.
      */
-    @Test
+    @Test(timeout=60000)
     public void testCompat400() throws Exception {
         File journalDir = File.createTempFile("bookie", "journal");
         journalDir.delete();
@@ -503,7 +503,7 @@ public class TestBackwardCompat {
      *    version due to a change in the ledger metadata format.
      *  - Otherwise, they should be compatible.
      */
-    @Test
+    @Test(timeout=60000)
     public void testCompat410() throws Exception {
         File journalDir = File.createTempFile("bookie", "journal");
         journalDir.delete();

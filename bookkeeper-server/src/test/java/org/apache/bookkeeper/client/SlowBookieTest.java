@@ -46,7 +46,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         super(4);
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testSlowBookie() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setZkServers(zkUtil.getZooKeeperConnectString()).setReadTimeout(360);
@@ -89,7 +89,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testBookieFailureWithSlowBookie() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setZkServers(zkUtil.getZooKeeperConnectString()).setReadTimeout(5);
@@ -144,7 +144,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         assertEquals("There should be no missing fragments", 0, numFragments.get());
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testManyBookieFailureWithSlowBookies() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setZkServers(zkUtil.getZooKeeperConnectString()).setReadTimeout(5);
