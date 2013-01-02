@@ -36,7 +36,9 @@ import org.apache.hedwig.exceptions.PubSubException.UnexpectedConditionException
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
 import org.apache.hedwig.protocol.PubSubProtocol.ResponseBody;
+import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
 import org.apache.hedwig.util.Callback;
+import org.apache.hedwig.util.Either;
 import static org.apache.hedwig.util.VarArgs.va;
 
 public class MultiplexSubscribeResponseHandler extends AbstractSubscribeResponseHandler {
@@ -72,9 +74,25 @@ public class MultiplexSubscribeResponseHandler extends AbstractSubscribeResponse
     }
 
     @Override
-    protected void handleSuccessResponse(TopicSubscriber ts, ActiveSubscriber as,
-                                         Channel channel) {
-        // do nothing now
+    protected Either<StatusCode, HChannel> handleSuccessResponse(
+        TopicSubscriber ts, PubSubData pubSubData, Channel channel) {
+        // Store the mapping for the TopicSubscriber to the Channel.
+        // This is so we can control the starting and stopping of
+        // message deliveries from the server on that Channel. Store
+        // this only on a successful ack response from the server.
+        Either<Boolean, HChannel> result =
+            sChannelManager.storeSubscriptionChannel(ts, pubSubData, hChannel);
+        if (result.left()) {
+            return Either.of(StatusCode.SUCCESS, result.right());
+        } else {
+            StatusCode code;
+            if (pubSubData.isResubscribeRequest()) {
+                code = StatusCode.RESUBSCRIBE_EXCEPTION;
+            } else {
+                code = StatusCode.CLIENT_ALREADY_SUBSCRIBED;
+            }
+            return Either.of(code, null);
+        }
     }
 
     @Override
@@ -92,6 +110,7 @@ public class MultiplexSubscribeResponseHandler extends AbstractSubscribeResponse
             @Override
             public void operationFinished(Object ctx, ResponseBody respBody) {
                 removeSubscription(topicSubscriber, ss);
+                sChannelManager.removeSubscriptionChannel(topicSubscriber, hChannel);
                 callback.operationFinished(context, null);
             }
 

@@ -605,4 +605,64 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
         assertEquals(SubscriptionEvent.TOPIC_MOVED, eventQueue.take());
     }
 
+    @Test
+    public void testCloseSubscribeDuringResubscribe() throws Exception {
+        client.close();
+
+        final long reconnectWaitTime = 2000L;
+        client = new HedwigClient(new ClientConfiguration() {
+            @Override
+            public HedwigSocketAddress getDefaultServerHedwigSocketAddress() {
+                return getDefaultHedwigAddress();
+            }
+
+            @Override
+            public boolean isSubscriptionChannelSharingEnabled() {
+                return TestPubSubClient.this.isSubscriptionChannelSharingEnabled;
+            }
+
+            @Override
+            public long getSubscribeReconnectRetryWaitTime() {
+                return reconnectWaitTime;
+            }
+        });
+
+        publisher = client.getPublisher();
+        subscriber = client.getSubscriber();
+
+        ByteString topic = ByteString.copyFromUtf8("testCloseSubscribeDuringResubscribe");
+        ByteString subscriberId = ByteString.copyFromUtf8("mysub");
+        subscriber.addSubscriptionListener(new TestSubscriptionListener());
+        SubscriptionOptions options =
+            SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH)
+            .setForceAttach(false).setEnableResubscribe(true).build();
+        subscriber.subscribe(topic, subscriberId, options);
+        logger.info("Subscribed topic {}, subscriber {}.", topic.toStringUtf8(),
+                    subscriberId.toStringUtf8());
+        subscriber.startDelivery(topic, subscriberId, new TestMessageHandler());
+
+        // tear down the hub server to let subscribe enter
+        tearDownHubServer();
+        logger.info("Tear down the hub server");
+
+        // wait for client enter to resubscribe logic
+        Thread.sleep(reconnectWaitTime / 2);
+
+        // close sub
+        subscriber.closeSubscription(topic, subscriberId);
+
+        // start the hub server again
+        startHubServer(conf);
+
+        // publish a new message
+        publisher.asyncPublish(topic, Message.newBuilder().setBody(ByteString.copyFromUtf8("Message #1")).build(),
+                               new TestCallback(), null);
+        assertTrue(queue.take());
+
+        // wait for another reconnect time period
+        assertNull("Should not receive any messages since the subscription has already been closed.",
+                   consumeQueue.poll(reconnectWaitTime + reconnectWaitTime / 2, TimeUnit.MILLISECONDS));
+    }
+
 }

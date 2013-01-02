@@ -76,6 +76,50 @@ public class CleanupChannelMap<T> {
     }
 
     /**
+     * Replace channel only if currently mapped to the given <code>oldChannel</code>.
+     *
+     * @param key
+     *            Key
+     * @param oldChannel
+     *            Old Channel
+     * @param newChannel
+     *            New Channel
+     * @return true if replaced successfully, otherwise false.
+     */
+    public boolean replaceChannel(T key, HChannel oldChannel, HChannel newChannel) {
+        this.closedLock.readLock().lock();
+        try {
+            if (closed) {
+                if (null != oldChannel) oldChannel.close();
+                if (null != newChannel) newChannel.close();
+                return false;
+            }
+            if (null == oldChannel) {
+                HChannel existedChannel = channels.putIfAbsent(key, newChannel);
+                if (null != existedChannel) {
+                    logger.info("Channel for {} already exists, so no need to replace it.", key);
+                    newChannel.close();
+                    return false;
+                } else {
+                    logger.debug("Storing a new channel for {}.", key);
+                    return true;
+                }
+            } else {
+                if (channels.replace(key, oldChannel, newChannel)) {
+                    logger.debug("Replacd channel {} for {}.", oldChannel, key);
+                    oldChannel.close();
+                    return true;
+                } else {
+                    newChannel.close();
+                    return false;
+                }
+            }
+        } finally {
+            this.closedLock.readLock().unlock();
+        }
+    }
+
+    /**
      * Returns the channel bound with <code>key</code>.
      *
      * @param key Key

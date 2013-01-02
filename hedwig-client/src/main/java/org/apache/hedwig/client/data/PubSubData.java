@@ -20,6 +20,7 @@ package org.apache.hedwig.client.data;
 import java.util.List;
 
 import com.google.protobuf.ByteString;
+import org.apache.hedwig.client.netty.HChannel;
 import org.apache.hedwig.protocol.PubSubProtocol;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
@@ -82,6 +83,8 @@ public class PubSubData {
     // For synchronous calls, this variable is used to know when the background
     // async process for it has completed, set in the VoidCallback.
     public boolean isDone = false;
+    // Record the original channel for a resubscribe request
+    private HChannel origChannel = null;
 
     // Constructor for all types of PubSub request data to send to the server
     public PubSubData(final ByteString topic, final Message msg, final ByteString subscriberId,
@@ -106,10 +109,20 @@ public class PubSubData {
     }
 
     public void operationFinishedToCallback(Object context, PubSubProtocol.ResponseBody response){
-
         callback.operationFinished(context, response);
     }
 
+    public boolean isResubscribeRequest() {
+        return null != origChannel;
+    }
+
+    public HChannel getOriginalChannelForResubscribe() {
+        return origChannel;
+    }
+
+    public void setOriginalChannelForResubscribe(HChannel channel) {
+        this.origChannel = channel;
+    }
 
     // Clear all of the stored servers we've contacted or attempted to in this
     // request.

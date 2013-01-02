@@ -25,6 +25,7 @@ import org.apache.hedwig.client.data.TopicSubscriber;
 import org.apache.hedwig.client.exceptions.AlreadyStartDeliveryException;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException;
+import org.apache.hedwig.exceptions.PubSubException.ResubscribeException;
 import org.apache.hedwig.protocol.PubSubProtocol.ResponseBody;
 import org.apache.hedwig.util.Callback;
 import static org.apache.hedwig.util.VarArgs.va;
@@ -77,6 +78,12 @@ class ResubscribeCallback implements Callback<ResponseBody> {
 
     @Override
     public void operationFailed(Object ctx, PubSubException exception) {
+        if (exception instanceof ResubscribeException) {
+            // it might be caused by closesub when resubscribing.
+            // so we don't need to retry resubscribe again
+            logger.warn("Failed to resubscribe {} : but it is caused by closesub when resubscribing. "
+                        + "so we don't need to retry subscribe again.", origSubData);
+        }
         // If the resubscribe fails, just keep retrying the subscribe
         // request. There isn't a way to flag to the application layer that
         // a topic subscription has failed. So instead, we'll just keep

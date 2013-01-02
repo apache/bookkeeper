@@ -34,6 +34,7 @@ import org.apache.hedwig.client.data.MessageConsumeData;
 import org.apache.hedwig.client.data.PubSubData;
 import org.apache.hedwig.client.data.TopicSubscriber;
 import org.apache.hedwig.client.exceptions.AlreadyStartDeliveryException;
+import org.apache.hedwig.client.netty.HChannel;
 import org.apache.hedwig.client.netty.NetUtils;
 import org.apache.hedwig.client.netty.FilterableMessageHandler;
 import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException;
@@ -64,6 +65,7 @@ public class ActiveSubscriber {
 
     // the underlying netty channel to send request
     protected final Channel channel;
+    protected final HChannel hChannel;
 
     // Counter for the number of consumed messages so far to buffer up before we
     // send the Consume message back to the server along with the last/largest
@@ -99,13 +101,15 @@ public class ActiveSubscriber {
                             AbstractHChannelManager channelManager,
                             TopicSubscriber ts, PubSubData op,
                             SubscriptionPreferences preferences,
-                            Channel channel) {
+                            Channel channel,
+                            HChannel hChannel) {
         this.cfg = cfg;
         this.channelManager = channelManager;
         this.topicSubscriber = ts;
         this.op = op;
         this.preferences = preferences;
         this.channel = channel;
+        this.hChannel = hChannel;
     }
 
     /**
@@ -368,6 +372,7 @@ public class ActiveSubscriber {
                                     channelManager, retryWaitTime);
         op.setCallback(resubscribeCb);
         op.context = null;
+        op.setOriginalChannelForResubscribe(hChannel);
         if (logger.isDebugEnabled()) {
             logger.debug("Resubscribe {} with origSubData {}",
                          va(topicSubscriber, op));

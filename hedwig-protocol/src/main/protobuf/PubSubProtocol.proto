@@ -248,6 +248,7 @@ enum StatusCode{
     CLIENT_NOT_SUBSCRIBED = 404;
     COULD_NOT_CONNECT = 405;
     TOPIC_BUSY = 406;
+    RESUBSCRIBE_EXCEPTION = 407;
     
     //server-side errors (5xx)
     NOT_RESPONSIBLE_FOR_TOPIC = 501;

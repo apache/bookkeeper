@@ -36,6 +36,7 @@ import org.apache.hedwig.client.data.PubSubData;
 import org.apache.hedwig.client.data.TopicSubscriber;
 import org.apache.hedwig.client.exceptions.AlreadyStartDeliveryException;
 import org.apache.hedwig.client.handlers.SubscribeResponseHandler;
+import org.apache.hedwig.client.netty.HChannel;
 import org.apache.hedwig.client.netty.HChannelManager;
 import org.apache.hedwig.client.netty.impl.AbstractHChannelManager;
 import org.apache.hedwig.client.netty.impl.AbstractSubscribeResponseHandler;
@@ -51,6 +52,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
 import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
 import org.apache.hedwig.protoextensions.MessageIdUtils;
 import org.apache.hedwig.util.Callback;
+import org.apache.hedwig.util.Either;
 
 public class SimpleSubscribeResponseHandler extends AbstractSubscribeResponseHandler {
 
@@ -73,8 +75,9 @@ public class SimpleSubscribeResponseHandler extends AbstractSubscribeResponseHan
                                       AbstractHChannelManager channelManager,
                                       TopicSubscriber ts, PubSubData op,
                                       SubscriptionPreferences preferences,
-                                      Channel channel) {
-            super(cfg, channelManager, ts, op, preferences, channel);
+                                      Channel channel,
+                                      HChannel hChannel) {
+            super(cfg, channelManager, ts, op, preferences, channel, hChannel);
             outstandingMsgSet = Collections.newSetFromMap(
                     new ConcurrentHashMap<Message, Boolean>(
                             cfg.getMaximumOutstandingMessages(), 1.0f));
@@ -175,8 +178,8 @@ public class SimpleSubscribeResponseHandler extends AbstractSubscribeResponseHan
     protected ActiveSubscriber createActiveSubscriber(
         ClientConfiguration cfg, AbstractHChannelManager channelManager,
         TopicSubscriber ts, PubSubData op, SubscriptionPreferences preferences,
-        Channel channel) {
-        return new SimpleActiveSubscriber(cfg, channelManager, ts, op, preferences, channel);
+        Channel channel, HChannel hChannel) {
+        return new SimpleActiveSubscriber(cfg, channelManager, ts, op, preferences, channel, hChannel);
     }
 
     @Override
@@ -234,17 +237,32 @@ public class SimpleSubscribeResponseHandler extends AbstractSubscribeResponseHan
     }
 
     @Override
-    protected void handleSuccessResponse(TopicSubscriber ts, ActiveSubscriber as,
-                                         Channel channel) {
-        synchronized (this) {
-            origTopicSubscriber = ts;
-            origActiveSubscriber = as;
-        }
+    protected Either<StatusCode, HChannel> handleSuccessResponse(
+        TopicSubscriber ts, PubSubData pubSubData, Channel channel) {
         // Store the mapping for the TopicSubscriber to the Channel.
         // This is so we can control the starting and stopping of
         // message deliveries from the server on that Channel. Store
         // this only on a successful ack response from the server.
-        sChannelManager.storeSubscriptionChannel(ts, channel);
+        Either<Boolean, HChannel> result =
+            sChannelManager.storeSubscriptionChannel(ts, pubSubData, channel);
+        if (result.left()) {
+            return Either.of(StatusCode.SUCCESS, result.right());
+        } else {
+            StatusCode code;
+            if (pubSubData.isResubscribeRequest()) {
+                code = StatusCode.RESUBSCRIBE_EXCEPTION;
+            } else {
+                code = StatusCode.CLIENT_ALREADY_SUBSCRIBED;
+            }
+            return Either.of(code, null);
+        }
+    }
+
+    @Override
+    protected synchronized void postHandleSuccessResponse(
+        TopicSubscriber ts, ActiveSubscriber as) {
+        origTopicSubscriber = ts;
+        origActiveSubscriber = as;
     }
 
     @Override
@@ -254,30 +272,6 @@ public class SimpleSubscribeResponseHandler extends AbstractSubscribeResponseHan
         // nothing to do just clear status
         // channel manager takes the responsibility to close the channel
         callback.operationFinished(context, (ResponseBody)null);
-    }
-
-    @Override
-    protected void resubscribeIfNecessary(final ActiveSubscriber ss,
-                                          final SubscriptionEvent event) {
-        final TopicSubscriber ts = ss.getTopicSubscriber();
-        // clear subscription status
-        sChannelManager.asyncCloseSubscription(ts, new Callback<ResponseBody>() {
-
-            @Override
-            public void operationFinished(Object ctx, ResponseBody result) {
-                finish();
-            }
-
-            @Override
-            public void operationFailed(Object ctx, PubSubException exception) {
-                finish();
-            }
-
-            private void finish() {
-                SimpleSubscribeResponseHandler.super.resubscribeIfNecessary(ss, event);
-            }
-
-        }, null);
     }
 
 }

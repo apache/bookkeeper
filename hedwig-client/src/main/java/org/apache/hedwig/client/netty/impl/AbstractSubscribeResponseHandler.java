@@ -62,6 +62,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
 import org.apache.hedwig.protoextensions.MessageIdUtils;
 import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 import org.apache.hedwig.util.Callback;
+import org.apache.hedwig.util.Either;
 import org.apache.hedwig.util.SubscriptionListener;
 import static org.apache.hedwig.util.VarArgs.va;
 
@@ -98,8 +99,8 @@ public abstract class AbstractSubscribeResponseHandler extends SubscribeResponse
     protected ActiveSubscriber createActiveSubscriber(
         ClientConfiguration cfg, AbstractHChannelManager channelManager,
         TopicSubscriber ts, PubSubData op, SubscriptionPreferences preferences,
-        Channel channel) {
-        return new ActiveSubscriber(cfg, channelManager, ts, op, preferences, channel);
+        Channel channel, HChannel hChannel) {
+        return new ActiveSubscriber(cfg, channelManager, ts, op, preferences, channel, hChannel);
     }
 
     @Override
@@ -129,33 +130,30 @@ public abstract class AbstractSubscribeResponseHandler extends SubscribeResponse
                 }
             }
 
-            ActiveSubscriber ss = createActiveSubscriber(cfg, aChannelManager, ts,
-                                                         pubSubData, preferences, channel);
-            boolean success = false;
+            Either<StatusCode, HChannel> result;
+            StatusCode statusCode;
+            ActiveSubscriber ss = null;
             // Store the Subscribe state
             disconnectLock.readLock().lock();
             try {
-                ActiveSubscriber oldSS = subscriptions.putIfAbsent(ts, ss);
-                if (null != oldSS) {
-                    logger.warn("Subscribe {} has existed in channel {}.",
-                                va(ts, channel));
-                    success = false;
-                } else {
-                    logger.debug("Succeed to add subscription {} in channel {}.",
-                                 va(ts, channel));
-                    success = true;
+                result = handleSuccessResponse(ts, pubSubData, channel);
+                statusCode = result.left();
+                if (StatusCode.SUCCESS == statusCode) {
+                    ss = createActiveSubscriber(
+                        cfg, aChannelManager, ts, pubSubData, preferences, channel, result.right());
+                    statusCode = addSubscription(ts, ss);
                 }
             } finally {
                 disconnectLock.readLock().unlock();
             }
-            if (success) {
-                handleSuccessResponse(ts, ss, channel);
+            if (StatusCode.SUCCESS == statusCode) {
+                postHandleSuccessResponse(ts, ss);
                 // Response was success so invoke the callback's operationFinished
                 // method.
                 pubSubData.getCallback().operationFinished(pubSubData.context, null);
             } else {
-                ClientAlreadySubscribedException exception =
-                    new ClientAlreadySubscribedException("Client is already subscribed for " + ts);
+                PubSubException exception = PubSubException.create(statusCode,
+                    "Client is already subscribed for " + ts);
                 pubSubData.getCallback().operationFailed(pubSubData.context, exception);
             }
             break;
@@ -195,13 +193,27 @@ public abstract class AbstractSubscribeResponseHandler extends SubscribeResponse
      *
      * @param ts
      *          Topic Subscriber.
-     * @param ss
-     *          Active Subscriber Object handle subscription actions for the subscriber.
+     * @param pubSubData
+     *          Pub/Sub Request data for this subscribe request.
      * @param channel
      *          Subscription Channel.
+     * @return status code to indicate what happened
      */
-    protected abstract void handleSuccessResponse(TopicSubscriber ts, ActiveSubscriber as,
-                                                  Channel channel);
+    protected abstract Either<StatusCode, HChannel> handleSuccessResponse(
+        TopicSubscriber ts, PubSubData pubSubData, Channel channel);
+
+    protected void postHandleSuccessResponse(TopicSubscriber ts, ActiveSubscriber ss) {
+        // do nothing now
+    }
+
+    private StatusCode addSubscription(TopicSubscriber ts, ActiveSubscriber ss) {
+        ActiveSubscriber oldSS = subscriptions.putIfAbsent(ts, ss);
+        if (null != oldSS) {
+            return StatusCode.CLIENT_ALREADY_SUBSCRIBED;
+        } else {
+            return StatusCode.SUCCESS;
+        }
+    }
 
     @Override
     public void handleSubscribeMessage(PubSubResponse response) {

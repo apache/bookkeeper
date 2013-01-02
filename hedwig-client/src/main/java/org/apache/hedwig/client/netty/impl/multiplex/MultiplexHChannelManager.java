@@ -48,6 +48,7 @@ import org.apache.hedwig.exceptions.PubSubException.ServiceDownException;
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
 import org.apache.hedwig.protocol.PubSubProtocol.ResponseBody;
 import org.apache.hedwig.util.Callback;
+import org.apache.hedwig.util.Either;
 import static org.apache.hedwig.util.VarArgs.va;
 
 
@@ -60,6 +61,9 @@ public class MultiplexHChannelManager extends AbstractHChannelManager {
 
     // Find which HChannel that a given TopicSubscriber used.
     protected final CleanupChannelMap<InetSocketAddress> subscriptionChannels;
+
+    // A index map for each topic subscriber is served by which subscription channel
+    protected final CleanupChannelMap<TopicSubscriber> sub2Channels;
 
     // Concurrent Map to store Message handler for each topic + sub id combination.
     // Store it here instead of in SubscriberResponseHandler as we don't want to lose the handler
@@ -74,6 +78,7 @@ public class MultiplexHChannelManager extends AbstractHChannelManager {
                                     ChannelFactory socketFactory) {
         super(cfg, socketFactory);
         subscriptionChannels = new CleanupChannelMap<InetSocketAddress>();
+        sub2Channels = new CleanupChannelMap<TopicSubscriber>();
         subscriptionChannelPipelineFactory =
             new MultiplexSubscriptionChannelPipelineFactory(cfg, this);
     }
@@ -296,4 +301,19 @@ public class MultiplexHChannelManager extends AbstractHChannelManager {
         subscriptionChannels.close();
     }
 
+    protected Either<Boolean, HChannel> storeSubscriptionChannel(
+        TopicSubscriber topicSubscriber, PubSubData txn, HChannel channel) {
+        boolean replaced = sub2Channels.replaceChannel(
+            topicSubscriber, txn.getOriginalChannelForResubscribe(), channel);
+        if (replaced) {
+            return Either.of(replaced, channel);
+        } else {
+            return Either.of(replaced, null);
+        }
+    }
+
+    protected boolean removeSubscriptionChannel(
+        TopicSubscriber topicSubscriber, HChannel channel) {
+        return sub2Channels.removeChannel(topicSubscriber, channel);
+    }
 }

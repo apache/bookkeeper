@@ -183,6 +183,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-470: Possible infinite loop in simple.SubscribeReconnectCallback (sijie via ivank)
 
+        BOOKKEEPER-55: SubscribeReconnectRetryTask might retry subscription endlessly when another subscription is already successfully created previously (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-302: No more messages delivered when hub server scans messages over two ledgers. (sijie via ivank)

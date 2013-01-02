@@ -31,10 +31,10 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.apache.hedwig.client.api.MessageHandler;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.data.TopicSubscriber;
+import org.apache.hedwig.client.data.PubSubData;
 import org.apache.hedwig.client.exceptions.AlreadyStartDeliveryException;
 import org.apache.hedwig.client.exceptions.NoResponseHandlerException;
 import org.apache.hedwig.client.handlers.SubscribeResponseHandler;
-
 import org.apache.hedwig.client.netty.CleanupChannelMap;
 import org.apache.hedwig.client.netty.HChannel;
 import org.apache.hedwig.client.netty.NetUtils;
@@ -48,6 +48,7 @@ import org.apache.hedwig.filter.ClientMessageFilter;
 import org.apache.hedwig.protocol.PubSubProtocol.ResponseBody;
 import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 import org.apache.hedwig.util.Callback;
+import org.apache.hedwig.util.Either;
 import static org.apache.hedwig.util.VarArgs.va;
 
 /**
@@ -103,12 +104,18 @@ public class SimpleHChannelManager extends AbstractHChannelManager {
                                 getSubscriptionChannelPipelineFactory());
     }
 
-    protected HChannel storeSubscriptionChannel(TopicSubscriber topicSubscriber,
-                                                Channel channel) {
+    protected Either<Boolean, HChannel> storeSubscriptionChannel(
+        TopicSubscriber topicSubscriber, PubSubData txn, Channel channel) {
         InetSocketAddress host = NetUtils.getHostFromChannel(channel);
         HChannel newHChannel = new HChannelImpl(host, channel, this,
                                                 getSubscriptionChannelPipelineFactory());
-        return topicSubscriber2Channel.addChannel(topicSubscriber, newHChannel);
+        boolean replaced = topicSubscriber2Channel.replaceChannel(
+            topicSubscriber, txn.getOriginalChannelForResubscribe(), newHChannel);
+        if (replaced) {
+            return Either.of(replaced, newHChannel);
+        } else {
+            return Either.of(replaced, null);
+        }
     }
 
     @Override

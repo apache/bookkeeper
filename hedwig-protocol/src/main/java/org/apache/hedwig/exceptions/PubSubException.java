@@ -74,6 +74,8 @@ public abstract class PubSubException extends Exception {
             return new TopicOwnerInfoExistsException(msg);
         } else if (code == StatusCode.INVALID_MESSAGE_FILTER) {
             return new InvalidMessageFilterException(msg);
+        } else if (code == StatusCode.RESUBSCRIBE_EXCEPTION) {
+            return new ResubscribeException(msg);
         }
         /*
          * Insert new ones here
@@ -100,6 +102,12 @@ public abstract class PubSubException extends Exception {
     public static class ClientNotSubscribedException extends PubSubException {
         public ClientNotSubscribedException(String msg) {
             super(StatusCode.CLIENT_NOT_SUBSCRIBED, msg);
+        }
+    }
+
+    public static class ResubscribeException extends PubSubException {
+        public ResubscribeException(String msg) {
+            super(StatusCode.RESUBSCRIBE_EXCEPTION, msg);
         }
     }
 

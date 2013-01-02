@@ -64,13 +64,15 @@ public abstract class PubSubServerStandAloneTestBase extends TestCase {
     }
 
     protected PubSubServer server;
+    protected ServerConfiguration conf;
     protected HedwigSocketAddress defaultAddress;
 
     @Override
     @Before
     public void setUp() throws Exception {
         logger.info("STARTING " + getName());
-        startHubServer();
+        conf = getStandAloneServerConfiguration();
+        startHubServer(conf);
         logger.info("Standalone PubSubServer test setup finished");
     }
 
@@ -81,13 +83,6 @@ public abstract class PubSubServerStandAloneTestBase extends TestCase {
         logger.info("tearDown starting");
         tearDownHubServer();
         logger.info("FINISHED " + getName());
-    }
-
-    protected void startHubServer() throws Exception {
-        ServerConfiguration conf = getStandAloneServerConfiguration();
-        defaultAddress = new HedwigSocketAddress("localhost", conf.getServerPort(),
-                                                 conf.getSSLServerPort());
-        startHubServer(conf);
     }
 
     protected HedwigSocketAddress getDefaultHedwigAddress() {
