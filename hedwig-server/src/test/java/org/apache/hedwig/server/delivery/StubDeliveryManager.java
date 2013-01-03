@@ -58,9 +58,11 @@ public class StubDeliveryManager implements DeliveryManager {
                                          SubscriptionPreferences preferences,
                                          MessageSeqId seqIdToStartFrom,
                                          DeliveryEndPoint endPoint,
-                                         ServerMessageFilter filter) {
+                                         ServerMessageFilter filter,
+                                         Callback<Void> cb, Object ctx) {
         lastRequest.add(new StartServingRequest(topic, subscriberId, preferences,
                                                 seqIdToStartFrom, endPoint, filter));
+        cb.operationFinished(ctx, null);
     }
 
     @Override

@@ -27,11 +27,32 @@ import org.apache.hedwig.util.Callback;
 public interface DeliveryManager {
     public void start();
 
+    /**
+     * Start serving a given subscription.
+     *
+     * @param topic
+     *          Topic Name
+     * @param subscriberId
+     *          Subscriber Id
+     * @param preferences
+     *          Subscription Preferences
+     * @param seqIdToStartFrom
+     *          Message sequence id starting delivery from.
+     * @param endPoint
+     *          End point to deliver messages to.
+     * @param filter
+     *          Message filter used to filter messages before delivery.
+     * @param callback
+     *          Callback instance.
+     * @param ctx
+     *          Callback context.
+     */
     public void startServingSubscription(ByteString topic, ByteString subscriberId,
                                          SubscriptionPreferences preferences,
                                          MessageSeqId seqIdToStartFrom,
                                          DeliveryEndPoint endPoint,
-                                         ServerMessageFilter filter);
+                                         ServerMessageFilter filter,
+                                         Callback<Void> callback, Object ctx);
 
     /**
      * Stop serving a given subscription.
@@ -40,6 +61,12 @@ public interface DeliveryManager {
      *          Topic Name
      * @param subscriberId
      *          Subscriber Id
+     * @param event
+     *          Subscription event indicating the reason to stop the subscriber.
+     * @param callback
+     *          Callback instance.
+     * @param ctx
+     *          Callback context.
      */
     public void stopServingSubscriber(ByteString topic, ByteString subscriberId,
                                       SubscriptionEvent event,

@@ -158,17 +158,22 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
      * @param filter
      *            Only messages passing this filter should be sent to this
      *            subscriber
+     * @param callback
+     *            Callback instance
+     * @param ctx
+     *            Callback context
      */
+    @Override
     public void startServingSubscription(ByteString topic, ByteString subscriberId,
                                          SubscriptionPreferences preferences,
                                          MessageSeqId seqIdToStartFrom,
-                                         DeliveryEndPoint endPoint, ServerMessageFilter filter) {
-
+                                         DeliveryEndPoint endPoint, ServerMessageFilter filter,
+                                         Callback<Void> callback, Object ctx) {
         ActiveSubscriberState subscriber = 
             new ActiveSubscriberState(topic, subscriberId,
                                       preferences,
                                       seqIdToStartFrom.getLocalComponent() - 1,
-                                      endPoint, filter);
+                                      endPoint, filter, callback, ctx);
 
         enqueueWithoutFailure(subscriber);
     }
@@ -376,7 +381,8 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
         boolean isThrottled = false;
         final int messageWindowSize;
         ServerMessageFilter filter;
-        // TODO make use of these variables
+        Callback<Void> cb;
+        Object ctx;
 
         final static int SEQ_ID_SLACK = 10;
 
@@ -384,7 +390,8 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
                                      SubscriptionPreferences preferences,
                                      long lastLocalSeqIdDelivered,
                                      DeliveryEndPoint deliveryEndPoint,
-                                     ServerMessageFilter filter) {
+                                     ServerMessageFilter filter,
+                                     Callback<Void> cb, Object ctx) {
             this.topic = topic;
             this.subscriberId = subscriberId;
             this.lastLocalSeqIdDelivered = lastLocalSeqIdDelivered;
@@ -401,6 +408,8 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
                     messageWindowSize = UNLIMITED;
                 }
             }
+            this.cb = cb;
+            this.ctx = ctx;
         }
 
         public void setNotConnected(SubscriptionEvent event) {
@@ -617,6 +626,8 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
          * {@link DeliveryManagerRequest} methods
          */
         public void performRequest() {
+            // try the callback to tell it started to deliver the message
+            cb.operationFinished(ctx, (Void)null);
 
             // Put this subscriber in the channel to subscriber mapping
             ActiveSubscriberState prevSubscriber =

@@ -209,6 +209,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-458:  Annoy BKReadException error when changing ledger. (jiannan via fpj)
 
+        BOOKKEEPER-507: Race condition happens if closeSubscription and subscribe happened at the same time (in multiplexed client). (sijie via ivank)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-467: Allocate ports for testing dynamically (ivank)
