@@ -289,13 +289,15 @@ public class ReplicationWorker implements Runnable {
             }
             workerRunning = false;
         }
-        try {
-            underreplicationManager.close();
-        } catch (UnavailableException e) {
-            LOG.warn("Exception while closing the "
-                    + "ZkLedgerUnderrepliationManager", e);
-        }
         this.pendingReplicationTimer.cancel();
+        try {
+            this.workerThread.interrupt();
+            this.workerThread.join();
+        } catch (InterruptedException e) {
+            LOG.error("Interrupted during shutting down replication worker : ",
+                    e);
+            Thread.currentThread().interrupt();
+        }
         try {
             bkc.close();
         } catch (InterruptedException e) {
@@ -305,12 +307,10 @@ public class ReplicationWorker implements Runnable {
             LOG.warn("Exception while closing the Bookie client", e);
         }
         try {
-            this.workerThread.interrupt();
-            this.workerThread.join();
-        } catch (InterruptedException e) {
-            LOG.error("Interrupted during shutting down replication worker : ",
-                    e);
-            Thread.currentThread().interrupt();
+            underreplicationManager.close();
+        } catch (UnavailableException e) {
+            LOG.warn("Exception while closing the "
+                    + "ZkLedgerUnderrepliationManager", e);
         }
     }
 
