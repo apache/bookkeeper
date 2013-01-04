@@ -369,6 +369,24 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         return -1;
     }
 
+
+    @Override
+    public long pollLedgerToRereplicate() throws ReplicationException.UnavailableException {
+        LOG.debug("pollLedgerToRereplicate()");
+        try {
+            Watcher w = new Watcher() {
+                    public void process(WatchedEvent e) { // do nothing
+                    }
+                };
+            return getLedgerToRereplicateFromHierarchy(urLedgerPath, 0, w);
+        } catch (KeeperException ke) {
+            throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while connecting zookeeper", ie);
+        }
+    }
+
     @Override
     public long getLedgerToRereplicate() throws ReplicationException.UnavailableException {
         LOG.debug("getLedgerToRereplicate()");

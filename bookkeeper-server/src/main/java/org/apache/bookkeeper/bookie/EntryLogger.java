@@ -76,6 +76,7 @@ public class EntryLogger {
     final static int LOGFILE_HEADER_SIZE = 1024;
     final ByteBuffer LOGFILE_HEADER = ByteBuffer.allocate(LOGFILE_HEADER_SIZE);
 
+    final static int MIN_SANE_ENTRY_SIZE = 8 + 8;
     final static long MB = 1024 * 1024;
 
     /**
@@ -373,6 +374,10 @@ public class EntryLogger {
         if (entrySize > MB) {
             LOG.error("Sanity check failed for entry size of " + entrySize + " at location " + pos + " in " + entryLogId);
 
+        }
+        if (entrySize < MIN_SANE_ENTRY_SIZE) {
+            LOG.error("Read invalid entry length {}", entrySize);
+            throw new IOException("Invalid entry length " + entrySize);
         }
         byte data[] = new byte[entrySize];
         ByteBuffer buff = ByteBuffer.wrap(data);

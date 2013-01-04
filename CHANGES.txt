@@ -285,6 +285,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-409: Integration Test - Perform bookie rereplication cycle by Auditor-RW processes (rakeshr via ivank)
 
+        BOOKKEEPER-293: Periodic checking of ledger replication status (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)

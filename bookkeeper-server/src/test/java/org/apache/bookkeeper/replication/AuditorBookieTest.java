@@ -233,7 +233,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
         zkClients.add(zk);
 
         AuditorElector auditorElector = new AuditorElector(addr,
-                                                           baseClientConf, zk);
+                                                           baseConf, zk);
         auditorElectors.put(addr, auditorElector);
         auditorElector.start();
         LOG.debug("Starting Auditor Elector");

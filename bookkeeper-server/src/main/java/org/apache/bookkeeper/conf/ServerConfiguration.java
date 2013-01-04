@@ -63,6 +63,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     //Disk utilization
     protected final static String DISK_USAGE_THRESHOLD = "diskUsageThreshold";
     protected final static String DISK_CHECK_INTERVAL = "diskCheckInterval";
+    protected final static String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
 
     /**
      * Construct a default configuration object
@@ -645,5 +646,24 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public int getDiskCheckInterval() {
         return getInt(DISK_CHECK_INTERVAL, 10 * 1000);
+    }
+
+    /**
+     * Set the regularity at which the auditor will run a check
+     * of all ledgers. This should not be run very often, and at most,
+     * once a day.
+     *
+     * @param interval The interval in seconds. e.g. 86400 = 1 day, 604800 = 1 week
+     */
+    public void setAuditorPeriodicCheckInterval(long interval) {
+        setProperty(AUDITOR_PERIODIC_CHECK_INTERVAL, interval);
+    }
+
+    /**
+     * Get the regularity at which the auditor checks all ledgers.
+     * @return The interval in seconds
+     */
+    public long getAuditorPeriodicCheckInterval() {
+        return getLong(AUDITOR_PERIODIC_CHECK_INTERVAL, 86400);
     }
 }

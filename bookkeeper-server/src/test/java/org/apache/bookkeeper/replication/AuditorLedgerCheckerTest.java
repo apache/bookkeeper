@@ -111,7 +111,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         for (BookieServer bserver : bs) {
             String addr = StringUtils.addrToString(bserver.getLocalAddress());
             AuditorElector auditorElector = new AuditorElector(addr,
-                    baseClientConf, zkc);
+                    baseConf, zkc);
             auditorElectors.put(addr, auditorElector);
             auditorElector.start();
             LOG.debug("Starting Auditor Elector");

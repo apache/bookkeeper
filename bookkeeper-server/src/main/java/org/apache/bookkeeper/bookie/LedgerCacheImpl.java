@@ -35,6 +35,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import org.apache.bookkeeper.util.SnapshotMap;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
@@ -232,7 +234,8 @@ public class LedgerCacheImpl implements LedgerCache {
         }
     }
 
-    static final String getLedgerName(long ledgerId) {
+    @VisibleForTesting
+    public static final String getLedgerName(long ledgerId) {
         int parent = (int) (ledgerId & 0xff);
         int grandParent = (int) ((ledgerId & 0xff00) >> 8);
         StringBuilder sb = new StringBuilder();

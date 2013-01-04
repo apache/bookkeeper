@@ -51,6 +51,15 @@ public interface LedgerUnderreplicationManager {
             throws ReplicationException.UnavailableException;
 
     /**
+     * Poll for a underreplicated ledger to rereplicate.
+     * @see #getLedgerToRereplicate
+     * @return the ledgerId, or -1 if none are available
+     */
+    long pollLedgerToRereplicate()
+            throws ReplicationException.UnavailableException;
+
+
+    /**
      * Release a previously acquired ledger. This allows others to acquire
      * the ledger
      */

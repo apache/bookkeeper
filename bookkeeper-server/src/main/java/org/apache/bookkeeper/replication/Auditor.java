@@ -26,22 +26,46 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
+
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 
-import org.apache.bookkeeper.conf.AbstractConfiguration;
+import java.net.InetSocketAddress;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.LedgerChecker;
+import org.apache.bookkeeper.client.LedgerFragment;
+import org.apache.bookkeeper.util.StringUtils;
+
+import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
+
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
+
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.commons.collections.CollectionUtils;
+import com.google.common.collect.Sets;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.slf4j.Logger;
@@ -56,21 +80,21 @@ import org.slf4j.LoggerFactory;
  */
 public class Auditor implements Watcher {
     private static final Logger LOG = LoggerFactory.getLogger(Auditor.class);
-
-    private final AbstractConfiguration conf;
+    private final ServerConfiguration conf;
     private final ZooKeeper zkc;
     private BookieLedgerIndexer bookieLedgerIndexer;
+    private LedgerManager ledgerManager;
     private LedgerUnderreplicationManager ledgerUnderreplicationManager;
-    private final ExecutorService executor;
+    private final ScheduledExecutorService executor;
     private List<String> knownBookies = new ArrayList<String>();
 
-    public Auditor(final String bookieIdentifier, AbstractConfiguration conf,
-            ZooKeeper zkc) throws UnavailableException {
+    public Auditor(final String bookieIdentifier, ServerConfiguration conf,
+                   ZooKeeper zkc) throws UnavailableException {
         this.conf = conf;
         this.zkc = zkc;
         initialize(conf, zkc);
 
-        executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+        executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable r) {
                     Thread t = new Thread(r, "AuditorBookie-" + bookieIdentifier);
@@ -80,14 +104,13 @@ public class Auditor implements Watcher {
             });
     }
 
-    private void initialize(AbstractConfiguration conf, ZooKeeper zkc)
+    private void initialize(ServerConfiguration conf, ZooKeeper zkc)
             throws UnavailableException {
         try {
             LedgerManagerFactory ledgerManagerFactory = LedgerManagerFactory
                     .newLedgerManagerFactory(conf, zkc);
-
-            this.bookieLedgerIndexer = new BookieLedgerIndexer(
-                    ledgerManagerFactory.newLedgerManager());
+            ledgerManager = ledgerManagerFactory.newLedgerManager();
+            this.bookieLedgerIndexer = new BookieLedgerIndexer(ledgerManager);
 
             this.ledgerUnderreplicationManager = ledgerManagerFactory
                     .newLedgerUnderreplicationManager();
@@ -173,6 +196,42 @@ public class Auditor implements Watcher {
             if (executor.isShutdown()) {
                 return;
             }
+
+            long interval = conf.getAuditorPeriodicCheckInterval();
+            if (interval > 0) {
+                LOG.info("Periodic checking enabled");
+                executor.scheduleAtFixedRate(new Runnable() {
+                        public void run() {
+                            LOG.info("Running periodic check");
+
+                            try {
+                                if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+                                    LOG.info("Ledger replication disabled, skipping");
+                                    return;
+                                }
+
+                                checkAllLedgers();
+                            } catch (KeeperException ke) {
+                                LOG.error("Exception while running periodic check", ke);
+                            } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
+                                LOG.error("Interrupted while running periodic check", ie);
+                            } catch (BKAuditException bkae) {
+                                LOG.error("Exception while running periodic check", bkae);
+                            } catch (BKException bke) {
+                                LOG.error("Exception running periodic check", bke);
+                            } catch (IOException ioe) {
+                                LOG.error("I/O exception running periodic check", ioe);
+                            } catch (ReplicationException.UnavailableException ue) {
+                                LOG.error("Underreplication manager unavailable "
+                                          +"running periodic check", ue);
+                            }
+                        }
+                    }, interval, interval, TimeUnit.MILLISECONDS);
+            } else {
+                LOG.info("Periodic checking disabled");
+            }
+
             executor.submit(new Runnable() {
                     public void run() {
                         try {
@@ -259,6 +318,148 @@ public class Auditor implements Watcher {
                         "Failed to publish underreplicated ledger: " + ledgerId
                                 + " of bookie: " + bookieIP, ue);
             }
+        }
+    }
+
+    /**
+     * Process the result returned from checking a ledger
+     */
+    private class ProcessLostFragmentsCb implements GenericCallback<Set<LedgerFragment>> {
+        final LedgerHandle lh;
+        final AsyncCallback.VoidCallback callback;
+
+        ProcessLostFragmentsCb(LedgerHandle lh, AsyncCallback.VoidCallback callback) {
+            this.lh = lh;
+            this.callback = callback;
+        }
+
+        public void operationComplete(int rc, Set<LedgerFragment> fragments) {
+            try {
+                if (rc == BKException.Code.OK) {
+                    Set<InetSocketAddress> bookies = Sets.newHashSet();
+                    for (LedgerFragment f : fragments) {
+                        bookies.add(f.getAddress());
+                    }
+                    for (InetSocketAddress bookie : bookies) {
+                        publishSuspectedLedgers(StringUtils.addrToString(bookie),
+                                                Sets.newHashSet(lh.getId()));
+                    }
+                }
+                lh.close();
+            } catch (BKException bke) {
+                LOG.error("Error closing lh", bke);
+                if (rc == BKException.Code.OK) {
+                    rc = BKException.Code.ZKException;
+                }
+            } catch (KeeperException ke) {
+                LOG.error("Couldn't publish suspected ledger", ke);
+                if (rc == BKException.Code.OK) {
+                    rc = BKException.Code.ZKException;
+                }
+            } catch (InterruptedException ie) {
+                LOG.error("Interrupted publishing suspected ledger", ie);
+                Thread.currentThread().interrupt();
+                if (rc == BKException.Code.OK) {
+                    rc = BKException.Code.InterruptedException;
+                }
+            } catch (BKAuditException bkae) {
+                LOG.error("Auditor exception publishing suspected ledger", bkae);
+                if (rc == BKException.Code.OK) {
+                    rc = BKException.Code.ZKException;
+                }
+            }
+
+            callback.processResult(rc, null, null);
+        }
+    }
+
+    /**
+     * List all the ledgers and check them individually. This should not
+     * be run very often.
+     */
+    private void checkAllLedgers() throws BKAuditException, BKException,
+            IOException, InterruptedException, KeeperException {
+        ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(conf.getZkTimeout());
+        ZooKeeper newzk = ZkUtils.createConnectedZookeeperClient(conf.getZkServers(), w);
+
+        final BookKeeper client = new BookKeeper(new ClientConfiguration(conf),
+                                                 newzk);
+        final BookKeeperAdmin admin = new BookKeeperAdmin(client);
+
+        try {
+            final LedgerChecker checker = new LedgerChecker(client);
+
+            final AtomicInteger returnCode = new AtomicInteger(BKException.Code.OK);
+            final CountDownLatch processDone = new CountDownLatch(1);
+
+            Processor<Long> checkLedgersProcessor = new Processor<Long>() {
+                @Override
+                public void process(final Long ledgerId,
+                                    final AsyncCallback.VoidCallback callback) {
+                    try {
+                        if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+                            LOG.info("Ledger rereplication has been disabled, aborting periodic check");
+                            processDone.countDown();
+                            return;
+                        }
+                    } catch (ReplicationException.UnavailableException ue) {
+                        LOG.error("Underreplication manager unavailable "
+                                  +"running periodic check", ue);
+                        processDone.countDown();
+                        return;
+                    }
+
+                    LedgerHandle lh = null;
+                    try {
+                        lh = admin.openLedgerNoRecovery(ledgerId);
+                        checker.checkLedger(lh, new ProcessLostFragmentsCb(lh, callback));
+                    } catch (BKException bke) {
+                        LOG.error("Couldn't open ledger " + ledgerId, bke);
+                        callback.processResult(BKException.Code.BookieHandleNotAvailableException,
+                                         null, null);
+                        return;
+                    } catch (InterruptedException ie) {
+                        LOG.error("Interrupted opening ledger", ie);
+                        Thread.currentThread().interrupt();
+                        callback.processResult(BKException.Code.InterruptedException, null, null);
+                        return;
+                    } finally {
+                        if (lh != null) {
+                            try {
+                                lh.close();
+                            } catch (BKException bke) {
+                                LOG.warn("Couldn't close ledger " + ledgerId, bke);
+                            } catch (InterruptedException ie) {
+                                LOG.warn("Interrupted closing ledger " + ledgerId, ie);
+                                Thread.currentThread().interrupt();
+                            }
+                        }
+                    }
+                }
+            };
+
+            ledgerManager.asyncProcessLedgers(checkLedgersProcessor,
+                    new AsyncCallback.VoidCallback() {
+                        @Override
+                        public void processResult(int rc, String s, Object obj) {
+                            returnCode.set(rc);
+                            processDone.countDown();
+                        }
+                    }, null, BKException.Code.OK, BKException.Code.ReadException);
+            try {
+                processDone.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new BKAuditException(
+                        "Exception while checking ledgers", e);
+            }
+            if (returnCode.get() != BKException.Code.OK) {
+                throw BKException.create(returnCode.get());
+            }
+        } finally {
+            admin.close();
+            client.close();
+            newzk.close();
         }
     }
 
