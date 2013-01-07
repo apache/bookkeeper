@@ -175,6 +175,17 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
         }
     }
 
+    protected ServerConfiguration newServerConfiguration() throws IOException {
+        File f = File.createTempFile("bookie", "test");
+        tmpDirs.add(f);
+        f.delete();
+        f.mkdir();
+
+        int port = PortManager.nextFreePort();
+        return newServerConfiguration(port, zkUtil.getZooKeeperConnectString(),
+                                      f, new File[] { f });
+    }
+
     protected ServerConfiguration newServerConfiguration(int port, String zkServers, File journalDir, File[] ledgerDirs) {
         ServerConfiguration conf = new ServerConfiguration(baseConf);
         conf.setBookiePort(port);
@@ -378,18 +389,11 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      */
     public int startNewBookie()
             throws IOException, InterruptedException, KeeperException, BookieException {
-        File f = File.createTempFile("bookie", "test");
-        tmpDirs.add(f);
-        f.delete();
-        f.mkdir();
-
-        int port = PortManager.nextFreePort();
-        ServerConfiguration conf = newServerConfiguration(port, zkUtil.getZooKeeperConnectString(),
-                                                          f, new File[] { f });
+        ServerConfiguration conf = newServerConfiguration();
         bsConfs.add(conf);
         bs.add(startBookie(conf));
 
-        return port;
+        return conf.getBookiePort();
     }
 
     /**

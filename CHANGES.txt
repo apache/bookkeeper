@@ -153,11 +153,14 @@ Trunk (unreleased changes)
         BOOKKEEPER-520: BookieFailureTest hangs on precommit build (ivank via sijie)
 
         BOOKKEEPER-447: Bookie can fail to recover if index pages flushed before ledger flush acknowledged (ivank via sijie)
+
 	BOOKKEEPER-520: BookieFailureTest hangs on precommit build (sijie via fpj, jira reopened)
 
 	BOOKKEEPER-514: TestDeadLock hanging sometimes (ivank, sijie via fpj)
 
         BOOKKEEPER-524: Bookie journal filesystem gets full after SyncThread is terminated with exception (Matteo, fpj via sijie)
+
+        BOOKKEEPER-355: Ledger recovery will mark ledger as closed with -1, in case of slow bookie is added to ensemble during recovery add (ivank)
 
       hedwig-protocol:
 

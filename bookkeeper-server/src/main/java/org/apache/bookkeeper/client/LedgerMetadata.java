@@ -437,20 +437,23 @@ public class LedgerMetadata {
             Version.Occurred.AFTER == version.compare(newMeta.version)) {
             return false;
         }
-        // ensemble size should be same
-        if (ensembles.size() != newMeta.ensembles.size()) {
-            return false;
-        }
-        // ensemble distribution should be same
-        // we don't check the detail ensemble, since new bookie will be set
-        // using recovery tool.
-        Iterator<Long> keyIter = ensembles.keySet().iterator();
-        Iterator<Long> newMetaKeyIter = newMeta.ensembles.keySet().iterator();
-        for (int i=0; i<ensembles.size(); i++) {
-            Long curKey = keyIter.next();
-            Long newMetaKey = newMetaKeyIter.next();
-            if (!curKey.equals(newMetaKey)) {
+        // if ledger is closed, we can just take the new ensembles
+        if (newMeta.state != LedgerMetadataFormat.State.CLOSED) {
+            // ensemble size should be same
+            if (ensembles.size() != newMeta.ensembles.size()) {
                 return false;
+            }
+            // ensemble distribution should be same
+            // we don't check the detail ensemble, since new bookie will be set
+            // using recovery tool.
+            Iterator<Long> keyIter = ensembles.keySet().iterator();
+            Iterator<Long> newMetaKeyIter = newMeta.ensembles.keySet().iterator();
+            for (int i=0; i<ensembles.size(); i++) {
+                Long curKey = keyIter.next();
+                Long newMetaKey = newMetaKeyIter.next();
+                if (!curKey.equals(newMetaKey)) {
+                    return false;
+                }
             }
         }
         /*

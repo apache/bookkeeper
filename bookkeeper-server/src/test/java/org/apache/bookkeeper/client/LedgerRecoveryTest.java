@@ -26,6 +26,8 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.*;
 import org.apache.bookkeeper.bookie.Bookie;
@@ -217,4 +219,141 @@ public class LedgerRecoveryTest extends BaseTestCase {
         assertEquals(numEntries - 1, afterlh.getLastAddConfirmed());
     }
 
+    /**
+     * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-355}
+     * A recovery during a rolling restart shouldn't affect the ability
+     * to recovery the ledger later.
+     * We have a ledger on ensemble B1,B2,B3.
+     * The sequence of events is
+     * 1. B1 brought down for maintenance
+     * 2. Ledger recovery started
+     * 3. B2 answers read last confirmed.
+     * 4. B1 replaced in ensemble by B4
+     * 5. Write to B4 fails for some reason
+     * 6. B1 comes back up.
+     * 7. B2 goes down for maintenance.
+     * 8. Ledger recovery starts (ledger is now unavailable)
+     */
+    @Test(timeout=60000)
+    public void testLedgerRecoveryWithRollingRestart() throws Exception {
+        LedgerHandle lhbefore = bkc.createLedger(numBookies, 2, digestType, "".getBytes());
+        for (int i = 0; i < (numBookies*3)+1; i++) {
+            lhbefore.addEntry("data".getBytes());
+        }
+
+        // Add a dead bookie to the cluster
+        ServerConfiguration conf = newServerConfiguration();
+        Bookie deadBookie1 = new Bookie(conf) {
+            @Override
+            public void recoveryAddEntry(ByteBuffer entry, WriteCallback cb, Object ctx, byte[] masterKey)
+                    throws IOException, BookieException {
+                // drop request to simulate a slow and failed bookie
+                throw new IOException("Couldn't write for some reason");
+            }
+        };
+        bsConfs.add(conf);
+        bs.add(startBookie(conf, deadBookie1));
+
+        // kill first bookie server
+        InetSocketAddress bookie1 = lhbefore.getLedgerMetadata().currentEnsemble.get(0);
+        ServerConfiguration conf1 = killBookie(bookie1);
+
+        // Try to recover and fence the ledger after killing one bookie in the
+        // ensemble in the ensemble, and another bookie is available in zk, but not writtable
+        try {
+            bkc.openLedger(lhbefore.getId(), digestType, "".getBytes());
+            fail("Shouldn't be able to open ledger, there should be entries missing");
+        } catch (BKException.BKLedgerRecoveryException e) {
+            // expected
+        }
+
+        // restart the first server, kill the second
+        bsConfs.add(conf1);
+        bs.add(startBookie(conf1));
+        InetSocketAddress bookie2 = lhbefore.getLedgerMetadata().currentEnsemble.get(1);
+        ServerConfiguration conf2 = killBookie(bookie2);
+
+        // using async, because this could trigger an assertion
+        final AtomicInteger returnCode = new AtomicInteger(0);
+        final CountDownLatch openLatch = new CountDownLatch(1);
+        bkc.asyncOpenLedger(lhbefore.getId(), digestType, "".getBytes(),
+                            new AsyncCallback.OpenCallback() {
+                                public void openComplete(int rc, LedgerHandle lh, Object ctx) {
+                                    returnCode.set(rc);
+                                    openLatch.countDown();
+                                    if (rc != BKException.Code.OK) {
+                                        try {
+                                            lh.close();
+                                        } catch (Exception e) {
+                                            LOG.error("Exception closing ledger handle", e);
+                                        }
+                                    }
+                                }
+                            }, null);
+        assertTrue("Open call should have completed", openLatch.await(5, TimeUnit.SECONDS));
+        assertFalse("Open should not have succeeded", returnCode.get() == BKException.Code.OK);
+
+        bsConfs.add(conf2);
+        bs.add(startBookie(conf2));
+
+        LedgerHandle lhafter = bkc.openLedger(lhbefore.getId(), digestType,
+                "".getBytes());
+        assertEquals("Fenced ledger should have correct lastAddConfirmed",
+                     lhbefore.getLastAddConfirmed(), lhafter.getLastAddConfirmed());
+    }
+
+    /**
+     * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-355}
+     * Verify that if a recovery happens with 1 replica missing, and it's replaced
+     * with a faulty bookie, it doesn't break future recovery from happening.
+     * 1. Ledger is created with quorum size as 2, and entries are written
+     * 2. Now first bookie is in the ensemble is brought down.
+     * 3. Another client fence and trying to recover the same ledger
+     * 4. During this time ensemble change will happen
+     *    and new bookie will be added. But this bookie is not able to write.
+     * 5. This recovery will fail.
+     * 7. A new non-faulty bookie comes up
+     * 8. Another client trying to recover the same ledger.
+     */
+    @Test(timeout=60000)
+    public void testBookieFailureDuringRecovery() throws Exception {
+        LedgerHandle lhbefore = bkc.createLedger(numBookies, 2, digestType, "".getBytes());
+        for (int i = 0; i < (numBookies*3)+1; i++) {
+            lhbefore.addEntry("data".getBytes());
+        }
+
+        // Add a dead bookie to the cluster
+        ServerConfiguration conf = newServerConfiguration();
+        Bookie deadBookie1 = new Bookie(conf) {
+            @Override
+            public void recoveryAddEntry(ByteBuffer entry, WriteCallback cb, Object ctx, byte[] masterKey)
+                    throws IOException, BookieException {
+                // drop request to simulate a slow and failed bookie
+                throw new IOException("Couldn't write for some reason");
+            }
+        };
+        bsConfs.add(conf);
+        bs.add(startBookie(conf, deadBookie1));
+
+        // kill first bookie server
+        InetSocketAddress bookie1 = lhbefore.getLedgerMetadata().currentEnsemble.get(0);
+        ServerConfiguration conf1 = killBookie(bookie1);
+
+        // Try to recover and fence the ledger after killing one bookie in the
+        // ensemble in the ensemble, and another bookie is available in zk but not writtable
+        try {
+            bkc.openLedger(lhbefore.getId(), digestType, "".getBytes());
+            fail("Shouldn't be able to open ledger, there should be entries missing");
+        } catch (BKException.BKLedgerRecoveryException e) {
+            // expected
+        }
+
+        // start a new good server
+        startNewBookie();
+
+        LedgerHandle lhafter = bkc.openLedger(lhbefore.getId(), digestType,
+                "".getBytes());
+        assertEquals("Fenced ledger should have correct lastAddConfirmed",
+                     lhbefore.getLastAddConfirmed(), lhafter.getLastAddConfirmed());
+    }
 }

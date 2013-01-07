@@ -25,7 +25,7 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import java.security.GeneralSecurityException;
-
+import java.net.InetSocketAddress;
 
 /**
  * Read only ledger handle. This ledger handle allows you to 
@@ -75,5 +75,32 @@ class ReadOnlyLedgerHandle extends LedgerHandle {
         LOG.error("Tried to add entry on a Read-Only ledger handle, ledgerid=" + ledgerId);
         cb.addComplete(BKException.Code.IllegalOpException, this,
                        LedgerHandle.INVALID_ENTRY_ID, ctx);
+    }
+
+    @Override
+    void handleBookieFailure(final InetSocketAddress addr, final int bookieIndex) {
+        blockAddCompletions.incrementAndGet();
+        synchronized (metadata) {
+            try {
+                if (!metadata.currentEnsemble.get(bookieIndex).equals(addr)) {
+                    // ensemble has already changed, failure of this addr is immaterial
+                    LOG.warn("Write did not succeed to {}, bookieIndex {}, but we have already fixed it.",
+                             addr, bookieIndex);
+                    blockAddCompletions.decrementAndGet();
+                    return;
+                }
+
+                replaceBookieInMetadata(addr, bookieIndex);
+
+                blockAddCompletions.decrementAndGet();
+                // the failed bookie has been replaced
+                unsetSuccessAndSendWriteRequest(bookieIndex);
+            } catch (BKException.BKNotEnoughBookiesException e) {
+                LOG.error("Could not get additional bookie to "
+                          + "remake ensemble, closing ledger: " + ledgerId);
+                handleUnrecoverableErrorDuringAdd(e.getCode());
+                return;
+            }
+        }
     }
 }
