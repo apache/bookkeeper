@@ -165,6 +165,7 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
         public void run() {
             if (top2sub2seq.containsKey(topic)) {
                 cb.operationFinished(ctx, null);
+                return;
             }
 
             readSubscriptions(topic, new Callback<Map<ByteString, InMemorySubscriptionState>>() {

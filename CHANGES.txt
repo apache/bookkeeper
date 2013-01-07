@@ -218,6 +218,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-507: Race condition happens if closeSubscription and subscribe happened at the same time (in multiplexed client). (sijie via ivank)
 
+	BOOKKEEPER-532: AbstractSubscriptionManager#AcquireOp read subscriptions every time even it already owned the topic. (sijie via fpj)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-467: Allocate ports for testing dynamically (ivank)
