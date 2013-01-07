@@ -293,12 +293,11 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
             List<BookieServer> auditors = getAuditorBookie();
             if (auditors.size() > 0) {
                 newAuditor = auditors.get(0);
-                if (auditor == newAuditor) {
-                    Thread.sleep(500);
-                } else {
+                if (auditor != newAuditor) {
                     break;
                 }
             }
+            Thread.sleep(500);
             retryCount--;
         }
         Assert.assertNotNull(

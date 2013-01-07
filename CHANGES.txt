@@ -162,6 +162,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-355: Ledger recovery will mark ledger as closed with -1, in case of slow bookie is added to ensemble during recovery add (ivank)
 
+        BOOKKEEPER-534: Flakeyness in AuditorBookieTest (umamahesh via ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)
