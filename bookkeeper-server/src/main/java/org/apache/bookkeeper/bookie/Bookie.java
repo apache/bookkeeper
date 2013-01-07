@@ -266,58 +266,63 @@ public class Bookie extends Thread {
         }
         @Override
         public void run() {
-            while(running) {
-                synchronized(this) {
-                    try {
-                        wait(flushInterval);
-                        if (!ledgerStorage.isFlushRequired()) {
+            try {
+                while (running) {
+                    synchronized (this) {
+                        try {
+                            wait(flushInterval);
+                            if (!ledgerStorage.isFlushRequired()) {
+                                continue;
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
                             continue;
                         }
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        continue;
                     }
-                }
 
-                // try to mark flushing flag to make sure it would not be interrupted
-                // by shutdown during flushing. otherwise it will receive
-                // ClosedByInterruptException which may cause index file & entry logger
-                // closed and corrupted.
-                if (!flushing.compareAndSet(false, true)) {
-                    // set flushing flag failed, means flushing is true now
-                    // indicates another thread wants to interrupt sync thread to exit
-                    break;
-                }
+                    // try to mark flushing flag to make sure it would not be interrupted
+                    // by shutdown during flushing. otherwise it will receive
+                    // ClosedByInterruptException which may cause index file & entry logger
+                    // closed and corrupted.
+                    if (!flushing.compareAndSet(false, true)) {
+                        // set flushing flag failed, means flushing is true now
+                        // indicates another thread wants to interrupt sync thread to exit
+                        break;
+                    }
 
-                // journal mark log
-                journal.markLog();
+                    // journal mark log
+                    journal.markLog();
 
-                boolean flushFailed = false;
-                try {
-                    ledgerStorage.flush();
-                } catch (NoWritableLedgerDirException e) {
-                    flushFailed = true;
-                    flushing.set(false);
-                    transitionToReadOnlyMode();
-                } catch (IOException e) {
-                    LOG.error("Exception flushing Ledger", e);
-                    flushFailed = true;
-                }
-
-                // if flush failed, we should not roll last mark, otherwise we would
-                // have some ledgers are not flushed and their journal entries were lost
-                if (!flushFailed) {
+                    boolean flushFailed = false;
                     try {
-                        journal.rollLog();
-                        journal.gcJournals();
+                        ledgerStorage.flush();
                     } catch (NoWritableLedgerDirException e) {
+                        flushFailed = true;
                         flushing.set(false);
                         transitionToReadOnlyMode();
+                    } catch (IOException e) {
+                        LOG.error("Exception flushing Ledger", e);
+                        flushFailed = true;
                     }
-                }
 
-                // clear flushing flag
-                flushing.set(false);
+                    // if flush failed, we should not roll last mark, otherwise we would
+                    // have some ledgers are not flushed and their journal entries were lost
+                    if (!flushFailed) {
+                        try {
+                            journal.rollLog();
+                            journal.gcJournals();
+                        } catch (NoWritableLedgerDirException e) {
+                            flushing.set(false);
+                            transitionToReadOnlyMode();
+                        }
+                    }
+
+                    // clear flushing flag
+                    flushing.set(false);
+                }
+            } catch (Throwable t) {
+                LOG.error("Exception in SyncThread", t);
+                triggerBookieShutdown(ExitCode.BOOKIE_EXCEPTION);
             }
         }
 

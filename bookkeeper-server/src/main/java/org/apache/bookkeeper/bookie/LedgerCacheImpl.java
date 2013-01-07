@@ -150,17 +150,18 @@ public class LedgerCacheImpl implements LedgerCache {
         return null;
     }
 
-    synchronized private LedgerEntryPage getLedgerEntryPage(Long ledger, Long firstEntry, boolean onlyDirty) {
+    synchronized protected LedgerEntryPage getLedgerEntryPage(Long ledger, Long firstEntry, boolean onlyDirty) {
         LedgerEntryPage lep = getFromTable(pages, ledger, firstEntry);
-        try {
-            if (onlyDirty && lep.isClean()) {
-                return null;
-            }
+        if (lep == null) {
+            return null;
+        }
+
+        lep.usePage();
+
+        if (onlyDirty && lep.isClean()) {
+            return null;
+        } else {
             return lep;
-        } finally {
-            if (lep != null) {
-                lep.usePage();
-            }
         }
     }
 

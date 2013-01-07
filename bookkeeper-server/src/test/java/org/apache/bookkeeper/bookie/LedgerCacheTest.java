@@ -345,6 +345,27 @@ public class LedgerCacheTest extends TestCase {
         }
     }
 
+
+    /**
+     * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-524}
+     * Checks that getLedgerEntryPage does not throw an NPE in the
+     * case getFromTable returns a null ledger entry page reference.
+     * This NPE might kill the sync thread leaving a bookie with no
+     * sync thread running.
+     *
+     * @throws IOException
+     */
+    @Test(timeout=30000)
+    public void testSyncThreadNPE() throws IOException {
+        newLedgerCache();
+        try {
+            ((LedgerCacheImpl) ledgerCache).getLedgerEntryPage(0L, 0L, true);
+        } catch (Exception e) {
+            LOG.error("Exception when trying to get a ledger entry page", e);
+            fail("Shouldn't have thrown an exception");
+        }
+    }
+
     private ByteBuffer generateEntry(long ledger, long entry) {
         byte[] data = ("ledger-" + ledger + "-" + entry).getBytes();
         ByteBuffer bb = ByteBuffer.wrap(new byte[8 + 8 + data.length]);

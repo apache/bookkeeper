@@ -157,6 +157,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-514: TestDeadLock hanging sometimes (ivank, sijie via fpj)
 
+        BOOKKEEPER-524: Bookie journal filesystem gets full after SyncThread is terminated with exception (Matteo, fpj via sijie)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)
