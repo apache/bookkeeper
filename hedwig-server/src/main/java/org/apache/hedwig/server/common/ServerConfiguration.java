@@ -41,6 +41,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String READAHEAD_COUNT = "readahead_count";
     protected final static String READAHEAD_SIZE = "readahead_size";
     protected final static String CACHE_SIZE = "cache_size";
+    protected final static String CACHE_ENTRY_TTL = "cache_entry_ttl";
     protected final static String SCAN_BACKOFF_MSEC = "scan_backoff_ms";
     protected final static String SERVER_PORT = "server_port";
     protected final static String SSL_SERVER_PORT = "ssl_server_port";
@@ -172,6 +173,17 @@ public class ServerConfiguration extends AbstractConfiguration {
     public long getMaximumCacheSize() {
         // 2G or half of the maximum amount of memory the JVM uses
         return conf.getLong(CACHE_SIZE, Math.min(2 * 1024L * 1024L * 1024L, Runtime.getRuntime().maxMemory() / 2));
+    }
+
+    /**
+     * Cache Entry TTL. By default is 0, cache entry will not be evicted
+     * until the cache is fullfilled or the messages are already consumed.
+     * The TTL is only checked when trying adding a new entry into the cache.
+     *
+     * @return cache entry ttl.
+     */
+    public long getCacheEntryTTL() {
+        return conf.getLong(CACHE_ENTRY_TTL, 0L);
     }
 
     /**

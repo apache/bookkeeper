@@ -34,6 +34,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.hedwig.protocol.PubSubProtocol;
 import org.slf4j.Logger;
@@ -57,7 +58,7 @@ import org.apache.hedwig.server.jmx.HedwigMBeanRegistry;
 import org.apache.hedwig.server.persistence.ReadAheadCacheBean;
 import org.apache.hedwig.util.Callback;
 
-public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXService {
+public class ReadAheadCache implements PersistenceManager, HedwigJMXService {
 
     static Logger logger = LoggerFactory.getLogger(ReadAheadCache.class);
 
@@ -78,30 +79,53 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
         new ConcurrentHashMap<CacheKey, CacheValue>();
 
     /**
-     * To simplify synchronization, the cache will be maintained by a single
-     * cache maintainer thread. This is the queue that will hold requests that
-     * need to be served by this thread
-     */
-    protected BlockingQueue<CacheRequest> requestQueue = new LinkedBlockingQueue<CacheRequest>();
-
-    /**
-     * We want to keep track of when entries were added in the cache, so that we
-     * can remove them in a FIFO fashion
-     */
-    protected SortedMap<Long, Set<CacheKey>> timeIndexOfAddition = new TreeMap<Long, Set<CacheKey>>();
-
-    /**
      * We also want to track the entries in seq-id order so that we can clean up
      * entries after the last subscriber
      */
-    protected Map<ByteString, SortedSet<Long>> orderedIndexOnSeqId =
-        new HashMap<ByteString, SortedSet<Long>>();
+    protected ConcurrentMap<ByteString, SortedSet<Long>> orderedIndexOnSeqId =
+        new ConcurrentHashMap<ByteString, SortedSet<Long>>();
+
+    /**
+     * Partition Cache into Serveral Segments for simplify synchronization.
+     * Each segment maintains its time index and segment size.
+     */
+    static class CacheSegment {
+
+        /**
+         * We want to keep track of when entries were added in the cache, so that we
+         * can remove them in a FIFO fashion
+         */
+        protected SortedMap<Long, Set<CacheKey>> timeIndexOfAddition = new TreeMap<Long, Set<CacheKey>>();
+
+        /**
+         * We maintain an estimate of the current size of each cache segment,
+         * so that the thread know when to evict entries from cache segment.
+         */
+        protected AtomicLong presentSegmentSize = new AtomicLong(0);
+
+    }
 
     /**
      * We maintain an estimate of the current size of the cache, so that we know
      * when to evict entries.
      */
     protected AtomicLong presentCacheSize = new AtomicLong(0);
+
+    /**
+     * Num pending requests.
+     */
+    protected AtomicInteger numPendingRequests = new AtomicInteger(0);
+
+    /**
+     * Cache segment for different threads
+     */
+    protected final ThreadLocal<CacheSegment> cacheSegment =
+        new ThreadLocal<CacheSegment>() {
+            @Override
+            protected CacheSegment initialValue() {
+                return new CacheSegment();
+            }
+        };
 
     /**
      * One instance of a callback that we will pass to the underlying
@@ -116,13 +140,14 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
     protected ReadAheadException readAheadExceptionInstance = new ReadAheadException();
 
     protected ServerConfiguration cfg;
-    protected Thread cacheThread;
     // Boolean indicating if this thread should continue running. This is used
     // when we want to stop the thread during a PubSubServer shutdown.
     protected volatile boolean keepRunning = true;
 
     protected final OrderedSafeExecutor cacheWorkers;
-    protected final long maxCacheSize;
+    protected final int numCacheWorkers;
+    protected volatile long maxSegmentSize;
+    protected volatile long cacheEntryTTL;
 
     // JMX Beans
     ReadAheadCacheBean jmxCacheBean = null;
@@ -135,13 +160,23 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
     public ReadAheadCache(PersistenceManagerWithRangeScan realPersistenceManager, ServerConfiguration cfg) {
         this.realPersistenceManager = realPersistenceManager;
         this.cfg = cfg;
-        cacheThread = new Thread(this, "CacheThread");
-        cacheWorkers = new OrderedSafeExecutor(cfg.getNumReadAheadCacheThreads());
-        maxCacheSize = cfg.getMaximumCacheSize();
+        numCacheWorkers = cfg.getNumReadAheadCacheThreads();
+        cacheWorkers = new OrderedSafeExecutor(numCacheWorkers);
+        reloadConf(cfg);
+    }
+
+    /**
+     * Reload configuration
+     *
+     * @param conf
+     *          Server configuration object
+     */
+    protected void reloadConf(ServerConfiguration cfg) {
+        maxSegmentSize = cfg.getMaximumCacheSize() / numCacheWorkers;
+        cacheEntryTTL = cfg.getCacheEntryTTL();
     }
 
     public ReadAheadCache start() {
-        cacheThread.start();
         return this;
     }
 
@@ -229,30 +264,16 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
             return;
         }
         try {
+            numPendingRequests.incrementAndGet();
             cacheWorkers.submitOrdered(topic, new SafeRunnable() {
                 @Override
                 public void safeRun() {
+                    numPendingRequests.decrementAndGet();
                     obj.performRequest();
                 }
             });
         } catch (RejectedExecutionException ree) {
             logger.error("Failed to submit cache request for topic " + topic.toStringUtf8() + " : ", ree);
-        }
-    }
-
-    /**
-     * Too complicated to deal with enqueue failures from the context of our
-     * callbacks. Its just simpler to quit and restart afresh. Moreover, this
-     * should not happen as the request queue for the cache maintainer is
-     * unbounded.
-     *
-     * @param obj
-     */
-    protected void enqueueWithoutFailure(CacheRequest obj) {
-        if (!requestQueue.offer(obj)) {
-            throw new UnexpectedError("Could not enqueue object: " + obj.toString()
-                                      + " to cache request queue. Exiting.");
-
         }
     }
 
@@ -275,7 +296,7 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
      * message-ids older than the one specified
      */
     public void deliveredUntil(ByteString topic, Long seqId) {
-        enqueueWithoutFailure(new DeliveredUntil(topic, seqId));
+        enqueueWithoutFailureByTopic(topic, new DeliveredUntil(topic, seqId));
     }
 
     /**
@@ -304,31 +325,15 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
     }
 
     /**
-     * ========================================================================
-     * BEGINNING OF CODE FOR THE CACHE MAINTAINER THREAD
-     *
-     * 1. The run method. It simply dequeues from the request queue, checks the
-     * type of object and acts accordingly
-     */
-    public void run() {
-        while (keepRunning) {
-            CacheRequest obj;
-            try {
-                obj = requestQueue.take();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-            }
-            obj.performRequest();
-        }
-
-    }
-
-    /**
-     * Stop method which will enqueue a ShutdownCacheRequest.
+     * Stop the readahead cache.
      */
     public void stop() {
-        enqueueWithoutFailure(new ShutdownCacheRequest());
+        try {
+            keepRunning = false;
+            cacheWorkers.shutdown();
+        } catch (Exception e) {
+            logger.warn("Failed to shut down cache workers : ", e);
+        }
     }
 
     /**
@@ -533,31 +538,28 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
             }
         }
 
+        CacheSegment segment = cacheSegment.get();
+        int size = message.getBody().size();
+
         // update the cache size
-        final long newCacheSize = presentCacheSize.addAndGet(message.getBody().size());
+        segment.presentSegmentSize.addAndGet(size);
+        presentCacheSize.addAndGet(size);
 
         synchronized (cacheValue) {
             // finally add the message to the cache
             cacheValue.setMessageAndInvokeCallbacks(message, currTime);
         }
 
-        // if overgrown, collect old entries
-        enqueueWithoutFailure(new CacheRequest() {
-            @Override
-            public void performRequest() {
-                // maintain the index of seq-id
-                MapMethods.addToMultiMap(orderedIndexOnSeqId, cacheKey.getTopic(),
-                                         cacheKey.getSeqId(), TreeSetLongFactory.instance);
+        // maintain the index of seq-id
+        // no lock since threads are partitioned by topics
+        MapMethods.addToMultiMap(orderedIndexOnSeqId, cacheKey.getTopic(),
+                                 cacheKey.getSeqId(), TreeSetLongFactory.instance);
 
-                // maintain the time index of addition
-                MapMethods.addToMultiMap(timeIndexOfAddition, currTime,
-                                         cacheKey, HashSetCacheKeyFactory.instance);
-                // update time index
-                if (newCacheSize > maxCacheSize) {
-                    collectOldCacheEntries();
-                }
-            }
-        });
+        // maintain the time index of addition
+        MapMethods.addToMultiMap(segment.timeIndexOfAddition, currTime,
+                                 cacheKey, HashSetCacheKeyFactory.instance);
+
+        collectOldOrExpiredCacheEntries(segment);
     }
 
     protected void removeMessageFromCache(final CacheKey cacheKey, Exception exception,
@@ -569,6 +571,8 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
             return;
         }
 
+        CacheSegment segment = cacheSegment.get();
+
         long timeOfAddition = 0;
         synchronized (cacheValue) {
             if (cacheValue.isStub()) {
@@ -578,26 +582,19 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
                 return;
             }
 
-            presentCacheSize.addAndGet(0 - cacheValue.getMessage().getBody().size());
+            int size = 0 - cacheValue.getMessage().getBody().size();
+            presentCacheSize.addAndGet(size);
+            segment.presentSegmentSize.addAndGet(size);
             timeOfAddition = cacheValue.getTimeOfAddition();
         }
 
-        // maintain the 2 indexes lazily
-        if (maintainSeqIdIndex || maintainTimeIndex) {
-            final long additionTime = timeOfAddition;
-            enqueueWithoutFailure(new CacheRequest() {
-                @Override
-                public void performRequest() {
-                    if (maintainSeqIdIndex) {
-                        MapMethods.removeFromMultiMap(orderedIndexOnSeqId, cacheKey.getTopic(),
-                                                      cacheKey.getSeqId());
-                    }
-                    if (maintainTimeIndex) {
-                        MapMethods.removeFromMultiMap(timeIndexOfAddition, additionTime,
-                                                      cacheKey);
-                    }
-                }
-            });
+        if (maintainSeqIdIndex) {
+            MapMethods.removeFromMultiMap(orderedIndexOnSeqId, cacheKey.getTopic(),
+                                          cacheKey.getSeqId());
+        }
+        if (maintainTimeIndex) {
+            MapMethods.removeFromMultiMap(segment.timeIndexOfAddition,
+                                          timeOfAddition, cacheKey);
         }
     }
 
@@ -605,28 +602,43 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
      * Collection of old entries is simple. Just collect in insert-time order,
      * oldest to newest.
      */
-    protected void collectOldCacheEntries() {
-        while (presentCacheSize.get() > cfg.getMaximumCacheSize () &&
-               !timeIndexOfAddition.isEmpty()) {
-            Long earliestTime = timeIndexOfAddition.firstKey();
-            Set<CacheKey> oldCacheEntries = timeIndexOfAddition.get(earliestTime);
-
-            // Note: only concrete cache entries, and not stubs are in the time
-            // index. Hence there can be no callbacks pending on these cache
-            // entries. Hence safe to remove them directly.
-            for (Iterator<CacheKey> iter = oldCacheEntries.iterator(); iter.hasNext();) {
-                final CacheKey cacheKey = iter.next();
-
-                logger.debug("Removing {} from cache because it's the oldest.", cacheKey);
-                removeMessageFromCache(cacheKey, readAheadExceptionInstance, //
-                                       // maintainTimeIndex=
-                                       false,
-                                       // maintainSeqIdIndex=
-                                       true);
+    protected void collectOldOrExpiredCacheEntries(CacheSegment segment) {
+        if (cacheEntryTTL > 0) {
+            // clear expired entries
+            while (!segment.timeIndexOfAddition.isEmpty()) {
+                Long earliestTime = segment.timeIndexOfAddition.firstKey();
+                if (MathUtils.now() - earliestTime < cacheEntryTTL) {
+                    break;
+                }
+                collectCacheEntriesAtTimestamp(segment, earliestTime);
             }
-
-            timeIndexOfAddition.remove(earliestTime);
         }
+
+        while (segment.presentSegmentSize.get() > maxSegmentSize &&
+               !segment.timeIndexOfAddition.isEmpty()) {
+            Long earliestTime = segment.timeIndexOfAddition.firstKey();
+            collectCacheEntriesAtTimestamp(segment, earliestTime);
+        }
+    }
+
+    private void collectCacheEntriesAtTimestamp(CacheSegment segment, long timestamp) {
+        Set<CacheKey> oldCacheEntries = segment.timeIndexOfAddition.get(timestamp);
+
+        // Note: only concrete cache entries, and not stubs are in the time
+        // index. Hence there can be no callbacks pending on these cache
+        // entries. Hence safe to remove them directly.
+        for (Iterator<CacheKey> iter = oldCacheEntries.iterator(); iter.hasNext();) {
+            final CacheKey cacheKey = iter.next();
+
+            logger.debug("Removing {} from cache because it's the oldest.", cacheKey);
+            removeMessageFromCache(cacheKey, readAheadExceptionInstance, //
+                                   // maintainTimeIndex=
+                                   false,
+                                   // maintainSeqIdIndex=
+                                   true);
+        }
+
+        segment.timeIndexOfAddition.remove(timestamp);
     }
 
     /**
@@ -772,16 +784,6 @@ public class ReadAheadCache implements PersistenceManager, Runnable, HedwigJMXSe
             if (readAheadRequest != null) {
                 realPersistenceManager.scanMessages(readAheadRequest);
             }
-        }
-    }
-
-    protected class ShutdownCacheRequest implements CacheRequest {
-        // This is a simple type of CacheRequest we will enqueue when
-        // the PubSubServer is shut down and we want to stop the ReadAheadCache
-        // thread.
-        public void performRequest() {
-            keepRunning = false;
-            cacheWorkers.shutdown();
         }
     }
 

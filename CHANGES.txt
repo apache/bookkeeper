@@ -220,6 +220,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-532: AbstractSubscriptionManager#AcquireOp read subscriptions every time even it already owned the topic. (sijie via fpj)
 
+        BOOKKEEPER-531: Cache thread should wait until old entries are collected (sijie via ivank)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-467: Allocate ports for testing dynamically (ivank)

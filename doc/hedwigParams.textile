@@ -43,6 +43,7 @@ h3. Read-ahead cache parameters
 bq. Upon a range scan request for a given topic, two hints are provided as to when scanning should stop: the number of messages scanned and the total size of messages scanned. Scanning stops whenever one of these limits is exceeded.
 
 | @cache_size@ | Sets the size of the read-ahead cache. Default is the smallest of 2G or half the heap size. | 
+| @cache_entry_ttl@ | Sets TTL for cache entries. Each time adding new entry into the cache, those expired cache entries would be discarded. If the value is set to zero or less than zero, cache entry will not be evicted until the cache is fullfilled or the messages are already consumed. Default is 0. |
 | @scan_backoff_ms@ | The backoff time (in milliseconds) to retry scans after failures. Default value is 1s (1000ms). Default is 1s. |
 | @num_readahead_cache_threads@ | Sets the number of threads to be used for the read-ahead mechanism. Default is the number of cores as returned with a call to <code>Runtime.getRuntime().availableProcessors()</code>.|
 

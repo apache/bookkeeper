@@ -58,7 +58,7 @@ public class ReadAheadCacheBean implements ReadAheadCacheMXBean,
 
     @Override
     public int getNumPendingCacheRequests() {
-        return cache.requestQueue.size();
+        return cache.numPendingRequests.get();
     }
 
 }
