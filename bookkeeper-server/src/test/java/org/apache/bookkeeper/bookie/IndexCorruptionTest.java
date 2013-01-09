@@ -1,4 +1,4 @@
-package org.apache.bookkeeper.test;
+package org.apache.bookkeeper.bookie;
 
 /*
  *
@@ -28,6 +28,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,26 +52,12 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
         baseConf.setPageSize(pageSize);
     }
 
-    private Thread findSyncThread() {
-        int threadCount = Thread.activeCount();
-        Thread[] allthreads = new Thread[Thread.activeCount()];
-        Thread.enumerate(allthreads);
-        for (Thread t : allthreads) {
-            if (t.getName().equals("SyncThread")) {
-                return t;
-            }
-        }
-        return null;
-    }
-
     @Test(timeout=60000)
     public void testNoSuchLedger() throws Exception {
         LOG.debug("Testing NoSuchLedger");
 
-        Thread syncThread = findSyncThread();
-        assertNotNull("Not found SyncThread.", syncThread);
-
-        syncThread.suspend();
+        Bookie.SyncThread syncThread = bs.get(0).getBookie().syncThread;
+        syncThread.suspendSync();
         // Create a ledger
         LedgerHandle lh = bkc.createLedger(1, 1, digestType, "".getBytes());
 
@@ -85,7 +72,7 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
             wlh.addEntry(dummyMsg.getBytes());
         }
 
-        syncThread.resume();
+        syncThread.resumeSync();
 
         // trigger sync 
         Thread.sleep(2 * baseConf.getFlushInterval());
@@ -110,10 +97,10 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
     public void testEmptyIndexPage() throws Exception {
         LOG.debug("Testing EmptyIndexPage");
 
-        Thread syncThread = findSyncThread();
+        Bookie.SyncThread syncThread = bs.get(0).getBookie().syncThread;
         assertNotNull("Not found SyncThread.", syncThread);
 
-        syncThread.suspend();
+        syncThread.suspendSync();
 
         // Create a ledger
         LedgerHandle lh1 = bkc.createLedger(1, 1, digestType, "".getBytes());
@@ -127,12 +114,12 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
             lh2.addEntry(dummyMsg.getBytes());
         }
 
-        syncThread.resume();
+        syncThread.resumeSync();
 
         // trigger sync
         Thread.sleep(2 * baseConf.getFlushInterval());
 
-        syncThread.suspend();
+        syncThread.suspendSync();
 
         // Close ledger 1 which cause a readEntry(0) call
         LedgerHandle newLh1 = bkc.openLedger(lh1.getId(), digestType, "".getBytes());
@@ -142,7 +129,7 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
             lh2.addEntry(dummyMsg.getBytes());
         }
 
-        syncThread.resume();
+        syncThread.resumeSync();
 
         // wait for sync again
         Thread.sleep(2 * baseConf.getFlushInterval());

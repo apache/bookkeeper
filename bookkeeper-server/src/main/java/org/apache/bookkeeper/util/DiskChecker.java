@@ -21,6 +21,8 @@ package org.apache.bookkeeper.util;
 import java.io.File;
 import java.io.IOException;
 
+import com.google.common.annotations.VisibleForTesting;
+
 /**
  * Class that provides utility functions for checking disk problems
  */
@@ -87,7 +89,7 @@ public class DiskChecker {
      *             Throws {@link DiskOutOfSpaceException} if available space is
      *             less than threshhold.
      */
-    // VisibleForTesting
+    @VisibleForTesting
     void checkDiskFull(File dir) throws DiskOutOfSpaceException {
         if (null == dir) {
             return;
@@ -140,7 +142,7 @@ public class DiskChecker {
      * 
      * @return
      */
-    // VisibleForTesting
+    @VisibleForTesting
     float getDiskSpaceThreshold() {
         return diskUsageThreshold;
     }
@@ -150,7 +152,7 @@ public class DiskChecker {
      * 
      * @param diskSpaceThreshold
      */
-    // VisibleForTesting
+    @VisibleForTesting
     void setDiskSpaceThreshold(float diskSpaceThreshold) {
         validateThreshold(diskSpaceThreshold);
         this.diskUsageThreshold = diskSpaceThreshold;

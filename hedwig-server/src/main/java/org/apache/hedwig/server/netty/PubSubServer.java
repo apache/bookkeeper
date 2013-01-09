@@ -30,6 +30,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BKException;
@@ -454,6 +455,11 @@ public class PubSubServer {
 
     public PubSubServer(ServerConfiguration serverConfiguration) throws Exception {
         this(serverConfiguration, new org.apache.hedwig.client.conf.ClientConfiguration());
+    }
+
+    @VisibleForTesting
+    public DeliveryManager getDeliveryManager() {
+        return dm;
     }
 
     /**

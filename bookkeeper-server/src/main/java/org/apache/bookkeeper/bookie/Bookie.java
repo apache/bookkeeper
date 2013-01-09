@@ -264,6 +264,31 @@ public class Bookie extends Thread {
             flushInterval = conf.getFlushInterval();
             LOG.debug("Flush Interval : {}", flushInterval);
         }
+
+        private Object suspensionLock = new Object();
+        private boolean suspended = false;
+
+        /**
+         * Suspend sync thread. (for testing)
+         */
+        @VisibleForTesting
+        public void suspendSync() {
+            synchronized(suspensionLock) {
+                suspended = true;
+            }
+        }
+
+        /**
+         * Resume sync thread. (for testing)
+         */
+        @VisibleForTesting
+        public void resumeSync() {
+            synchronized(suspensionLock) {
+                suspended = false;
+                suspensionLock.notify();
+            }
+        }
+
         @Override
         public void run() {
             try {
@@ -279,7 +304,11 @@ public class Bookie extends Thread {
                             continue;
                         }
                     }
-
+                    synchronized (suspensionLock) {
+                        while (suspended) {
+                            suspensionLock.wait();
+                        }
+                    }
                     // try to mark flushing flag to make sure it would not be interrupted
                     // by shutdown during flushing. otherwise it will receive
                     // ClosedByInterruptException which may cause index file & entry logger

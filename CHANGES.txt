@@ -36,6 +36,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-483: precommit tests only check toplevel rat file, not the one for submodules. (ivank via fpj)
 
+      BOOKKEEPER-533: TestSubAfterCloseSub fails strangely in tests (ivank via fpj)
+
       bookkeeper-server:
 
         BOOKKEEPER-183: Provide tools to read/check data files in bookie server (sijie via ivank)

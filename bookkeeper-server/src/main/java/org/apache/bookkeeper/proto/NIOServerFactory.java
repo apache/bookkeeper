@@ -39,6 +39,8 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.annotations.VisibleForTesting;
+
 /**
  * This class handles communication with clients using NIO. There is one Cnxn
  * per client, but only one thread doing the communication.
@@ -74,6 +76,9 @@ public class NIOServerFactory extends Thread {
 
     ServerConfiguration conf;
 
+    private Object suspensionLock = new Object();
+    private boolean suspended = false;
+
     public NIOServerFactory(ServerConfiguration conf, PacketProcessor processor) throws IOException {
         super("NIOServerFactory-" + conf.getBookiePort());
         setDaemon(true);
@@ -99,11 +104,37 @@ public class NIOServerFactory extends Thread {
         return !ss.socket().isClosed();
     }
 
+    /**
+     * Stop nio server from processing requests. (for testing)
+     */
+    @VisibleForTesting
+    public void suspendProcessing() {
+        synchronized(suspensionLock) {
+            suspended = true;
+        }
+    }
+
+    /**
+     * Resume processing requests in nio server. (for testing)
+     */
+    @VisibleForTesting
+    public void resumeProcessing() {
+        synchronized(suspensionLock) {
+            suspended = false;
+            suspensionLock.notify();
+        }
+    }
+
     @Override
     public void run() {
         while (!ss.socket().isClosed()) {
             try {
                 selector.select(1000);
+                synchronized(suspensionLock) {
+                    while (suspended) {
+                        suspensionLock.wait();
+                    }
+                }
                 Set<SelectionKey> selected;
                 synchronized (this) {
                     selected = selector.selectedKeys();

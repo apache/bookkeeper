@@ -134,7 +134,7 @@ public class TestDeadlock extends HedwigHubTestBase {
                         // same ledger. since there is no permit, it blocks
                         try {
                             CountDownLatch latch = new CountDownLatch(1);
-                            sleepBookie(8, latch);
+                            sleepBookies(8, latch);
                             latch.await();
                             SynchronousQueue<Boolean> queue = new SynchronousQueue<Boolean>();
                             for (int i=0; i<3; i++) {
@@ -250,29 +250,20 @@ public class TestDeadlock extends HedwigHubTestBase {
         }
     }
 
-    protected void sleepBookie(final int seconds, final CountDownLatch l)
-    throws InterruptedException, IOException {
-        final String prefix = "Bookie-";
-        Thread[] allThreads = new Thread[Thread.activeCount()];
-        Thread.enumerate(allThreads);
-        for (final Thread t : allThreads) {
-            if (t.getName().startsWith(prefix)) {
-                Thread sleeper = new Thread() {
-                    public void run() {
-                        try {
-                            t.suspend();
-                            l.countDown();
-                            Thread.sleep(seconds * 1000);
-                            t.resume();
-                        } catch (Exception e) {
-                            logger.error("Error suspending thread", e);
-                        }
+    protected void sleepBookies(final int seconds, final CountDownLatch l)
+            throws InterruptedException, IOException {
+        Thread sleeper = new Thread() {
+                public void run() {
+                    try {
+                        bktb.suspendAllBookieServers();
+                        l.countDown();
+                        Thread.sleep(seconds * 1000);
+                        bktb.resumeAllBookieServers();
+                    } catch (Exception e) {
+                        logger.error("Error suspending thread", e);
                     }
-                };
-                sleeper.start();
-                return;
-            }
-        }
-        throw new IOException("Bookie thread not found");
+                }
+            };
+        sleeper.start();
     }
 }

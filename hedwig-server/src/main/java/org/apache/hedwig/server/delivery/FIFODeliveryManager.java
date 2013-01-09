@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ByteString;
 
 import org.apache.bookkeeper.util.MathUtils;
@@ -116,6 +117,10 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
     protected boolean keepRunning = true;
     private final Thread workerThread;
 
+    private Object suspensionLock = new Object();
+    private boolean suspended = false;
+
+
     public FIFODeliveryManager(PersistenceManager persistenceMgr, ServerConfiguration cfg) {
         this.persistenceMgr = persistenceMgr;
         perTopicDeliveryPtrs = new HashMap<ByteString, SortedMap<Long, Set<ActiveSubscriberState>>>();
@@ -126,6 +131,27 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
 
     public void start() {
         workerThread.start();
+    }
+
+    /**
+     * Stop FIFO delivery manager from processing requests. (for testing)
+     */
+    @VisibleForTesting
+    public void suspendProcessing() {
+        synchronized(suspensionLock) {
+            suspended = true;
+        }
+    }
+
+    /**
+     * Resume FIFO delivery manager. (for testing)
+     */
+    @VisibleForTesting
+    public void resumeProcessing() {
+        synchronized(suspensionLock) {
+            suspended = false;
+            suspensionLock.notify();
+        }
     }
 
     /**
@@ -278,6 +304,11 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
                 // We use a timeout of 1 second, so that we can wake up once in
                 // a while to check if there is something in the retry queue.
                 request = requestQueue.poll(1, TimeUnit.SECONDS);
+                synchronized(suspensionLock) {
+                    while (suspended) {
+                        suspensionLock.wait();
+                    }
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }

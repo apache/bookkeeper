@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.DiskChecker.DiskErrorException;
@@ -91,7 +92,7 @@ public class LedgerDirsManager {
     /**
      * Add the dir to filled dirs list
      */
-    // VisibleForTesting
+    @VisibleForTesting
     public void addToFilledDirs(File dir) {
         if (!filledDirs.contains(dir)) {
             LOG.warn(dir + " is out of space."

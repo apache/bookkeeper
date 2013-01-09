@@ -41,6 +41,8 @@ import org.apache.bookkeeper.jmx.BKMBeanRegistry;
 import org.apache.bookkeeper.proto.NIOServerFactory.Cnxn;
 import org.apache.bookkeeper.util.MathUtils;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import static org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.cli.BasicParser;
@@ -107,9 +109,25 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         }
     }
 
-    //VisibleForTesting
+    @VisibleForTesting
     public Bookie getBookie() {
         return bookie;
+    }
+
+    /**
+     * Suspend processing of requests in the bookie (for testing)
+     */
+    @VisibleForTesting
+    public void suspendProcessing() {
+        nioServerFactory.suspendProcessing();
+    }
+
+    /**
+     * Resume processing requests in the bookie (for testing)
+     */
+    @VisibleForTesting
+    public void resumeProcessing() {
+        nioServerFactory.resumeProcessing();
     }
 
     public synchronized void shutdown() {

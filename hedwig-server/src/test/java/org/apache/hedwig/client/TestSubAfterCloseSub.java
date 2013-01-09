@@ -18,51 +18,27 @@
 package org.apache.hedwig.server.integration;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.api.MessageHandler;
 import org.apache.hedwig.client.api.Subscriber;
-import org.apache.hedwig.client.conf.ClientConfiguration;
-import org.apache.hedwig.client.exceptions.InvalidSubscriberIdException;
-import org.apache.hedwig.client.exceptions.AlreadyStartDeliveryException;
 import org.apache.hedwig.client.HedwigClient;
 import org.apache.hedwig.client.api.Client;
 import org.apache.hedwig.client.api.Publisher;
 import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.exceptions.PubSubException;
-import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
-import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
-import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
-import org.apache.hedwig.protocol.PubSubProtocol.ProtocolVersion;
-import org.apache.hedwig.protocol.PubSubProtocol.PubSubRequest;
-import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
-import org.apache.hedwig.protocol.PubSubProtocol.StartDeliveryRequest;
-import org.apache.hedwig.protocol.PubSubProtocol.StopDeliveryRequest;
-import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
-import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 import org.apache.hedwig.server.HedwigHubTestBase;
-import org.apache.hedwig.server.netty.WriteRecordingChannel;
-import org.apache.hedwig.server.proxy.HedwigProxy;
-import org.apache.hedwig.server.proxy.ProxyConfiguration;
-import org.apache.hedwig.server.regions.HedwigHubClient;
+import org.apache.hedwig.server.netty.PubSubServer;
+import org.apache.hedwig.server.delivery.DeliveryManager;
+import org.apache.hedwig.server.delivery.FIFODeliveryManager;
 import org.apache.hedwig.util.Callback;
-import org.apache.hedwig.util.ConcurrencyUtils;
-import org.apache.hedwig.util.HedwigSocketAddress;
-import org.apache.bookkeeper.test.PortManager;
-import org.apache.hedwig.server.LoggingExceptionHandler;
 
 public class TestSubAfterCloseSub extends HedwigHubTestBase {
 
@@ -80,29 +56,28 @@ public class TestSubAfterCloseSub extends HedwigHubTestBase {
         }
     }
 
-    private void sleepThread(final String name, final CountDownLatch wakeupLatch)
-    throws IOException {
-        Thread[] allthreads = new Thread[Thread.activeCount()];
-        Thread.enumerate(allthreads);
-        for (final Thread t : allthreads) {
-            if (t.getName().equals(name)) {
-                Thread sleeper = new Thread() {
-                    @Override
-                    public void run() {
-                        try {
-                            t.suspend();
-                            wakeupLatch.await();
-                            t.resume();
-                        } catch (Exception e) {
-                            logger.error("Error suspending thread " + name + " : ", e);
-                        }
+    private void sleepDeliveryManager(final CountDownLatch wakeupLatch)
+            throws IOException {
+        PubSubServer server = serversList.get(0);
+        assertNotNull("There should be at least one pubsub server", server);
+        DeliveryManager dm = server.getDeliveryManager();
+        assertNotNull("Delivery manager should not be null once server has started", dm);
+        assertTrue("Delivery manager is wrong type", dm instanceof FIFODeliveryManager);
+        final FIFODeliveryManager fdm = (FIFODeliveryManager)dm;
+
+        Thread sleeper = new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        fdm.suspendProcessing();
+                        wakeupLatch.await();
+                        fdm.resumeProcessing();
+                    } catch (Exception e) {
+                        logger.error("Error suspending delivery manager", e);
                     }
-                };
-                sleeper.start();
-                return;
-            }
-        }
-        throw new IOException("Could not find thread " + name);
+                }
+            };
+        sleeper.start();
     }
 
     /**
@@ -136,7 +111,7 @@ public class TestSubAfterCloseSub extends HedwigHubTestBase {
 
         try {
             subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
-            sleepThread("DeliveryManagerThread", wakeupLatch);
+            sleepDeliveryManager(wakeupLatch);
             subscriber.asyncCloseSubscription(topic, subid, new Callback<Void>() {
                 @Override
                 public void operationFinished(Object ctx, Void resultOfOperation) {

@@ -187,7 +187,19 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
             bookiesList.add(startBookie(conf));
         }
     }
-    
+
+    public void suspendAllBookieServers() throws Exception {
+        for (BookieServer bs : bookiesList) {
+            bs.suspendProcessing();
+        }
+    }
+
+    public void resumeAllBookieServers() throws Exception {
+        for (BookieServer bs : bookiesList) {
+            bs.resumeProcessing();
+        }
+    }
+
     public void tearDownOneBookieServer() throws Exception {
         Random r = new Random();
         int bi = r.nextInt(bookiesList.size());
