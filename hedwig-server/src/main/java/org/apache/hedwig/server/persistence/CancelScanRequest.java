@@ -17,38 +17,11 @@
  */
 package org.apache.hedwig.server.persistence;
 
-public class ScanCallbackWithContext {
-    ScanCallback scanCallback;
-    Object ctx;
+public interface CancelScanRequest {
 
-    public ScanCallbackWithContext(ScanCallback callback, Object ctx) {
-        this.scanCallback = callback;
-        this.ctx = ctx;
-    }
-
-    public ScanCallback getScanCallback() {
-        return scanCallback;
-    }
-
-    public Object getCtx() {
-        return ctx;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (!(other instanceof ScanCallbackWithContext)) {
-            return false;
-        }
-        ScanCallbackWithContext otherCb =
-            (ScanCallbackWithContext) other;
-        // Ensure that it was same callback & same ctx
-        return scanCallback == otherCb.scanCallback &&
-               ctx == otherCb.ctx;
-    }
-
-    @Override
-    public int hashCode() {
-        return scanCallback.hashCode();
-    }
+    /**
+     * @return the scan request to cancel
+     */
+    public ScanRequest getScanRequest();
 
 }

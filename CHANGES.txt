@@ -224,6 +224,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-531: Cache thread should wait until old entries are collected (sijie via ivank)
 
+        BOOKKEEPER-529: stopServingSubscriber in delivery manager should remove stub callbacks in ReadAheadCache (sijie via ivank)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-467: Allocate ports for testing dynamically (ivank)

@@ -17,8 +17,8 @@
  */
 package org.apache.hedwig.server.persistence;
 
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +35,9 @@ public class CacheValue {
 
     static Logger logger = LoggerFactory.getLogger(ReadAheadCache.class);
 
-    Queue<ScanCallbackWithContext> callbacks = new LinkedList<ScanCallbackWithContext>();
+    // Actually we don't care the order of callbacks
+    // when a scan callback, it should be delivered to both callbacks
+    Set<ScanCallbackWithContext> callbacks = new HashSet<ScanCallbackWithContext>();
     Message message;
     long timeOfAddition = 0;
 
@@ -61,11 +63,17 @@ public class CacheValue {
 
         this.message = message;
         this.timeOfAddition = currTime;
-        ScanCallbackWithContext callbackWithCtx;
+
         logger.debug("Invoking {} callbacks for {} message added to cache", callbacks.size(), message);
-        while ((callbackWithCtx = callbacks.poll()) != null) {
-            callbackWithCtx.getScanCallback().messageScanned(callbackWithCtx.getCtx(), message);
+        for (ScanCallbackWithContext callbackWithCtx : callbacks) {
+            if (null != callbackWithCtx) {
+                callbackWithCtx.getScanCallback().messageScanned(callbackWithCtx.getCtx(), message);
+            }
         }
+    }
+
+    public boolean removeCallback(ScanCallback callback, Object ctx) {
+        return callbacks.remove(new ScanCallbackWithContext(callback, ctx));
     }
 
     public void addCallback(ScanCallback callback, Object ctx) {
@@ -83,9 +91,10 @@ public class CacheValue {
     }
 
     public void setErrorAndInvokeCallbacks(Exception exception) {
-        ScanCallbackWithContext callbackWithCtx;
-        while ((callbackWithCtx = callbacks.poll()) != null) {
-            callbackWithCtx.getScanCallback().scanFailed(callbackWithCtx.getCtx(), exception);
+        for (ScanCallbackWithContext callbackWithCtx : callbacks) {
+            if (null != callbackWithCtx) {
+                callbackWithCtx.getScanCallback().scanFailed(callbackWithCtx.getCtx(), exception);
+            }
         }
     }
 

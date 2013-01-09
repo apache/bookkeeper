@@ -470,6 +470,26 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
     }
 
     @Test(timeout=60000)
+    public void testSubClosesubAndPublish() throws Exception {
+        ByteString topic = ByteString.copyFromUtf8("mySubClosesubAndPublish");
+        ByteString subid = ByteString.copyFromUtf8("mysub");
+        // to populate startServing/stopServing sequeuence
+        for (int i=0; i<5; i++) {
+            subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+            subscriber.closeSubscription(topic, subid);
+        }
+        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        subscriber.startDelivery(topic, subid, new TestMessageHandler());
+        for (int i=0; i<3; i++) {
+            publisher.asyncPublish(topic,
+                Message.newBuilder().setBody(ByteString.copyFromUtf8("Message #" + i)).build(),
+                new TestCallback(), null);
+            assertTrue(queue.take());
+            assertTrue(consumeQueue.take());
+        }
+    }
+
+    @Test(timeout=60000)
     public void testSyncSubscribeWithListener() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("mySyncSubscribeWithListener");
         ByteString subscriberId = ByteString.copyFromUtf8("mysub");
