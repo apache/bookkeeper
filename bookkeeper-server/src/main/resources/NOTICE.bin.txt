@@ -1,5 +1,5 @@
 Apache BookKeeper
-Copyright 2011-2012 The Apache Software Foundation
+Copyright 2011-2013 The Apache Software Foundation
 
 Licensed under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
@@ -18,6 +18,7 @@ This project includes:
   Apache Log4j under The Apache Software License, Version 2.0
   Commons BeanUtils Core under The Apache Software License, Version 2.0
   Commons CLI under The Apache Software License, Version 2.0
+  Commons Codec under The Apache Software License, Version 2.0
   Commons Collections under The Apache Software License, Version 2.0
   Commons Configuration under The Apache Software License, Version 2.0
   Commons IO under The Apache Software License, Version 2.0
@@ -31,3 +32,4 @@ This project includes:
   The Netty Project under Apache License, Version 2.0
   ZooKeeper under Apache License, Version 2.0
   Protocol Buffer Java API under New BSD license
+  Guava under The Apache Software License, Version 2.0

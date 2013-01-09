@@ -236,6 +236,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-523: Every test should have a timeout (ivank, sijie via fpj)
 
+      BOOKKEEPER-541: Add guava to notice file (ivank via fpj)
+
       bookkeeper-server:
 
         BOOKKEEPER-328: Bookie DeathWatcher is missing thread name (Rakesh via sijie)

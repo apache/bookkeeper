@@ -29,6 +29,7 @@
   <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.libdir>${basedir}/lib</project.libdir>
   </properties>
   <dependencies>
     <dependency>
@@ -201,10 +202,23 @@
               <goal>copy-dependencies</goal>
             </goals>
             <configuration>
-              <outputDirectory>${basedir}/lib</outputDirectory>
+              <outputDirectory>${project.libdir}</outputDirectory>
+	      <includeScope>runtime</includeScope>
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>2.5</version>
+	<configuration>
+	  <filesets>
+            <fileset>
+              <directory>${project.libdir}</directory>
+              <followSymlinks>false</followSymlinks>
+            </fileset>
+	  </filesets>
+	</configuration>
       </plugin>
     </plugins>
   </build>
