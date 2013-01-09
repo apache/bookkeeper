@@ -166,6 +166,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-534: Flakeyness in AuditorBookieTest (umamahesh via ivank)
 
+        BOOKKEEPER-542: Remove trailing spaces in IndexCorruptionTest (fpj via ivank)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)

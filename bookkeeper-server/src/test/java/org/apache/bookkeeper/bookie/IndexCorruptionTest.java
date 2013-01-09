@@ -74,13 +74,13 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
 
         syncThread.resumeSync();
 
-        // trigger sync 
+        // trigger sync
         Thread.sleep(2 * baseConf.getFlushInterval());
 
         // restart bookies
         restartBookies();
 
-        Enumeration<LedgerEntry> seq = wlh.readEntries(0, numMsgs - 1); 
+        Enumeration<LedgerEntry> seq = wlh.readEntries(0, numMsgs - 1);
         assertTrue("Enumeration of ledger entries has no element", seq.hasMoreElements() == true);
         int entryId = 0;
         while (seq.hasMoreElements()) {
@@ -133,12 +133,12 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
 
         // wait for sync again
         Thread.sleep(2 * baseConf.getFlushInterval());
-    
+
         // restart bookies
         restartBookies();
 
         numMsgs += 3;
-        Enumeration<LedgerEntry> seq = lh2.readEntries(0, numMsgs - 1); 
+        Enumeration<LedgerEntry> seq = lh2.readEntries(0, numMsgs - 1);
         assertTrue("Enumeration of ledger entries has no element", seq.hasMoreElements() == true);
         int entryId = 0;
         while (seq.hasMoreElements()) {
