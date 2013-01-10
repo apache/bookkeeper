@@ -228,6 +228,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-529: stopServingSubscriber in delivery manager should remove stub callbacks in ReadAheadCache (sijie via ivank)
 
+        BOOKKEEPER-543: Read zk host list in a wrong way in hedwig server (Fangmin via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-467: Allocate ports for testing dynamically (ivank)

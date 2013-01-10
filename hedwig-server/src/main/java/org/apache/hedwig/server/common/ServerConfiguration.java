@@ -28,6 +28,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.lang.StringUtils;
 
 import com.google.protobuf.ByteString;
 import org.apache.bookkeeper.util.ReflectionUtils;
@@ -262,7 +263,11 @@ public class ServerConfiguration extends AbstractConfiguration {
      * @return String
      */
     public String getZkHost() {
-        return conf.getString(ZK_HOST, "localhost");
+        List<Object> servers = conf.getList(ZK_HOST, null);
+        if (null == servers || 0 == servers.size()) {
+            return "localhost";
+        }
+        return StringUtils.join(servers, ",");
     }
 
     /**
