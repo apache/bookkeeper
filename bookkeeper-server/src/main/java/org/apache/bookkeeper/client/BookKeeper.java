@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
@@ -560,6 +561,15 @@ public class BookKeeper {
      *
      */
     public void close() throws InterruptedException, BKException {
+        scheduler.shutdown();
+        if (!scheduler.awaitTermination(10, TimeUnit.SECONDS)) {
+            LOG.warn("The scheduler did not shutdown cleanly");
+        }
+        mainWorkerPool.shutdown();
+        if (!mainWorkerPool.awaitTermination(10, TimeUnit.SECONDS)) {
+            LOG.warn("The mainWorkerPool did not shutdown cleanly");
+        }
+
         bookieClient.close();
         try {
             ledgerManager.close();
@@ -567,14 +577,13 @@ public class BookKeeper {
         } catch (IOException ie) {
             LOG.error("Failed to close ledger manager : ", ie);
         }
-        scheduler.shutdown();
+
         if (ownChannelFactory) {
             channelFactory.releaseExternalResources();
         }
         if (ownZKHandle) {
             zk.close();
         }
-        mainWorkerPool.shutdown();
     }
 
     private static class SyncCreateCallback implements CreateCallback {

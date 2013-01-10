@@ -22,7 +22,9 @@ package org.apache.bookkeeper.client;
 */
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -177,4 +179,43 @@ public class BookKeeperTest extends BaseTestCase {
         Assert.assertTrue(result.get() != 0);
     }
 
+    /**
+     * Test that bookkeeper will close cleanly if close is issued
+     * while another operation is in progress.
+     */
+    @Test(timeout=60000)
+    public void testCloseDuringOp() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString());
+        for (int i = 0; i < 100; i++) {
+            final BookKeeper client = new BookKeeper(conf);
+            final CountDownLatch l = new CountDownLatch(1);
+            final AtomicBoolean success = new AtomicBoolean(false);
+            Thread t = new Thread() {
+                    public void run() {
+                        try {
+                            LedgerHandle lh = client.createLedger(3, 3, digestType, "testPasswd".getBytes());
+                            startNewBookie();
+                            killBookie(0);
+                            lh.asyncAddEntry("test".getBytes(), new AddCallback() {
+                                    @Override
+                                    public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+                                        // noop, we don't care if this completes
+                                    }
+                                }, null);
+                            client.close();
+                            success.set(true);
+                            l.countDown();
+                        } catch (Exception e) {
+                            LOG.error("Error running test", e);
+                            success.set(false);
+                            l.countDown();
+                        }
+                    }
+                };
+            t.start();
+            assertTrue("Close never completed", l.await(10, TimeUnit.SECONDS));
+            assertTrue("Close was not successful", success.get());
+        }
+    }
 }

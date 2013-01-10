@@ -91,7 +91,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     volatile Channel channel = null;
 
     private enum ConnectionState {
-        DISCONNECTED, CONNECTING, CONNECTED
+        DISCONNECTED, CONNECTING, CONNECTED, CLOSED
             };
 
     private volatile ConnectionState state;
@@ -138,7 +138,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                         rc = BKException.Code.OK;
                         channel = future.getChannel();
                         state = ConnectionState.CONNECTED;
-                    } else if (future.isSuccess() && state == ConnectionState.DISCONNECTED) {
+                    } else if (future.isSuccess() && (state == ConnectionState.CLOSED
+                                                      || state == ConnectionState.DISCONNECTED)) {
                         LOG.error("Closed before connection completed, clean up: " + addr);
                         future.getChannel().close();
                         rc = BKException.Code.BookieHandleNotAvailableException;
@@ -147,7 +148,9 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                         LOG.error("Could not connect to bookie: " + addr);
                         rc = BKException.Code.BookieHandleNotAvailableException;
                         channel = null;
-                        state = ConnectionState.DISCONNECTED;
+                        if (state != ConnectionState.CLOSED) {
+                            state = ConnectionState.DISCONNECTED;
+                        }
                     }
 
                     // trick to not do operations under the lock, take the list
@@ -166,17 +169,21 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     }
 
     void connectIfNeededAndDoOp(GenericCallback<Void> op) {
-        boolean doOpNow = false;
-
+        boolean completeOpNow = false;
+        int opRc = BKException.Code.OK;
         // common case without lock first
         if (channel != null && state == ConnectionState.CONNECTED) {
-            doOpNow = true;
+            completeOpNow = true;
         } else {
 
             synchronized (this) {
                 // check the channel status again under lock
                 if (channel != null && state == ConnectionState.CONNECTED) {
-                    doOpNow = true;
+                    completeOpNow = true;
+                    opRc = BKException.Code.OK;
+                } else if (state == ConnectionState.CLOSED) {
+                    completeOpNow = true;
+                    opRc = BKException.Code.BookieHandleNotAvailableException;
                 } else {
                     // channel is either null (first connection attempt), or the
                     // channel is disconnected. Connection attempt is still in
@@ -193,14 +200,14 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                     state = ConnectionState.CONNECTING;
                 }
             }
-            if (!doOpNow) {
+            if (!completeOpNow) {
                 // Start connection attempt to the input server host.
                 connect();
             }
         }
 
-        if (doOpNow) {
-            op.operationComplete(BKException.Code.OK, null);
+        if (completeOpNow) {
+            op.operationComplete(opRc, null);
         }
 
     }
@@ -337,9 +344,27 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         }
     }
 
+    /**
+     * Disconnects the bookie client. It can be reused.
+     */
+    public void disconnect() {
+        closeInternal(false);
+    }
+
+    /**
+     * Closes the bookie client permanently. It cannot be reused.
+     */
     public void close() {
+        closeInternal(true);
+    }
+
+    private void closeInternal(boolean permanent) {
         synchronized (this) {
-            state = ConnectionState.DISCONNECTED;
+            if (permanent) {
+                state = ConnectionState.CLOSED;
+            } else if (state != ConnectionState.CLOSED) {
+                state = ConnectionState.DISCONNECTED;
+            }
         }
         if (channel != null) {
             channel.close().awaitUninterruptibly();
@@ -446,9 +471,14 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         LOG.info("Disconnected from bookie: " + addr);
         errorOutOutstandingEntries();
-        channel.close();
+        Channel c = this.channel;
+        if (c != null) {
+            c.close();
+        }
         synchronized (this) {
-            state = ConnectionState.DISCONNECTED;
+            if (state != ConnectionState.CLOSED) {
+                state = ConnectionState.DISCONNECTED;
+            }
         }
 
         // we don't want to reconnect right away. If someone sends a request to

@@ -170,6 +170,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-530: data might be lost during compaction. (ivank)
 
+	BOOKKEEPER-538: Race condition in BookKeeper#close (ivank via fpj)
+
       hedwig-protocol:
 
         BOOKKEEPER-394: CompositeException message is not useful (Stu Hood via sijie)
