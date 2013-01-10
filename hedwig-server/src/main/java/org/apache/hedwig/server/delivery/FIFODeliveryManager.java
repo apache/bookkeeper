@@ -51,6 +51,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
 import org.apache.hedwig.protoextensions.PubSubResponseUtils;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.common.UnexpectedError;
+import org.apache.hedwig.server.handlers.SubscriptionChannelManager.SubChannelDisconnectedListener;
 import org.apache.hedwig.server.netty.ServerStats;
 import org.apache.hedwig.server.persistence.CancelScanRequest;
 import org.apache.hedwig.server.persistence.Factory;
@@ -62,7 +63,7 @@ import org.apache.hedwig.server.persistence.ScanRequest;
 import org.apache.hedwig.util.Callback;
 import static org.apache.hedwig.util.VarArgs.va;
 
-public class FIFODeliveryManager implements Runnable, DeliveryManager {
+public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChannelDisconnectedListener {
 
     protected static final Logger logger = LoggerFactory.getLogger(FIFODeliveryManager.class);
 
@@ -879,6 +880,12 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager {
         public Set<ActiveSubscriberState> newInstance() {
             return new HashSet<ActiveSubscriberState>();
         }
+    }
+
+    @Override
+    public void onSubChannelDisconnected(TopicSubscriber topicSubscriber) {
+        stopServingSubscriber(topicSubscriber.getTopic(), topicSubscriber.getSubscriberId(),
+                null, NOP_CALLBACK, null);
     }
 
 }

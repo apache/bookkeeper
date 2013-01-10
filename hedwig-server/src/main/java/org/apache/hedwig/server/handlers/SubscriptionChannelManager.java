@@ -17,7 +17,9 @@
  */
 package org.apache.hedwig.server.handlers;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -56,12 +58,29 @@ public class SubscriptionChannelManager implements ChannelDisconnectListener {
         }
     };
 
+    final List<SubChannelDisconnectedListener> listeners;
+
+    public interface SubChannelDisconnectedListener {
+        /**
+         * Act on a particular topicSubscriber being disconnected
+         * @param topicSubscriber
+         */
+        public void onSubChannelDisconnected(TopicSubscriber topicSubscriber);
+    }
+
     final ConcurrentHashMap<TopicSubscriber, Channel> sub2Channel;
     final ConcurrentHashMap<Channel, Set<TopicSubscriber>> channel2sub;
 
     public SubscriptionChannelManager() {
         sub2Channel = new ConcurrentHashMap<TopicSubscriber, Channel>();
         channel2sub = new ConcurrentHashMap<Channel, Set<TopicSubscriber>>();
+        listeners = new ArrayList<SubChannelDisconnectedListener>();
+    }
+
+    public void addSubChannelDisconnectedListener(SubChannelDisconnectedListener listener) {
+        if (null != listener) {
+            listeners.add(listener);
+        }
     }
 
     @Override
@@ -79,6 +98,9 @@ public class SubscriptionChannelManager implements ChannelDisconnectListener {
                             va(channel.getRemoteAddress(), topicSub));
                 // remove entry only currently mapped to given value.
                 sub2Channel.remove(topicSub, channel);
+                for (SubChannelDisconnectedListener listener : listeners) {
+                    listener.onSubChannelDisconnected(topicSub);
+                }
             }
         }
     }

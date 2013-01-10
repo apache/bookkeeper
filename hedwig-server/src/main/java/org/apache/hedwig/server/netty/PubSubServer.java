@@ -64,6 +64,7 @@ import org.apache.hedwig.server.handlers.NettyHandlerBean;
 import org.apache.hedwig.server.handlers.PublishHandler;
 import org.apache.hedwig.server.handlers.SubscribeHandler;
 import org.apache.hedwig.server.handlers.SubscriptionChannelManager;
+import org.apache.hedwig.server.handlers.SubscriptionChannelManager.SubChannelDisconnectedListener;
 import org.apache.hedwig.server.handlers.UnsubscribeHandler;
 import org.apache.hedwig.server.jmx.HedwigMBeanRegistry;
 import org.apache.hedwig.server.meta.MetadataManagerFactory;
@@ -422,6 +423,7 @@ public class PubSubServer {
                     // UmbrellaHandler) once so they can be shared by
                     // both the SSL and non-SSL channels.
                     SubscriptionChannelManager subChannelMgr = new SubscriptionChannelManager();
+                    subChannelMgr.addSubChannelDisconnectedListener((SubChannelDisconnectedListener) dm);
                     Map<OperationType, Handler> handlers =
                         initializeNettyHandlers(tm, dm, pm, sm, subChannelMgr);
                     // Initialize Netty for the regular non-SSL channels

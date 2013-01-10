@@ -230,6 +230,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-543: Read zk host list in a wrong way in hedwig server (Fangmin via sijie)
 
+        BOOKKEEPER-540: #stopServingSubscriber when channel is disconnected. (Fangmin via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-467: Allocate ports for testing dynamically (ivank)
