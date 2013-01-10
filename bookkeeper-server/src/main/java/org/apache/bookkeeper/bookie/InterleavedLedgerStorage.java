@@ -57,13 +57,14 @@ class InterleavedLedgerStorage implements LedgerStorage {
     private volatile boolean somethingWritten = false;
 
     InterleavedLedgerStorage(ServerConfiguration conf,
-            LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager)
+                             LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager,
+                             GarbageCollectorThread.SafeEntryAdder safeEntryAdder)
 			throws IOException {
         activeLedgers = new SnapshotMap<Long, Boolean>();
         entryLogger = new EntryLogger(conf, ledgerDirsManager);
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers, ledgerDirsManager);
         gcThread = new GarbageCollectorThread(conf, ledgerCache, entryLogger,
-                activeLedgers, new EntryLogCompactionScanner(), ledgerManager);
+                activeLedgers, safeEntryAdder, ledgerManager);
     }
 
     @Override
@@ -184,23 +185,4 @@ class InterleavedLedgerStorage implements LedgerStorage {
     public BKMBeanInfo getJMXBean() {
         return ledgerCache.getJMXBean();
     }
-
-    /**
-     * Scanner used to do entry log compaction
-     */
-    class EntryLogCompactionScanner implements EntryLogger.EntryLogScanner {
-        @Override
-        public boolean accept(long ledgerId) {
-            // bookie has no knowledge about which ledger is deleted
-            // so just accept all ledgers.
-            return true;
-        }
-
-        @Override
-        public void process(long ledgerId, long offset, ByteBuffer buffer)
-            throws IOException {
-            addEntry(buffer);
-        }
-    }
-
 }

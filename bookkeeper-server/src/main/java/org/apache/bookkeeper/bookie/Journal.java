@@ -503,7 +503,8 @@ class Journal extends Thread {
                             lastFlushPosition = bc.position();
                             lastLogMark.setLastLogMark(logId, lastFlushPosition);
                             for (QueueEntry e : toFlush) {
-                                e.cb.writeComplete(0, e.ledgerId, e.entryId, null, e.ctx);
+                                e.cb.writeComplete(BookieException.Code.OK,
+                                                   e.ledgerId, e.entryId, null, e.ctx);
                             }
                             toFlush.clear();
 

@@ -30,7 +30,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -46,7 +48,7 @@ import org.slf4j.LoggerFactory;
  */
 public class GarbageCollectorThread extends Thread {
     private static final Logger LOG = LoggerFactory.getLogger(GarbageCollectorThread.class);
-
+    private static final int COMPACTION_MAX_OUTSTANDING_REQUESTS = 1000;
     private static final int SECOND = 1000;
 
     // Maps entry log files to the set of ledgers that comprise the file and the size usage per ledger
@@ -69,7 +71,7 @@ public class GarbageCollectorThread extends Thread {
 
     // Entry Logger Handle
     final EntryLogger entryLogger;
-    final EntryLogScanner scanner;
+    final SafeEntryAdder safeEntryAdder;
 
     // Ledger Cache Handle
     final LedgerCache ledgerCache;
@@ -87,11 +89,23 @@ public class GarbageCollectorThread extends Thread {
     final GarbageCollector garbageCollector;
     final GarbageCleaner garbageCleaner;
 
+
+    /**
+     * Interface for adding entries. When the write callback is triggered, the
+     * entry must be guaranteed to be presisted.
+     */
+    interface SafeEntryAdder {
+        public void safeAddEntry(long ledgerId, ByteBuffer buffer, GenericCallback<Void> cb);
+    }
+
     /**
      * A scanner wrapper to check whether a ledger is alive in an entry log file
      */
     class CompactionScanner implements EntryLogScanner {
         EntryLogMetadata meta;
+        Object completionLock = new Object();
+        AtomicInteger outstandingRequests = new AtomicInteger(0);
+        AtomicBoolean allSuccessful = new AtomicBoolean(true);
 
         public CompactionScanner(EntryLogMetadata meta) {
             this.meta = meta;
@@ -99,13 +113,53 @@ public class GarbageCollectorThread extends Thread {
 
         @Override
         public boolean accept(long ledgerId) {
-            return meta.containsLedger(ledgerId) && scanner.accept(ledgerId);
+            return meta.containsLedger(ledgerId);
         }
 
         @Override
-        public void process(long ledgerId, long offset, ByteBuffer entry)
+        public void process(final long ledgerId, long offset, ByteBuffer entry)
             throws IOException {
-            scanner.process(ledgerId, offset, entry);
+            if (!allSuccessful.get()) {
+                return;
+            }
+
+            outstandingRequests.incrementAndGet();
+            synchronized (completionLock) {
+                while (outstandingRequests.get() >= COMPACTION_MAX_OUTSTANDING_REQUESTS) {
+                    try {
+                        completionLock.wait();
+                    } catch (InterruptedException ie) {
+                        LOG.error("Interrupted while waiting to re-add entry", ie);
+                        Thread.currentThread().interrupt();
+                        throw new IOException("Interrupted while waiting to re-add entry", ie);
+                    }
+                }
+            }
+            safeEntryAdder.safeAddEntry(ledgerId, entry, new GenericCallback<Void>() {
+                    @Override
+                    public void operationComplete(int rc, Void result) {
+                        if (rc != BookieException.Code.OK) {
+                            LOG.error("Error {} re-adding entry for ledger {})",
+                                      rc, ledgerId);
+                            allSuccessful.set(false);
+                        }
+                        synchronized(completionLock) {
+                            outstandingRequests.decrementAndGet();
+                            completionLock.notifyAll();
+                        }
+                    }
+                });
+        }
+
+        void awaitComplete() throws InterruptedException, IOException {
+            synchronized(completionLock) {
+                while (outstandingRequests.get() > 0) {
+                    completionLock.wait();
+                }
+                if (allSuccessful.get() == false) {
+                    throw new IOException("Couldn't re-add all entries");
+                }
+            }
         }
     }
 
@@ -121,7 +175,7 @@ public class GarbageCollectorThread extends Thread {
                                   final LedgerCache ledgerCache,
                                   EntryLogger entryLogger,
                                   SnapshotMap<Long, Boolean> activeLedgers,
-                                  EntryLogScanner scanner,
+                                  SafeEntryAdder safeEntryAdder,
                                   LedgerManager ledgerManager)
         throws IOException {
         super("GarbageCollectorThread");
@@ -129,7 +183,7 @@ public class GarbageCollectorThread extends Thread {
         this.ledgerCache = ledgerCache;
         this.entryLogger = entryLogger;
         this.activeLedgers = activeLedgers;
-        this.scanner = scanner;
+        this.safeEntryAdder = safeEntryAdder;
 
         this.gcWaitTime = conf.getGcWaitTime();
 
@@ -366,11 +420,16 @@ public class GarbageCollectorThread extends Thread {
         LOG.info("Compacting entry log : " + entryLogId);
 
         try {
-            entryLogger.scanEntryLog(entryLogId, new CompactionScanner(entryLogMeta));
+            CompactionScanner scanner = new CompactionScanner(entryLogMeta);
+            entryLogger.scanEntryLog(entryLogId, scanner);
+            scanner.awaitComplete();
             // after moving entries to new entry log, remove this old one
             removeEntryLog(entryLogId);
         } catch (IOException e) {
             LOG.info("Premature exception when compacting " + entryLogId, e);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            LOG.warn("Interrupted while compacting", ie);
         } finally {
             // clear compacting flag
             compacting.set(false);
