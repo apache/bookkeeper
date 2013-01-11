@@ -217,33 +217,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
     public void stopServingSubscriber(ByteString topic, ByteString subscriberId,
                                       SubscriptionEvent event,
                                       Callback<Void> cb, Object ctx) {
-        ActiveSubscriberState subState =
-            subscriberStates.remove(new TopicSubscriber(topic, subscriberId));
-
-        if (subState != null) {
-            stopServingSubscriber(subState, event, cb, ctx);
-        } else {
-            cb.operationFinished(ctx, null);
-        }
-    }
-
-    /**
-     * Due to some error or disconnection or unsusbcribe, someone asks us to
-     * stop serving a particular endpoint
-     *
-     * @param subscriber
-     *          Subscriber instance
-     * @param event
-     *          Subscription event indicates why to stop subscriber.
-     * @param cb
-     *          Callback after the subscriber is stopped.
-     * @param ctx
-     *          Callback context
-     */
-    protected void stopServingSubscriber(ActiveSubscriberState subscriber,
-                                         SubscriptionEvent event,
-                                         Callback<Void> cb, Object ctx) {
-        enqueueWithoutFailure(new StopServingSubscriber(subscriber, event, cb, ctx));
+        enqueueWithoutFailure(new StopServingSubscriber(topic, subscriberId, event, cb, ctx));
     }
 
     /**
@@ -252,7 +226,6 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
      *
      * @param subscriber
      */
-
     public void retryErroredSubscriberAfterDelay(ActiveSubscriberState subscriber) {
 
         subscriber.setLastScanErrorTime(MathUtils.now());
@@ -279,6 +252,8 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
         }
     }
 
+    // TODO: for now, I don't move messageConsumed request to delivery manager thread,
+    //       which is supposed to be fixed in {@link https://issues.apache.org/jira/browse/BOOKKEEPER-503}
     @Override
     public void messageConsumed(ByteString topic, ByteString subscriberId,
                                 MessageSeqId consumedSeqId) {
@@ -716,7 +691,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
             // the underlying channel is broken, the channel will
             // be closed in UmbrellaHandler when exception happened.
             // so we don't need to close the channel again
-            stopServingSubscriber(this, null,
+            stopServingSubscriber(topic, subscriberId, null,
                                   NOP_CALLBACK, null);
         }
 
@@ -729,18 +704,30 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
          * {@link DeliveryManagerRequest} methods
          */
         public void performRequest() {
-            // try the callback to tell it started to deliver the message
-            cb.operationFinished(ctx, (Void)null);
-
             // Put this subscriber in the channel to subscriber mapping
             ActiveSubscriberState prevSubscriber =
                 subscriberStates.put(new TopicSubscriber(topic, subscriberId), this);
+
+            // after put the active subscriber in subscriber states mapping
+            // trigger the callback to tell it started to deliver the message
+            // should let subscriber response go first before first delivered message.
+            cb.operationFinished(ctx, (Void)null);
 
             if (prevSubscriber != null) {
                 // we already in the delivery thread, we don't need to equeue a stop request
                 // just stop it now, since stop is not blocking operation.
                 // and also it cleans the old state of the active subscriber immediately.
-                doStopServingSubscriber(prevSubscriber, SubscriptionEvent.SUBSCRIPTION_FORCED_CLOSED);
+                SubscriptionEvent se;
+                if (deliveryEndPoint.equals(prevSubscriber.deliveryEndPoint)) {
+                    logger.debug("Subscriber {} replaced a duplicated subscriber {} at same delivery point {}.",
+                                 va(this, prevSubscriber, deliveryEndPoint));
+                    se = null;
+                } else {
+                    logger.debug("Subscriber {} from delivery point {} forcelly closed delivery point {}.",
+                                 va(this, deliveryEndPoint, prevSubscriber.deliveryEndPoint));
+                    se = SubscriptionEvent.SUBSCRIPTION_FORCED_CLOSED;
+                }
+                doStopServingSubscriber(prevSubscriber, se);
             }
 
             lastSeqIdCommunicatedExternally = lastLocalSeqIdDelivered;
@@ -762,15 +749,15 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
     }
 
     protected class StopServingSubscriber implements DeliveryManagerRequest {
-        ActiveSubscriberState subscriber;
+        TopicSubscriber ts;
         SubscriptionEvent event;
         final Callback<Void> cb;
         final Object ctx;
 
-        public StopServingSubscriber(ActiveSubscriberState subscriber,
+        public StopServingSubscriber(ByteString topic, ByteString subscriberId,
                                      SubscriptionEvent event,
                                      Callback<Void> callback, Object ctx) {
-            this.subscriber = subscriber;
+            this.ts = new TopicSubscriber(topic, subscriberId);
             this.event = event;
             this.cb = callback;
             this.ctx = ctx;
@@ -778,7 +765,10 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
 
         @Override
         public void performRequest() {
-            doStopServingSubscriber(subscriber, event);
+            ActiveSubscriberState subscriber = subscriberStates.remove(ts);
+            if (null != subscriber) {
+                doStopServingSubscriber(subscriber, event);
+            }
             cb.operationFinished(ctx, null);
         }
 

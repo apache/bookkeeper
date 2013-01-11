@@ -236,6 +236,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-540: #stopServingSubscriber when channel is disconnected. (Fangmin via sijie)
 
+        BOOKKEEPER-539: ClientNotSubscribedException & doesn't receive enough messages in TestThrottlingDelivery#testServerSideThrottle (sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-467: Allocate ports for testing dynamically (ivank)
