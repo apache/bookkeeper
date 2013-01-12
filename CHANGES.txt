@@ -238,6 +238,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-539: ClientNotSubscribedException & doesn't receive enough messages in TestThrottlingDelivery#testServerSideThrottle (sijie)
 
+        BOOKKEEPER-503: The test case of TestThrottlingDelivery#testServerSideThrottle failed sometimes (jiannan & sijie via ivank)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-467: Allocate ports for testing dynamically (ivank)

@@ -483,22 +483,18 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
             return topic;
         }
 
-        public long getLastLocalSeqIdDelivered() {
-            return lastLocalSeqIdDelivered;
-        }
-
-        public long getLastScanErrorTime() {
+        public synchronized long getLastScanErrorTime() {
             return lastScanErrorTime;
         }
 
-        public void setLastScanErrorTime(long lastScanErrorTime) {
+        public synchronized void setLastScanErrorTime(long lastScanErrorTime) {
             this.lastScanErrorTime = lastScanErrorTime;
         }
 
         /**
          * Clear the last scan error time so it could be retry immediately.
          */
-        protected void clearLastScanErrorTime() {
+        protected synchronized void clearLastScanErrorTime() {
             this.lastScanErrorTime = -1;
         }
 
@@ -511,7 +507,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
             }
         }
 
-        protected void messageConsumed(long newSeqIdConsumed) {
+        protected synchronized void messageConsumed(long newSeqIdConsumed) {
             if (newSeqIdConsumed <= lastSeqIdConsumedUtil) {
                 return;
             }
@@ -563,20 +559,22 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
                 return;
             }
 
-            // check whether we have delivered enough messages without receiving their consumes
-            if (msgLimitExceeded()) {
-                logger.info("Subscriber ({}) is throttled : last delivered {}, last consumed {}.",
-                            va(this, lastLocalSeqIdDelivered, lastSeqIdConsumedUtil));
-                isThrottled = true;
-                // do nothing, since the delivery process would be throttled.
-                // After message consumed, it would be added back to retry queue.
-                return;
+            synchronized (this) {
+                // check whether we have delivered enough messages without receiving their consumes
+                if (msgLimitExceeded()) {
+                    logger.info("Subscriber ({}) is throttled : last delivered {}, last consumed {}.",
+                                va(this, lastLocalSeqIdDelivered, lastSeqIdConsumedUtil));
+                    isThrottled = true;
+                    // do nothing, since the delivery process would be throttled.
+                    // After message consumed, it would be added back to retry queue.
+                    return;
+                }
+
+                localSeqIdDeliveringNow = persistenceMgr.getSeqIdAfterSkipping(topic, lastLocalSeqIdDelivered, 1);
+
+                outstandingScanRequest = new ScanRequest(topic, localSeqIdDeliveringNow,
+                        /* callback= */this, /* ctx= */null);
             }
-
-            localSeqIdDeliveringNow = persistenceMgr.getSeqIdAfterSkipping(topic, lastLocalSeqIdDelivered, 1);
-
-            outstandingScanRequest = new ScanRequest(topic, localSeqIdDeliveringNow,
-                    /* callback= */this, /* ctx= */null);
 
             persistenceMgr.scanSingleMessage(outstandingScanRequest);
         }
@@ -665,24 +663,26 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
                 return;
             }
 
-            lastLocalSeqIdDelivered = localSeqIdDeliveringNow;
+            synchronized (this) {
+                lastLocalSeqIdDelivered = localSeqIdDeliveringNow;
 
-            if (lastLocalSeqIdDelivered > lastSeqIdCommunicatedExternally + SEQ_ID_SLACK) {
-                // Note: The order of the next 2 statements is important. We should
-                // submit a request to change our delivery pointer only *after* we
-                // have actually changed it. Otherwise, there is a race condition
-                // with removal of this channel, w.r.t, maintaining the deliveryPtrs
-                // tree map.
-                long prevId = lastSeqIdCommunicatedExternally;
-                lastSeqIdCommunicatedExternally = lastLocalSeqIdDelivered;
-                moveDeliveryPtrForward(this, prevId, lastLocalSeqIdDelivered);
+                if (lastLocalSeqIdDelivered > lastSeqIdCommunicatedExternally + SEQ_ID_SLACK) {
+                    // Note: The order of the next 2 statements is important. We should
+                    // submit a request to change our delivery pointer only *after* we
+                    // have actually changed it. Otherwise, there is a race condition
+                    // with removal of this channel, w.r.t, maintaining the deliveryPtrs
+                    // tree map.
+                    long prevId = lastSeqIdCommunicatedExternally;
+                    lastSeqIdCommunicatedExternally = lastLocalSeqIdDelivered;
+                    moveDeliveryPtrForward(this, prevId, lastLocalSeqIdDelivered);
+                }
             }
             // increment deliveried message
             ServerStats.getInstance().incrementMessagesDelivered();
             deliverNextMessage();
         }
 
-        public long getLastSeqIdCommunicatedExternally() {
+        public synchronized long getLastSeqIdCommunicatedExternally() {
             return lastSeqIdCommunicatedExternally;
         }
 
@@ -730,8 +730,10 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
                 doStopServingSubscriber(prevSubscriber, se);
             }
 
-            lastSeqIdCommunicatedExternally = lastLocalSeqIdDelivered;
-            addDeliveryPtr(this, lastLocalSeqIdDelivered);
+            synchronized (this) {
+                lastSeqIdCommunicatedExternally = lastLocalSeqIdDelivered;
+                addDeliveryPtr(this, lastLocalSeqIdDelivered);
+            }
 
             deliverNextMessage();
         };
@@ -741,7 +743,9 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
             StringBuilder sb = new StringBuilder();
             sb.append("Topic: ");
             sb.append(topic.toStringUtf8());
-            sb.append("DeliveryPtr: ");
+            sb.append("Subscriber: ");
+            sb.append(subscriberId.toStringUtf8());
+            sb.append(", DeliveryPtr: ");
             sb.append(lastLocalSeqIdDelivered);
             return sb.toString();
 

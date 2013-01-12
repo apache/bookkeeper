@@ -88,9 +88,16 @@ public class StubPersistenceManager implements PersistenceManagerWithRangeScan {
             return;
         }
 
-        request.getCallback().messageScanned(request.getCtx(),
-                                             messages.get(request.getTopic()).get((int) request.getStartSeqId()));
+        long index = request.getStartSeqId() - 1;
+        List<Message> messageList = messages.get(request.getTopic());
+        if (index >= messageList.size()) {
+            request.getCallback().scanFinished(request.getCtx(), ReasonForFinish.NO_MORE_MESSAGES);
+            return;
+        }
 
+        Message msg = messageList.get((int) index);
+        Message toDeliver = MessageIdUtils.mergeLocalSeqId(msg, request.getStartSeqId());
+        request.getCallback().messageScanned(request.getCtx(), toDeliver);
     }
 
     public void scanMessages(RangeScanRequest request) {
