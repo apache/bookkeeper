@@ -59,6 +59,7 @@ public class AutoRecoveryMain {
     private AutoRecoveryDeathWatcher deathWatcher;
     private int exitCode;
     private volatile boolean shuttingDown = false;
+    private volatile boolean running = false;
 
     public AutoRecoveryMain(ServerConfiguration conf) throws IOException,
             InterruptedException, KeeperException, UnavailableException,
@@ -92,6 +93,7 @@ public class AutoRecoveryMain {
         auditorElector.start();
         replicationWorker.start();
         deathWatcher.start();
+        running = true;
     }
 
     /*
@@ -113,6 +115,7 @@ public class AutoRecoveryMain {
             return;
         }
         shuttingDown = true;
+        running = false;
         this.exitCode = exitCode;
         try {
             deathWatcher.interrupt();
@@ -135,6 +138,11 @@ public class AutoRecoveryMain {
 
     private int getExitCode() {
         return exitCode;
+    }
+
+    /** Is auto-recovery service running? */
+    public boolean isAutoRecoveryRunning() {
+        return running;
     }
 
     /*

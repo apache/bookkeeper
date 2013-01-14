@@ -334,6 +334,8 @@ Release 4.2.0 - 2013-01-14
 
         BOOKKEEPER-293: Periodic checking of ledger replication status (ivank)
 
+        BOOKKEEPER-472: Provide an option to start Autorecovery along with Bookie Servers (umamahesh via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-250: Need a ledger manager like interface to manage metadata operations in Hedwig (sijie via ivank)

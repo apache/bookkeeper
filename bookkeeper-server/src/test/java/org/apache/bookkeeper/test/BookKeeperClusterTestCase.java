@@ -337,7 +337,8 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      * @throws BookieException
      */
     public void restartBookies()
-            throws InterruptedException, IOException, KeeperException, BookieException {
+            throws InterruptedException, IOException, KeeperException,
+            BookieException, UnavailableException, CompatibilityException {
         restartBookies(null);
     }
 
@@ -353,7 +354,8 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      * @throws BookieException
      */
     public void restartBookies(ServerConfiguration newConf)
-        throws InterruptedException, IOException, KeeperException, BookieException {
+            throws InterruptedException, IOException, KeeperException,
+            BookieException, UnavailableException, CompatibilityException {
         // shut down bookie server
         for (BookieServer server : bs) {
             server.shutdown();
@@ -382,7 +384,8 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      * @throws IOException
      */
     public int startNewBookie()
-            throws IOException, InterruptedException, KeeperException, BookieException {
+            throws IOException, InterruptedException, KeeperException,
+            BookieException, UnavailableException, CompatibilityException {
         ServerConfiguration conf = newServerConfiguration();
         bsConfs.add(conf);
         bs.add(startBookie(conf));
@@ -400,7 +403,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      */
     protected BookieServer startBookie(ServerConfiguration conf)
             throws IOException, InterruptedException, KeeperException,
-            BookieException {
+            BookieException, UnavailableException, CompatibilityException {
         BookieServer server = new BookieServer(conf);
         server.start();
 
@@ -427,7 +430,8 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      * recovery for this bookie, if isAutoRecoveryEnabled is true.
      */
     protected BookieServer startBookie(ServerConfiguration conf, final Bookie b)
-            throws IOException, InterruptedException, KeeperException, BookieException {
+            throws IOException, InterruptedException, KeeperException,
+            BookieException, UnavailableException, CompatibilityException {
         BookieServer server = new BookieServer(conf) {
             @Override
             protected Bookie newBookie(ServerConfiguration conf) {

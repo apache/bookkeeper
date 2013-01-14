@@ -64,6 +64,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String DISK_USAGE_THRESHOLD = "diskUsageThreshold";
     protected final static String DISK_CHECK_INTERVAL = "diskCheckInterval";
     protected final static String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
+    protected final static String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
 
     /**
      * Construct a default configuration object
@@ -665,5 +666,29 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public long getAuditorPeriodicCheckInterval() {
         return getLong(AUDITOR_PERIODIC_CHECK_INTERVAL, 86400);
+    }
+
+    /**
+     * Sets that whether the auto-recovery service can start along with Bookie
+     * server itself or not
+     *
+     * @param enabled
+     *            - true if need to start auto-recovery service. Otherwise
+     *            false.
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setAutoRecoveryDaemonEnabled(boolean enabled) {
+        setProperty(AUTO_RECOVERY_DAEMON_ENABLED, enabled);
+        return this;
+    }
+
+    /**
+     * Get whether the Bookie itself can start auto-recovery service also or not
+     *
+     * @return true - if Bookie should start auto-recovery service along with
+     *         it. false otherwise.
+     */
+    public boolean isAutoRecoveryDaemonEnabled() {
+        return getBoolean(AUTO_RECOVERY_DAEMON_ENABLED, false);
     }
 }
