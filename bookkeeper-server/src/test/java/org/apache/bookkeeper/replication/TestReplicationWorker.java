@@ -23,7 +23,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.Set;
 import java.util.Map.Entry;
 
@@ -40,7 +39,6 @@ import org.apache.bookkeeper.test.MultiLedgerManagerTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -130,7 +128,8 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
             underReplicationManager.markLedgerUnderreplicated(lh.getId(),
                     replicaToKill.toString());
 
-            while (isLedgerInUnderReplication(lh.getId(), basePath)) {
+            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh
+                    .getId(), basePath)) {
                 Thread.sleep(100);
             }
 
@@ -177,13 +176,15 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
             int counter = 100;
             while (counter-- > 0) {
                 assertTrue("Expecting that replication should not complete",
-                        isLedgerInUnderReplication(lh.getId(), basePath));
+                        ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh
+                                .getId(), basePath));
                 Thread.sleep(100);
             }
             // restart killed bookie
             bs.add(startBookie(killedBookieConfig));
             bsConfs.add(killedBookieConfig);
-            while (isLedgerInUnderReplication(lh.getId(), basePath)) {
+            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh
+                    .getId(), basePath)) {
                 Thread.sleep(100);
             }
             // Should be able to read the entries from 0-9
@@ -239,13 +240,15 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
             int counter = 10;
             while (counter-- > 0) {
                 assertTrue("Expecting that replication should not complete",
-                        isLedgerInUnderReplication(lh.getId(), basePath));
+                        ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh
+                                .getId(), basePath));
                 Thread.sleep(100);
             }
             // restart killed bookie
             bs.add(startBookie(killedBookieConfig));
             bsConfs.add(killedBookieConfig);
-            while (isLedgerInUnderReplication(lh.getId(), basePath)) {
+            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh
+                    .getId(), basePath)) {
                 Thread.sleep(100);
             }
             // Should be able to read the entries from 0-9
@@ -288,7 +291,8 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
             // Also mark ledger as in UnderReplication
             underReplicationManager.markLedgerUnderreplicated(lh.getId(),
                     replicaToKill.toString());
-            while (isLedgerInUnderReplication(lh.getId(), basePath)) {
+            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh
+                    .getId(), basePath)) {
                 Thread.sleep(100);
             }
         } finally {
@@ -348,11 +352,13 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
             underReplicationManager.markLedgerUnderreplicated(lh2.getId(),
                     replicaToKillFromSecondLedger.toString());
 
-            while (isLedgerInUnderReplication(lh1.getId(), basePath)) {
+            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh1
+                    .getId(), basePath)) {
                 Thread.sleep(100);
             }
 
-            while (isLedgerInUnderReplication(lh2.getId(), basePath)) {
+            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh2
+                    .getId(), basePath)) {
                 Thread.sleep(100);
             }
 
@@ -403,8 +409,8 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
 
             underReplicationManager.markLedgerUnderreplicated(lh.getId(),
                     replicaToKill.toString());
-            while (isLedgerInUnderReplication(lh.getId(),
-                    basePath)) {
+            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh
+                    .getId(), basePath)) {
                 Thread.sleep(100);
             }
             killAllBookies(lh, newBkAddr);
@@ -465,7 +471,8 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
 
             underReplicationManager.markLedgerUnderreplicated(lh.getId(),
                     replicaToKill.toString());
-            while (isLedgerInUnderReplication(lh.getId(), basePath)) {
+            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh
+                    .getId(), basePath)) {
                 Thread.sleep(100);
             }
 
@@ -533,35 +540,6 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
                 killBookie(bookie);
             }
         }
-    }
-
-    private boolean isLedgerInUnderReplication(long id, String basePath)
-            throws KeeperException, InterruptedException {
-        List<String> children;
-        try {
-            children = zkc.getChildren(basePath, true);
-        } catch (KeeperException.NoNodeException nne) {
-            return false;
-        }
-
-        boolean isMatched = false;
-        for (String child : children) {
-            if (child.startsWith("urL") && child.contains(String.valueOf(id))) {
-                isMatched = true;
-                break;
-            } else {
-                String path = basePath + '/' + child;
-                try {
-                    if (zkc.getChildren(path, false).size() > 0) {
-                        isMatched = isLedgerInUnderReplication(id, path);
-                    }
-                } catch (KeeperException.NoNodeException nne) {
-                    return false;
-                }
-            }
-
-        }
-        return isMatched;
     }
 
     private void verifyRecoveredLedgers(LedgerHandle lh, long startEntryId,

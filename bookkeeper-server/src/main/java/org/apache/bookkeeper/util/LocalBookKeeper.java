@@ -31,6 +31,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
+import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
@@ -121,8 +123,10 @@ public class LocalBookKeeper {
             LOG.error("Interrupted while creating znodes", e);
         }
     }
-    private void runBookies(ServerConfiguration baseConf) 
-            throws IOException, KeeperException, InterruptedException, BookieException {
+
+    private void runBookies(ServerConfiguration baseConf) throws IOException,
+            KeeperException, InterruptedException, BookieException,
+            UnavailableException, CompatibilityException {
         LOG.info("Starting Bookie(s)");
         // Create Bookie Servers (B1, B2, B3)
 
@@ -149,8 +153,9 @@ public class LocalBookKeeper {
         }
     }
 
-    public static void main(String[] args)
-            throws IOException, KeeperException, InterruptedException, BookieException {
+    public static void main(String[] args) throws IOException, KeeperException,
+            InterruptedException, BookieException, UnavailableException,
+            CompatibilityException {
         if(args.length < 1) {
             usage();
             System.exit(-1);

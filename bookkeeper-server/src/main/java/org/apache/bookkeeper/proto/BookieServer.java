@@ -39,6 +39,9 @@ import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.jmx.BKMBeanRegistry;
 import org.apache.bookkeeper.proto.NIOServerFactory.Cnxn;
+import org.apache.bookkeeper.replication.AutoRecoveryMain;
+import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
+import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.util.MathUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -73,12 +76,18 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     final BKStats bkStats = BKStats.getInstance();
     final boolean isStatsEnabled;
     protected BookieServerBean jmxBkServerBean;
+    private AutoRecoveryMain autoRecoveryMain = null;
+    private boolean isAutoRecoveryDaemonEnabled;
 
-    public BookieServer(ServerConfiguration conf) 
-            throws IOException, KeeperException, InterruptedException, BookieException {
+    public BookieServer(ServerConfiguration conf) throws IOException,
+            KeeperException, InterruptedException, BookieException,
+            UnavailableException, CompatibilityException {
         this.conf = conf;
         this.bookie = newBookie(conf);
-
+        isAutoRecoveryDaemonEnabled = conf.isAutoRecoveryDaemonEnabled();
+        if (isAutoRecoveryDaemonEnabled) {
+            this.autoRecoveryMain = new AutoRecoveryMain(conf);
+        }
         isStatsEnabled = conf.isStatisticsEnabled();
     }
 
@@ -87,10 +96,13 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         return new Bookie(conf);
     }
 
-    public void start() throws IOException {
+    public void start() throws IOException, UnavailableException {
         nioServerFactory = new NIOServerFactory(conf, this);
 
         this.bookie.start();
+        if (isAutoRecoveryDaemonEnabled && this.autoRecoveryMain != null) {
+            this.autoRecoveryMain.start();
+        }
 
         nioServerFactory.start();
         running = true;
@@ -136,6 +148,9 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         }
         nioServerFactory.shutdown();
         exitCode = bookie.shutdown();
+        if (isAutoRecoveryDaemonEnabled && this.autoRecoveryMain != null) {
+            this.autoRecoveryMain.shutdown();
+        }
         running = false;
 
         // unregister JMX
@@ -180,6 +195,16 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     }
 
     /**
+     * Whether auto-recovery service running with Bookie?
+     *
+     * @return true if auto-recovery service is running, otherwise return false
+     */
+    public boolean isAutoRecoveryRunning() {
+        return this.autoRecoveryMain != null
+                && this.autoRecoveryMain.isAutoRecoveryRunning();
+    }
+
+    /**
      * Whether nio server is running?
      *
      * @return true if nio server is running, otherwise return false
@@ -216,7 +241,9 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
                 } catch (InterruptedException ie) {
                     // do nothing
                 }
-                if (!isBookieRunning() || !isNioServerRunning()) {
+                if (!isBookieRunning()
+                        || !isNioServerRunning()
+                        || (isAutoRecoveryDaemonEnabled && !isAutoRecoveryRunning())) {
                     shutdown();
                     break;
                 }
@@ -227,6 +254,8 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     static final Options bkOpts = new Options();
     static {
         bkOpts.addOption("c", "conf", true, "Configuration for Bookie Server");
+        bkOpts.addOption("withAutoRecovery", false,
+                "Start Autorecovery service Bookie server");
         bkOpts.addOption("h", "help", false, "Print help message");
     }
 
@@ -273,6 +302,10 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
                 String confFile = cmdLine.getOptionValue("c");
                 loadConfFile(conf, confFile);
                 return conf;
+            }
+
+            if (cmdLine.hasOption("withAutoRecovery")) {
+                conf.setAutoRecoveryDaemonEnabled(true);
             }
 
             if (leftArgs.length < 4) {
