@@ -144,6 +144,10 @@ public abstract class PubSubException extends Exception {
         public ServiceDownException(Exception e) {
             super(StatusCode.SERVICE_DOWN, e);
         }
+
+        public ServiceDownException(String msg, Throwable t) {
+            super(StatusCode.SERVICE_DOWN, msg, t);
+        }
     }
 
     public static class CouldNotConnectException extends PubSubException {

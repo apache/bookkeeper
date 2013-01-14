@@ -104,7 +104,7 @@ public class PubSubData {
         this.callback = callback;
     }
 
-    public Callback<?> getCallback() {
+    public Callback<PubSubProtocol.ResponseBody> getCallback() {
         return callback;
     }
 

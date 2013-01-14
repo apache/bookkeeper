@@ -180,9 +180,11 @@ public abstract class AbstractSubscribeResponseHandler extends SubscribeResponse
             // Consider all other status codes as errors, operation failed
             // cases.
             logger.error("Unexpected error response from server for PubSubResponse: " + response);
-            pubSubData.getCallback().operationFailed(pubSubData.context, new ServiceDownException(
-                                                     "Server responded with a status code of: "
-                                                     + response.getStatusCode()));
+            pubSubData.getCallback().operationFailed(pubSubData.context,
+                    new ServiceDownException("Server responded with a status code of: "
+                            + response.getStatusCode(),
+                            PubSubException.create(response.getStatusCode(),
+                                                   "Original Exception")));
             break;
         }
     }

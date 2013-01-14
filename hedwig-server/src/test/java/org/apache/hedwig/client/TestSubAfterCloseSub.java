@@ -165,5 +165,34 @@ public class TestSubAfterCloseSub extends HedwigHubTestBase {
         }
     }
 
+    /**
+     * Test that if we close a subscription and open again immediately, we don't
+     * get a TOPIC_BUSY. This race existed because the simple client simply closed
+     * the connection when closing a subscription, and another client could try to
+     * attach to the subscription before the channel disconnected event occurs.
+     *
+     * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-513}
+     */
+    @Test(timeout=15000)
+    public void testSimpleClientDoesntGetTopicBusy() throws Exception {
+        // run ten times to increase chance of hitting race
+        for (int i = 0; i < 10; i++) {
+            HedwigClient client1 = new HedwigClient(new TestClientConfiguration(false));
+            Subscriber subscriber1 = client1.getSubscriber();
+            HedwigClient client2 = new HedwigClient(new TestClientConfiguration(false));
+            Subscriber subscriber2 = client2.getSubscriber();
+
+            final ByteString topic = ByteString.copyFromUtf8("TestSimpleClientTopicBusy");
+            final ByteString subid = ByteString.copyFromUtf8("mysub");
+
+            subscriber1.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+            subscriber1.closeSubscription(topic, subid);
+            subscriber2.subscribe(topic, subid, CreateOrAttach.ATTACH);
+            subscriber2.closeSubscription(topic, subid);
+
+            client1.close();
+            client2.close();
+        }
+    }
 }
 

@@ -434,6 +434,7 @@ public class TestBackwardCompat extends TestCase {
             assertEquals("Should be expected message with " + x, x, expected.get());
             subscriber.stopDelivery(topic, subid);
             subscriber.closeSubscription(topic, subid);
+            Thread.sleep(1000); // give server time to run disconnect logic (BOOKKEEPER-513)
         }
 
         void subscribe(ByteString topic, ByteString subscriberId) throws Exception {
@@ -450,6 +451,7 @@ public class TestBackwardCompat extends TestCase {
 
         void closeSubscription(ByteString topic, ByteString subscriberId) throws Exception {
             subscriber.closeSubscription(topic, subscriberId);
+            Thread.sleep(1000); // give server time to run disconnect logic (BOOKKEEPER-513)
         }
 
         void receiveInts(ByteString topic, ByteString subscriberId, int start, int num) throws Exception {
@@ -1016,6 +1018,7 @@ public class TestBackwardCompat extends TestCase {
         Client410 c410 = new Client410("localhost:"+port+":"+sslPort);
         c410.subscribe(topic, sub410);
         c410.closeSubscription(topic, sub410);
+        Thread.sleep(1000); // give server time to run disconnect logic (BOOKKEEPER-513)
 
         ClientCurrent ccur = new ClientCurrent("localhost:"+port+":"+sslPort);
         ccur.subscribe(topic, subcur);
@@ -1091,16 +1094,22 @@ public class TestBackwardCompat extends TestCase {
         Client410 c410 = new Client410("localhost:"+port+":"+sslPort);
         c410.subscribe(topic, subid, options20v410);
         c410.closeSubscription(topic, subid);
+        Thread.sleep(1000); // give server time to run disconnect logic (BOOKKEEPER-513)
+
         c410.sendXExpectLastY(topic, subid, 50, 20);
 
         c410.subscribe(topic, subid, options5v410);
         c410.closeSubscription(topic, subid);
+        Thread.sleep(1000); // give server time to run disconnect logic (BOOKKEEPER-513)
+
         // the message bound isn't updated.
         c410.sendXExpectLastY(topic, subid, 50, 20);
 
         ClientCurrent ccur = new ClientCurrent("localhost:"+port+":"+sslPort);
         ccur.subscribe(topic, subid, options5cur);
         ccur.closeSubscription(topic, subid);
+        Thread.sleep(1000); // give server time to run disconnect logic (BOOKKEEPER-513)
+
         // the message bound should be updated.
         c410.sendXExpectLastY(topic, subid, 50, 5);
 
