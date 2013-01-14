@@ -1,3 +1,17 @@
+Trunk (unreleased changes)
+
+  Non-backward compatible changes:
+
+    BUGFIXES:
+
+    IMPROVEMENTS:
+
+  Backward compatible changes:
+
+    BUGFIXES:
+
+    IMPROVEMENTS:
+
 Release 4.2.0 - 2013-01-14
 
   Non-backward compatible changes:
