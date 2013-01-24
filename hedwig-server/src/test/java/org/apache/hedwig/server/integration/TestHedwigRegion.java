@@ -103,12 +103,6 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
         super.setUp();
     }
 
-    @Override
-    @After
-    public void tearDown() throws Exception {
-        super.tearDown();
-    }
-
     @Test(timeout=60000)
     public void testMultiRegionSubscribeAndConsume() throws Exception {
         int batchSize = 10;

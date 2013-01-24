@@ -58,6 +58,11 @@ public abstract class HedwigHubTestBase extends TestCase {
     protected List<PubSubServer> serversList;
     protected List<HedwigSocketAddress> serverAddresses;
 
+    protected boolean sslEnabled = true;
+    protected boolean standalone = false;
+
+    protected static final String HOST = "localhost";
+
     public HedwigHubTestBase() {
         this(1);
     }
@@ -65,9 +70,20 @@ public abstract class HedwigHubTestBase extends TestCase {
     protected HedwigHubTestBase(int numServers) {
         this.numServers = numServers;
 
+        init();
+    }
+
+    public HedwigHubTestBase(String name, int numServers) {
+        super(name);
+        this.numServers = numServers;
+        init();
+    }
+
+    private void init() {
+
         serverAddresses = new LinkedList<HedwigSocketAddress>();
         for (int i = 0; i < numServers; i++) {
-            serverAddresses.add(new HedwigSocketAddress("localhost",
+            serverAddresses.add(new HedwigSocketAddress(HOST,
                                         PortManager.nextFreePort(), PortManager.nextFreePort()));
         }
     }
@@ -85,6 +101,11 @@ public abstract class HedwigHubTestBase extends TestCase {
         }
 
         @Override
+        public boolean isStandalone() {
+            return standalone;
+        }
+
+        @Override
         public int getServerPort() {
             return serverPort;
         }
@@ -96,22 +117,22 @@ public abstract class HedwigHubTestBase extends TestCase {
 
         @Override
         public String getZkHost() {
-            return bktb.getZkHostPort();
+            return null != bktb ? bktb.getZkHostPort() : null;
         }
 
         @Override
         public boolean isSSLEnabled() {
-            return true;
+            return sslEnabled;
         }
 
         @Override
         public String getCertName() {
-            return "/server.p12";
+            return isSSLEnabled() ? "/server.p12" : null;
         }
 
         @Override
         public String getPassword() {
-            return "eUySvp2phM2Wk";
+            return isSSLEnabled() ? "eUySvp2phM2Wk" : null;
         }
     }
 
@@ -136,12 +157,13 @@ public abstract class HedwigHubTestBase extends TestCase {
 
         for (int i = 0; i < numServers; i++) {
             ServerConfiguration conf = getServerConfiguration(serverAddresses.get(i).getPort(),
-                                                              serverAddresses.get(i).getSSLPort());
+                                                              sslEnabled ? serverAddresses.get(i).getSSLPort() : -1);
             PubSubServer s = new PubSubServer(conf, new ClientConfiguration(), new LoggingExceptionHandler());
             serversList.add(s);
             s.start();
         }
     }
+
     protected void stopHubServers() throws Exception {
         // Shutdown all of the PubSubServers
         for (PubSubServer server : serversList) {
@@ -152,20 +174,22 @@ public abstract class HedwigHubTestBase extends TestCase {
 
     @Override
     @Before
-    public void setUp() throws Exception {
+    protected void setUp() throws Exception {
         logger.info("STARTING " + getName());
-        bktb = new BookKeeperTestBase(numBookies, readDelay);
-        bktb.setUp();
+        if (! standalone) {
+            bktb = new BookKeeperTestBase(numBookies, readDelay);
+            bktb.setUp();
+        }
         startHubServers();
         logger.info("HedwigHub test setup finished");
     }
 
     @Override
     @After
-    public void tearDown() throws Exception {
+    protected void tearDown() throws Exception {
         logger.info("tearDown starting");
         stopHubServers();
-        bktb.tearDown();
+        if (null != bktb) bktb.tearDown();
         logger.info("FINISHED " + getName());
     }
 

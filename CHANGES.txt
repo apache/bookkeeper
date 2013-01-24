@@ -12,6 +12,8 @@ Trunk (unreleased changes)
 
     IMPROVEMENTS:
 
+      BOOKKEEPER-544: Modify hedwig server tests to allow client testcases to start/stop them as part of their tests (mridul via ivank)
+
 Release 4.2.0 - 2013-01-14
 
   Non-backward compatible changes:

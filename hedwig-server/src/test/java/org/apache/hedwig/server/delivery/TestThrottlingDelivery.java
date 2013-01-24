@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Before;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -182,6 +183,13 @@ public class TestThrottlingDelivery extends HedwigHubTestBase {
     public void setUp() throws Exception {
         super.setUp();
     }
+
+    @Override
+    @After
+    public void tearDown() throws Exception {
+        super.tearDown();
+    }
+
 
     @Override
     protected ServerConfiguration getServerConfiguration(int port, int sslPort) {
