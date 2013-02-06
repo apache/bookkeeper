@@ -69,6 +69,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String DEFAULT_MESSAGE_WINDOW_SIZE =
         "default_message_window_size";
     protected final static String NUM_READAHEAD_CACHE_THREADS = "num_readahead_cache_threads";
+    protected final static String NUM_DELIVERY_THREADS = "num_delivery_threads";
 
     protected final static String MAX_ENTRIES_PER_LEDGER = "max_entries_per_ledger";
 
@@ -529,6 +530,15 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public int getNumReadAheadCacheThreads() {
         return conf.getInt(NUM_READAHEAD_CACHE_THREADS, Runtime.getRuntime().availableProcessors());
+    }
+
+    /**
+     * Get number of delivery threads
+     *
+     * @return number of delivery threads.
+     */
+    public int getNumDeliveryThreads() {
+        return conf.getInt(NUM_DELIVERY_THREADS, Runtime.getRuntime().availableProcessors());
     }
 
     /**

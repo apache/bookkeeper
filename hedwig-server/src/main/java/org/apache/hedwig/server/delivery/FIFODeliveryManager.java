@@ -18,7 +18,6 @@
 package org.apache.hedwig.server.delivery;
 
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Queue;
@@ -26,6 +25,8 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -63,7 +64,7 @@ import org.apache.hedwig.server.persistence.ScanRequest;
 import org.apache.hedwig.util.Callback;
 import static org.apache.hedwig.util.VarArgs.va;
 
-public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChannelDisconnectedListener {
+public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnectedListener {
 
     protected static final Logger logger = LoggerFactory.getLogger(FIFODeliveryManager.class);
 
@@ -81,49 +82,180 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
     }
 
     /**
-     * the main queue that the single-threaded delivery manager works off of
-     */
-    BlockingQueue<DeliveryManagerRequest> requestQueue = new LinkedBlockingQueue<DeliveryManagerRequest>();
-
-    /**
-     * The queue of all subscriptions that are facing a transient error either
-     * in scanning from the persistence manager, or in sending to the consumer
-     */
-    Queue<ActiveSubscriberState> retryQueue =
-        new PriorityBlockingQueue<ActiveSubscriberState>(32, new Comparator<ActiveSubscriberState>() {
-            @Override
-            public int compare(ActiveSubscriberState as1, ActiveSubscriberState as2) {
-                long s = as1.lastScanErrorTime - as2.lastScanErrorTime;
-                return s > 0 ? 1 : (s < 0 ? -1 : 0);
-            }
-        });
-
-    /**
      * Stores a mapping from topic to the delivery pointers on the topic. The
      * delivery pointers are stored in a sorted map from seq-id to the set of
      * subscribers at that seq-id
      */
-    Map<ByteString, SortedMap<Long, Set<ActiveSubscriberState>>> perTopicDeliveryPtrs;
+    ConcurrentMap<ByteString, SortedMap<Long, Set<ActiveSubscriberState>>> perTopicDeliveryPtrs;
 
     /**
      * Mapping from delivery end point to the subscriber state that we are
      * serving at that end point. This prevents us e.g., from serving two
      * subscriptions to the same endpoint
      */
-    Map<TopicSubscriber, ActiveSubscriberState> subscriberStates;
+    ConcurrentMap<TopicSubscriber, ActiveSubscriberState> subscriberStates;
 
     private final ReadAheadCache cache;
     private final PersistenceManager persistenceMgr;
 
     private ServerConfiguration cfg;
 
-    // Boolean indicating if this thread should continue running. This is used
-    // when we want to stop the thread during a PubSubServer shutdown.
-    protected boolean keepRunning = true;
-    private final Thread workerThread;
+    private final int numDeliveryWorkers;
+    private final DeliveryWorker[] deliveryWorkers;
 
-    private Object suspensionLock = new Object();
-    private boolean suspended = false;
+    private class DeliveryWorker implements Runnable {
+
+        BlockingQueue<DeliveryManagerRequest> requestQueue =
+            new LinkedBlockingQueue<DeliveryManagerRequest>();;
+
+        /**
+         * The queue of all subscriptions that are facing a transient error either
+         * in scanning from the persistence manager, or in sending to the consumer
+         */
+        Queue<ActiveSubscriberState> retryQueue =
+            new PriorityBlockingQueue<ActiveSubscriberState>(32, new Comparator<ActiveSubscriberState>() {
+                @Override
+                public int compare(ActiveSubscriberState as1, ActiveSubscriberState as2) {
+                    long s = as1.lastScanErrorTime - as2.lastScanErrorTime;
+                    return s > 0 ? 1 : (s < 0 ? -1 : 0);
+                }
+            });
+
+        // Boolean indicating if this thread should continue running. This is used
+        // when we want to stop the thread during a PubSubServer shutdown.
+        protected volatile boolean keepRunning = true;
+        private final Thread workerThread;
+        private final int idx;
+
+        private Object suspensionLock = new Object();
+        private boolean suspended = false;
+
+        DeliveryWorker(int index) {
+            this.idx = index;
+            workerThread = new Thread(this, "DeliveryManagerThread-" + index);
+        }
+
+        void start() {
+            workerThread.start();
+        }
+
+        /**
+         * Stop method which will enqueue a ShutdownDeliveryManagerRequest.
+         */
+        void stop() {
+            enqueueWithoutFailure(new ShutdownDeliveryManagerRequest());
+        }
+
+        /**
+         * Stop FIFO delivery worker from processing requests. (for testing)
+         */
+        void suspendProcessing() {
+            synchronized(suspensionLock) {
+                suspended = true;
+            }
+        }
+
+        /**
+         * Resume FIFO delivery worker. (for testing)
+         */
+        void resumeProcessing() {
+            synchronized(suspensionLock) {
+                suspended = false;
+                suspensionLock.notify();
+            }
+        }
+
+        @Override
+        public void run() {
+            while (keepRunning) {
+                DeliveryManagerRequest request = null;
+
+                try {
+                    // We use a timeout of 1 second, so that we can wake up once in
+                    // a while to check if there is something in the retry queue.
+                    request = requestQueue.poll(1, TimeUnit.SECONDS);
+                    synchronized(suspensionLock) {
+                        while (suspended) {
+                            suspensionLock.wait();
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+
+                // First retry any subscriptions that had failed and need a retry
+                retryErroredSubscribers();
+
+                if (request == null) {
+                    continue;
+                }
+
+                request.performRequest();
+
+            }
+        }
+
+        protected void enqueueWithoutFailure(DeliveryManagerRequest request) {
+            if (!requestQueue.offer(request)) {
+                throw new UnexpectedError("Could not enqueue object: " + request
+                    + " to request queue for delivery worker ." + idx);
+            }
+        }
+
+        public void retryErroredSubscriberAfterDelay(ActiveSubscriberState subscriber) {
+            subscriber.setLastScanErrorTime(MathUtils.now());
+
+            if (!retryQueue.offer(subscriber)) {
+                throw new UnexpectedError("Could not enqueue to retry queue for delivery worker " + idx);
+            }
+            getDeliveryWorker(subscriber.getTopic()).retryErroredSubscriberAfterDelay(subscriber);
+        }
+
+        public void clearRetryDelayForSubscriber(ActiveSubscriberState subscriber) {
+            subscriber.clearLastScanErrorTime();
+            if (!retryQueue.offer(subscriber)) {
+                throw new UnexpectedError("Could not enqueue to delivery manager retry queue");
+            }
+            // no request in request queue now
+            // issue a empty delivery request to not waiting for polling requests queue
+            if (requestQueue.isEmpty()) {
+                enqueueWithoutFailure(new DeliveryManagerRequest() {
+                        @Override
+                        public void performRequest() {
+                        // do nothing
+                        }
+                        });
+            }
+        }
+
+        protected void retryErroredSubscribers() {
+            long lastInterestingFailureTime = MathUtils.now() - cfg.getScanBackoffPeriodMs();
+            ActiveSubscriberState subscriber;
+
+            while ((subscriber = retryQueue.peek()) != null) {
+                if (subscriber.getLastScanErrorTime() > lastInterestingFailureTime) {
+                    // Not enough time has elapsed yet, will retry later
+                    // Since the queue is fifo, no need to check later items
+                    return;
+                }
+
+                // retry now
+                subscriber.deliverNextMessage();
+                retryQueue.poll();
+            }
+        }
+
+        protected class ShutdownDeliveryManagerRequest implements DeliveryManagerRequest {
+            // This is a simple type of Request we will enqueue when the
+            // PubSubServer is shut down and we want to stop the DeliveryManager
+            // thread.
+            public void performRequest() {
+                keepRunning = false;
+            }
+        }
+
+    }
+
 
 
     public FIFODeliveryManager(PersistenceManager persistenceMgr, ServerConfiguration cfg) {
@@ -133,14 +265,23 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
         } else {
             this.cache = null;
         }
-        perTopicDeliveryPtrs = new HashMap<ByteString, SortedMap<Long, Set<ActiveSubscriberState>>>();
-        subscriberStates = new HashMap<TopicSubscriber, ActiveSubscriberState>();
-        workerThread = new Thread(this, "DeliveryManagerThread");
+        perTopicDeliveryPtrs =
+            new ConcurrentHashMap<ByteString, SortedMap<Long, Set<ActiveSubscriberState>>>();
+        subscriberStates =
+            new ConcurrentHashMap<TopicSubscriber, ActiveSubscriberState>();
         this.cfg = cfg;
+        // initialize the delivery workers
+        this.numDeliveryWorkers = cfg.getNumDeliveryThreads();
+        this.deliveryWorkers = new DeliveryWorker[numDeliveryWorkers];
+        for (int i=0; i<numDeliveryWorkers; i++) {
+            deliveryWorkers[i] = new DeliveryWorker(i);
+        }
     }
 
     public void start() {
-        workerThread.start();
+        for (int i=0; i<numDeliveryWorkers; i++) {
+            deliveryWorkers[i].start();
+        }
     }
 
     /**
@@ -148,8 +289,8 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
      */
     @VisibleForTesting
     public void suspendProcessing() {
-        synchronized(suspensionLock) {
-            suspended = true;
+        for (int i=0; i<numDeliveryWorkers; i++) {
+            deliveryWorkers[i].suspendProcessing();
         }
     }
 
@@ -158,10 +299,22 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
      */
     @VisibleForTesting
     public void resumeProcessing() {
-        synchronized(suspensionLock) {
-            suspended = false;
-            suspensionLock.notify();
+        for (int i=0; i<numDeliveryWorkers; i++) {
+            deliveryWorkers[i].resumeProcessing();
         }
+    }
+
+    /**
+     * Stop the FIFO delivery manager.
+     */
+    public void stop() {
+        for (int i=0; i<numDeliveryWorkers; i++) {
+            deliveryWorkers[i].stop();
+        }
+    }
+
+    private DeliveryWorker getDeliveryWorker(ByteString topic) {
+        return deliveryWorkers[MathUtils.signSafeMod(topic.hashCode(), numDeliveryWorkers)];
     }
 
     /**
@@ -170,16 +323,9 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
      * never happen
      *
      */
-    protected void enqueueWithoutFailure(DeliveryManagerRequest request) {
-        if (!requestQueue.offer(request)) {
-            throw new UnexpectedError("Could not enqueue object: " + request + " to delivery manager request queue.");
-        }
+    protected void enqueueWithoutFailure(ByteString topic, DeliveryManagerRequest request) {
+        getDeliveryWorker(topic).enqueueWithoutFailure(request);
     }
-
-    /**
-     * ====================================================================
-     * Public interface of the delivery manager
-     */
 
     /**
      * Tells the delivery manager to start sending out messages for a particular
@@ -211,13 +357,13 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
                                       seqIdToStartFrom.getLocalComponent() - 1,
                                       endPoint, filter, callback, ctx);
 
-        enqueueWithoutFailure(subscriber);
+        enqueueWithoutFailure(topic, subscriber);
     }
 
     public void stopServingSubscriber(ByteString topic, ByteString subscriberId,
                                       SubscriptionEvent event,
                                       Callback<Void> cb, Object ctx) {
-        enqueueWithoutFailure(new StopServingSubscriber(topic, subscriberId, event, cb, ctx));
+        enqueueWithoutFailure(topic, new StopServingSubscriber(topic, subscriberId, event, cb, ctx));
     }
 
     /**
@@ -227,29 +373,11 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
      * @param subscriber
      */
     public void retryErroredSubscriberAfterDelay(ActiveSubscriberState subscriber) {
-
-        subscriber.setLastScanErrorTime(MathUtils.now());
-
-        if (!retryQueue.offer(subscriber)) {
-            throw new UnexpectedError("Could not enqueue to delivery manager retry queue");
-        }
+        getDeliveryWorker(subscriber.getTopic()).retryErroredSubscriberAfterDelay(subscriber);
     }
 
     public void clearRetryDelayForSubscriber(ActiveSubscriberState subscriber) {
-        subscriber.clearLastScanErrorTime();
-        if (!retryQueue.offer(subscriber)) {
-            throw new UnexpectedError("Could not enqueue to delivery manager retry queue");
-        }
-        // no request in request queue now
-        // issue a empty delivery request to not waiting for polling requests queue
-        if (requestQueue.isEmpty()) {
-            enqueueWithoutFailure(new DeliveryManagerRequest() {
-                    @Override
-                    public void performRequest() {
-                    // do nothing
-                    }
-                    });
-        }
+        getDeliveryWorker(subscriber.getTopic()).clearRetryDelayForSubscriber(subscriber);
     }
 
     // TODO: for now, I don't move messageConsumed request to delivery manager thread,
@@ -274,64 +402,8 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
      * @param newSeqId
      */
     public void moveDeliveryPtrForward(ActiveSubscriberState subscriber, long prevSeqId, long newSeqId) {
-        enqueueWithoutFailure(new DeliveryPtrMove(subscriber, prevSeqId, newSeqId));
-    }
-
-    /*
-     * ==========================================================================
-     * == End of public interface, internal machinery begins.
-     */
-    public void run() {
-        while (keepRunning) {
-            DeliveryManagerRequest request = null;
-
-            try {
-                // We use a timeout of 1 second, so that we can wake up once in
-                // a while to check if there is something in the retry queue.
-                request = requestQueue.poll(1, TimeUnit.SECONDS);
-                synchronized(suspensionLock) {
-                    while (suspended) {
-                        suspensionLock.wait();
-                    }
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-
-            // First retry any subscriptions that had failed and need a retry
-            retryErroredSubscribers();
-
-            if (request == null) {
-                continue;
-            }
-
-            request.performRequest();
-
-        }
-    }
-
-    /**
-     * Stop method which will enqueue a ShutdownDeliveryManagerRequest.
-     */
-    public void stop() {
-        enqueueWithoutFailure(new ShutdownDeliveryManagerRequest());
-    }
-
-    protected void retryErroredSubscribers() {
-        long lastInterestingFailureTime = MathUtils.now() - cfg.getScanBackoffPeriodMs();
-        ActiveSubscriberState subscriber;
-
-        while ((subscriber = retryQueue.peek()) != null) {
-            if (subscriber.getLastScanErrorTime() > lastInterestingFailureTime) {
-                // Not enough time has elapsed yet, will retry later
-                // Since the queue is fifo, no need to check later items
-                return;
-            }
-
-            // retry now
-            subscriber.deliverNextMessage();
-            retryQueue.poll();
-        }
+        enqueueWithoutFailure(subscriber.getTopic(),
+            new DeliveryPtrMove(subscriber, prevSeqId, newSeqId));
     }
 
     protected void removeDeliveryPtr(ActiveSubscriberState subscriber, Long seqId, boolean isAbsenceOk,
@@ -525,7 +597,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
                 logger.info("Try to wake up subscriber ({}) to deliver messages again : last delivered {}, last consumed {}.",
                             va(this, lastLocalSeqIdDelivered, lastSeqIdConsumedUtil));
 
-                enqueueWithoutFailure(new DeliveryManagerRequest() {
+                enqueueWithoutFailure(topic, new DeliveryManagerRequest() {
                     @Override
                     public void performRequest() {
                         // enqueue 
@@ -840,15 +912,6 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
             if (nowMinSeqId > prevMinSeqId) {
                 persistenceMgr.deliveredUntil(topic, nowMinSeqId);
             }
-        }
-    }
-
-    protected class ShutdownDeliveryManagerRequest implements DeliveryManagerRequest {
-        // This is a simple type of Request we will enqueue when the
-        // PubSubServer is shut down and we want to stop the DeliveryManager
-        // thread.
-        public void performRequest() {
-            keepRunning = false;
         }
     }
 
