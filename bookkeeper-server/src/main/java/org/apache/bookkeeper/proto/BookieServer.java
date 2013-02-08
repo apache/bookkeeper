@@ -404,6 +404,11 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
             ledgerId = packet.getLong();
             entryId = packet.getLong();
             break;
+        default:
+            LOG.warn("Received bad request (opcode:{})", h.getOpCode());
+            src.sendResponse(buildResponse(BookieProtocol.EBADREQ, h.getVersion(),
+                                           h.getOpCode(), ledgerId, entryId));
+            break;
         }
 
         if (h.getVersion() < BookieProtocol.LOWEST_COMPAT_PROTOCOL_VERSION

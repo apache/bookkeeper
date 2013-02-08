@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 /**
  * Class for creating hardlinks.
  * Supports Unix/Linux, WinXP/2003/Vista via Cygwin, and Mac OS X.
@@ -424,10 +426,10 @@ public class HardLink {
     try {
       if (process.waitFor() != 0) {
         String errMsg = new BufferedReader(new InputStreamReader(
-            process.getInputStream())).readLine();
+                                                   process.getInputStream(), UTF_8)).readLine();
         if (errMsg == null)  errMsg = "";
         String inpMsg = new BufferedReader(new InputStreamReader(
-            process.getErrorStream())).readLine();
+                                                   process.getErrorStream(), UTF_8)).readLine();
         if (inpMsg == null)  inpMsg = "";
         throw new IOException(errMsg + inpMsg);
       }
@@ -512,10 +514,10 @@ public class HardLink {
     try {
       if (process.waitFor() != 0) {
         String errMsg = new BufferedReader(new InputStreamReader(
-            process.getInputStream())).readLine();
+                                                   process.getInputStream(), UTF_8)).readLine();
         if (errMsg == null)  errMsg = "";
         String inpMsg = new BufferedReader(new InputStreamReader(
-            process.getErrorStream())).readLine();
+                                                   process.getErrorStream(), UTF_8)).readLine();
         if (inpMsg == null)  inpMsg = "";
         throw new IOException(errMsg + inpMsg);
       }
@@ -551,10 +553,10 @@ public class HardLink {
     try {
       exitValue = process.waitFor();
       in = new BufferedReader(new InputStreamReader(
-                                  process.getInputStream()));
+                                      process.getInputStream(), UTF_8));
       inpMsg = in.readLine();
       err = new BufferedReader(new InputStreamReader(
-                                   process.getErrorStream()));
+                                       process.getErrorStream(), UTF_8));
       errMsg = err.readLine();
       if (inpMsg == null || exitValue != 0) {
         throw createIOException(fileName, inpMsg, errMsg, exitValue, null);
@@ -648,7 +650,7 @@ public class HardLink {
             throw new IOException("Couldn't resolve path "
                                   + filename + "(" + err + ")");
         }
-        r = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        r = new BufferedReader(new InputStreamReader(p.getInputStream(), UTF_8));
         return r.readLine();
       } catch (InterruptedException ie) {
         throw new IOException("Couldn't resolve path " + filename, ie);

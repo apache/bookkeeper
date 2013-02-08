@@ -56,6 +56,8 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.KeeperException;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 /**
  * Application for upgrading the bookkeeper filesystem
  * between versions
@@ -118,7 +120,7 @@ public class FileSystemUpgrade {
         if (!v2versionFile.exists()) {
             return 1;
         }
-        Scanner s = new Scanner(v2versionFile);
+        Scanner s = new Scanner(v2versionFile, UTF_8.name());
         try {
             return s.nextInt();
         } catch (NoSuchElementException nse) {

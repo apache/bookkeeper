@@ -62,6 +62,7 @@ import org.apache.hedwig.server.topics.TopicOwnershipChangeListener;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.zookeeper.SafeAsynBKCallback;
 import static org.apache.hedwig.util.VarArgs.va;
+import static com.google.common.base.Charsets.UTF_8;
 
 /**
  * This persistence manager uses zookeeper and bookkeeper to store messages.
@@ -77,7 +78,7 @@ import static org.apache.hedwig.util.VarArgs.va;
 
 public class BookkeeperPersistenceManager implements PersistenceManagerWithRangeScan, TopicOwnershipChangeListener {
     static Logger logger = LoggerFactory.getLogger(BookkeeperPersistenceManager.class);
-    static byte[] passwd = "sillysecret".getBytes();
+    static byte[] passwd = "sillysecret".getBytes(UTF_8);
     private BookKeeper bk;
     private TopicPersistenceManager tpManager;
     private ServerConfiguration cfg;

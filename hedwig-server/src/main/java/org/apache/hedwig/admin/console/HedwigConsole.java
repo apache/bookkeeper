@@ -66,6 +66,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
+import static com.google.common.base.Charsets.UTF_8;
 
 import static org.apache.hedwig.admin.console.HedwigCommands.*;
 import static org.apache.hedwig.admin.console.HedwigCommands.COMMAND.*;
@@ -76,7 +77,7 @@ import static org.apache.hedwig.admin.console.HedwigCommands.COMMAND.*;
 public class HedwigConsole {
     private static final Logger LOG = LoggerFactory.getLogger(HedwigConsole.class);
     // NOTE: now it is fixed passwd in bookkeeper
-    static byte[] passwd = "sillysecret".getBytes();
+    static byte[] passwd = "sillysecret".getBytes(UTF_8);
 
     // history file name
     static final String HW_HISTORY_FILE = ".hw_history";

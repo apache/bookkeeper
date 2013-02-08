@@ -50,6 +50,8 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.PosixParser;
 import org.apache.commons.cli.ParseException;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -168,7 +170,7 @@ public class BenchReadThroughputLatency {
         }
 
         final String servers = cmd.getOptionValue("zookeeper", "localhost:2181");
-        final byte[] passwd = cmd.getOptionValue("password", "benchPasswd").getBytes();
+        final byte[] passwd = cmd.getOptionValue("password", "benchPasswd").getBytes(UTF_8);
         final int sockTimeout = Integer.valueOf(cmd.getOptionValue("sockettimeout", "5"));
         if (cmd.hasOption("ledger") && cmd.hasOption("listen")) {
             LOG.error("Cannot used -ledger and -listen together");

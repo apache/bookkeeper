@@ -29,6 +29,8 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.Arrays;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import org.apache.bookkeeper.versioning.Version;
 import com.google.protobuf.TextFormat;
 import com.google.protobuf.ByteString;
@@ -244,7 +246,7 @@ public class LedgerMetadata {
         s.append(VERSION_KEY).append(tSplitter).append(CURRENT_METADATA_FORMAT_VERSION).append(lSplitter);
         s.append(TextFormat.printToString(builder.build()));
         LOG.debug("Serialized config: {}", s);
-        return s.toString().getBytes();
+        return s.toString().getBytes(UTF_8);
     }
 
     private byte[] serializeVersion1() {
@@ -268,7 +270,7 @@ public class LedgerMetadata {
 
         LOG.debug("Serialized config: {}", s);
 
-        return s.toString().getBytes();
+        return s.toString().getBytes(UTF_8);
     }
 
     /**
@@ -286,7 +288,7 @@ public class LedgerMetadata {
         LedgerMetadata lc = new LedgerMetadata();
         lc.version = version;
 
-        String config = new String(bytes);
+        String config = new String(bytes, UTF_8);
 
         LOG.debug("Parsing Config: {}", config);
         BufferedReader reader = new BufferedReader(new StringReader(config));

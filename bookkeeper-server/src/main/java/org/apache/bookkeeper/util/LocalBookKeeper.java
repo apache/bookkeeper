@@ -45,6 +45,8 @@ import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.apache.zookeeper.server.ZooKeeperServer;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 public class LocalBookKeeper {
     protected static final Logger LOG = LoggerFactory.getLogger(LocalBookKeeper.class);
     public static final int CONNECTION_TIMEOUT = 30000;
@@ -223,12 +225,12 @@ public class LocalBookKeeper {
                 BufferedReader reader = null;
                 try {
                     OutputStream outstream = sock.getOutputStream();
-                    outstream.write("stat".getBytes());
+                    outstream.write("stat".getBytes(UTF_8));
                     outstream.flush();
 
                     reader =
                         new BufferedReader(
-                        new InputStreamReader(sock.getInputStream()));
+                                new InputStreamReader(sock.getInputStream(), UTF_8));
                     String line = reader.readLine();
                     if (line != null && line.startsWith("Zookeeper version:")) {
                         LOG.info("Server UP");

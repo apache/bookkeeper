@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Random;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.util.Callback;
@@ -139,7 +141,7 @@ class ZkHubServerManager implements HubServerManager {
 
     @Override
     public void registerSelf(final HubLoad selfData, final Callback<HubInfo> callback, Object ctx) {
-        byte[] loadDataBytes = selfData.toString().getBytes();
+        byte[] loadDataBytes = selfData.toString().getBytes(UTF_8);
         ZkUtils.createFullPathOptimistic(zk, ephemeralNodePath, loadDataBytes, Ids.OPEN_ACL_UNSAFE,
                                          CreateMode.EPHEMERAL, new SafeAsyncZKCallback.StringCallback() {
             @Override
@@ -206,7 +208,7 @@ class ZkHubServerManager implements HubServerManager {
     @Override
     public void uploadSelfLoadData(HubLoad selfLoad) {
         logger.debug("Reporting hub load of {} : {}", myHubInfo, selfLoad);
-        byte[] loadDataBytes = selfLoad.toString().getBytes();
+        byte[] loadDataBytes = selfLoad.toString().getBytes(UTF_8);
         zk.setData(ephemeralNodePath, loadDataBytes, -1,
                    loadReportingStatCallback, null);
     }
@@ -264,7 +266,7 @@ class ZkHubServerManager implements HubServerManager {
                 synchronized (this) {
                     if (rc == KeeperException.Code.OK.intValue()) {
                         try {
-                            HubLoad load = HubLoad.parse(new String(data));
+                            HubLoad load = HubLoad.parse(new String(data, UTF_8));
                             logger.debug("Found server {} with load: {}", ctx, load);
                             int compareRes = load.compareTo(minLoad);
                             if (compareRes < 0 || (compareRes == 0 && rand.nextBoolean())) {

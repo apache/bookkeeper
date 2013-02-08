@@ -23,8 +23,9 @@ package org.apache.bookkeeper.bookie;
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -46,6 +47,7 @@ import org.apache.bookkeeper.proto.DataFormats.CookieFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.google.common.base.Charsets.UTF_8;
 import com.google.protobuf.TextFormat;
 
 /**
@@ -159,7 +161,7 @@ class Cookie {
         FileOutputStream fos = new FileOutputStream(versionFile);
         BufferedWriter bw = null;
         try {
-            bw = new BufferedWriter(new OutputStreamWriter(fos));
+            bw = new BufferedWriter(new OutputStreamWriter(fos, UTF_8));
             bw.write(toString());
         } finally {
             if (bw != null) {
@@ -174,7 +176,7 @@ class Cookie {
         String bookieCookiePath = conf.getZkLedgersRootPath() + "/"
                 + BookKeeperConstants.COOKIE_NODE;
         String zkPath = getZkPath(conf);
-        byte[] data = toString().getBytes();
+        byte[] data = toString().getBytes(UTF_8);
         if (znodeVersion != -1) {
             zk.setData(zkPath, data, znodeVersion);
         } else {
@@ -225,8 +227,7 @@ class Cookie {
 
         Stat stat = zk.exists(zkPath, false);
         byte[] data = zk.getData(zkPath, false, stat);
-        BufferedReader reader = new BufferedReader(new StringReader(new String(
-                data)));
+        BufferedReader reader = new BufferedReader(new StringReader(new String(data, UTF_8)));
         try {
             Cookie c = parse(reader);
             c.znodeVersion = stat.getVersion();
@@ -239,7 +240,8 @@ class Cookie {
     static Cookie readFromDirectory(File directory) throws IOException {
         File versionFile = new File(directory,
                 BookKeeperConstants.VERSION_FILENAME);
-        BufferedReader reader = new BufferedReader(new FileReader(versionFile));
+        BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(versionFile), UTF_8));
         try {
             return parse(reader);
         } finally {

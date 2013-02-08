@@ -10,6 +10,8 @@ Trunk (unreleased changes)
 
     BUGFIXES:
 
+      BOOKKEEPER-561: Findbugs report errors with openjdk (ivank via umamahesh)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-526: multiple threads for delivery manager (sijie via ivank)

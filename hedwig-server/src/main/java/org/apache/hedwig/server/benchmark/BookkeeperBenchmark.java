@@ -25,6 +25,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.util.MathUtils;
+import static com.google.common.base.Charsets.UTF_8;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +44,7 @@ public class BookkeeperBenchmark extends AbstractBenchmark {
         int ensembleSize = Integer.getInteger("ensemble", 4);
         DigestType digestType = DigestType.valueOf(System.getProperty("digestType", "CRC32"));
         for (int i=0; i< numLedgers; i++) {
-            lh[i] = bk.createLedger(ensembleSize, quorumSize, digestType, "blah".getBytes());
+            lh[i] = bk.createLedger(ensembleSize, quorumSize, digestType, "blah".getBytes(UTF_8));
         }
 
     }

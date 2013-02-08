@@ -147,8 +147,14 @@ public abstract class AbstractSubscriptionManager implements SubscriptionManager
                 if (topicSubscriptions.isEmpty()
                     || (minConsumedFromMap != null && minConsumedFromMap < minConsumedMessage)
                     || (minConsumedFromMap == null && minConsumedMessage != 0)) {
-                    topic2MinConsumedMessagesMap.put(topic, minConsumedMessage);
-                    pm.consumedUntil(topic, minConsumedMessage);
+                    // Replace or put the new min consumed value. If it has changed
+                    // do nothing, as another thread has updated the min consumed message
+                    if ((minConsumedFromMap != null
+                         && (topic2MinConsumedMessagesMap.replace(topic, minConsumedFromMap,
+                                                                  minConsumedMessage)))
+                        || (topic2MinConsumedMessagesMap.putIfAbsent(topic, minConsumedMessage) == null)) {
+                        pm.consumedUntil(topic, minConsumedMessage);
+                    }
                 } else if (hasBound) {
                     pm.consumeToBound(topic);
                 }

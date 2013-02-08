@@ -61,6 +61,7 @@ import org.apache.zookeeper.data.Stat;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import static com.google.common.base.Charsets.UTF_8;
 
 /**
  * Hedwig Admin
@@ -69,7 +70,7 @@ public class HedwigAdmin {
     static final Logger LOG = LoggerFactory.getLogger(HedwigAdmin.class);
 
     // NOTE: now it is fixed passwd used in hedwig
-    static byte[] passwd = "sillysecret".getBytes();
+    static byte[] passwd = "sillysecret".getBytes(UTF_8);
 
     protected final ZooKeeper zk;
     protected final BookKeeper bk;
@@ -308,7 +309,7 @@ public class HedwigAdmin {
                 if (data == null) {
                     continue;
                 }
-                HubLoad load = HubLoad.parse(new String(data));
+                HubLoad load = HubLoad.parse(new String(data, UTF_8));
                 HubInfo info = new HubInfo(addr, stat.getCzxid());
                 hubs.put(addr, new HubStats(info, load));
             } catch (KeeperException ke) {

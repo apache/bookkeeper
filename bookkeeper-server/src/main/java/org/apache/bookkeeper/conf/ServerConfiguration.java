@@ -352,9 +352,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public File[] getLedgerDirs() {
         String[] ledgerDirNames = getLedgerDirNames();
-        if (null == ledgerDirNames) {
-            return null;
-        }
+
         File[] ledgerDirs = new File[ledgerDirNames.length];
         for (int i = 0; i < ledgerDirNames.length; i++) {
             ledgerDirs[i] = new File(ledgerDirNames[i]);

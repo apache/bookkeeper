@@ -55,6 +55,7 @@ import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.google.common.base.Charsets.UTF_8;
 
 /**
  * This is a simple test program to compare the performance of writing to
@@ -121,7 +122,7 @@ public class TestClient {
         try {
             int numFiles = Integer.valueOf(cmd.getOptionValue("numconcurrent", "1"));
             int numThreads = Math.min(numFiles, 1000);
-            byte[] data = sb.toString().getBytes();
+            byte[] data = sb.toString().getBytes(UTF_8);
             long runid = System.currentTimeMillis();
             List<Callable<Long>> clients = new ArrayList<Callable<Long>>();
 

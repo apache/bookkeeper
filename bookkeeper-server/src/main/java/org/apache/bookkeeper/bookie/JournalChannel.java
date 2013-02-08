@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.ByteBuffer;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +47,7 @@ class JournalChannel implements Closeable {
     final int formatVersion;
     long nextPrealloc = 0;
 
-    final byte[] MAGIC_WORD = "BKLG".getBytes();
+    final byte[] MAGIC_WORD = "BKLG".getBytes(UTF_8);
 
     private final static int START_OF_FILE = -12345;
 

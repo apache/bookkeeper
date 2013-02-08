@@ -75,7 +75,7 @@ public abstract class BookieException extends Exception {
     }
 
     public String getMessage(int code) {
-        String err = "Invalid operation";
+        String err;
         switch(code) {
         case Code.OK:
             err = "No problem";
@@ -91,6 +91,9 @@ public abstract class BookieException extends Exception {
             break;
         case Code.UpgradeException:
             err = "Error performing an upgrade operation ";
+            break;
+        default:
+            err = "Invalid operation";
             break;
         }
         String reason = super.getMessage();

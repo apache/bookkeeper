@@ -45,6 +45,7 @@ import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State;
 import org.apache.bookkeeper.util.SafeRunnable;
 
+import static com.google.common.base.Charsets.UTF_8;
 import com.google.common.util.concurrent.RateLimiter;
 
 import org.slf4j.Logger;
@@ -771,9 +772,9 @@ public class LedgerHandle {
                             + "while changing ensemble to: "
                             + ensembleInfo.newEnsemble
                             + ", old meta data is \n"
-                            + new String(metadata.serialize())
+                            + new String(metadata.serialize(), UTF_8)
                             + "\n, new meta data is \n"
-                            + new String(newMeta.serialize())
+                            + new String(newMeta.serialize(), UTF_8)
                             + "\n ,closing ledger");
                     handleUnrecoverableErrorDuringAdd(rc);
                 }
@@ -811,9 +812,9 @@ public class LedgerHandle {
                             + "while changing ensemble to: "
                             + ensembleInfo.newEnsemble
                             + ", old meta data is \n"
-                            + new String(metadata.serialize())
+                            + new String(metadata.serialize(), UTF_8)
                             + "\n, new meta data is \n"
-                            + new String(newMeta.serialize()));
+                            + new String(newMeta.serialize(), UTF_8));
                     writeLedgerConfig(new ChangeEnsembleCb(ensembleInfo));
                 }
             } else {

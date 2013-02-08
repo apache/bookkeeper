@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -69,6 +70,7 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.Watcher.Event.EventType;
 
+import static com.google.common.base.Charsets.UTF_8;
 import com.google.common.annotations.VisibleForTesting;
 
 /**
@@ -193,8 +195,11 @@ public class Bookie extends Thread {
             return value;
         }
         @Override
-        public T get(long timeout, TimeUnit unit) throws InterruptedException {
-            latch.await(timeout, unit);
+        public T get(long timeout, TimeUnit unit)
+            throws InterruptedException, TimeoutException {
+            if (!latch.await(timeout, unit)) {
+                throw new TimeoutException("Timed out waiting for latch");
+            }
             return value;
         }
 
@@ -488,7 +493,7 @@ public class Bookie extends Thread {
         try {
             byte[] data = zk.getData(conf.getZkLedgersRootPath() + "/"
                     + BookKeeperConstants.INSTANCEID, false, null);
-            instanceId = new String(data);
+            instanceId = new String(data, UTF_8);
         } catch (KeeperException.NoNodeException e) {
             LOG.warn("INSTANCEID not exists in zookeeper. Not considering it for data verification");
         }

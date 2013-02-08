@@ -472,7 +472,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         LOG.debug("disableLedegerReplication()");
         try {
             ZkUtils.createFullPathOptimistic(zkc, basePath + '/'
-                    + BookKeeperConstants.DISABLE_NODE, "".getBytes(),
+                    + BookKeeperConstants.DISABLE_NODE, "".getBytes(UTF_8),
                     Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             LOG.info("Auto ledger re-replication is disabled!");
         } catch (KeeperException.NodeExistsException ke) {

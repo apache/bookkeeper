@@ -44,6 +44,8 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 /**
  * Implements the client-side part of the BookKeeper protocol.
  *
@@ -255,7 +257,7 @@ public class BookieClient {
             }
         };
         Counter counter = new Counter();
-        byte hello[] = "hello".getBytes();
+        byte hello[] = "hello".getBytes(UTF_8);
         long ledger = Long.parseLong(args[2]);
         ClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors
                 .newCachedThreadPool());

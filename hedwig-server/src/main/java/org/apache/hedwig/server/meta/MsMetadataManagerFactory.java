@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.google.common.base.Charsets.UTF_8;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.TextFormat;
 import com.google.protobuf.TextFormat.ParseException;
@@ -271,7 +272,7 @@ public class MsMetadataManagerFactory extends MetadataManagerFactory {
                     try {
                         byte[] data = value.getValue().getField(OWNER_FIELD);
                         if (data != null) {
-                            owner = HubInfo.parse(new String(data));
+                            owner = HubInfo.parse(new String(data, UTF_8));
                         }
                     } catch (HubInfo.InvalidHubInfoException ihie) {
                         logger.warn("Failed to parse hub info for topic " + topic.toStringUtf8(), ihie);
@@ -286,7 +287,7 @@ public class MsMetadataManagerFactory extends MetadataManagerFactory {
         public void writeOwnerInfo(final ByteString topic, final HubInfo owner, final Version version,
                 final Callback<Version> callback, Object ctx) {
             Value value = new Value();
-            value.setField(OWNER_FIELD, owner.toString().getBytes());
+            value.setField(OWNER_FIELD, owner.toString().getBytes(UTF_8));
 
             ownerTable.put(topic.toStringUtf8(), value, version, new MetastoreCallback<Version>() {
                 @Override
@@ -439,7 +440,7 @@ public class MsMetadataManagerFactory extends MetadataManagerFactory {
         public void writeTopicPersistenceInfo(final ByteString topic, LedgerRanges ranges, final Version version,
                 final Callback<Version> callback, Object ctx) {
             Value value = new Value();
-            value.setField(PERSIST_FIELD, TextFormat.printToString(ranges).getBytes());
+            value.setField(PERSIST_FIELD, TextFormat.printToString(ranges).getBytes(UTF_8));
 
             persistTable.put(topic.toStringUtf8(), value, version, new MetastoreCallback<Version>() {
                 @Override
@@ -534,10 +535,10 @@ public class MsMetadataManagerFactory extends MetadataManagerFactory {
         private Value subscriptionData2Value(SubscriptionData subData) {
             Value value = new Value();
             if (subData.hasState()) {
-                value.setField(SUB_STATE_FIELD, TextFormat.printToString(subData.getState()).getBytes());
+                value.setField(SUB_STATE_FIELD, TextFormat.printToString(subData.getState()).getBytes(UTF_8));
             }
             if (subData.hasPreferences()) {
-                value.setField(SUB_PREFS_FIELD, TextFormat.printToString(subData.getPreferences()).getBytes());
+                value.setField(SUB_PREFS_FIELD, TextFormat.printToString(subData.getPreferences()).getBytes(UTF_8));
             }
             return value;
         }

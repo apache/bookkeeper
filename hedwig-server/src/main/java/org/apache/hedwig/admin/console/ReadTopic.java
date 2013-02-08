@@ -43,6 +43,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
+import static com.google.common.base.Charsets.UTF_8;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -320,7 +321,7 @@ public class ReadTopic {
     
     boolean pressKeyToContinue() throws IOException {
         System.out.println("Press Y to continue...");
-        BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in, UTF_8));
         int ch = stdin.read();
         if (ch == 'y' ||
             ch == 'Y') {

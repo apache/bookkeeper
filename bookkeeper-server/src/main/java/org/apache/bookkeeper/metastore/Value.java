@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Collections;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import static org.apache.bookkeeper.metastore.MetastoreTable.ALL_FIELDS;
 
 public class Value {
@@ -144,7 +146,7 @@ public class Value {
             if (null == entry.getValue()) {
                 value = "NONE";
             } else {
-                value = new String(entry.getValue());
+                value = new String(entry.getValue(), UTF_8);
             }
             sb.append("('").append(f).append("'=").append(value).append(")");
         }

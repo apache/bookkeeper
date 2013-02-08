@@ -51,6 +51,7 @@ import org.apache.hedwig.server.topics.HubInfo;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.zookeeper.SafeAsyncZKCallback;
 import org.apache.hedwig.zookeeper.ZkUtils;
+import static com.google.common.base.Charsets.UTF_8;
 
 /**
  * ZooKeeper-based Metadata Manager.
@@ -701,7 +702,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                     }
                     HubInfo owner = null;
                     try {
-                        owner = HubInfo.parse(new String(data));
+                        owner = HubInfo.parse(new String(data, UTF_8));
                     } catch (HubInfo.InvalidHubInfoException ihie) {
                         logger.warn("Failed to parse hub info for topic " + topic.toStringUtf8() + " : ", ihie);
                     }
@@ -727,7 +728,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
             }
 
             int znodeVersion = ((ZkVersion)version).getZnodeVersion();
-            zk.setData(hubPath(topic), owner.toString().getBytes(), znodeVersion,
+            zk.setData(hubPath(topic), owner.toString().getBytes(UTF_8), znodeVersion,
                        new SafeAsyncZKCallback.StatCallback() {
                 @Override
                 public void safeProcessResult(int rc, String path, Object ctx, Stat stat) {
@@ -758,7 +759,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
         protected void createOwnerInfo(final ByteString topic, final HubInfo owner,
                                        final Callback<Version> callback, Object ctx) {
             String ownerPath = hubPath(topic);
-            ZkUtils.createFullPathOptimistic(zk, ownerPath, owner.toString().getBytes(), Ids.OPEN_ACL_UNSAFE,
+            ZkUtils.createFullPathOptimistic(zk, ownerPath, owner.toString().getBytes(UTF_8), Ids.OPEN_ACL_UNSAFE,
                                              CreateMode.PERSISTENT, new SafeAsyncZKCallback.StringCallback() {
                 @Override
                 public void safeProcessResult(int rc, String path, Object ctx, String name) {

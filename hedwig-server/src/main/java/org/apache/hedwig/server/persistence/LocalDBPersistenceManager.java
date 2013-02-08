@@ -37,6 +37,8 @@ import javax.sql.rowset.serial.SerialBlob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.exceptions.PubSubException.ServiceDownException;
 import org.apache.hedwig.exceptions.PubSubException.UnexpectedConditionException;
@@ -305,7 +307,7 @@ public class LocalDBPersistenceManager implements PersistenceManagerWithRangeSca
     private String getTableNameForTopic(ByteString topic) {
         String src = (topic.toStringUtf8() + "_" + version);
         threadLocalDigest.get().reset();
-        byte[] digest = threadLocalDigest.get().digest(src.getBytes());
+        byte[] digest = threadLocalDigest.get().digest(src.getBytes(UTF_8));
         BigInteger bigInt = new BigInteger(1,digest);
         return String.format("TABLE_%032X", bigInt);
     }

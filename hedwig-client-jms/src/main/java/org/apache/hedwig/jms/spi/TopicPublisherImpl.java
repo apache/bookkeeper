@@ -88,7 +88,7 @@ public class TopicPublisherImpl extends MessageProducerImpl implements TopicPubl
         }
 
         if (null == topic){
-            throw new InvalidDestinationException("Topic must be specified to publish " + topic);
+            throw new InvalidDestinationException("Topic must be specified to publish");
         }
 
         final MessageImpl copiedMessageImpl;

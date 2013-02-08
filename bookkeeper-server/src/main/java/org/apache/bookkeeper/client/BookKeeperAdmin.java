@@ -51,6 +51,8 @@ import org.apache.zookeeper.ZooDefs.Ids;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 /**
  * Admin client for BookKeeper clusters
  */
@@ -708,12 +710,12 @@ public class BookKeeperAdmin {
 
             // Create ledgers root node if not exists
             if (!ledgerRootExists) {
-                zkc.create(conf.getZkLedgersRootPath(), "".getBytes(),
+                zkc.create(conf.getZkLedgersRootPath(), "".getBytes(UTF_8),
                         Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             }
             // create available bookies node if not exists
             if (!availableNodeExists) {
-                zkc.create(conf.getZkAvailableBookiesPath(), "".getBytes(),
+                zkc.create(conf.getZkAvailableBookiesPath(), "".getBytes(UTF_8),
                         Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             }
 
@@ -761,7 +763,7 @@ public class BookKeeperAdmin {
             // create INSTANCEID
             String instanceId = UUID.randomUUID().toString();
             zkc.create(conf.getZkLedgersRootPath() + "/"
-                    + BookKeeperConstants.INSTANCEID, instanceId.getBytes(),
+                    + BookKeeperConstants.INSTANCEID, instanceId.getBytes(UTF_8),
                     Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 
             LOG.info("Successfully formatted BookKeeper metadata");

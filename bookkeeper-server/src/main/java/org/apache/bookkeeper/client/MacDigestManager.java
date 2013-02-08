@@ -28,6 +28,8 @@ import javax.crypto.spec.SecretKeySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 class MacDigestManager extends DigestManager {
     final static Logger LOG = LoggerFactory.getLogger(MacDigestManager.class);
 
@@ -59,7 +61,7 @@ class MacDigestManager extends DigestManager {
 
     static byte[] genDigest(String pad, byte[] passwd) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance(DIGEST_ALGORITHM);
-        digest.update(pad.getBytes());
+        digest.update(pad.getBytes(UTF_8));
         digest.update(passwd);
         return digest.digest();
     }

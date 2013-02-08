@@ -96,6 +96,8 @@ public class NetUtils {
             pubsubRequestBuilder.setCloseSubscriptionRequest(
                 buildCloseSubscriptionRequest(pubSubData));
             break;
+        default:
+            throw new IllegalArgumentException("Unknown argument type " + pubSubData.operationType);
         }
 
         // Update the PubSubData with the txnId and the requestWriteTime

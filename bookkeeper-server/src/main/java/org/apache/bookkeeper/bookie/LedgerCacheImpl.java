@@ -209,11 +209,8 @@ public class LedgerCacheImpl implements LedgerCache {
         if (lep == null) {
             lep = grabLedgerEntryPage(ledger, pageEntry); 
         }
-        if (lep != null) {
-            lep.setOffset(offset, offsetInPage*8);
-            lep.releasePage();
-            return;
-        }
+        lep.setOffset(offset, offsetInPage*8);
+        lep.releasePage();
     }
 
     @Override
@@ -810,10 +807,7 @@ public class LedgerCacheImpl implements LedgerCache {
         FileInfo fi = null;
         try {
             fi = getFileInfo(ledgerId, null);
-            if (null != fi) {
-                return fi.setFenced();
-            }
-            return false;
+            return fi.setFenced();
         } finally {
             if (null != fi) {
                 fi.release();
@@ -826,10 +820,7 @@ public class LedgerCacheImpl implements LedgerCache {
         FileInfo fi = null;
         try {
             fi = getFileInfo(ledgerId, null);
-            if (null != fi) {
-                return fi.isFenced();
-            }
-            return false;
+            return fi.isFenced();
         } finally {
             if (null != fi) {
                 fi.release();

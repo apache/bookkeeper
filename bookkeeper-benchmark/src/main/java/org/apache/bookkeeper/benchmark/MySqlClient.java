@@ -30,6 +30,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.google.common.base.Charsets.UTF_8;
 
 import org.apache.zookeeper.KeeperException;
 
@@ -90,8 +91,8 @@ public class MySqlClient {
         }
         try {
             MySqlClient c = new MySqlClient(args[2], args[3], args[4]);
-            c.writeSameEntryBatch(sb.toString().getBytes(), Integer.parseInt(args[0]));
-            c.writeSameEntry(sb.toString().getBytes(), Integer.parseInt(args[0]));
+            c.writeSameEntryBatch(sb.toString().getBytes(UTF_8), Integer.parseInt(args[0]));
+            c.writeSameEntry(sb.toString().getBytes(UTF_8), Integer.parseInt(args[0]));
             c.closeHandle();
         } catch (NumberFormatException e) {
             e.printStackTrace();
@@ -110,7 +111,7 @@ public class MySqlClient {
     void writeSameEntryBatch(byte[] data, int times) throws InterruptedException, SQLException {
         start = System.currentTimeMillis();
         int count = times;
-        String content = new String(data);
+        String content = new String(data, UTF_8);
         System.out.println("Data: " + content + ", " + data.length);
         while(count-- > 0) {
             stmt.addBatch("insert into data(content) values(\"" + content + "\");");
@@ -125,7 +126,7 @@ public class MySqlClient {
     void writeSameEntry(byte[] data, int times) throws InterruptedException, SQLException {
         start = System.currentTimeMillis();
         int count = times;
-        String content = new String(data);
+        String content = new String(data, UTF_8);
         System.out.println("Data: " + content + ", " + data.length);
         while(count-- > 0) {
             stmt.executeUpdate("insert into data(content) values(\"" + content + "\");");

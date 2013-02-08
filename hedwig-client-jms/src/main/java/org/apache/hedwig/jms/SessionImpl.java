@@ -518,7 +518,7 @@ public class SessionImpl implements Session {
         // spin ONLY if we are NOT within the listener already !
         if (! closeFromWithinListener.get()){
             synchronized (lockObject){
-                final long waitTime = 100;
+                long waitTime = 100;
                 long retryCount = StateManager.WAIT_TIME_FOR_TRANSIENT_STATE_CHANGE / waitTime;
                 if (messageListenerThreadStarted) {
                     while (!messageListenerThreadFinished) {
@@ -906,7 +906,7 @@ public class SessionImpl implements Session {
     // delegate to this IF this method can be invoked (specifically, if not QueueSession)
     protected TopicPublisher createPublisherImpl(Topic topic) throws JMSException {
         if (sessionState.isInCloseMode()) throw new javax.jms.IllegalStateException("Already closed");
-        if (null == topic) throw new InvalidDestinationException("Illegal destination " + topic);
+        if (null == topic) throw new InvalidDestinationException("Illegal destination");
         connection.initConnectionClientID();
 
         return (TopicPublisher) createProducerImpl(MessagingSessionFacade.DestinationType.TOPIC, topic);
@@ -916,7 +916,7 @@ public class SessionImpl implements Session {
     @Override
     public MessageConsumer createConsumer(Destination destination) throws JMSException {
         if (sessionState.isInCloseMode()) throw new javax.jms.IllegalStateException("Already closed");
-        if (null == destination) throw new InvalidDestinationException("Illegal destination " + destination);
+        if (null == destination) throw new InvalidDestinationException("Illegal destination");
         connection.initConnectionClientID();
 
         return createConsumerImpl(findDestinationType(destination), destination);
@@ -938,7 +938,7 @@ public class SessionImpl implements Session {
     // delegate to this IF this method can be invoked (specifically, if not QueueSession)
     protected TopicSubscriber createSubscriberImpl(Topic topic) throws JMSException {
         if (sessionState.isInCloseMode()) throw new javax.jms.IllegalStateException("Already closed");
-        if (null == topic) throw new InvalidDestinationException("Illegal destination " + topic);
+        if (null == topic) throw new InvalidDestinationException("Illegal destination");
         connection.initConnectionClientID();
 
         return (TopicSubscriber) createConsumerImpl(MessagingSessionFacade.DestinationType.TOPIC, topic);
@@ -949,7 +949,7 @@ public class SessionImpl implements Session {
         throws JMSException {
 
         if (sessionState.isInCloseMode()) throw new javax.jms.IllegalStateException("Already closed");
-        if (null == topic) throw new InvalidDestinationException("Illegal destination " + topic);
+        if (null == topic) throw new InvalidDestinationException("Illegal destination");
         connection.initConnectionClientID();
 
         return (TopicSubscriber) createConsumerImpl(MessagingSessionFacade.DestinationType.TOPIC,
@@ -960,7 +960,7 @@ public class SessionImpl implements Session {
     @Override
     public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException {
         if (sessionState.isInCloseMode()) throw new javax.jms.IllegalStateException("Already closed");
-        if (null == destination) throw new InvalidDestinationException("Illegal destination " + destination);
+        if (null == destination) throw new InvalidDestinationException("Illegal destination");
         connection.initConnectionClientID();
 
         return createConsumer(destination, messageSelector, false);
@@ -971,7 +971,7 @@ public class SessionImpl implements Session {
                                           boolean noLocal) throws JMSException {
 
         if (sessionState.isInCloseMode()) throw new javax.jms.IllegalStateException("Already closed");
-        if (null == destination) throw new InvalidDestinationException("Illegal destination " + destination);
+        if (null == destination) throw new InvalidDestinationException("Illegal destination");
         connection.initConnectionClientID();
 
         return createConsumerImpl(findDestinationType(destination), destination, messageSelector, noLocal);
@@ -1017,7 +1017,7 @@ public class SessionImpl implements Session {
     @Override
     public Topic createTopic(String topicName) throws JMSException {
         if (sessionState.isInCloseMode()) throw new javax.jms.IllegalStateException("Already closed");
-        if (null == topicName) throw new InvalidDestinationException("Illegal destination " + topicName);
+        if (null == topicName) throw new InvalidDestinationException("Illegal destination");
         connection.initConnectionClientID();
 
         return (Topic) getDestination(MessagingSessionFacade.DestinationType.TOPIC, topicName);
@@ -1027,8 +1027,8 @@ public class SessionImpl implements Session {
     public TopicSubscriber createDurableSubscriber(Topic topic, String subscribedId) throws JMSException {
         if (sessionState.isInCloseMode()) throw new javax.jms.IllegalStateException("Already closed");
 
-        if (null == topic) throw new InvalidDestinationException("Illegal destination " + topic);
-        if (null == subscribedId) throw new JMSException("Illegal subscribedId " + subscribedId);
+        if (null == topic) throw new InvalidDestinationException("Illegal destination");
+        if (null == subscribedId) throw new JMSException("Illegal subscribedId");
         connection.initConnectionClientID();
 
         subscriptions.registerSubscriberIdToTopic(subscribedId, topic.getTopicName());
@@ -1040,8 +1040,8 @@ public class SessionImpl implements Session {
                                                    boolean noLocal) throws JMSException {
         if (sessionState.isInCloseMode()) throw new javax.jms.IllegalStateException("Already closed");
 
-        if (null == topic) throw new InvalidDestinationException("Illegal destination " + topic);
-        if (null == subscribedId) throw new JMSException("Illegal subscribedId " + subscribedId);
+        if (null == topic) throw new InvalidDestinationException("Illegal destination");
+        if (null == subscribedId) throw new JMSException("Illegal subscribedId");
         connection.initConnectionClientID();
 
         subscriptions.registerSubscriberIdToTopic(subscribedId, topic.getTopicName());

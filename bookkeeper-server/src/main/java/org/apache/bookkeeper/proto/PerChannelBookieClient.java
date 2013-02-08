@@ -703,7 +703,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof CompletionKey) || obj == null) {
+            if (!(obj instanceof CompletionKey)) {
                 return false;
             }
             CompletionKey that = (CompletionKey) obj;

@@ -35,6 +35,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.hedwig.protocol.PubSubProtocol.ManagerMeta;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.zookeeper.ZkUtils;
+import static com.google.common.base.Charsets.UTF_8;
 
 /**
  * This class encapsulates metadata manager layout information
@@ -87,7 +88,7 @@ public class FactoryLayout {
     throws KeeperException, IOException, InterruptedException {
         String factoryLayoutPath = getFactoryLayoutPath(new StringBuilder(), cfg);
 
-        byte[] layoutData = TextFormat.printToString(managerMeta).getBytes();
+        byte[] layoutData = TextFormat.printToString(managerMeta).getBytes(UTF_8);
         ZkUtils.createFullPathOptimistic(zk, factoryLayoutPath, layoutData,
                                          Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
     }
@@ -136,7 +137,7 @@ public class FactoryLayout {
         ManagerMeta meta;
         try {
             BufferedReader reader = new BufferedReader(
-                new StringReader(new String(layoutData)));
+                    new StringReader(new String(layoutData, UTF_8)));
             ManagerMeta.Builder metaBuilder = ManagerMeta.newBuilder();
             TextFormat.merge(reader, metaBuilder);
             meta = metaBuilder.build();

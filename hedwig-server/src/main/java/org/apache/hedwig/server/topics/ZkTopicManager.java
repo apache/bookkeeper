@@ -31,6 +31,7 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.data.Stat;
 
+import static com.google.common.base.Charsets.UTF_8;
 import com.google.protobuf.ByteString;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.server.common.ServerConfiguration;
@@ -205,7 +206,7 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
 
                     // successfully did a read
                     try {
-                        HubInfo ownerHubInfo = HubInfo.parse(new String(data));
+                        HubInfo ownerHubInfo = HubInfo.parse(new String(data, UTF_8));
                         HedwigSocketAddress owner = ownerHubInfo.getAddress();
                         if (!owner.equals(addr)) {
                             if (logger.isDebugEnabled()) {
@@ -244,8 +245,9 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
                 logger.debug("claiming topic: " + topic.toStringUtf8());
             }
 
-            ZkUtils.createFullPathOptimistic(zk, hubPath, myHubInfo.toString().getBytes(), Ids.OPEN_ACL_UNSAFE,
-            CreateMode.EPHEMERAL, new SafeAsyncZKCallback.StringCallback() {
+            ZkUtils.createFullPathOptimistic(zk, hubPath,
+                    myHubInfo.toString().getBytes(UTF_8), Ids.OPEN_ACL_UNSAFE,
+                    CreateMode.EPHEMERAL, new SafeAsyncZKCallback.StringCallback() {
 
                 @Override
                 public void safeProcessResult(int rc, String path, Object ctx, String name) {
@@ -290,7 +292,7 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
                     return;
                 }
 
-                String hubInfoStr = new String(data);
+                String hubInfoStr = new String(data, UTF_8);
                 try {
                     HubInfo ownerHubInfo = HubInfo.parse(hubInfoStr);
                     HedwigSocketAddress owner = ownerHubInfo.getAddress();

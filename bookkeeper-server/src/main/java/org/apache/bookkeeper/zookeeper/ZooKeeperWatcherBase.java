@@ -66,6 +66,9 @@ public class ZooKeeperWatcherBase implements Watcher {
             LOG.error("ZooKeeper client connection to the "
                     + "ZooKeeper server has expired!");
             break;
+        default:
+            // do nothing
+            break;
         }
     }
 
