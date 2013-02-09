@@ -25,30 +25,8 @@ public class ServerStats {
     private long totalLatency = 0;
     private long count = 0;
 
-    public interface Provider {
-        public long getOutstandingRequests();
-
-        public long getLastProcessedZxid();
-    }
-
-    private Provider provider = null;
-    private Object mutex = new Object();
-
     static public ServerStats getInstance() {
         return instance;
-    }
-
-    static public void registerAsConcrete() {
-        setInstance(new ServerStats());
-    }
-
-    static synchronized public void unregister() {
-        instance = null;
-    }
-
-    static synchronized protected void setInstance(ServerStats newInstance) {
-        assert instance == null;
-        instance = newInstance;
     }
 
     protected ServerStats() {
@@ -69,17 +47,6 @@ public class ServerStats {
         return maxLatency;
     }
 
-    public long getOutstandingRequests() {
-        synchronized (mutex) {
-            return (provider != null) ? provider.getOutstandingRequests() : -1;
-        }
-    }
-
-    public long getLastProcessedZxid() {
-        synchronized (mutex) {
-            return (provider != null) ? provider.getLastProcessedZxid() : -1;
-        }
-    }
 
     synchronized public long getPacketsReceived() {
         return packetsReceived;
@@ -89,29 +56,13 @@ public class ServerStats {
         return packetsSent;
     }
 
-    public String getServerState() {
-        return "standalone";
-    }
-
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Latency min/avg/max: " + getMinLatency() + "/" + getAvgLatency() + "/" + getMaxLatency() + "\n");
         sb.append("Received: " + getPacketsReceived() + "\n");
         sb.append("Sent: " + getPacketsSent() + "\n");
-        if (provider != null) {
-            sb.append("Outstanding: " + getOutstandingRequests() + "\n");
-            sb.append("Zxid: 0x" + Long.toHexString(getLastProcessedZxid()) + "\n");
-        }
-        sb.append("Mode: " + getServerState() + "\n");
         return sb.toString();
-    }
-
-    // mutators
-    public void setStatsProvider(Provider zk) {
-        synchronized (mutex) {
-            provider = zk;
-        }
     }
 
     synchronized void updateLatency(long requestCreateTime) {
