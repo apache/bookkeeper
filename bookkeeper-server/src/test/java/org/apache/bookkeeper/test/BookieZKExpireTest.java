@@ -92,7 +92,6 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             // allow watcher thread to run
             secondsToWait = 20;
             while (server.isBookieRunning()
-                   || server.isNioServerRunning()
                    || server.isRunning()) {
                 Thread.sleep(1000);
                 if (secondsToWait-- <= 0) {
@@ -100,7 +99,6 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
                 }
             }
             assertFalse("Bookie should have shutdown on losing zk session", server.isBookieRunning());
-            assertFalse("Nio Server should have shutdown on losing zk session", server.isNioServerRunning());
             assertFalse("Bookie Server should have shutdown on losing zk session", server.isRunning());
         } finally {
             server.shutdown();

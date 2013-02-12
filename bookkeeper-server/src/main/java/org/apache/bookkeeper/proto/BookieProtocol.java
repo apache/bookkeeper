@@ -21,6 +21,8 @@ package org.apache.bookkeeper.proto;
  *
  */
 
+import java.nio.ByteBuffer;
+
 /**
  * The packets of the Bookie protocol all have a 4-byte integer indicating the
  * type of request or response at the very beginning of the packet followed by a
@@ -173,4 +175,160 @@ public interface BookieProtocol {
     public static final short FLAG_NONE = 0x0;
     public static final short FLAG_DO_FENCING = 0x0001;
     public static final short FLAG_RECOVERY_ADD = 0x0002;
+
+    static class Request {
+
+        final byte protocolVersion;
+        final byte opCode;
+        final long ledgerId;
+        final long entryId;
+        final short flags;
+        final byte[] masterKey;
+
+        protected Request(byte protocolVersion, byte opCode, long ledgerId,
+                          long entryId, short flags) {
+            this(protocolVersion, opCode, ledgerId, entryId, flags, null);
+        }
+
+        protected Request(byte protocolVersion, byte opCode, long ledgerId,
+                          long entryId, short flags, byte[] masterKey) {
+            this.protocolVersion = protocolVersion;
+            this.opCode = opCode;
+            this.ledgerId = ledgerId;
+            this.entryId = entryId;
+            this.flags = flags;
+            this.masterKey = masterKey;
+        }
+
+        byte getProtocolVersion() {
+            return protocolVersion;
+        }
+
+        byte getOpCode() {
+            return opCode;
+        }
+
+        long getLedgerId() {
+            return ledgerId;
+        }
+
+        long getEntryId() {
+            return entryId;
+        }
+
+        boolean hasMasterKey() {
+            return masterKey != null;
+        }
+
+        byte[] getMasterKey() {
+            assert hasMasterKey();
+            return masterKey;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Op(%d)[Ledger:%d,Entry:%d]", opCode, ledgerId, entryId);
+        }
+    }
+
+    static class AddRequest extends Request {
+        final ByteBuffer data;
+
+        AddRequest(byte protocolVersion, long ledgerId, long entryId,
+                   short flags, byte[] masterKey, ByteBuffer data) {
+            super(protocolVersion, ADDENTRY, ledgerId, entryId, flags, masterKey);
+            this.data = data;
+        }
+
+        ByteBuffer getData() {
+            return data;
+        }
+
+        boolean isRecoveryAdd() {
+            return (flags & FLAG_RECOVERY_ADD) == FLAG_RECOVERY_ADD;
+        }
+    }
+
+    static class ReadRequest extends Request {
+        ReadRequest(byte protocolVersion, long ledgerId, long entryId, short flags) {
+            super(protocolVersion, READENTRY, ledgerId, entryId, flags);
+        }
+
+        ReadRequest(byte protocolVersion, long ledgerId, long entryId,
+                    short flags, byte[] masterKey) {
+            super(protocolVersion, READENTRY, ledgerId, entryId, flags, masterKey);
+        }
+
+        boolean isFencingRequest() {
+            return (flags & FLAG_DO_FENCING) == FLAG_DO_FENCING;
+        }
+    }
+
+    static class Response {
+        final byte protocolVersion;
+        final byte opCode;
+        final int errorCode;
+        final long ledgerId;
+        final long entryId;
+
+        protected Response(byte protocolVersion, byte opCode,
+                           int errorCode, long ledgerId, long entryId) {
+            this.protocolVersion = protocolVersion;
+            this.opCode = opCode;
+            this.errorCode = errorCode;
+            this.ledgerId = ledgerId;
+            this.entryId = entryId;
+        }
+
+        byte getProtocolVersion() {
+            return protocolVersion;
+        }
+
+        byte getOpCode() {
+            return opCode;
+        }
+
+        long getLedgerId() {
+            return ledgerId;
+        }
+
+        long getEntryId() {
+            return entryId;
+        }
+
+        int getErrorCode() {
+            return errorCode;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Op(%d)[Ledger:%d,Entry:%d]", opCode, ledgerId, entryId);
+        }
+    }
+
+    static class ReadResponse extends Response {
+        final ByteBuffer data;
+
+        ReadResponse(byte protocolVersion, long ledgerId, long entryId, ByteBuffer data) {
+            super(protocolVersion, READENTRY, EOK, ledgerId, entryId);
+            this.data = data;
+        }
+
+        ByteBuffer getData() {
+            return data;
+        }
+    }
+
+    static class AddResponse extends Response {
+        AddResponse(byte protocolVersion, long ledgerId, long entryId) {
+            super(protocolVersion, ADDENTRY, EOK, ledgerId, entryId);
+        }
+    }
+
+    static class ErrorResponse extends Response {
+        ErrorResponse(byte protocolVersion, byte opCode, int errorCode,
+                      long ledgerId, long entryId) {
+            super(protocolVersion, opCode, errorCode, ledgerId, entryId);
+        }
+    }
 }

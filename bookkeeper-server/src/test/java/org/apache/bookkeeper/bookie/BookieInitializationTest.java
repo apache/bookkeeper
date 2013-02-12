@@ -29,6 +29,7 @@ import java.net.InetAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.jboss.netty.channel.ChannelException;
 import junit.framework.Assert;
 
 import org.apache.bookkeeper.bookie.Bookie;
@@ -229,9 +230,11 @@ public class BookieInitializationTest {
             BookieServer bs2 = new BookieServer(conf);
             bs2.start();
             fail("Should throw BindException, as the bk server is already running!");
-        } catch (BindException be) {
-            Assert.assertTrue("BKServer allowed duplicate startups!", be
-                    .getMessage().contains("Address already in use"));
+        } catch (ChannelException ce) {
+            Assert.assertTrue("Should be caused by a bind exception",
+                              ce.getCause() instanceof BindException);
+            Assert.assertTrue("BKServer allowed duplicate startups!",
+                    ce.getCause().getMessage().contains("Address already in use"));
         }
     }
 
