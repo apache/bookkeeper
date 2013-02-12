@@ -282,6 +282,8 @@ public class LedgerCacheTest extends TestCase {
         ledgerStorage.flush();
         File after = newFileInfo.getLf();
 
+        assertEquals("Reference counting for the file info should be zero.", 0, newFileInfo.getUseCount());
+
         assertFalse("After flush index file should be changed", before.equals(after));
         // Verify written entries
         Assert.assertArrayEquals(generateEntry(1, 1).array(), ledgerStorage.getEntry(1, 1).array());

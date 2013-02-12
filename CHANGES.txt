@@ -12,6 +12,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-561: Findbugs report errors with openjdk (ivank via umamahesh)
 
+      BOOKKEEPER-554: fd leaking when move ledger index file (sijie, ivank via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-526: multiple threads for delivery manager (sijie via ivank)

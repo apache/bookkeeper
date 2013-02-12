@@ -360,10 +360,17 @@ public class LedgerCacheImpl implements LedgerCache {
                 // if some new dir detected as full, then move all corresponding
                 // open index files to new location
                 for (Long l : dirtyLedgers) {
-                    FileInfo fi = getFileInfo(l, null);
-                    File currentDir = getLedgerDirForLedger(fi);
-                    if (ledgerDirsManager.isDirFull(currentDir)) {
-                        moveLedgerIndexFile(l, fi);
+                    FileInfo fi = null;
+                    try {
+                        fi = getFileInfo(l, null);
+                        File currentDir = getLedgerDirForLedger(fi);
+                        if (ledgerDirsManager.isDirFull(currentDir)) {
+                            moveLedgerIndexFile(l, fi);
+                        }
+                    } finally {
+                        if (null != fi) {
+                            fi.release();
+                        }
                     }
                 }
                 shouldRelocateIndexFile.set(false);

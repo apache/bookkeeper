@@ -29,6 +29,7 @@ import java.nio.BufferUnderflowException;
 import java.nio.channels.FileChannel;
 
 import static com.google.common.base.Charsets.UTF_8;
+import com.google.common.annotations.VisibleForTesting;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -334,6 +335,11 @@ class FileInfo {
 
     synchronized public void use() {
         useCount++;
+    }
+
+    @VisibleForTesting
+    synchronized int getUseCount() {
+        return useCount;
     }
 
     synchronized public void release() {
