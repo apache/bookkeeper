@@ -22,7 +22,7 @@
   <parent>
     <artifactId>bookkeeper</artifactId>
     <groupId>org.apache.bookkeeper</groupId>
-    <version>4.2.0</version>
+    <version>4.2.1-SNAPSHOT</version>
   </parent>
   <groupId>org.apache.bookkeeper</groupId>
   <artifactId>bookkeeper-benchmark</artifactId>
