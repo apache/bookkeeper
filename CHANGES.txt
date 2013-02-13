@@ -1,3 +1,11 @@
+Release 4.2.1 (unreleased changes)
+
+  Backward compatible changes:
+
+    BUGFIXES:
+
+      BOOKKEEPER-554: fd leaking when move ledger index file (sijie via ivank)
+
 Release 4.2.0 - 2013-01-14
 
   Non-backward compatible changes:

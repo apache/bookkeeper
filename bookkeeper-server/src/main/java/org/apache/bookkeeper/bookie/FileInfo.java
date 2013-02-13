@@ -27,6 +27,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.FileChannel;
+import com.google.common.annotations.VisibleForTesting;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -332,6 +333,11 @@ class FileInfo {
 
     synchronized public void use() {
         useCount++;
+    }
+
+    @VisibleForTesting
+    synchronized int getUseCount() {
+        return useCount;
     }
 
     synchronized public void release() {
