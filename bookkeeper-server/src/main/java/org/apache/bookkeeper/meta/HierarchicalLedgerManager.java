@@ -416,7 +416,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
                 if (l1NodesIter == null) {
                     l1NodesIter = zk.getChildren(ledgerRootPath, null).iterator();
                     hasMoreElement = nextL1Node();
-                } else if (!l2NodesIter.hasNext()) {
+                } else if (l2NodesIter == null || !l2NodesIter.hasNext()) {
                     hasMoreElement = nextL1Node();
                 }
             } catch (Exception e) {

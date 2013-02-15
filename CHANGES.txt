@@ -14,6 +14,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-554: fd leaking when move ledger index file (sijie, ivank via sijie)
 
+      BOOKKEEPER-568: NPE during GC with HierarchicalLedgerManager (Matteo via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-555: Make BookieServer use Netty rather than a custom IO server (ivank)
