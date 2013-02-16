@@ -9,12 +9,15 @@ Trunk (unreleased changes)
   Backward compatible changes:
 
     BUGFIXES:
+      bookkeeper-server:
 
-      BOOKKEEPER-561: Findbugs report errors with openjdk (ivank via umamahesh)
+        BOOKKEEPER-561: Findbugs report errors with openjdk (ivank via umamahesh)
 
-      BOOKKEEPER-554: fd leaking when move ledger index file (sijie, ivank via sijie)
+        BOOKKEEPER-554: fd leaking when move ledger index file (sijie, ivank via sijie)
 
-      BOOKKEEPER-568: NPE during GC with HierarchicalLedgerManager (Matteo via sijie)
+        BOOKKEEPER-568: NPE during GC with HierarchicalLedgerManager (Matteo via sijie)
+
+        BOOKKEEPER-569: Critical performance bug in InterleavedLedgerStorage (ivank via fpj)
 
     IMPROVEMENTS:
 

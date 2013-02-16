@@ -155,7 +155,7 @@ class InterleavedLedgerStorage implements LedgerStorage {
     };
 
     @Override
-    public synchronized void flush() throws IOException {
+    public void flush() throws IOException {
 
         if (!somethingWritten) {
             return;
