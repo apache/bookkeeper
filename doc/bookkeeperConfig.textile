@@ -115,6 +115,22 @@ The mechanism to prevent the bookie from starting up in the case of configuratio
 # A strict subset of the ledger devices (among multiple ledger devices) has been replaced, consequently making the content of the replaced devices unavailable;
 # A strict subset of the ledger directories has been accidentally deleted.
 
+h3. Full or failing disks
+
+A bookie can go into read-only mode if it detects problems with its disks. In read-only mode, the bookie will serve read requests, but will not allow any writes. Any ledger currently writing to the bookie will replace the bookie in its ensemble. No new ledgers will select the read-only bookie for writing.
+
+The bookie goes into read-only mode in the following conditions.
+
+# All disks are full.
+# An error occurred flushing to the ledger disks.
+# An error occurred writing to the journal disk.
+
+Important parameters are:
+
+* @readOnlyModeEnabled@, whether read-only mode is enabled. If read-only mode is not enabled, the bookie will shutdown on encountering any of the above conditions. By default, read-only mode is disabled.
+* @diskUsageThreshold@, percentage threshold at which a disk will be considered full. This value must be between 0 and 1.0. By default, the value is 0.95.
+* @diskCheckInterval@, interval at which the disks are checked to see if they are full. Specified in milliseconds. By default the check occurs every 10000 milliseconds (10 seconds).
+
 h2. Running Autorecovery nodes
 
 To run autorecovery nodes, we execute the following command in every Bookie node:
