@@ -6,6 +6,8 @@ Release 4.2.1 (unreleased changes)
 
       bookkeeper-server:
 
+        BOOKKEEPER-549: Documentation missed for readOnlyMode support (ivank)
+
         BOOKKEEPER-548: Document about periodic ledger checker configuration (ivank)
 
         BOOKKEEPER-554: fd leaking when move ledger index file (sijie via ivank)
