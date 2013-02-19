@@ -358,6 +358,7 @@ public class Bookie extends Thread {
                 }
             } catch (Throwable t) {
                 LOG.error("Exception in SyncThread", t);
+                flushing.set(false);
                 triggerBookieShutdown(ExitCode.BOOKIE_EXCEPTION);
             }
         }

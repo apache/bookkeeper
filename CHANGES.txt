@@ -11,6 +11,8 @@ Trunk (unreleased changes)
     BUGFIXES:
       bookkeeper-server:
 
+        BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)
+
         BOOKKEEPER-549: Documentation missed for readOnlyMode support (ivank)
 
         BOOKKEEPER-548: Document about periodic ledger checker configuration (ivank)
