@@ -1,4 +1,4 @@
-Release 4.2.1 (unreleased changes)
+Release 4.2.1 - 2013-02-19
 
   Backward compatible changes:
 
