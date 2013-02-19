@@ -650,7 +650,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Set the regularity at which the auditor will run a check
      * of all ledgers. This should not be run very often, and at most,
-     * once a day.
+     * once a day. Setting this to 0 will completely disable the periodic
+     * check.
      *
      * @param interval The interval in seconds. e.g. 86400 = 1 day, 604800 = 1 week
      */
@@ -660,10 +661,10 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Get the regularity at which the auditor checks all ledgers.
-     * @return The interval in seconds
+     * @return The interval in seconds. Default is 604800 (1 week).
      */
     public long getAuditorPeriodicCheckInterval() {
-        return getLong(AUDITOR_PERIODIC_CHECK_INTERVAL, 86400);
+        return getLong(AUDITOR_PERIODIC_CHECK_INTERVAL, 604800);
     }
 
     /**

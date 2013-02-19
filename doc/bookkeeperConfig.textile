@@ -124,9 +124,12 @@ Configuration parameters for autorecovery can be set in *bookkeeper-server/conf/
 
 Important parameters are:
 
+* @auditorPeriodicCheckInterval@, interval at which the auditor will do a check of all ledgers in the cluster. By default this runs once a week. The interval is set in seconds. To disable the periodic check completely, set this to 0. Note that periodic checking will put extra load on the cluster, so it should not be run more frequently than once a day.
+
 * @rereplicationEntryBatchSize@ specifies the number of entries which a replication will rereplicate in parallel. The default value is 10. A larger value for this parameter will increase the speed at which autorecovery occurs but will increate the memory requirement of the autorecovery process, and create more load on the cluster.
 
 * @openLedgerRereplicationGracePeriod@, is the amount of time, in milliseconds, which a recovery worker will wait before recovering a ledger segment which has no defined ended, i.e. the client is still writing to that segment. If the client is still active, it should detect the bookie failure, and start writing to a new ledger segment, and a new ensemble, which doesn't include the failed bookie. Creating new ledger segment will define the end of the previous segment. If, after the grace period, the ledger segment's end has not been defined, we assume the writing client has crashed. The ledger is fenced and the client is blocked from writing any more entries to the ledger. The default value is 30000ms.
+
 
 h3. Disabling Autorecovery during maintenance
 

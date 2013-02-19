@@ -11,6 +11,8 @@ Trunk (unreleased changes)
     BUGFIXES:
       bookkeeper-server:
 
+        BOOKKEEPER-548: Document about periodic ledger checker configuration (ivank)
+
         BOOKKEEPER-561: Findbugs report errors with openjdk (ivank via umamahesh)
 
         BOOKKEEPER-554: fd leaking when move ledger index file (sijie, ivank via sijie)
