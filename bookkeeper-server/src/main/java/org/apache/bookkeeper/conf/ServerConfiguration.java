@@ -584,9 +584,11 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the ReadOnlyModeEnabled status
+     * Set whether the bookie is able to go into read-only mode.
+     * If this is set to false, the bookie will shutdown on encountering
+     * an error condition.
      * 
-     * @param enabled enables read-only mode.
+     * @param enabled whether to enable read-only mode.
      * 
      * @return ServerConfiguration 
      */
@@ -596,7 +598,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get ReadOnlyModeEnabled status
+     * Get whether read-only mode is enabled. The default is false.
      * 
      * @return boolean
      */
