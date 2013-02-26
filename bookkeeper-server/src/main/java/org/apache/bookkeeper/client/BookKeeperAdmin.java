@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.Collection;
 
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
@@ -151,6 +152,17 @@ public class BookKeeperAdmin {
     public void close() throws InterruptedException, BKException {
         bkc.close();
         zk.close();
+    }
+
+    /**
+     * Get a list of the available bookies.
+     *
+     * @return the collection of available bookies
+     */
+    public Collection<InetSocketAddress> getAvailableBookies()
+            throws InterruptedException, KeeperException {
+        bkc.bookieWatcher.readBookiesBlocking();
+        return bkc.bookieWatcher.getBookies();
     }
 
     /**

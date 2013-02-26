@@ -37,6 +37,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-556: BookieServerMXBean#getServerState makes no sense (ivank via sijie)
 
+      BOOKKEEPER-574: Extend the bookkeeper shell to get a list of available bookies (ivank via umamahesh)
+
 Release 4.2.0 - 2013-01-14
 
   Non-backward compatible changes:

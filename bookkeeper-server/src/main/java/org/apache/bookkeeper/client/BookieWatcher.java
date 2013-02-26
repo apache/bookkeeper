@@ -21,6 +21,7 @@ package org.apache.bookkeeper.client;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -82,6 +83,10 @@ class BookieWatcher implements Watcher, ChildrenCallback {
         this.bookieRegistrationPath = conf.getZkAvailableBookiesPath();
         this.scheduler = scheduler;
         readOnlyBookieWatcher = new ReadOnlyBookieWatcher(conf, bk);
+    }
+
+    public synchronized Collection<InetSocketAddress> getBookies() {
+        return new HashSet<InetSocketAddress>(knownBookies);
     }
 
     public void readBookies() {

@@ -42,6 +42,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.Tool;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.util.StringUtils;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -73,6 +74,7 @@ public class BookieShell implements Tool {
     static final String CMD_READJOURNAL = "readjournal";
     static final String CMD_LASTMARK = "lastmark";
     static final String CMD_AUTORECOVERY = "autorecovery";
+    static final String CMD_LISTBOOKIES = "listbookies";
     static final String CMD_HELP = "help";
 
     final ServerConfiguration bkConf = new ServerConfiguration();
@@ -474,6 +476,55 @@ public class BookieShell implements Tool {
     }
 
     /**
+     * List available bookies
+     */
+    class ListBookiesCmd extends MyCommand {
+        Options opts = new Options();
+
+        ListBookiesCmd() {
+            super(CMD_LISTBOOKIES);
+            opts.addOption("h", "hostnames", false, "Also print hostnames");
+        }
+
+        @Override
+        public int runCmd(CommandLine cmdLine) throws Exception {
+            ClientConfiguration clientconf = new ClientConfiguration(bkConf)
+                .setZkServers(bkConf.getZkServers());
+            BookKeeperAdmin bka = new BookKeeperAdmin(clientconf);
+
+            int count = 0;
+            for (InetSocketAddress b : bka.getAvailableBookies()) {
+                System.out.print(StringUtils.addrToString(b));
+                if (cmdLine.hasOption("h")) {
+                    System.out.print("\t" + b.getHostName());
+                }
+                System.out.println("");
+                count++;
+            }
+            if (count == 0) {
+                System.err.println("No bookies available");
+                return 1;
+            }
+            return 0;
+        }
+
+        @Override
+        String getDescription() {
+            return "List all available bookies.";
+        }
+
+        @Override
+        String getUsage() {
+            return "listbookies [-hostnames]";
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+    }
+
+    /**
      * Command to print help message
      */
     class HelpCmd implements Command {
@@ -583,6 +634,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_READJOURNAL, new ReadJournalCmd());
         commands.put(CMD_LASTMARK, new LastMarkCmd());
         commands.put(CMD_AUTORECOVERY, new AutoRecoveryCmd());
+        commands.put(CMD_LISTBOOKIES, new ListBookiesCmd());
         commands.put(CMD_HELP, new HelpCmd());
     }
 
@@ -592,7 +644,7 @@ public class BookieShell implements Tool {
         journalDirectory = Bookie.getCurrentDirectory(bkConf.getJournalDir());
         ledgerDirectories = Bookie.getCurrentDirectories(bkConf.getLedgerDirs());
         formatter = EntryFormatter.newEntryFormatter(bkConf, ENTRY_FORMATTER_CLASS);
-        LOG.info("Using entry formatter " + formatter.getClass().getName());
+        LOG.debug("Using entry formatter {}", formatter.getClass().getName());
         pageSize = bkConf.getPageSize();
         entriesPerPage = pageSize / 8;
     }
@@ -607,6 +659,7 @@ public class BookieShell implements Tool {
         System.err.println("       readlog      [-msg] <entry_log_id|entry_log_file_name>");
         System.err.println("       readjournal  [-msg] <journal_id|journal_file_name>");
         System.err.println("       autorecovery [-enable|-disable]");
+        System.err.println("       listbookies  [-hostnames]");
         System.err.println("       lastmark");
         System.err.println("       help");
     }
