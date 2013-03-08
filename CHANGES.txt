@@ -9,6 +9,9 @@ Trunk (unreleased changes)
   Backward compatible changes:
 
     BUGFIXES:
+
+      BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)
