@@ -377,7 +377,7 @@ public class Auditor implements Watcher {
      * List all the ledgers and check them individually. This should not
      * be run very often.
      */
-    private void checkAllLedgers() throws BKAuditException, BKException,
+    void checkAllLedgers() throws BKAuditException, BKException,
             IOException, InterruptedException, KeeperException {
         ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(conf.getZkTimeout());
         ZooKeeper newzk = ZkUtils.createConnectedZookeeperClient(conf.getZkServers(), w);
@@ -413,6 +413,11 @@ public class Auditor implements Watcher {
                     try {
                         lh = admin.openLedgerNoRecovery(ledgerId);
                         checker.checkLedger(lh, new ProcessLostFragmentsCb(lh, callback));
+                    } catch (BKException.BKNoSuchLedgerExistsException bknsle) {
+                        LOG.debug("Ledger was deleted before we could check it", bknsle);
+                        callback.processResult(BKException.Code.OK,
+                                               null, null);
+                        return;
                     } catch (BKException bke) {
                         LOG.error("Couldn't open ledger " + ledgerId, bke);
                         callback.processResult(BKException.Code.BookieHandleNotAvailableException,
