@@ -58,7 +58,7 @@ public class TestProtoVersions {
         base.tearDown();
     }
 
-    private void testVersion(int version, int expectedresult) throws Exception {
+    private void testVersion(byte version, int expectedresult) throws Exception {
         PerChannelBookieClient bc = new PerChannelBookieClient(base.executor, base.channelFactory, 
                 new InetSocketAddress(InetAddress.getLocalHost(), base.port), new AtomicLong(0));
         final AtomicInteger outerrc = new AtomicInteger(-1);
@@ -83,20 +83,9 @@ public class TestProtoVersions {
         bc.readCompletions.put(bc.newCompletionKey(1, 1),
                                new PerChannelBookieClient.ReadCompletion(cb, this));
         
-        int totalHeaderSize = 4 // for the length of the packet
-            + 4 // for request type
-            + 8 // for ledgerId
-            + 8; // for entryId
-
-        // This will need to updated if the protocol for read changes
-        ChannelBuffer tmpEntry = bc.channel.getConfig().getBufferFactory().getBuffer(totalHeaderSize);
-        tmpEntry.writeInt(totalHeaderSize - 4);
-        tmpEntry.writeInt(new BookieProtocol.PacketHeader((byte)version, BookieProtocol.READENTRY, (short)0).toInt());
-        tmpEntry.writeLong(1);
-        tmpEntry.writeLong(1);
+        BookieProtocol.ReadRequest req = new BookieProtocol.ReadRequest(version, 1L, 1L, (short)0);
         
-        
-        bc.channel.write(tmpEntry).awaitUninterruptibly();
+        bc.channel.write(req).awaitUninterruptibly();
         readLatch.await(5, TimeUnit.SECONDS);
         assertEquals("Expected result differs", expectedresult, outerrc.get());
         
@@ -105,9 +94,9 @@ public class TestProtoVersions {
 
     @Test(timeout=60000)
     public void testVersions() throws Exception {
-        testVersion(BookieProtocol.LOWEST_COMPAT_PROTOCOL_VERSION-1, BKException.Code.ProtocolVersionException);
+        testVersion((byte)(BookieProtocol.LOWEST_COMPAT_PROTOCOL_VERSION-1), BKException.Code.ProtocolVersionException);
         testVersion(BookieProtocol.LOWEST_COMPAT_PROTOCOL_VERSION, BKException.Code.NoSuchEntryException);
         testVersion(BookieProtocol.CURRENT_PROTOCOL_VERSION, BKException.Code.NoSuchEntryException);
-        testVersion(BookieProtocol.CURRENT_PROTOCOL_VERSION+1, BKException.Code.ProtocolVersionException);
+        testVersion((byte)(BookieProtocol.CURRENT_PROTOCOL_VERSION+1), BKException.Code.ProtocolVersionException);
     }
 }

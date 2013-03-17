@@ -44,6 +44,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-574: Extend the bookkeeper shell to get a list of available bookies (ivank via umamahesh)
 
+      BOOKKEEPER-576: Bookie client should use netty Decoder/Encoder (ivank via sijie)
+
 Release 4.2.0 - 2013-01-14
 
   Non-backward compatible changes:

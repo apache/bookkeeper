@@ -21,20 +21,27 @@
 package org.apache.bookkeeper.proto;
 
 import java.nio.ByteBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 
 class ResponseBuilder {
     static BookieProtocol.Response buildErrorResponse(int errorCode, BookieProtocol.Request r) {
-        return new BookieProtocol.ErrorResponse(r.getProtocolVersion(), r.getOpCode(),
-                                                errorCode, r.getLedgerId(), r.getEntryId());
+        if (r.getOpCode() == BookieProtocol.ADDENTRY) {
+            return new BookieProtocol.AddResponse(r.getProtocolVersion(), errorCode,
+                                                  r.getLedgerId(), r.getEntryId());
+        } else {
+            assert(r.getOpCode() == BookieProtocol.READENTRY);
+            return new BookieProtocol.ReadResponse(r.getProtocolVersion(), errorCode,
+                                                   r.getLedgerId(), r.getEntryId());
+        }
     }
 
     static BookieProtocol.Response buildAddResponse(BookieProtocol.Request r) {
-        return new BookieProtocol.AddResponse(r.getProtocolVersion(), r.getLedgerId(),
+        return new BookieProtocol.AddResponse(r.getProtocolVersion(), BookieProtocol.EOK, r.getLedgerId(),
                                               r.getEntryId());
     }
 
     static BookieProtocol.Response buildReadResponse(ByteBuffer data, BookieProtocol.Request r) {
-        return new BookieProtocol.ReadResponse(r.getProtocolVersion(),
-                                               r.getLedgerId(), r.getEntryId(), data);
+        return new BookieProtocol.ReadResponse(r.getProtocolVersion(), BookieProtocol.EOK,
+                r.getLedgerId(), r.getEntryId(), ChannelBuffers.wrappedBuffer(data));
     }
 }

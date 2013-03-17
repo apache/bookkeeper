@@ -159,10 +159,11 @@ class BookieRequestHandler extends SimpleChannelHandler
         int rc = BookieProtocol.EOK;
         try {
             if (add.isRecoveryAdd()) {
-                bookie.recoveryAddEntry(add.getData(), this, new AddCtx(c, add),
+                bookie.recoveryAddEntry(add.getDataAsByteBuffer(), this, new AddCtx(c, add),
                                         add.getMasterKey());
             } else {
-                bookie.addEntry(add.getData(), this, new AddCtx(c, add), add.getMasterKey());
+                bookie.addEntry(add.getDataAsByteBuffer(),
+                                this, new AddCtx(c, add), add.getMasterKey());
             }
         } catch (IOException e) {
             LOG.error("Error writing " + add, e);

@@ -21,6 +21,7 @@ package org.apache.bookkeeper.proto;
  *
  */
 
+import org.jboss.netty.buffer.ChannelBuffer;
 import java.nio.ByteBuffer;
 
 /**
@@ -216,6 +217,10 @@ public interface BookieProtocol {
             return entryId;
         }
 
+        short getFlags() {
+            return flags;
+        }
+
         boolean hasMasterKey() {
             return masterKey != null;
         }
@@ -232,16 +237,20 @@ public interface BookieProtocol {
     }
 
     static class AddRequest extends Request {
-        final ByteBuffer data;
+        final ChannelBuffer data;
 
         AddRequest(byte protocolVersion, long ledgerId, long entryId,
-                   short flags, byte[] masterKey, ByteBuffer data) {
+                   short flags, byte[] masterKey, ChannelBuffer data) {
             super(protocolVersion, ADDENTRY, ledgerId, entryId, flags, masterKey);
             this.data = data;
         }
 
-        ByteBuffer getData() {
+        ChannelBuffer getData() {
             return data;
+        }
+
+        ByteBuffer getDataAsByteBuffer() {
+            return data.toByteBuffer().slice();
         }
 
         boolean isRecoveryAdd() {
@@ -302,33 +311,36 @@ public interface BookieProtocol {
 
         @Override
         public String toString() {
-            return String.format("Op(%d)[Ledger:%d,Entry:%d]", opCode, ledgerId, entryId);
+            return String.format("Op(%d)[Ledger:%d,Entry:%d,errorCode=%d]",
+                                 opCode, ledgerId, entryId, errorCode);
         }
     }
 
     static class ReadResponse extends Response {
-        final ByteBuffer data;
+        final ChannelBuffer data;
 
-        ReadResponse(byte protocolVersion, long ledgerId, long entryId, ByteBuffer data) {
-            super(protocolVersion, READENTRY, EOK, ledgerId, entryId);
+        ReadResponse(byte protocolVersion, int errorCode, long ledgerId, long entryId) {
+            super(protocolVersion, READENTRY, errorCode, ledgerId, entryId);
+            this.data = null;
+        }
+
+        ReadResponse(byte protocolVersion, int errorCode, long ledgerId, long entryId, ChannelBuffer data) {
+            super(protocolVersion, READENTRY, errorCode, ledgerId, entryId);
             this.data = data;
         }
 
-        ByteBuffer getData() {
+        boolean hasData() {
+            return data != null;
+        }
+
+        ChannelBuffer getData() {
             return data;
         }
     }
 
     static class AddResponse extends Response {
-        AddResponse(byte protocolVersion, long ledgerId, long entryId) {
-            super(protocolVersion, ADDENTRY, EOK, ledgerId, entryId);
-        }
-    }
-
-    static class ErrorResponse extends Response {
-        ErrorResponse(byte protocolVersion, byte opCode, int errorCode,
-                      long ledgerId, long entryId) {
-            super(protocolVersion, opCode, errorCode, ledgerId, entryId);
+        AddResponse(byte protocolVersion, int errorCode, long ledgerId, long entryId) {
+            super(protocolVersion, ADDENTRY, errorCode, ledgerId, entryId);
         }
     }
 }
