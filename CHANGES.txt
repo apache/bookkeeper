@@ -48,6 +48,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-585: Auditor logs noisily when a ledger has been deleted (ivank via sijie)
 
+      BOOKKEEPER-573: Script to start a bookkeeper cluster (ivank via sijie)
+
 Release 4.2.0 - 2013-01-14
 
   Non-backward compatible changes:
