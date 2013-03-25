@@ -24,20 +24,18 @@ package org.apache.bookkeeper.client;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.*;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.test.BaseTestCase;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -355,5 +353,68 @@ public class LedgerRecoveryTest extends BaseTestCase {
                 "".getBytes());
         assertEquals("Fenced ledger should have correct lastAddConfirmed",
                      lhbefore.getLastAddConfirmed(), lhafter.getLastAddConfirmed());
+    }
+
+    /**
+     * Verify that it doesn't break the recovery when changing ensemble in
+     * recovery add.
+     */
+    @Test(timeout = 60000)
+    public void testEnsembleChangeDuringRecovery() throws Exception {
+        LedgerHandle lh = bkc.createLedger(numBookies, 2, 2, digestType, "".getBytes());
+        int numEntries = (numBookies * 3) + 1;
+        final AtomicInteger numPendingAdds = new AtomicInteger(numEntries);
+        final CountDownLatch addDone = new CountDownLatch(1);
+        for (int i = 0; i < numEntries; i++) {
+            lh.asyncAddEntry("data".getBytes(), new AddCallback() {
+
+                @Override
+                public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+                    if (BKException.Code.OK != rc) {
+                        addDone.countDown();
+                        return;
+                    }
+                    if (numPendingAdds.decrementAndGet() == 0) {
+                        addDone.countDown();
+                    }
+                }
+
+            }, null);
+        }
+        addDone.await(10, TimeUnit.SECONDS);
+        if (numPendingAdds.get() > 0) {
+            fail("Failed to add " + numEntries + " to ledger handle " + lh.getId());
+        }
+        // kill first 2 bookies to replace bookies
+        InetSocketAddress bookie1 = lh.getLedgerMetadata().currentEnsemble.get(0);
+        ServerConfiguration conf1 = killBookie(bookie1);
+        InetSocketAddress bookie2 = lh.getLedgerMetadata().currentEnsemble.get(1);
+        ServerConfiguration conf2 = killBookie(bookie2);
+
+        // replace these two bookies
+        startDeadBookie(conf1);
+        startDeadBookie(conf2);
+        // kick in two brand new bookies
+        startNewBookie();
+        startNewBookie();
+
+        // two dead bookies are put in the ensemble which would cause ensemble
+        // change
+        LedgerHandle recoveredLh = bkc.openLedger(lh.getId(), digestType, "".getBytes());
+        assertEquals("Fenced ledger should have correct lastAddConfirmed", lh.getLastAddConfirmed(),
+                recoveredLh.getLastAddConfirmed());
+    }
+
+    private void startDeadBookie(ServerConfiguration conf) throws Exception {
+        Bookie rBookie = new Bookie(conf) {
+            @Override
+            public void recoveryAddEntry(ByteBuffer entry, WriteCallback cb, Object ctx, byte[] masterKey)
+                    throws IOException, BookieException {
+                // drop request to simulate a dead bookie
+                throw new IOException("Couldn't write entries for some reason");
+            }
+        };
+        bsConfs.add(conf);
+        bs.add(startBookie(conf, rBookie));
     }
 }

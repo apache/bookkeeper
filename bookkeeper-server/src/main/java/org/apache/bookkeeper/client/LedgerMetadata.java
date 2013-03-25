@@ -18,26 +18,28 @@ package org.apache.bookkeeper.client;
  * limitations under the License.
  */
 
-import java.io.BufferedReader;
-import java.io.StringReader;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.Arrays;
-
 import static com.google.common.base.Charsets.UTF_8;
 
-import org.apache.bookkeeper.versioning.Version;
-import com.google.protobuf.TextFormat;
-import com.google.protobuf.ByteString;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
 import org.apache.bookkeeper.util.StringUtils;
+import org.apache.bookkeeper.versioning.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.protobuf.ByteString;
+import com.google.protobuf.TextFormat;
 
 /**
  * This class encapsulates all the ledger metadata that is persistently stored
@@ -96,6 +98,30 @@ public class LedgerMetadata {
             LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.CRC32;
         this.password = Arrays.copyOf(password, password.length);
         this.hasPassword = true;
+    }
+
+    /**
+     * Copy Constructor.
+     */
+    LedgerMetadata(LedgerMetadata other) {
+        this.ensembleSize = other.ensembleSize;
+        this.writeQuorumSize = other.writeQuorumSize;
+        this.ackQuorumSize = other.ackQuorumSize;
+        this.length = other.length;
+        this.lastEntryId = other.lastEntryId;
+        this.metadataFormatVersion = other.metadataFormatVersion;
+        this.state = other.state;
+        this.version = other.version;
+        this.hasPassword = other.hasPassword;
+        this.digestType = other.digestType;
+        this.password = new byte[other.password.length];
+        System.arraycopy(other.password, 0, this.password, 0, other.password.length);
+        // copy the ensembles
+        for (Entry<Long, ArrayList<InetSocketAddress>> entry : other.ensembles.entrySet()) {
+            long startEntryId = entry.getKey();
+            ArrayList<InetSocketAddress> newEnsemble = new ArrayList<InetSocketAddress>(entry.getValue());
+            this.addEnsemble(startEntryId, newEnsemble);
+        }
     }
 
     private LedgerMetadata() {

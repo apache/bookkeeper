@@ -16,6 +16,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-506: Provide better topic release algorithm (sijie via ivank)
 
+      BOOKKEEPER-581: Ledger recovery doesn't work correctly when recovery adds force changing ensembles. (sijie via ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)

@@ -21,27 +21,27 @@ package org.apache.bookkeeper.client;
  *
  */
 import java.net.InetSocketAddress;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ScheduledFuture;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.NoSuchElementException;
-import java.util.Queue;
 import java.util.BitSet;
-import java.util.Set;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
-
+import java.util.NoSuchElementException;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Sequence of entries of a ledger that represents a pending read operation.
@@ -128,7 +128,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
          * @return host we sent to if we sent. null otherwise.
          */
         synchronized InetSocketAddress maybeSendSpeculativeRead(Set<InetSocketAddress> heardFromHosts) {
-            if (nextReplicaIndexToReadFrom >= lh.getLedgerMetadata().getWriteQuorumSize()) {
+            if (nextReplicaIndexToReadFrom >= getLedgerMetadata().getWriteQuorumSize()) {
                 return null;
             }
 
@@ -146,7 +146,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         }
 
         synchronized InetSocketAddress sendNextRead() {
-            if (nextReplicaIndexToReadFrom >= lh.metadata.getWriteQuorumSize()) {
+            if (nextReplicaIndexToReadFrom >= getLedgerMetadata().getWriteQuorumSize()) {
                 // we are done, the read has failed from all replicas, just fail the
                 // read
 
@@ -251,9 +251,14 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         this.endEntryId = endEntryId;
         this.scheduler = scheduler;
         numPendingEntries = endEntryId - startEntryId + 1;
-        maxMissedReadsAllowed = lh.metadata.getWriteQuorumSize() - lh.metadata.getAckQuorumSize();
+        maxMissedReadsAllowed = getLedgerMetadata().getWriteQuorumSize()
+                - getLedgerMetadata().getAckQuorumSize();
         speculativeReadTimeout = lh.bk.getConf().getSpeculativeReadTimeout();
         heardFromHosts = new HashSet<InetSocketAddress>();
+    }
+
+    protected LedgerMetadata getLedgerMetadata() {
+        return lh.metadata;
     }
 
     public void initiate() throws InterruptedException {
@@ -283,11 +288,9 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         }
 
         do {
-            LOG.debug("Acquiring lock: {}", i);
-
             if (i == nextEnsembleChange) {
-                ensemble = lh.metadata.getEnsemble(i);
-                nextEnsembleChange = lh.metadata.getNextEnsembleChange(i);
+                ensemble = getLedgerMetadata().getEnsemble(i);
+                nextEnsembleChange = getLedgerMetadata().getNextEnsembleChange(i);
             }
             LedgerEntryRequest entry = new LedgerEntryRequest(ensemble, lh.ledgerId, i);
             seq.add(entry);

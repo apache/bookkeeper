@@ -19,21 +19,16 @@ package org.apache.bookkeeper.client;
  */
 
 import java.util.Enumeration;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
-import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
-import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
-import org.apache.bookkeeper.client.LedgerHandle.NoopCloseCallback;
 import org.apache.bookkeeper.client.DigestManager.RecoveryData;
-import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
  * This class encapsulated the ledger recovery operation. It first does a read
@@ -51,8 +46,24 @@ class LedgerRecoveryOp implements ReadCallback, AddCallback {
     long maxAddPushed = LedgerHandle.INVALID_ENTRY_ID;
     long maxAddConfirmed = LedgerHandle.INVALID_ENTRY_ID;
     long maxLength = 0;
+    // keep a copy of metadata for recovery.
+    LedgerMetadata metadataForRecovery;
 
     GenericCallback<Void> cb;
+
+    class RecoveryReadOp extends PendingReadOp {
+
+        RecoveryReadOp(LedgerHandle lh, ScheduledExecutorService scheduler, long startEntryId,
+                long endEntryId, ReadCallback cb, Object ctx) {
+            super(lh, scheduler, startEntryId, endEntryId, cb, ctx);
+        }
+
+        @Override
+        protected LedgerMetadata getLedgerMetadata() {
+            return metadataForRecovery;
+        }
+
+    }
 
     public LedgerRecoveryOp(LedgerHandle lh, GenericCallback<Void> cb) {
         this.cb = cb;
@@ -63,17 +74,20 @@ class LedgerRecoveryOp implements ReadCallback, AddCallback {
     public void initiate() {
         ReadLastConfirmedOp rlcop = new ReadLastConfirmedOp(lh,
                 new ReadLastConfirmedOp.LastConfirmedDataCallback() {
-                public void readLastConfirmedDataComplete(int rc, RecoveryData data) {
-                    if (rc == BKException.Code.OK) {
-                        lh.lastAddPushed = lh.lastAddConfirmed = data.lastAddConfirmed;
-                        lh.length = data.length;
-                        doRecoveryRead();
-                    } else if (rc == BKException.Code.UnauthorizedAccessException) {
-                        cb.operationComplete(rc, null);
-                    } else {
-                        cb.operationComplete(BKException.Code.ReadException, null);
+                    public void readLastConfirmedDataComplete(int rc, RecoveryData data) {
+                        if (rc == BKException.Code.OK) {
+                            lh.lastAddPushed = lh.lastAddConfirmed = data.lastAddConfirmed;
+                            lh.length = data.length;
+                            // keep a copy of ledger metadata before proceeding
+                            // ledger recovery
+                            metadataForRecovery = new LedgerMetadata(lh.getLedgerMetadata());
+                            doRecoveryRead();
+                        } else if (rc == BKException.Code.UnauthorizedAccessException) {
+                            cb.operationComplete(rc, null);
+                        } else {
+                            cb.operationComplete(BKException.Code.ReadException, null);
+                        }
                     }
-                }
                 });
 
         /**
@@ -88,14 +102,16 @@ class LedgerRecoveryOp implements ReadCallback, AddCallback {
      * Try to read past the last confirmed.
      */
     private void doRecoveryRead() {
-        lh.lastAddConfirmed++;
-        lh.asyncReadEntries(lh.lastAddConfirmed, lh.lastAddConfirmed, this, null);
+        long nextEntry = lh.lastAddConfirmed + 1;
+        try {
+            new RecoveryReadOp(lh, lh.bk.scheduler, nextEntry, nextEntry, this, null).initiate();
+        } catch (InterruptedException e) {
+            readComplete(BKException.Code.InterruptedException, lh, null, null);
+        }
     }
 
     @Override
     public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
-        // get back to prev value
-        lh.lastAddConfirmed--;
         if (rc == BKException.Code.OK) {
             LedgerEntry entry = seq.nextElement();
             byte[] data = entry.getEntry();
@@ -145,9 +161,7 @@ class LedgerRecoveryOp implements ReadCallback, AddCallback {
             cb.operationComplete(rc, null);
             return;
         }
-
         doRecoveryRead();
-
     }
 
 }
