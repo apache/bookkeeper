@@ -411,7 +411,7 @@ public class PubSubServer {
                     instantiateMetadataManagerFactory();
                     tm = instantiateTopicManager();
                     pm = instantiatePersistenceManager(tm);
-                    dm = new FIFODeliveryManager(pm, conf);
+                    dm = new FIFODeliveryManager(tm, pm, conf);
                     dm.start();
 
                     sm = instantiateSubscriptionManager(tm, pm, dm);

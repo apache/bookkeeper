@@ -276,7 +276,7 @@ public class TestMMTopicManager extends MetadataManagerFactoryTestCase {
         Assert.assertTrue(pair.second());
         Assert.assertEquals(PubSubException.ServiceDownException.class, ((CompositeException) addrCbq.take().right())
                             .getExceptions().iterator().next().getClass());
-        Assert.assertFalse(tm.topics.contains(topic));
+        Assert.assertFalse(null != tm.topics.getIfPresent(topic));
         Thread.sleep(100);
         assertOwnershipNodeDoesntExist();
 
@@ -317,5 +317,41 @@ public class TestMMTopicManager extends MetadataManagerFactoryTestCase {
         Assert.assertEquals(me, check(addrCbq.take()));
         assertOwnershipNodeExists();
     }
+
+    @Test(timeout=60000)
+    public void testRetentionAfterAccess() throws Exception {
+        conf.getConf().setProperty("retention_secs_after_access", "5");
+        MMTopicManager tm1 = new MMTopicManager(conf, zk, metadataManagerFactory, scheduler);
+        tm1.getOwner(topic, true, addrCbq, null);
+        Assert.assertEquals(me, check(addrCbq.take()));
+        Thread.sleep(6000L);
+        tm1.topics.cleanUp();
+        Thread.sleep(2000L);
+        assertOwnershipNodeDoesntExist();
+        tm1.getOwner(topic, true, addrCbq, null);
+        Assert.assertEquals(me, check(addrCbq.take()));
+        Thread.sleep(1000L);
+        tm1.topics.cleanUp();
+        Thread.sleep(2000L);
+        assertOwnershipNodeExists();
+
+        tm1.stop();
+    }
+
+    @Test(timeout=60000)
+    public void testMaxNumTopics() throws Exception {
+        conf.getConf().setProperty("max_num_topics", "1");
+        MMTopicManager tm1 = new MMTopicManager(conf, zk, metadataManagerFactory, scheduler);
+        tm1.getOwner(topic, true, addrCbq, null);
+        Assert.assertEquals(me, check(addrCbq.take()));
+        assertOwnershipNodeExists();
+        tm1.getOwner(ByteString.copyFromUtf8("MaxNumTopic"),
+                     true, addrCbq, null);
+        Assert.assertEquals(me, check(addrCbq.take()));
+        Thread.sleep(2000L);
+        assertOwnershipNodeDoesntExist();
+        tm1.stop();
+    }
+
 
 }

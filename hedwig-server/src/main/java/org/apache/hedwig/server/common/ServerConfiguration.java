@@ -57,7 +57,10 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String PASSWORD = "password";
     protected final static String SSL_ENABLED = "ssl_enabled";
     protected final static String CONSUME_INTERVAL = "consume_interval";
+    protected final static String INIT_NUM_TOPICS = "init_num_topics";
+    protected final static String MAX_NUM_TOPICS = "max_num_topics";
     protected final static String RETENTION_SECS = "retention_secs";
+    protected final static String RETENTION_SECS_AFTER_ACCESS = "retention_secs_after_access";
     protected final static String INTER_REGION_SSL_ENABLED = "inter_region_ssl_enabled";
     protected final static String MESSAGES_CONSUMED_THREAD_RUN_INTERVAL = "messages_consumed_thread_run_interval";
     protected final static String BK_ENSEMBLE_SIZE = "bk_ensemble_size";
@@ -385,6 +388,36 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public int getRetentionSecs() {
         return conf.getInt(RETENTION_SECS, 0);
+    }
+
+    /**
+     * Specifies that the topic should be automatically released
+     * once a fixed duration after the topic is owned, a message is
+     * published, or a message is delivered.
+     *
+     * @return the length of time after an entry is last accessed that
+     *         it should be automatically removed.
+     */
+    public int getRetentionSecsAfterAccess() {
+        return conf.getInt(RETENTION_SECS_AFTER_ACCESS, 0);
+    }
+
+    /**
+     * Max number of topics for a hub server to serve.
+     *
+     * @return max number of topics for a hub server to serve.
+     */
+    public int getMaxNumTopics() {
+        return conf.getInt(MAX_NUM_TOPICS, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Minimum size of internal structure to store topics.
+     *
+     * @return init number of topics for a hub server.
+     */
+    public int getInitNumTopics() {
+        return conf.getInt(INIT_NUM_TOPICS, 128);
     }
 
     /**

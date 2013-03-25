@@ -51,7 +51,7 @@ public class StubTopicManager extends TrivialOwnAllTopicManager {
             cb.operationFailed(ctx, new PubSubException.ServiceDownException("Asked to fail"));
             return;
         }
-        if (topics.contains(topic) // already own it
+        if (null != topics.getIfPresent(topic) // already own it
                 || shouldOwnEveryNewTopic) {
             super.realGetOwner(topic, shouldClaim, cb, ctx);
             return;

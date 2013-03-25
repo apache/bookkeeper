@@ -88,11 +88,23 @@ public class TestZkTopicManager extends ZooKeeperTestBase {
     protected HedwigSocketAddress me;
     protected ScheduledExecutorService scheduler;
 
+    private volatile int DEFAULT_MAX_NUM_TOPICS = Integer.MAX_VALUE;
+    private volatile int DEFAULT_RETENTION_SECS_AFTER_ACCESS = 0;
+
     @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        cfg = new ServerConfiguration();
+        cfg = new ServerConfiguration() {
+            @Override
+            public int getRetentionSecsAfterAccess() {
+                return DEFAULT_RETENTION_SECS_AFTER_ACCESS;
+            }
+            @Override
+            public int getMaxNumTopics() {
+                return DEFAULT_MAX_NUM_TOPICS;
+            }
+        };
         me = cfg.getServerAddr();
         scheduler = Executors.newSingleThreadScheduledExecutor();
         tm = new ZkTopicManager(zk, cfg, scheduler);
@@ -283,7 +295,7 @@ public class TestZkTopicManager extends ZooKeeperTestBase {
         Assert.assertTrue(pair.second());
         Assert.assertEquals(PubSubException.ServiceDownException.class, ((CompositeException) addrCbq.take().right())
                             .getExceptions().iterator().next().getClass());
-        Assert.assertFalse(tm.topics.contains(topic));
+        Assert.assertFalse(null != tm.topics.getIfPresent(topic));
         Thread.sleep(100);
         assertOwnershipNodeDoesntExist();
 
@@ -324,6 +336,41 @@ public class TestZkTopicManager extends ZooKeeperTestBase {
         tm.getOwner(topic, true, addrCbq, null);
         Assert.assertEquals(me, check(addrCbq.take()));
         assertOwnershipNodeExists();
+    }
+
+    @Test(timeout=60000)
+    public void testRetentionAfterAccess() throws Exception {
+        DEFAULT_RETENTION_SECS_AFTER_ACCESS = 5;
+        ZkTopicManager tm1 = new ZkTopicManager(zk, cfg, scheduler);
+        tm1.getOwner(topic, true, addrCbq, null);
+        Assert.assertEquals(me, check(addrCbq.take()));
+        Thread.sleep(6000L);
+        tm1.topics.cleanUp();
+        Thread.sleep(2000L);
+        assertOwnershipNodeDoesntExist();
+        tm1.getOwner(topic, true, addrCbq, null);
+        Assert.assertEquals(me, check(addrCbq.take()));
+        Thread.sleep(1000L);
+        tm1.topics.cleanUp();
+        Thread.sleep(2000L);
+        assertOwnershipNodeExists();
+
+        tm1.stop();
+    }
+
+    @Test(timeout=60000)
+    public void testMaxNumTopics() throws Exception {
+        DEFAULT_MAX_NUM_TOPICS = 1;
+        TopicManager tm1 = new ZkTopicManager(zk, cfg, scheduler);
+        tm1.getOwner(topic, true, addrCbq, null);
+        Assert.assertEquals(me, check(addrCbq.take()));
+        assertOwnershipNodeExists();
+        tm1.getOwner(ByteString.copyFromUtf8("MaxNumTopic"),
+                     true, addrCbq, null);
+        Assert.assertEquals(me, check(addrCbq.take()));
+        Thread.sleep(2000L);
+        assertOwnershipNodeDoesntExist();
+        tm1.stop();
     }
 
 }

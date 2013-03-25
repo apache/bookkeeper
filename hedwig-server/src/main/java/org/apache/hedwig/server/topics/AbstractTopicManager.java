@@ -29,6 +29,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.common.TopicOpQueuer;
@@ -37,6 +41,15 @@ import org.apache.hedwig.util.CallbackUtils;
 import org.apache.hedwig.util.HedwigSocketAddress;
 
 public abstract class AbstractTopicManager implements TopicManager {
+
+    /**
+     * Stats for a topic. For now it just an empty stub class.
+     */
+    static class TopicStats {
+    }
+
+    final static TopicStats STUB_TOPIC_STATS = new TopicStats();
+
     /**
      * My name.
      */
@@ -50,7 +63,7 @@ public abstract class AbstractTopicManager implements TopicManager {
     /**
      * List of topics I believe I am responsible for.
      */
-    protected Set<ByteString> topics = Collections.synchronizedSet(new HashSet<ByteString>());
+    protected Cache<ByteString, TopicStats> topics;
 
     protected TopicOpQueuer queuer;
     protected ServerConfiguration cfg;
@@ -74,17 +87,42 @@ public abstract class AbstractTopicManager implements TopicManager {
     }
 
     private class ReleaseOp extends TopicOpQueuer.AsynchronousOp<Void> {
+        final boolean checkExistence;
+
         public ReleaseOp(ByteString topic, Callback<Void> cb, Object ctx) {
+            this(topic, cb, ctx, true);
+        }
+
+        ReleaseOp(ByteString topic, Callback<Void> cb, Object ctx,
+                  boolean checkExistence) {
             queuer.super(topic, cb, ctx);
+            this.checkExistence = checkExistence;
         }
 
         @Override
         public void run() {
-            if (!topics.contains(topic)) {
-                cb.operationFinished(ctx, null);
-                return;
+            if (checkExistence) {
+                TopicStats stats = topics.getIfPresent(topic);
+                if (null == stats) {
+                    cb.operationFinished(ctx, null);
+                    return;
+                }
             }
             realReleaseTopic(topic, cb, ctx);
+        }
+    }
+
+    /**
+     * Release topic when the topic is removed from topics cache.
+     */
+    class ReleaseTopicListener implements RemovalListener<ByteString, TopicStats> {
+        @Override
+        public void onRemoval(RemovalNotification<ByteString, TopicStats> notification) {
+            if (notification.wasEvicted()) {
+                logger.info("topic {} is evicted", notification.getKey().toStringUtf8());
+                // if the topic is evicted, we need to release the topic.
+                releaseTopicInternally(notification.getKey(), false);
+            }
         }
     }
 
@@ -94,11 +132,53 @@ public abstract class AbstractTopicManager implements TopicManager {
         this.queuer = new TopicOpQueuer(scheduler);
         this.scheduler = scheduler;
         addr = cfg.getServerAddr();
+
+        // build the topic cache
+        CacheBuilder<ByteString, TopicStats> cacheBuilder = CacheBuilder.newBuilder()
+            .maximumSize(cfg.getMaxNumTopics())
+            .initialCapacity(cfg.getInitNumTopics())
+            // TODO: change to same number as topic op queuer threads
+            .concurrencyLevel(Runtime.getRuntime().availableProcessors())
+            .removalListener(new ReleaseTopicListener());
+        if (cfg.getRetentionSecsAfterAccess() > 0) {
+            cacheBuilder.expireAfterAccess(cfg.getRetentionSecsAfterAccess(), TimeUnit.SECONDS);
+        }
+        topics = cacheBuilder.build();
+    }
+
+    @Override
+    public void incrementTopicAccessTimes(ByteString topic) {
+        // let guava cache handle hits counting
+        topics.getIfPresent(topic);
     }
 
     @Override
     public synchronized void addTopicOwnershipChangeListener(TopicOwnershipChangeListener listener) {
         listeners.add(listener);
+    }
+
+    private void releaseTopicInternally(final ByteString topic, boolean checkExistence) {
+        // Enqueue a release operation. (Recall that release
+        // doesn't "fail" even if the topic is missing.)
+        queuer.pushAndMaybeRun(topic, new ReleaseOp(topic, new Callback<Void>() {
+
+            @Override
+            public void operationFailed(Object ctx, PubSubException exception) {
+                logger.error("failure that should never happen when releasing topic "
+                             + topic, exception);
+            }
+
+            @Override
+            public void operationFinished(Object ctx, Void resultOfOperation) {
+                    logger.info("successfully release of topic "
+                        + topic.toStringUtf8());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("successfully release of topic "
+                        + topic.toStringUtf8());
+                }
+            }
+
+        }, null, checkExistence));
     }
 
     protected final synchronized void notifyListenersAndAddToOwnedTopics(final ByteString topic,
@@ -108,30 +188,12 @@ public abstract class AbstractTopicManager implements TopicManager {
 
             @Override
             public void operationFinished(Object ctx, Void resultOfOperation) {
-                topics.add(topic);
+                topics.put(topic, STUB_TOPIC_STATS);
                 if (cfg.getRetentionSecs() > 0) {
                     scheduler.schedule(new Runnable() {
                         @Override
                         public void run() {
-                            // Enqueue a release operation. (Recall that release
-                            // doesn't "fail" even if the topic is missing.)
-                            releaseTopic(topic, new Callback<Void>() {
-
-                                @Override
-                                public void operationFailed(Object ctx, PubSubException exception) {
-                                    logger.error("failure that should never happen when periodically releasing topic "
-                                                 + topic, exception);
-                                }
-
-                                @Override
-                                public void operationFinished(Object ctx, Void resultOfOperation) {
-                                    if (logger.isDebugEnabled()) {
-                                        logger.debug("successful periodic release of topic "
-                                            + topic.toStringUtf8());
-                                    }
-                                }
-
-                            }, null);
+                            releaseTopicInternally(topic, true);
                         }
                     }, cfg.getRetentionSecs(), TimeUnit.SECONDS);
                 }
@@ -164,7 +226,7 @@ public abstract class AbstractTopicManager implements TopicManager {
     private void realReleaseTopic(ByteString topic, Callback<Void> callback, Object ctx) {
         for (TopicOwnershipChangeListener listener : listeners)
             listener.lostTopic(topic);
-        topics.remove(topic);
+        topics.invalidate(topic);
         postReleaseCleanup(topic, callback, ctx);
     }
 

@@ -14,6 +14,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-586: Remove recursive call in delivery manager (sijie via ivank)
 
+      BOOKKEEPER-506: Provide better topic release algorithm (sijie via ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)

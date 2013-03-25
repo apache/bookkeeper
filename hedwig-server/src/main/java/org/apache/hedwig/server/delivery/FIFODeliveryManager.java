@@ -61,6 +61,7 @@ import org.apache.hedwig.server.persistence.PersistenceManager;
 import org.apache.hedwig.server.persistence.ReadAheadCache;
 import org.apache.hedwig.server.persistence.ScanCallback;
 import org.apache.hedwig.server.persistence.ScanRequest;
+import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.util.Callback;
 import static org.apache.hedwig.util.VarArgs.va;
 
@@ -97,7 +98,7 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
 
     private final ReadAheadCache cache;
     private final PersistenceManager persistenceMgr;
-
+    private TopicManager tm;
     private ServerConfiguration cfg;
 
     private final int numDeliveryWorkers;
@@ -257,7 +258,9 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
 
 
 
-    public FIFODeliveryManager(PersistenceManager persistenceMgr, ServerConfiguration cfg) {
+    public FIFODeliveryManager(TopicManager tm, PersistenceManager persistenceMgr,
+                               ServerConfiguration cfg) {
+        this.tm = tm;
         this.persistenceMgr = persistenceMgr;
         if (persistenceMgr instanceof ReadAheadCache) {
             this.cache = (ReadAheadCache) persistenceMgr;
@@ -690,6 +693,12 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
             if (!checkConnected()) {
                 return;
             }
+
+            // only increment topic access times when tried to deliver a message
+            // for those subscribers just waiting for a published for a long time
+            // we don't increment topic access times, so the topic would be evicted
+            // in future.
+            tm.incrementTopicAccessTimes(topic);
 
             if (!filter.testMessage(message)) {
                 sendingFinished();

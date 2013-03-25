@@ -36,7 +36,8 @@ public class TrivialOwnAllTopicManager extends AbstractTopicManager {
     protected void realGetOwner(ByteString topic, boolean shouldClaim,
                                 Callback<HedwigSocketAddress> cb, Object ctx) {
 
-        if (topics.contains(topic)) {
+        TopicStats stats = topics.getIfPresent(topic);
+        if (null != stats) {
             cb.operationFinished(ctx, addr);
             return;
         }

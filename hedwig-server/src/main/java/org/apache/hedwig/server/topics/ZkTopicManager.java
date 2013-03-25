@@ -134,7 +134,8 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
             return;
         }
 
-        if (topics.contains(topic)) {
+        TopicStats stats = topics.getIfPresent(topic);
+        if (null != stats) {
             cb.operationFinished(ctx, addr);
             return;
         }

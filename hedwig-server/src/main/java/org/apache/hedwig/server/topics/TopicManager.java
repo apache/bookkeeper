@@ -49,6 +49,14 @@ public interface TopicManager {
                          Callback<HedwigSocketAddress> cb, Object ctx);
 
     /**
+     * Increment the number of access times for a given <code>topic</code>.
+     *
+     * @param topic
+     *          Topic Name.
+     */
+    public void incrementTopicAccessTimes(ByteString topic);
+
+    /**
      * Whenever the topic manager finds out that the set of topics owned by this
      * node has changed, it can notify a set of
      * {@link TopicOwnershipChangeListener} objects. Any component of the system

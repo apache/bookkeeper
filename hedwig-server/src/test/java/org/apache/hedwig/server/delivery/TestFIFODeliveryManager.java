@@ -37,6 +37,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionPreferences;
 import org.apache.hedwig.server.common.ServerConfiguration;
+import org.apache.hedwig.server.topics.StubTopicManager;
 import org.apache.hedwig.server.persistence.PersistRequest;
 import org.apache.hedwig.server.persistence.PersistenceManager;
 import org.apache.hedwig.server.persistence.StubPersistenceManager;
@@ -120,7 +121,7 @@ public class TestFIFODeliveryManager {
         ByteString subscriber = ByteString.copyFromUtf8("subRaceSubscriber");
 
         PersistenceManager pm = new StubPersistenceManager();
-        FIFODeliveryManager fdm = new FIFODeliveryManager(pm, conf);
+        FIFODeliveryManager fdm = new FIFODeliveryManager(new StubTopicManager(conf), pm, conf);
         ExecutorDeliveryEndPointWithQueue dep = new ExecutorDeliveryEndPointWithQueue();
         SubscriptionPreferences prefs = SubscriptionPreferences.newBuilder().build();
 
@@ -251,7 +252,7 @@ public class TestFIFODeliveryManager {
         ByteString subscriber = ByteString.copyFromUtf8("throttlingRaceSubscriber");
 
         PersistenceManager pm = new StubPersistenceManager();
-        FIFODeliveryManager fdm = new FIFODeliveryManager(pm, conf);
+        FIFODeliveryManager fdm = new FIFODeliveryManager(new StubTopicManager(conf), pm, conf);
         ExecutorDeliveryEndPoint dep = new ExecutorDeliveryEndPoint(fdm);
         SubscriptionPreferences prefs = SubscriptionPreferences.newBuilder().build();
 
