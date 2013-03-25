@@ -127,7 +127,7 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
         private final Thread workerThread;
         private final int idx;
 
-        private Object suspensionLock = new Object();
+        private final Object suspensionLock = new Object();
         private boolean suspended = false;
 
         DeliveryWorker(int index) {
@@ -208,7 +208,6 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
             if (!retryQueue.offer(subscriber)) {
                 throw new UnexpectedError("Could not enqueue to retry queue for delivery worker " + idx);
             }
-            getDeliveryWorker(subscriber.getTopic()).retryErroredSubscriberAfterDelay(subscriber);
         }
 
         public void clearRetryDelayForSubscriber(ActiveSubscriberState subscriber) {
