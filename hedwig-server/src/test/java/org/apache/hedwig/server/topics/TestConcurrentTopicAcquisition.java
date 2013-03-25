@@ -28,6 +28,7 @@ import org.apache.hedwig.client.api.Publisher;
 import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.server.HedwigHubTestBase;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.ConcurrencyUtils;
@@ -116,12 +117,14 @@ public class TestConcurrentTopicAcquisition extends HedwigHubTestBase {
         // 300 subscribers subscribe to a same topic
         final AtomicBoolean inRedirectLoop = new AtomicBoolean(false);
         numDone.set(0);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
         for (int i=0; i<numSubscribers; i++) {
             ByteString subId = ByteString.copyFromUtf8("sub-" + i);
             if (logger.isDebugEnabled()) {
                 logger.debug("subscriber " + subId.toStringUtf8() + " subscribes topic " + topic.toStringUtf8());
             }
-            subscriber.asyncSubscribe(topic, subId, CreateOrAttach.CREATE_OR_ATTACH,
+            subscriber.asyncSubscribe(topic, subId, opts,
                 new Callback<Void>() {
                 
                     private void tick() {
@@ -175,14 +178,15 @@ public class TestConcurrentTopicAcquisition extends HedwigHubTestBase {
                     }
                     
                     ByteString subId;
+                    SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+                        .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
                     while (true) {
                         subId = subscribers.take();
                         
                         if (logger.isDebugEnabled()) {
                             logger.debug("subscriber " + subId.toStringUtf8() + " subscribes topic " + topic.toStringUtf8());
                         }
-                        subscriber.asyncSubscribe(topic, subId, CreateOrAttach.CREATE_OR_ATTACH,
-                            new SubCallback(subId), null);
+                        subscriber.asyncSubscribe(topic, subId, opts, new SubCallback(subId), null);
                     }
                     // subscriber.asyncSubscribe(topic, subscriberId, mode, callback, context)
                 } catch (InterruptedException ie) {

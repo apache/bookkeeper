@@ -274,7 +274,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                             callback.operationFailed(ctx, PubSubException.create(StatusCode.NO_TOPIC_PERSISTENCE_INFO,
                                                           "No persistence info found for topic " + topic.toStringUtf8()));
                             return;
-                        } else if (rc == Code.BadVersion) {
+                        } else if (rc == Code.BADVERSION.intValue()) {
                             // bad version
                             callback.operationFailed(ctx, PubSubException.create(StatusCode.BAD_VERSION,
                                                           "Bad version provided to update persistence info of topic " + topic.toStringUtf8()));
@@ -318,7 +318,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                         callback.operationFailed(ctx, PubSubException.create(StatusCode.NO_TOPIC_PERSISTENCE_INFO,
                                                       "No persistence info found for topic " + topic.toStringUtf8()));
                         return;
-                    } else if (rc == Code.BadVersion) {
+                    } else if (rc == Code.BADVERSION.intValue()) {
                         // bad version
                         callback.operationFailed(ctx, PubSubException.create(StatusCode.BAD_VERSION,
                                                       "Bad version provided to delete persistence info of topic " + topic.toStringUtf8()));
@@ -449,7 +449,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                                                       "No subscription state found for (topic:" + topic.toStringUtf8() + ", subscriber:"
                                                       + subscriberId.toStringUtf8() + ")."));
                         return;
-                    } else if (rc == Code.BadVersion) {
+                    } else if (rc == Code.BADVERSION.intValue()) {
                         // bad version
                         callback.operationFailed(ctx, PubSubException.create(StatusCode.BAD_VERSION,
                                                       "Bad version provided to replace subscription data of topic " 
@@ -503,7 +503,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                                                       "No subscription state found for (topic:" + topic.toStringUtf8() + ", subscriber:"
                                                       + subscriberId.toStringUtf8() + ")."));
                         return;
-                    } else if (rc == Code.BadVersion) {
+                    } else if (rc == Code.BADVERSION.intValue()) {
                         // bad version
                         callback.operationFailed(ctx, PubSubException.create(StatusCode.BAD_VERSION,
                                                       "Bad version provided to delete subscription data of topic " 
@@ -737,7 +737,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                         callback.operationFailed(ctx, PubSubException.create(StatusCode.NO_TOPIC_OWNER_INFO,
                                                       "No owner info found for topic " + topic.toStringUtf8()));
                         return;
-                    } else if (rc == Code.BadVersion) {
+                    } else if (rc == Code.BADVERSION.intValue()) {
                         // bad version
                         callback.operationFailed(ctx, PubSubException.create(StatusCode.BAD_VERSION,
                                                       "Bad version provided to update owner info of topic " + topic.toStringUtf8()));
@@ -811,7 +811,7 @@ public class ZkMetadataManagerFactory extends MetadataManagerFactory {
                         callback.operationFailed(ctx, PubSubException.create(StatusCode.NO_TOPIC_OWNER_INFO,
                                                       "No owner info found for topic " + topic.toStringUtf8()));
                         return;
-                    } else if (Code.BadVersion == rc) {
+                    } else if (Code.BADVERSION.intValue() == rc) {
                         // bad version
                         callback.operationFailed(ctx, PubSubException.create(StatusCode.BAD_VERSION,
                                                       "Bad version provided to delete owner info of topic " + topic.toStringUtf8()));

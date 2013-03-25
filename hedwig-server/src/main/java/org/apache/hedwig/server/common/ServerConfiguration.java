@@ -264,7 +264,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * @return String
      */
     public String getZkHost() {
-        List<Object> servers = conf.getList(ZK_HOST, null);
+        List servers = conf.getList(ZK_HOST, null);
         if (null == servers || 0 == servers.size()) {
             return "localhost";
         }
@@ -447,6 +447,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * copies of each ledger entry is written).
      * 
      * @return int
+     * @deprecated please use #getBkWriteQuorumSize() and #getBkAckQuorumSize()
      */
     @Deprecated
     protected int getBkQuorumSize() {

@@ -253,7 +253,9 @@ public class TestMessageFilter extends HedwigHubTestBase {
         ByteString topic = ByteString.copyFromUtf8("TestMessageFilter");
         ByteString subid = ByteString.copyFromUtf8("mysub");
 
-        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.subscribe(topic, subid, opts);
         subscriber.closeSubscription(topic, subid);
         publishNums(topic, 0, 100, 2);
         receiveNumModM(topic, subid, ModMessageFilter.class.getName(), null, 0, 50, 2, true);
@@ -282,7 +284,9 @@ public class TestMessageFilter extends HedwigHubTestBase {
         ByteString topic = ByteString.copyFromUtf8("TestChangeSubscriptionPreferences");
         ByteString subid = ByteString.copyFromUtf8("mysub");
 
-        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.subscribe(topic, subid, opts);
         subscriber.closeSubscription(topic, subid);
 
         publishNums(topic, 0, 100, 2);
@@ -304,7 +308,9 @@ public class TestMessageFilter extends HedwigHubTestBase {
         ByteString topic = ByteString.copyFromUtf8("TestChangeMessageFilter");
         ByteString subid = ByteString.copyFromUtf8("mysub");
 
-        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.subscribe(topic, subid, opts);
         subscriber.closeSubscription(topic, subid);
 
         publishNums(topic, 0, 100, 3);
@@ -321,7 +327,9 @@ public class TestMessageFilter extends HedwigHubTestBase {
         ByteString topic = ByteString.copyFromUtf8("TestFixMessageFilter");
         ByteString subid = ByteString.copyFromUtf8("mysub");
 
-        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.subscribe(topic, subid, opts);
         subscriber.closeSubscription(topic, subid);
 
         publishNums(topic, 0, 100, 3);
@@ -340,7 +348,9 @@ public class TestMessageFilter extends HedwigHubTestBase {
     public void testNullClientMessageFilter() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("TestNullClientMessageFilter");
         ByteString subid = ByteString.copyFromUtf8("mysub");
-        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.subscribe(topic, subid, opts);
         try {
             subscriber.startDeliveryWithFilter(topic, subid, null, new ModMessageFilter());
             fail("Should fail start delivery with filter using null message handler.");
@@ -364,7 +374,9 @@ public class TestMessageFilter extends HedwigHubTestBase {
         ByteString topic = ByteString.copyFromUtf8("TestClientMessageFilter");
         ByteString subid = ByteString.copyFromUtf8("mysub");
 
-        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.subscribe(topic, subid, opts);
         subscriber.closeSubscription(topic, subid);
         publishNums(topic, 0, 100, 2);
         receiveNumModM(topic, subid, null, new ModMessageFilter(), 0, 50, 2, true);
@@ -375,7 +387,9 @@ public class TestMessageFilter extends HedwigHubTestBase {
         ByteString topic = ByteString.copyFromUtf8("TestChangeSubscriptionPreferencesForClientFilter");
         ByteString subid = ByteString.copyFromUtf8("mysub");
 
-        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.subscribe(topic, subid, opts);
         subscriber.closeSubscription(topic, subid);
 
         publishNums(topic, 0, 100, 2);
@@ -389,7 +403,9 @@ public class TestMessageFilter extends HedwigHubTestBase {
         ByteString topic = ByteString.copyFromUtf8("TestChangeClientSideMessageFilter");
         ByteString subid = ByteString.copyFromUtf8("mysub");
 
-        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.subscribe(topic, subid, opts);
         subscriber.closeSubscription(topic, subid);
 
         publishNums(topic, 0, 100, 3);

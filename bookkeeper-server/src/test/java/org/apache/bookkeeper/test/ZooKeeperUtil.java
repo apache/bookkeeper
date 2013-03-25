@@ -108,6 +108,7 @@ public class ZooKeeperUtil {
         for (final Thread t : allthreads) {
             if (t.getName().contains("SyncThread:0")) {
                 Thread sleeper = new Thread() {
+                    @SuppressWarnings("deprecation")
                     public void run() {
                         try {
                             t.suspend();

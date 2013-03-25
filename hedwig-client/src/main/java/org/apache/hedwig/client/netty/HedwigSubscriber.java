@@ -52,6 +52,7 @@ import org.apache.hedwig.util.SubscriptionListener;
  * This is the Hedwig Netty specific implementation of the Subscriber interface.
  *
  */
+@SuppressWarnings("deprecation") // so that we can implemented the Deprecated subscribe methods without a warning
 public class HedwigSubscriber implements Subscriber {
 
     private static Logger logger = LoggerFactory.getLogger(HedwigSubscriber.class);

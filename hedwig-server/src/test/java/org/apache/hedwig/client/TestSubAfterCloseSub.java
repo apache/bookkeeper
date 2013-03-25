@@ -27,6 +27,7 @@ import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.server.HedwigHubTestBase;
 import org.apache.hedwig.server.delivery.DeliveryManager;
 import org.apache.hedwig.server.delivery.FIFODeliveryManager;
@@ -106,7 +107,9 @@ public class TestSubAfterCloseSub extends HedwigHubTestBase {
         final CountDownLatch deliverLatch = new CountDownLatch(1);
 
         try {
-            subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+            SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+                .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+            subscriber.subscribe(topic, subid, opts);
             sleepDeliveryManager(wakeupLatch);
             subscriber.asyncCloseSubscription(topic, subid, new Callback<Void>() {
                 @Override
@@ -118,7 +121,10 @@ public class TestSubAfterCloseSub extends HedwigHubTestBase {
                     logger.error("Closesub failed : ", exception);
                 }
             }, null);
-            subscriber.asyncSubscribe(topic, subid, CreateOrAttach.ATTACH, new Callback<Void>() {
+
+            SubscriptionOptions optsAttach = SubscriptionOptions.newBuilder()
+                .setCreateOrAttach(CreateOrAttach.ATTACH).build();
+            subscriber.asyncSubscribe(topic, subid, optsAttach, new Callback<Void>() {
                 @Override
                 public void operationFinished(Object ctx, Void resultOfOperation) {
                     try {
@@ -181,9 +187,14 @@ public class TestSubAfterCloseSub extends HedwigHubTestBase {
             final ByteString topic = ByteString.copyFromUtf8("TestSimpleClientTopicBusy");
             final ByteString subid = ByteString.copyFromUtf8("mysub");
 
-            subscriber1.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+            SubscriptionOptions opts1 = SubscriptionOptions.newBuilder()
+                .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+            subscriber1.subscribe(topic, subid, opts1);
             subscriber1.closeSubscription(topic, subid);
-            subscriber2.subscribe(topic, subid, CreateOrAttach.ATTACH);
+
+            SubscriptionOptions opts2 = SubscriptionOptions.newBuilder()
+                .setCreateOrAttach(CreateOrAttach.ATTACH).build();
+            subscriber2.subscribe(topic, subid, opts2);
             subscriber2.closeSubscription(topic, subid);
 
             client1.close();

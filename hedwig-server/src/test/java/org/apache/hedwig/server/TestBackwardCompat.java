@@ -675,7 +675,11 @@ public class TestBackwardCompat extends TestCase {
                 publisher.publish(topic, org.apache.hedwig.protocol.PubSubProtocol.Message.newBuilder().setBody(
                                          ByteString.copyFromUtf8(String.valueOf(i))).build());
             }
-            subscriber.subscribe(topic, subid, org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach.ATTACH);
+            org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions opts
+                = org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions.newBuilder()
+                .setCreateOrAttach(org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach.ATTACH)
+                .build();
+            subscriber.subscribe(topic, subid, opts);
 
             final AtomicInteger expected = new AtomicInteger(x - y);
             final CountDownLatch latch = new CountDownLatch(1);
@@ -744,7 +748,12 @@ public class TestBackwardCompat extends TestCase {
             };
             filter.initialize(conf.getConf());
 
-            subscriber.subscribe(topic, subid, org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach.ATTACH);
+
+            org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions opts
+                = org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions.newBuilder()
+                .setCreateOrAttach(org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach.ATTACH)
+                .build();
+            subscriber.subscribe(topic, subid, opts);
             final int base = start + M - start % M;
             final AtomicInteger expected = new AtomicInteger(base);
             final CountDownLatch latch = new CountDownLatch(1);

@@ -42,6 +42,7 @@ public class CompositePublishTest extends JmsSendReceiveTestSupport {
     protected MessageConsumer[] consumers;
     protected List[] messageLists;
 
+    @SuppressWarnings("unchecked")
     protected void setUp() throws Exception {
         super.setUp();
 
@@ -116,6 +117,7 @@ public class CompositePublishTest extends JmsSendReceiveTestSupport {
         return super.getSubject() + ".";
     }
 
+    @SuppressWarnings("unchecked")
     protected void assertMessagesAreReceived() throws JMSException {
         waitForMessagesToBeDelivered();
         int size = messageLists.length;

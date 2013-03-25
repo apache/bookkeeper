@@ -36,6 +36,7 @@ import org.apache.hedwig.client.api.Publisher;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.server.HedwigRegionTestBase;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.integration.TestHedwigHub.TestCallback;
@@ -109,9 +110,11 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
         // Subscribe to topics for clients in all regions
         for (HedwigClient client : regionClientsMap.values()) {
             for (int i = 0; i < batchSize; i++) {
+                SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+                    .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+
                 client.getSubscriber().asyncSubscribe(ByteString.copyFromUtf8("Topic" + i),
-                                                      ByteString.copyFromUtf8("LocalSubscriber"), CreateOrAttach.CREATE_OR_ATTACH,
-                                                      new TestCallback(queue), null);
+                        ByteString.copyFromUtf8("LocalSubscriber"), opts, new TestCallback(queue), null);
                 assertTrue(queue.take());
             }
         }
@@ -150,6 +153,9 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
     public void testSubscribeAndConsumeWhenARegionDown() throws Exception {
         int batchSize = 10;
 
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+
         // first shut down a region
         Random r = new Random();
         int regionId = r.nextInt(numRegions);
@@ -158,8 +164,8 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
         for (HedwigClient client : regionClientsMap.values()) {
             for (int i = 0; i < batchSize; i++) {
                 client.getSubscriber().asyncSubscribe(ByteString.copyFromUtf8("Topic" + i),
-                                                      ByteString.copyFromUtf8("LocalSubscriber"), CreateOrAttach.CREATE_OR_ATTACH,
-                                                      new TestCallback(queue), null);
+                                                      ByteString.copyFromUtf8("LocalSubscriber"),
+                                                      opts, new TestCallback(queue), null);
                 assertFalse(queue.take());
             }
         }
@@ -172,8 +178,8 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
             HedwigClient client = entry.getValue();
             for (int i = 0; i < batchSize; i++) {
                 client.getSubscriber().asyncSubscribe(ByteString.copyFromUtf8("Topic" + i),
-                                                      ByteString.copyFromUtf8("LocalSubscriber"), CreateOrAttach.CREATE_OR_ATTACH,
-                                                      new TestCallback(queue), null);
+                                                      ByteString.copyFromUtf8("LocalSubscriber"),
+                                                      opts, new TestCallback(queue), null);
                 assertTrue(queue.take());
             }
         }
@@ -215,13 +221,16 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
     public void testAttachExistingSubscriptionsWhenARegionDown() throws Exception {
         int batchSize = 10;
         
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+
         // sub it remotely to make subscriptions existed
         for (Map.Entry<String, HedwigClient> entry : regionClientsMap.entrySet()) {
             HedwigClient client = entry.getValue();
             for (int i = 0; i < batchSize; i++) {
                 client.getSubscriber().asyncSubscribe(ByteString.copyFromUtf8("Topic" + i),
-                                                      ByteString.copyFromUtf8("LocalSubscriber"), CreateOrAttach.CREATE_OR_ATTACH,
-                                                      new TestCallback(queue), null);
+                                                      ByteString.copyFromUtf8("LocalSubscriber"),
+                                                      opts, new TestCallback(queue), null);
                 assertTrue(queue.take());
             }
         }
@@ -244,8 +253,8 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
         for (HedwigClient client : regionClientsMap.values()) {
             for (int i = 0; i < batchSize; i++) {
                 client.getSubscriber().asyncSubscribe(ByteString.copyFromUtf8("Topic" + i),
-                                                      ByteString.copyFromUtf8("LocalSubscriber"), CreateOrAttach.CREATE_OR_ATTACH,
-                                                      new TestCallback(queue), null);
+                                                      ByteString.copyFromUtf8("LocalSubscriber"),
+                                                      opts, new TestCallback(queue), null);
                 assertTrue(queue.take());
             }
         }
@@ -268,8 +277,8 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
         HedwigClient client = regionClientsMap.get(regionName);
         for (int i = 0; i < batchSize; i++) {
             client.getSubscriber().asyncSubscribe(ByteString.copyFromUtf8("Topic" + i),
-                                                  ByteString.copyFromUtf8("LocalSubscriber"), CreateOrAttach.CREATE_OR_ATTACH,
-                                                  new TestCallback(queue), null);
+                                                  ByteString.copyFromUtf8("LocalSubscriber"),
+                                                  opts, new TestCallback(queue), null);
             assertTrue(queue.take());
             client.getSubscriber().startDelivery(ByteString.copyFromUtf8("Topic" + i),
                     ByteString.copyFromUtf8("LocalSubscriber"), new TestMessageHandler(consumeQueue));

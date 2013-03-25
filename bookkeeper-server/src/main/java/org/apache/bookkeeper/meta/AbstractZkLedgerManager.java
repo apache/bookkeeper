@@ -177,7 +177,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager {
                    new StatCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, Stat stat) {
-                if (KeeperException.Code.BadVersion == rc) {
+                if (KeeperException.Code.BADVERSION.intValue() == rc) {
                     cb.operationComplete(BKException.Code.MetadataVersionException, null);
                 } else if (KeeperException.Code.OK.intValue() == rc) {
                     // update metadata version

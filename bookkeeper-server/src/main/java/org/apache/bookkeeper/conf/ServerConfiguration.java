@@ -387,7 +387,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * @return zookeeper servers
      */
     public String getZkServers() {
-        List<Object> servers = getList(ZK_SERVERS, null);
+        List servers = getList(ZK_SERVERS, null);
         if (null == servers || 0 == servers.size()) {
             return null;
         }

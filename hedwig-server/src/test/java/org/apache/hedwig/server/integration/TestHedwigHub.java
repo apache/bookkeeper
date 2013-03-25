@@ -48,6 +48,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
 import org.apache.hedwig.protocol.PubSubProtocol.StartDeliveryRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.StopDeliveryRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.protoextensions.SubscriptionStateUtils;
 import org.apache.hedwig.server.HedwigHubTestBase;
@@ -300,7 +301,9 @@ public abstract class TestHedwigHub extends HedwigHubTestBase {
         if (logger.isDebugEnabled())
             logger.debug("Subscribing to topics and starting delivery.");
         for (int i = 0; i < batchSize; i++) {
-            subscriber.asyncSubscribe(getTopic(i), localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH,
+            SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+                .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+            subscriber.asyncSubscribe(getTopic(i), localSubscriberId, opts,
                                       new TestCallback(queue), null);
             assertTrue(queue.take());
         }
@@ -347,7 +350,9 @@ public abstract class TestHedwigHub extends HedwigHubTestBase {
         Publisher myPublisher = myClient.getPublisher();
         ByteString myTopic = getTopic(0);
         // Subscribe to a topic and start delivery on it
-        mySubscriber.asyncSubscribe(myTopic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH,
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        mySubscriber.asyncSubscribe(myTopic, localSubscriberId, opts,
                                     new TestCallback(queue), null);
         assertTrue(queue.take());
         startDelivery(mySubscriber, myTopic, localSubscriberId, new TestMessageHandler(consumeQueue));
@@ -384,14 +389,20 @@ public abstract class TestHedwigHub extends HedwigHubTestBase {
     @Test(timeout=10000)
     public void testAttachToSubscriptionSuccess() throws Exception {
         ByteString topic = getTopic(0);
-        subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
+        SubscriptionOptions opts1 = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+
+        subscriber.asyncSubscribe(topic, localSubscriberId, opts1, new TestCallback(queue),
                                   null);
         assertTrue(queue.take());
         // Close the subscription asynchronously
         subscriber.asyncCloseSubscription(topic, localSubscriberId, new TestCallback(queue), null);
         assertTrue(queue.take());
+
+        SubscriptionOptions opts2 = SubscriptionOptions.newBuilder()
+                .setCreateOrAttach(CreateOrAttach.ATTACH).build();
         // Now try to attach to the subscription
-        subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.ATTACH, new TestCallback(queue), null);
+        subscriber.asyncSubscribe(topic, localSubscriberId, opts2, new TestCallback(queue), null);
         assertTrue(queue.take());
         // Start delivery and publish some messages. Make sure they are consumed
         // correctly.
@@ -437,8 +448,10 @@ public abstract class TestHedwigHub extends HedwigHubTestBase {
     @Test(timeout=10000)
     public void testUnsubscribe() throws Exception {
         ByteString topic = getTopic(0);
-        subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
-                                  null);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+
+        subscriber.asyncSubscribe(topic, localSubscriberId, opts, new TestCallback(queue), null);
         assertTrue(queue.take());
         startDelivery(topic, localSubscriberId, new TestMessageHandler(consumeQueue));
         publisher.asyncPublish(topic, getMsg(0), new TestCallback(queue), null);
@@ -488,8 +501,9 @@ public abstract class TestHedwigHub extends HedwigHubTestBase {
     @Test(timeout=10000)
     public void testCloseSubscription() throws Exception {
         ByteString topic = getTopic(0);
-        subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
-                                  null);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.asyncSubscribe(topic, localSubscriberId, opts, new TestCallback(queue), null);
         assertTrue(queue.take());
         startDelivery(topic, localSubscriberId, new TestMessageHandler(consumeQueue));
         publisher.asyncPublish(topic, getMsg(0), new TestCallback(queue), null);
@@ -520,8 +534,10 @@ public abstract class TestHedwigHub extends HedwigHubTestBase {
     @Test(timeout=10000)
     public void testStartDeliveryTwice() throws Exception {
         ByteString topic = getTopic(0);
-        subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
-                                  null);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+
+        subscriber.asyncSubscribe(topic, localSubscriberId, opts, new TestCallback(queue), null);
         assertTrue(queue.take());
         startDelivery(topic, localSubscriberId, new TestMessageHandler(consumeQueue));
         try {
@@ -534,8 +550,10 @@ public abstract class TestHedwigHub extends HedwigHubTestBase {
     @Test(timeout=10000)
     public void testStopDelivery() throws Exception {
         ByteString topic = getTopic(0);
-        subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
-                                  null);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+
+        subscriber.asyncSubscribe(topic, localSubscriberId, opts, new TestCallback(queue), null);
         assertTrue(queue.take());
         startDelivery(topic, localSubscriberId, new TestMessageHandler(consumeQueue));
         publisher.asyncPublish(topic, getMsg(0), new TestCallback(queue), null);
@@ -575,8 +593,10 @@ public abstract class TestHedwigHub extends HedwigHubTestBase {
     @Test(timeout=10000)
     public void testConsumedMessagesInOrder() throws Exception {
         ByteString topic = getTopic(0);
-        subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
-                                  null);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+
+        subscriber.asyncSubscribe(topic, localSubscriberId, opts, new TestCallback(queue), null);
         assertTrue(queue.take());
         startDelivery(topic, localSubscriberId, new TestMessageHandler(consumeQueue));
         // Now publish some messages and verify that they are delivered in order
@@ -596,21 +616,28 @@ public abstract class TestHedwigHub extends HedwigHubTestBase {
     @Test(timeout=10000)
     public void testCreateSubscriptionFailure() throws Exception {
         ByteString topic = getTopic(0);
-        subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(queue),
-                                  null);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+
+        subscriber.asyncSubscribe(topic, localSubscriberId, opts, new TestCallback(queue), null);
         assertTrue(queue.take());
         // Close the subscription asynchronously
         subscriber.asyncCloseSubscription(topic, localSubscriberId, new TestCallback(queue), null);
         assertTrue(queue.take());
         // Now try to create the subscription when it already exists
-        subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE, new TestCallback(queue), null);
+        SubscriptionOptions optsCreate = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE).build();
+
+        subscriber.asyncSubscribe(topic, localSubscriberId, optsCreate, new TestCallback(queue), null);
         assertFalse(queue.take());
     }
 
     @Test(timeout=10000)
     public void testCreateSubscriptionSuccess() throws Exception {
         ByteString topic = getTopic(0);
-        subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.CREATE, new TestCallback(queue), null);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE).build();
+        subscriber.asyncSubscribe(topic, localSubscriberId, opts, new TestCallback(queue), null);
         assertTrue(queue.take());
         startDelivery(topic, localSubscriberId, new TestMessageHandler(consumeQueue));
         int batchSize = 5;
@@ -624,7 +651,10 @@ public abstract class TestHedwigHub extends HedwigHubTestBase {
     @Test(timeout=10000)
     public void testAttachToSubscriptionFailure() throws Exception {
         ByteString topic = getTopic(0);
-        subscriber.asyncSubscribe(topic, localSubscriberId, CreateOrAttach.ATTACH, new TestCallback(queue), null);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.ATTACH).build();
+
+        subscriber.asyncSubscribe(topic, localSubscriberId, opts, new TestCallback(queue), null);
         assertFalse(queue.take());
     }
 
@@ -635,7 +665,9 @@ public abstract class TestHedwigHub extends HedwigHubTestBase {
     public void testSyncSubscribeWithInvalidSubscriberId() throws Exception {
         boolean subscribeSuccess = false;
         try {
-            subscriber.subscribe(getTopic(0), hubSubscriberId, CreateOrAttach.CREATE_OR_ATTACH);
+            SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+                .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+            subscriber.subscribe(getTopic(0), hubSubscriberId, opts);
         } catch (InvalidSubscriberIdException e) {
             subscribeSuccess = true;
         } catch (Exception ex) {
@@ -646,7 +678,9 @@ public abstract class TestHedwigHub extends HedwigHubTestBase {
 
     @Test(timeout=10000)
     public void testAsyncSubscribeWithInvalidSubscriberId() throws Exception {
-        subscriber.asyncSubscribe(getTopic(0), hubSubscriberId, CreateOrAttach.CREATE_OR_ATTACH,
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.asyncSubscribe(getTopic(0), hubSubscriberId, opts,
                                   new TestCallback(queue), null);
         assertFalse(queue.take());
     }
@@ -679,7 +713,9 @@ public abstract class TestHedwigHub extends HedwigHubTestBase {
         Subscriber hubSubscriber = hubClient.getSubscriber();
         boolean subscribeSuccess = false;
         try {
-            hubSubscriber.subscribe(getTopic(0), localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH);
+            SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+                .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+            hubSubscriber.subscribe(getTopic(0), localSubscriberId, opts);
         } catch (InvalidSubscriberIdException e) {
             subscribeSuccess = true;
         } catch (Exception ex) {
@@ -693,7 +729,9 @@ public abstract class TestHedwigHub extends HedwigHubTestBase {
     public void testAsyncHubSubscribeWithInvalidSubscriberId() throws Exception {
         Client hubClient = new HedwigHubClient(new HubClientConfiguration());
         Subscriber hubSubscriber = hubClient.getSubscriber();
-        hubSubscriber.asyncSubscribe(getTopic(0), localSubscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        hubSubscriber.asyncSubscribe(getTopic(0), localSubscriberId, opts, new TestCallback(
                                          queue), null);
         assertFalse(queue.take());
         hubClient.close();

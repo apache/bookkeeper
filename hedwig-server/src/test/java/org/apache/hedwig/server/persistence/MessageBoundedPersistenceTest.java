@@ -94,7 +94,9 @@ public class MessageBoundedPersistenceTest extends HedwigHubTestBase {
             pub.publish(topic, Message.newBuilder().setBody(
                                 ByteString.copyFromUtf8(String.valueOf(i))).build());
         }
-        sub.subscribe(topic, subid, CreateOrAttach.ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.ATTACH).build();
+        sub.subscribe(topic, subid, opts);
 
         final AtomicInteger expected = new AtomicInteger(X - Y);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -140,7 +142,9 @@ public class MessageBoundedPersistenceTest extends HedwigHubTestBase {
 
         ByteString topic = ByteString.copyFromUtf8("basicBoundingTopic");
         ByteString subid = ByteString.copyFromUtf8("basicBoundingSubId");
-        sub.subscribe(topic, subid, CreateOrAttach.CREATE);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE).build();
+        sub.subscribe(topic, subid, opts);
         sub.closeSubscription(topic, subid);
 
         sendXExpectLastY(pub, sub, topic, subid, 1000, 5);
@@ -222,7 +226,9 @@ public class MessageBoundedPersistenceTest extends HedwigHubTestBase {
         sendXExpectLastY(pub, sub, topic, subid, 50, 10);
 
         // message bound is not provided, no update
-        sub.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        sub.subscribe(topic, subid, opts);
         sub.closeSubscription(topic, subid);
         sendXExpectLastY(pub, sub, topic, subid, 50, 10);
 
@@ -238,7 +244,9 @@ public class MessageBoundedPersistenceTest extends HedwigHubTestBase {
         String ledgersPath = "/hedwig/standalone/topics/testGCTopic/ledgers";
         ByteString topic = ByteString.copyFromUtf8("testGCTopic");
         ByteString subid = ByteString.copyFromUtf8("testGCSubId");
-        sub.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        sub.subscribe(topic, subid, opts);
         sub.closeSubscription(topic, subid);
 
         for (int i = 1; i <= 100; i++) {

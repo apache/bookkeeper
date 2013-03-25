@@ -133,16 +133,17 @@ public abstract class LedgerManagerFactory {
         // handle pre V2 layout
         if (layout.getLayoutFormatVersion() <= V1) {
             // pre V2 layout we use type of ledger manager
+            @SuppressWarnings("deprecation")
             String lmType = conf.getLedgerManagerType();
-            if (lmType != null && !layout.getManagerType().equals(lmType)) {
+            if (lmType != null && !layout.getManagerFactoryClass().equals(lmType)) {
                 throw new IOException("Configured layout " + lmType
-                                    + " does not match existing layout "  + layout.getManagerType());
+                        + " does not match existing layout "  + layout.getManagerFactoryClass());
             }
 
             // create the ledger manager
-            if (FlatLedgerManagerFactory.NAME.equals(layout.getManagerType())) {
+            if (FlatLedgerManagerFactory.NAME.equals(layout.getManagerFactoryClass())) {
                 lmFactory = new FlatLedgerManagerFactory();
-            } else if (HierarchicalLedgerManagerFactory.NAME.equals(layout.getManagerType())) {
+            } else if (HierarchicalLedgerManagerFactory.NAME.equals(layout.getManagerFactoryClass())) {
                 lmFactory = new HierarchicalLedgerManagerFactory();
             } else {
                 throw new IOException("Unknown ledger manager type: " + lmType);
@@ -189,6 +190,7 @@ public abstract class LedgerManagerFactory {
         // use default ledger manager factory if no one provided
         if (factoryClass == null) {
             // for backward compatibility, check manager type
+            @SuppressWarnings("deprecation")
             String lmType = conf.getLedgerManagerType();
             if (lmType == null) {
                 factoryClass = FlatLedgerManagerFactory.class;

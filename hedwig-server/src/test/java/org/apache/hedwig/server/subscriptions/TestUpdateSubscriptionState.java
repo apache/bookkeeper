@@ -25,6 +25,7 @@ import org.apache.hedwig.client.api.Publisher;
 import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.server.HedwigHubTestBase;
 import org.apache.hedwig.server.common.ServerConfiguration;
@@ -161,7 +162,9 @@ public class TestUpdateSubscriptionState extends HedwigHubTestBase {
         int startMsgId = 0;
         int numMsgs = 10;
         // subscriber in client
-        subscriber.subscribe(topic, subId, CreateOrAttach.CREATE_OR_ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.subscribe(topic, subId, opts);
         // start delivery
         OrderCheckingMessageHandler ocm = new OrderCheckingMessageHandler(
                 topic, subId, startMsgId, numMsgs);
@@ -185,7 +188,7 @@ public class TestUpdateSubscriptionState extends HedwigHubTestBase {
 
         startMsgId = 20;
         // reconnect it again
-        subscriber.subscribe(topic, subId, CreateOrAttach.CREATE_OR_ATTACH);
+        subscriber.subscribe(topic, subId, opts);
         ocm = new OrderCheckingMessageHandler(topic, subId, startMsgId, numMsgs);
         subscriber.startDelivery(topic, subId, ocm);
         for (int i=0; i<numMsgs; i++) {
@@ -205,8 +208,10 @@ public class TestUpdateSubscriptionState extends HedwigHubTestBase {
 
         int startMsgId = 0;
         int numMsgs = 10;
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
         // subscriber in client
-        subscriber.subscribe(topic, subId, CreateOrAttach.CREATE_OR_ATTACH);
+        subscriber.subscribe(topic, subId, opts);
         // start delivery
         OrderCheckingMessageHandler ocm = new OrderCheckingMessageHandler(
                 topic, subId, startMsgId, numMsgs);
@@ -232,7 +237,7 @@ public class TestUpdateSubscriptionState extends HedwigHubTestBase {
 
         startMsgId = 20;
         // reconnect it again
-        subscriber.subscribe(topic, subId, CreateOrAttach.CREATE_OR_ATTACH);
+        subscriber.subscribe(topic, subId, opts);
         ocm = new OrderCheckingMessageHandler(topic, subId, startMsgId, numMsgs);
         subscriber.startDelivery(topic, subId, ocm);
         for (int i=0; i<numMsgs; i++) {

@@ -151,6 +151,7 @@ public class Auditor implements Watcher {
                 return;
             }
             executor.submit(new Runnable() {
+                    @SuppressWarnings("unchecked")
                     public void run() {
                         try {
                             waitIfLedgerReplicationDisabled();
@@ -267,6 +268,7 @@ public class Auditor implements Watcher {
         return zkc.getChildren(conf.getZkAvailableBookiesPath(), this);
     }
 
+    @SuppressWarnings("unchecked")
     private void auditingBookies(List<String> availableBookies)
             throws BKAuditException, KeeperException, InterruptedException {
 

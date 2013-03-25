@@ -68,21 +68,24 @@ public class JLineHedwigCompletor implements Completor {
                     READTOPIC.equalsIgnoreCase(tokens[0]))) {
             return completeTopic(buffer, tokens[1], candidates);
         }
-        List<String> cmds = HedwigCommands.findCandidateCommands(tokens);
+        List cmds = HedwigCommands.findCandidateCommands(tokens);
         return completeCommand(buffer, tokens[tokens.length - 1], cmds, candidates);
     }
 
+    @SuppressWarnings("unchecked")
     private int completeCommand(String buffer, String token,
-            List<String> commands, List<String> candidates) {
-        for (String cmd : commands) {
-            if (cmd.startsWith(token)) {
-                candidates.add(cmd);
+            List commands, List candidates) {
+        for (Object cmdo : commands) {
+            assert (cmdo instanceof String);
+            if (((String)cmdo).startsWith(token)) {
+                candidates.add(cmdo);
             }
         }
         return buffer.lastIndexOf(" ") + 1;
     }
 
-    private int completeTopic(String buffer, String token, List<String> candidates) {
+    @SuppressWarnings("unchecked")
+    private int completeTopic(String buffer, String token, List candidates) {
         try {
             Iterator<ByteString> children = admin.getTopics();
             int i = 0;

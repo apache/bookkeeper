@@ -111,6 +111,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
     /**
      * Test bad client configuration
      */
+    @SuppressWarnings("deprecation")
     @Test(timeout=60000)
     public void testBadConfV1() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();

@@ -287,9 +287,9 @@ public class TestSpeculativeRead extends BaseTestCase {
         LedgerHandle l = bkspec.openLedger(id, digestType, passwd);
 
         ArrayList<InetSocketAddress> ensemble = l.getLedgerMetadata().getEnsembles().get(0L);
-        Set<InetSocketAddress> allHosts = new HashSet(ensemble);
-        Set<InetSocketAddress> noHost = new HashSet();
-        Set<InetSocketAddress> secondHostOnly = new HashSet();
+        Set<InetSocketAddress> allHosts = new HashSet<InetSocketAddress>(ensemble);
+        Set<InetSocketAddress> noHost = new HashSet<InetSocketAddress>();
+        Set<InetSocketAddress> secondHostOnly = new HashSet<InetSocketAddress>();
         secondHostOnly.add(ensemble.get(1));
         PendingReadOp.LedgerEntryRequest req0 = null, req2 = null, req4 = null;
         try {

@@ -26,7 +26,7 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
+import org.jboss.netty.channel.ChannelHandler.Sharable;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
@@ -44,7 +44,7 @@ import org.apache.hedwig.protoextensions.PubSubResponseUtils;
 import org.apache.hedwig.server.handlers.ChannelDisconnectListener;
 import org.apache.hedwig.server.handlers.Handler;
 
-@ChannelPipelineCoverage("all")
+@Sharable
 public class UmbrellaHandler extends SimpleChannelHandler {
     static Logger logger = LoggerFactory.getLogger(UmbrellaHandler.class);
 
@@ -100,7 +100,7 @@ public class UmbrellaHandler extends SimpleChannelHandler {
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         if (isSSLEnabled) {
-            ctx.getPipeline().get(SslHandler.class).handshake(e.getChannel()).addListener(new ChannelFutureListener() {
+            ctx.getPipeline().get(SslHandler.class).handshake().addListener(new ChannelFutureListener() {
                 public void operationComplete(ChannelFuture future) throws Exception {
                     if (future.isSuccess()) {
                         logger.debug("SSL handshake has completed successfully!");

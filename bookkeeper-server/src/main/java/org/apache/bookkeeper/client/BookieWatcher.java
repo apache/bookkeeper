@@ -120,7 +120,7 @@ class BookieWatcher implements Watcher, ChildrenCallback {
 
         final HashSet<InetSocketAddress> deadBookies;
         synchronized (this) {
-            deadBookies = (HashSet<InetSocketAddress>)knownBookies.clone();
+            deadBookies = new HashSet<InetSocketAddress>(knownBookies);
             deadBookies.removeAll(newBookieAddrs);
             // No need to close readonly bookie clients.
             deadBookies.removeAll(readOnlyBookieWatcher.getReadOnlyBookies());

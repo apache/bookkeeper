@@ -42,7 +42,6 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
@@ -66,8 +65,6 @@ import org.slf4j.LoggerFactory;
  * has reconnect logic if a connection to a bookie fails.
  *
  */
-
-@ChannelPipelineCoverage("one")
 public class PerChannelBookieClient extends SimpleChannelHandler implements ChannelPipelineFactory {
 
     static final Logger LOG = LoggerFactory.getLogger(PerChannelBookieClient.class);

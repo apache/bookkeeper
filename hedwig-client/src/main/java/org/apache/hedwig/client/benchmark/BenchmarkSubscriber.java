@@ -35,6 +35,7 @@ import org.apache.hedwig.client.benchmark.BenchmarkUtils.ThroughputLatencyAggreg
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.RegionSpecificSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.util.Callback;
 
 public class BenchmarkSubscriber extends BenchmarkWorker implements Callable<Void> {
@@ -73,7 +74,9 @@ public class BenchmarkSubscriber extends BenchmarkWorker implements Callable<Voi
 
             final String topic = HedwigBenchmark.TOPIC_PREFIX + i;
 
-            subscriber.subscribe(ByteString.copyFromUtf8(topic), subId, CreateOrAttach.CREATE_OR_ATTACH);
+            SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+                .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+            subscriber.subscribe(ByteString.copyFromUtf8(topic), subId, opts);
             subscriber.startDelivery(ByteString.copyFromUtf8(topic), subId, new MessageHandler() {
 
                 @Override
@@ -130,7 +133,10 @@ public class BenchmarkSubscriber extends BenchmarkWorker implements Callable<Voi
             if (!HedwigBenchmark.amIResponsibleForTopic(i, partitionIndex, numPartitions)) {
                 continue;
             }
-            subscriber.asyncSubscribe(ByteString.copyFromUtf8(topicPrefix + i), subId, CreateOrAttach.CREATE_OR_ATTACH,
+            SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+                .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+            subscriber.asyncSubscribe(ByteString.copyFromUtf8(topicPrefix + i),
+                                      subId, opts,
                                       new BenchmarkCallback(agg), null);
         }
         // Wait till the benchmark test has completed

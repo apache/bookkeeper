@@ -26,6 +26,7 @@ import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.client.benchmark.BenchmarkUtils.BenchmarkCallback;
 import org.apache.hedwig.client.benchmark.BenchmarkUtils.ThroughputLatencyAggregator;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.util.Callback;
 
@@ -50,7 +51,9 @@ public class BenchmarkPublisher extends BenchmarkWorker {
     public void warmup(int nWarmup) throws Exception {
         ByteString topic = ByteString.copyFromUtf8("warmup" + partitionIndex);
         ByteString subId = ByteString.copyFromUtf8("sub");
-        subscriber.subscribe(topic, subId, CreateOrAttach.CREATE_OR_ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.subscribe(topic, subId, opts);
 
         subscriber.startDelivery(topic, subId, new MessageHandler() {
             @Override

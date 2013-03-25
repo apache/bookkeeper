@@ -106,7 +106,9 @@ public class TestThrottlingDelivery extends HedwigHubTestBase {
             pub.publish(topic, Message.newBuilder().setBody(
                                ByteString.copyFromUtf8(String.valueOf(i))).build());
         }
-        sub.subscribe(topic, subid, CreateOrAttach.ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.ATTACH).build();
+        sub.subscribe(topic, subid, opts);
 
         final AtomicInteger expected = new AtomicInteger(1);
         final CountDownLatch throttleLatch = new CountDownLatch(1);
@@ -207,7 +209,9 @@ public class TestThrottlingDelivery extends HedwigHubTestBase {
 
         ByteString topic = ByteString.copyFromUtf8("testServerSideThrottle"); 
         ByteString subid = ByteString.copyFromUtf8("serverThrottleSub");
-        sub.subscribe(topic, subid, CreateOrAttach.CREATE);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE).build();
+        sub.subscribe(topic, subid, opts);
         sub.closeSubscription(topic, subid);
 
         // throttle with hub server's setting

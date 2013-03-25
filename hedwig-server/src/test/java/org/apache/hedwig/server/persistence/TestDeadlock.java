@@ -37,6 +37,7 @@ import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.HedwigClient;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.server.HedwigHubTestBase;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.util.Callback;
@@ -182,7 +183,11 @@ public class TestDeadlock extends HedwigHubTestBase {
             return 1;
         }
         @Override
-        public int getBkQuorumSize() {
+        public int getBkWriteQuorumSize() {
+            return 1;
+        }
+        @Override
+        public int getBkAckQuorumSize() {
             return 1;
         }
         @Override
@@ -218,7 +223,9 @@ public class TestDeadlock extends HedwigHubTestBase {
 
         // subscribe to topic
         logger.info("Setup subscriptions");
-        subscriber.subscribe(topic, subscriberId, CreateOrAttach.CREATE_OR_ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.subscribe(topic, subscriberId, opts);
         subscriber.closeSubscription(topic, subscriberId);
 
         // publish 5 messages to form first ledger
@@ -242,7 +249,7 @@ public class TestDeadlock extends HedwigHubTestBase {
 
         logger.info("Start subscribe topics again and receive messages");
         // subscribe to topic
-        subscriber.subscribe(topic, subscriberId, CreateOrAttach.CREATE_OR_ATTACH);
+        subscriber.subscribe(topic, subscriberId, opts);
         subscriber.startDelivery(topic, subscriberId,
                                  new TestMessageHandler(consumeQueue));
         for (int i=0; i<(2*numMessages+3); i++) {

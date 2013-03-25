@@ -68,7 +68,7 @@ public class ZkUtils {
         }
 
         if (Code.OK.intValue() != syncObj.rc) {
-            throw KeeperException.create(syncObj.rc, syncObj.path);
+            throw KeeperException.create(KeeperException.Code.get(syncObj.rc), syncObj.path);
         }
     }
 

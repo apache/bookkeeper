@@ -346,7 +346,9 @@ public class HedwigConsole {
                 try {
                     for (int j=startSub; j<=endSub; j++) {
                         ByteString sub = ByteString.copyFromUtf8(subPrefix + j);
-                        subscriber.subscribe(topic, sub, CreateOrAttach.CREATE_OR_ATTACH);
+                        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+                            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+                        subscriber.subscribe(topic, sub, opts);
                         subscriber.unsubscribe(topic, sub);
                     }
                     System.out.println("RMSUB " + topic.toStringUtf8() + " DONE");
@@ -471,7 +473,9 @@ public class HedwigConsole {
             System.out.println("Starting PUBSUB test ...");
             try {
                 // sub the topic
-                subscriber.subscribe(topic, subId, CreateOrAttach.CREATE_OR_ATTACH);
+                SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+                    .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+                subscriber.subscribe(topic, subId, opts);
                 subscribed = true;
 
                 System.out.println("Sub topic " + topic.toStringUtf8() + ", subscriber id " + subId.toStringUtf8());

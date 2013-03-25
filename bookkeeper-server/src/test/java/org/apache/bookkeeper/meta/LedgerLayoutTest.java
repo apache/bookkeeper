@@ -56,7 +56,7 @@ public class LedgerLayoutTest extends BookKeeperClusterTestCase {
         layout2.store(zkc, ledgerRootPath);
 
         layout = LedgerLayout.readLayout(zkc, ledgerRootPath);
-        assertEquals(testName, layout.getManagerType());
+        assertEquals(testName, layout.getManagerFactoryClass());
         assertEquals(testVersion, layout.getManagerVersion());
     }
 
@@ -141,7 +141,7 @@ public class LedgerLayoutTest extends BookKeeperClusterTestCase {
 
         LedgerLayout layout = LedgerLayout.readLayout(zkc, conf.getZkLedgersRootPath());
         assertNotNull("Should not be null", layout);
-        assertEquals(FlatLedgerManagerFactory.NAME, layout.getManagerType());
+        assertEquals(FlatLedgerManagerFactory.NAME, layout.getManagerFactoryClass());
         assertEquals(FlatLedgerManagerFactory.CUR_VERSION, layout.getManagerVersion());
         assertEquals(1, layout.getLayoutFormatVersion());
     }

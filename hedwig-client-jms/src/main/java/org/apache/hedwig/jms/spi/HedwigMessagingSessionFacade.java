@@ -31,6 +31,8 @@ import org.apache.hedwig.jms.DebugUtil;
 import org.apache.hedwig.jms.message.MessageImpl;
 import org.apache.hedwig.jms.message.MessageUtil;
 import org.apache.hedwig.protocol.PubSubProtocol;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -357,9 +359,10 @@ public class HedwigMessagingSessionFacade implements MessagingSessionFacade, Mes
         }
 
         try {
+            SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+                .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
             hedwigClient.getSubscriber().subscribe(ByteString.copyFromUtf8(topicName),
-                    ByteString.copyFromUtf8(subscribedId),
-                PubSubProtocol.SubscribeRequest.CreateOrAttach.CREATE_OR_ATTACH);
+                    ByteString.copyFromUtf8(subscribedId), opts);
         } catch (PubSubException.CouldNotConnectException e) {
             JMSException je = new JMSException("receive failed, could not connect .. " + e);
             je.setLinkedException(e);

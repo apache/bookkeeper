@@ -40,7 +40,7 @@ public class ConnectionChurnTest extends JmsTestBase {
 
     public void testPerformance() throws Exception {
         ConnectionFactory factory = createConnectionFactory();
-        List<Connection> list = new ArrayList();
+        List<Connection> list = new ArrayList<Connection>();
         for (int i = 0; i < CONNECTION_COUNT; i++) {
             Connection connection = factory.createConnection();
             connection.start();

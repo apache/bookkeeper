@@ -33,6 +33,7 @@ import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.server.HedwigHubTestBase;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.util.Callback;
@@ -270,10 +271,13 @@ public class TestMultiplexing extends HedwigHubTestBase {
         TestMessageHandler csHandler22 =
             new TestMessageHandler(1, X, true, X);
 
-        subscriber.subscribe(topic1, subid1, CreateOrAttach.CREATE);
-        subscriber.subscribe(topic1, subid2, CreateOrAttach.CREATE);
-        subscriber.subscribe(topic2, subid1, CreateOrAttach.CREATE);
-        subscriber.subscribe(topic2, subid2, CreateOrAttach.CREATE);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE).build();
+
+        subscriber.subscribe(topic1, subid1, opts);
+        subscriber.subscribe(topic1, subid2, opts);
+        subscriber.subscribe(topic2, subid1, opts);
+        subscriber.subscribe(topic2, subid2, opts);
 
         // start deliveries
         subscriber.startDelivery(topic1, subid1, csHandler11);
@@ -330,10 +334,12 @@ public class TestMultiplexing extends HedwigHubTestBase {
         TestMessageHandler csHandler22 =
             new TestMessageHandler(1, X, true, X);
 
-        subscriber.subscribe(topic1, subid1, CreateOrAttach.CREATE);
-        subscriber.subscribe(topic1, subid2, CreateOrAttach.CREATE);
-        subscriber.subscribe(topic2, subid1, CreateOrAttach.CREATE);
-        subscriber.subscribe(topic2, subid2, CreateOrAttach.CREATE);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE).build();
+        subscriber.subscribe(topic1, subid1, opts);
+        subscriber.subscribe(topic1, subid2, opts);
+        subscriber.subscribe(topic2, subid1, opts);
+        subscriber.subscribe(topic2, subid2, opts);
 
         // start deliveries
         subscriber.startDelivery(topic1, subid1, csHandler11);
@@ -390,10 +396,12 @@ public class TestMultiplexing extends HedwigHubTestBase {
         ThrottleMessageHandler csHandler22 =
             new ThrottleMessageHandler(1, 3*X, false, X);
 
-        subscriber.subscribe(topic1, subid1, CreateOrAttach.CREATE);
-        subscriber.subscribe(topic1, subid2, CreateOrAttach.CREATE);
-        subscriber.subscribe(topic2, subid1, CreateOrAttach.CREATE);
-        subscriber.subscribe(topic2, subid2, CreateOrAttach.CREATE);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE).build();
+        subscriber.subscribe(topic1, subid1, opts);
+        subscriber.subscribe(topic1, subid2, opts);
+        subscriber.subscribe(topic2, subid1, opts);
+        subscriber.subscribe(topic2, subid2, opts);
 
         // start deliveries
         subscriber.startDelivery(topic1, subid1, csHandler11);

@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
@@ -48,7 +47,6 @@ import org.apache.hedwig.protocol.PubSubProtocol.StatusCode;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionEventResponse;
 import static org.apache.hedwig.util.VarArgs.va;
 
-@ChannelPipelineCoverage("all")
 public class HChannelHandler extends SimpleChannelHandler {
 
     private static Logger logger = LoggerFactory.getLogger(HChannelHandler.class);
@@ -267,7 +265,7 @@ public class HChannelHandler extends SimpleChannelHandler {
         // explicitly or the client has been stopped.
         if (cfg.isSSLEnabled() && !channelClosedExplicitly && !channelManager.isClosed()) {
             logger.debug("Initiating the SSL handshake");
-            ctx.getPipeline().get(SslHandler.class).handshake(e.getChannel());
+            ctx.getPipeline().get(SslHandler.class).handshake();
         }
     }
 

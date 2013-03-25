@@ -26,6 +26,7 @@ import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.exceptions.PubSubException.TopicBusyException;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubRequest;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest;
+import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.protoextensions.PubSubResponseUtils;
 import org.apache.hedwig.server.handlers.ChannelDisconnectListener;
 import org.apache.hedwig.server.handlers.Handler;
@@ -59,9 +60,11 @@ public class ProxySubscribeHandler implements Handler, ChannelDisconnectListener
 
         SubscribeRequest subRequest = request.getSubscribeRequest();
         final TopicSubscriber topicSubscriber = new TopicSubscriber(request.getTopic(), subRequest.getSubscriberId());
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(subRequest.getCreateOrAttach()).build();
 
-        subscriber.asyncSubscribe(topicSubscriber.getTopic(), subRequest.getSubscriberId(), subRequest
-        .getCreateOrAttach(), new Callback<Void>() {
+        subscriber.asyncSubscribe(topicSubscriber.getTopic(), subRequest.getSubscriberId(),
+                                  opts, new Callback<Void>() {
             @Override
             public void operationFailed(Object ctx, PubSubException exception) {
                 channel.write(PubSubResponseUtils.getResponseForException(exception, request.getTxnId()));

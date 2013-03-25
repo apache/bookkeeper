@@ -222,7 +222,9 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
         final Map<String, MessageSeqId> receivedMsgs =
             new HashMap<String, MessageSeqId>();
 
-        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.subscribe(topic, subid, opts);
         subscriber.startDelivery(topic, subid, new MessageHandler() {
             synchronized public void deliver(ByteString topic, ByteString subscriberId,
                                              Message msg, Callback<Void> callback,
@@ -286,7 +288,9 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
         final Map<String, MessageSeqId> receivedMsgs =
             new HashMap<String, MessageSeqId>();
 
-        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.subscribe(topic, subid, opts);
         subscriber.startDelivery(topic, subid, new MessageHandler() {
             synchronized public void deliver(ByteString topic, ByteString subscriberId,
                                              Message msg, Callback<Void> callback,
@@ -361,7 +365,9 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
     public void testSyncSubscribe() throws Exception {
         boolean subscribeSuccess = true;
         try {
-            subscriber.subscribe(ByteString.copyFromUtf8("mySyncSubscribeTopic"), ByteString.copyFromUtf8("1"), CreateOrAttach.CREATE_OR_ATTACH);
+            SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+                .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+            subscriber.subscribe(ByteString.copyFromUtf8("mySyncSubscribeTopic"), ByteString.copyFromUtf8("1"), opts);
         } catch (Exception e) {
             subscribeSuccess = false;
         }
@@ -370,8 +376,10 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
 
     @Test(timeout=60000)
     public void testAsyncSubscribe() throws Exception {
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
         subscriber.asyncSubscribe(ByteString.copyFromUtf8("myAsyncSubscribeTopic"), ByteString.copyFromUtf8("1"),
-                                  CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(), null);
+                                  opts, new TestCallback(), null);
         assertTrue(queue.take());
     }
 
@@ -379,7 +387,9 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
     public void testStartDeliveryAfterCloseSub() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("testStartDeliveryAfterCloseSub");
         ByteString subid = ByteString.copyFromUtf8("mysubid");
-        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.subscribe(topic, subid, opts);
 
         // Start delivery for the subscriber
         subscriber.startDelivery(topic, subid, new TestMessageHandler());
@@ -394,7 +404,7 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
         subscriber.closeSubscription(topic, subid);
 
         // subscribe again
-        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        subscriber.subscribe(topic, subid, opts);
         subscriber.startDelivery(topic, subid, new TestMessageHandler());
 
         publisher.publish(topic, Message.newBuilder()
@@ -406,7 +416,10 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
     public void testSubscribeAndConsume() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("myConsumeTopic");
         ByteString subscriberId = ByteString.copyFromUtf8("1");
-        subscriber.asyncSubscribe(topic, subscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(), null);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+
+        subscriber.asyncSubscribe(topic, subscriberId, opts, new TestCallback(), null);
         assertTrue(queue.take());
 
         // Start delivery for the subscriber
@@ -440,7 +453,9 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
     public void testAsyncSubscribeAndUnsubscribe() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("myAsyncUnsubTopic");
         ByteString subscriberId = ByteString.copyFromUtf8("1");
-        subscriber.asyncSubscribe(topic, subscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(), null);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.asyncSubscribe(topic, subscriberId, opts, new TestCallback(), null);
         assertTrue(queue.take());
         subscriber.asyncUnsubscribe(topic, subscriberId, new TestCallback(), null);
         assertTrue(queue.take());
@@ -463,7 +478,9 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
     public void testAsyncSubscribeAndCloseSubscription() throws Exception {
         ByteString topic = ByteString.copyFromUtf8("myAsyncSubAndCloseSubTopic");
         ByteString subscriberId = ByteString.copyFromUtf8("1");
-        subscriber.asyncSubscribe(topic, subscriberId, CreateOrAttach.CREATE_OR_ATTACH, new TestCallback(), null);
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
+        subscriber.asyncSubscribe(topic, subscriberId, opts, new TestCallback(), null);
         assertTrue(queue.take());
         subscriber.closeSubscription(topic, subscriberId);
         assertTrue(true);
@@ -474,11 +491,13 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
         ByteString topic = ByteString.copyFromUtf8("mySubClosesubAndPublish");
         ByteString subid = ByteString.copyFromUtf8("mysub");
         // to populate startServing/stopServing sequeuence
+        SubscriptionOptions opts = SubscriptionOptions.newBuilder()
+            .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
         for (int i=0; i<5; i++) {
-            subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+            subscriber.subscribe(topic, subid, opts);
             subscriber.closeSubscription(topic, subid);
         }
-        subscriber.subscribe(topic, subid, CreateOrAttach.CREATE_OR_ATTACH);
+        subscriber.subscribe(topic, subid, opts);
         subscriber.startDelivery(topic, subid, new TestMessageHandler());
         for (int i=0; i<3; i++) {
             publisher.asyncPublish(topic,

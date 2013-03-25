@@ -26,7 +26,7 @@ import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
+import org.jboss.netty.channel.ChannelHandler.Sharable;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
@@ -38,7 +38,7 @@ import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
 import org.jboss.netty.logging.InternalLoggerFactory;
 import org.jboss.netty.logging.Log4JLoggerFactory;
 
-@ChannelPipelineCoverage("all")
+@Sharable
 public class FakeBookie extends SimpleChannelHandler implements
     ChannelPipelineFactory {
     static final Logger logger = LoggerFactory.getLogger(FakeBookie.class);
