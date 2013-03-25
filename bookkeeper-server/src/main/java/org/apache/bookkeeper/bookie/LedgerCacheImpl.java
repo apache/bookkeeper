@@ -263,9 +263,6 @@ public class LedgerCacheImpl implements LedgerCache {
                 }
                 evictFileInfoIfNecessary();
                 fi = new FileInfo(lf, masterKey);
-                if (ledgerDirsManager.isDirFull(getLedgerDirForLedger(fi))) {
-                    moveLedgerIndexFile(ledger, fi);
-                }
                 fileInfoCache.put(ledger, fi);
                 openLedgers.add(ledger);
             }

@@ -184,4 +184,40 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
             // Expected
         }
     }
+
+    /**
+     * Try to read closed ledger from restarted ReadOnlyBookie.
+     */
+    public void testReadFromReadOnlyBookieShouldBeSuccess() throws Exception {
+        LedgerHandle ledger = bkc.createLedger(2, 2, DigestType.MAC, "".getBytes());
+        for (int i = 0; i < 10; i++) {
+            ledger.addEntry("data".getBytes());
+        }
+        ledger.close();
+        bsConfs.get(1).setReadOnlyModeEnabled(true);
+        bsConfs.get(1).setDiskCheckInterval(500);
+        restartBookies();
+
+        // Check new bookie with readonly mode enabled.
+        File[] ledgerDirs = bsConfs.get(1).getLedgerDirs();
+        assertEquals("Only one ledger dir should be present", 1, ledgerDirs.length);
+        Bookie bookie = bs.get(1).getBookie();
+        LedgerDirsManager ledgerDirsManager = bookie.getLedgerDirsManager();
+
+        // Now add the current ledger dir to filled dirs list
+        ledgerDirsManager.addToFilledDirs(new File(ledgerDirs[0], "current"));
+
+        // Wait till Bookie converts to ReadOnly mode.
+        Thread.sleep(1000);
+        assertTrue("Bookie should be converted to readonly mode", bookie.isRunning() && bookie.isReadOnly());
+
+        // Now kill the other bookie and read entries from the readonly bookie
+        killBookie(0);
+
+        Enumeration<LedgerEntry> readEntries = ledger.readEntries(0, 9);
+        while (readEntries.hasMoreElements()) {
+            LedgerEntry entry = readEntries.nextElement();
+            assertEquals("Entry should contain correct data", "data", new String(entry.getEntry()));
+        }
+    }
 }

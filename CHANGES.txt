@@ -52,6 +52,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-557: Compiler error showing up badly with jdk 7 (ivank via sijie)
 
+      BOOKKEEPER-583: Read from a ReadOnlyBookie fails if index fileinfo is not in ledger cache (vinay via sijie)
+
 Release 4.2.0 - 2013-01-14
 
   Non-backward compatible changes:
