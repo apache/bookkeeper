@@ -10,6 +10,8 @@ Trunk (unreleased changes)
 
     BUGFIXES:
 
+      BOOKKEEPER-597: Add flag to output test logs to stdout (ivank)
+
       BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)
 
       BOOKKEEPER-586: Remove recursive call in delivery manager (sijie via ivank)
