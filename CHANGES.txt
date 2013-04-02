@@ -10,6 +10,8 @@ Trunk (unreleased changes)
 
     BUGFIXES:
 
+      BOOKKEEPER-595: Crash of inprocess autorecovery daemon should not take down the bookie (ivank)
+
       BOOKKEEPER-597: Add flag to output test logs to stdout (ivank)
 
       BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)

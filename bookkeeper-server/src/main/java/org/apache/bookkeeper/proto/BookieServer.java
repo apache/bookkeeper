@@ -65,7 +65,7 @@ public class BookieServer {
 
     // operation stats
     protected BookieServerBean jmxBkServerBean;
-    private AutoRecoveryMain autoRecoveryMain = null;
+    AutoRecoveryMain autoRecoveryMain = null;
     private boolean isAutoRecoveryDaemonEnabled;
 
     public BookieServer(ServerConfiguration conf) throws IOException,
@@ -219,10 +219,12 @@ public class BookieServer {
                 } catch (InterruptedException ie) {
                     // do nothing
                 }
-                if (!isBookieRunning()
-                        || (isAutoRecoveryDaemonEnabled && !isAutoRecoveryRunning())) {
+                if (!isBookieRunning()) {
                     shutdown();
-                    break;
+                }
+                if (isAutoRecoveryDaemonEnabled && !isAutoRecoveryRunning()) {
+                    LOG.error("Autorecovery daemon has stopped. Please check the logs");
+                    isAutoRecoveryDaemonEnabled = false; // to avoid spamming the logs
                 }
             }
         }
