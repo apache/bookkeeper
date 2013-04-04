@@ -72,31 +72,31 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
                     garbageCleaner.clean(bkLid);
                 }
             }
+            long lastEnd = -1;
+
             while(ledgerRangeIterator.hasNext()) {
                 LedgerRange lRange = ledgerRangeIterator.next();
                 Map<Long, Boolean> subBkActiveLedgers = null;
-                Long start = lRange.start();
+
+                Long start = lastEnd + 1;
                 Long end = lRange.end();
-                if (end != LedgerRange.NOLIMIT) {
-                    subBkActiveLedgers = bkActiveLedgersSnapshot.subMap(start,
-                            true, end, true);
-                } else {
-                    if (start != LedgerRange.NOLIMIT) {
-                        subBkActiveLedgers = bkActiveLedgersSnapshot.tailMap(start);
-                    } else {
-                        subBkActiveLedgers = bkActiveLedgersSnapshot;
-                    }
+                if (!ledgerRangeIterator.hasNext()) {
+                    end = Long.MAX_VALUE;
                 }
-                Set<Long> globalActiveLedgers = lRange.getLedgers();
-                LOG.debug("All active ledgers for hash node {}, Current active ledgers from Bookie for hash node {}",
-                        globalActiveLedgers, subBkActiveLedgers.keySet());
+                subBkActiveLedgers = bkActiveLedgersSnapshot.subMap(
+                        start, true, end, true);
+
+                Set<Long> ledgersInMetadata = lRange.getLedgers();
+                LOG.debug("Active in metadata {}, Active in bookie {}",
+                          ledgersInMetadata, subBkActiveLedgers.keySet());
                 for (Long bkLid : subBkActiveLedgers.keySet()) {
-                    if (!globalActiveLedgers.contains(bkLid)) {
+                    if (!ledgersInMetadata.contains(bkLid)) {
                         // remove it from current active ledger
                         subBkActiveLedgers.remove(bkLid);
                         garbageCleaner.clean(bkLid);
                     }
                 }
+                lastEnd = end;
             }
         } catch (Exception e) {
             // ignore exception, collecting garbage next time

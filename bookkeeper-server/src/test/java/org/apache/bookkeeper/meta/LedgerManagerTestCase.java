@@ -64,7 +64,8 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
     public static Collection<Object[]> configs() {
         return Arrays.asList(new Object[][] {
             { FlatLedgerManagerFactory.class },
-            { HierarchicalLedgerManagerFactory.class }
+            { HierarchicalLedgerManagerFactory.class },
+            { MSLedgerManagerFactory.class }
         });
     }
 

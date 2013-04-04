@@ -10,6 +10,8 @@ Trunk (unreleased changes)
 
     BUGFIXES:
 
+      BOOKKEEPER-596: Ledgers are gc'ed by mistake in MSLedgerManagerFactory. (sijie & ivank)
+
       BOOKKEEPER-595: Crash of inprocess autorecovery daemon should not take down the bookie (ivank)
 
       BOOKKEEPER-597: Add flag to output test logs to stdout (ivank)
