@@ -569,8 +569,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
     void handleReadResponse(BookieProtocol.ReadResponse rr) {
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Got response for read request {} entry length: {}",
-                      rr, rr.getData().readableBytes());
+            LOG.debug("Got response for read request {} entry length: {}", rr,
+                    rr.getData() != null ? rr.getData().readableBytes() : -1);
         }
 
         // convert to BKException code because thats what the uppper

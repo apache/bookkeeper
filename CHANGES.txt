@@ -42,6 +42,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-559: Fix occasional failure in AuditorBookieTest (ivank via umamahesh)
 
+        BOOKKEEPER-599: NPE in PerChannelBookieClient (jiannan via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-555: Make BookieServer use Netty rather than a custom IO server (ivank)
