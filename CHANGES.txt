@@ -44,6 +44,10 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-599: NPE in PerChannelBookieClient (jiannan via sijie)
 
+      hedwig-client:
+
+        BOOKKEEPER-598: Fails to compile - RESUBSCRIBE_EXCEPTION conflict (Matthew Farrellee via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-555: Make BookieServer use Netty rather than a custom IO server (ivank)
