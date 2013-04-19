@@ -39,13 +39,11 @@ import org.slf4j.LoggerFactory;
 
 /**
  * This class tests BookieClient. It just sends the a new entry to itself.
- *
- *
- *
  */
-
 class LoopbackClient implements WriteCallback {
-    private final static Logger LOG = LoggerFactory.getLogger(LoopbackClient.class);
+
+    private static final Logger LOG = LoggerFactory.getLogger(LoopbackClient.class);
+
     BookieClient client;
     static int recvTimeout = 2000;
     long begin = 0;
@@ -81,6 +79,7 @@ class LoopbackClient implements WriteCallback {
         client.addEntry(addr, ledgerId, passwd, entry, Unpooled.wrappedBuffer(data), cb, ctx, BookieProtocol.FLAG_NONE);
     }
 
+    @Override
     public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
         Counter counter = (Counter) ctx;
         counter.increment();
