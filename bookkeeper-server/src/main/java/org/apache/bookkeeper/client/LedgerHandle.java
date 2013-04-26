@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.client;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,38 +18,34 @@ package org.apache.bookkeeper.client;
  * under the License.
  *
  */
+package org.apache.bookkeeper.client;
+
+import static com.google.common.base.Charsets.UTF_8;
 
 import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
-import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
+import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.client.LedgerMetadata;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
-
 import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State;
+import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
 import org.apache.bookkeeper.util.SafeRunnable;
-
-import static com.google.common.base.Charsets.UTF_8;
-import com.google.common.util.concurrent.RateLimiter;
-
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.jboss.netty.buffer.ChannelBuffer;
+import com.google.common.util.concurrent.RateLimiter;
 
 /**
  * Ledger handle contains ledger metadata and is used to access the read and
@@ -298,7 +292,12 @@ public class LedgerHandle {
                                         }
 
                                         metadata.setLength(prevLength);
-                                        if (metadata.resolveConflict(newMeta)) {
+                                        if (!metadata.isNewerThan(newMeta)
+                                                && !metadata.isConflictWith(newMeta)) {
+                                            // use the new metadata's ensemble, in case re-replication already
+                                            // replaced some bookies in the ensemble.
+                                            metadata.setEnsembles(newMeta.getEnsembles());
+                                            metadata.setVersion(newMeta.version);
                                             metadata.setLength(length);
                                             metadata.close(lastAddConfirmed);
                                             writeLedgerConfig(new CloseCb());
@@ -486,7 +485,7 @@ public class LedgerHandle {
         final long currentLength;
         synchronized(this) {
             // synchronized on this to ensure that
-            // the ledger isn't closed between checking and 
+            // the ledger isn't closed between checking and
             // updating lastAddPushed
             if (metadata.isClosed()) {
                 LOG.warn("Attempt to add to closed ledger: " + ledgerId);
@@ -533,6 +532,7 @@ public class LedgerHandle {
 
     public void asyncReadLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
         ReadLastConfirmedOp.LastConfirmedDataCallback innercb = new ReadLastConfirmedOp.LastConfirmedDataCallback() {
+                @Override
                 public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
                     if (rc == BKException.Code.OK) {
                         lastAddConfirmed = Math.max(lastAddConfirmed, data.lastAddConfirmed);
@@ -782,6 +782,8 @@ public class LedgerHandle {
         }
 
         /**
+         * Specific resolve conflicts happened when multiple bookies failures in same ensemble.
+         * <p>
          * Resolving the version conflicts between local ledgerMetadata and zk
          * ledgerMetadata. This will do the following:
          * <ul>
@@ -791,23 +793,35 @@ public class LedgerHandle {
          * if the zk ledgerMetadata still contains the failed bookie, then
          * update zookeeper with the newBookie otherwise send write request</li>
          * </ul>
+         * </p>
          */
         private boolean resolveConflict(LedgerMetadata newMeta) {
-            // close have changed, another client has opened
-            // the ledger, can't resolve this conflict.
+            // make sure the ledger isn't closed by other ones.
             if (metadata.getState() != newMeta.getState()) {
                 return false;
             }
-            // update znode version
-            metadata.setVersion(newMeta.getVersion());
-            // Resolve the conflicts if zk metadata still contains failed
-            // bookie.
+
+            // If the failed the bookie is still existed in the metadata (in zookeeper), it means that
+            // the ensemble change of the failed bookie is failed due to metadata conflicts. so try to
+            // update the ensemble change metadata again. Otherwise, it means that the ensemble change
+            // is already succeed, unset the success and re-adding entries.
             if (newMeta.currentEnsemble.get(ensembleInfo.bookieIndex).equals(
                     ensembleInfo.addr)) {
-                // Update ledger metadata in zk, if in-memory metadata doesn't
-                // contains the failed bookie.
+                // If the in-memory data doesn't contains the failed bookie, it means the ensemble change
+                // didn't finish, so try to resolve conflicts with the metadata read from zookeeper and
+                // update ensemble changed metadata again.
                 if (!metadata.currentEnsemble.get(ensembleInfo.bookieIndex)
                         .equals(ensembleInfo.addr)) {
+                    // if the local metadata is newer than zookeeper metadata, it means that metadata is updated
+                    // again when it was trying re-reading the metatada, re-kick the reread again
+                    if (metadata.isNewerThan(newMeta)) {
+                        rereadMetadata(this);
+                        return true;
+                    }
+                    // make sure the metadata doesn't changed by other ones.
+                    if (metadata.isConflictWith(newMeta)) {
+                        return false;
+                    }
                     LOG.info("Resolve ledger metadata conflict "
                             + "while changing ensemble to: "
                             + ensembleInfo.newEnsemble
@@ -815,6 +829,8 @@ public class LedgerHandle {
                             + new String(metadata.serialize(), UTF_8)
                             + "\n, new meta data is \n"
                             + new String(newMeta.serialize(), UTF_8));
+                    // update znode version
+                    metadata.setVersion(newMeta.getVersion());
                     writeLedgerConfig(new ChangeEnsembleCb(ensembleInfo));
                 }
             } else {
@@ -907,6 +923,7 @@ public class LedgerHandle {
          * @param ctx
          *          control object
          */
+        @Override
         public void readComplete(int rc, LedgerHandle lh,
                                  Enumeration<LedgerEntry> seq, Object ctx) {
             
@@ -935,6 +952,7 @@ public class LedgerHandle {
          * @param ctx
          *          control object
          */
+        @Override
         public void addComplete(int rc, LedgerHandle lh, long entry, Object ctx) {
             SyncCounter counter = (SyncCounter) ctx;
 
@@ -948,6 +966,7 @@ public class LedgerHandle {
         /**
          * Implementation of  callback interface for synchronous read last confirmed method.
          */
+        @Override
         public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
             LastConfirmedCtx lcCtx = (LastConfirmedCtx) ctx;
             
@@ -967,6 +986,7 @@ public class LedgerHandle {
          * @param lh
          * @param ctx
          */
+        @Override
         public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
             SyncCounter counter = (SyncCounter) ctx;
             counter.setrc(rc);

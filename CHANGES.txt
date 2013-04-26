@@ -24,6 +24,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-581: Ledger recovery doesn't work correctly when recovery adds force changing ensembles. (sijie via ivank)
 
+      BOOKKEEPER-584: Data loss when ledger metadata is overwritten (sijie via ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)
