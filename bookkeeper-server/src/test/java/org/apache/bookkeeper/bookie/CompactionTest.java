@@ -276,6 +276,8 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         bkc.deleteLedger(lhs[1].getId());
         bkc.deleteLedger(lhs[2].getId());
         LOG.info("Finished deleting the ledgers contains most entries.");
+        // restart bookies again to roll entry log files.
+        restartBookies();
         Thread.sleep(baseConf.getMajorCompactionInterval() * 1000
                    + baseConf.getGcWaitTime());
 

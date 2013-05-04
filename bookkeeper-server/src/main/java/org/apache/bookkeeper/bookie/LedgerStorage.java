@@ -24,6 +24,7 @@ package org.apache.bookkeeper.bookie;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
 
 /**
@@ -91,16 +92,24 @@ interface LedgerStorage {
     ByteBuffer getEntry(long ledgerId, long entryId) throws IOException;
 
     /**
-     * Whether there is data in the storage which needs to be flushed
-     */
-    boolean isFlushRequired();
-
-    /**
      * Flushes all data in the storage. Once this is called,
      * add data written to the LedgerStorage up until this point
      * has been persisted to perminant storage
      */
     void flush() throws IOException;
+
+    /**
+     * Ask the ledger storage to sync data until the given <i>checkpoint</i>.
+     * The ledger storage implementation do checkpoint and return the real checkpoint
+     * that it finished. The returned the checkpoint indicates that all entries added
+     * before that point already persist.
+     *
+     * @param checkpoint
+     *          Check Point that {@link Checkpointer} proposed.
+     * @throws IOException
+     * @return the checkpoint that the ledger storage finished.
+     */
+    Checkpoint checkpoint(Checkpoint checkpoint) throws IOException;
 
     /**
      * Get the JMX management bean for this LedgerStorage

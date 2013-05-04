@@ -21,16 +21,16 @@
 
 package org.apache.bookkeeper.bookie;
 
-import java.nio.ByteBuffer;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
-import org.apache.bookkeeper.jmx.BKMBeanInfo;
+import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
+import org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.util.SnapshotMap;
-import org.apache.zookeeper.ZooKeeper;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,11 +39,34 @@ import org.slf4j.LoggerFactory;
  * This ledger storage implementation stores all entries in a single
  * file and maintains an index file for each ledger.
  */
-class InterleavedLedgerStorage implements LedgerStorage {
+class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
     final static Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
+
+    // Hold the last checkpoint
+    static class CheckpointHolder {
+        Checkpoint lastCheckpoint = Checkpoint.MAX;
+
+        synchronized void setNextCheckpoint(Checkpoint cp) {
+            if (Checkpoint.MAX.equals(lastCheckpoint) || lastCheckpoint.compareTo(cp) < 0) {
+                lastCheckpoint = cp;
+            }
+        }
+
+        synchronized void clearLastCheckpoint(Checkpoint done) {
+            if (0 == lastCheckpoint.compareTo(done)) {
+                lastCheckpoint = Checkpoint.MAX;
+            }
+        }
+
+        synchronized Checkpoint getLastCheckpoint() {
+            return lastCheckpoint;
+        }
+    }
 
     EntryLogger entryLogger;
     LedgerCache ledgerCache;
+    private final CheckpointSource checkpointSource;
+    private final CheckpointHolder checkpointHolder = new CheckpointHolder();
 
     // A sorted map to stored all active ledger ids
     protected final SnapshotMap<Long, Boolean> activeLedgers;
@@ -56,12 +79,12 @@ class InterleavedLedgerStorage implements LedgerStorage {
     // this indicates that a write has happened since the last flush
     private volatile boolean somethingWritten = false;
 
-    InterleavedLedgerStorage(ServerConfiguration conf,
-                             LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager,
-                             GarbageCollectorThread.SafeEntryAdder safeEntryAdder)
-			throws IOException {
+    InterleavedLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
+            LedgerDirsManager ledgerDirsManager, CheckpointSource checkpointSource,
+            GarbageCollectorThread.SafeEntryAdder safeEntryAdder) throws IOException {
         activeLedgers = new SnapshotMap<Long, Boolean>();
-        entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        this.checkpointSource = checkpointSource;
+        entryLogger = new EntryLogger(conf, ledgerDirsManager, this);
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers, ledgerDirsManager);
         gcThread = new GarbageCollectorThread(conf, ledgerCache, entryLogger,
                 activeLedgers, safeEntryAdder, ledgerManager);
@@ -115,19 +138,8 @@ class InterleavedLedgerStorage implements LedgerStorage {
         long ledgerId = entry.getLong();
         long entryId = entry.getLong();
         entry.rewind();
-        
-        /*
-         * Log the entry
-         */
-        long pos = entryLogger.addEntry(ledgerId, entry);
-        
-        
-        /*
-         * Set offset of entry id to be the current ledger position
-         */
-        ledgerCache.putEntryOffset(ledgerId, entryId, pos);
 
-        somethingWritten = true;
+        processEntry(ledgerId, entryId, entry);
 
         return entryId;
     }
@@ -149,29 +161,29 @@ class InterleavedLedgerStorage implements LedgerStorage {
         return ByteBuffer.wrap(entryLogger.readEntry(ledgerId, entryId, offset));
     }
 
-    @Override
-    public boolean isFlushRequired() {
-        return somethingWritten;
-    };
+    private void flushOrCheckpoint(boolean isCheckpointFlush)
+            throws IOException {
 
-    @Override
-    public void flush() throws IOException {
-
-        if (!somethingWritten) {
-            return;
-        }
-        somethingWritten = false;
         boolean flushFailed = false;
-
         try {
             ledgerCache.flushLedger(true);
+        } catch (LedgerDirsManager.NoWritableLedgerDirException e) {
+            throw e;
         } catch (IOException ioe) {
             LOG.error("Exception flushing Ledger cache", ioe);
             flushFailed = true;
         }
 
         try {
-            entryLogger.flush();
+            // if it is just a checkpoint flush, we just flush rotated entry log files
+            // in entry logger.
+            if (isCheckpointFlush) {
+                entryLogger.checkpoint();
+            } else {
+                entryLogger.flush();
+            }
+        } catch (LedgerDirsManager.NoWritableLedgerDirException e) {
+            throw e;
         } catch (IOException ioe) {
             LOG.error("Exception flushing Ledger", ioe);
             flushFailed = true;
@@ -182,7 +194,66 @@ class InterleavedLedgerStorage implements LedgerStorage {
     }
 
     @Override
+    public Checkpoint checkpoint(Checkpoint checkpoint) throws IOException {
+        Checkpoint lastCheckpoint = checkpointHolder.getLastCheckpoint();
+        // if checkpoint is less than last checkpoint, we don't need to do checkpoint again.
+        if (lastCheckpoint.compareTo(checkpoint) > 0) {
+            return lastCheckpoint;
+        }
+        // we don't need to check somethingwritten since checkpoint
+        // is scheduled when rotate an entry logger file. and we could
+        // not set somethingWritten to false after checkpoint, since
+        // current entry logger file isn't flushed yet.
+        flushOrCheckpoint(true);
+        // after the ledger storage finished checkpointing, try to clear the done checkpoint
+        checkpointHolder.clearLastCheckpoint(lastCheckpoint);
+        return lastCheckpoint;
+    }
+
+    @Override
+    synchronized public void flush() throws IOException {
+        if (!somethingWritten) {
+            return;
+        }
+        somethingWritten = false;
+        flushOrCheckpoint(false);
+    }
+
+    @Override
     public BKMBeanInfo getJMXBean() {
         return ledgerCache.getJMXBean();
+    }
+
+    protected void processEntry(long ledgerId, long entryId, ByteBuffer entry) throws IOException {
+        processEntry(ledgerId, entryId, entry, true);
+    }
+
+    synchronized protected void processEntry(long ledgerId, long entryId, ByteBuffer entry, boolean rollLog)
+            throws IOException {
+        /*
+         * Touch dirty flag
+         */
+        somethingWritten = true;
+
+        /*
+         * Log the entry
+         */
+        long pos = entryLogger.addEntry(ledgerId, entry, rollLog);
+
+        /*
+         * Set offset of entry id to be the current ledger position
+         */
+        ledgerCache.putEntryOffset(ledgerId, entryId, pos);
+    }
+
+    @Override
+    public void onRotateEntryLog() {
+        // for interleaved ledger storage, we request a checkpoint when rotating a entry log file.
+        // the checkpoint represent the point that all the entries added before this point are already
+        // in ledger storage and ready to be synced to disk.
+        // TODO: we could consider remove checkpointSource and checkpointSouce#newCheckpoint
+        // later if we provide kind of LSN (Log/Journal Squeuence Number)
+        // mechanism when adding entry.
+        checkpointHolder.setNextCheckpoint(checkpointSource.newCheckpoint());
     }
 }
