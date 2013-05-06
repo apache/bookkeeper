@@ -76,6 +76,10 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-583: Read from a ReadOnlyBookie fails if index fileinfo is not in ledger cache (vinay via sijie)
 
+    NEW FEATURE:
+
+      BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj)
+
 Release 4.2.0 - 2013-01-14
 
   Non-backward compatible changes:

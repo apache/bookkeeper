@@ -136,4 +136,16 @@ public interface AsyncCallback {
          */
         void recoverComplete(int rc, Object ctx);
     }
+    
+    public interface IsClosedCallback {
+        /**
+         * Callback definition for isClosed operation
+         *
+         * @param rc
+         *          return code
+         * @param isClosed
+         *          true if ledger is closed
+         */
+        void isClosedComplete(int rc, boolean isClosed, Object ctx);
+    }
 }

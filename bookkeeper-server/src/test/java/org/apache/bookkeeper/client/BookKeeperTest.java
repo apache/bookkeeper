@@ -218,4 +218,24 @@ public class BookKeeperTest extends BaseTestCase {
             assertTrue("Close was not successful", success.get());
         }
     }
+    
+    @Test(timeout=60000)
+    public void testIsClosed() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration()
+        .setZkServers(zkUtil.getZooKeeperConnectString());
+
+        BookKeeper bkc = new BookKeeper(conf);
+        LedgerHandle lh = bkc.createLedger(digestType, "testPasswd".getBytes());
+        Long lId = lh.getId();
+
+        lh.addEntry("000".getBytes());
+        boolean result = bkc.isClosed(lId);
+        Assert.assertTrue("Ledger shouldn't be flagged as closed!",!result);
+
+        lh.close();
+        result = bkc.isClosed(lId);
+        Assert.assertTrue("Ledger should be flagged as closed!",result);
+
+        bkc.close();
+    }
 }
