@@ -48,6 +48,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-599: NPE in PerChannelBookieClient (jiannan via sijie)
 
+	BOOKkEEPER-577: BookieFailureTest uses sync/wait()/notify() incorrectly (ivank via fpj) 
+
       hedwig-client:
 
         BOOKKEEPER-598: Fails to compile - RESUBSCRIBE_EXCEPTION conflict (Matthew Farrellee via sijie)
