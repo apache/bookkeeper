@@ -56,6 +56,8 @@ Trunk (unreleased changes)
 
     IMPROVEMENTS:
 
+      BOOKKEEPER-608: Make SyncThread a reusable component (ivank)
+
       BOOKKEEPER-555: Make BookieServer use Netty rather than a custom IO server (ivank)
 
       BOOKKEEPER-526: multiple threads for delivery manager (sijie via ivank)
