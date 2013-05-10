@@ -24,9 +24,12 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.UUID;
 import java.util.Collection;
@@ -36,6 +39,8 @@ import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.BookKeeper.SyncOpenCallback;
 import org.apache.bookkeeper.client.LedgerFragmentReplicator.SingleFragmentCallback;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
+import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.util.BookKeeperConstants;
@@ -788,5 +793,63 @@ public class BookKeeperAdmin {
             }
         }
         return true;
+    }
+
+    /**
+     * This method returns an iterable object for the list of ledger identifiers of
+     * the ledgers currently available.
+     *
+     * @return an iterable object for the list of ledger identifiers
+     * @throws IOException  if the list of ledger identifiers cannot be read from the
+     *  metadata store
+     */
+    public Iterable<Long> listLedgers()
+    throws IOException {
+        final LedgerRangeIterator iterator = bkc.getLedgerManager().getLedgerRanges();
+        return new Iterable<Long>() {
+            public Iterator<Long> iterator() {
+                return new Iterator<Long>() {
+                    Iterator<Long> currentRange = null;
+
+                    @Override
+                    public boolean hasNext() {
+                        try {
+                            if (iterator.hasNext()) {
+                                return true;
+                            } else if (currentRange != null) {
+                                if (currentRange.hasNext()) {
+                                    return true;
+                                }
+                            }
+                        } catch (IOException e) {
+                            LOG.error("Error while checking if there is a next element", e);
+                        }
+
+                        return false;
+                    }
+
+                    @Override
+                    public Long next()
+                    throws NoSuchElementException {
+                        try{
+                            if (currentRange == null) {
+                                currentRange = iterator.next().getLedgers().iterator();
+                            }
+                        } catch (IOException e) {
+                            LOG.error("Error while reading the next element", e);
+                            throw new NoSuchElementException(e.getMessage());
+                        }
+
+                        return currentRange.next();
+                    }
+
+                    @Override
+                    public void remove()
+                    throws UnsupportedOperationException {
+                        throw new UnsupportedOperationException();
+                    }
+                };
+            }
+        };
     }
 }
