@@ -22,7 +22,11 @@ package org.apache.bookkeeper.test;
  */
 
 import java.io.File;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CountDownLatch;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.util.TestUtils;
 import org.slf4j.Logger;
@@ -39,7 +43,7 @@ public class LedgerDeleteTest extends MultiLedgerManagerTestCase {
     DigestType digestType;
 
     public LedgerDeleteTest(String ledgerManagerFactory) {
-        super(3);
+        super(1);
         LOG.info("Running test case using ledger manager : " + ledgerManagerFactory);
         this.digestType = DigestType.CRC32;
         // set ledger manager name
@@ -63,7 +67,7 @@ public class LedgerDeleteTest extends MultiLedgerManagerTestCase {
         // Create the ledgers
         LedgerHandle[] lhs = new LedgerHandle[numLedgers];
         for (int i = 0; i < numLedgers; i++) {
-            lhs[i] = bkc.createLedger(digestType, "".getBytes());
+            lhs[i] = bkc.createLedger(1, 1, digestType, "".getBytes());
         }
 
         // Create a dummy message string to write as ledger entries
@@ -72,12 +76,22 @@ public class LedgerDeleteTest extends MultiLedgerManagerTestCase {
             msgSB.append("a");
         }
         String msg = msgSB.toString();
-
+        final CountDownLatch completeLatch = new CountDownLatch(numMsgs*numLedgers);
+        final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
         // Write all of the entries for all of the ledgers
         for (int i = 0; i < numMsgs; i++) {
             for (int j = 0; j < numLedgers; j++) {
-                lhs[j].addEntry(msg.getBytes());
+                lhs[j].asyncAddEntry(msg.getBytes(), new AddCallback() {
+                    public void addComplete(int rc2, LedgerHandle lh, long entryId, Object ctx) {
+                        rc.compareAndSet(BKException.Code.OK, rc2);
+                        completeLatch.countDown();
+                    }
+                }, null);
             }
+        }
+        completeLatch.await();
+        if (rc.get() != BKException.Code.OK) {
+            throw BKException.create(rc.get());
         }
 
         // Return the ledger handles to the inserted ledgers and entries

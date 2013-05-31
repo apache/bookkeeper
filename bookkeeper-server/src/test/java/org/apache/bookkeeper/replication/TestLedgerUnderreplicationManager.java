@@ -186,7 +186,7 @@ public class TestLedgerUnderreplicationManager {
 
         Future<Long> f = getLedgerToReplicate(m);
         try {
-            f.get(5, TimeUnit.SECONDS);
+            f.get(1, TimeUnit.SECONDS);
             fail("Shouldn't be able to find a ledger to replicate");
         } catch (TimeoutException te) {
             // correct behaviour
@@ -218,7 +218,7 @@ public class TestLedgerUnderreplicationManager {
 
         f = getLedgerToReplicate(m2);
         try {
-            f.get(5, TimeUnit.SECONDS);
+            f.get(1, TimeUnit.SECONDS);
             fail("Shouldn't be able to find a ledger to replicate");
         } catch (TimeoutException te) {
             // correct behaviour
@@ -264,7 +264,7 @@ public class TestLedgerUnderreplicationManager {
 
         Future<Long> f = getLedgerToReplicate(m2);
         try {
-            f.get(5, TimeUnit.SECONDS);
+            f.get(1, TimeUnit.SECONDS);
             fail("Shouldn't be able to find a ledger to replicate");
         } catch (TimeoutException te) {
             // correct behaviour
@@ -308,7 +308,7 @@ public class TestLedgerUnderreplicationManager {
 
         Future<Long> f = getLedgerToReplicate(m2);
         try {
-            f.get(5, TimeUnit.SECONDS);
+            f.get(1, TimeUnit.SECONDS);
             fail("Shouldn't be able to find a ledger to replicate");
         } catch (TimeoutException te) {
             // correct behaviour
@@ -388,7 +388,7 @@ public class TestLedgerUnderreplicationManager {
 
         Future<Long> f = getLedgerToReplicate(m2);
         try {
-            f.get(5, TimeUnit.SECONDS);
+            f.get(1, TimeUnit.SECONDS);
             fail("Shouldn't be able to find a ledger to replicate");
         } catch (TimeoutException te) {
             // correct behaviour
@@ -506,7 +506,7 @@ public class TestLedgerUnderreplicationManager {
 
         Future<Long> fA = getLedgerToReplicate(replicaMgr);
         try {
-            fA.get(5, TimeUnit.SECONDS);
+            fA.get(1, TimeUnit.SECONDS);
             fail("Shouldn't be able to find a ledger to replicate");
         } catch (TimeoutException te) {
             // expected behaviour, as the replication is disabled
@@ -522,7 +522,7 @@ public class TestLedgerUnderreplicationManager {
      * should continue getLedgerToRereplicate() task
      */
     @Test(timeout = 20000)
-    public void testEnableLedegerReplication() throws Exception {
+    public void testEnableLedgerReplication() throws Exception {
         isLedgerReplicationDisabled = true;
         final LedgerUnderreplicationManager replicaMgr = lmf1
                 .newLedgerUnderreplicationManager();
@@ -574,7 +574,7 @@ public class TestLedgerUnderreplicationManager {
         thread1.start();
 
         try {
-            znodeLatch.await(5, TimeUnit.SECONDS);
+            assertFalse("shouldn't complete", znodeLatch.await(1, TimeUnit.SECONDS));
             assertTrue("Ledger replication is not disabled!",
                     isLedgerReplicationDisabled);
             assertEquals("Failed to disable ledger replication!", 2, znodeLatch
@@ -645,7 +645,7 @@ public class TestLedgerUnderreplicationManager {
         final LedgerUnderreplicationManager replicaMgr2 = lmf2
             .newLedgerUnderreplicationManager();
 
-        final int iterations = 1000;
+        final int iterations = 100;
         final AtomicBoolean threadFailed = new AtomicBoolean(false);
         Thread markUnder = new Thread() {
                 public void run() {

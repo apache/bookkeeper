@@ -80,6 +80,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-583: Read from a ReadOnlyBookie fails if index fileinfo is not in ledger cache (vinay via sijie)
 
+      BOOKKEEPER-611: Speed up bookkeeper tests (ivank via fpj)
+
     NEW FEATURE:
 
       BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj)

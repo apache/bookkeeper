@@ -22,14 +22,17 @@ package org.apache.bookkeeper.test;
  */
 import java.io.File;
 import java.util.Enumeration;
-import java.util.List;
+
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +51,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
     DigestType digestType;
 
     public BookieJournalRollingTest() {
-        super(3);
+        super(1);
         this.digestType = DigestType.CRC32;
     }
 
@@ -75,7 +78,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         LedgerHandle[] lhs = new LedgerHandle[numLedgers];
         long[] ledgerIds = new long[numLedgers];
         for (int i = 0; i < numLedgers; i++) {
-            lhs[i] = bkc.createLedger(digestType, "".getBytes());
+            lhs[i] = bkc.createLedger(1, 1, digestType, "".getBytes());
             ledgerIds[i] = lhs[i].getId();
         }
         writeLedgerEntries(lhs, msgSize, numMsgs);
@@ -91,14 +94,26 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         }
         String msg = msgSB.toString();
 
+        final CountDownLatch completeLatch = new CountDownLatch(numMsgs*lhs.length);
+        final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
+
         // Write all of the entries for all of the ledgers
         for (int i = 0; i < numMsgs; i++) {
             for (int j = 0; j < lhs.length; j++) {
                 StringBuilder sb = new StringBuilder();
                 sb.append(lhs[j].getId()).append('-').append(i).append('-')
                   .append(msg);
-                lhs[j].addEntry(sb.toString().getBytes());
+                lhs[j].asyncAddEntry(sb.toString().getBytes(), new AddCallback() {
+                        public void addComplete(int rc2, LedgerHandle lh, long entryId, Object ctx) {
+                            rc.compareAndSet(BKException.Code.OK, rc2);
+                            completeLatch.countDown();
+                        }
+                    }, null);
             }
+        }
+        completeLatch.await();
+        if (rc.get() != BKException.Code.OK) {
+            throw BKException.create(rc.get());
         }
     }
 
@@ -163,6 +178,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         long[] ledgerIds = new long[lhs.length];
         for (int i=0; i<lhs.length; i++) {
             ledgerIds[i] = lhs[i].getId();
+            lhs[i].close();
         }
 
         // Sleep for a while to ensure data are flushed
@@ -210,6 +226,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         long[] ledgerIds = new long[lhs.length];
         for (int i=0; i<lhs.length; i++) {
             ledgerIds[i] = lhs[i].getId();
+            lhs[i].close();
         }
 
         // ledger indexes are not flushed

@@ -173,7 +173,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
         try {
             underReplicationManager.markLedgerUnderreplicated(lh.getId(),
                     replicaToKill.toString());
-            int counter = 100;
+            int counter = 30;
             while (counter-- > 0) {
                 assertTrue("Expecting that replication should not complete",
                         ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh
@@ -398,6 +398,8 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
                 .getLocalHost().getHostAddress(), startNewBookie);
         LOG.info("New Bookie addr :" + newBkAddr);
 
+        // set to 3s instead of default 30s
+        baseConf.setOpenLedgerRereplicationGracePeriod("3000");
         ReplicationWorker rw = new ReplicationWorker(zkc, baseConf, newBkAddr);
 
         LedgerManagerFactory mFactory = LedgerManagerFactory

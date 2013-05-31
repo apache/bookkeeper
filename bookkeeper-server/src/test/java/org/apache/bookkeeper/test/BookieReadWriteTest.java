@@ -34,6 +34,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.Arrays;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -541,8 +542,20 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             // bkc.initMessageDigest("SHA1");
             ledgerId = lh.getId();
             LOG.info("Ledger ID: " + lh.getId());
+            final CountDownLatch completeLatch = new CountDownLatch(numEntriesToWrite);
+            final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
+
             for (int i = 0; i < numEntriesToWrite; i++) {
-                lh.addEntry(new byte[0]);
+                lh.asyncAddEntry(new byte[0], new AddCallback() {
+                        public void addComplete(int rccb, LedgerHandle lh, long entryId, Object ctx) {
+                            rc.compareAndSet(BKException.Code.OK, rccb);
+                            completeLatch.countDown();
+                        }
+                    }, null);
+            }
+            completeLatch.await();
+            if (rc.get() != BKException.Code.OK) {
+                throw BKException.create(rc.get());
             }
 
             /*
@@ -587,11 +600,28 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             long ledgerId = lh.getId();
             long ledgerId2 = lh2.getId();
 
+            final CountDownLatch completeLatch = new CountDownLatch(numEntriesToWrite*2);
+            final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
+
             // bkc.initMessageDigest("SHA1");
             LOG.info("Ledger ID 1: " + lh.getId() + ", Ledger ID 2: " + lh2.getId());
             for (int i = 0; i < numEntriesToWrite; i++) {
-                lh.addEntry(new byte[0]);
-                lh2.addEntry(new byte[0]);
+                lh.asyncAddEntry(new byte[0], new AddCallback() {
+                        public void addComplete(int rc2, LedgerHandle lh, long entryId, Object ctx) {
+                            rc.compareAndSet(BKException.Code.OK, rc2);
+                            completeLatch.countDown();
+                        }
+                    }, null);
+                lh2.asyncAddEntry(new byte[0], new AddCallback() {
+                        public void addComplete(int rc2, LedgerHandle lh, long entryId, Object ctx) {
+                            rc.compareAndSet(BKException.Code.OK, rc2);
+                            completeLatch.countDown();
+                        }
+                    }, null);
+            }
+            completeLatch.await();
+            if (rc.get() != BKException.Code.OK) {
+                throw BKException.create(rc.get());
             }
 
             lh.close();
@@ -684,49 +714,81 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
         }
     }
 
+    private long writeNEntriesLastWriteSync(LedgerHandle lh, int numToWrite) throws Exception {
+        final CountDownLatch completeLatch = new CountDownLatch(numToWrite - 1);
+        final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
+
+        ByteBuffer entry = ByteBuffer.allocate(4);
+        for (int i = 0; i < numToWrite - 1; i++) {
+            entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+
+            entries.add(entry.array());
+            entriesSize.add(entry.array().length);
+            lh.asyncAddEntry(entry.array(), new AddCallback() {
+                    public void addComplete(int rccb, LedgerHandle lh, long entryId, Object ctx) {
+                        rc.compareAndSet(BKException.Code.OK, rccb);
+                        completeLatch.countDown();
+                    }
+                }, null);
+        }
+        completeLatch.await();
+        if (rc.get() != BKException.Code.OK) {
+            throw BKException.create(rc.get());
+        }
+
+        entry = ByteBuffer.allocate(4);
+        entry.putInt(rng.nextInt(maxInt));
+        entry.position(0);
+
+        entries.add(entry.array());
+        entriesSize.add(entry.array().length);
+        lh.addEntry(entry.array());
+        return lh.getLastAddConfirmed();
+    }
+
     @Test(timeout=60000)
-    public void testReadFromOpenLedger() throws IOException {
+    public void testReadFromOpenLedger() throws Exception {
         try {
             // Create a ledger
             lh = bkc.createLedger(digestType, ledgerPassword);
             // bkc.initMessageDigest("SHA1");
             ledgerId = lh.getId();
             LOG.info("Ledger ID: " + lh.getId());
-            for (int i = 0; i < numEntriesToWrite; i++) {
+
+            long lac = writeNEntriesLastWriteSync(lh, numEntriesToWrite);
+
+            LedgerHandle lhOpen = bkc.openLedgerNoRecovery(ledgerId, digestType, ledgerPassword);
+            // no recovery opened ledger 's last confirmed entry id is less than written
+            // and it just can read until (i-1)
+            long toRead = lac - 1;
+
+            Enumeration<LedgerEntry> readEntry = lhOpen.readEntries(toRead, toRead);
+            assertTrue("Enumeration of ledger entries has no element", readEntry.hasMoreElements() == true);
+            LedgerEntry e = readEntry.nextElement();
+            assertEquals(toRead, e.getEntryId());
+            Assert.assertArrayEquals(entries.get((int)toRead), e.getEntry());
+            // should not written to a read only ledger
+            try {
                 ByteBuffer entry = ByteBuffer.allocate(4);
                 entry.putInt(rng.nextInt(maxInt));
                 entry.position(0);
 
-                entries.add(entry.array());
-                entriesSize.add(entry.array().length);
-                lh.addEntry(entry.array());
-                if(i == numEntriesToWrite/2) {
-                    LedgerHandle lhOpen = bkc.openLedgerNoRecovery(ledgerId, digestType, ledgerPassword);
-                    // no recovery opened ledger 's last confirmed entry id is less than written
-                    // and it just can read until (i-1)
-                    int toRead = i - 1;
-                    Enumeration<LedgerEntry> readEntry = lhOpen.readEntries(toRead, toRead);
-                    assertTrue("Enumeration of ledger entries has no element", readEntry.hasMoreElements() == true);
-                    LedgerEntry e = readEntry.nextElement();
-                    assertEquals(toRead, e.getEntryId());
-                    Assert.assertArrayEquals(entries.get(toRead), e.getEntry());
-                    // should not written to a read only ledger
-                    try {
-                        lhOpen.addEntry(entry.array());
-                        fail("Should have thrown an exception here");
-                    } catch (BKException.BKIllegalOpException bkioe) {
-                        // this is the correct response
-                    } catch (Exception ex) {
-                        LOG.error("Unexpected exception", ex);
-                        fail("Unexpected exception");
-                    }
-                    // close read only ledger should not change metadata
-                    lhOpen.close();
-                }
+                lhOpen.addEntry(entry.array());
+                fail("Should have thrown an exception here");
+            } catch (BKException.BKIllegalOpException bkioe) {
+                // this is the correct response
+            } catch (Exception ex) {
+                LOG.error("Unexpected exception", ex);
+                fail("Unexpected exception");
             }
+            // close read only ledger should not change metadata
+            lhOpen.close();
 
-            long last = lh.readLastConfirmed();
-            assertTrue("Last confirmed add: " + last, last == (numEntriesToWrite - 2));
+            lac = writeNEntriesLastWriteSync(lh, numEntriesToWrite);
+
+            assertEquals("Last confirmed add: ", lac, (numEntriesToWrite * 2) - 1);
 
             LOG.debug("*** WRITE COMPLETE ***");
             // close ledger
@@ -737,17 +799,8 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             lh = bkc.createLedger(digestType, ledgerPassword);
             // bkc.initMessageDigest("SHA1");
             ledgerId = lh.getId();
-            LOG.info("Ledger ID: " + lh.getId());
-            for (int i = 0; i < numEntriesToWrite; i++) {
-                ByteBuffer entry = ByteBuffer.allocate(4);
-                entry.putInt(rng.nextInt(maxInt));
-                entry.position(0);
 
-                entries.add(entry.array());
-                entriesSize.add(entry.array().length);
-                lh.addEntry(entry.array());
-            }
-
+            writeNEntriesLastWriteSync(lh, numEntriesToWrite);
 
             SyncObj sync = new SyncObj();
             lh.asyncReadLastConfirmed(this, sync);
@@ -761,7 +814,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
                 assertEquals("Error reading", BKException.Code.OK, sync.getReturnCode());
             }
 
-            assertTrue("Last confirmed add: " + sync.lastConfirmed, sync.lastConfirmed == (numEntriesToWrite - 2));
+            assertEquals("Last confirmed add", sync.lastConfirmed, (numEntriesToWrite - 2));
 
             LOG.debug("*** WRITE COMPLETE ***");
             // close ledger
@@ -784,40 +837,36 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             ledgerId = lh.getId();
             LOG.info("Ledger ID: " + lh.getId());
             LedgerHandle lhOpen = bkc.openLedgerNoRecovery(ledgerId, digestType, ledgerPassword);
-            for (int i = 0; i < numEntriesToWrite; i++) {
-                ByteBuffer entry = ByteBuffer.allocate(4);
-                entry.putInt(rng.nextInt(maxInt));
-                entry.position(0);
+            writeNEntriesLastWriteSync(lh, numEntriesToWrite/2);
 
-                entries.add(entry.array());
-                entriesSize.add(entry.array().length);
-                lh.addEntry(entry.array());
-                if (i == numEntriesToWrite / 2) {
-                    // no recovery opened ledger 's last confirmed entry id is
-                    // less than written
-                    // and it just can read until (i-1)
-                    int toRead = i - 1;
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
 
-                    long readLastConfirmed = lhOpen.readLastConfirmed();
-                    assertTrue(readLastConfirmed != 0);
-                    Enumeration<LedgerEntry> readEntry = lhOpen.readEntries(toRead, toRead);
-                    assertTrue("Enumeration of ledger entries has no element", readEntry.hasMoreElements() == true);
-                    LedgerEntry e = readEntry.nextElement();
-                    assertEquals(toRead, e.getEntryId());
-                    Assert.assertArrayEquals(entries.get(toRead), e.getEntry());
-                    // should not written to a read only ledger
-                    try {
-                        lhOpen.addEntry(entry.array());
-                        fail("Should have thrown an exception here");
-                    } catch (BKException.BKIllegalOpException bkioe) {
-                        // this is the correct response
-                    } catch (Exception ex) {
-                        LOG.error("Unexpected exception", ex);
-                        fail("Unexpected exception");
-                    }
+            // no recovery opened ledger 's last confirmed entry id is
+            // less than written
+            // and it just can read until (i-1)
+            int toRead = numEntriesToWrite/2 - 2;
 
-                }
+            long readLastConfirmed = lhOpen.readLastConfirmed();
+            assertTrue(readLastConfirmed != 0);
+            Enumeration<LedgerEntry> readEntry = lhOpen.readEntries(toRead, toRead);
+            assertTrue("Enumeration of ledger entries has no element", readEntry.hasMoreElements() == true);
+            LedgerEntry e = readEntry.nextElement();
+            assertEquals(toRead, e.getEntryId());
+            Assert.assertArrayEquals(entries.get(toRead), e.getEntry());
+            // should not written to a read only ledger
+            try {
+                lhOpen.addEntry(entry.array());
+                fail("Should have thrown an exception here");
+            } catch (BKException.BKIllegalOpException bkioe) {
+                // this is the correct response
+            } catch (Exception ex) {
+                LOG.error("Unexpected exception", ex);
+                fail("Unexpected exception");
             }
+            writeNEntriesLastWriteSync(lh, numEntriesToWrite/2);
+
             long last = lh.readLastConfirmed();
             assertTrue("Last confirmed add: " + last, last == (numEntriesToWrite - 2));
 
@@ -904,23 +953,15 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
 
 
     @Test(timeout=60000)
-    public void testLastConfirmedAdd() throws IOException {
+    public void testLastConfirmedAdd() throws Exception {
         try {
             // Create a ledger
             lh = bkc.createLedger(digestType, ledgerPassword);
             // bkc.initMessageDigest("SHA1");
             ledgerId = lh.getId();
             LOG.info("Ledger ID: " + lh.getId());
-            for (int i = 0; i < numEntriesToWrite; i++) {
-                ByteBuffer entry = ByteBuffer.allocate(4);
-                entry.putInt(rng.nextInt(maxInt));
-                entry.position(0);
 
-                entries.add(entry.array());
-                entriesSize.add(entry.array().length);
-                lh.addEntry(entry.array());
-            }
-
+            writeNEntriesLastWriteSync(lh, numEntriesToWrite);
             long last = lh.readLastConfirmed();
             assertTrue("Last confirmed add: " + last, last == (numEntriesToWrite - 2));
 
@@ -934,16 +975,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             // bkc.initMessageDigest("SHA1");
             ledgerId = lh.getId();
             LOG.info("Ledger ID: " + lh.getId());
-            for (int i = 0; i < numEntriesToWrite; i++) {
-                ByteBuffer entry = ByteBuffer.allocate(4);
-                entry.putInt(rng.nextInt(maxInt));
-                entry.position(0);
-
-                entries.add(entry.array());
-                entriesSize.add(entry.array().length);
-                lh.addEntry(entry.array());
-            }
-
+            writeNEntriesLastWriteSync(lh, numEntriesToWrite);
 
             SyncObj sync = new SyncObj();
             lh.asyncReadLastConfirmed(this, sync);

@@ -30,9 +30,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -174,10 +176,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         ledgerList.add(lh2.getId());
         LOG.debug("Created following ledgers : " + ledgerList);
 
-        // 2 is added to the latch, since after the ledger reformation, again
-        // the reformed bookie is stopped. So auditor will modify the zk
-        // underreplicated metadata
-        int count = ledgerList.size() + 2;
+        int count = ledgerList.size();
         final CountDownLatch underReplicaLatch = registerUrLedgerWatcher(count);
 
         int bkShutdownIndex = bs.size() - 1;
@@ -190,7 +189,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for ledgers to be marked as under replicated");
-        underReplicaLatch.await(5, TimeUnit.SECONDS);
+        assertTrue("latch should have completed", underReplicaLatch.await(5, TimeUnit.SECONDS));
         Map<Long, String> urLedgerData = getUrLedgerData(urLedgerList);
 
         assertEquals("Missed identifying under replicated ledgers", 2,
@@ -272,7 +271,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         shutdownBookieList.add(shutdownBookie(bs.size() - 1));
 
         assertFalse("Ledger replication is not disabled!", urReplicaLatch
-                .await(5, TimeUnit.SECONDS));
+                .await(1, TimeUnit.SECONDS));
 
         // enabling ledger replication
         urLedgerMgr.enableLedgerReplication();
@@ -345,12 +344,25 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
 
     private void addEntry(int numEntriesToWrite, LedgerHandle lh)
             throws InterruptedException, BKException {
+        final CountDownLatch completeLatch = new CountDownLatch(numEntriesToWrite);
+        final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
+
         for (int i = 0; i < numEntriesToWrite; i++) {
             ByteBuffer entry = ByteBuffer.allocate(4);
             entry.putInt(rng.nextInt(Integer.MAX_VALUE));
             entry.position(0);
-            lh.addEntry(entry.array());
+            lh.asyncAddEntry(entry.array(), new AddCallback() {
+                    public void addComplete(int rc2, LedgerHandle lh, long entryId, Object ctx) {
+                        rc.compareAndSet(BKException.Code.OK, rc2);
+                        completeLatch.countDown();
+                    }
+                }, null);
         }
+        completeLatch.await();
+        if (rc.get() != BKException.Code.OK) {
+            throw BKException.create(rc.get());
+        }
+
     }
 
     private Map<Long, String> getUrLedgerData(Set<Long> urLedgerList)

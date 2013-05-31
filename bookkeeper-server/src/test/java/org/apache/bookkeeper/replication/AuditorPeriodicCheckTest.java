@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CountDownLatch;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -39,6 +40,8 @@ import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
@@ -66,7 +69,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
     private HashMap<String, AuditorElector> auditorElectors = new HashMap<String, AuditorElector>();
     private List<ZooKeeper> zkClients = new LinkedList<ZooKeeper>();
 
-    private final static int CHECK_INTERVAL = 1000; // run every second
+    private final static int CHECK_INTERVAL = 100; // run every 100ms
 
     public AuditorPeriodicCheckTest() {
         super(3);
@@ -215,15 +218,32 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bsConfs.get(0), zkc);
         final LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
         final int numLedgers = 100;
+        final int numMsgs = 100;
+        final CountDownLatch completeLatch = new CountDownLatch(numMsgs*numLedgers);
+        final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
 
+        List<LedgerHandle> lhs = new ArrayList<LedgerHandle>();
         for (int i = 0; i < numLedgers; i++) {
             LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
-
+            lhs.add(lh);
             for (int j = 0; j < 100; j++) {
-                lh.addEntry("testdata".getBytes());
+                lh.asyncAddEntry("testdata".getBytes(), new AddCallback() {
+                        public void addComplete(int rc2, LedgerHandle lh, long entryId, Object ctx) {
+                            rc.compareAndSet(BKException.Code.OK, rc2);
+                            completeLatch.countDown();
+                        }
+                    }, null);
             }
+        }
+        completeLatch.await();
+        if (rc.get() != BKException.Code.OK) {
+            throw BKException.create(rc.get());
+        }
+
+        for (LedgerHandle lh : lhs) {
             lh.close();
         }
+
         underReplicationManager.disableLedgerReplication();
 
         final AtomicInteger numReads = new AtomicInteger(0);
