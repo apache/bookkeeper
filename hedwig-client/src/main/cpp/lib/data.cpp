@@ -24,6 +24,7 @@
 
 #include <log4cxx/logger.h>
 #include <iostream>
+#include <boost/thread/locks.hpp>
 
 #define stringify( name ) #name
 

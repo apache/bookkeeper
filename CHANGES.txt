@@ -48,7 +48,7 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-599: NPE in PerChannelBookieClient (jiannan via sijie)
 
-	BOOKkEEPER-577: BookieFailureTest uses sync/wait()/notify() incorrectly (ivank via fpj) 
+	BOOKKEEPER-577: BookieFailureTest uses sync/wait()/notify() incorrectly (ivank via fpj) 
 
       hedwig-client:
 
@@ -81,6 +81,8 @@ Trunk (unreleased changes)
       BOOKKEEPER-583: Read from a ReadOnlyBookie fails if index fileinfo is not in ledger cache (vinay via sijie)
 
       BOOKKEEPER-611: Speed up bookkeeper tests (ivank via fpj)
+
+      BOOKKEEPER-603: Support Boost 1.53 for Hedwig Cpp Client (jiannan via ivank)
 
     NEW FEATURE:
 
