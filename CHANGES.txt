@@ -28,6 +28,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-584: Data loss when ledger metadata is overwritten (sijie via ivank)
 
+      BOOKKEEPER-617: BOOKKEEPER-544 breaks hedwig-server/bin/hedwig script (ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)

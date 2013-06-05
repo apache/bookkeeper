@@ -58,12 +58,12 @@ DEFAULT_LOG_CONF=$HW_HOME/conf/log4j.properties
 
 . $HW_HOME/conf/hwenv.sh
 
-RELEASE_JAR=`ls $HW_HOME/hedwig-server-*.jar 2> /dev/null | tail -1`
+RELEASE_JAR=`ls $HW_HOME/hedwig-server-*.jar 2> /dev/null | grep -v tests | tail -1`
 if [ $? == 0 ]; then
     HEDWIG_JAR=$RELEASE_JAR
 fi
 
-BUILT_JAR=`ls $HW_HOME/target/hedwig-server-*.jar 2> /dev/null | tail -1`
+BUILT_JAR=`ls $HW_HOME/target/hedwig-server-*.jar 2> /dev/null | grep -v tests | tail -1`
 if [ $? != 0 ] && [ ! -e "$HEDWIG_JAR" ]; then 
     echo "\nCouldn't find hedwig jar.";
     echo "Make sure you've run 'mvn package'\n";
