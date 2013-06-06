@@ -46,11 +46,6 @@ public interface BookieServerMXBean {
     public OpStatData getReadStats();
 
     /**
-     * @return server state
-     */
-    public String getServerState();
-
-    /**
      * @return server port
      */
     public String getServerPort();

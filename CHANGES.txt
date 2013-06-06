@@ -1,3 +1,15 @@
+Release 4.2.2 - Unreleased
+
+  Backward compatible changes:
+
+    BUGFIXES:
+
+      bookkeeper-server:
+
+       BOOKKEEPER-556: BookieServerMXBean#getServerState makes no sense (ivank)
+
+       BOOKKEEPER-583: Read from a ReadOnlyBookie fails if index fileinfo is not in ledger cache (vinay via sijie)
+
 Release 4.2.1 - 2013-02-19
 
   Backward compatible changes:
@@ -17,12 +29,6 @@ Release 4.2.1 - 2013-02-19
         BOOKKEEPER-568: NPE during GC with HierarchicalLedgerManager (Matteo via sijie)
 
         BOOKKEEPER-569: Critical performance bug in InterleavedLedgerStorage (ivank via fpj)
-
-    IMPROVEMENTS:
-
-      bookkeeper-server:
-
-        BOOKKEEPER-583: Read from a ReadOnlyBookie fails if index fileinfo is not in ledger cache (vinay via sijie)
 
 Release 4.2.0 - 2013-01-14
 
