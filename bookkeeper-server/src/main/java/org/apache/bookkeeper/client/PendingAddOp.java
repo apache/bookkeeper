@@ -21,11 +21,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.net.InetSocketAddress;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
  * This represents a pending add operation. When it has got success from all
@@ -132,6 +132,11 @@ class PendingAddOp implements WriteCallback {
     public void writeComplete(int rc, long ledgerId, long entryId, InetSocketAddress addr, Object ctx) {
         int bookieIndex = (Integer) ctx;
 
+        if (completed) {
+            // I am already finished, ignore incoming responses.
+            // otherwise, we might hit the following error handling logic, which might cause bad things.
+            return;
+        }
 
         switch (rc) {
         case BKException.Code.OK:

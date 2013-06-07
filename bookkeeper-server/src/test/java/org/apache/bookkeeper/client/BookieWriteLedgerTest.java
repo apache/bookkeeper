@@ -58,6 +58,7 @@ public class BookieWriteLedgerTest extends
 
     private static class SyncObj {
         volatile int counter;
+        volatile int rc;
 
         public SyncObj() {
             counter = 0;
@@ -182,6 +183,7 @@ public class BookieWriteLedgerTest extends
                 LOG.debug("Entries counter = " + syncObj1.counter);
                 syncObj1.wait();
             }
+            assertEquals(BKException.Code.OK, syncObj1.rc);
         }
         // wait for all entries to be acknowledged for the second ledger
         synchronized (syncObj2) {
@@ -189,6 +191,7 @@ public class BookieWriteLedgerTest extends
                 LOG.debug("Entries counter = " + syncObj2.counter);
                 syncObj2.wait();
             }
+            assertEquals(BKException.Code.OK, syncObj2.rc);
         }
 
         // reading ledger till the last entry
@@ -217,12 +220,9 @@ public class BookieWriteLedgerTest extends
 
     @Override
     public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-        if (rc != BKException.Code.OK)
-            fail("Return code is not OK: " + rc);
-
         SyncObj x = (SyncObj) ctx;
-
         synchronized (x) {
+            x.rc = rc;
             x.counter++;
             x.notify();
         }

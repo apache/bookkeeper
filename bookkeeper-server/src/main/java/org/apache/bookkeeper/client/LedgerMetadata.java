@@ -139,6 +139,10 @@ public class LedgerMetadata {
         return ensembles;
     }
 
+    void setEnsembles(SortedMap<Long, ArrayList<InetSocketAddress>> ensembles) {
+        this.ensembles = ensembles;
+    }
+
     public int getEnsembleSize() {
         return ensembleSize;
     }
@@ -433,13 +437,26 @@ public class LedgerMetadata {
     }
 
     /**
-     * Resolve conflict with new updated metadata.
+     * Is the metadata newer that given <i>newMeta</i>.
+     *
+     * @param newMeta
+     * @return
+     */
+    boolean isNewerThan(LedgerMetadata newMeta) {
+        if (null == version) {
+            return false;
+        }
+        return Version.Occurred.AFTER == version.compare(newMeta.version);
+    }
+
+    /**
+     * Is the metadata conflict with new updated metadata.
      *
      * @param newMeta
      *          Re-read metadata
-     * @return true if the conflict has been resolved, otherwise false.
+     * @return true if the metadata is conflict.
      */
-    boolean resolveConflict(LedgerMetadata newMeta) {
+    boolean isConflictWith(LedgerMetadata newMeta) {
         /*
          *  if length & close have changed, then another client has
          *  opened the ledger, can't resolve this conflict.
@@ -453,22 +470,17 @@ public class LedgerMetadata {
             state != newMeta.state ||
             !digestType.equals(newMeta.digestType) ||
             !Arrays.equals(password, newMeta.password)) {
-            return false;
+            return true;
         }
         if (state == LedgerMetadataFormat.State.CLOSED
             && lastEntryId != newMeta.lastEntryId) {
-            return false;
-        }
-        // new meta znode version should be larger than old one
-        if (null != version &&
-            Version.Occurred.AFTER == version.compare(newMeta.version)) {
-            return false;
+            return true;
         }
         // if ledger is closed, we can just take the new ensembles
         if (newMeta.state != LedgerMetadataFormat.State.CLOSED) {
             // ensemble size should be same
             if (ensembles.size() != newMeta.ensembles.size()) {
-                return false;
+                return true;
             }
             // ensemble distribution should be same
             // we don't check the detail ensemble, since new bookie will be set
@@ -479,16 +491,10 @@ public class LedgerMetadata {
                 Long curKey = keyIter.next();
                 Long newMetaKey = newMetaKeyIter.next();
                 if (!curKey.equals(newMetaKey)) {
-                    return false;
+                    return true;
                 }
             }
         }
-        /*
-         *  if the conflict has been resolved, then update
-         *  ensemble and znode version
-         */
-        ensembles = newMeta.ensembles;
-        version = newMeta.version;
-        return true;
+        return false;
     }
 }
