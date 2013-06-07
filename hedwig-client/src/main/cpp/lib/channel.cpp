@@ -702,7 +702,7 @@ void AsioSSLDuplexChannel::sslChannelConnected(const OperationCallbackPtr& callb
 void AsioSSLDuplexChannel::startHandShake(const OperationCallbackPtr& callback) {
   ssl_socket->async_handshake(boost::asio::ssl::stream_base::client,
                               boost::bind(&AsioSSLDuplexChannel::handleHandshake,
-                                          boost::shared_dynamic_cast<AsioSSLDuplexChannel>(shared_from_this()),
+                                          boost::dynamic_pointer_cast<AsioSSLDuplexChannel>(shared_from_this()),
                                           callback, boost::asio::placeholders::error));
 }
 
