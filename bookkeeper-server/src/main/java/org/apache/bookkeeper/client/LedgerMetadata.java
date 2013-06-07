@@ -18,6 +18,8 @@ package org.apache.bookkeeper.client;
  * limitations under the License.
  */
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.io.IOException;
@@ -25,6 +27,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.Arrays;
@@ -94,6 +97,30 @@ public class LedgerMetadata {
             LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.CRC32;
         this.password = Arrays.copyOf(password, password.length);
         this.hasPassword = true;
+    }
+
+    /**
+     * Copy Constructor.
+     */
+    LedgerMetadata(LedgerMetadata other) {
+        this.ensembleSize = other.ensembleSize;
+        this.writeQuorumSize = other.writeQuorumSize;
+        this.ackQuorumSize = other.ackQuorumSize;
+        this.length = other.length;
+        this.lastEntryId = other.lastEntryId;
+        this.metadataFormatVersion = other.metadataFormatVersion;
+        this.state = other.state;
+        this.version = other.version;
+        this.hasPassword = other.hasPassword;
+        this.digestType = other.digestType;
+        this.password = new byte[other.password.length];
+        System.arraycopy(other.password, 0, this.password, 0, other.password.length);
+        // copy the ensembles
+        for (Entry<Long, ArrayList<InetSocketAddress>> entry : other.ensembles.entrySet()) {
+            long startEntryId = entry.getKey();
+            ArrayList<InetSocketAddress> newEnsemble = new ArrayList<InetSocketAddress>(entry.getValue());
+            this.addEnsemble(startEntryId, newEnsemble);
+        }
     }
 
     private LedgerMetadata() {
