@@ -24,12 +24,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NavigableMap;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.bookkeeper.metastore.MSException.Code;
 import org.apache.bookkeeper.versioning.Versioned;
+
+import com.google.common.collect.ImmutableSortedMap;
 
 class InMemoryMetastoreCursor implements MetastoreCursor {
 
@@ -37,9 +39,10 @@ class InMemoryMetastoreCursor implements MetastoreCursor {
     private final Iterator<Map.Entry<String, Versioned<Value>>> iter;
     private final Set<String> fields;
 
-    public InMemoryMetastoreCursor(NavigableMap<String, Versioned<Value>> map, Set<String> fields,
+    public InMemoryMetastoreCursor(SortedMap<String, Versioned<Value>> map, Set<String> fields,
             ScheduledExecutorService scheduler) {
-        this.iter = map.entrySet().iterator();
+        // copy an map for iterator to avoid concurrent modification problem.
+        this.iter = ImmutableSortedMap.copyOfSorted(map).entrySet().iterator();
         this.fields = fields;
         this.scheduler = scheduler;
     }

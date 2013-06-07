@@ -21,6 +21,8 @@ package org.apache.bookkeeper.meta;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
@@ -127,34 +129,23 @@ public interface LedgerManager extends Closeable {
      * current scan.
      */
     public static class LedgerRange {
-        // ledger start and end ranges
-        private final long start;
-        private final long end;
-        public final static long NOLIMIT = -1;
-
         // returned ledgers
-        private Set<Long> ledgers;
+        private final SortedSet<Long> ledgers;
 
         public LedgerRange(Set<Long> ledgers) {
-            this(ledgers, NOLIMIT, NOLIMIT);
+            this.ledgers = new TreeSet<Long>(ledgers);
         }
 
-        public LedgerRange(Set<Long> ledgers, long start) {
-            this(ledgers, start, NOLIMIT);
-        }
-
-        public LedgerRange(Set<Long> ledgers, long start, long end) {
-            this.ledgers = ledgers;
-            this.start = start;
-            this.end = end;
+        public int size() {
+            return this.ledgers.size();
         }
 
         public Long start() {
-            return this.start;
+            return ledgers.first();
         }
 
         public Long end() {
-            return this.end;
+            return ledgers.last();
         }
 
         public Set<Long> getLedgers() {

@@ -463,6 +463,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         class MSLedgerRangeIterator implements LedgerRangeIterator {
             final CountDownLatch openCursorLatch = new CountDownLatch(1);
             MetastoreCursor cursor = null;
+            // last ledger id in previous range
 
             MSLedgerRangeIterator() {
                 MetastoreCallback<MetastoreCursor> openCursorCb = new MetastoreCallback<MetastoreCursor>() {
@@ -480,16 +481,16 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
             }
 
             @Override
-            public boolean hasNext() {
+            public boolean hasNext() throws IOException {
                 try {
                     openCursorLatch.await();
                 } catch (InterruptedException ie) {
                     LOG.error("Interrupted waiting for cursor to open", ie);
                     Thread.currentThread().interrupt();
-                    return false;
+                    throw new IOException("Interrupted waiting to read range", ie);
                 }
                 if (cursor == null) {
-                    return false;
+                    throw new IOException("Failed to open ledger range cursor, check logs");
                 }
                 return cursor.hasMoreEntries();
             }
@@ -497,7 +498,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
             @Override
             public LedgerRange next() throws IOException {
                 try {
-                    Set<Long> ledgerIds = new TreeSet<Long>();
+                    SortedSet<Long> ledgerIds = new TreeSet<Long>();
                     Iterator<MetastoreTableItem> iter = cursor.readEntries(maxEntriesPerScan);
                     while (iter.hasNext()) {
                         ledgerIds.add(key2LedgerId(iter.next().getKey()));

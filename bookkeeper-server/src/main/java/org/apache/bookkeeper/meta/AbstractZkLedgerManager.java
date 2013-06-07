@@ -18,7 +18,8 @@
 package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.TreeSet;
+import java.util.SortedSet;
 import java.util.List;
 import java.util.Set;
 
@@ -275,8 +276,8 @@ abstract class AbstractZkLedgerManager implements LedgerManager {
      *          the prefix path of the ledger nodes
      * @return ledger id hash set
      */
-    protected Set<Long> ledgerListToSet(List<String> ledgerNodes, String path) {
-        Set<Long> zkActiveLedgers = new HashSet<Long>(ledgerNodes.size(), 1.0f);
+    protected SortedSet<Long> ledgerListToSet(List<String> ledgerNodes, String path) {
+        SortedSet<Long> zkActiveLedgers = new TreeSet<Long>();
         for (String ledgerNode : ledgerNodes) {
             if (isSpecialZnode(ledgerNode)) {
                 continue;

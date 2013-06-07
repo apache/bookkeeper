@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.SortedSet;
 
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -381,7 +381,8 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
         private Iterator<String> l1NodesIter = null;
         private Iterator<String> l2NodesIter = null;
         private String curL1Nodes = "";
-        private boolean hasMoreElement = true;
+        private boolean iteratorDone = false;
+        private LedgerRange nextRange = null;
 
         /**
          * iterate next level1 znode
@@ -410,27 +411,47 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
             return true;
         }
 
-        @Override
-        public boolean hasNext() throws IOException {
-            try {
-                if (l1NodesIter == null) {
-                    l1NodesIter = zk.getChildren(ledgerRootPath, null).iterator();
-                    hasMoreElement = nextL1Node();
-                } else if (l2NodesIter == null || !l2NodesIter.hasNext()) {
-                    hasMoreElement = nextL1Node();
+        synchronized private void preload() throws IOException {
+            while (nextRange == null && !iteratorDone) {
+                boolean hasMoreElements = false;
+                try {
+                    if (l1NodesIter == null) {
+                        l1NodesIter = zk.getChildren(ledgerRootPath, null).iterator();
+                        hasMoreElements = nextL1Node();
+                    } else if (l2NodesIter == null || !l2NodesIter.hasNext()) {
+                        hasMoreElements = nextL1Node();
+                    }
+                } catch (KeeperException ke) {
+                    throw new IOException("Error preloading next range", ke);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Interrupted while preloading", ie);
                 }
-            } catch (Exception e) {
-                throw new IOException("Error when check more elements", e);
+                if (hasMoreElements) {
+                    nextRange = getLedgerRangeByLevel(curL1Nodes, l2NodesIter.next());
+                    if (nextRange.size() == 0) {
+                        nextRange = null;
+                    }
+                } else {
+                    iteratorDone = true;
+                }
             }
-            return hasMoreElement;
         }
 
         @Override
-        public LedgerRange next() throws IOException {
-            if (!hasMoreElement) {
+        synchronized public boolean hasNext() throws IOException {
+            preload();
+            return nextRange != null && !iteratorDone;
+        }
+
+        @Override
+        synchronized public LedgerRange next() throws IOException {
+            if (!hasNext()) {
                 throw new NoSuchElementException();
             }
-            return getLedgerRangeByLevel(curL1Nodes, l2NodesIter.next());
+            LedgerRange r = nextRange;
+            nextRange = null;
+            return r;
         }
 
         /**
@@ -454,13 +475,13 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
             } catch (InterruptedException e) {
                 throw new IOException("Error when get child nodes from zk", e);
             }
-            Set<Long> zkActiveLedgers = ledgerListToSet(ledgerNodes, nodePath);
+            SortedSet<Long> zkActiveLedgers = ledgerListToSet(ledgerNodes, nodePath);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("All active ledgers from ZK for hash node "
                           + level1 + "/" + level2 + " : " + zkActiveLedgers);
             }
-            return new LedgerRange(zkActiveLedgers,
-                    getStartLedgerIdByLevel(level1, level2), getEndLedgerIdByLevel(level1, level2));
+            return new LedgerRange(zkActiveLedgers.subSet(getStartLedgerIdByLevel(level1, level2),
+                                                          getEndLedgerIdByLevel(level1, level2)));
         }
     }
 }

@@ -128,25 +128,38 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
     public LedgerRangeIterator getLedgerRanges() {
         return new LedgerRangeIterator() {
             // single iterator, can visit only one time
-            boolean hasMoreElement = true;
-            @Override
-            public boolean hasNext() {
-                return hasMoreElement;
-            }
-            @Override
-            public LedgerRange next() throws IOException {
-                if (!hasMoreElement) {
-                    throw new NoSuchElementException();
+            boolean nextCalled = false;
+            LedgerRange nextRange = null;
+
+            synchronized private void preload() throws IOException {
+                if (nextRange != null) {
+                    return;
                 }
-                hasMoreElement = false;
-                Set<Long> zkActiveLedgers;
+                Set<Long> zkActiveLedgers = null;
+
                 try {
                     zkActiveLedgers = ledgerListToSet(
                             ZkUtils.getChildrenInSingleNode(zk, ledgerRootPath), ledgerRootPath);
-                } catch (InterruptedException e) {
-                    throw new IOException("Error when get child nodes from zk", e);
+                    nextRange = new LedgerRange(zkActiveLedgers);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Error when get child nodes from zk", ie);
                 }
-                return new LedgerRange(zkActiveLedgers);
+            }
+
+            @Override
+            synchronized public boolean hasNext() throws IOException {
+                preload();
+                return nextRange != null && nextRange.size() > 0 && !nextCalled;
+            }
+
+            @Override
+            synchronized public LedgerRange next() throws IOException {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                nextCalled = true;
+                return nextRange;
             }
         };
     }
