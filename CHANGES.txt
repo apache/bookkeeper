@@ -6,9 +6,11 @@ Release 4.2.2 - Unreleased
 
       bookkeeper-server:
 
-       BOOKKEEPER-556: BookieServerMXBean#getServerState makes no sense (ivank)
+        BOOKKEEPER-559: Fix occasional failure in AuditorBookieTest (ivank)
 
-       BOOKKEEPER-583: Read from a ReadOnlyBookie fails if index fileinfo is not in ledger cache (vinay via sijie)
+        BOOKKEEPER-556: BookieServerMXBean#getServerState makes no sense (ivank)
+
+        BOOKKEEPER-583: Read from a ReadOnlyBookie fails if index fileinfo is not in ledger cache (vinay via sijie)
 
 Release 4.2.1 - 2013-02-19
 

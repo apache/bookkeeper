@@ -212,6 +212,9 @@ public class AuditorElector {
 
         Runnable r = new Runnable() {
                 public void run() {
+                    if (!running.get()) {
+                        return;
+                    }
                     try {
                         // creating my vote in zk. Vote format is 'V_numeric'
                         createMyVote();
