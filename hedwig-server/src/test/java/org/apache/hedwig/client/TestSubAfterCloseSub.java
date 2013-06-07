@@ -15,30 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hedwig.server.integration;
+package org.apache.hedwig.client;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import com.google.protobuf.ByteString;
 import org.apache.hedwig.client.api.MessageHandler;
-import org.apache.hedwig.client.api.Subscriber;
-import org.apache.hedwig.client.HedwigClient;
-import org.apache.hedwig.client.api.Client;
 import org.apache.hedwig.client.api.Publisher;
 import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.server.HedwigHubTestBase;
-import org.apache.hedwig.server.netty.PubSubServer;
 import org.apache.hedwig.server.delivery.DeliveryManager;
 import org.apache.hedwig.server.delivery.FIFODeliveryManager;
+import org.apache.hedwig.server.netty.PubSubServer;
 import org.apache.hedwig.util.Callback;
+import org.junit.Test;
+
+import com.google.protobuf.ByteString;
 
 public class TestSubAfterCloseSub extends HedwigHubTestBase {
 

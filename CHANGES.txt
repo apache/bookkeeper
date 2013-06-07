@@ -12,6 +12,10 @@ Release 4.2.2 - Unreleased
 
         BOOKKEEPER-583: Read from a ReadOnlyBookie fails if index fileinfo is not in ledger cache (vinay via sijie)
 
+      hedwig-server:
+
+        BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)
+
 Release 4.2.1 - 2013-02-19
 
   Backward compatible changes:
