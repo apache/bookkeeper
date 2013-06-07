@@ -76,7 +76,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     final BKStats bkStats = BKStats.getInstance();
     final boolean isStatsEnabled;
     protected BookieServerBean jmxBkServerBean;
-    private AutoRecoveryMain autoRecoveryMain = null;
+    AutoRecoveryMain autoRecoveryMain = null;
     private boolean isAutoRecoveryDaemonEnabled;
 
     public BookieServer(ServerConfiguration conf) throws IOException,
@@ -242,10 +242,13 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
                     // do nothing
                 }
                 if (!isBookieRunning()
-                        || !isNioServerRunning()
-                        || (isAutoRecoveryDaemonEnabled && !isAutoRecoveryRunning())) {
+                    || !isNioServerRunning()) {
                     shutdown();
                     break;
+                }
+                if (isAutoRecoveryDaemonEnabled && !isAutoRecoveryRunning()) {
+                    LOG.error("Autorecovery daemon has stopped. Please check the logs");
+                    isAutoRecoveryDaemonEnabled = false; // to avoid spamming the logs
                 }
             }
         }

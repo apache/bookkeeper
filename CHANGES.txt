@@ -16,6 +16,8 @@ Release 4.2.2 - Unreleased
 
         BOOKKEEPER-581: Ledger recovery doesn't work correctly when recovery adds force changing ensembles. (sijie via ivank)
 
+        BOOKKEEPER-595: Crash of inprocess autorecovery daemon should not take down the bookie (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)
