@@ -23,6 +23,8 @@ package org.apache.bookkeeper.replication;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CountDownLatch;
 import java.util.HashMap;
 import java.util.List;
 import java.util.LinkedList;
@@ -269,5 +271,51 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         LOG.info("{} of {} ledgers underreplicated", numUnderreplicated, numUnderreplicated);
         assertTrue("All should be underreplicated",
                 numUnderreplicated <= numLedgers && numUnderreplicated > 0);
+    }
+
+    /**
+     * Test that the period check will succeed if a ledger is deleted midway
+     */
+    @Test(timeout=60000)
+    public void testPeriodicCheckWhenLedgerDeleted() throws Exception {
+        for (AuditorElector e : auditorElectors.values()) {
+            e.shutdown();
+        }
+
+        final int numLedgers = 100;
+        List<Long> ids = new LinkedList<Long>();
+        for (int i = 0; i < numLedgers; i++) {
+            LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
+            ids.add(lh.getId());
+            for (int j = 0; j < 10; j++) {
+                lh.addEntry("testdata".getBytes());
+            }
+            lh.close();
+        }
+        final Auditor auditor = new Auditor(
+                StringUtils.addrToString(Bookie.getBookieAddress(bsConfs.get(0))),
+                bsConfs.get(0), zkc);
+        final AtomicBoolean exceptionCaught = new AtomicBoolean(false);
+        final CountDownLatch latch = new CountDownLatch(1);
+        Thread t = new Thread() {
+                public void run() {
+                    try {
+                        latch.countDown();
+                        for (int i = 0; i < numLedgers; i++) {
+                            auditor.checkAllLedgers();
+                        }
+                    } catch (Exception e) {
+                        LOG.error("Caught exception while checking all ledgers", e);
+                        exceptionCaught.set(true);
+                    }
+                }
+            };
+        t.start();
+        latch.await();
+        for (Long id : ids) {
+            bkc.deleteLedger(id);
+        }
+        t.join();
+        assertFalse("Shouldn't have thrown exception", exceptionCaught.get());
     }
 }
