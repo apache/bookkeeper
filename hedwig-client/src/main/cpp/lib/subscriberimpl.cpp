@@ -39,7 +39,7 @@ const int DEFAULT_RECONNECT_SUBSCRIBE_RETRY_WAIT_TIME = 5000;
 const bool DEFAULT_SUBSCRIBER_AUTOCONSUME = true;
 const int DEFAULT_SUBSCRIPTION_MESSAGE_BOUND = 0;
 
-static const std::type_info& RESUBSCRIBE_EXCEPTION = typeid(ResubscribeException());
+static const std::type_info& RESUBSCRIBE_EXCEPTION_TYPEID = typeid(ResubscribeException());
 
 ConsumeWriteCallback::ConsumeWriteCallback(const ActiveSubscriberPtr& activeSubscriber,
                                            const PubSubDataPtr& data,
@@ -147,7 +147,7 @@ void ResubscribeCallback::operationComplete(const ResponseBody & resp) {
 }
 
 void ResubscribeCallback::operationFailed(const std::exception& exception) {
-  if (RESUBSCRIBE_EXCEPTION == typeid(exception)) {
+  if (RESUBSCRIBE_EXCEPTION_TYPEID == typeid(exception)) {
     // it might be caused by closesub when resubscribing.
     // so we don't need to retry resubscribe again
     LOG4CXX_WARN(logger, "Failed to resubscribe " << *activeSubscriber
