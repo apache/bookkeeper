@@ -168,7 +168,6 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
                 entries.add(entry.array());
                 entriesSize.add(entry.array().length);
                 lh.asyncAddEntry(entry.array(), this, sync);
-
             }
 
             LOG.info("Wrote " + numEntriesToWrite + " and now going to fail bookie.");
@@ -202,11 +201,10 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
             lh.asyncReadEntries(0, numEntriesToWrite - 1, this, sync);
 
             synchronized (sync) {
-                while (sync.value == false) {
-                    sync.wait(10000);
-                    assertTrue("Haven't received entries", sync.value);
-                    assertFalse("Failure occurred during read", sync.failureOccurred);
-                }
+                int i = 0;
+                sync.wait(10000);
+                assertFalse("Failure occurred during read", sync.failureOccurred);
+                assertTrue("Haven't received entries", sync.value);
             }
 
             LOG.debug("*** READ COMPLETE ***");

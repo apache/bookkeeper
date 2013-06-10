@@ -22,6 +22,8 @@ Release 4.2.2 - Unreleased
 
         BOOKKEEPER-584: Data loss when ledger metadata is overwritten (sijie via ivank)
 
+        BOOKKEEPER-577: BookieFailureTest uses sync/wait()/notify() incorrectly (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)
