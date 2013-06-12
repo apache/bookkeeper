@@ -29,11 +29,13 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
+import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
@@ -554,6 +556,68 @@ public class BookKeeper {
             LOG.error("Error deleting ledger " + lId + " : " + counter.getrc());
             throw BKException.create(counter.getrc());
         }
+    }
+    
+    /**
+     * Check asynchronously whether the ledger with identifier <i>lId</i>
+     * has been closed.
+     * 
+     * @param lId   ledger identifier
+     * @param cb    callback method
+     */
+    public void asyncIsClosed(long lId, final IsClosedCallback cb, final Object ctx){
+        ledgerManager.readLedgerMetadata(lId, new GenericCallback<LedgerMetadata>(){
+            public void operationComplete(int rc, LedgerMetadata lm){
+                if (rc == BKException.Code.OK) {
+                    cb.isClosedComplete(rc, lm.isClosed(), ctx);
+                } else {
+                    cb.isClosedComplete(rc, false, ctx);
+                }
+            }
+        });
+    }
+    
+    /**
+     * Check whether the ledger with identifier <i>lId</i>
+     * has been closed.
+     * 
+     * @param lId
+     * @return boolean true if ledger has been closed
+     * @throws BKException
+     */
+    public boolean isClosed(long lId)
+    throws BKException, InterruptedException {
+        final class Result {
+            int rc;
+            boolean isClosed;
+            final CountDownLatch notifier = new CountDownLatch(1);
+        }
+
+        final Result result = new Result();
+
+        final IsClosedCallback cb = new IsClosedCallback(){
+            public void isClosedComplete(int rc, boolean isClosed, Object ctx){
+                    result.isClosed = isClosed;
+                    result.rc = rc;
+                    result.notifier.countDown();
+            }
+        };
+
+        /*
+         * Call asynchronous version of isClosed
+         */
+        asyncIsClosed(lId, cb, null);
+        
+        /*
+         * Wait for callback
+         */
+        result.notifier.await();
+        
+        if (result.rc != BKException.Code.OK) {
+            throw BKException.create(result.rc);
+        }
+        
+        return result.isClosed;
     }
 
     /**
