@@ -37,8 +37,10 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
+import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -84,6 +86,9 @@ public class BookKeeper {
     // Ledger manager responsible for how to store ledger meta data
     final LedgerManagerFactory ledgerManagerFactory;
     final LedgerManager ledgerManager;
+
+    // Ensemble Placement Policy
+    final EnsemblePlacementPolicy placementPolicy;
 
     final ClientConfiguration conf;
 
@@ -131,10 +136,12 @@ public class BookKeeper {
         this.channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                                                                 Executors.newCachedThreadPool());
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
+        // initialize the ensemble placement
+        this.placementPolicy = initializeEnsemblePlacementPolicy(conf);
 
         mainWorkerPool = new OrderedSafeExecutor(conf.getNumWorkerThreads());
         bookieClient = new BookieClient(conf, channelFactory, mainWorkerPool);
-        bookieWatcher = new BookieWatcher(conf, scheduler, this);
+        bookieWatcher = new BookieWatcher(conf, scheduler, placementPolicy, this);
         bookieWatcher.readBookiesBlocking();
 
         ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, zk);
@@ -195,14 +202,26 @@ public class BookKeeper {
         this.zk = zk;
         this.channelFactory = channelFactory;
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
+        // initialize the ensemble placement
+        this.placementPolicy = initializeEnsemblePlacementPolicy(conf);
 
         mainWorkerPool = new OrderedSafeExecutor(conf.getNumWorkerThreads());
         bookieClient = new BookieClient(conf, channelFactory, mainWorkerPool);
-        bookieWatcher = new BookieWatcher(conf, scheduler, this);
+        bookieWatcher = new BookieWatcher(conf, scheduler, placementPolicy, this);
         bookieWatcher.readBookiesBlocking();
 
         ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, zk);
         ledgerManager = ledgerManagerFactory.newLedgerManager();
+    }
+
+    private EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf)
+        throws IOException {
+        try {
+            Class<? extends EnsemblePlacementPolicy> policyCls = conf.getEnsemblePlacementPolicy();
+            return ReflectionUtils.newInstance(policyCls).initialize(conf);
+        } catch (ConfigurationException e) {
+            throw new IOException("Failed to initialize ensemble placement policy : ", e);
+        }
     }
 
     LedgerManager getLedgerManager() {
@@ -661,6 +680,7 @@ public class BookKeeper {
          * @param ctx
          *          optional control object
          */
+        @Override
         public void createComplete(int rc, LedgerHandle lh, Object ctx) {
             SyncCounter counter = (SyncCounter) ctx;
             counter.setLh(lh);
@@ -680,12 +700,13 @@ public class BookKeeper {
          * @param ctx
          *          optional control object
          */
+        @Override
         public void openComplete(int rc, LedgerHandle lh, Object ctx) {
             SyncCounter counter = (SyncCounter) ctx;
             counter.setLh(lh);
-            
+
             LOG.debug("Open complete: {}", rc);
-            
+
             counter.setrc(rc);
             counter.dec();
         }
@@ -700,6 +721,7 @@ public class BookKeeper {
          * @param ctx
          *            optional control object
          */
+        @Override
         public void deleteComplete(int rc, Object ctx) {
             SyncCounter counter = (SyncCounter) ctx;
             counter.setrc(rc);

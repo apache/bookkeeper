@@ -92,7 +92,8 @@ class LedgerCreateOp implements GenericCallback<Long> {
 
         ArrayList<InetSocketAddress> ensemble;
         try {
-            ensemble = bk.bookieWatcher.getNewBookies(metadata.getEnsembleSize());
+            ensemble = bk.bookieWatcher
+                    .newEnsemble(metadata.getEnsembleSize(), metadata.getWriteQuorumSize());
         } catch (BKNotEnoughBookiesException e) {
             LOG.error("Not enough bookies to create ledger");
             cb.createComplete(e.getCode(), null, this.ctx);

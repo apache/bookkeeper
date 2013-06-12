@@ -86,6 +86,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-603: Support Boost 1.53 for Hedwig Cpp Client (jiannan via ivank)
 
+      BOOKKEEPER-592: allow application to recommend ledger data locality (sijie via ivank)
+
     NEW FEATURE:
 
       BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj)

@@ -655,7 +655,7 @@ public class LedgerHandle {
 
         // avoid parallel ensemble changes to same ensemble.
         synchronized (metadata) {
-            newBookie = bk.bookieWatcher.getAdditionalBookie(metadata.currentEnsemble);
+            newBookie = bk.bookieWatcher.replaceBookie(metadata.currentEnsemble, bookieIndex);
 
             newEnsemble.addAll(metadata.currentEnsemble);
             newEnsemble.set(bookieIndex, newBookie);

@@ -38,12 +38,13 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
 
     static final Logger LOG = LoggerFactory.getLogger(AbstractConfiguration.class);
 
-    private static ClassLoader defaultLoader;
+    protected static final ClassLoader defaultLoader;
     static {
-        defaultLoader = Thread.currentThread().getContextClassLoader();
-        if (null == defaultLoader) {
-            defaultLoader = AbstractConfiguration.class.getClassLoader();
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        if (null == loader) {
+            loader = AbstractConfiguration.class.getClassLoader();
         }
+        defaultLoader = loader;
     }
 
     // Ledger Manager

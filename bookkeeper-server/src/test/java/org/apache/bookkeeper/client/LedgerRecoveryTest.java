@@ -279,7 +279,7 @@ public class LedgerRecoveryTest extends BaseTestCase {
                                 public void openComplete(int rc, LedgerHandle lh, Object ctx) {
                                     returnCode.set(rc);
                                     openLatch.countDown();
-                                    if (rc != BKException.Code.OK) {
+                                    if (rc == BKException.Code.OK) {
                                         try {
                                             lh.close();
                                         } catch (Exception e) {
