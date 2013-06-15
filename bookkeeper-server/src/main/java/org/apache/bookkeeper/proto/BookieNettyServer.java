@@ -65,7 +65,7 @@ class BookieNettyServer {
     Object suspensionLock = new Object();
     boolean suspended = false;
 
-    InetSocketAddress localAddress = null;
+    final InetSocketAddress bindAddress;
 
     BookieNettyServer(ServerConfiguration conf, Bookie bookie)
             throws IOException, KeeperException, InterruptedException, BookieException  {
@@ -77,7 +77,12 @@ class BookieNettyServer {
         serverChannelFactory = new NioServerSocketChannelFactory(
                 Executors.newCachedThreadPool(tfb.setNameFormat(base + "-boss-%d").build()),
                 Executors.newCachedThreadPool(tfb.setNameFormat(base + "-worker-%d").build()));
-
+        if (conf.getListeningInterface() == null) {
+            // listen on all interfaces
+            bindAddress = new InetSocketAddress(conf.getBookiePort());
+        } else {
+            bindAddress = Bookie.getBookieAddress(conf);
+        }
     }
 
     boolean isRunning() {
@@ -101,24 +106,14 @@ class BookieNettyServer {
         }
     }
 
-    InetSocketAddress getLocalAddress() {
-        if (localAddress != null) {
-            return localAddress;
-        } else {
-            return new InetSocketAddress(conf.getBookiePort());
-        }
-    }
-
     void start() {
         ServerBootstrap bootstrap = new ServerBootstrap(serverChannelFactory);
         bootstrap.setPipelineFactory(new BookiePipelineFactory());
         bootstrap.setOption("child.tcpNoDelay", conf.getServerTcpNoDelay());
         bootstrap.setOption("child.soLinger", 2);
 
-        Channel listen = bootstrap.bind(new InetSocketAddress(conf.getBookiePort()));
+        Channel listen = bootstrap.bind(bindAddress);
 
-        assert(listen.getLocalAddress() instanceof InetSocketAddress);
-        localAddress = (InetSocketAddress)listen.getLocalAddress();
         allChannels.add(listen);
         isRunning.set(true);
     }

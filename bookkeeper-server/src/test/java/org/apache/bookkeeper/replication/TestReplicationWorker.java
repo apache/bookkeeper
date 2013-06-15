@@ -529,7 +529,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
     }
 
     private void killAllBookies(LedgerHandle lh, InetSocketAddress excludeBK)
-            throws InterruptedException {
+            throws Exception {
         // Killing all bookies except newly replicated bookie
         Set<Entry<Long, ArrayList<InetSocketAddress>>> entrySet = LedgerHandleAdapter
                 .getLedgerMetadata(lh).getEnsembles().entrySet();

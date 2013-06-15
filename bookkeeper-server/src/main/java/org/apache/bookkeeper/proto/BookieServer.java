@@ -100,12 +100,9 @@ public class BookieServer {
         registerJMX();
     }
 
-    public InetSocketAddress getLocalAddress() {
-        try {
-            return Bookie.getBookieAddress(conf);
-        } catch (UnknownHostException uhe) {
-            return nettyServer.getLocalAddress();
-        }
+    @VisibleForTesting
+    public InetSocketAddress getLocalAddress() throws UnknownHostException {
+        return Bookie.getBookieAddress(conf);
     }
 
     @VisibleForTesting

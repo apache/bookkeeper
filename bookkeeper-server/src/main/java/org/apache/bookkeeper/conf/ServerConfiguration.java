@@ -48,6 +48,9 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String MAX_BACKUP_JOURNALS = "journalMaxBackups";
     // Bookie Parameters
     protected final static String BOOKIE_PORT = "bookiePort";
+    protected final static String LISTENING_INTERFACE = "listeningInterface";
+    protected final static String ALLOW_LOOPBACK = "allowLoopback";
+
     protected final static String JOURNAL_DIR = "journalDirectory";
     protected final static String LEDGER_DIRS = "ledgerDirectories";
     // NIO Parameters
@@ -280,6 +283,64 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setBookiePort(int port) {
         this.setProperty(BOOKIE_PORT, Integer.toString(port));
+        return this;
+    }
+
+    /**
+     * Get the network interface that the bookie should
+     * listen for connections on. If this is null, then the bookie
+     * will listen for connections on all interfaces.
+     *
+     * @return the network interface to listen on, e.g. eth0, or
+     *         null if none is specified
+     */
+    public String getListeningInterface() {
+        return this.getString(LISTENING_INTERFACE);
+    }
+
+    /**
+     * Set the network interface that the bookie should listen on.
+     * If not set, the bookie will listen on all interfaces.
+     *
+     * @param iface the interface to listen on
+     */
+    public ServerConfiguration setListeningInterface(String iface) {
+        this.setProperty(LISTENING_INTERFACE, iface);
+        return this;
+    }
+
+    /**
+     * Is the bookie allowed to use a loopback interface as its primary
+     * interface(i.e. the interface it uses to establish its identity)?
+     *
+     * By default, loopback interfaces are not allowed as the primary
+     * interface.
+     *
+     * Using a loopback interface as the primary interface usually indicates
+     * a configuration error. For example, its fairly common in some VPS setups
+     * to not configure a hostname, or to have the hostname resolve to
+     * 127.0.0.1. If this is the case, then all bookies in the cluster will
+     * establish their identities as 127.0.0.1:3181, and only one will be able
+     * to join the cluster. For VPSs configured like this, you should explicitly
+     * set the listening interface.
+     *
+     * @see #setListeningInterface(String)
+     * @return whether a loopback interface can be used as the primary interface
+     */
+    public boolean getAllowLoopback() {
+        return this.getBoolean(ALLOW_LOOPBACK, false);
+    }
+
+    /**
+     * Configure the bookie to allow loopback interfaces to be used
+     * as the primary bookie interface.
+     *
+     * @see #getAllowLoopback
+     * @param allow whether to allow loopback interfaces
+     * @return server configuration
+     */
+    public ServerConfiguration setAllowLoopback(boolean allow) {
+        this.setProperty(ALLOW_LOOPBACK, allow);
         return this;
     }
 

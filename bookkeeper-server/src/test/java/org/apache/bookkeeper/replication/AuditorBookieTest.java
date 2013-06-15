@@ -253,8 +253,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
         }
     }
 
-    private BookieServer verifyAuditor() throws KeeperException,
-            InterruptedException {
+    private BookieServer verifyAuditor() throws Exception {
         List<BookieServer> auditors = getAuditorBookie();
         Assert.assertEquals("Multiple Bookies acting as Auditor!", 1, auditors
                 .size());
@@ -262,8 +261,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
         return auditors.get(0);
     }
 
-    private List<BookieServer> getAuditorBookie() throws KeeperException,
-            InterruptedException {
+    private List<BookieServer> getAuditorBookie() throws Exception {
         List<BookieServer> auditors = new LinkedList<BookieServer>();
         byte[] data = zkc.getData(electionPath, false, null);
         Assert.assertNotNull("Auditor election failed", data);
@@ -286,7 +284,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
     }
 
     private BookieServer waitForNewAuditor(BookieServer auditor)
-            throws InterruptedException, KeeperException {
+            throws Exception {
         BookieServer newAuditor = null;
         int retryCount = 8;
         while (retryCount > 0) {

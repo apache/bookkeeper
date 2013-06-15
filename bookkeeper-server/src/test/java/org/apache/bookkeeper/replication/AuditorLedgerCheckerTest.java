@@ -321,8 +321,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         }
     }
 
-    private String shutdownBookie(int bkShutdownIndex) throws IOException,
-            InterruptedException {
+    private String shutdownBookie(int bkShutdownIndex) throws Exception {
         BookieServer bkServer = bs.get(bkShutdownIndex);
         String bookieAddr = StringUtils.addrToString(bkServer.getLocalAddress());
         LOG.debug("Shutting down bookie:" + bookieAddr);

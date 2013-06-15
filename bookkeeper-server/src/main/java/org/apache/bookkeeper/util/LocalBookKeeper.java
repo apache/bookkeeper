@@ -149,6 +149,7 @@ public class LocalBookKeeper {
                                   + ZooKeeperDefaultPort);
             bsConfs[i].setJournalDirName(tmpDirs[i].getPath());
             bsConfs[i].setLedgerDirNames(new String[] { tmpDirs[i].getPath() });
+            bsConfs[i].setAllowLoopback(true);
 
             bs[i] = new BookieServer(bsConfs[i]);
             bs[i].start();

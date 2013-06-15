@@ -175,7 +175,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
         }
     }
 
-    protected ServerConfiguration newServerConfiguration() throws IOException {
+    protected ServerConfiguration newServerConfiguration() throws Exception {
         File f = File.createTempFile("bookie", "test");
         tmpDirs.add(f);
         f.delete();
@@ -191,6 +191,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
         conf.setBookiePort(port);
         conf.setZkServers(zkServers);
         conf.setJournalDirName(journalDir.getPath());
+        conf.setAllowLoopback(true);
         String[] ledgerDirNames = new String[ledgerDirs.length];
         for (int i=0; i<ledgerDirs.length; i++) {
             ledgerDirNames[i] = ledgerDirs[i].getPath();
@@ -202,7 +203,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
     /**
      * Get bookie address for bookie at index
      */
-    public InetSocketAddress getBookie(int index) throws IllegalArgumentException {
+    public InetSocketAddress getBookie(int index) throws Exception {
         if (bs.size() <= index || index < 0) {
             throw new IllegalArgumentException("Invalid index, there are only " + bs.size()
                                                + " bookies. Asked for " + index);
@@ -219,7 +220,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      * @return the configuration of killed bookie
      * @throws InterruptedException
      */
-    public ServerConfiguration killBookie(InetSocketAddress addr) throws InterruptedException {
+    public ServerConfiguration killBookie(InetSocketAddress addr) throws Exception {
         BookieServer toRemove = null;
         int toRemoveIndex = 0;
         for (BookieServer server : bs) {
@@ -248,7 +249,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      * @throws InterruptedException
      * @throws IOException
      */
-    public ServerConfiguration killBookie(int index) throws InterruptedException, IOException {
+    public ServerConfiguration killBookie(int index) throws Exception {
         if (index >= bs.size()) {
             throw new IOException("Bookie does not exist");
         }
@@ -271,7 +272,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      * @throws IOException
      */
     public CountDownLatch sleepBookie(InetSocketAddress addr, final int seconds)
-            throws InterruptedException, IOException {
+            throws Exception {
         for (final BookieServer bookie : bs) {
             if (bookie.getLocalAddress().equals(addr)) {
                 final CountDownLatch l = new CountDownLatch(1);
@@ -306,7 +307,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      * @throws IOException
      */
     public void sleepBookie(InetSocketAddress addr, final CountDownLatch l)
-            throws InterruptedException, IOException {
+            throws Exception {
         for (final BookieServer bookie : bs) {
             if (bookie.getLocalAddress().equals(addr)) {
                 Thread sleeper = new Thread() {
@@ -337,8 +338,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      * @throws BookieException
      */
     public void restartBookies()
-            throws InterruptedException, IOException, KeeperException,
-            BookieException, UnavailableException, CompatibilityException {
+            throws Exception {
         restartBookies(null);
     }
 
@@ -354,8 +354,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      * @throws BookieException
      */
     public void restartBookies(ServerConfiguration newConf)
-            throws InterruptedException, IOException, KeeperException,
-            BookieException, UnavailableException, CompatibilityException {
+            throws Exception {
         // shut down bookie server
         for (BookieServer server : bs) {
             server.shutdown();
@@ -384,8 +383,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      * @throws IOException
      */
     public int startNewBookie()
-            throws IOException, InterruptedException, KeeperException,
-            BookieException, UnavailableException, CompatibilityException {
+            throws Exception {
         ServerConfiguration conf = newServerConfiguration();
         bsConfs.add(conf);
         bs.add(startBookie(conf));
@@ -402,8 +400,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      *
      */
     protected BookieServer startBookie(ServerConfiguration conf)
-            throws IOException, InterruptedException, KeeperException,
-            BookieException, UnavailableException, CompatibilityException {
+            throws Exception {
         BookieServer server = new BookieServer(conf);
         server.start();
 
@@ -430,8 +427,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      * recovery for this bookie, if isAutoRecoveryEnabled is true.
      */
     protected BookieServer startBookie(ServerConfiguration conf, final Bookie b)
-            throws IOException, InterruptedException, KeeperException,
-            BookieException, UnavailableException, CompatibilityException {
+            throws Exception {
         BookieServer server = new BookieServer(conf) {
             @Override
             protected Bookie newBookie(ServerConfiguration conf) {
@@ -486,9 +482,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
     }
 
     private void startAutoRecovery(BookieServer bserver,
-            ServerConfiguration conf) throws CompatibilityException,
-            KeeperException, InterruptedException, IOException,
-            UnavailableException {
+                                   ServerConfiguration conf) throws Exception {
         if (isAutoRecoveryEnabled()) {
             AutoRecoveryMain autoRecoveryProcess = new AutoRecoveryMain(conf);
             autoRecoveryProcess.start();
@@ -498,7 +492,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
         }
     }
 
-    private void stopAutoRecoveryService(BookieServer toRemove) {
+    private void stopAutoRecoveryService(BookieServer toRemove) throws Exception {
         AutoRecoveryMain autoRecoveryMain = autoRecoveryProcesses
                 .remove(toRemove);
         if (null != autoRecoveryMain && isAutoRecoveryEnabled()) {
@@ -512,21 +506,8 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      * Will starts the auto recovery process for the bookie servers. One auto
      * recovery process per each bookie server, if isAutoRecoveryEnabled is
      * enabled.
-     *
-     * @throws CompatibilityException
-     *             - Compatibility error
-     * @throws KeeperException
-     *             - ZK exception
-     * @throws InterruptedException
-     *             - interrupted exception
-     * @throws IOException
-     *             - IOException
-     * @throws UnavailableException
-     *             - replication service has become unavailable
      */
-    public void startReplicationService() throws CompatibilityException,
-            KeeperException, InterruptedException, IOException,
-            UnavailableException {
+    public void startReplicationService() throws Exception {
         int index = -1;
         for (BookieServer bserver : bs) {
             startAutoRecovery(bserver, bsConfs.get(++index));
@@ -537,7 +518,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      * Will stops all the auto recovery processes for the bookie cluster, if
      * isAutoRecoveryEnabled is true.
      */
-    public void stopReplicationService() {
+    public void stopReplicationService() throws Exception{
         if(false == isAutoRecoveryEnabled()){
             return;
         }

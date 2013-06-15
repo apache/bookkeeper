@@ -55,7 +55,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
      * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-485}.
      */
     @Test(timeout=60000)
-    public void testConnectCloseRace() {
+    public void testConnectCloseRace() throws Exception {
         ClientSocketChannelFactory channelFactory
             = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                                                 Executors.newCachedThreadPool());
@@ -85,7 +85,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
      * correctly, this causes the netty channel to get orphaned.
      */
     @Test(timeout=60000)
-    public void testConnectRace() {
+    public void testConnectRace() throws Exception {
         GenericCallback<Void> nullop = new GenericCallback<Void>() {
             @Override
             public void operationComplete(int rc, Void result) {

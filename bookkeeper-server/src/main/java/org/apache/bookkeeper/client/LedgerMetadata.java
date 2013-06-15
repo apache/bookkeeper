@@ -267,7 +267,7 @@ public class LedgerMetadata {
             LedgerMetadataFormat.Segment.Builder segmentBuilder = LedgerMetadataFormat.Segment.newBuilder();
             segmentBuilder.setFirstEntryId(entry.getKey());
             for (InetSocketAddress addr : entry.getValue()) {
-                segmentBuilder.addEnsembleMember(addr.getAddress().getHostAddress() + ":" + addr.getPort());
+                segmentBuilder.addEnsembleMember(StringUtils.addrToString(addr));
             }
             builder.addSegment(segmentBuilder.build());
         }

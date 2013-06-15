@@ -454,7 +454,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
     }
 
     private void killBookie(ArrayList<InetSocketAddress> firstEnsemble,
-            InetSocketAddress ensemble) throws InterruptedException {
+            InetSocketAddress ensemble) throws Exception {
         LOG.info("Killing " + ensemble + " from ensemble=" + firstEnsemble);
         killBookie(ensemble);
     }
