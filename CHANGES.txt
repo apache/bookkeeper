@@ -51,6 +51,8 @@ Trunk (unreleased changes)
         BOOKKEEPER-599: NPE in PerChannelBookieClient (jiannan via sijie)
 
 	BOOKKEEPER-577: BookieFailureTest uses sync/wait()/notify() incorrectly (ivank via fpj) 
+	
+	BOOKKEEPER-626: BOOKIE_EXTRA_OPTS are added twice (vinay via fpj)
 
       hedwig-client:
 
