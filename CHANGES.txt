@@ -24,6 +24,8 @@ Release 4.2.2 - Unreleased
 
         BOOKKEEPER-577: BookieFailureTest uses sync/wait()/notify() incorrectly (ivank)
 
+	BOOKKEEPER-626: BOOKIE_EXTRA_OPTS are added twice (vinay via fpj)
+
       hedwig-server:
 
         BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)
