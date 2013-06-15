@@ -173,9 +173,10 @@ public class LedgerDirsManager {
      * Thread to monitor the disk space periodically.
      */
     private class LedgerDirsMonitor extends Thread {
-        int interval;
+        private final int interval;
 
         public LedgerDirsMonitor(int interval) {
+            super("LedgerDirsMonitorThread");
             this.interval = interval;
         }
 
@@ -220,6 +221,7 @@ public class LedgerDirsManager {
                     listener.fatalError();
                 }
             }
+            LOG.info("LedgerDirsMonitorThread exited!");
         }
     }
 

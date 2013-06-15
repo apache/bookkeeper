@@ -90,6 +90,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-592: allow application to recommend ledger data locality (sijie via ivank)
 
+      BOOKKEEPER-627: LedgerDirsMonitor is missing thread name (rakesh via fpj)
+
     NEW FEATURE:
 
       BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj)
