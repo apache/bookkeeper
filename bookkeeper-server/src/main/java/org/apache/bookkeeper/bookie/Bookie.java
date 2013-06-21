@@ -674,6 +674,10 @@ public class Bookie extends Thread {
      */
     @VisibleForTesting
     public void transitionToReadOnlyMode() {
+        if (shuttingdown == true) {
+            return;
+        }
+
         if (!readOnly.compareAndSet(false, true)) {
             return;
         }
@@ -793,19 +797,18 @@ public class Bookie extends Thread {
     // Triggering the Bookie shutdown in its own thread,
     // because shutdown can be called from sync thread which would be
     // interrupted by shutdown call.
+    AtomicBoolean shutdownTriggered = new AtomicBoolean(false);
     void triggerBookieShutdown(final int exitCode) {
-        Thread shutdownThread = new Thread() {
+        if (!shutdownTriggered.compareAndSet(false, true)) {
+            return;
+        }
+        LOG.info("Triggering shutdown of Bookie-{} with exitCode {}",
+                 conf.getBookiePort(), exitCode);
+        new Thread("BookieShutdownTrigger") {
             public void run() {
                 Bookie.this.shutdown(exitCode);
             }
-        };
-        shutdownThread.start();
-        try {
-            shutdownThread.join();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            LOG.debug("InterruptedException while waiting for shutdown. Not a problem!!");
-        }
+        }.start();
     }
 
     // provided a public shutdown method for other caller
@@ -820,15 +823,11 @@ public class Bookie extends Thread {
         try {
             if (running) { // avoid shutdown twice
                 // the exitCode only set when first shutdown usually due to exception found
+                LOG.info("Shutting down Bookie-{} with exitCode {}",
+                         conf.getBookiePort(), exitCode);
                 this.exitCode = exitCode;
                 // mark bookie as in shutting down progress
                 shuttingdown = true;
-
-                // Shutdown the ZK client
-                if(zk != null) zk.close();
-
-                //Shutdown disk checker
-                ledgerDirsManager.shutdown();
 
                 // Shutdown journal
                 journal.shutdown();
@@ -845,7 +844,15 @@ public class Bookie extends Thread {
                 } catch (IOException ie) {
                     LOG.error("Failed to close active ledger manager : ", ie);
                 }
-                // setting running to false here, so watch thread in bookie server know it only after bookie shut down
+
+                //Shutdown disk checker
+                ledgerDirsManager.shutdown();
+
+                // Shutdown the ZK client
+                if(zk != null) zk.close();
+
+                // setting running to false here, so watch thread
+                // in bookie server know it only after bookie shut down
                 running = false;
             }
         } catch (InterruptedException ie) {

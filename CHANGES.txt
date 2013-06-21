@@ -32,6 +32,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-619: Bookie should not create local cookie files if zookeeper is uninitialized (ivank)
 
+      BOOKKEEPER-313: Bookkeeper shutdown call from Bookie thread is not shutting down server (vinay via ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)
