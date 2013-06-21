@@ -27,6 +27,7 @@ Release 4.2.2 - Unreleased
 	BOOKKEEPER-626: BOOKIE_EXTRA_OPTS are added twice (vinay via fpj)
 
         BOOKKEEPER-619: Bookie should not create local cookie files if zookeeper is uninitialized (ivank)
+        BOOKKEEPER-313: Bookkeeper shutdown call from Bookie thread is not shutting down server (vinay via ivank)
 
       hedwig-server:
 
