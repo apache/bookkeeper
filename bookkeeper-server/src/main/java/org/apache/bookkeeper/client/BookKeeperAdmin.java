@@ -750,7 +750,9 @@ public class BookKeeperAdmin {
                 } else {
                     // Confirm with the admin.
                     confirm = IOUtils
-                            .confirmPrompt("Are you sure to format bookkeeper metadata ?");
+                            .confirmPrompt("Ledger root already exists. "
+                                    +"Are you sure to format bookkeeper metadata? "
+                                    +"This may cause data loss.");
                 }
                 if (!confirm) {
                     LOG.error("BookKeeper metadata Format aborted!!");

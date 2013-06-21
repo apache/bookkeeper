@@ -367,6 +367,12 @@ public class Bookie extends Thread {
     private String getInstanceId(ZooKeeper zk) throws KeeperException,
             InterruptedException {
         String instanceId = null;
+        if (zk.exists(conf.getZkLedgersRootPath(), null) == null) {
+            LOG.error("BookKeeper metadata doesn't exist in zookeeper. "
+                      + "Has the cluster been initialized? "
+                      + "Try running bin/bookkeeper shell metaformat");
+            throw new KeeperException.NoNodeException("BookKeeper metadata");
+        }
         try {
             byte[] data = zk.getData(conf.getZkLedgersRootPath() + "/"
                     + BookKeeperConstants.INSTANCEID, false, null);

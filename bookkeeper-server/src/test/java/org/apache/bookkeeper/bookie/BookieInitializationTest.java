@@ -34,7 +34,9 @@ import junit.framework.Assert;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.commons.io.FileUtils;
@@ -258,6 +260,41 @@ public class BookieInitializationTest {
             fail("Should throw ConnectionLossException as ZKServer is not running!");
         } catch (KeeperException.ConnectionLossException e) {
             // expected behaviour
+        } finally {
+            FileUtils.deleteDirectory(tmpDir);
+        }
+    }
+
+    /**
+     * Verify that if I try to start a bookie without zk initialized, it won't
+     * prevent me from starting the bookie when zk is initialized
+     */
+    @Test(timeout = 20000)
+    public void testStartBookieWithoutZKInitialized() throws Exception {
+        File tmpDir = File.createTempFile("bookie", "test");
+        tmpDir.delete();
+        tmpDir.mkdir();
+        final String ZK_ROOT = "/ledgers2";
+
+        final ServerConfiguration conf = new ServerConfiguration()
+            .setZkServers(zkutil.getZooKeeperConnectString())
+            .setZkTimeout(5000).setJournalDirName(tmpDir.getPath())
+            .setLedgerDirNames(new String[] { tmpDir.getPath() });
+        conf.setZkLedgersRootPath(ZK_ROOT);
+        try {
+            try {
+                new Bookie(conf);
+                fail("Should throw NoNodeException");
+            } catch (Exception e) {
+                // shouldn't be able to start
+            }
+            ClientConfiguration clientConf = new ClientConfiguration();
+            clientConf.setZkServers(zkutil.getZooKeeperConnectString());
+            clientConf.setZkLedgersRootPath(ZK_ROOT);
+            BookKeeperAdmin.format(clientConf, false, false);
+
+            Bookie b = new Bookie(conf);
+            b.shutdown();
         } finally {
             FileUtils.deleteDirectory(tmpDir);
         }

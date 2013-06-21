@@ -30,6 +30,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-617: BOOKKEEPER-544 breaks hedwig-server/bin/hedwig script (ivank)
 
+      BOOKKEEPER-619: Bookie should not create local cookie files if zookeeper is uninitialized (ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)
