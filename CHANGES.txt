@@ -26,6 +26,8 @@ Release 4.2.2 - Unreleased
 
 	BOOKKEEPER-626: BOOKIE_EXTRA_OPTS are added twice (vinay via fpj)
 
+        BOOKKEEPER-619: Bookie should not create local cookie files if zookeeper is uninitialized (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)
