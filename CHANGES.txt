@@ -27,7 +27,10 @@ Release 4.2.2 - Unreleased
 	BOOKKEEPER-626: BOOKIE_EXTRA_OPTS are added twice (vinay via fpj)
 
         BOOKKEEPER-619: Bookie should not create local cookie files if zookeeper is uninitialized (ivank)
+
         BOOKKEEPER-313: Bookkeeper shutdown call from Bookie thread is not shutting down server (vinay via ivank)
+
+        BOOKKEEPER-623: LedgerChecker should avoid segments of closed ledger with higher start entryId than closed entry. (vinay via sijie)
 
       hedwig-server:
 
