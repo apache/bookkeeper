@@ -20,6 +20,7 @@ package org.apache.bookkeeper.client;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -29,6 +30,7 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
@@ -57,12 +59,50 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
     @Test(timeout = 60000)
     public void testLedgerCloseDuringUnrecoverableErrors() throws Exception {
         int numEntries = 3;
+        LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, "".getBytes());
+        verifyMetadataConsistency(numEntries, lh);
+    }
+
+    @Test(timeout = 60000)
+    public void testLedgerCheckerShouldnotSelectInvalidLastFragments() throws Exception {
+        int numEntries = 10;
+        LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, "".getBytes());
+        // Add some entries before bookie failures
+        for (int i = 0; i < numEntries; i++) {
+            lh.addEntry("data".getBytes());
+        }
+        numEntries = 4; // add n*ensemleSize+1 entries async after bookies
+                        // failed.
+        verifyMetadataConsistency(numEntries, lh);
+
+        LedgerChecker checker = new LedgerChecker(bkc);
+        CheckerCallback cb = new CheckerCallback();
+        checker.checkLedger(lh, cb);
+        Set<LedgerFragment> result = cb.waitAndGetResult();
+        assertEquals("No fragments should be selected", 0, result.size());
+    }
+
+    class CheckerCallback implements GenericCallback<Set<LedgerFragment>> {
+        private Set<LedgerFragment> result = null;
+        private CountDownLatch latch = new CountDownLatch(1);
+
+        public void operationComplete(int rc, Set<LedgerFragment> result) {
+            this.result = result;
+            latch.countDown();
+        }
+
+        Set<LedgerFragment> waitAndGetResult() throws InterruptedException {
+            latch.await();
+            return result;
+        }
+    }
+
+    private void verifyMetadataConsistency(int numEntries, LedgerHandle lh)
+            throws Exception {
         final CountDownLatch addDoneLatch = new CountDownLatch(1);
         final CountDownLatch deadIOLatch = new CountDownLatch(1);
         final CountDownLatch recoverDoneLatch = new CountDownLatch(1);
         final CountDownLatch failedLatch = new CountDownLatch(1);
-
-        LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, "".getBytes());
         // kill first bookie to replace with a unauthorize bookie
         InetSocketAddress bookie = lh.getLedgerMetadata().currentEnsemble.get(0);
         ServerConfiguration conf = killBookie(bookie);

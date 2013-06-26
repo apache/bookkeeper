@@ -204,9 +204,7 @@ public class LedgerChecker {
          * NoSuchEntry we can assume it was never written. If they respond with anything
          * else, we must assume the entry has been written, so we run the check.
          */
-        if (curEntryId != null
-            && !(lh.getLastAddConfirmed() == LedgerHandle.INVALID_ENTRY_ID
-                 && lh.getLedgerMetadata().isClosed())) {
+        if (curEntryId != null && !(lh.getLedgerMetadata().isClosed() && lh.getLastAddConfirmed() < curEntryId)) {
             long lastEntry = lh.getLastAddConfirmed();
 
             if (lastEntry < curEntryId) {

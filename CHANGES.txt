@@ -58,6 +58,8 @@ Trunk (unreleased changes)
 	
 	BOOKKEEPER-626: BOOKIE_EXTRA_OPTS are added twice (vinay via fpj)
 
+        BOOKKEEPER-623: LedgerChecker should avoid segments of closed ledger with higher start entryId than closed entry. (vinay via sijie)
+
       hedwig-client:
 
         BOOKKEEPER-598: Fails to compile - RESUBSCRIBE_EXCEPTION conflict (Matthew Farrellee via sijie)
