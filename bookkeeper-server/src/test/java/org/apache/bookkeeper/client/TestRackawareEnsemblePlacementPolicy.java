@@ -236,6 +236,31 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
+    /**
+     * Test for BOOKKEEPER-633
+     */
+    @Test
+    public void testRemoveBookieFromCluster() {
+        InetSocketAddress addr1 = new InetSocketAddress("127.0.0.1", 3181);
+        InetSocketAddress addr2 = new InetSocketAddress("127.0.0.2", 3181);
+        InetSocketAddress addr3 = new InetSocketAddress("127.0.0.3", 3181);
+        InetSocketAddress addr4 = new InetSocketAddress("127.0.0.4", 3181);
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getAddress().getHostAddress(), NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(addr2.getAddress().getHostAddress(), "/r2");
+        StaticDNSResolver.addNodeToRack(addr3.getAddress().getHostAddress(), "/r2");
+        StaticDNSResolver.addNodeToRack(addr4.getAddress().getHostAddress(), "/r3");
+        // Update cluster
+        Set<InetSocketAddress> addrs = new HashSet<InetSocketAddress>();
+        addrs.add(addr1);
+        addrs.add(addr2);
+        addrs.add(addr3);
+        addrs.add(addr4);
+        repp.onClusterChanged(addrs, new HashSet<InetSocketAddress>());
+        addrs.remove(addr1);
+        repp.onClusterChanged(addrs, new HashSet<InetSocketAddress>());
+    }
+
     private int getNumCoveredWriteQuorums(ArrayList<InetSocketAddress> ensemble, int writeQuorumSize)
             throws Exception {
         int ensembleSize = ensemble.size();

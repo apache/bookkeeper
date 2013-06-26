@@ -60,6 +60,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-623: LedgerChecker should avoid segments of closed ledger with higher start entryId than closed entry. (vinay via sijie)
 
+        BOOKKEEPER-633: ConcurrentModificationException in RackawareEnsemblePlacementPolicy when a bookie is removed from available list (vinay via sijie)
+
       hedwig-client:
 
         BOOKKEEPER-598: Fails to compile - RESUBSCRIBE_EXCEPTION conflict (Matthew Farrellee via sijie)

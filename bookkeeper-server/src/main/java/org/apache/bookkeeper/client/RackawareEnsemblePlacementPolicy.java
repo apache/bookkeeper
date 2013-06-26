@@ -43,6 +43,7 @@ import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 /**
@@ -362,14 +363,14 @@ public class RackawareEnsemblePlacementPolicy implements EnsemblePlacementPolicy
             Set<InetSocketAddress> readOnlyBookies) {
         rwLock.writeLock().lock();
         try {
-            Set<InetSocketAddress> joinedBookies, leftBookies, deadBookies;
+            ImmutableSet<InetSocketAddress> joinedBookies, leftBookies, deadBookies;
             Set<InetSocketAddress> oldBookieSet = knownBookies.keySet();
             // left bookies : bookies in known bookies, but not in new writable bookie cluster.
-            leftBookies = Sets.difference(oldBookieSet, writableBookies);
+            leftBookies = Sets.difference(oldBookieSet, writableBookies).immutableCopy();
             // joined bookies : bookies in new writable bookie cluster, but not in known bookies
-            joinedBookies = Sets.difference(writableBookies, oldBookieSet);
+            joinedBookies = Sets.difference(writableBookies, oldBookieSet).immutableCopy();
             // dead bookies.
-            deadBookies = Sets.difference(leftBookies, readOnlyBookies);
+            deadBookies = Sets.difference(leftBookies, readOnlyBookies).immutableCopy();
             if (LOG.isDebugEnabled()) {
                 LOG.debug(
                         "Cluster changed : left bookies are {}, joined bookies are {}, while dead bookies are {}.",
