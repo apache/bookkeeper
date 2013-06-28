@@ -34,6 +34,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-313: Bookkeeper shutdown call from Bookie thread is not shutting down server (vinay via ivank)
 
+      BOOKKEEPER-620: PerChannelBookieClient race during channel disconnect (ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)
