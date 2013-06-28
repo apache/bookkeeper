@@ -20,11 +20,14 @@ package org.apache.bookkeeper.proto;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayDeque;
+import java.util.Set;
+import java.util.Collections;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.google.common.collect.ImmutableSet;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
@@ -78,7 +81,6 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     AtomicLong totalBytesOutstanding;
     ClientSocketChannelFactory channelFactory;
     OrderedSafeExecutor executor;
-    private Timer readTimeoutTimer;
 
     ConcurrentHashMap<CompletionKey, AddCompletion> addCompletions = new ConcurrentHashMap<CompletionKey, AddCompletion>();
     ConcurrentHashMap<CompletionKey, ReadCompletion> readCompletions = new ConcurrentHashMap<CompletionKey, ReadCompletion>();
@@ -90,11 +92,11 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     Queue<GenericCallback<Void>> pendingOps = new ArrayDeque<GenericCallback<Void>>();
     volatile Channel channel = null;
 
-    private enum ConnectionState {
+    enum ConnectionState {
         DISCONNECTED, CONNECTING, CONNECTED, CLOSED
             };
 
-    private volatile ConnectionState state;
+    volatile ConnectionState state;
     private final ClientConfiguration conf;
 
     public PerChannelBookieClient(OrderedSafeExecutor executor, ClientSocketChannelFactory channelFactory,
@@ -110,7 +112,6 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         this.totalBytesOutstanding = totalBytesOutstanding;
         this.channelFactory = channelFactory;
         this.state = ConnectionState.DISCONNECTED;
-        this.readTimeoutTimer = null;
     }
 
     private void connect() {
@@ -124,29 +125,36 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         bootstrap.setOption("keepAlive", true);
 
         ChannelFuture future = bootstrap.connect(addr);
-
         future.addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
+                LOG.debug("Channel connected ({}) {}", future.isSuccess(), future.getChannel());
                 int rc;
                 Queue<GenericCallback<Void>> oldPendingOps;
 
                 synchronized (PerChannelBookieClient.this) {
-
                     if (future.isSuccess() && state == ConnectionState.CONNECTING) {
-                        LOG.info("Successfully connected to bookie: " + addr);
+                        LOG.info("Successfully connected to bookie: {}", future.getChannel());
                         rc = BKException.Code.OK;
                         channel = future.getChannel();
                         state = ConnectionState.CONNECTED;
                     } else if (future.isSuccess() && (state == ConnectionState.CLOSED
                                                       || state == ConnectionState.DISCONNECTED)) {
-                        LOG.error("Closed before connection completed, clean up: " + addr);
-                        future.getChannel().close();
+                        LOG.warn("Closed before connection completed, clean up: {}, current state {}",
+                                 future.getChannel(), state);
+                        closeChannel(future.getChannel());
                         rc = BKException.Code.BookieHandleNotAvailableException;
                         channel = null;
+                    } else if (future.isSuccess() && state == ConnectionState.CONNECTED) {
+                        LOG.debug("Already connected with another channel({}), so close the new channel({})",
+                                  channel, future.getChannel());
+                        closeChannel(future.getChannel());
+                        return; // pendingOps should have been completed when other channel connected
                     } else {
-                        LOG.error("Could not connect to bookie: " + addr);
+                        LOG.error("Could not connect to bookie: {}, current state {}",
+                                  future.getChannel(), state);
                         rc = BKException.Code.BookieHandleNotAvailableException;
+                        closeChannel(future.getChannel());
                         channel = null;
                         if (state != ConnectionState.CLOSED) {
                             state = ConnectionState.DISCONNECTED;
@@ -359,20 +367,28 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     }
 
     private void closeInternal(boolean permanent) {
+        Channel toClose = null;
         synchronized (this) {
             if (permanent) {
                 state = ConnectionState.CLOSED;
             } else if (state != ConnectionState.CLOSED) {
                 state = ConnectionState.DISCONNECTED;
             }
+            toClose = channel;
+            channel = null;
         }
-        if (channel != null) {
-            channel.close().awaitUninterruptibly();
+        if (toClose != null) {
+            closeChannel(toClose).awaitUninterruptibly();
         }
-        if (readTimeoutTimer != null) {
-            readTimeoutTimer.stop();
-            readTimeoutTimer = null;
+    }
+
+    private ChannelFuture closeChannel(Channel c) {
+        LOG.debug("Closing channel {}", c);
+        ReadTimeoutHandler timeout = c.getPipeline().get(ReadTimeoutHandler.class);
+        if (timeout != null) {
+            timeout.releaseExternalResources();
         }
+        return c.close();
     }
 
     void errorOutReadKey(final CompletionKey key) {
@@ -453,11 +469,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = Channels.pipeline();
 
-        if (readTimeoutTimer == null) {
-            readTimeoutTimer = new HashedWheelTimer();
-        }
-
-        pipeline.addLast("readTimeout", new ReadTimeoutHandler(readTimeoutTimer, 
+        pipeline.addLast("readTimeout", new ReadTimeoutHandler(new HashedWheelTimer(),
                                                                conf.getReadTimeout()));
         pipeline.addLast("lengthbasedframedecoder", new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 0, 4, 0, 4));
         pipeline.addLast("mainhandler", this);
@@ -469,14 +481,18 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
      */
     @Override
     public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-        LOG.info("Disconnected from bookie: " + addr);
-        errorOutOutstandingEntries();
-        Channel c = this.channel;
+        Channel c = ctx.getChannel();
+        LOG.info("Disconnected from bookie channel {}", c);
         if (c != null) {
-            c.close();
+            closeChannel(c);
         }
+        if (this.channel == c) {
+            errorOutOutstandingEntries();
+        }
+
         synchronized (this) {
-            if (state != ConnectionState.CLOSED) {
+            if (this.channel == c
+                && state != ConnectionState.CLOSED) {
                 state = ConnectionState.DISCONNECTED;
             }
         }

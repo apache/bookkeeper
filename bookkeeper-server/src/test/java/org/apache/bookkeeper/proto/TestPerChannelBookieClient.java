@@ -24,12 +24,16 @@ package org.apache.bookkeeper.proto;
 import org.junit.*;
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.Executors;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.PerChannelBookieClient.ConnectionState;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
-
+import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
@@ -108,6 +112,98 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
             }
             client.close();
         }
+        channelFactory.releaseExternalResources();
+        executor.shutdown();
+    }
+
+    /**
+     * Test that all resources are freed if connections and disconnections
+     * are interleaved randomly.
+     *
+     * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-620}
+     */
+    @Test(timeout=60000)
+    public void testDisconnectRace() throws Exception {
+        final GenericCallback<Void> nullop = new GenericCallback<Void>() {
+            @Override
+            public void operationComplete(int rc, Void result) {
+                // do nothing, we don't care about doing anything with the connection,
+                // we just want to trigger it connecting.
+            }
+        };
+        final int ITERATIONS = 100000;
+        ClientSocketChannelFactory channelFactory
+            = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
+                                                Executors.newCachedThreadPool());
+        OrderedSafeExecutor executor = new OrderedSafeExecutor(1);
+        InetSocketAddress addr = getBookie(0);
+
+        AtomicLong bytesOutstanding = new AtomicLong(0);
+        final PerChannelBookieClient client = new PerChannelBookieClient(executor,
+                channelFactory, addr, bytesOutstanding);
+        final AtomicBoolean shouldFail = new AtomicBoolean(false);
+        final AtomicBoolean running = new AtomicBoolean(true);
+        final CountDownLatch disconnectRunning = new CountDownLatch(1);
+        Thread connectThread = new Thread() {
+                public void run() {
+                    try {
+                        if (!disconnectRunning.await(10, TimeUnit.SECONDS)) {
+                            LOG.error("Disconnect thread never started");
+                            shouldFail.set(true);
+                        }
+                    } catch (InterruptedException ie) {
+                        LOG.error("Connect thread interrupted", ie);
+                        Thread.currentThread().interrupt();
+                        running.set(false);
+                    }
+                    for (int i = 0; i < ITERATIONS && running.get(); i++) {
+                        client.connectIfNeededAndDoOp(nullop);
+                    }
+                    running.set(false);
+                }
+            };
+        Thread disconnectThread = new Thread() {
+                public void run() {
+                    disconnectRunning.countDown();
+                    while (running.get()) {
+                        client.disconnect();
+                    }
+                }
+            };
+        Thread checkThread = new Thread() {
+                public void run() {
+                    ConnectionState state;
+                    Channel channel;
+                    while (running.get()) {
+                        synchronized (client) {
+                            state = client.state;
+                            channel = client.channel;
+
+                            if ((state == ConnectionState.CONNECTED
+                                 && (channel == null
+                                     || !channel.isConnected()))
+                                || (state != ConnectionState.CONNECTED
+                                    && channel != null
+                                    && channel.isConnected())) {
+                                LOG.error("State({}) and channel({}) inconsistent " + channel,
+                                          state, channel == null ? null : channel.isConnected());
+                                shouldFail.set(true);
+                                running.set(false);
+                            }
+                        }
+                    }
+                }
+            };
+        connectThread.start();
+        disconnectThread.start();
+        checkThread.start();
+
+        connectThread.join();
+        disconnectThread.join();
+        checkThread.join();
+        assertFalse("Failure in threads, check logs", shouldFail.get());
+
+        client.close();
         channelFactory.releaseExternalResources();
         executor.shutdown();
     }
