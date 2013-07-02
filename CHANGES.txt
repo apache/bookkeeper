@@ -36,6 +36,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-620: PerChannelBookieClient race during channel disconnect (ivank)
 
+      BOOKKEEPER-637: NoSuchEntry exception when reading an entry from a bookie should not print ERROR level message (mmerli via ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)

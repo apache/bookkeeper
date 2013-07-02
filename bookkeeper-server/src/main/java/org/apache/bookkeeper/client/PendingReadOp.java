@@ -190,10 +190,12 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             }
             if (BKException.Code.NoSuchEntryException == rc) {
                 ++numMissedEntryReads;
+                LOG.info("No such entry found on bookie. entry: {} ledgerId: {} bookie: {}", new Object[] { entryId,
+                        lh.ledgerId, host });
+            } else {
+                LOG.error(errMsg + " while reading entry: " + entryId + " ledgerId: " + lh.ledgerId + " from bookie: "
+                        + host);
             }
-
-            LOG.error(errMsg + " while reading entry: " + entryId + " ledgerId: " + lh.ledgerId + " from bookie: "
-                      + host);
 
             int replica = getReplicaIndex(host);
             if (replica == NOT_FOUND) {
