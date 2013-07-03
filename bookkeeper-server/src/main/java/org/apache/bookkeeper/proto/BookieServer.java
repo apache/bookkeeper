@@ -199,9 +199,9 @@ public class BookieServer {
     /**
      * A thread to watch whether bookie & nioserver is still alive
      */
-    class DeathWatcher extends Thread {
+    private class DeathWatcher extends Thread {
 
-        final int watchInterval;
+        private final int watchInterval;
 
         DeathWatcher(ServerConfiguration conf) {
             super("BookieDeathWatcher-" + conf.getBookiePort());
@@ -218,12 +218,14 @@ public class BookieServer {
                 }
                 if (!isBookieRunning()) {
                     shutdown();
+                    break;
                 }
                 if (isAutoRecoveryDaemonEnabled && !isAutoRecoveryRunning()) {
                     LOG.error("Autorecovery daemon has stopped. Please check the logs");
                     isAutoRecoveryDaemonEnabled = false; // to avoid spamming the logs
                 }
             }
+            LOG.info("BookieDeathWatcher exited loop!");
         }
     }
 
