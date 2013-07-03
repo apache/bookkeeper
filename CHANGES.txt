@@ -36,6 +36,8 @@ Release 4.2.2 - Unreleased
 
         BOOKKEEPER-637: NoSuchEntry exception when reading an entry from a bookie should not print ERROR level message (mmerli via ivank)
 
+        BOOKKEEPER-257: Ability to list all ledgers (fpj via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)
