@@ -67,6 +67,12 @@ class JournalChannel implements Closeable {
 
         LOG.info("Opening journal {}", fn);
         if (!fn.exists()) { // new file, write version
+            if (!fn.createNewFile()) {
+                LOG.error("Journal file {}, that shouldn't exist, already exists. "
+                          + " is there another bookie process running?", fn);
+                throw new IOException("File " + fn
+                        + " suddenly appeared, is another bookie process running?");
+            }
             fc = new RandomAccessFile(fn, "rw").getChannel();
             formatVersion = CURRENT_JOURNAL_FORMAT_VERSION;
 

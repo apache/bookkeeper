@@ -40,6 +40,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-641: DeathWatcher thread is unnecessarily running even after bookie shutdown (rakeshr via ivank)
 
+      BOOKKEEPER-636: Latest txn logs might be deleted in a race condition which is not recoverable if BK goes down before next txn log created. (vinay via ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)

@@ -479,7 +479,11 @@ class Journal extends Thread implements CheckpointSource {
         ByteBuffer lenBuff = ByteBuffer.allocate(4);
         JournalChannel logFile = null;
         try {
-            long logId = 0;
+            List<Long> journalIds = listJournalIds(journalDirectory, null);
+            // Should not use MathUtils.now(), which use System.nanoTime() and
+            // could only be used to measure elapsed time.
+            // http://docs.oracle.com/javase/1.5.0/docs/api/java/lang/System.html#nanoTime%28%29
+            long logId = journalIds.isEmpty() ? System.currentTimeMillis() : journalIds.get(journalIds.size() - 1);
             BufferedChannel bc = null;
             long lastFlushPosition = 0;
 
@@ -487,7 +491,7 @@ class Journal extends Thread implements CheckpointSource {
             while (true) {
                 // new journal file to write
                 if (null == logFile) {
-                    logId = MathUtils.now();
+                    logId = logId + 1;
                     logFile = new JournalChannel(journalDirectory, logId);
                     bc = logFile.getBufferedChannel();
 
