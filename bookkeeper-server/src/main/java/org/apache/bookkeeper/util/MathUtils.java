@@ -32,13 +32,16 @@ public class MathUtils {
         return mod;
 
     }
-    
+
     /**
      * Current time from some arbitrary time base in the past, counting in
      * milliseconds, and not affected by settimeofday or similar system clock
      * changes. This is appropriate to use when computing how much longer to
      * wait for an interval to expire.
-     * 
+     *
+     * NOTE: only use it for measuring.
+     * http://docs.oracle.com/javase/1.5.0/docs/api/java/lang/System.html#nanoTime%28%29
+     *
      * @return current time in milliseconds.
      */
     public static long now() {
