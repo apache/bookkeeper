@@ -70,6 +70,10 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-633: ConcurrentModificationException in RackawareEnsemblePlacementPolicy when a bookie is removed from available list (vinay via sijie)
 
+      hedwig-server:
+
+        BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
+
       hedwig-client:
 
         BOOKKEEPER-598: Fails to compile - RESUBSCRIBE_EXCEPTION conflict (Matthew Farrellee via sijie)
