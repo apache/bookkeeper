@@ -23,6 +23,8 @@ import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.net.DNS;
+
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
@@ -114,7 +116,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
         LockDataFormat.Builder lockDataBuilder = LockDataFormat.newBuilder();
         try {
-            lockDataBuilder.setBookieId(InetAddress.getLocalHost().getHostAddress().toString());
+            lockDataBuilder.setBookieId(DNS.getDefaultHost("default"));
         } catch (UnknownHostException uhe) {
             // if we cant get the address, ignore. it's optional
             // in the data structure in any case

@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 
 import org.slf4j.Logger;
@@ -85,7 +86,13 @@ public class NIOServerFactory extends Thread {
         this.processor = processor;
         this.conf = conf;
         this.ss = ServerSocketChannel.open();
-        ss.socket().bind(new InetSocketAddress(conf.getBookiePort()));
+        if (conf.getListeningInterface() == null) {
+            // listen on all interfaces
+            ss.socket().bind(new InetSocketAddress(conf.getBookiePort()));
+        } else {
+            ss.socket().bind(Bookie.getBookieAddress(conf));
+        }
+        
         ss.configureBlocking(false);
         ss.register(selector, SelectionKey.OP_ACCEPT);
     }

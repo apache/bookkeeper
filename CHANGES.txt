@@ -54,6 +54,9 @@ Release 4.2.2 - Unreleased
 
       BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj via ivank)
 
+	
+    IMPROVEMENT:
+      BOOKKEEPER-618: Better resolution of bookie address (ivank via fpj)
 
 Release 4.2.1 - 2013-02-19
 

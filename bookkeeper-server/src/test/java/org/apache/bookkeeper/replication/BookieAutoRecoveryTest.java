@@ -358,7 +358,7 @@ public class BookieAutoRecoveryTest extends
 
     private void verifyLedgerEnsembleMetadataAfterReplication(
             BookieServer newBookieServer, LedgerHandle lh,
-            int ledgerReplicaIndex) throws BKException, InterruptedException {
+            int ledgerReplicaIndex) throws Exception {
         LedgerHandle openLedger = bkc
                 .openLedger(lh.getId(), digestType, PASSWD);
 

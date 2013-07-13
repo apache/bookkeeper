@@ -56,6 +56,7 @@ import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.util.StringUtils;
+import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -479,8 +480,20 @@ public class Bookie extends Thread {
      */
     public static InetSocketAddress getBookieAddress(ServerConfiguration conf)
             throws UnknownHostException {
-        return new InetSocketAddress(InetAddress.getLocalHost()
-                .getHostAddress(), conf.getBookiePort());
+        String iface = conf.getListeningInterface();
+        if (iface == null) {
+            iface = "default";
+        }
+        InetSocketAddress addr = new InetSocketAddress(
+                DNS.getDefaultHost(iface),
+                conf.getBookiePort());
+        if (addr.getAddress().isLoopbackAddress()
+            && !conf.getAllowLoopback()) {
+            throw new UnknownHostException("Trying to listen on loopback address, "
+                    + addr + " but this is forbidden by default "
+                    + "(see ServerConfiguration#getAllowLoopback())");
+        }
+        return addr;
     }
 
     private String getInstanceId(ZooKeeper zk) throws KeeperException,
@@ -545,8 +558,7 @@ public class Bookie extends Thread {
     }
 
     private String getMyId() throws UnknownHostException {
-        return InetAddress.getLocalHost().getHostAddress() + ":"
-                + conf.getBookiePort();
+        return StringUtils.addrToString(Bookie.getBookieAddress(conf));
     }
 
     void readJournal() throws IOException, BookieException {

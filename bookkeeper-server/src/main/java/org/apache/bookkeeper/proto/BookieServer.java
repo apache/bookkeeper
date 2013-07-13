@@ -113,6 +113,7 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         registerJMX();
     }
 
+    @VisibleForTesting
     public InetSocketAddress getLocalAddress() {
         try {
             return Bookie.getBookieAddress(conf);
