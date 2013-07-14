@@ -78,6 +78,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-598: Fails to compile - RESUBSCRIBE_EXCEPTION conflict (Matthew Farrellee via sijie)
 
+	BOOKKEEPER-600: shouldClaim flag isn't cleared for hedwig multiplex java client (sijie via fpj)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-608: Make SyncThread a reusable component (ivank)
