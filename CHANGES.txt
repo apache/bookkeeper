@@ -4,6 +4,8 @@ Release 4.2.2 - Unreleased
 
     BUGFIXES:
 
+      BOOKKEEPER-635: jenkins build should highlight which lines of the patch cause raw analysis errors (ivank via sijie)
+
       bookkeeper-server:
 
         BOOKKEEPER-559: Fix occasional failure in AuditorBookieTest (ivank)
