@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
  * This class serves two purposes.
  */
 public class LedgerCacheImpl implements LedgerCache {
-    private final static Logger LOG = LoggerFactory.getLogger(LedgerDescriptor.class);
+    private final static Logger LOG = LoggerFactory.getLogger(LedgerCacheImpl.class);
     private static final String IDX = ".idx";
     static final String RLOC = ".rloc";
 

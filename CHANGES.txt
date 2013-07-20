@@ -46,6 +46,8 @@ Release 4.2.2 - Unreleased
 
         BOOKKEEPER-646: BookieShell readjournal command is throwing BufferUnderflowException (Rakesh via sijie)
 
+        BOOKKEEPER-652: Logger class name is wrong in LedgerCacheImpl.java (Rakesh via sijie)
+
       hedwig-server:
 
         BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)
