@@ -948,6 +948,12 @@ public class BookieShell implements Tool {
             System.out.println();
             return;
         }
+        if (entryId == Bookie.METAENTRY_ID_FENCE_KEY) {
+            System.out.println("Type:           META");
+            System.out.println("Fenced");
+            System.out.println();
+            return;
+        }
         // process a data entry
         long lastAddConfirmed = recBuff.getLong();
         System.out.println("Type:           DATA");

@@ -74,6 +74,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-563: Avoid Journal polluting page cache (Robin Dhamankar via sijie)
 
+        BOOKKEEPER-646: BookieShell readjournal command is throwing BufferUnderflowException (Rakesh via sijie)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
