@@ -76,6 +76,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-646: BookieShell readjournal command is throwing BufferUnderflowException (Rakesh via sijie)
 
+        BOOKKEEPER-652: Logger class name is wrong in LedgerCacheImpl.java (Rakesh via sijie)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
