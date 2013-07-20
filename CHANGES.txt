@@ -44,6 +44,8 @@ Release 4.2.2 - Unreleased
 
         BOOKKEEPER-621: NPE in FileInfo.moveToNewLocation (ivank via sijie)
 
+        BOOKKEEPER-646: BookieShell readjournal command is throwing BufferUnderflowException (Rakesh via sijie)
+
       hedwig-server:
 
         BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)
