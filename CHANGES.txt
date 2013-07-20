@@ -118,6 +118,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-618: Better resolution of bookie address (ivank via fpj)
 
+      BOOKKEEPER-610: Make SyncThread use an executor (ivank via sijie)
+
     NEW FEATURE:
 
       BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj)
