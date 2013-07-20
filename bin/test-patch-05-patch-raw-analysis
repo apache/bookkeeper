@@ -11,6 +11,7 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+source $(dirname "$0")/raw-check-patch
 
 if [ "${TESTPATCHDEBUG}" == "true" ] ; then
     set -x
@@ -74,37 +75,48 @@ parseArgs() {
 }
 ###############################################################################
 checkNoAuthors() {
-    authorTags=`grep "^+ " ${PATCHFILE} | grep -c -i -e ".*\*.* @author"`
+    TMPFILE=$TEMPDIR/$TASKNAME-authors.txt
+    printAuthors $PATCHFILE > $TMPFILE
+    authorTags=$(wc -l $TMPFILE | awk '{print $1}')
     if [[ ${authorTags} != 0 ]] ; then
         REPORT+=("{color:red}-1{color} the patch seems to contain ${authorTags} line(s) with @author tags")
+        REPORT+=("$(cat $TMPFILE)")
     else
         REPORT+=("{color:green}+1{color} the patch does not introduce any @author tags")
     fi
 }
 ###############################################################################
 checkNoTabs() {
-    tabs=`grep "^+ " ${PATCHFILE} | grep -c -P "\t"`
+    TMPFILE=$TEMPDIR/$TASKNAME-tabs.txt
+    printTabs $PATCHFILE > $TMPFILE
+    tabs=$(wc -l $TMPFILE | awk '{print $1}')
     if [[ ${tabs} != 0 ]] ; then
         REPORT+=("{color:red}-1{color} the patch contains ${tabs} line(s) with tabs")
+        REPORT+=("$(cat $TMPFILE)")
     else
         REPORT+=("{color:green}+1{color} the patch does not introduce any tabs")
     fi
 }
 ###############################################################################
 checkNoTrailingSpaces() {
-    trailingSpaces=`grep "^+ " ${PATCHFILE} | grep -c -e " $"`
+    TMPFILE=$TEMPDIR/$TASKNAME-trailingspaces.txt
+    printTrailingSpaces $PATCHFILE > $TMPFILE
+    trailingSpaces=$(wc -l $TMPFILE | awk '{print $1}')
     if [[ ${trailingSpaces} != 0 ]] ; then
         REPORT+=("{color:red}-1{color} the patch contains ${trailingSpaces} line(s) with trailing spaces")
+        REPORT+=("$(cat $TMPFILE)")
     else
         REPORT+=("{color:green}+1{color} the patch does not introduce any trailing spaces")
     fi
 }
 ###############################################################################
 checkLinesLength() {
-  # We check for > 120 to account for the "+" sign
-    longLines=`grep "^+ " ${PATCHFILE} | awk 'BEGIN{count=0}{if ( length > 121 ) { count=count+1} }END{ print count}'`
+    TMPFILE=$TEMPDIR/$TASKNAME-trailingspaces.txt
+    printLongLines $PATCHFILE > $TMPFILE
+    longLines=$(wc -l $TMPFILE | awk '{print $1}')
     if [[ ${longLines} != 0 ]] ; then
         REPORT+=("{color:red}-1{color} the patch contains ${longLines} line(s) longer than 120 characters")
+        REPORT+=("$(cat $TMPFILE)")
     else
         REPORT+=("{color:green}+1{color} the patch does not introduce any line longer than 120")
     fi
