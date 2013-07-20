@@ -111,8 +111,21 @@ public class BufferedChannel
             writeBufferStartPosition = bc.position();
         }
         if (sync) {
-            bc.force(false);
+            forceWrite(false);
         }
+    }
+
+    public long forceWrite(boolean forceMetadata) throws IOException {
+        // This is the point up to which we had flushed to the file system page cache
+        // before issuing this force write hence is guaranteed to be made durable by
+        // the force write, any flush that happens after this may or may
+        // not be flushed
+        long positionForceWrite;
+        synchronized (this) {
+            positionForceWrite = writeBufferStartPosition;
+        }
+        bc.force(forceMetadata);
+        return positionForceWrite;
     }
 
     /*public Channel getInternalChannel() {

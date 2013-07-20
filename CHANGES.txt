@@ -70,6 +70,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-633: ConcurrentModificationException in RackawareEnsemblePlacementPolicy when a bookie is removed from available list (vinay via sijie)
 
+        BOOKKEEPER-563: Avoid Journal polluting page cache (Robin Dhamankar via sijie)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

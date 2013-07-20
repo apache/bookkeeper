@@ -275,6 +275,8 @@ class Journal extends Thread implements CheckpointSource {
 
     final File journalDirectory;
     final ServerConfiguration conf;
+    // should we hint the filesystem to remove pages from cache after force write
+    private final boolean removePagesFromCache;
 
     private LastLogMark lastLogMark = new LastLogMark(0, 0);
 
@@ -292,6 +294,7 @@ class Journal extends Thread implements CheckpointSource {
         this.maxJournalSize = conf.getMaxJournalSize() * MB;
         this.maxBackupJournals = conf.getMaxBackupJournals();
 
+        this.removePagesFromCache = conf.getJournalRemovePagesFromCache();
         // read last log mark
         lastLogMark.readLog();
         LOG.debug("Last Log Mark : {}", lastLogMark.getCurMark());
@@ -492,7 +495,7 @@ class Journal extends Thread implements CheckpointSource {
                 // new journal file to write
                 if (null == logFile) {
                     logId = logId + 1;
-                    logFile = new JournalChannel(journalDirectory, logId);
+                    logFile = new JournalChannel(journalDirectory, logId, removePagesFromCache);
                     bc = logFile.getBufferedChannel();
 
                     lastFlushPosition = 0;
@@ -505,7 +508,11 @@ class Journal extends Thread implements CheckpointSource {
                         qe = queue.poll();
                         if (qe == null || bc.position() > lastFlushPosition + 512*1024) {
                             //logFile.force(false);
-                            bc.flush(true);
+                            bc.flush(false);
+                            // This separation of flush and force is useful when adaptive group
+                            // force write is used where the flush thread does not block while
+                            // the force is issued by a separate thread
+                            logFile.forceWrite(false);
                             lastFlushPosition = bc.position();
                             lastLogMark.setCurLogMark(logId, lastFlushPosition);
                             for (QueueEntry e : toFlush) {

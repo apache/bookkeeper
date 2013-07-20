@@ -20,6 +20,8 @@ package org.apache.bookkeeper.conf;
 import java.io.File;
 import java.util.List;
 
+import com.google.common.annotations.Beta;
+
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -46,6 +48,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     // Journal Parameters
     protected final static String MAX_JOURNAL_SIZE = "journalMaxSizeMB";
     protected final static String MAX_BACKUP_JOURNALS = "journalMaxBackups";
+    protected final static String JOURNAL_REMOVE_FROM_PAGE_CACHE = "journalRemoveFromPageCache";
     // Bookie Parameters
     protected final static String BOOKIE_PORT = "bookiePort";
     protected final static String LISTENING_INTERFACE = "listeningInterface";
@@ -752,5 +755,27 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public boolean isAutoRecoveryDaemonEnabled() {
         return getBoolean(AUTO_RECOVERY_DAEMON_ENABLED, false);
+    }
+
+    /**
+     * Should we remove pages from page cache after force write
+     *
+     * @return remove pages from cache
+     */
+    @Beta
+    public boolean getJournalRemovePagesFromCache() {
+        return getBoolean(JOURNAL_REMOVE_FROM_PAGE_CACHE, false);
+    }
+
+    /**
+     * Sets that whether should we remove pages from page cache after force write.
+     *
+     * @param enabled
+     *            - true if we need to remove pages from page cache. otherwise, false
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setJournalRemovePagesFromCache(boolean enabled) {
+        setProperty(JOURNAL_REMOVE_FROM_PAGE_CACHE, enabled);
+        return this;
     }
 }

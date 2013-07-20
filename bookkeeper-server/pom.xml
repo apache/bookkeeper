@@ -98,6 +98,11 @@
       <artifactId>commons-io</artifactId>
       <version>2.1</version>
     </dependency>
+    <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna</artifactId>
+      <version>3.2.7</version>
+    </dependency>
     <!--
         Annoying dependency we need to include because
         zookeeper uses log4j and so we transatively do, but

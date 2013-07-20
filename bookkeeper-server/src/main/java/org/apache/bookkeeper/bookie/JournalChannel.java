@@ -29,6 +29,7 @@ import java.io.RandomAccessFile;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.ByteBuffer;
+import org.apache.bookkeeper.util.NativeIO;
 
 import static com.google.common.base.Charsets.UTF_8;
 
@@ -42,6 +43,7 @@ import org.slf4j.LoggerFactory;
 class JournalChannel implements Closeable {
     static Logger LOG = LoggerFactory.getLogger(JournalChannel.class);
 
+    final RandomAccessFile randomAccessFile;
     final FileChannel fc;
     final BufferedChannel bc;
     final int formatVersion;
@@ -57,12 +59,24 @@ class JournalChannel implements Closeable {
 
     public final static long preAllocSize = 4*1024*1024;
     public final static ByteBuffer zeros = ByteBuffer.allocate(512);
+    private boolean fRemoveFromPageCache;
+    // The position of the file channel's last force write.
+    private long lastForceWritePosition = 0;
 
     JournalChannel(File journalDirectory, long logId) throws IOException {
-        this(journalDirectory, logId, START_OF_FILE);
+        this(journalDirectory, logId, START_OF_FILE, false);
     }
 
     JournalChannel(File journalDirectory, long logId, long position) throws IOException {
+        this(journalDirectory, logId, position, false);
+    }
+
+    JournalChannel(File journalDirectory, long logId, boolean fRemoveFromPageCache) throws IOException {
+        this(journalDirectory, logId, START_OF_FILE, fRemoveFromPageCache);
+    }
+
+    JournalChannel(File journalDirectory, long logId, long position, boolean fRemoveFromPageCache) throws IOException {
+        this.fRemoveFromPageCache = fRemoveFromPageCache;
         File fn = new File(journalDirectory, Long.toHexString(logId) + ".txn");
 
         LOG.info("Opening journal {}", fn);
@@ -73,7 +87,8 @@ class JournalChannel implements Closeable {
                 throw new IOException("File " + fn
                         + " suddenly appeared, is another bookie process running?");
             }
-            fc = new RandomAccessFile(fn, "rw").getChannel();
+            randomAccessFile = new RandomAccessFile(fn, "rw");
+            fc = randomAccessFile.getChannel();
             formatVersion = CURRENT_JOURNAL_FORMAT_VERSION;
 
             ByteBuffer bb = ByteBuffer.allocate(HEADER_SIZE);
@@ -81,14 +96,15 @@ class JournalChannel implements Closeable {
             bb.putInt(formatVersion);
             bb.flip();
             fc.write(bb);
-            fc.force(true);
 
             bc = new BufferedChannel(fc, 65536);
 
+            forceWrite(true);
             nextPrealloc = preAllocSize;
             fc.write(zeros, nextPrealloc);
         } else {  // open an existing file
-            fc = new RandomAccessFile(fn, "r").getChannel();
+            randomAccessFile = new RandomAccessFile(fn, "r");
+            fc = randomAccessFile.getChannel();
             bc = null; // readonly
 
             ByteBuffer bb = ByteBuffer.allocate(HEADER_SIZE);
@@ -133,6 +149,9 @@ class JournalChannel implements Closeable {
             } catch (IOException e) {
                 LOG.error("Bookie journal file can seek to position :", e);
             }
+
+            // Anything we read has been force written
+            lastForceWritePosition = fc.position();
         }
     }
 
@@ -162,5 +181,18 @@ class JournalChannel implements Closeable {
 
     public void close() throws IOException {
         fc.close();
+    }
+
+    public void forceWrite(boolean forceMetadata) throws IOException {
+        long newForceWritePosition = bc.forceWrite(forceMetadata);
+        if (newForceWritePosition > lastForceWritePosition) {
+            if (fRemoveFromPageCache) {
+                NativeIO.bestEffortRemoveFromPageCache(randomAccessFile.getFD(),
+                    lastForceWritePosition, (int)(newForceWritePosition - lastForceWritePosition));
+            }
+            synchronized (this) {
+                lastForceWritePosition = newForceWritePosition;
+            }
+        }
     }
 }
