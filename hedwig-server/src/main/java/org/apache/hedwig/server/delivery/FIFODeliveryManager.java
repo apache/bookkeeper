@@ -139,6 +139,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
         this.cfg = cfg;
     }
 
+    @Override
     public void start() {
         workerThread.start();
     }
@@ -205,7 +206,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
                                          MessageSeqId seqIdToStartFrom,
                                          DeliveryEndPoint endPoint, ServerMessageFilter filter,
                                          Callback<Void> callback, Object ctx) {
-        ActiveSubscriberState subscriber = 
+        ActiveSubscriberState subscriber =
             new ActiveSubscriberState(topic, subscriberId,
                                       preferences,
                                       seqIdToStartFrom.getLocalComponent() - 1,
@@ -262,7 +263,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
         if (null == subState) {
             return;
         }
-        subState.messageConsumed(consumedSeqId.getLocalComponent()); 
+        subState.messageConsumed(consumedSeqId.getLocalComponent());
     }
 
     /**
@@ -313,6 +314,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
     /**
      * Stop method which will enqueue a ShutdownDeliveryManagerRequest.
      */
+    @Override
     public void stop() {
         enqueueWithoutFailure(new ShutdownDeliveryManagerRequest());
     }
@@ -528,8 +530,8 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
                 enqueueWithoutFailure(new DeliveryManagerRequest() {
                     @Override
                     public void performRequest() {
-                        // enqueue 
-                        clearRetryDelayForSubscriber(ActiveSubscriberState.this);            
+                        // enqueue
+                        clearRetryDelayForSubscriber(ActiveSubscriberState.this);
                     }
                 });
             }
@@ -621,6 +623,19 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
             }
 
             if (!filter.testMessage(message)) {
+                // for filtered out messages, we don't deliver the message to client, so we would not
+                // receive its consume request which moves the <i>lastSeqIdConsumedUtil</i> pointer.
+                // we move the <i>lastSeqIdConsumedUtil</i> here for filtered out messages, which would
+                // avoid a subscriber being throttled due to the message gap introduced by filtering.
+                //
+                // it is OK to move <i>lastSeqIdConsumedUtil</i> here, since this pointer is subscriber's
+                // delivery state which to trottling deliver. changing <i>lastSeqIdConsumedUtil</i> would
+                // not affect the subscriber's consume pointer in zookeeper which is managed in subscription
+                // manager.
+                //
+                // And marking message consumed before calling sending finished, would avoid the subscriber
+                // being throttled first and released from throttled state laster.
+                messageConsumed(message.getMsgId().getLocalComponent());
                 sendingFinished();
                 return;
             }
@@ -641,6 +656,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
 
         }
 
+        @Override
         public void scanFailed(Object ctx, Exception exception) {
             if (!checkConnected()) {
                 return;
@@ -650,6 +666,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
             retryErroredSubscriberAfterDelay(this);
         }
 
+        @Override
         public void scanFinished(Object ctx, ReasonForFinish reason) {
             checkConnected();
         }
@@ -658,6 +675,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
          * ===============================================================
          * {@link DeliveryCallback} methods
          */
+        @Override
         public void sendingFinished() {
             if (!isConnected()) {
                 return;
@@ -687,6 +705,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
         }
 
 
+        @Override
         public void permanentErrorOnSend() {
             // the underlying channel is broken, the channel will
             // be closed in UmbrellaHandler when exception happened.
@@ -695,6 +714,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
                                   NOP_CALLBACK, null);
         }
 
+        @Override
         public void transientErrorOnSend() {
             retryErroredSubscriberAfterDelay(this);
         }
@@ -703,6 +723,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
          * ===============================================================
          * {@link DeliveryManagerRequest} methods
          */
+        @Override
         public void performRequest() {
             // Put this subscriber in the channel to subscriber mapping
             ActiveSubscriberState prevSubscriber =
@@ -847,6 +868,7 @@ public class FIFODeliveryManager implements Runnable, DeliveryManager, SubChanne
         // This is a simple type of Request we will enqueue when the
         // PubSubServer is shut down and we want to stop the DeliveryManager
         // thread.
+        @Override
         public void performRequest() {
             keepRunning = false;
         }
