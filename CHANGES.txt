@@ -82,6 +82,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
 
+        BOOKKEEPER-607: Filtered Messages Require ACK from Client Causes User Being Throttled Incorrectly Forever (sijie via ivank)
+
       hedwig-client:
 
         BOOKKEEPER-598: Fails to compile - RESUBSCRIBE_EXCEPTION conflict (Matthew Farrellee via sijie)

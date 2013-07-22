@@ -17,9 +17,10 @@
  */
 package org.apache.hedwig.server.delivery;
 
+import static org.apache.hedwig.util.VarArgs.va;
+
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.SortedMap;
@@ -249,6 +250,7 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
             // This is a simple type of Request we will enqueue when the
             // PubSubServer is shut down and we want to stop the DeliveryManager
             // thread.
+            @Override
             public void performRequest() {
                 keepRunning = false;
             }
@@ -280,6 +282,7 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
         }
     }
 
+    @Override
     public void start() {
         for (int i=0; i<numDeliveryWorkers; i++) {
             deliveryWorkers[i].start();
@@ -309,6 +312,7 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
     /**
      * Stop the FIFO delivery manager.
      */
+    @Override
     public void stop() {
         for (int i=0; i<numDeliveryWorkers; i++) {
             deliveryWorkers[i].stop();
@@ -353,7 +357,7 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
                                          MessageSeqId seqIdToStartFrom,
                                          DeliveryEndPoint endPoint, ServerMessageFilter filter,
                                          Callback<Void> callback, Object ctx) {
-        ActiveSubscriberState subscriber = 
+        ActiveSubscriberState subscriber =
             new ActiveSubscriberState(topic, subscriberId,
                                       preferences,
                                       seqIdToStartFrom.getLocalComponent() - 1,
@@ -392,7 +396,7 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
         if (null == subState) {
             return;
         }
-        subState.messageConsumed(consumedSeqId.getLocalComponent()); 
+        subState.messageConsumed(consumedSeqId.getLocalComponent());
     }
 
     /**
@@ -602,8 +606,8 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
                 enqueueWithoutFailure(topic, new DeliveryManagerRequest() {
                     @Override
                     public void performRequest() {
-                        // enqueue 
-                        clearRetryDelayForSubscriber(ActiveSubscriberState.this);            
+                        // enqueue
+                        clearRetryDelayForSubscriber(ActiveSubscriberState.this);
                     }
                 });
             }
@@ -701,6 +705,19 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
             tm.incrementTopicAccessTimes(topic);
 
             if (!filter.testMessage(message)) {
+                // for filtered out messages, we don't deliver the message to client, so we would not
+                // receive its consume request which moves the <i>lastSeqIdConsumedUtil</i> pointer.
+                // we move the <i>lastSeqIdConsumedUtil</i> here for filtered out messages, which would
+                // avoid a subscriber being throttled due to the message gap introduced by filtering.
+                //
+                // it is OK to move <i>lastSeqIdConsumedUtil</i> here, since this pointer is subscriber's
+                // delivery state which to trottling deliver. changing <i>lastSeqIdConsumedUtil</i> would
+                // not affect the subscriber's consume pointer in zookeeper which is managed in subscription
+                // manager.
+                //
+                // And marking message consumed before calling sending finished, would avoid the subscriber
+                // being throttled first and released from throttled state laster.
+                messageConsumed(message.getMsgId().getLocalComponent());
                 sendingFinished();
                 return;
             }
@@ -721,6 +738,7 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
 
         }
 
+        @Override
         public void scanFailed(Object ctx, Exception exception) {
             if (!checkConnected()) {
                 return;
@@ -730,6 +748,7 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
             retryErroredSubscriberAfterDelay(this);
         }
 
+        @Override
         public void scanFinished(Object ctx, ReasonForFinish reason) {
             checkConnected();
         }
@@ -738,6 +757,7 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
          * ===============================================================
          * {@link DeliveryCallback} methods
          */
+        @Override
         public void sendingFinished() {
             if (!isConnected()) {
                 return;
@@ -767,6 +787,7 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
         }
 
 
+        @Override
         public void permanentErrorOnSend() {
             // the underlying channel is broken, the channel will
             // be closed in UmbrellaHandler when exception happened.
@@ -775,6 +796,7 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
                                   NOP_CALLBACK, null);
         }
 
+        @Override
         public void transientErrorOnSend() {
             retryErroredSubscriberAfterDelay(this);
         }
@@ -783,6 +805,7 @@ public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnec
          * ===============================================================
          * {@link DeliveryManagerRequest} methods
          */
+        @Override
         public void performRequest() {
             // Put this subscriber in the channel to subscriber mapping
             ActiveSubscriberState prevSubscriber =
