@@ -50,6 +50,8 @@ Release 4.2.2 - Unreleased
 
         BOOKKEEPER-625: On OutOfMemoryError in NIOServerFactory thread bookie should shutdown (vinay via ivank)
 
+        BOOKKEEPER-642: Bookie returns incorrect exitcode, ExitCode.ZK_REG_FAIL is getting overridden (Rakesh via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)

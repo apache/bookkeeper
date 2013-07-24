@@ -100,6 +100,11 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         nioServerFactory = new NIOServerFactory(conf, this);
 
         this.bookie.start();
+        // fail fast, when bookie startup is not successful
+        if (!this.bookie.isRunning()) {
+            exitCode = bookie.getExitCode();
+            return;
+        }
         if (isAutoRecoveryDaemonEnabled && this.autoRecoveryMain != null) {
             this.autoRecoveryMain.start();
         }
