@@ -108,7 +108,7 @@ public class NIOServerFactory extends Thread {
     }
 
     public boolean isRunning() {
-        return !ss.socket().isClosed();
+        return !ss.socket().isClosed() && isAlive();
     }
 
     /**
@@ -164,6 +164,9 @@ public class NIOServerFactory extends Thread {
                 selected.clear();
             } catch (Exception e) {
                 LOG.warn("Exception in server socket loop: " + ss.socket().getInetAddress(), e);
+            } catch (Throwable e) {
+                LOG.error("Error in server socket loop: " + ss.socket().getInetAddress(), e);
+                break;
             }
         }
         LOG.info("NIOServerCnxn factory exitedloop.");
