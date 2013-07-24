@@ -644,7 +644,7 @@ public class TestPubSubClient extends PubSubServerStandAloneTestBase {
         assertEquals(SubscriptionEvent.TOPIC_MOVED, eventQueue.take());
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testCloseSubscribeDuringResubscribe() throws Exception {
         client.close();
 

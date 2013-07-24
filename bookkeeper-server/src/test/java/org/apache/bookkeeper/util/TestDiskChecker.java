@@ -57,7 +57,7 @@ public class TestDiskChecker {
      * Check disk full on non exist file. in this case it should check for
      * parent file
      */
-    @Test(expected = DiskOutOfSpaceException.class)
+    @Test(timeout = 30000, expected = DiskOutOfSpaceException.class)
     public void testCheckDiskFullOnNonExistFile() throws IOException {
         File file = File.createTempFile("DiskCheck", "test");
         long usableSpace = file.getUsableSpace();
@@ -71,7 +71,7 @@ public class TestDiskChecker {
     /**
      * Check disk error for file
      */
-    @Test(expected = DiskErrorException.class)
+    @Test(timeout = 30000, expected = DiskErrorException.class)
     public void testCheckDiskErrorForFile() throws Exception {
         File parent = File.createTempFile("DiskCheck", "test");
         parent.delete();

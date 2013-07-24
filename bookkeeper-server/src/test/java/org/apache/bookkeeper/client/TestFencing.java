@@ -377,7 +377,7 @@ public class TestFencing extends BaseTestCase {
         writelh.addEntry(tmp.getBytes());
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testFencingAndRestartBookies() throws Exception {
         LedgerHandle writelh = null;
         writelh = bkc.createLedger(digestType, "password".getBytes());

@@ -44,6 +44,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-635: jenkins build should highlight which lines of the patch cause raw analysis errors (ivank via sijie)
 
+      BOOKKEEPER-653: Timeout option is missing in few testcases (Rakesh via ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)

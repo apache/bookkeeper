@@ -62,7 +62,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         super.tearDown();
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testReplaceBookieWithEnoughBookiesInSameRack() throws Exception {
         InetSocketAddress addr1 = new InetSocketAddress("127.0.0.1", 3181);
         InetSocketAddress addr2 = new InetSocketAddress("127.0.0.2", 3181);
@@ -85,7 +85,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(addr3, replacedBookie);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testReplaceBookieWithEnoughBookiesInDifferentRack() throws Exception {
         InetSocketAddress addr1 = new InetSocketAddress("127.0.0.1", 3181);
         InetSocketAddress addr2 = new InetSocketAddress("127.0.0.2", 3181);
@@ -112,7 +112,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertTrue(addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testReplaceBookieWithNotEnoughBookies() throws Exception {
         InetSocketAddress addr1 = new InetSocketAddress("127.0.0.1", 3181);
         InetSocketAddress addr2 = new InetSocketAddress("127.0.0.2", 3181);
@@ -143,7 +143,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testNewEnsembleWithSingleRack() throws Exception {
         InetSocketAddress addr1 = new InetSocketAddress("127.0.0.1", 3181);
         InetSocketAddress addr2 = new InetSocketAddress("127.0.0.2", 3181);
@@ -166,7 +166,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testNewEnsembleWithMultipleRacks() throws Exception {
         InetSocketAddress addr1 = new InetSocketAddress("127.0.0.1", 3181);
         InetSocketAddress addr2 = new InetSocketAddress("127.0.0.2", 3181);
@@ -196,7 +196,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test
+    @Test(timeout = 90000)
     public void testNewEnsembleWithEnoughRacks() throws Exception {
         InetSocketAddress addr1 = new InetSocketAddress("127.0.0.1", 3181);
         InetSocketAddress addr2 = new InetSocketAddress("127.0.0.2", 3181);
@@ -239,7 +239,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     /**
      * Test for BOOKKEEPER-633
      */
-    @Test
+    @Test(timeout = 60000)
     public void testRemoveBookieFromCluster() {
         InetSocketAddress addr1 = new InetSocketAddress("127.0.0.1", 3181);
         InetSocketAddress addr2 = new InetSocketAddress("127.0.0.2", 3181);

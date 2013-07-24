@@ -114,7 +114,7 @@ public class TestFIFODeliveryManager {
      * in the correct order
      * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-539}
      */
-    @Test
+    @Test(timeout = 60000)
     public void testFIFODeliverySubCloseSubRace() throws Exception {
         ServerConfiguration conf = new ServerConfiguration();
         ByteString topic = ByteString.copyFromUtf8("subRaceTopic");
@@ -238,7 +238,7 @@ public class TestFIFODeliveryManager {
      * Test throttle race issue cause by messageConsumed and doDeliverNextMessage
      * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-503}
      */
-    @Test
+    @Test(timeout = 60000)
     public void testFIFODeliveryThrottlingRace() throws Exception {
         final int numMessages = 20;
         final int throttleSize = 10;

@@ -38,7 +38,7 @@ public class BookieShutdownTest extends BookKeeperClusterTestCase {
      * 
      * @throws Exception
      */
-    @Test
+    @Test(timeout = 60000)
     public void testBookieShutdownFromBookieThread() throws Exception {
         ServerConfiguration conf = bsConfs.get(0);
         killBookie(0);
