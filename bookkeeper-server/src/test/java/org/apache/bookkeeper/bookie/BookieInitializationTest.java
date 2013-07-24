@@ -88,6 +88,38 @@ public class BookieInitializationTest {
     }
 
     /**
+     * Verify the bookie server exit code. On ZooKeeper exception, should return
+     * exit code ZK_REG_FAIL = 4
+     */
+    @Test(timeout = 20000)
+    public void testExitCodeZK_REG_FAIL() throws Exception {
+        File tmpDir = File.createTempFile("bookie", "test");
+        tmpDir.delete();
+        tmpDir.mkdir();
+
+        final ServerConfiguration conf = new ServerConfiguration()
+                .setZkServers(null).setJournalDirName(tmpDir.getPath())
+                .setLedgerDirNames(new String[] { tmpDir.getPath() });
+
+        // simulating ZooKeeper exception by assigning a closed zk client to bk
+        BookieServer bkServer = new BookieServer(conf) {
+            protected Bookie newBookie(ServerConfiguration conf)
+                    throws IOException, KeeperException, InterruptedException,
+                    BookieException {
+                MockBookie bookie = new MockBookie(conf);
+                bookie.zk = zkc;
+                zkc.close();
+                return bookie;
+            };
+        };
+
+        bkServer.start();
+        bkServer.join();
+        Assert.assertEquals("Failed to return ExitCode.ZK_REG_FAIL",
+                ExitCode.ZK_REG_FAIL, bkServer.getExitCode());
+    }
+
+    /**
      * Verify the bookie reg. Restarting bookie server will wait for the session
      * timeout when previous reg node exists in zk. On zNode delete event,
      * should continue startup

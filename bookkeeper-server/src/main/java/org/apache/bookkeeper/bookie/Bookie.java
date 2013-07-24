@@ -25,7 +25,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.FilenameFilter;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -1135,5 +1134,14 @@ public class Bookie extends Thread {
         cb.waitZero();
         long end = MathUtils.now();
         System.out.println("Took " + (end-start) + "ms");
+    }
+
+    /**
+     * Returns exit code - cause of failure
+     *
+     * @return {@link ExitCode}
+     */
+    public int getExitCode() {
+        return exitCode;
     }
 }

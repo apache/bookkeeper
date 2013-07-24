@@ -80,6 +80,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-652: Logger class name is wrong in LedgerCacheImpl.java (Rakesh via sijie)
 
+        BOOKKEEPER-642: Bookie returns incorrect exitcode, ExitCode.ZK_REG_FAIL is getting overridden (Rakesh via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
