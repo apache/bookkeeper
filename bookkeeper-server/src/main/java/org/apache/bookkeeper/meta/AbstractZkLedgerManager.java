@@ -18,32 +18,30 @@
 package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
-import java.util.TreeSet;
-import java.util.SortedSet;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.Set;
+import java.util.TreeSet;
 
-import org.apache.bookkeeper.conf.AbstractConfiguration;
-import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.util.BookKeeperConstants;
-import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.util.ZkUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import org.apache.bookkeeper.versioning.Version;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.AsyncCallback.DataCallback;
-import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
+import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Abstract ledger manager based on zookeeper, which provides common methods such as query zk nodes.
@@ -276,8 +274,8 @@ abstract class AbstractZkLedgerManager implements LedgerManager {
      *          the prefix path of the ledger nodes
      * @return ledger id hash set
      */
-    protected SortedSet<Long> ledgerListToSet(List<String> ledgerNodes, String path) {
-        SortedSet<Long> zkActiveLedgers = new TreeSet<Long>();
+    protected NavigableSet<Long> ledgerListToSet(List<String> ledgerNodes, String path) {
+        NavigableSet<Long> zkActiveLedgers = new TreeSet<Long>();
         for (String ledgerNode : ledgerNodes) {
             if (isSpecialZnode(ledgerNode)) {
                 continue;
