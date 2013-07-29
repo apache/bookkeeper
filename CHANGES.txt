@@ -82,6 +82,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-642: Bookie returns incorrect exitcode, ExitCode.ZK_REG_FAIL is getting overridden (Rakesh via ivank)
 
+        BOOKKEEPER-663: HierarchicalLedgerManager iterator is missing some ranges and the last ledger in the range (mmerli via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

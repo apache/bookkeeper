@@ -19,13 +19,14 @@ package org.apache.bookkeeper.meta;
  */
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NavigableSet;
+import java.util.NoSuchElementException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.SortedSet;
 
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -40,7 +41,6 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -402,6 +402,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
                     continue;
                 }
                 List<String> l2Nodes = zk.getChildren(ledgerRootPath + "/" + curL1Nodes, null);
+                Collections.sort(l2Nodes);
                 l2NodesIter = l2Nodes.iterator();
                 if (!l2NodesIter.hasNext()) {
                     l2NodesIter = null;
@@ -420,6 +421,8 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
                         hasMoreElements = nextL1Node();
                     } else if (l2NodesIter == null || !l2NodesIter.hasNext()) {
                         hasMoreElements = nextL1Node();
+                    } else {
+                        hasMoreElements = true;
                     }
                 } catch (KeeperException ke) {
                     throw new IOException("Error preloading next range", ke);
@@ -475,13 +478,14 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
             } catch (InterruptedException e) {
                 throw new IOException("Error when get child nodes from zk", e);
             }
-            SortedSet<Long> zkActiveLedgers = ledgerListToSet(ledgerNodes, nodePath);
+            NavigableSet<Long> zkActiveLedgers = ledgerListToSet(ledgerNodes, nodePath);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("All active ledgers from ZK for hash node "
                           + level1 + "/" + level2 + " : " + zkActiveLedgers);
             }
-            return new LedgerRange(zkActiveLedgers.subSet(getStartLedgerIdByLevel(level1, level2),
-                                                          getEndLedgerIdByLevel(level1, level2)));
+
+            return new LedgerRange(zkActiveLedgers.subSet(getStartLedgerIdByLevel(level1, level2), true,
+                                                          getEndLedgerIdByLevel(level1, level2), true));
         }
     }
 }

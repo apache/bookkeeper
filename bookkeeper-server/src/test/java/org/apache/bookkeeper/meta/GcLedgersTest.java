@@ -23,14 +23,14 @@ package org.apache.bookkeeper.meta;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.Queue;
-import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,14 +38,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.bookie.GarbageCollector;
 import org.apache.bookkeeper.bookie.ScanAndCompareGarbageCollector;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
+import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.versioning.Version;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.junit.Test;
 
 /**
  * Test garbage collection ledgers in ledger manager
@@ -228,5 +229,44 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         garbageCollector.gc(cleaner);
         assertNotNull("Should have cleaned something", cleaned.peek());
         assertEquals("Should have cleaned first ledger" + first, (long)first, (long)cleaned.poll());
+    }
+
+    @Test(timeout=60000)
+    public void testGcLedgersNotLast() throws Exception {
+        final SortedSet<Long> createdLedgers = Collections.synchronizedSortedSet(new TreeSet<Long>());
+        final List<Long> cleaned = new ArrayList<Long>();
+
+        // Create enough ledgers to span over 4 ranges in the hierarchical ledger manager implementation
+        final int numLedgers = 30001;
+
+        createLedgers(numLedgers, createdLedgers);
+
+        final GarbageCollector garbageCollector =
+                new ScanAndCompareGarbageCollector(getLedgerManager(), activeLedgers);
+        GarbageCollector.GarbageCleaner cleaner = new GarbageCollector.GarbageCleaner() {
+                @Override
+                public void clean(long ledgerId) {
+                    LOG.info("Cleaned {}", ledgerId);
+                    cleaned.add(ledgerId);
+                }
+            };
+
+        SortedSet<Long> scannedLedgers = new TreeSet<Long>();
+        LedgerRangeIterator iterator = getLedgerManager().getLedgerRanges();
+        while (iterator.hasNext()) {
+            LedgerRange ledgerRange = iterator.next();
+            scannedLedgers.addAll(ledgerRange.getLedgers());
+        }
+
+        assertEquals(createdLedgers, scannedLedgers);
+
+        garbageCollector.gc(cleaner);
+        assertTrue("Should have cleaned nothing", cleaned.isEmpty());
+
+        long first = createdLedgers.first();
+        removeLedger(first);
+        garbageCollector.gc(cleaner);
+        assertEquals("Should have cleaned something", 1, cleaned.size());
+        assertEquals("Should have cleaned first ledger" + first, (long)first, (long)cleaned.get(0));
     }
 }
