@@ -54,6 +54,8 @@ Release 4.2.2 - Unreleased
 
         BOOKKEEPER-663: HierarchicalLedgerManager iterator is missing some ranges and the last ledger in the range (mmerli via ivank)
 
+        BOOKKEEPER-604: Ledger storage can log an exception if GC happens concurrently. (sijie & ivank via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)
