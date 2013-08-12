@@ -30,6 +30,9 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.SnapshotMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.LinkedBlockingQueue;
+
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -366,6 +369,79 @@ public class LedgerCacheTest extends TestCase {
             LOG.error("Exception when trying to get a ledger entry page", e);
             fail("Shouldn't have thrown an exception");
         }
+    }
+
+    /**
+     * Race where a flush would fail because a garbage collection occurred at
+     * the wrong time.
+     * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-604}
+     */
+    @Test(timeout=60000)
+    public void testFlushDeleteRace() throws Exception {
+        newLedgerCache();
+        final AtomicInteger rc = new AtomicInteger(0);
+        final LinkedBlockingQueue<Long> ledgerQ = new LinkedBlockingQueue<Long>(1);
+        final byte[] masterKey = "masterKey".getBytes();
+        Thread newLedgerThread = new Thread() {
+                public void run() {
+                    try {
+                        for (int i = 0; i < 1000 && rc.get() == 0; i++) {
+                            ledgerCache.setMasterKey(i, masterKey);
+                            ledgerQ.put((long)i);
+                        }
+                    } catch (Exception e) {
+                        rc.set(-1);
+                        LOG.error("Exception in new ledger thread", e);
+                    }
+                }
+            };
+        newLedgerThread.start();
+
+        Thread flushThread = new Thread() {
+                public void run() {
+                    try {
+                        while (true) {
+                            Long id = ledgerQ.peek();
+                            if (id == null) {
+                                continue;
+                            }
+                            LOG.info("Put entry for {}", id);
+                            try {
+                                ledgerCache.putEntryOffset((long)id, 1, 0);
+                            } catch (Bookie.NoLedgerException nle) {
+                                //ignore
+                            }
+                            ledgerCache.flushLedger(true);
+                        }
+                    } catch (Exception e) {
+                        rc.set(-1);
+                        LOG.error("Exception in flush thread", e);
+                    }
+                }
+            };
+        flushThread.start();
+
+        Thread deleteThread = new Thread() {
+                public void run() {
+                    try {
+                        while (true) {
+                            long id = ledgerQ.take();
+                            LOG.info("Deleting {}", id);
+                            ledgerCache.deleteLedger(id);
+                        }
+                    } catch (Exception e) {
+                        rc.set(-1);
+                        LOG.error("Exception in delete thread", e);
+                    }
+                }
+            };
+        deleteThread.start();
+
+        newLedgerThread.join();
+        assertEquals("Should have been no errors", rc.get(), 0);
+
+        deleteThread.interrupt();
+        flushThread.interrupt();
     }
 
     private ByteBuffer generateEntry(long ledger, long entry) {

@@ -84,6 +84,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-663: HierarchicalLedgerManager iterator is missing some ranges and the last ledger in the range (mmerli via ivank)
 
+        BOOKKEEPER-604: Ledger storage can log an exception if GC happens concurrently. (sijie & ivank via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

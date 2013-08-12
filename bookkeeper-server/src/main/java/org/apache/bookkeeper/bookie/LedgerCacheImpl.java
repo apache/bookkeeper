@@ -416,19 +416,25 @@ public class LedgerCacheImpl implements LedgerCache {
      * @throws IOException
      */
     private void flushLedger(long l) throws IOException {
+        FileInfo fi = null;
+        try {
+            fi = getFileInfo(l, null);
+            flushLedger(l, fi);
+        } catch (Bookie.NoLedgerException nle) {
+            // ledger has been deleted
+        } finally {
+            if (null != fi) {
+                fi.release();
+            }
+        }
+    }
+
+    private void flushLedger(long l, FileInfo fi) throws IOException {
         LinkedList<Long> firstEntryList;
         synchronized(this) {
             HashMap<Long, LedgerEntryPage> pageMap = pages.get(l);
             if (pageMap == null || pageMap.isEmpty()) {
-                FileInfo fi = null;
-                try {
-                    fi = getFileInfo(l, null);
-                    fi.flushHeader();
-                } finally {
-                    if (null != fi) {
-                        fi.release();
-                    }
-                }
+                fi.flushHeader();
                 return;
             }
             firstEntryList = new LinkedList<Long>();
@@ -450,7 +456,6 @@ public class LedgerCacheImpl implements LedgerCache {
 
         // Now flush all the pages of a ledger
         List<LedgerEntryPage> entries = new ArrayList<LedgerEntryPage>(firstEntryList.size());
-        FileInfo fi = null;
         try {
             for(Long firstEntry: firstEntryList) {
                 LedgerEntryPage lep = getLedgerEntryPage(l, firstEntry, true);
@@ -465,7 +470,6 @@ public class LedgerCacheImpl implements LedgerCache {
                     }
                     });
             ArrayList<Integer> versions = new ArrayList<Integer>(entries.size());
-            fi = getFileInfo(l, null);
             // flush the header if necessary
             fi.flushHeader();
             int start = 0;
@@ -496,9 +500,6 @@ public class LedgerCacheImpl implements LedgerCache {
         } finally {
             for(LedgerEntryPage lep: entries) {
                 lep.releasePage();
-            }
-            if (fi != null) {
-                fi.release();
             }
         }
     }
