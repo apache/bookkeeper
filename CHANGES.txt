@@ -56,6 +56,8 @@ Release 4.2.2 - Unreleased
 
         BOOKKEEPER-604: Ledger storage can log an exception if GC happens concurrently. (sijie & ivank via ivank)
 
+        BOOKKEEPER-667: Client write will fail with BadMetadataVersion in case of multiple Bookie failures with AutoRecovery enabled (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)
