@@ -801,6 +801,24 @@ public class LedgerHandle {
                 return false;
             }
 
+            // We should check number of ensembles since there are two kinds of metadata conflicts:
+            // - Case 1: Multiple bookies involved in ensemble change.
+            //           Number of ensembles should be same in this case.
+            // - Case 2: Recovery (Auto/Manually) replaced ensemble and ensemble changed.
+            //           The metadata changed due to ensemble change would have one more ensemble
+            //           than the metadata changed by recovery.
+            int diff = newMeta.getEnsembles().size() - metadata.getEnsembles().size();
+            if (0 != diff) {
+                if (-1 == diff) {
+                    // Case 1: metadata is changed by other ones (e.g. Recovery)
+                    return updateMetadataIfPossible(newMeta);
+                }
+                return false;
+            }
+
+            //
+            // Case 2:
+            //
             // If the failed the bookie is still existed in the metadata (in zookeeper), it means that
             // the ensemble change of the failed bookie is failed due to metadata conflicts. so try to
             // update the ensemble change metadata again. Otherwise, it means that the ensemble change
@@ -812,32 +830,36 @@ public class LedgerHandle {
                 // update ensemble changed metadata again.
                 if (!metadata.currentEnsemble.get(ensembleInfo.bookieIndex)
                         .equals(ensembleInfo.addr)) {
-                    // if the local metadata is newer than zookeeper metadata, it means that metadata is updated
-                    // again when it was trying re-reading the metatada, re-kick the reread again
-                    if (metadata.isNewerThan(newMeta)) {
-                        rereadMetadata(this);
-                        return true;
-                    }
-                    // make sure the metadata doesn't changed by other ones.
-                    if (metadata.isConflictWith(newMeta)) {
-                        return false;
-                    }
-                    LOG.info("Resolve ledger metadata conflict "
-                            + "while changing ensemble to: "
-                            + ensembleInfo.newEnsemble
-                            + ", old meta data is \n"
-                            + new String(metadata.serialize(), UTF_8)
-                            + "\n, new meta data is \n"
-                            + new String(newMeta.serialize(), UTF_8));
-                    // update znode version
-                    metadata.setVersion(newMeta.getVersion());
-                    writeLedgerConfig(new ChangeEnsembleCb(ensembleInfo));
+                    return updateMetadataIfPossible(newMeta);
                 }
             } else {
                 // the failed bookie has been replaced
                 blockAddCompletions.decrementAndGet();
                 unsetSuccessAndSendWriteRequest(ensembleInfo.bookieIndex);
             }
+            return true;
+        }
+
+        private boolean updateMetadataIfPossible(LedgerMetadata newMeta) {
+            // if the local metadata is newer than zookeeper metadata, it means that metadata is updated
+            // again when it was trying re-reading the metatada, re-kick the reread again
+            if (metadata.isNewerThan(newMeta)) {
+                rereadMetadata(this);
+                return true;
+            }
+            // make sure the metadata doesn't changed by other ones.
+            if (metadata.isConflictWith(newMeta)) {
+                return false;
+            }
+            LOG.info("Resolve ledger metadata conflict while changing ensemble to: {},"
+                    + " old meta data is \n {} \n, new meta data is \n {}.", new Object[] {
+                    ensembleInfo.newEnsemble, metadata, newMeta });
+            // update znode version
+            metadata.setVersion(newMeta.getVersion());
+            // merge ensemble infos from new meta except last ensemble
+            // since they might be modified by recovery tool.
+            metadata.mergeEnsembles(newMeta.getEnsembles());
+            writeLedgerConfig(new ChangeEnsembleCb(ensembleInfo));
             return true;
         }
 

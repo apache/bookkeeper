@@ -228,6 +228,45 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
     }
 
     /**
+     * This tests the bookie recovery functionality with ensemble changes.
+     * We'll verify that:
+     * - bookie recovery should not affect ensemble change.
+     * - ensemble change should not erase changes made by recovery.
+     *
+     * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-667}
+     */
+    @Test(timeout = 60000)
+    public void testMetadataConflictWithRecovery() throws Exception {
+        int numEntries = 10;
+        byte[] data = "testMetadataConflictWithRecovery".getBytes();
+
+        LedgerHandle lh = bkc.createLedger(2, 2, digestType, baseClientConf.getBookieRecoveryPasswd());
+        for (int i = 0; i < numEntries; i++) {
+            lh.addEntry(data);
+        }
+        InetSocketAddress bookieToKill = lh.getLedgerMetadata().getEnsemble(numEntries - 1).get(1);
+        killBookie(bookieToKill);
+        startNewBookie();
+        for (int i = 0; i < numEntries; i++) {
+            lh.addEntry(data);
+        }
+        bkAdmin.recoverBookieData(bookieToKill, null);
+        // fail another bookie to cause ensemble change again
+        bookieToKill = lh.getLedgerMetadata().getEnsemble(2 * numEntries - 1).get(1);
+        ServerConfiguration confOfKilledBookie = killBookie(bookieToKill);
+        startNewBookie();
+        for (int i = 0; i < numEntries; i++) {
+            lh.addEntry(data);
+        }
+        // start the killed bookie again
+        bsConfs.add(confOfKilledBookie);
+        bs.add(startBookie(confOfKilledBookie));
+        // all ensembles should be fully replicated since it is recovered
+        assertTrue("Not fully replicated", verifyFullyReplicated(lh, 3 * numEntries));
+        lh.close();
+    }
+
+    /**
      * This tests the asynchronous bookie recovery functionality by writing
      * entries into 3 bookies, killing one bookie, starting up a new one to
      * replace it, and then recovering the ledger entries from the killed bookie

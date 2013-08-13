@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.client;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,6 +15,7 @@ package org.apache.bookkeeper.client;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Charsets.UTF_8;
 
@@ -479,8 +478,10 @@ public class LedgerMetadata {
         }
         // if ledger is closed, we can just take the new ensembles
         if (newMeta.state != LedgerMetadataFormat.State.CLOSED) {
-            // ensemble size should be same
-            if (ensembles.size() != newMeta.ensembles.size()) {
+            // allow new metadata to be one ensemble less than current metadata
+            // since ensemble change might kick in when recovery changed metadata
+            int diff = ensembles.size() - newMeta.ensembles.size();
+            if (0 != diff && 1 != diff) {
                 return true;
             }
             // ensemble distribution should be same
@@ -488,7 +489,7 @@ public class LedgerMetadata {
             // using recovery tool.
             Iterator<Long> keyIter = ensembles.keySet().iterator();
             Iterator<Long> newMetaKeyIter = newMeta.ensembles.keySet().iterator();
-            for (int i=0; i<ensembles.size(); i++) {
+            for (int i=0; i<newMeta.ensembles.size(); i++) {
                 Long curKey = keyIter.next();
                 Long newMetaKey = newMetaKeyIter.next();
                 if (!curKey.equals(newMetaKey)) {
@@ -498,4 +499,32 @@ public class LedgerMetadata {
         }
         return false;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("(meta:").append(new String(serialize(), UTF_8)).append(", version:").append(version).append(")");
+        return sb.toString();
+    }
+
+    void mergeEnsembles(SortedMap<Long, ArrayList<InetSocketAddress>> newEnsembles) {
+        // allow new metadata to be one ensemble less than current metadata
+        // since ensemble change might kick in when recovery changed metadata
+        int diff = ensembles.size() - newEnsembles.size();
+        if (0 != diff && 1 != diff) {
+            return;
+        }
+        int i = 0;
+        for (Entry<Long, ArrayList<InetSocketAddress>> entry : newEnsembles.entrySet()) {
+            ++i;
+            if (ensembles.size() != i) {
+                // we should use last ensemble from current metadata
+                // not the new metadata read from zookeeper
+                long key = entry.getKey();
+                ArrayList<InetSocketAddress> ensemble = entry.getValue();
+                ensembles.put(key, ensemble);
+            }
+        }
+    }
+
 }

@@ -86,6 +86,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-604: Ledger storage can log an exception if GC happens concurrently. (sijie & ivank via ivank)
 
+        BOOKKEEPER-667: Client write will fail with BadMetadataVersion in case of multiple Bookie failures with AutoRecovery enabled (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
