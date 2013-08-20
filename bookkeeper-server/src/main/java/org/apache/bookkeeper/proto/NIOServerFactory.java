@@ -236,7 +236,9 @@ public class NIOServerFactory extends Thread {
                 if (k.isReadable()) {
                     int rc = sock.read(incomingBuffer);
                     if (rc < 0) {
-                        throw new IOException("Read error");
+                        LOG.info("Peer closed connection. rc={} {}", rc, sock);
+                        close();
+                        return;
                     }
                     if (incomingBuffer.remaining() == 0) {
                         incomingBuffer.flip();
