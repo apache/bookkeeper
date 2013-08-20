@@ -88,6 +88,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-667: Client write will fail with BadMetadataVersion in case of multiple Bookie failures with AutoRecovery enabled (sijie via ivank)
 
+        BOOKKEEPER-668: Race between PerChannelBookieClient#channelDisconnected() and disconnect() calls can make clients hang while add/reading entries in case of multiple bookie failures (sijie & ivank via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

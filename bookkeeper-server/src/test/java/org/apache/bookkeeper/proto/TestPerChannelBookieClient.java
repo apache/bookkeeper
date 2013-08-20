@@ -29,11 +29,20 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import java.nio.ByteBuffer;
+import java.io.IOException;
+
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.PerChannelBookieClient.ConnectionState;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
@@ -202,9 +211,75 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         disconnectThread.join();
         checkThread.join();
         assertFalse("Failure in threads, check logs", shouldFail.get());
-
         client.close();
         channelFactory.releaseExternalResources();
         executor.shutdown();
+    }
+
+    /**
+     * Test that requests are completed even if the channel is disconnected
+     * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-668}
+     */
+    @Test(timeout=60000)
+    public void testRequestCompletesAfterDisconnectRace() throws Exception {
+        ServerConfiguration conf = killBookie(0);
+
+        Bookie delayBookie = new Bookie(conf) {
+            @Override
+            public ByteBuffer readEntry(long ledgerId, long entryId)
+                    throws IOException, NoLedgerException {
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException ie) {
+                    throw new IOException("Interrupted waiting", ie);
+                }
+                return super.readEntry(ledgerId, entryId);
+            }
+        };
+        bsConfs.add(conf);
+        bs.add(startBookie(conf, delayBookie));
+
+        ClientSocketChannelFactory channelFactory
+            = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
+                                                Executors.newCachedThreadPool());
+        final OrderedSafeExecutor executor = new OrderedSafeExecutor(1);
+        InetSocketAddress addr = getBookie(0);
+        AtomicLong bytesOutstanding = new AtomicLong(0);
+
+        final PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory,
+                                                                         addr, bytesOutstanding);
+        final CountDownLatch completion = new CountDownLatch(1);
+        final ReadEntryCallback cb = new ReadEntryCallback() {
+                @Override
+                public void readEntryComplete(int rc, long ledgerId, long entryId,
+                                              ChannelBuffer buffer, Object ctx) {
+                    completion.countDown();
+                }
+            };
+
+        client.connectIfNeededAndDoOp(new GenericCallback<Void>() {
+            @Override
+            public void operationComplete(final int rc, Void result) {
+                if (rc != BKException.Code.OK) {
+                    executor.submitOrdered(1, new SafeRunnable() {
+                        @Override
+                        public void safeRun() {
+                            cb.readEntryComplete(rc, 1, 1, null, null);
+                        }
+                    });
+                    return;
+                }
+
+                client.readEntryAndFenceLedger(1, "00000111112222233333".getBytes(), 1, cb, null);
+            }
+        });
+
+        Thread.sleep(1000);
+        client.disconnect();
+        client.close();
+        channelFactory.releaseExternalResources();
+        executor.shutdown();
+
+        assertTrue("Request should have completed", completion.await(5, TimeUnit.SECONDS));
     }
 }
