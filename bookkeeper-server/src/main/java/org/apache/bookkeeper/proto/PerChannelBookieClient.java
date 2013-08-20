@@ -397,10 +397,16 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             public void safeRun() {
 
                 ReadCompletion readCompletion = readCompletions.remove(key);
+                String bAddress = "null";
+                Channel c = channel;
+                if(c != null) {
+                    bAddress = c.getRemoteAddress().toString();
+                }
 
                 if (readCompletion != null) {
-                    LOG.error("Could not write  request for reading entry: " + key.entryId + " ledger-id: "
-                              + key.ledgerId + " bookie: " + channel.getRemoteAddress());
+                    LOG.error("Could not write request for reading entry: {}"
+                              + " ledger-id: {} bookie: {}",
+                              new Object[] { key.entryId, key.ledgerId, bAddress });
 
                     readCompletion.cb.readEntryComplete(BKException.Code.BookieHandleNotAvailableException,
                                                         key.ledgerId, key.entryId, null, readCompletion.ctx);
@@ -419,10 +425,12 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
                 if (addCompletion != null) {
                     String bAddress = "null";
-                    if(channel != null)
-                        bAddress = channel.getRemoteAddress().toString();
-                    LOG.error("Could not write request for adding entry: " + key.entryId + " ledger-id: "
-                              + key.ledgerId + " bookie: " + bAddress);
+                    Channel c = channel;
+                    if(c != null) {
+                        bAddress = c.getRemoteAddress().toString();
+                    }
+                    LOG.error("Could not write request for adding entry: {} ledger-id: {} bookie: {}",
+                              new Object[] { key.entryId, key.ledgerId, bAddress });
 
                     addCompletion.cb.writeComplete(BKException.Code.BookieHandleNotAvailableException, key.ledgerId,
                                                    key.entryId, addr, addCompletion.ctx);
@@ -486,9 +494,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         if (c != null) {
             closeChannel(c);
         }
-        if (this.channel == c) {
-            errorOutOutstandingEntries();
-        }
+
+        errorOutOutstandingEntries();
 
         synchronized (this) {
             if (this.channel == c
