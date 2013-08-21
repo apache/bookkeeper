@@ -20,7 +20,10 @@
  */
 package org.apache.bookkeeper.replication;
 
+import java.util.concurrent.CountDownLatch;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+
+import org.junit.Test;
 
 /*
  * Test the AuditorPeer
@@ -34,6 +37,7 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
     /*
      * test the startup of the auditorElector and RW.
      */
+    @Test(timeout=60000)
     public void testStartup() throws Exception {
         AutoRecoveryMain main = new AutoRecoveryMain(bsConfs.get(0));
         try {
@@ -51,6 +55,7 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
     /*
      * Test the shutdown of all daemons
      */
+    @Test(timeout=60000)
     public void testShutdown() throws Exception {
         AutoRecoveryMain main = new AutoRecoveryMain(bsConfs.get(0));
         main.start();
@@ -65,5 +70,39 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
                 main.auditorElector.isRunning());
         assertFalse("Replication worker should not be running",
                 main.replicationWorker.isRunning());
+    }
+
+    /**
+     * Test that, if an autorecovery looses its ZK connection/session
+     * it will shutdown.
+     */
+    @Test(timeout=60000)
+    public void testAutoRecoverySessionLoss() throws Exception {
+        AutoRecoveryMain main1 = new AutoRecoveryMain(bsConfs.get(0));
+        AutoRecoveryMain main2 = new AutoRecoveryMain(bsConfs.get(1));
+        main1.start();
+        main2.start();
+        Thread.sleep(500);
+        assertTrue("AuditorElectors should be running",
+                main1.auditorElector.isRunning() && main2.auditorElector.isRunning());
+        assertTrue("Replication workers should be running",
+                main1.replicationWorker.isRunning() && main2.replicationWorker.isRunning());
+
+        zkUtil.expireSession(main1.zk);
+        zkUtil.expireSession(main2.zk);
+
+        for (int i = 0; i < 10; i++) { // give it 10 seconds to shutdown
+            if (!main1.auditorElector.isRunning()
+                && !main2.auditorElector.isRunning()
+                && !main1.replicationWorker.isRunning()
+                && !main2.replicationWorker.isRunning()) {
+                break;
+            }
+            Thread.sleep(1000);
+        }
+        assertFalse("Elector1 should have shutdown", main1.auditorElector.isRunning());
+        assertFalse("Elector2 should have shutdown", main2.auditorElector.isRunning());
+        assertFalse("RW1 should have shutdown", main1.replicationWorker.isRunning());
+        assertFalse("RW2 should have shutdown", main2.replicationWorker.isRunning());
     }
 }

@@ -207,25 +207,6 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
                 .getPort());
     }
 
-    /**
-     * Test that, if an auditor looses its ZK connection/session
-     * it will shutdown.
-     */
-    @Test(timeout=60000)
-    public void testAuditorZKSessionLoss() throws Exception {
-        stopZKCluster();
-        for (AuditorElector e : auditorElectors.values()) {
-            for (int i = 0; i < 10; i++) { // give it 10 seconds to shutdown
-                if (!e.isRunning()) {
-                    break;
-                }
-
-                Thread.sleep(1000);
-            }
-            assertFalse("AuditorElector should have shutdown", e.isRunning());
-        }
-    }
-
     private void startAuditorElector(String addr) throws Exception {
         ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(10000);
         ZooKeeper zk = ZkUtils.createConnectedZookeeperClient(

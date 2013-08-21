@@ -299,6 +299,29 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         }
     }
 
+    /**
+     * Test Auditor should consider Readonly bookie as available bookie. Should not publish ur ledgers for
+     * readonly bookies.
+     */
+    @Test(timeout = 20000)
+    public void testReadOnlyBookieExclusionFromURLedgersCheck() throws Exception {
+        LedgerHandle lh = createAndAddEntriesToLedger();
+        ledgerList.add(lh.getId());
+        LOG.debug("Created following ledgers : " + ledgerList);
+
+        int count = ledgerList.size();
+        final CountDownLatch underReplicaLatch = registerUrLedgerWatcher(count);
+
+        ServerConfiguration bookieConf = bsConfs.get(2);
+        BookieServer bk = bs.get(2);
+        bookieConf.setReadOnlyModeEnabled(true);
+        bk.getBookie().transitionToReadOnlyMode();
+
+        // grace period for publishing the bk-ledger
+        LOG.debug("Waiting for Auditor to finish ledger check.");
+        assertFalse("latch should not have completed", underReplicaLatch.await(5, TimeUnit.SECONDS));
+    }
+
     private CountDownLatch registerUrLedgerWatcher(int count)
             throws KeeperException, InterruptedException {
         final CountDownLatch underReplicaLatch = new CountDownLatch(count);

@@ -53,7 +53,7 @@ public class AutoRecoveryMain {
             .getLogger(AutoRecoveryMain.class);
 
     private ServerConfiguration conf;
-    private ZooKeeper zk;
+    ZooKeeper zk;
     AuditorElector auditorElector;
     ReplicationWorker replicationWorker;
     private AutoRecoveryDeathWatcher deathWatcher;

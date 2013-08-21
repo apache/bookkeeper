@@ -163,8 +163,7 @@ public class AuditorElector {
     private class ElectionWatcher implements Watcher {
         @Override
         public void process(WatchedEvent event) {
-            if (event.getState() == KeeperState.Disconnected
-                || event.getState() == KeeperState.Expired) {
+            if (event.getState() == KeeperState.Expired) {
                 LOG.error("Lost ZK connection, shutting down");
                 submitShutdownTask();
             } else if (event.getType() == EventType.NodeDeleted) {

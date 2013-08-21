@@ -162,12 +162,32 @@ public class BookKeeperAdmin {
     /**
      * Get a list of the available bookies.
      *
-     * @return the collection of available bookies
+     * @return a collection of bookie addresses
      */
     public Collection<InetSocketAddress> getAvailableBookies()
-            throws InterruptedException, KeeperException {
-        bkc.bookieWatcher.readBookiesBlocking();
+            throws BKException {
         return bkc.bookieWatcher.getBookies();
+    }
+
+    /**
+     * Get a list of readonly bookies
+     *
+     * @return a collection of bookie addresses
+     */
+    public Collection<InetSocketAddress> getReadOnlyBookies() {
+        return bkc.bookieWatcher.getReadOnlyBookies();
+    }
+
+    /**
+     * Notify when the available list of bookies changes.
+     * This is a one-shot notification. To receive subsequent notifications
+     * the listener must be registered again.
+     *
+     * @param listener the listener to notify
+     */
+    public void notifyBookiesChanged(final BookiesListener listener)
+            throws BKException {
+        bkc.bookieWatcher.notifyBookiesChanged(listener);
     }
 
     /**

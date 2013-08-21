@@ -127,6 +127,16 @@ public class ZooKeeperUtil {
         throw new IOException("ZooKeeper thread not found");
     }
 
+    public void expireSession(ZooKeeper zk) throws Exception {
+        long id = zk.getSessionId();
+        byte[] password = zk.getSessionPasswd();
+        ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(10000);
+        ZooKeeper zk2 = new ZooKeeper(getZooKeeperConnectString(),
+                zk.getSessionTimeout(), w, id, password);
+        w.waitForConnection();
+        zk2.close();
+    }
+
     public void killServer() throws Exception {
         if (zkc != null) {
             zkc.close();

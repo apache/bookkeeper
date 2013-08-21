@@ -35,6 +35,7 @@ import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.MultiLedgerManagerTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -493,6 +494,46 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
             underReplicationManager.close();
         }
 
+    }
+
+    /**
+     * Test that if the local bookie turns out to be readonly, then no point in running RW. So RW should shutdown.
+     */
+    @Test(timeout = 20000)
+    public void testRWShutdownOnLocalBookieReadonlyTransition() throws Exception {
+        LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32, TESTPASSWD);
+
+        for (int i = 0; i < 10; i++) {
+            lh.addEntry(data);
+        }
+        InetSocketAddress replicaToKill = LedgerHandleAdapter.getLedgerMetadata(lh).getEnsembles().get(0L).get(0);
+
+        LOG.info("Killing Bookie", replicaToKill);
+        killBookie(replicaToKill);
+
+        int newBkPort = startNewBookie();
+        for (int i = 0; i < 10; i++) {
+            lh.addEntry(data);
+        }
+
+        InetSocketAddress newBkAddr = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), newBkPort);
+        LOG.info("New Bookie addr :" + newBkAddr);
+
+        ReplicationWorker rw = new ReplicationWorker(zkc, baseConf, newBkAddr);
+
+        rw.start();
+        try {
+            BookieServer newBk = bs.get(bs.size() - 1);
+            bsConfs.get(bsConfs.size() - 1).setReadOnlyModeEnabled(true);
+            newBk.getBookie().transitionToReadOnlyMode();
+            underReplicationManager.markLedgerUnderreplicated(lh.getId(), replicaToKill.toString());
+            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath) && rw.isRunning()) {
+                Thread.sleep(100);
+            }
+            assertFalse("RW should shutdown if the bookie is readonly", rw.isRunning());
+        } finally {
+            rw.shutdown();
+        }
     }
 
     /**
