@@ -189,6 +189,9 @@ public class ReplicationWorker implements Runnable {
             } catch (BKException.BKLedgerRecoveryException e) {
                 LOG.warn("BKLedgerRecoveryException "
                         + "while replicating the fragment", e);
+                if (admin.getReadOnlyBookies().contains(targetBookie)) {
+                    throw new BKException.BKWriteOnReadOnlyBookieException();
+                }
             }
         }
 

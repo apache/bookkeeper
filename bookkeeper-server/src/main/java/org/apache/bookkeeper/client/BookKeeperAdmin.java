@@ -22,6 +22,7 @@ package org.apache.bookkeeper.client;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Collection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -154,6 +155,37 @@ public class BookKeeperAdmin {
     public void close() throws InterruptedException, BKException {
         bkc.close();
         zk.close();
+    }
+
+    /**
+     * Get a list of the available bookies.
+     *
+     * @return a collection of bookie addresses
+     */
+    public Collection<InetSocketAddress> getAvailableBookies()
+            throws BKException {
+        return bkc.bookieWatcher.getBookies();
+    }
+
+    /**
+     * Get a list of readonly bookies
+     *
+     * @return a collection of bookie addresses
+     */
+    public Collection<InetSocketAddress> getReadOnlyBookies() {
+        return bkc.bookieWatcher.getReadOnlyBookies();
+    }
+
+    /**
+     * Notify when the available list of bookies changes.
+     * This is a one-shot notification. To receive subsequent notifications
+     * the listener must be registered again.
+     *
+     * @param listener the listener to notify
+     */
+    public void notifyBookiesChanged(final BookiesListener listener)
+            throws BKException {
+        bkc.bookieWatcher.notifyBookiesChanged(listener);
     }
 
     /**
