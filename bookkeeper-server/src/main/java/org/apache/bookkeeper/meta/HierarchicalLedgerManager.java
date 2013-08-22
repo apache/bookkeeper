@@ -102,7 +102,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
 
     @Override
     public void createLedger(final LedgerMetadata metadata, final GenericCallback<Long> ledgerCb) {
-        ZkUtils.createFullPathOptimistic(zk, idGenPath, new byte[0], Ids.OPEN_ACL_UNSAFE,
+        ZkUtils.asyncCreateFullPathOptimistic(zk, idGenPath, new byte[0], Ids.OPEN_ACL_UNSAFE,
             CreateMode.EPHEMERAL_SEQUENTIAL, new StringCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, final String idPathName) {
@@ -140,7 +140,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
                         }
                     }
                 };
-                ZkUtils.createFullPathOptimistic(zk, ledgerPath, metadata.serialize(),
+                ZkUtils.asyncCreateFullPathOptimistic(zk, ledgerPath, metadata.serialize(),
                     Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT, scb, null);
                 // delete the znode for id generation
                 scheduler.submit(new Runnable() {
