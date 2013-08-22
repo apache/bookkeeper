@@ -25,6 +25,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.zookeeper.CreateMode;
@@ -42,8 +45,11 @@ import org.slf4j.LoggerFactory;
  */
 public class ZkUtils {
     private static final Logger LOG = LoggerFactory.getLogger(ZkUtils.class);
+
     /**
-     * Create zookeeper path recursively
+     * Asynchronously create zookeeper path recursively and optimistically.
+     *
+     * @see #createFullPathOptimistic(ZooKeeper,String,byte[],List<ACL>,CreateMode)
      *
      * @param zk
      *          Zookeeper client
@@ -60,7 +66,7 @@ public class ZkUtils {
      * @param ctx
      *          Context object
      */
-    public static void createFullPathOptimistic(
+    public static void asyncCreateFullPathOptimistic(
         final ZooKeeper zk, final String originalPath, final byte[] data,
         final List<ACL> acl, final CreateMode createMode,
         final AsyncCallback.StringCallback callback, final Object ctx) {
@@ -77,7 +83,8 @@ public class ZkUtils {
                 // Since I got a nonode, it means that my parents don't exist
                 // create mode is persistent since ephemeral nodes can't be
                 // parents
-                createFullPathOptimistic(zk, new File(originalPath).getParent().replace("\\", "/"), new byte[0], acl,
+                String parent = new File(originalPath).getParent().replace("\\", "/");
+                asyncCreateFullPathOptimistic(zk, parent, new byte[0], acl,
                         CreateMode.PERSISTENT, new StringCallback() {
 
                             @Override
@@ -85,8 +92,8 @@ public class ZkUtils {
                                 if (rc == Code.OK.intValue() || rc == Code.NODEEXISTS.intValue()) {
                                     // succeeded in creating the parent, now
                                     // create the original path
-                                    createFullPathOptimistic(zk, originalPath, data, acl, createMode, callback,
-                                            ctx);
+                                    asyncCreateFullPathOptimistic(zk, originalPath, data,
+                                            acl, createMode, callback, ctx);
                                 } else {
                                     callback.processResult(rc, path, ctx, name);
                                 }
@@ -94,7 +101,48 @@ public class ZkUtils {
                         }, ctx);
             }
         }, ctx);
+    }
 
+    /**
+     * Create zookeeper path recursively and optimistically. This method can throw
+     * any of the KeeperExceptions which can be thrown by ZooKeeper#create.
+     * KeeperException.NodeExistsException will only be thrown if the full path specified
+     * by _path_ already exists. The existence of any parent znodes is not an error
+     * condition.
+     *
+     * @param zkc
+     *            - ZK instance
+     * @param path
+     *            - znode path
+     * @param data
+     *            - znode data
+     * @param acl
+     *            - Acl of the zk path
+     * @param createMode
+     *            - Create mode of zk path
+     * @throws KeeperException
+     *             if the server returns a non-zero error code, or invalid ACL
+     * @throws InterruptedException
+     *             if the transaction is interrupted
+     */
+    public static void createFullPathOptimistic(ZooKeeper zkc, String path,
+            byte[] data, final List<ACL> acl, final CreateMode createMode)
+            throws KeeperException, InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicInteger rc = new AtomicInteger(Code.OK.intValue());
+        asyncCreateFullPathOptimistic(zkc, path, data, acl, createMode,
+                                      new StringCallback() {
+                                          @Override
+                                          public void processResult(int rc2, String path,
+                                                                    Object ctx, String name) {
+                                              rc.set(rc2);
+                                              latch.countDown();
+                                          }
+                                      }, null);
+        latch.await();
+        if (rc.get() != Code.OK.intValue()) {
+            throw KeeperException.create(Code.get(rc.get()));
+        }
     }
 
     private static class GetChildrenCtx {
@@ -205,39 +253,5 @@ public class ZkUtils {
             throw KeeperException.create(KeeperException.Code.CONNECTIONLOSS);
         }
         return newZk;
-    }
-
-    /**
-     * Utility to create the complete znode path synchronously
-     * 
-     * @param zkc
-     *            - ZK instance
-     * @param path
-     *            - znode path
-     * @param data
-     *            - znode data
-     * @param acl
-     *            - Acl of the zk path
-     * @param createMode
-     *            - Create mode of zk path
-     * @throws KeeperException
-     *             if the server returns a non-zero error code, or invalid ACL
-     * @throws InterruptedException
-     *             if the transaction is interrupted
-     */
-    public static void createFullPathOptimistic(ZooKeeper zkc, String path,
-            byte[] data, final List<ACL> acl, final CreateMode createMode)
-            throws KeeperException, InterruptedException {
-        try {
-            zkc.create(path, data, acl, createMode);
-        } catch (KeeperException.NoNodeException nne) {
-            int lastSlash = path.lastIndexOf('/');
-            if (lastSlash <= 0) {
-                throw nne;
-            }
-            String parent = path.substring(0, lastSlash);
-            createFullPathOptimistic(zkc, parent, new byte[0], acl, createMode);
-            zkc.create(path, data, acl, createMode);
-        }
     }
 }

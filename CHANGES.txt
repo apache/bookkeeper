@@ -94,6 +94,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-632: AutoRecovery should consider read only bookies (vinay via ivank)
 
+        BOOKKEEPER-649: Race condition in sync ZKUtils.createFullPathOptimistic() (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

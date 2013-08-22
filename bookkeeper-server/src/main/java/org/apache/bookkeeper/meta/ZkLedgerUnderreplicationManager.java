@@ -42,7 +42,6 @@ import com.google.protobuf.TextFormat;
 import com.google.common.base.Joiner;
 import static com.google.common.base.Charsets.UTF_8;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import java.util.concurrent.CountDownLatch;
@@ -198,7 +197,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         String subdir2 = String.format("%04x", ledgerId >> 32 & 0xffff);
         String subdir3 = String.format("%04x", ledgerId >> 16 & 0xffff);
         String subdir4 = String.format("%04x", ledgerId & 0xffff);
-        
+
         return String.format("%s/%s/%s/%s/%s",
                              base, subdir1, subdir2, subdir3, subdir4);
     }
@@ -430,7 +429,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             cb.await();
         }
     }
-    
+
     @Override
     public void releaseUnderreplicatedLedger(long ledgerId) throws ReplicationException.UnavailableException {
         LOG.debug("releaseLedger(ledgerId={})", ledgerId);
@@ -473,9 +472,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             throws ReplicationException.UnavailableException {
         LOG.debug("disableLedegerReplication()");
         try {
-            ZkUtils.createFullPathOptimistic(zkc, basePath + '/'
-                    + BookKeeperConstants.DISABLE_NODE, "".getBytes(UTF_8),
-                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            String znode = basePath + '/' + BookKeeperConstants.DISABLE_NODE;
+            zkc.create(znode, "".getBytes(UTF_8), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             LOG.info("Auto ledger re-replication is disabled!");
         } catch (KeeperException.NodeExistsException ke) {
             LOG.warn("AutoRecovery is already disabled!", ke);

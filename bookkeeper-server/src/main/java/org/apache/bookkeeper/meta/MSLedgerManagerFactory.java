@@ -216,7 +216,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
 
         @Override
         public void createLedger(final LedgerMetadata metadata, final GenericCallback<Long> ledgerCb) {
-            ZkUtils.createFullPathOptimistic(zk, idGenPath, new byte[0], Ids.OPEN_ACL_UNSAFE,
+            ZkUtils.asyncCreateFullPathOptimistic(zk, idGenPath, new byte[0], Ids.OPEN_ACL_UNSAFE,
                     CreateMode.EPHEMERAL_SEQUENTIAL, new StringCallback() {
                         @Override
                         public void processResult(int rc, String path, Object ctx, final String idPathName) {
