@@ -248,6 +248,12 @@ public class LedgerHandle {
                 final State prevState;
 
                 synchronized(LedgerHandle.this) {
+                    // if the metadata is already closed, we don't need to proceed the process
+                    // otherwise, it might end up encountering bad version error log messages when updating metadata
+                    if (metadata.isClosed()) {
+                        cb.closeComplete(BKException.Code.OK, LedgerHandle.this, ctx);
+                        return;
+                    }
                     prevState = metadata.getState();
                     prevLastEntryId = metadata.getLastEntryId();
                     prevLength = metadata.getLength();
@@ -257,8 +263,6 @@ public class LedgerHandle {
                     // is closed. 
                     metadata.setLength(length);
 
-                    // Close operation is idempotent, so no need to check if we are
-                    // already closed
                     metadata.close(lastAddConfirmed);
                     errorOutPendingAdds(rc);
                     lastAddPushed = lastAddConfirmed;

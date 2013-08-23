@@ -292,12 +292,7 @@ public class TestFencing extends BaseTestCase {
         }
 
         readlh.close();
-        try {
-            writelh.close();
-            fail("Should fail trying to update metadata");
-        } catch (BKException.BKMetadataVersionException e) {
-            // correct behaviour
-        }
+        writelh.close();
     }
 
     /**
@@ -338,13 +333,7 @@ public class TestFencing extends BaseTestCase {
         }
 
         readlh.close();
-
-        try {
-            writelh.close();
-            fail("Should fail trying to update metadata");
-        } catch (BKException.BKMetadataVersionException e) {
-            // correct behaviour
-        }
+        writelh.close();
     }
 
     /**

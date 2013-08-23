@@ -96,6 +96,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-649: Race condition in sync ZKUtils.createFullPathOptimistic() (ivank)
 
+        BOOKKEEPER-580: improve close logic (sijie & ivank via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
