@@ -25,7 +25,19 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
+
+import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+
+import java.io.IOException;
+import org.apache.zookeeper.KeeperException;
+
+import java.nio.ByteBuffer;
 import org.junit.Test;
+import org.junit.Assert;
 
 public class BookieShutdownTest extends BookKeeperClusterTestCase {
 
@@ -67,5 +79,44 @@ public class BookieShutdownTest extends BookKeeperClusterTestCase {
         Thread.sleep(1000);
         latch.countDown();
         shutdownComplete.await(5000, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Test whether bookieserver returns the correct error code when it crashes.
+     */
+    @Test(timeout=60000)
+    public void testBookieServerThreadError() throws Exception {
+        ServerConfiguration conf = bsConfs.get(0);
+        killBookie(0);
+        final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch shutdownComplete = new CountDownLatch(1);
+        // simulating ZooKeeper exception by assigning a closed zk client to bk
+        BookieServer bkServer = new BookieServer(conf) {
+            protected Bookie newBookie(ServerConfiguration conf)
+                    throws IOException, KeeperException, InterruptedException,
+                    BookieException {
+                return new Bookie(conf) {
+                    @Override
+                    public void addEntry(ByteBuffer entry, WriteCallback cb,
+                                         Object ctx, byte[] masterKey)
+                            throws IOException, BookieException {
+                        throw new OutOfMemoryError();
+                    }
+                };
+            }
+        };
+        bkServer.start();
+
+        LedgerHandle lh = bkc.createLedger(1, 1, BookKeeper.DigestType.CRC32, "passwd".getBytes());
+        lh.asyncAddEntry("test".getBytes(), new AddCallback() {
+                @Override
+                public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+                    // dont care, only trying to trigger OOM
+                }
+            }, null);
+        bkServer.join();
+        Assert.assertFalse("Should have died", bkServer.isRunning());
+        Assert.assertEquals("Should have died with server exception code",
+                            ExitCode.SERVER_EXCEPTION, bkServer.getExitCode());
     }
 }

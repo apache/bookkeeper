@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -77,6 +78,7 @@ public class NIOServerFactory extends Thread {
 
     ServerConfiguration conf;
 
+    private AtomicBoolean crashed = new AtomicBoolean(false);
     private Object suspensionLock = new Object();
     private boolean suspended = false;
 
@@ -109,6 +111,10 @@ public class NIOServerFactory extends Thread {
 
     public boolean isRunning() {
         return !ss.socket().isClosed() && isAlive();
+    }
+
+    boolean hasCrashed() {
+        return crashed.get();
     }
 
     /**
@@ -166,6 +172,7 @@ public class NIOServerFactory extends Thread {
                 LOG.warn("Exception in server socket loop: " + ss.socket().getInetAddress(), e);
             } catch (Throwable e) {
                 LOG.error("Error in server socket loop: " + ss.socket().getInetAddress(), e);
+                crashed.set(true);
                 break;
             }
         }

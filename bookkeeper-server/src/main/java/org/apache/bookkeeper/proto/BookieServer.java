@@ -70,8 +70,6 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     DeathWatcher deathWatcher;
     static Logger LOG = LoggerFactory.getLogger(BookieServer.class);
 
-    int exitCode = ExitCode.OK;
-
     // operation stats
     final BKStats bkStats = BKStats.getInstance();
     final boolean isStatsEnabled;
@@ -102,7 +100,6 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
         this.bookie.start();
         // fail fast, when bookie startup is not successful
         if (!this.bookie.isRunning()) {
-            exitCode = bookie.getExitCode();
             return;
         }
         if (isAutoRecoveryDaemonEnabled && this.autoRecoveryMain != null) {
@@ -153,7 +150,8 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
             return;
         }
         nioServerFactory.shutdown();
-        exitCode = bookie.shutdown();
+        bookie.shutdown();
+
         if (isAutoRecoveryDaemonEnabled && this.autoRecoveryMain != null) {
             this.autoRecoveryMain.shutdown();
         }
@@ -224,6 +222,12 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
     }
 
     public int getExitCode() {
+        int exitCode = bookie.getExitCode();
+        if (exitCode == ExitCode.OK) {
+            if (nioServerFactory.hasCrashed()) {
+                return ExitCode.SERVER_EXCEPTION;
+            }
+        }
         return exitCode;
     }
 
