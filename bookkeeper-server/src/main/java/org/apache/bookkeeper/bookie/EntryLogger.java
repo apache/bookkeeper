@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +70,11 @@ public class EntryLogger {
      */
     final long logSizeLimit;
     private volatile BufferedChannel logChannel;
+    private final CopyOnWriteArrayList<EntryLogListener> listeners
+        = new CopyOnWriteArrayList<EntryLogListener>();
+    // this indicates that a write has happened since the last flush
+    private volatile boolean somethingWritten = false;
+
     /**
      * The 1K block at the head of the entry logger file
      * that contains the fingerprint and (future) meta-data
@@ -108,6 +114,16 @@ public class EntryLogger {
     }
 
     /**
+     * Entry Log Listener
+     */
+    static interface EntryLogListener {
+        /**
+         * Rotate a new entry log to write.
+         */
+        public void onRotateEntryLog();
+    }
+
+    /**
      * Create an EntryLogger that stores it's log files in the given
      * directories
      */
@@ -138,6 +154,12 @@ public class EntryLogger {
         }
 
         initialize();
+    }
+
+    void addListener(EntryLogListener listener) {
+        if (null != listener) {
+            listeners.add(listener);
+        }
     }
 
     /**
@@ -326,7 +348,16 @@ public class EntryLogger {
         if (logChannel != null) {
             logChannel.flush(true);
         }
+        somethingWritten = false;
+        for (EntryLogListener listener: listeners) {
+            listener.onRotateEntryLog();
+        }
     }
+
+    boolean isFlushRequired() {
+        return somethingWritten;
+    }
+
     synchronized long addEntry(long ledger, ByteBuffer entry) throws IOException {
         // Create new log if logSizeLimit reached or current disk is full
         boolean createNewLog = shouldCreateNewEntryLog.get();
@@ -346,6 +377,8 @@ public class EntryLogger {
         long pos = logChannel.position();
         logChannel.write(entry);
         //logChannel.flush(false);
+
+        somethingWritten = true;
 
         return (logId << 32L) | pos;
     }

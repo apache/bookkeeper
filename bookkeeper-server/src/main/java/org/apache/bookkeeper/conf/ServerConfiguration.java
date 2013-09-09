@@ -32,6 +32,9 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
     protected final static String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
     protected final static String MAJOR_COMPACTION_THRESHOLD = "majorCompactionThreshold";
+    protected final static String COMPACTION_MAX_OUTSTANDING_REQUESTS
+        = "compactionMaxOutstandingRequests";
+    protected final static String COMPACTION_RATE = "compactionRate";
 
     // Gc Parameters
     protected final static String GC_WAIT_TIME = "gcWaitTime";
@@ -754,5 +757,57 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public boolean isAutoRecoveryDaemonEnabled() {
         return getBoolean(AUTO_RECOVERY_DAEMON_ENABLED, false);
+    }
+
+    /**
+     * Get the maximum number of entries which can be compacted without flushing.
+     * Default is 100,000.
+     *
+     * @return the maximum number of unflushed entries
+     */
+    public int getCompactionMaxOutstandingRequests() {
+        return getInt(COMPACTION_MAX_OUTSTANDING_REQUESTS, 100000);
+    }
+
+    /**
+     * Set the maximum number of entries which can be compacted without flushing.
+     *
+     * When compacting, the entries are written to the entrylog and the new offsets
+     * are cached in memory. Once the entrylog is flushed the index is updated with
+     * the new offsets. This parameter controls the number of entries added to the
+     * entrylog before a flush is forced. A higher value for this parameter means
+     * more memory will be used for offsets. Each offset consists of 3 longs.
+     *
+     * This parameter should _not_ be modified unless you know what you're doing.
+     * The default is 100,000.
+     *
+     * @param maxOutstandingRequests number of entries to compact before flushing
+     *
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setCompactionMaxOutstandingRequests(int maxOutstandingRequests) {
+        setProperty(COMPACTION_MAX_OUTSTANDING_REQUESTS, maxOutstandingRequests);
+        return this;
+    }
+
+    /**
+     * Get the rate of compaction adds. Default is 1,000.
+     *
+     * @return rate of compaction (adds per second)
+     */
+    public int getCompactionRate() {
+        return getInt(COMPACTION_RATE, 1000);
+    }
+
+    /**
+     * Set the rate of compaction adds.
+     *
+     * @param rate rate of compaction adds (adds per second)
+     *
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setCompactionRate(int rate) {
+        setProperty(COMPACTION_RATE, rate);
+        return this;
     }
 }

@@ -70,6 +70,8 @@ Release 4.2.2 - Unreleased
 
         BOOKKEEPER-580: improve close logic (sijie & ivank via ivank)
 
+        BOOKKEEPER-664: Compaction increases latency on journal writes (ivank & sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)

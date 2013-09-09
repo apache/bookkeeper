@@ -53,18 +53,14 @@ class InterleavedLedgerStorage implements LedgerStorage {
     // has lower remaining percentage to reclaim disk space.
     final GarbageCollectorThread gcThread;
 
-    // this indicates that a write has happened since the last flush
-    private volatile boolean somethingWritten = false;
-
     InterleavedLedgerStorage(ServerConfiguration conf,
-                             LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager,
-                             GarbageCollectorThread.SafeEntryAdder safeEntryAdder)
+                             LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager)
 			throws IOException {
         activeLedgers = new SnapshotMap<Long, Boolean>();
         entryLogger = new EntryLogger(conf, ledgerDirsManager);
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers, ledgerDirsManager);
         gcThread = new GarbageCollectorThread(conf, ledgerCache, entryLogger,
-                activeLedgers, safeEntryAdder, ledgerManager);
+                activeLedgers, ledgerManager);
     }
 
     @Override
@@ -127,8 +123,6 @@ class InterleavedLedgerStorage implements LedgerStorage {
          */
         ledgerCache.putEntryOffset(ledgerId, entryId, pos);
 
-        somethingWritten = true;
-
         return entryId;
     }
 
@@ -151,16 +145,14 @@ class InterleavedLedgerStorage implements LedgerStorage {
 
     @Override
     public boolean isFlushRequired() {
-        return somethingWritten;
-    };
+        return entryLogger.isFlushRequired();
+    }
 
     @Override
     public void flush() throws IOException {
-
-        if (!somethingWritten) {
+        if (!isFlushRequired()) {
             return;
         }
-        somethingWritten = false;
         boolean flushFailed = false;
 
         try {
