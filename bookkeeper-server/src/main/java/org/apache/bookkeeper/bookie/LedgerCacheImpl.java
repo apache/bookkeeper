@@ -805,7 +805,10 @@ public class LedgerCacheImpl implements LedgerCache {
                 long ledgerToRemove = openLedgers.removeFirst();
                 LOG.info("Ledger {} is evicted from file info cache.",
                          ledgerToRemove);
-                fileInfoCache.remove(ledgerToRemove).close(true);
+                FileInfo fi = fileInfoCache.remove(ledgerToRemove);
+                if (fi != null) {
+                    fi.close(true);
+                }
             }
         }
     }

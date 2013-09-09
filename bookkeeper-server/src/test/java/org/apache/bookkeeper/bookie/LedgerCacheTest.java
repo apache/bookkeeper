@@ -200,6 +200,55 @@ public class LedgerCacheTest extends TestCase {
         }
     }
 
+    /**
+     * Test simulating race condition between when a ledger is deleting and an
+     * eviction from LedgerCache simultaneously
+     */
+    @Test(timeout = 60000)
+    public void testPageEvictionWhileDeleteLedgerInProgress() throws Exception {
+        File ledgerDir1 = File.createTempFile("bkTest", ".dir");
+        ledgerDir1.delete();
+        File ledgerDir2 = File.createTempFile("bkTest", ".dir");
+        ledgerDir2.delete();
+        ServerConfiguration conf = new ServerConfiguration();
+        conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(),
+                ledgerDir2.getAbsolutePath() });
+        conf.setOpenFileLimit(1);
+        Bookie bookie = new Bookie(conf);
+        InterleavedLedgerStorage ledgerStorage = ((InterleavedLedgerStorage) bookie.ledgerStorage);
+        final LedgerCacheImpl ledgerCache = (LedgerCacheImpl) ledgerStorage.ledgerCache;
+        // Create ledger index
+        final int ledgerCount = 2;
+        putLedger(ledgerCache, ledgerCount);
+        for (int id = 0; id < ledgerCount; id++) {
+            LOG.info("Deleting ledger id {}", id);
+            ledgerCache.deleteLedger(id);
+        }
+        // Adding ledgers back to the openLedgers data structure. This is done
+        // to simulate the case - during ledger eviction it would be deleted
+        // from fileInfoCache and exists only in openLedgers list, as these two
+        // are not atomic operations
+        ledgerCache.openLedgers.add(Long.valueOf(0));
+        ledgerCache.openLedgers.add(Long.valueOf(1));
+        for (int id = 0; id < ledgerCount; id++) {
+            try {
+                LOG.info("Reading ledger id {}", id);
+                ledgerCache.getFileInfo(Long.valueOf(id), "key".getBytes());
+            } catch (Exception e) {
+                LOG.info("Exception occured while getting the ledger info!", e);
+                Assert.fail("Exception occured while getting the ledger id "
+                        + id);
+            }
+        }
+    }
+
+    private void putLedger(LedgerCacheImpl ledgerCache, int count)
+            throws IOException {
+        for (int id = 0; id < count; id++) {
+            ledgerCache.getFileInfo(Long.valueOf(id), "key".getBytes());
+        }
+    }
+
     @Test(timeout=30000)
     public void testPageEviction() throws Exception {
         int numLedgers = 10;
