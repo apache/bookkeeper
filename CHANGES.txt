@@ -98,6 +98,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-580: improve close logic (sijie & ivank via ivank)
 
+        BOOKKEEPER-446: BookKeeper.createLedger(..) should not mask the error with ZKException (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
