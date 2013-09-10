@@ -79,13 +79,13 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
                 if (Code.OK.intValue() != rc) {
                     LOG.error("Could not create node for ledger",
                               KeeperException.create(KeeperException.Code.get(rc), path));
-                    cb.operationComplete(rc, null);
+                    cb.operationComplete(BKException.Code.ZKException, null);
                 } else {
                     // update znode status
                     metadata.setVersion(new ZkVersion(0));
                     try {
                         long ledgerId = getLedgerId(name);
-                        cb.operationComplete(rc, ledgerId);
+                        cb.operationComplete(BKException.Code.OK, ledgerId);
                     } catch (IOException ie) {
                         LOG.error("Could not extract ledger-id from path:" + name, ie);
                         cb.operationComplete(BKException.Code.ZKException, null);

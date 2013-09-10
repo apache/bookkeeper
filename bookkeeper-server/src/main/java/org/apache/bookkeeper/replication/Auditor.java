@@ -64,10 +64,8 @@ import org.apache.commons.collections.CollectionUtils;
 import com.google.common.collect.Sets;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.AsyncCallback;
-import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,8 +176,6 @@ public class Auditor implements BookiesListener {
                             }
                         } catch (BKException bke) {
                             LOG.error("Exception getting bookie list", bke);
-                        } catch (KeeperException ke) {
-                            LOG.error("Exception while watching available bookies", ke);
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
                             LOG.error("Interrupted while watching available bookies ", ie);
@@ -306,8 +302,7 @@ public class Auditor implements BookiesListener {
     }
 
     private void handleLostBookies(Collection<String> lostBookies,
-            Map<String, Set<Long>> ledgerDetails) throws BKAuditException,
-            KeeperException, InterruptedException {
+            Map<String, Set<Long>> ledgerDetails) throws BKAuditException {
         LOG.info("Following are the failed bookies: " + lostBookies
                 + " and searching its ledgers for re-replication");
 
@@ -319,7 +314,7 @@ public class Auditor implements BookiesListener {
     }
 
     private void publishSuspectedLedgers(String bookieIP, Set<Long> ledgers)
-            throws KeeperException, InterruptedException, BKAuditException {
+            throws BKAuditException {
         if (null == ledgers || ledgers.size() == 0) {
             // there is no ledgers available for this bookie and just
             // ignoring the bookie failures
@@ -368,12 +363,7 @@ public class Auditor implements BookiesListener {
             } catch (BKException bke) {
                 LOG.error("Error closing lh", bke);
                 if (rc == BKException.Code.OK) {
-                    rc = BKException.Code.ZKException;
-                }
-            } catch (KeeperException ke) {
-                LOG.error("Couldn't publish suspected ledger", ke);
-                if (rc == BKException.Code.OK) {
-                    rc = BKException.Code.ZKException;
+                    rc = BKException.Code.ReplicationException;
                 }
             } catch (InterruptedException ie) {
                 LOG.error("Interrupted publishing suspected ledger", ie);
@@ -384,7 +374,7 @@ public class Auditor implements BookiesListener {
             } catch (BKAuditException bkae) {
                 LOG.error("Auditor exception publishing suspected ledger", bkae);
                 if (rc == BKException.Code.OK) {
-                    rc = BKException.Code.ZKException;
+                    rc = BKException.Code.ReplicationException;
                 }
             }
 

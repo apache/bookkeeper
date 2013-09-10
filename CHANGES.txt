@@ -76,6 +76,8 @@ Release 4.2.2 - Unreleased
 
         BOOKKEEPER-669: Race condition in ledger deletion and eviction from cache (rakeshr via ivank)
 
+        BOOKKEEPER-446: BookKeeper.createLedger(..) should not mask the error with ZKException (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)

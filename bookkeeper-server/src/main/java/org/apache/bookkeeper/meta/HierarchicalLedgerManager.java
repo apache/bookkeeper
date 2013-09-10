@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -109,7 +110,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
                 if (rc != KeeperException.Code.OK.intValue()) {
                     LOG.error("Could not generate new ledger id",
                               KeeperException.create(KeeperException.Code.get(rc), path));
-                    ledgerCb.operationComplete(rc, null);
+                    ledgerCb.operationComplete(BKException.Code.ZKException, null);
                     return;
                 }
                 /*
@@ -120,7 +121,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
                     ledgerId = getLedgerIdFromGenPath(idPathName);
                 } catch (IOException e) {
                     LOG.error("Could not extract ledger-id from id gen path:" + path, e);
-                    ledgerCb.operationComplete(KeeperException.Code.SYSTEMERROR.intValue(), null);
+                    ledgerCb.operationComplete(BKException.Code.ZKException, null);
                     return;
                 }
                 String ledgerPath = getLedgerPath(ledgerId);
@@ -132,11 +133,11 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
                         if (rc != KeeperException.Code.OK.intValue()) {
                             LOG.error("Could not create node for ledger",
                                       KeeperException.create(KeeperException.Code.get(rc), path));
-                            ledgerCb.operationComplete(rc, null);
+                            ledgerCb.operationComplete(BKException.Code.ZKException, null);
                         } else {
                             // update version
                             metadata.setVersion(new ZkVersion(0));
-                            ledgerCb.operationComplete(rc, lid);
+                            ledgerCb.operationComplete(BKException.Code.OK, lid);
                         }
                     }
                 };

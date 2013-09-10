@@ -21,9 +21,12 @@ package org.apache.bookkeeper.test;
  *
  */
 
+import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 
 import org.junit.Before;
@@ -71,4 +74,26 @@ public class LedgerCreateDeleteTest extends BookKeeperClusterTestCase {
             lh.close();
         }
     }
+
+    @Test(timeout = 60000)
+    public void testCreateLedgerWithBKNotEnoughBookiesException() throws Exception {
+        try {
+            bkc.createLedger(2, 2, DigestType.CRC32, "bk is cool".getBytes());
+            fail("Should be able to throw BKNotEnoughBookiesException");
+        } catch (BKException.BKNotEnoughBookiesException bkn) {
+            // expected
+        }
+    }
+
+    @Test(timeout = 60000)
+    public void testCreateLedgerWithZKException() throws Exception {
+        stopZKCluster();
+        try {
+            bkc.createLedger(1, 1, DigestType.CRC32, "bk is cool".getBytes());
+            fail("Should be able to throw ZKException");
+        } catch (BKException.ZKException zke) {
+            // expected
+        }
+    }
+
 }
