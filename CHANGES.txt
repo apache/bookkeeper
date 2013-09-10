@@ -78,6 +78,8 @@ Release 4.2.2 - Unreleased
 
         BOOKKEEPER-446: BookKeeper.createLedger(..) should not mask the error with ZKException (sijie via ivank)
 
+        BOOKKEEPER-675: Log noise fixup before cutting 4.2.2 (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)

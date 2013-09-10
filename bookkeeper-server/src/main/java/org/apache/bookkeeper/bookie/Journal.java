@@ -433,6 +433,7 @@ class Journal extends Thread {
             if(id == markedLogId) {
                 logPosition = lastLogMark.getTxnLogPosition();
             }
+            LOG.info("Replaying journal {} from position {}", id, logPosition);
             scanJournal(id, logPosition, scanner);
         }
     }

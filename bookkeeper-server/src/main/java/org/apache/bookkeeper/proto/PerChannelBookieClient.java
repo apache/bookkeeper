@@ -404,7 +404,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                 }
 
                 if (readCompletion != null) {
-                    LOG.error("Could not write request for reading entry: {}"
+                    LOG.debug("Could not write request for reading entry: {}"
                               + " ledger-id: {} bookie: {}",
                               new Object[] { key.entryId, key.ledgerId, bAddress });
 
@@ -429,12 +429,12 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                     if(c != null) {
                         bAddress = c.getRemoteAddress().toString();
                     }
-                    LOG.error("Could not write request for adding entry: {} ledger-id: {} bookie: {}",
+                    LOG.debug("Could not write request for adding entry: {} ledger-id: {} bookie: {}",
                               new Object[] { key.entryId, key.ledgerId, bAddress });
 
                     addCompletion.cb.writeComplete(BKException.Code.BookieHandleNotAvailableException, key.ledgerId,
                                                    key.entryId, addr, addCompletion.ctx);
-                    LOG.error("Invoked callback method: " + key.entryId);
+                    LOG.debug("Invoked callback method: {}", key.entryId);
                 }
             }
 
@@ -516,8 +516,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
         Throwable t = e.getCause();
         if (t instanceof CorruptedFrameException || t instanceof TooLongFrameException) {
-            LOG.error("Corrupted fram received from bookie: "
-                      + e.getChannel().getRemoteAddress());
+            LOG.error("Corrupted frame received from bookie: {}",
+                      e.getChannel().getRemoteAddress());
             return;
         }
         if (t instanceof ReadTimeoutException) {
@@ -541,7 +541,14 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             return;
         }
 
-        LOG.error("Unexpected exception caught by bookie client channel handler", t);
+        synchronized (this) {
+            if (state == ConnectionState.CLOSED) {
+                LOG.debug("Unexpected exception caught by bookie client channel handler, "
+                          + "but the client is closed, so it isn't important", t);
+            } else {
+                LOG.error("Unexpected exception caught by bookie client channel handler", t);
+            }
+        }
         // Since we are a library, cant terminate App here, can we?
     }
 
@@ -590,8 +597,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
     void handleAddResponse(long ledgerId, long entryId, int rc) {
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Got response for add request from bookie: " + addr + " for ledger: " + ledgerId + " entry: "
-                      + entryId + " rc: " + rc);
+            LOG.debug("Got response for add request from bookie: {} for ledger: {} entry: {}"
+                      + " rc: {}", new Object[] { addr, ledgerId, entryId, rc });
         }
 
         // convert to BKException code because thats what the uppper
@@ -614,8 +621,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             rc = BKException.Code.WriteOnReadOnlyBookieException;
             break;
         default:
-            LOG.error("Add for ledger: " + ledgerId + ", entry: " + entryId + " failed on bookie: " + addr
-                      + " with code: " + rc);
+            LOG.warn("Add for ledger: {}, entry: {} failed on bookie: {}"
+                    + " with unknown code: {}", new Object[] { ledgerId, entryId, addr, rc });
             rc = BKException.Code.WriteException;
             break;
         }
@@ -623,8 +630,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         AddCompletion ac;
         ac = addCompletions.remove(new CompletionKey(ledgerId, entryId));
         if (ac == null) {
-            LOG.error("Unexpected add response received from bookie: " + addr + " for ledger: " + ledgerId
-                      + ", entry: " + entryId + " , ignoring");
+            LOG.debug("Unexpected add response received from bookie: {} for ledger: {}"
+                    + ", entry: {}, ignoring", new Object[] { addr,  ledgerId, entryId });
             return;
         }
 
@@ -636,8 +643,9 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
     void handleReadResponse(long ledgerId, long entryId, int rc, ChannelBuffer buffer) {
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Got response for read request from bookie: " + addr + " for ledger: " + ledgerId + " entry: "
-                      + entryId + " rc: " + rc + " entry length: " + buffer.readableBytes());
+            LOG.debug("Got response for read request from bookie: {} for ledger: {} entry: {}"
+                    + " rc: {} entry length: {}",
+                    new Object[] { addr, ledgerId, entryId, rc, buffer.readableBytes() });
         }
 
         // convert to BKException code because thats what the uppper
@@ -652,8 +660,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         } else if (rc == BookieProtocol.EUA) {
             rc = BKException.Code.UnauthorizedAccessException;
         } else {
-            LOG.error("Read for ledger: " + ledgerId + ", entry: " + entryId + " failed on bookie: " + addr
-                      + " with code: " + rc);
+            LOG.warn("Read for ledger: {}, entry: {} failed on bookie: {}"
+                    + " with unknown code: {}", new Object[] { ledgerId, entryId, addr, rc });
             rc = BKException.Code.ReadException;
         }
 
@@ -671,8 +679,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         }
 
         if (readCompletion == null) {
-            LOG.error("Unexpected read response received from bookie: " + addr + " for ledger: " + ledgerId
-                      + ", entry: " + entryId + " , ignoring");
+            LOG.debug("Unexpected read response received from bookie: {} for ledger: {}"
+                    + ", entry: {} , ignoring", new Object[] { addr, ledgerId, entryId });
             return;
         }
 

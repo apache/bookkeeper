@@ -507,7 +507,7 @@ public class Bookie extends Thread {
                     + BookKeeperConstants.INSTANCEID, false, null);
             instanceId = new String(data);
         } catch (KeeperException.NoNodeException e) {
-            LOG.warn("INSTANCEID not exists in zookeeper. Not considering it for data verification");
+            LOG.info("INSTANCEID not exists in zookeeper. Not considering it for data verification");
         }
         return instanceId;
     }
@@ -624,6 +624,7 @@ public class Bookie extends Thread {
             shutdown(ExitCode.BOOKIE_EXCEPTION);
             return;
         }
+        LOG.info("Finished reading journal, starting bookie");
         // start bookie thread
         super.start();
 

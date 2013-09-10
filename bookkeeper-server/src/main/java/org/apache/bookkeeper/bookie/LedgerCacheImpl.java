@@ -803,8 +803,10 @@ public class LedgerCacheImpl implements LedgerCache {
         synchronized (fileInfoCache) {
             if (openLedgers.size() > openFileLimit) {
                 long ledgerToRemove = openLedgers.removeFirst();
-                LOG.info("Ledger {} is evicted from file info cache.",
-                         ledgerToRemove);
+                // TODO Add a statistic here, we don't care really which
+                // ledger is evicted, but the rate at which they get evicted
+                LOG.debug("Ledger {} is evicted from file info cache.",
+                          ledgerToRemove);
                 FileInfo fi = fileInfoCache.remove(ledgerToRemove);
                 if (fi != null) {
                     fi.close(true);
