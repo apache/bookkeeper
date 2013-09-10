@@ -80,6 +80,8 @@ Release 4.2.2 - Unreleased
 
         BOOKKEEPER-675: Log noise fixup before cutting 4.2.2 (ivank)
 
+        BOOKKEEPER-627: LedgerDirsMonitor is missing thread name (rakeshr via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)
