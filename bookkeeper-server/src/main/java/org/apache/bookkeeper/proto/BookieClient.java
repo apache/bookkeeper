@@ -205,6 +205,7 @@ public class BookieClient {
             for (PerChannelBookieClient channel: channels.values()) {
                 channel.close();
             }
+            channels.clear();
         } finally {
             closeLock.writeLock().unlock();
         }

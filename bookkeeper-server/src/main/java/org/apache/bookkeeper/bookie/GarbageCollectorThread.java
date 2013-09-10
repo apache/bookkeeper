@@ -542,7 +542,7 @@ public class GarbageCollectorThread extends Thread {
                 continue;
             }
 
-            LOG.info("Extracting entry log meta from entryLogId: " + entryLogId);
+            LOG.info("Extracting entry log meta from entryLogId: {}", entryLogId);
 
             try {
                 // Read through the entry log file and extract the entry log meta
@@ -570,8 +570,8 @@ public class GarbageCollectorThread extends Thread {
         ExtractionScanner scanner = new ExtractionScanner(entryLogMeta);
         // Read through the entry log file and extract the entry log meta
         entryLogger.scanEntryLog(entryLogId, scanner);
-        LOG.info("Retrieved entry log meta data entryLogId: "
-                 + entryLogId + ", meta: " + entryLogMeta);
+        LOG.debug("Retrieved entry log meta data entryLogId: {}, meta: {}",
+                  entryLogId, entryLogMeta);
         return entryLogMeta;
     }
 }

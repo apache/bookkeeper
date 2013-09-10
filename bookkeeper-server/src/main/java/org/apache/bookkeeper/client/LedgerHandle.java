@@ -624,6 +624,7 @@ public class LedgerHandle {
             errorOutPendingAdds(rc);
             return;
         }
+        LOG.error("Closing ledger {} due to error {}", ledgerId, rc);
         asyncCloseInternal(NoopCloseCallback.instance, null, rc);
     }
 

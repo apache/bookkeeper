@@ -143,15 +143,18 @@ class PendingAddOp implements WriteCallback {
             // continue
             break;
         case BKException.Code.LedgerFencedException:
-            LOG.warn("Fencing exception on write: " + ledgerId + ", " + entryId);
+            LOG.warn("Fencing exception on write: L{} E{} on {}",
+                     new Object[] { ledgerId, entryId, addr });
             lh.handleUnrecoverableErrorDuringAdd(rc);
             return;
         case BKException.Code.UnauthorizedAccessException:
-            LOG.warn("Unauthorized access exception on write: " + ledgerId + ", " + entryId);
+            LOG.warn("Unauthorized access exception on write: L{} E{} on {}",
+                     new Object[] { ledgerId, entryId, addr });
             lh.handleUnrecoverableErrorDuringAdd(rc);
             return;
         default:
-            LOG.warn("Write did not succeed: " + ledgerId + ", " + entryId);
+            LOG.warn("Write did not succeed: L{} E{} on {}",
+                     new Object[] { ledgerId, entryId, addr });
             lh.handleBookieFailure(addr, bookieIndex);
             return;
         }
@@ -172,6 +175,11 @@ class PendingAddOp implements WriteCallback {
     }
 
     void submitCallback(final int rc) {
+        if (rc != BKException.Code.OK) {
+            LOG.error("Write of ledger entry to quorum failed: L{} E{}",
+                      lh.getId(), entryId);
+        }
+
         cb.addComplete(rc, lh, entryId, ctx);
     }
 

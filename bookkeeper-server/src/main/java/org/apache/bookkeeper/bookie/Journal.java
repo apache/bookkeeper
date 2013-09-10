@@ -438,6 +438,7 @@ class Journal extends Thread implements CheckpointSource {
             if(id == markedLog.getLogFileId()) {
                 logPosition = markedLog.getLogFileOffset();
             }
+            LOG.info("Replaying journal {} from position {}", id, logPosition);
             scanJournal(id, logPosition, scanner);
         }
     }

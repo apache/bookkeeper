@@ -190,11 +190,11 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             }
             if (BKException.Code.NoSuchEntryException == rc) {
                 ++numMissedEntryReads;
-                LOG.info("No such entry found on bookie. entry: {} ledgerId: {} bookie: {}", new Object[] { entryId,
-                        lh.ledgerId, host });
+                LOG.debug("No such entry found on bookie.  L{} E{} bookie: {}",
+                        new Object[] { lh.ledgerId, entryId, host });
             } else {
-                LOG.error(errMsg + " while reading entry: " + entryId + " ledgerId: " + lh.ledgerId + " from bookie: "
-                        + host);
+                LOG.debug(errMsg + " while reading L{} E{} from bookie: {}",
+                          new Object[] { lh.ledgerId, entryId, host });
             }
 
             int replica = getReplicaIndex(host);
@@ -282,8 +282,8 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
                             }
                         }
                         if (x > 0) {
-                            LOG.info("Send {} speculative reads for ledger {} ({}, {}). Hosts heard are {}.",
-                                     new Object[] { x, lh.getId(), startEntryId, endEntryId, heardFromHosts });
+                            LOG.debug("Send {} speculative reads for ledger {} ({}, {}). Hosts heard are {}.",
+                                      new Object[] { x, lh.getId(), startEntryId, endEntryId, heardFromHosts });
                         }
                     }
                 }, speculativeReadTimeout, speculativeReadTimeout, TimeUnit.MILLISECONDS);
@@ -346,6 +346,17 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         if (speculativeTask != null) {
             speculativeTask.cancel(true);
             speculativeTask = null;
+        }
+        if (code != BKException.Code.OK) {
+            long firstUnread = LedgerHandle.INVALID_ENTRY_ID;
+            for (LedgerEntryRequest req : seq) {
+                if (!req.isComplete()) {
+                    firstUnread = req.getEntryId();
+                    break;
+                }
+            }
+            LOG.error("Read of ledger entry failed: L{} E{}-E{}, Heard from {}. First unread entry is {}",
+                    new Object[] { lh.getId(), startEntryId, endEntryId, heardFromHosts, firstUnread });
         }
         cb.readComplete(code, lh, PendingReadOp.this, PendingReadOp.this.ctx);
     }
