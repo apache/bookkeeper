@@ -6,6 +6,8 @@ Release 4.2.2 - 2013-09-10
 
       BOOKKEEPER-635: jenkins build should highlight which lines of the patch cause raw analysis errors (ivank via sijie)
 
+      BOOKKEEPER-684: ZK logging is oververbose, can cause oom in tests (ivank via fpj)
+
       bookkeeper-server:
 
         BOOKKEEPER-559: Fix occasional failure in AuditorBookieTest (ivank)
