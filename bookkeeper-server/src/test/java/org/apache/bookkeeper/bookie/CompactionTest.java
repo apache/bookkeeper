@@ -40,6 +40,7 @@ import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
@@ -219,9 +220,10 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         for (File dir : dirManager.getAllLedgerDirs()) {
             Bookie.checkDirectoryStructure(dir);
         }
-        InterleavedLedgerStorage storage = new InterleavedLedgerStorage(conf,
-                        LedgerManagerFactory.newLedgerManagerFactory(conf, zkc).newLedgerManager(),
-                        dirManager, cp);
+        InterleavedLedgerStorage storage = new InterleavedLedgerStorage();
+        storage.initialize(conf,
+                LedgerManagerFactory.newLedgerManagerFactory(conf, zkc).newLedgerManager(),
+                dirManager, dirManager, cp, NullStatsLogger.INSTANCE);
         storage.start();
         long startTime = MathUtils.now();
         Thread.sleep(2000);
@@ -424,8 +426,8 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         File log0 = new File(curDir, "0.log");
         LedgerDirsManager dirs = new LedgerDirsManager(conf, conf.getLedgerDirs());
         assertFalse("Log shouldnt exist", log0.exists());
-        InterleavedLedgerStorage storage = new InterleavedLedgerStorage(conf, manager,
-                                                                        dirs, checkpointSource);
+        InterleavedLedgerStorage storage = new InterleavedLedgerStorage();
+        storage.initialize(conf, manager, dirs, dirs, checkpointSource, NullStatsLogger.INSTANCE);
         ledgers.add(1l);
         ledgers.add(2l);
         ledgers.add(3l);
@@ -443,7 +445,8 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         ledgers.remove(2l);
         ledgers.remove(3l);
 
-        storage = new InterleavedLedgerStorage(conf, manager, dirs, checkpointSource);
+        storage = new InterleavedLedgerStorage();
+        storage.initialize(conf, manager, dirs, dirs, checkpointSource, NullStatsLogger.INSTANCE);
         storage.start();
         for (int i = 0; i < 10; i++) {
             if (!log0.exists()) {
@@ -458,7 +461,8 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         storage.setMasterKey(4, KEY);
         storage.addEntry(genEntry(4, 1, ENTRY_SIZE)); // force ledger 1 page to flush
 
-        storage = new InterleavedLedgerStorage(conf, manager, dirs, checkpointSource);
+        storage = new InterleavedLedgerStorage();
+        storage.initialize(conf, manager, dirs, dirs, checkpointSource, NullStatsLogger.INSTANCE);
         storage.getEntry(1, 1); // entry should exist
     }
 
@@ -553,8 +557,8 @@ public class CompactionTest extends BookKeeperClusterTestCase {
                     boolean compact) throws IOException {
             }
         };
-        InterleavedLedgerStorage storage = new InterleavedLedgerStorage(conf,
-                manager, dirs, checkpointSource);
+        InterleavedLedgerStorage storage = new InterleavedLedgerStorage();
+        storage.initialize(conf, manager, dirs, dirs, checkpointSource, NullStatsLogger.INSTANCE);
 
         double threshold = 0.1;
         // shouldn't throw exception
@@ -599,9 +603,10 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         for (File dir : dirManager.getAllLedgerDirs()) {
             Bookie.checkDirectoryStructure(dir);
         }
-        InterleavedLedgerStorage storage = new InterleavedLedgerStorage(conf,
-                        LedgerManagerFactory.newLedgerManagerFactory(conf, zkc).newLedgerManager(),
-                        dirManager, cp);
+        InterleavedLedgerStorage storage = new InterleavedLedgerStorage();
+        storage.initialize(conf,
+                LedgerManagerFactory.newLedgerManagerFactory(conf, zkc).newLedgerManager(),
+                dirManager, dirManager, cp, NullStatsLogger.INSTANCE);
         storage.start();
         
         // test suspend Major GC.

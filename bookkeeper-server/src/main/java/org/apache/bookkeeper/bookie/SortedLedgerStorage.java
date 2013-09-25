@@ -39,14 +39,19 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         implements LedgerStorage, CacheCallback, SkipListFlusher {
     private final static Logger LOG = LoggerFactory.getLogger(SortedLedgerStorage.class);
 
-    private final EntryMemTable memTable;
-    private final ScheduledExecutorService scheduler;
+    private EntryMemTable memTable;
+    private ScheduledExecutorService scheduler;
 
-    public SortedLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
-                               LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                               final CheckpointSource checkpointSource, StatsLogger statsLogger)
-                                       throws IOException {
-        super(conf, ledgerManager, ledgerDirsManager, indexDirsManager, checkpointSource, statsLogger);
+    public SortedLedgerStorage() {
+        super();
+    }
+
+    @Override
+    public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
+                           LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
+                           final CheckpointSource checkpointSource, StatsLogger statsLogger)
+            throws IOException {
+        super.initialize(conf, ledgerManager, ledgerDirsManager, indexDirsManager, null, statsLogger);
         this.memTable = new EntryMemTable(conf, checkpointSource, statsLogger);
         this.scheduler = Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactoryBuilder()
