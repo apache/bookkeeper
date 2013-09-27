@@ -80,10 +80,12 @@ public class TestSubAfterCloseSub extends HedwigHubTestBase {
     /**
      * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-507}
      */
+    /* TODO: Add this test case back after BOOKKEEPER-37 is fixed
     @Test(timeout=15000)
     public void testSubAfterCloseSubForSimpleClient() throws Exception {
         runSubAfterCloseSubTest(false);
     }
+    */
 
     /**
      * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-507}
