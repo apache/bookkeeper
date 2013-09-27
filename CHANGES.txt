@@ -92,6 +92,8 @@ Release 4.2.2 - 2013-09-10
 
         BOOKKEEPER-607: Filtered Messages Require ACK from Client Causes User Being Throttled Incorrectly Forever (sijie via ivank)
 
+        BOOKKEEPER-683: TestSubAfterCloseSub fails on 4.2 (jiannan via ivank)
+
       hedwig-client:
 
         BOOKKEEPER-598: Fails to compile - RESUBSCRIBE_EXCEPTION conflict (Matthew Farrellee via ivank)
