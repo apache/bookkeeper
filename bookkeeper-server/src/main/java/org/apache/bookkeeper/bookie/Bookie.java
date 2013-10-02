@@ -413,6 +413,10 @@ public class Bookie extends Thread {
         LOG.info("instantiate ledger manager {}", ledgerManagerFactory.getClass().getName());
         ledgerManager = ledgerManagerFactory.newLedgerManager();
 
+        // Initialise ledgerDirManager. This would look through all the
+        // configured directories. When disk errors or all the ledger
+        // directories are full, would throws exception and fail bookie startup.
+        this.ledgerDirsManager.init();
         // instantiate the journal
         journal = new Journal(conf, ledgerDirsManager);
         ledgerStorage = new InterleavedLedgerStorage(conf, ledgerManager,
@@ -486,6 +490,8 @@ public class Bookie extends Thread {
     synchronized public void start() {
         setDaemon(true);
         LOG.debug("I'm starting a bookie with journal directory {}", journalDirectory.getName());
+        //Start DiskChecker thread
+        ledgerDirsManager.start();
         // replay journals
         try {
             readJournal();
@@ -502,9 +508,9 @@ public class Bookie extends Thread {
         // start bookie thread
         super.start();
 
+        // After successful bookie startup, register listener for disk
+        // error/full notifications.
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
-        //Start DiskChecker thread
-        ledgerDirsManager.start();
 
         ledgerStorage.start();
 

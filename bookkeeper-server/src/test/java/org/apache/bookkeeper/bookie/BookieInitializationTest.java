@@ -34,11 +34,13 @@ import junit.framework.Assert;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
+import org.apache.bookkeeper.util.DiskChecker.DiskErrorException;
 import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -329,6 +331,52 @@ public class BookieInitializationTest {
             b.shutdown();
         } finally {
             FileUtils.deleteDirectory(tmpDir);
+        }
+    }
+
+    /**
+     * Check disk full. Expected to throw NoWritableLedgerDirException
+     * during bookie initialisation.
+     */
+    @Test(timeout = 30000, expected = NoWritableLedgerDirException.class)
+    public void testWithDiskFull() throws Exception {
+        File tempDir = File.createTempFile("DiskCheck", "test");
+        tempDir.delete();
+        tempDir.mkdir();
+        long usableSpace = tempDir.getUsableSpace();
+        long totalSpace = tempDir.getTotalSpace();
+        final ServerConfiguration conf = new ServerConfiguration()
+                .setZkServers(zkutil.getZooKeeperConnectString())
+                .setZkTimeout(5000).setJournalDirName(tempDir.getPath())
+                .setLedgerDirNames(new String[] { tempDir.getPath() });
+        conf.setDiskUsageThreshold((1f - ((float) usableSpace / (float) totalSpace)) - 0.05f);
+        try {
+            new Bookie(conf);
+        } finally {
+            FileUtils.deleteDirectory(tempDir);
+        }
+    }
+
+    /**
+     * Check disk error for file. Expected to throw DiskErrorException.
+     */
+    @Test(timeout = 30000, expected = DiskErrorException.class)
+    public void testWithDiskError() throws Exception {
+        File parent = File.createTempFile("DiskCheck", "test");
+        parent.delete();
+        parent.mkdir();
+        File child = File.createTempFile("DiskCheck", "test", parent);
+        final ServerConfiguration conf = new ServerConfiguration()
+                .setZkServers(zkutil.getZooKeeperConnectString())
+                .setZkTimeout(5000).setJournalDirName(child.getPath())
+                .setLedgerDirNames(new String[] { child.getPath() });
+        try {
+            // LedgerDirsManager#init() is used in Bookie instantiation.
+            // Simulating disk errors by directly calling #init
+            LedgerDirsManager ldm = new LedgerDirsManager(conf);
+            ldm.init();
+        } finally {
+            FileUtils.deleteDirectory(parent);
         }
     }
 

@@ -153,6 +153,19 @@ public class LedgerDirsManager {
         }
     }
 
+    /**
+     * Sweep through all the directories to check disk errors or disk full.
+     * 
+     * @throws DiskErrorException
+     *             If disk having errors
+     * @throws NoWritableLedgerDirException
+     *             If all the configured ledger directories are full or having
+     *             less space than threshold
+     */
+    public void init() throws DiskErrorException, NoWritableLedgerDirException {
+        monitor.checkDirs(writableLedgerDirectories);
+    }
+
     // start the daemon for disk monitoring
     public void start() {
         monitor.setDaemon(true);
@@ -201,6 +214,7 @@ public class LedgerDirsManager {
                         } catch (DiskErrorException e) {
                             // Notify disk failure to all listeners
                             for (LedgerDirsListener listener : listeners) {
+                                LOG.warn("{} has errors.", dir, e);
                                 listener.diskFailed(dir);
                             }
                         } catch (DiskOutOfSpaceException e) {
@@ -223,6 +237,18 @@ public class LedgerDirsManager {
                 }
             }
             LOG.info("LedgerDirsMonitorThread exited!");
+        }
+
+        private void checkDirs(List<File> writableDirs)
+                throws DiskErrorException, NoWritableLedgerDirException {
+            for (File dir : writableDirs) {
+                try {
+                    diskChecker.checkDir(dir);
+                } catch (DiskOutOfSpaceException e) {
+                    addToFilledDirs(dir);
+                }
+            }
+            getWritableLedgerDirs();
         }
     }
 

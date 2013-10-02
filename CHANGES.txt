@@ -46,6 +46,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-653: Timeout option is missing in few testcases (Rakesh via ivank)
 
+      BOOKKEEPER-686: Bookie startup will fail if one of the configured ledgerDir is full and the same is used for replaying the journal (Rakesh via sijie)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)
