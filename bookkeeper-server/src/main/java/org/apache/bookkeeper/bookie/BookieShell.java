@@ -23,6 +23,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +36,6 @@ import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
-import org.apache.bookkeeper.bookie.Journal.LastLogMark;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -483,17 +484,38 @@ public class BookieShell implements Tool {
 
         ListBookiesCmd() {
             super(CMD_LISTBOOKIES);
-            opts.addOption("h", "hostnames", false, "Also print hostnames");
+            opts.addOption("rw", "readwrite", false, "Print readwrite bookies");
+            opts.addOption("ro", "readonly", false, "Print readonly bookies");
+            opts.addOption("h", "hostnames", false,
+                    "Also print hostname of the bookie");
         }
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
+            boolean readwrite = cmdLine.hasOption("rw");
+            boolean readonly = cmdLine.hasOption("ro");
+
+            if ((!readwrite && !readonly) || (readwrite && readonly)) {
+                LOG.error("One and only one of -readwrite and -readonly must be specified");
+                printUsage();
+                return 1;
+            }
             ClientConfiguration clientconf = new ClientConfiguration(bkConf)
                 .setZkServers(bkConf.getZkServers());
             BookKeeperAdmin bka = new BookKeeperAdmin(clientconf);
 
             int count = 0;
-            for (InetSocketAddress b : bka.getAvailableBookies()) {
+            Collection<InetSocketAddress> bookies = new ArrayList<InetSocketAddress>();
+            if (cmdLine.hasOption("rw")) {
+                Collection<InetSocketAddress> availableBookies = bka
+                        .getAvailableBookies();
+                bookies.addAll(availableBookies);
+            } else if (cmdLine.hasOption("ro")) {
+                Collection<InetSocketAddress> roBookies = bka
+                        .getReadOnlyBookies();
+                bookies.addAll(roBookies);
+            }
+            for (InetSocketAddress b : bookies) {
                 System.out.print(StringUtils.addrToString(b));
                 if (cmdLine.hasOption("h")) {
                     System.out.print("\t" + b.getHostName());
@@ -502,7 +524,7 @@ public class BookieShell implements Tool {
                 count++;
             }
             if (count == 0) {
-                System.err.println("No bookies available");
+                System.err.println("No bookie exists!");
                 return 1;
             }
             return 0;
@@ -510,12 +532,12 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "List all available bookies.";
+            return "List the bookies, which are running as either readwrite or readonly mode.";
         }
 
         @Override
         String getUsage() {
-            return "listbookies [-hostnames]";
+            return "listbookies [-readwrite|-readonly] [-hostnames]";
         }
 
         @Override
@@ -659,7 +681,7 @@ public class BookieShell implements Tool {
         System.err.println("       readlog      [-msg] <entry_log_id|entry_log_file_name>");
         System.err.println("       readjournal  [-msg] <journal_id|journal_file_name>");
         System.err.println("       autorecovery [-enable|-disable]");
-        System.err.println("       listbookies  [-hostnames]");
+        System.err.println("       listbookies  [-readwrite|-readonly] [-hostnames]");
         System.err.println("       lastmark");
         System.err.println("       help");
     }
