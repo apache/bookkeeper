@@ -84,6 +84,8 @@ Release 4.2.2 - 2013-09-10
 
         BOOKKEEPER-627: LedgerDirsMonitor is missing thread name (rakeshr via ivank)
 
+        BOOKKEEPER-685: Race in compaction algorithm from BOOKKEEPER-664 (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)

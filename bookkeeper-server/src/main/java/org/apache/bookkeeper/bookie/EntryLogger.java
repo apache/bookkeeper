@@ -118,9 +118,9 @@ public class EntryLogger {
      */
     static interface EntryLogListener {
         /**
-         * Rotate a new entry log to write.
+         * Callback when entry log is flushed.
          */
-        public void onRotateEntryLog();
+        public void onEntryLogFlushed();
     }
 
     /**
@@ -350,7 +350,7 @@ public class EntryLogger {
         }
         somethingWritten = false;
         for (EntryLogListener listener: listeners) {
-            listener.onRotateEntryLog();
+            listener.onEntryLogFlushed();
         }
     }
 
