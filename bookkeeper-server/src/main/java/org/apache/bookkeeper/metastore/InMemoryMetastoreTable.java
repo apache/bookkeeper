@@ -27,6 +27,8 @@ import org.apache.bookkeeper.metastore.MSException.Code;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 public class InMemoryMetastoreTable implements MetastoreScannableTable {
 
     public static class MetadataVersion implements Version {
@@ -96,7 +98,11 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
     public InMemoryMetastoreTable(InMemoryMetaStore metastore, String name) {
         this.map = new TreeMap<String, Versioned<Value>>();
         this.name = name;
-        this.scheduler = Executors.newSingleThreadScheduledExecutor();
+        String thName = "InMemoryMetastore-Table(" + name + ")-Scheduler-%d";
+        ThreadFactoryBuilder tfb = new ThreadFactoryBuilder()
+                .setNameFormat(thName);
+        this.scheduler = Executors
+                .newSingleThreadScheduledExecutor(tfb.build());
     }
 
     @Override

@@ -45,6 +45,8 @@ import org.apache.hedwig.server.netty.PubSubServer;
 import org.apache.hedwig.server.netty.PubSubServerPipelineFactory;
 import org.apache.hedwig.server.netty.UmbrellaHandler;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 public class HedwigProxy {
     static final Logger logger = LoggerFactory.getLogger(HedwigProxy.class);
 
@@ -78,9 +80,12 @@ public class HedwigProxy {
             @Override
             public void run() {
                 client = new HedwigClient(cfg);
-
-                serverSocketChannelFactory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(),
-                        Executors.newCachedThreadPool());
+                ThreadFactoryBuilder tfb = new ThreadFactoryBuilder();
+                serverSocketChannelFactory = new NioServerSocketChannelFactory(
+                        Executors.newCachedThreadPool(tfb.setNameFormat(
+                                "HedwigProxy-NIOBoss-%d").build()),
+                        Executors.newCachedThreadPool(tfb.setNameFormat(
+                                "HedwigProxy-NIOWorker-%d").build()));
                 initializeHandlers();
                 initializeNetty();
 

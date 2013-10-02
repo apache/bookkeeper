@@ -58,6 +58,8 @@ import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 /**
  * MetaStore Based Ledger Manager Factory
  */
@@ -201,7 +203,10 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
             maxEntriesPerScan = conf.getMetastoreMaxEntriesPerScan();
 
             this.idGenPath = conf.getZkLedgersRootPath() + IDGENERATION_PREFIX;
-            this.scheduler = Executors.newSingleThreadScheduledExecutor();
+            ThreadFactoryBuilder tfb = new ThreadFactoryBuilder()
+                    .setNameFormat("MSLedgerManagerScheduler-%d");
+            this.scheduler = Executors.newSingleThreadScheduledExecutor(tfb
+                    .build());
         }
 
         @Override

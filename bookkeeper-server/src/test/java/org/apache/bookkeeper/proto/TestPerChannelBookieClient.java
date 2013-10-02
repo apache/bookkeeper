@@ -72,7 +72,8 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         ClientSocketChannelFactory channelFactory
             = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                                                 Executors.newCachedThreadPool());
-        OrderedSafeExecutor executor = new OrderedSafeExecutor(1);
+        OrderedSafeExecutor executor = new OrderedSafeExecutor(1,
+                "BKClientOrderedSafeExecutor");
 
         InetSocketAddress addr = getBookie(0);
         AtomicLong bytesOutstanding = new AtomicLong(0);
@@ -109,7 +110,8 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         ClientSocketChannelFactory channelFactory
             = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                                                 Executors.newCachedThreadPool());
-        OrderedSafeExecutor executor = new OrderedSafeExecutor(1);
+        OrderedSafeExecutor executor = new OrderedSafeExecutor(1,
+                "BKClientOrderedSafeExecutor");
 
         InetSocketAddress addr = getBookie(0);
         AtomicLong bytesOutstanding = new AtomicLong(0);
@@ -144,7 +146,8 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         ClientSocketChannelFactory channelFactory
             = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                                                 Executors.newCachedThreadPool());
-        OrderedSafeExecutor executor = new OrderedSafeExecutor(1);
+        OrderedSafeExecutor executor = new OrderedSafeExecutor(1,
+                "BKClientOrderedSafeExecutor");
         InetSocketAddress addr = getBookie(0);
 
         AtomicLong bytesOutstanding = new AtomicLong(0);
@@ -242,7 +245,8 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         ClientSocketChannelFactory channelFactory
             = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                                                 Executors.newCachedThreadPool());
-        final OrderedSafeExecutor executor = new OrderedSafeExecutor(1);
+        final OrderedSafeExecutor executor = new OrderedSafeExecutor(1,
+                "BKClientOrderedSafeExecutor");
         InetSocketAddress addr = getBookie(0);
         AtomicLong bytesOutstanding = new AtomicLong(0);
 

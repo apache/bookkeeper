@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
-import com.google.protobuf.ByteString;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import org.apache.hedwig.client.api.Client;
 import org.apache.hedwig.client.conf.ClientConfiguration;
@@ -65,7 +65,10 @@ public class HedwigClientImpl implements Client {
     // This will create its own client socket channel factory.
     protected HedwigClientImpl(ClientConfiguration cfg) {
         this(cfg, new NioClientSocketChannelFactory(
-                  Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
+                Executors.newCachedThreadPool(new ThreadFactoryBuilder()
+                        .setNameFormat("HedwigClient-NIOBoss-%d").build()),
+                Executors.newCachedThreadPool(new ThreadFactoryBuilder()
+                        .setNameFormat("HedwigClient-NIOWorker-%d").build())));
         ownChannelFactory = true;
     }
 

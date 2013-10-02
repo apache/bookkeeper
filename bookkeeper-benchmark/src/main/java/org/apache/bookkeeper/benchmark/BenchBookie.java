@@ -145,7 +145,7 @@ public class BenchBookie {
         ClientSocketChannelFactory channelFactory
             = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors
                                                 .newCachedThreadPool());
-        OrderedSafeExecutor executor = new OrderedSafeExecutor(1);
+        OrderedSafeExecutor executor = new OrderedSafeExecutor(1, "BenchBookieClientScheduler");
 
         ClientConfiguration conf = new ClientConfiguration();
         BookieClient bc = new BookieClient(conf, channelFactory, executor);

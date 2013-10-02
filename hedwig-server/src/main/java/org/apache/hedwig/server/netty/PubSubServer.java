@@ -31,6 +31,8 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BKException;
@@ -401,11 +403,19 @@ public class PubSubServer {
                 try {
                     // Since zk is needed by almost everyone,try to see if we
                     // need that first
-                    scheduler = Executors.newSingleThreadScheduledExecutor();
-                    serverChannelFactory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors
-                            .newCachedThreadPool());
-                    clientChannelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors
-                            .newCachedThreadPool());
+                    ThreadFactoryBuilder tfb = new ThreadFactoryBuilder();
+                    scheduler = Executors.newSingleThreadScheduledExecutor(tfb
+                            .setNameFormat("PubSubServerScheduler-%d").build());
+                    serverChannelFactory = new NioServerSocketChannelFactory(
+                            Executors.newCachedThreadPool(tfb.setNameFormat(
+                                    "PubSub-Server-NIOBoss-%d").build()),
+                            Executors.newCachedThreadPool(tfb.setNameFormat(
+                                    "PubSub-Server-NIOWorker-%d").build()));
+                    clientChannelFactory = new NioClientSocketChannelFactory(
+                            Executors.newCachedThreadPool(tfb.setNameFormat(
+                                    "PubSub-Client-NIOBoss-%d").build()),
+                            Executors.newCachedThreadPool(tfb.setNameFormat(
+                                    "PubSub-Client-NIOWorker-%d").build()));
 
                     instantiateZookeeperClient();
                     instantiateMetadataManagerFactory();

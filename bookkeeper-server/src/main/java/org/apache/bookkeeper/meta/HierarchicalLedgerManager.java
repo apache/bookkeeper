@@ -45,6 +45,8 @@ import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 /**
  * Hierarchical Ledger Manager which manages ledger meta in zookeeper using 2-level hierarchical znodes.
  *
@@ -87,7 +89,10 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
         super(conf, zk);
 
         this.idGenPath = ledgerRootPath + IDGENERATION_PREFIX;
-        this.scheduler = Executors.newSingleThreadScheduledExecutor();
+        ThreadFactoryBuilder tfb = new ThreadFactoryBuilder().setNameFormat(
+                "HierarchialLedgerManagerScheduler-%d");
+        this.scheduler = Executors
+                .newSingleThreadScheduledExecutor(tfb.build());
         LOG.debug("Using HierarchicalLedgerManager with root path : {}", ledgerRootPath);
     }
 

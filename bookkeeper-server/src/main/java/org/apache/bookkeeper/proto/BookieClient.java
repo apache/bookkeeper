@@ -42,6 +42,9 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.google.common.base.Charsets.UTF_8;
@@ -260,9 +263,14 @@ public class BookieClient {
         Counter counter = new Counter();
         byte hello[] = "hello".getBytes(UTF_8);
         long ledger = Long.parseLong(args[2]);
-        ClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors
-                .newCachedThreadPool());
-        OrderedSafeExecutor executor = new OrderedSafeExecutor(1);
+        ThreadFactoryBuilder tfb = new ThreadFactoryBuilder();
+        ClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(
+                Executors.newCachedThreadPool(tfb.setNameFormat(
+                        "BookKeeper-NIOBoss-%d").build()),
+                Executors.newCachedThreadPool(tfb.setNameFormat(
+                        "BookKeeper-NIOWorker-%d").build()));
+        OrderedSafeExecutor executor = new OrderedSafeExecutor(1,
+                "BookieClientWorker");
         BookieClient bc = new BookieClient(new ClientConfiguration(), channelFactory, executor);
         InetSocketAddress addr = new InetSocketAddress(args[0], Integer.parseInt(args[1]));
 

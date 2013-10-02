@@ -72,7 +72,7 @@ public class BookieClientTest extends TestCase {
         bs.start();
         channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors
                 .newCachedThreadPool());
-        executor = new OrderedSafeExecutor(2);
+        executor = new OrderedSafeExecutor(2, "BKClientOrderedSafeExecutor");
     }
 
     @Override

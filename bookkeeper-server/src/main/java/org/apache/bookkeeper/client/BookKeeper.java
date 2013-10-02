@@ -48,6 +48,8 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 /**
  * BookKeeper client. We assume there is one single writer to a ledger at any
  * time.
@@ -132,14 +134,19 @@ public class BookKeeper {
         ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(conf.getZkTimeout());
         this.zk = ZkUtils
                 .createConnectedZookeeperClient(conf.getZkServers(), w);
-
-        this.channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
-                                                                Executors.newCachedThreadPool());
-        this.scheduler = Executors.newSingleThreadScheduledExecutor();
+        ThreadFactoryBuilder tfb = new ThreadFactoryBuilder();
+        this.channelFactory = new NioClientSocketChannelFactory(
+                Executors.newCachedThreadPool(tfb.setNameFormat(
+                        "BookKeeper-NIOBoss-%d").build()),
+                Executors.newCachedThreadPool(tfb.setNameFormat(
+                        "BookKeeper-NIOWorker-%d").build()));
+        this.scheduler = Executors.newSingleThreadScheduledExecutor(tfb
+                .setNameFormat("BookKeeperClientScheduler-%d").build());
         // initialize the ensemble placement
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf);
 
-        mainWorkerPool = new OrderedSafeExecutor(conf.getNumWorkerThreads());
+        mainWorkerPool = new OrderedSafeExecutor(conf.getNumWorkerThreads(),
+                "BookKeeperClientWorker");
         bookieClient = new BookieClient(conf, channelFactory, mainWorkerPool);
         bookieWatcher = new BookieWatcher(conf, scheduler, placementPolicy, this);
         bookieWatcher.readBookiesBlocking();
@@ -166,9 +173,13 @@ public class BookKeeper {
      * @throws KeeperException
      */
     public BookKeeper(ClientConfiguration conf, ZooKeeper zk)
-        throws IOException, InterruptedException, KeeperException {
-        this(conf, zk, new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
-                Executors.newCachedThreadPool()));
+            throws IOException, InterruptedException, KeeperException {
+
+        this(conf, zk, new NioClientSocketChannelFactory(
+                Executors.newCachedThreadPool(new ThreadFactoryBuilder()
+                        .setNameFormat("BookKeeper-NIOBoss-%d").build()),
+                Executors.newCachedThreadPool(new ThreadFactoryBuilder()
+                        .setNameFormat("BookKeeper-NIOWorker-%d").build())));
         ownChannelFactory = true;
     }
 
@@ -201,11 +212,15 @@ public class BookKeeper {
         this.conf = conf;
         this.zk = zk;
         this.channelFactory = channelFactory;
-        this.scheduler = Executors.newSingleThreadScheduledExecutor();
+        ThreadFactoryBuilder tfb = new ThreadFactoryBuilder().setNameFormat(
+                "BookKeeperClientScheduler-%d");
+        this.scheduler = Executors
+                .newSingleThreadScheduledExecutor(tfb.build());
         // initialize the ensemble placement
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf);
 
-        mainWorkerPool = new OrderedSafeExecutor(conf.getNumWorkerThreads());
+        mainWorkerPool = new OrderedSafeExecutor(conf.getNumWorkerThreads(),
+                "BookKeeperClientWorker");
         bookieClient = new BookieClient(conf, channelFactory, mainWorkerPool);
         bookieWatcher = new BookieWatcher(conf, scheduler, placementPolicy, this);
         bookieWatcher.readBookiesBlocking();

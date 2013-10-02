@@ -41,7 +41,7 @@ public class BookieBenchmark extends AbstractBenchmark {
     BookieClient bkc;
     InetSocketAddress addr;
     ClientSocketChannelFactory channelFactory;
-    OrderedSafeExecutor executor = new OrderedSafeExecutor(1);
+    OrderedSafeExecutor executor = new OrderedSafeExecutor(1, "BookieBenchmarkScheduler");
 
 
     public BookieBenchmark(String bookieHostPort)  throws Exception {

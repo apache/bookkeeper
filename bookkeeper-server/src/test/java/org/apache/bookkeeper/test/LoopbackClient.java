@@ -97,7 +97,7 @@ class LoopbackClient implements WriteCallback {
         LoopbackClient lb;
         ClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors
                 .newCachedThreadPool());
-        OrderedSafeExecutor executor = new OrderedSafeExecutor(2);
+        OrderedSafeExecutor executor = new OrderedSafeExecutor(2, "BookieClientScheduler");
         try {
             InetSocketAddress addr = new InetSocketAddress("127.0.0.1", Integer.valueOf(args[2]).intValue());
             lb = new LoopbackClient(channelFactory, executor, begin, limit.intValue());
