@@ -129,8 +129,8 @@ public class GarbageCollectorThread extends Thread {
                         long entryId = entry.getLong();
                         entry.rewind();
 
-                        flushed.set(false);
                         long newoffset = entryLogger.addEntry(ledgerId, entry);
+                        flushed.set(false);
                         offsets.add(new Offset(ledgerId, entryId, newoffset));
                     }
                 }
@@ -141,7 +141,7 @@ public class GarbageCollectorThread extends Thread {
         Object flushLock = new Object();
 
         @Override
-        public void onRotateEntryLog() {
+        public void onEntryLogFlushed() {
             synchronized (flushLock) {
                 flushed.set(true);
                 flushLock.notifyAll();
@@ -151,10 +151,14 @@ public class GarbageCollectorThread extends Thread {
         synchronized private void waitEntrylogFlushed() throws IOException {
             try {
                 synchronized (flushLock) {
-                    while (!flushed.get() && running) {
+                    while (!flushed.get()
+                           && entryLogger.isFlushRequired()
+                           && running) {
                         flushLock.wait(1000);
                     }
-                    if (!flushed.get() && !running) {
+                    if (!flushed.get()
+                        && entryLogger.isFlushRequired()
+                        && !running) {
                         throw new IOException("Shutdown before flushed");
                     }
                 }
