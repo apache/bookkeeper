@@ -161,6 +161,7 @@ public class LedgerDirsManager {
 
     // shutdown disk monitoring daemon
     public void shutdown() {
+        LOG.info("Shutting down LedgerDirsMonitor");
         monitor.interrupt();
         try {
             monitor.join();

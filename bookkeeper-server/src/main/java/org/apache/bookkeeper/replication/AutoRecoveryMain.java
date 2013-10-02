@@ -114,6 +114,7 @@ public class AutoRecoveryMain {
         if (shuttingDown) {
             return;
         }
+        LOG.info("Shutting down AutoRecovery");
         shuttingDown = true;
         running = false;
         this.exitCode = exitCode;

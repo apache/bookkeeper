@@ -154,6 +154,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-610: Make SyncThread use an executor (ivank via sijie)
 
+      BOOKKEEPER-640: Log improvement - add shutdown/exit log message for the bookie services (rakesh via sijie)
+
     NEW FEATURE:
 
       BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj)

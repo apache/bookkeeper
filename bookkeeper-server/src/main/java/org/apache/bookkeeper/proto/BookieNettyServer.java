@@ -119,6 +119,7 @@ class BookieNettyServer {
     }
 
     void shutdown() {
+        LOG.info("Shutting down BookieNettyServer");
         isRunning.set(false);
         allChannels.close().awaitUninterruptibly();
         serverChannelFactory.releaseExternalResources();

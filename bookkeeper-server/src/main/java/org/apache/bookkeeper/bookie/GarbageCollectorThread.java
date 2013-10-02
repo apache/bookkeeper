@@ -293,6 +293,7 @@ public class GarbageCollectorThread extends Thread {
                 lastMinorCompactionTime = MathUtils.now();
             }
         }
+        LOG.info("GarbageCollectorThread exited loop!");
     }
 
     /**
@@ -372,6 +373,7 @@ public class GarbageCollectorThread extends Thread {
      */
     public void shutdown() throws InterruptedException {
         this.running = false;
+        LOG.info("Shutting down GarbageCollectorThread");
         if (compacting.compareAndSet(false, true)) {
             // if setting compacting flag succeed, means gcThread is not compacting now
             // it is safe to interrupt itself now

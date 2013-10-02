@@ -171,6 +171,7 @@ class SyncThread {
 
     // shutdown sync thread
     void shutdown() throws InterruptedException {
+        LOG.info("Shutting down SyncThread");
         executor.submit(new Runnable() {
                 public void run() {
                     try {

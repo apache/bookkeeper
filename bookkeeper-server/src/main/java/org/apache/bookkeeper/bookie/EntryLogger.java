@@ -41,13 +41,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
@@ -619,6 +613,7 @@ public class EntryLogger {
      */
     public void shutdown() {
         // since logChannel is buffered channel, do flush when shutting down
+        LOG.info("Stopping EntryLogger");
         try {
             flush();
             for (Entry<Long, BufferedChannel> channelEntry : channels

@@ -32,12 +32,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.IOUtils;
-import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -564,6 +562,7 @@ class Journal extends Thread implements CheckpointSource {
         } finally {
             IOUtils.close(LOG, logFile);
         }
+        LOG.info("Journal exited loop!");
     }
 
     /**
@@ -574,6 +573,7 @@ class Journal extends Thread implements CheckpointSource {
             if (!running) {
                 return;
             }
+            LOG.info("Shutting down Journal");
             running = false;
             this.interrupt();
             this.join();

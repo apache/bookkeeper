@@ -135,6 +135,7 @@ public class BookieServer {
         if (!running) {
             return;
         }
+        LOG.info("Shutting down BookieServer");
         this.nettyServer.shutdown();
         exitCode = bookie.shutdown();
         if (isAutoRecoveryDaemonEnabled && this.autoRecoveryMain != null) {
