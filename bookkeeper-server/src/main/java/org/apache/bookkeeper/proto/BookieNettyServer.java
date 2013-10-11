@@ -20,12 +20,8 @@
  */
 package org.apache.bookkeeper.proto;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
-
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -33,22 +29,26 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.zookeeper.KeeperException;
-
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.ChannelGroupFuture;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
  * Netty server for serving bookie requests
@@ -65,8 +65,6 @@ class BookieNettyServer {
     Object suspensionLock = new Object();
     boolean suspended = false;
 
-    final InetSocketAddress bindAddress;
-
     BookieNettyServer(ServerConfiguration conf, Bookie bookie)
             throws IOException, KeeperException, InterruptedException, BookieException  {
         this.conf = conf;
@@ -77,12 +75,14 @@ class BookieNettyServer {
         serverChannelFactory = new NioServerSocketChannelFactory(
                 Executors.newCachedThreadPool(tfb.setNameFormat(base + "-boss-%d").build()),
                 Executors.newCachedThreadPool(tfb.setNameFormat(base + "-worker-%d").build()));
+        InetSocketAddress bindAddress;
         if (conf.getListeningInterface() == null) {
             // listen on all interfaces
             bindAddress = new InetSocketAddress(conf.getBookiePort());
         } else {
             bindAddress = Bookie.getBookieAddress(conf);
         }
+        listenOn(bindAddress);
     }
 
     boolean isRunning() {
@@ -106,15 +106,17 @@ class BookieNettyServer {
         }
     }
 
-    void start() {
+    private void listenOn(InetSocketAddress address) {
         ServerBootstrap bootstrap = new ServerBootstrap(serverChannelFactory);
         bootstrap.setPipelineFactory(new BookiePipelineFactory());
         bootstrap.setOption("child.tcpNoDelay", conf.getServerTcpNoDelay());
         bootstrap.setOption("child.soLinger", 2);
 
-        Channel listen = bootstrap.bind(bindAddress);
-
+        Channel listen = bootstrap.bind(address);
         allChannels.add(listen);
+    }
+
+    void start() {
         isRunning.set(true);
     }
 
@@ -139,10 +141,20 @@ class BookieNettyServer {
 
             pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.RequestDecoder());
             pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.ResponseEncoder());
-            pipeline.addLast("bookieRequestHandler", new BookieRequestHandler(conf, bookie,
-                                                                              allChannels));
+            SimpleChannelHandler requestHandler = isRunning.get() ? new BookieRequestHandler(conf, bookie, allChannels)
+                    : new RejectRequestHandler();
+            pipeline.addLast("bookieRequestHandler", requestHandler);
             return pipeline;
         }
+    }
+
+    private static class RejectRequestHandler extends SimpleChannelHandler {
+
+        @Override
+        public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+            ctx.getChannel().close();
+        }
+
     }
 
     private static class CleanupChannelGroup extends DefaultChannelGroup {

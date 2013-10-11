@@ -104,6 +104,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-675: Log noise fixup before cutting 4.2.2 (ivank)
 
+        BOOKKEEPER-638: Two bookies could start at the same time to access bookie data. (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
