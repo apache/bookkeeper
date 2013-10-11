@@ -745,7 +745,7 @@ public class BookieShell implements Tool {
      * @return file object.
      */
     private File getLedgerFile(long ledgerId) {
-        String ledgerName = LedgerCacheImpl.getLedgerName(ledgerId);
+        String ledgerName = IndexPersistenceMgr.getLedgerName(ledgerId);
         File lf = null;
         for (File d : ledgerDirectories) {
             lf = new File(d, ledgerName);

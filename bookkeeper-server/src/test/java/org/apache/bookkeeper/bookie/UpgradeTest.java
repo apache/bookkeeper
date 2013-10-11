@@ -21,33 +21,28 @@
 
 package org.apache.bookkeeper.bookie;
 
-import java.util.Arrays;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.IOException;
-
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
-import java.io.BufferedWriter;
 import java.io.PrintStream;
 import java.io.RandomAccessFile;
-
-import org.junit.Before;
-import org.junit.After;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.util.Arrays;
 
 import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.bookkeeper.test.PortManager;
-
+import org.apache.bookkeeper.test.ZooKeeperUtil;
+import org.apache.zookeeper.ZooKeeper;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +70,7 @@ public class UpgradeTest {
             throws Exception {
         long ledgerId = 1;
 
-        File fn = new File(dir, LedgerCacheImpl.getLedgerName(ledgerId));
+        File fn = new File(dir, IndexPersistenceMgr.getLedgerName(ledgerId));
         fn.getParentFile().mkdirs();
         FileInfo fi = new FileInfo(fn, masterKey);
         // force creation of index file

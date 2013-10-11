@@ -21,18 +21,19 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-
-import static com.google.common.base.Charsets.UTF_8;
-import com.google.common.annotations.VisibleForTesting;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * This is the file handle for a ledger's index file that maps entry ids to location.
@@ -291,7 +292,7 @@ class FileInfo {
             if (size > fc.size()) {
                 size = fc.size();
             }
-            File rlocFile = new File(newFile.getParentFile(), newFile.getName() + LedgerCacheImpl.RLOC);
+            File rlocFile = new File(newFile.getParentFile(), newFile.getName() + IndexPersistenceMgr.RLOC);
             if (!rlocFile.exists()) {
                 checkParents(rlocFile);
                 if (!rlocFile.createNewFile()) {
