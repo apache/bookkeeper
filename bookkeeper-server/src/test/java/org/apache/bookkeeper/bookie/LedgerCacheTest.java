@@ -27,8 +27,11 @@ import java.nio.ByteBuffer;
 
 import junit.framework.TestCase;
 
+import junit.framework.TestCase;
+
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.SnapshotMap;
@@ -70,7 +73,7 @@ public class LedgerCacheTest extends TestCase {
         // create current dir
         new File(ledgerDir, BookKeeperConstants.CURRENT_DIR).mkdir();
 
-        conf = new ServerConfiguration();
+        conf = TestBKConfiguration.newServerConfiguration();
         conf.setZkServers(null);
         conf.setJournalDirName(txnDir.getPath());
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
@@ -256,7 +259,7 @@ public class LedgerCacheTest extends TestCase {
         ledgerDir1.delete();
         File ledgerDir2 = File.createTempFile("bkTest", ".dir");
         ledgerDir2.delete();
-        ServerConfiguration conf = new ServerConfiguration();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(), ledgerDir2.getAbsolutePath() });
 
         Bookie bookie = new Bookie(conf);
@@ -312,7 +315,7 @@ public class LedgerCacheTest extends TestCase {
         ledgerDir.mkdir();
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
 
-        ServerConfiguration conf = new ServerConfiguration()
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(null)
             .setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
@@ -326,7 +329,7 @@ public class LedgerCacheTest extends TestCase {
             b.addEntry(packet, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
         }
 
-        conf = new ServerConfiguration()
+        conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(null)
             .setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });

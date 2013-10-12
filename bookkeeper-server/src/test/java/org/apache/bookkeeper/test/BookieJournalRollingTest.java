@@ -22,25 +22,22 @@ package org.apache.bookkeeper.test;
  */
 import java.io.File;
 import java.util.Enumeration;
-
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.junit.Assert;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class tests that bookie rolling journals
@@ -59,7 +56,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
     @Override
     public void setUp() throws Exception {
         // Set up the configuration properties needed.
-        baseConf.setMaxJournalSize(1);
+        baseConf.setMaxJournalSizeMB(1);
         baseConf.setMaxBackupJournals(1);
         super.setUp();
     }
@@ -216,7 +213,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         }
 
         // set flush interval to a large value
-        ServerConfiguration newConf = new ServerConfiguration();
+        ServerConfiguration newConf = TestBKConfiguration.newServerConfiguration();
         newConf.setFlushInterval(999999999);
         // restart bookies
         restartBookies(newConf);
@@ -254,7 +251,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         Thread.sleep(3 * baseConf.getFlushInterval());
 
         // restart bookies with flush interval set to a large value
-        ServerConfiguration newConf = new ServerConfiguration();
+        ServerConfiguration newConf = TestBKConfiguration.newServerConfiguration();
         newConf.setFlushInterval(999999999);
         // restart bookies
         restartBookies(newConf);

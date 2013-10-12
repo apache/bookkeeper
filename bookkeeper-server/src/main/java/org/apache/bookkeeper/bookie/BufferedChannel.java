@@ -100,19 +100,36 @@ public class BufferedChannel
         return bc.size();
     }
 
-    public void flush(boolean sync) throws IOException {
+    /**
+     * Write any data in the buffer to the file. If sync is set to true, force a sync operation so that
+     * data is persisted to the disk.
+     * @param shouldForceWrite
+     * @throws IOException if the write or sync operation fails.
+     */
+    public void flush(boolean shouldForceWrite) throws IOException {
         synchronized(this) {
-            if (writeBuffer == null) {
-                return;
-            }
-            writeBuffer.flip();
-            bc.write(writeBuffer);
-            writeBuffer.clear();
-            writeBufferStartPosition = bc.position();
+            flushInternal();
         }
-        if (sync) {
+        if (shouldForceWrite) {
             forceWrite(false);
         }
+    }
+
+    /**
+     * Write any data in the buffer to the file and advance the writeBufferPosition
+     * Callers are expected to synchronize appropriately
+     * @throws IOException if the write fails.
+     */
+    private void flushInternal() throws IOException {
+        if (writeBuffer == null) {
+            return;
+        }
+        writeBuffer.flip();
+        do {
+            bc.write(writeBuffer);
+        } while (writeBuffer.hasRemaining());
+        writeBuffer.clear();
+        writeBufferStartPosition = bc.position();
     }
 
     public long forceWrite(boolean forceMetadata) throws IOException {

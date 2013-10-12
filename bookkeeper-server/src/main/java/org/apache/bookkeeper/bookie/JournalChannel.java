@@ -33,6 +33,7 @@ import org.apache.bookkeeper.util.NativeIO;
 
 import static com.google.common.base.Charsets.UTF_8;
 
+import org.apache.bookkeeper.util.NativeIO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,25 +58,35 @@ class JournalChannel implements Closeable {
     int MIN_COMPAT_JOURNAL_FORMAT_VERSION = 1;
     int CURRENT_JOURNAL_FORMAT_VERSION = 4;
 
-    public final static long preAllocSize = 4*1024*1024;
-    public final static ByteBuffer zeros = ByteBuffer.allocate(512);
+    private long preAllocSize;
     private boolean fRemoveFromPageCache;
+    public final static ByteBuffer zeros = ByteBuffer.allocate(512);
+
     // The position of the file channel's last force write.
     private long lastForceWritePosition = 0;
 
+    // Mostly used by tests
     JournalChannel(File journalDirectory, long logId) throws IOException {
-        this(journalDirectory, logId, START_OF_FILE, false);
+        this(journalDirectory, logId, 4*1024*1024, 65536, START_OF_FILE);
     }
 
-    JournalChannel(File journalDirectory, long logId, long position) throws IOException {
-        this(journalDirectory, logId, position, false);
+    JournalChannel(File journalDirectory, long logId, long preAllocSize, int writeBufferSize) throws IOException {
+        this(journalDirectory, logId, preAllocSize, writeBufferSize, START_OF_FILE);
     }
 
-    JournalChannel(File journalDirectory, long logId, boolean fRemoveFromPageCache) throws IOException {
-        this(journalDirectory, logId, START_OF_FILE, fRemoveFromPageCache);
+    JournalChannel(File journalDirectory, long logId,
+                   long preAllocSize, int writeBufferSize, long position) throws IOException {
+         this(journalDirectory, logId, preAllocSize, writeBufferSize, position, false);
     }
 
-    JournalChannel(File journalDirectory, long logId, long position, boolean fRemoveFromPageCache) throws IOException {
+    JournalChannel(File journalDirectory, long logId,
+                   long preAllocSize, int writeBufferSize, boolean fRemoveFromPageCache) throws IOException {
+        this(journalDirectory, logId, preAllocSize, writeBufferSize, START_OF_FILE, fRemoveFromPageCache);
+    }
+
+    JournalChannel(File journalDirectory, long logId,
+                   long preAllocSize, int writeBufferSize, long position, boolean fRemoveFromPageCache) throws IOException {
+        this.preAllocSize = preAllocSize;
         this.fRemoveFromPageCache = fRemoveFromPageCache;
         File fn = new File(journalDirectory, Long.toHexString(logId) + ".txn");
 
@@ -97,8 +108,7 @@ class JournalChannel implements Closeable {
             bb.flip();
             fc.write(bb);
 
-            bc = new BufferedChannel(fc, 65536);
-
+            bc = new BufferedChannel(fc, writeBufferSize);
             forceWrite(true);
             nextPrealloc = preAllocSize;
             fc.write(zeros, nextPrealloc);
@@ -184,6 +194,9 @@ class JournalChannel implements Closeable {
     }
 
     public void forceWrite(boolean forceMetadata) throws IOException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Journal ForceWrite");
+        }
         long newForceWritePosition = bc.forceWrite(forceMetadata);
         if (newForceWritePosition > lastForceWritePosition) {
             if (fRemoveFromPageCache) {

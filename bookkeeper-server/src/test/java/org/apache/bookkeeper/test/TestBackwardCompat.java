@@ -20,25 +20,26 @@
  */
 package org.apache.bookkeeper.test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.File;
-
-import java.util.Enumeration;
-import java.util.Arrays;
 import java.net.InetAddress;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.junit.Test;
-import org.junit.Before;
-import org.junit.After;
-import static org.junit.Assert.*;
+import java.util.Arrays;
+import java.util.Enumeration;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.FileSystemUpgrade;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestBackwardCompat {
     static Logger LOG = LoggerFactory.getLogger(TestBackwardCompat.class);
@@ -265,7 +266,7 @@ public class TestBackwardCompat {
         org.apache.bookkeeper.proto.BookieServer server = null;
 
         ServerCurrent(File journalDir, File ledgerDir, int port) throws Exception {
-            conf = new org.apache.bookkeeper.conf.ServerConfiguration();
+            conf = TestBKConfiguration.newServerConfiguration();
             conf.setBookiePort(port);
             conf.setZkServers(zkUtil.getZooKeeperConnectString());
             conf.setJournalDirName(journalDir.getPath());

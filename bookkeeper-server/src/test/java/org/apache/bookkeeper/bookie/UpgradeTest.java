@@ -37,6 +37,7 @@ import java.util.Arrays;
 import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.zookeeper.ZooKeeper;
@@ -159,7 +160,7 @@ public class UpgradeTest {
     }
 
     private static void testUpgradeProceedure(String zkServers, String journalDir, String ledgerDir) throws Exception {
-        ServerConfiguration conf = new ServerConfiguration()
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(zkServers)
             .setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir })
@@ -216,7 +217,7 @@ public class UpgradeTest {
         String ledgerDir = newV2LedgerDirectory();
         testUpgradeProceedure(zkutil.getZooKeeperConnectString(), journalDir, ledgerDir);
         // Upgrade again
-        ServerConfiguration conf = new ServerConfiguration()
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())
             .setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir })

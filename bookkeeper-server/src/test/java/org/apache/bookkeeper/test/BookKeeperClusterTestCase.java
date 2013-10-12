@@ -40,6 +40,7 @@ import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.metastore.InMemoryMetaStore;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
@@ -71,7 +72,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
     protected int numBookies;
     protected BookKeeperTestClient bkc;
 
-    protected ServerConfiguration baseConf = new ServerConfiguration();
+    protected ServerConfiguration baseConf = TestBKConfiguration.newServerConfiguration();
     protected ClientConfiguration baseClientConf = new ClientConfiguration();
 
     private Map<BookieServer, AutoRecoveryMain> autoRecoveryProcesses = new HashMap<BookieServer, AutoRecoveryMain>();
@@ -363,13 +364,11 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
         bs.clear();
         Thread.sleep(1000);
         // restart them to ensure we can't
-        int j = 0;
         for (ServerConfiguration conf : bsConfs) {
             if (null != newConf) {
                 conf.loadConf(newConf);
             }
             bs.add(startBookie(conf));
-            j++;
         }
     }
 

@@ -35,6 +35,7 @@ import junit.framework.Assert;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -132,7 +133,7 @@ public class BookieInitializationTest {
         tmpDir.delete();
         tmpDir.mkdir();
 
-        final ServerConfiguration conf = new ServerConfiguration()
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
                 .setZkServers(null).setJournalDirName(tmpDir.getPath())
                 .setLedgerDirNames(new String[] { tmpDir.getPath() });
 
@@ -198,7 +199,7 @@ public class BookieInitializationTest {
         tmpDir.delete();
         tmpDir.mkdir();
 
-        ServerConfiguration conf = new ServerConfiguration().setZkServers(null)
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration().setZkServers(null)
                 .setJournalDirName(tmpDir.getPath()).setLedgerDirNames(
                         new String[] { tmpDir.getPath() });
 
@@ -253,7 +254,7 @@ public class BookieInitializationTest {
         tmpDir.delete();
         tmpDir.mkdir();
 
-        ServerConfiguration conf = new ServerConfiguration();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         int port = 12555;
         conf.setZkServers(null).setBookiePort(port).setJournalDirName(
                 tmpDir.getPath()).setLedgerDirNames(
@@ -285,7 +286,7 @@ public class BookieInitializationTest {
         tmpDir.delete();
         tmpDir.mkdir();
 
-        final ServerConfiguration conf = new ServerConfiguration()
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
                 .setZkServers(zkutil.getZooKeeperConnectString())
                 .setZkTimeout(5000).setJournalDirName(tmpDir.getPath())
                 .setLedgerDirNames(new String[] { tmpDir.getPath() });
@@ -310,7 +311,7 @@ public class BookieInitializationTest {
         tmpDir.mkdir();
         final String ZK_ROOT = "/ledgers2";
 
-        final ServerConfiguration conf = new ServerConfiguration()
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())
             .setZkTimeout(5000).setJournalDirName(tmpDir.getPath())
             .setLedgerDirNames(new String[] { tmpDir.getPath() });

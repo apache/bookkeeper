@@ -19,14 +19,14 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.File;
-import java.io.IOException;
+
+import junit.framework.Assert;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
-
-import org.junit.Test;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.junit.After;
 import org.junit.Before;
-import junit.framework.Assert;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +77,7 @@ public class CreateNewLogTest {
      */
     @Test(timeout=60000)
     public void testCreateNewLog() throws Exception {
-        ServerConfiguration conf = new ServerConfiguration();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
                      
         // Creating a new configuration with a number of 
         // ledger directories.

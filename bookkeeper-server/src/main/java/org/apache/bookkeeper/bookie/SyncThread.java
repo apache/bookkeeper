@@ -21,24 +21,21 @@
 
 package org.apache.bookkeeper.bookie;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
 
-import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
-
-import com.google.common.annotations.VisibleForTesting;
-
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
-
-import java.io.IOException;
-
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
  * SyncThread is a background thread which help checkpointing ledger storage

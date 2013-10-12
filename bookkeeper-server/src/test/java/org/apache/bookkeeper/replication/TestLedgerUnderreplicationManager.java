@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
@@ -58,8 +59,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.Watcher.Event.EventType;
+import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -92,7 +93,7 @@ public class TestLedgerUnderreplicationManager {
         zkUtil = new ZooKeeperUtil();
         zkUtil.startServer();
 
-        conf = new ServerConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
+        conf = TestBKConfiguration.newServerConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
 
         executor = Executors.newCachedThreadPool();
 

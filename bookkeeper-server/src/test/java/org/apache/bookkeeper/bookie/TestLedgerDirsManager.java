@@ -26,16 +26,16 @@ import junit.framework.TestCase;
 
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.junit.Before;
 import org.junit.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TestLedgerDirsManager extends TestCase {
     static Logger LOG = LoggerFactory.getLogger(TestLedgerDirsManager.class);
 
-    ServerConfiguration conf = new ServerConfiguration();
+    ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
     File curDir;
     LedgerDirsManager dirsManager;
 
@@ -47,7 +47,7 @@ public class TestLedgerDirsManager extends TestCase {
         curDir = Bookie.getCurrentDirectory(tmpDir);
         Bookie.checkDirectoryStructure(curDir);
 
-        ServerConfiguration conf = new ServerConfiguration();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
 
         dirsManager = new LedgerDirsManager(conf);

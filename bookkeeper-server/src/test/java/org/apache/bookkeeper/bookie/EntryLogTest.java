@@ -31,11 +31,11 @@ import junit.framework.TestCase;
 import org.apache.bookkeeper.bookie.GarbageCollectorThread.EntryLogMetadata;
 import org.apache.bookkeeper.bookie.GarbageCollectorThread.ExtractionScanner;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +55,7 @@ public class EntryLogTest extends TestCase {
         Bookie.checkDirectoryStructure(curDir);
 
         int gcWaitTime = 1000;
-        ServerConfiguration conf = new ServerConfiguration();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
         Bookie bookie = new Bookie(conf);
@@ -106,7 +106,7 @@ public class EntryLogTest extends TestCase {
         File curDir = Bookie.getCurrentDirectory(tmpDir);
         Bookie.checkDirectoryStructure(curDir);
 
-        ServerConfiguration conf = new ServerConfiguration();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
         Bookie bookie = new Bookie(conf);
         // create some entries
@@ -167,7 +167,7 @@ public class EntryLogTest extends TestCase {
             throws Exception {
         File tmpDir = File.createTempFile("bkTest", ".dir");
         tmpDir.delete();
-        ServerConfiguration conf = new ServerConfiguration();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
         EntryLogger entryLogger = null;
         try {
@@ -192,7 +192,7 @@ public class EntryLogTest extends TestCase {
         ledgerDir1.delete();
         File ledgerDir2 = File.createTempFile("bkTest", ".dir");
         ledgerDir2.delete();
-        ServerConfiguration conf = new ServerConfiguration();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(),
                 ledgerDir2.getAbsolutePath() });
         Bookie bookie = new Bookie(conf);

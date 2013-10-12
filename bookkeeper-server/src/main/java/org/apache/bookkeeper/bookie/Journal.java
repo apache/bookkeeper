@@ -30,19 +30,24 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.util.DaemonThreadFactory;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Provide journal related management.
  */
-class Journal extends Thread implements CheckpointSource {
+class Journal extends BookieThread implements CheckpointSource {
 
     static Logger LOG = LoggerFactory.getLogger(Journal.class);
 
@@ -115,13 +120,19 @@ class Journal extends Thread implements CheckpointSource {
         public int hashCode() {
             return mark.hashCode();
         }
+
+        @Override
+        public String toString() {
+            return mark.toString();
+        }
     }
 
     /**
      * Last Log Mark
      */
     class LastLogMark {
-        private LogMark curMark;
+        private final LogMark curMark;
+
         LastLogMark(long logId, long logPosition) {
             this.curMark = new LogMark(logId, logPosition);
         }
@@ -200,6 +211,11 @@ class Journal extends Thread implements CheckpointSource {
                 }
             }
         }
+
+        @Override
+        public String toString() {
+            return curMark.toString();
+        }
     }
 
     /**
@@ -245,52 +261,240 @@ class Journal extends Thread implements CheckpointSource {
      * Journal Entry to Record
      */
     private static class QueueEntry {
+        ByteBuffer entry;
+        long ledgerId;
+        long entryId;
+        WriteCallback cb;
+        Object ctx;
+        long enqueueTime;
+
         QueueEntry(ByteBuffer entry, long ledgerId, long entryId,
-                   WriteCallback cb, Object ctx) {
+                   WriteCallback cb, Object ctx, long enqueueTime) {
             this.entry = entry.duplicate();
             this.cb = cb;
             this.ctx = ctx;
             this.ledgerId = ledgerId;
             this.entryId = entryId;
+            this.enqueueTime = enqueueTime;
         }
 
-        ByteBuffer entry;
+        public void callback() {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Acknowledge Ledger: {}, Entry: {}", ledgerId, entryId);
+            }
+            cb.writeComplete(0, ledgerId, entryId, null, ctx);
+        }
+    }
 
-        long ledgerId;
+    private class ForceWriteRequest implements Runnable {
+        private final JournalChannel logFile;
+        private final LinkedList<QueueEntry> forceWriteWaiters;
+        private boolean shouldClose;
+        private final boolean isMarker;
+        private final long lastFlushedPosition;
+        private final long logId;
 
-        long entryId;
+        private ForceWriteRequest(JournalChannel logFile,
+                          long logId,
+                          long lastFlushedPosition,
+                          LinkedList<QueueEntry> forceWriteWaiters,
+                          boolean shouldClose,
+                          boolean isMarker) {
+            this.forceWriteWaiters = forceWriteWaiters;
+            this.logFile = logFile;
+            this.logId = logId;
+            this.lastFlushedPosition = lastFlushedPosition;
+            this.shouldClose = shouldClose;
+            this.isMarker = isMarker;
+        }
 
-        WriteCallback cb;
+        public int process(boolean shouldForceWrite) throws IOException {
+            if (isMarker) {
+                return 0;
+            }
 
-        Object ctx;
+            try {
+                if (shouldForceWrite) {
+                    this.logFile.forceWrite(false);
+                }
+                lastLogMark.setCurLogMark(this.logId, this.lastFlushedPosition);
+
+                // Notify the waiters that the force write succeeded
+                cbThreadPool.submit(this);
+
+                return this.forceWriteWaiters.size();
+            }
+            finally {
+                closeFileIfNecessary();
+            }
+        }
+
+        @Override
+        public void run() {
+            for (QueueEntry e : this.forceWriteWaiters) {
+                e.callback();    // Process cbs inline
+            }
+        }
+
+        public void closeFileIfNecessary() {
+            // Close if shouldClose is set
+            if (shouldClose) {
+                // We should guard against exceptions so its
+                // safe to call in catch blocks
+                try {
+                    logFile.close();
+                    // Call close only once
+                    shouldClose = false;
+                }
+                catch (IOException ioe) {
+                    LOG.error("I/O exception while closing file", ioe);
+                }
+            }
+        }
+    }
+
+    /**
+     * ForceWriteThread is a background thread which makes the journal durable periodically
+     *
+     */
+    private class ForceWriteThread extends BookieThread {
+        volatile boolean running = true;
+        // This holds the queue entries that should be notified after a
+        // successful force write
+        Thread threadToNotifyOnEx;
+        // should we group force writes
+        private final boolean enableGroupForceWrites;
+        // make flush interval as a parameter
+        public ForceWriteThread(Thread threadToNotifyOnEx, boolean enableGroupForceWrites) {
+            super("ForceWriteThread");
+            this.threadToNotifyOnEx = threadToNotifyOnEx;
+            this.enableGroupForceWrites = enableGroupForceWrites;
+        }
+        @Override
+        public void run() {
+            LOG.info("ForceWrite Thread started");
+            boolean shouldForceWrite = true;
+            int numReqInLastForceWrite = 0;
+            while(running) {
+                ForceWriteRequest req = null;
+                try {
+                    req = forceWriteRequests.take();
+
+                    // Force write the file and then notify the write completions
+                    //
+                    if (!req.isMarker) {
+                        if (shouldForceWrite) {
+                            // if we are going to force write, any request that is already in the
+                            // queue will benefit from this force write - post a marker prior to issuing
+                            // the flush so until this marker is encountered we can skip the force write
+                            if (enableGroupForceWrites) {
+                                forceWriteRequests.put(new ForceWriteRequest(req.logFile, 0, 0, null, false, true));
+                            }
+
+                            // If we are about to issue a write, record the number of requests in
+                            // the last force write and then reset the counter so we can accumulate
+                            // requests in the write we are about to issue
+                            if (numReqInLastForceWrite > 0) {
+                                numReqInLastForceWrite = 0;
+                            }
+                        }
+                        numReqInLastForceWrite += req.process(shouldForceWrite);
+                    }
+
+                    if (enableGroupForceWrites &&
+                        // if its a marker we should switch back to flushing
+                        !req.isMarker &&
+                        // This indicates that this is the last request in a given file
+                        // so subsequent requests will go to a different file so we should
+                        // flush on the next request
+                        !req.shouldClose) {
+                        shouldForceWrite = false;
+                    }
+                    else {
+                        shouldForceWrite = true;
+                    }
+                } catch (IOException ioe) {
+                    LOG.error("I/O exception in ForceWrite thread", ioe);
+                    running = false;
+                } catch (InterruptedException e) {
+                    LOG.error("ForceWrite thread interrupted", e);
+                    // close is idempotent
+                    if (null != req) {
+                        req.closeFileIfNecessary();
+                    }
+                    running = false;
+                }
+            }
+            // Regardless of what caused us to exit, we should notify the
+            // the parent thread as it should either exit or be in the process
+            // of exiting else we will have write requests hang
+            threadToNotifyOnEx.interrupt();
+        }
+        // shutdown sync thread
+        void shutdown() throws InterruptedException {
+            running = false;
+            this.interrupt();
+            this.join();
+        }
     }
 
     final static long MB = 1024 * 1024L;
+    final static int KB = 1024;
     // max journal file size
     final long maxJournalSize;
+    // pre-allocation size for the journal files
+    final long journalPreAllocSize;
+    // write buffer size for the journal files
+    final int journalWriteBufferSize;
     // number journal files kept before marked journal
     final int maxBackupJournals;
 
     final File journalDirectory;
     final ServerConfiguration conf;
+    ForceWriteThread forceWriteThread;
+    // should we group force writes
+    private final boolean enableGroupForceWrites;
+    // Time after which we will stop grouping and issue the flush
+    private final long maxGroupWaitInMSec;
+    // Threshold after which we flush any buffered journal writes
+    private final long bufferedWritesThreshold;
+    // should we flush if the queue is empty
+    private final boolean flushWhenQueueEmpty;
     // should we hint the filesystem to remove pages from cache after force write
     private final boolean removePagesFromCache;
 
-    private LastLogMark lastLogMark = new LastLogMark(0, 0);
+    private final LastLogMark lastLogMark = new LastLogMark(0, 0);
+
+    /**
+     * The thread pool used to handle callback.
+     */
+    private final ExecutorService cbThreadPool;
 
     // journal entry queue to commit
     LinkedBlockingQueue<QueueEntry> queue = new LinkedBlockingQueue<QueueEntry>();
+    LinkedBlockingQueue<ForceWriteRequest> forceWriteRequests = new LinkedBlockingQueue<ForceWriteRequest>();
 
     volatile boolean running = true;
-    private LedgerDirsManager ledgerDirsManager;
+    private final LedgerDirsManager ledgerDirsManager;
 
     public Journal(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager) {
         super("BookieJournal-" + conf.getBookiePort());
         this.ledgerDirsManager = ledgerDirsManager;
         this.conf = conf;
         this.journalDirectory = Bookie.getCurrentDirectory(conf.getJournalDir());
-        this.maxJournalSize = conf.getMaxJournalSize() * MB;
+        this.maxJournalSize = conf.getMaxJournalSizeMB() * MB;
+        this.journalPreAllocSize = conf.getJournalPreAllocSizeMB() * MB;
+        this.journalWriteBufferSize = conf.getJournalWriteBufferSizeKB() * KB;
         this.maxBackupJournals = conf.getMaxBackupJournals();
+        this.enableGroupForceWrites = conf.getJournalAdaptiveGroupWrites();
+        this.forceWriteThread = new ForceWriteThread(this, enableGroupForceWrites);
+        this.maxGroupWaitInMSec = conf.getJournalMaxGroupWaitMSec();
+        this.bufferedWritesThreshold = conf.getJournalBufferedWritesThreshold();
+        this.cbThreadPool = Executors.newFixedThreadPool(conf.getNumAddWorkerThreads(), new DaemonThreadFactory());
+
+        // Unless there is a cap on the max wait (which requires group force writes)
+        // we cannot skip flushing for queue empty
+        this.flushWhenQueueEmpty = !enableGroupForceWrites || conf.getJournalFlushWhenQueueEmpty();
 
         this.removePagesFromCache = conf.getJournalRemovePagesFromCache();
         // read last log mark
@@ -362,9 +566,9 @@ class Journal extends Thread implements CheckpointSource {
         throws IOException {
         JournalChannel recLog;
         if (journalPos <= 0) {
-            recLog = new JournalChannel(journalDirectory, journalId);
+            recLog = new JournalChannel(journalDirectory, journalId, journalPreAllocSize, journalWriteBufferSize);
         } else {
-            recLog = new JournalChannel(journalDirectory, journalId, journalPos);
+            recLog = new JournalChannel(journalDirectory, journalId, journalPreAllocSize, journalWriteBufferSize, journalPos);
         }
         int journalVersion = recLog.getFormatVersion();
         try {
@@ -448,7 +652,7 @@ class Journal extends Thread implements CheckpointSource {
         long ledgerId = entry.getLong();
         long entryId = entry.getLong();
         entry.rewind();
-        queue.add(new QueueEntry(entry, ledgerId, entryId, cb, ctx));
+        queue.add(new QueueEntry(entry, ledgerId, entryId, cb, ctx, MathUtils.nowInNano()));
     }
 
     /**
@@ -480,6 +684,7 @@ class Journal extends Thread implements CheckpointSource {
         LinkedList<QueueEntry> toFlush = new LinkedList<QueueEntry>();
         ByteBuffer lenBuff = ByteBuffer.allocate(4);
         JournalChannel logFile = null;
+        forceWriteThread.start();
         try {
             List<Long> journalIds = listJournalIds(journalDirectory, null);
             // Should not use MathUtils.now(), which use System.nanoTime() and
@@ -494,7 +699,11 @@ class Journal extends Thread implements CheckpointSource {
                 // new journal file to write
                 if (null == logFile) {
                     logId = logId + 1;
-                    logFile = new JournalChannel(journalDirectory, logId, removePagesFromCache);
+                    logFile = new JournalChannel(journalDirectory,
+                                        logId,
+                                        journalPreAllocSize,
+                                        journalWriteBufferSize,
+                                        removePagesFromCache);
                     bc = logFile.getBufferedChannel();
 
                     lastFlushPosition = 0;
@@ -504,25 +713,43 @@ class Journal extends Thread implements CheckpointSource {
                     if (toFlush.isEmpty()) {
                         qe = queue.take();
                     } else {
-                        qe = queue.poll();
-                        if (qe == null || bc.position() > lastFlushPosition + 512*1024) {
-                            //logFile.force(false);
-                            bc.flush(false);
-                            // This separation of flush and force is useful when adaptive group
-                            // force write is used where the flush thread does not block while
-                            // the force is issued by a separate thread
-                            logFile.forceWrite(false);
-                            lastFlushPosition = bc.position();
-                            lastLogMark.setCurLogMark(logId, lastFlushPosition);
-                            for (QueueEntry e : toFlush) {
-                                e.cb.writeComplete(BookieException.Code.OK,
-                                                   e.ledgerId, e.entryId, null, e.ctx);
-                            }
-                            toFlush.clear();
+                        long pollWaitTime = maxGroupWaitInMSec - MathUtils.elapsedMSec(toFlush.getFirst().enqueueTime);
+                        if (flushWhenQueueEmpty || pollWaitTime < 0) {
+                            pollWaitTime = 0;
+                        }
+                        qe = queue.poll(pollWaitTime, TimeUnit.MILLISECONDS);
+                        boolean shouldFlush = false;
+                        // We should issue a forceWrite if any of the three conditions below holds good
+                        // 1. If the oldest pending entry has been pending for longer than the max wait time
+                        if (enableGroupForceWrites && (MathUtils.elapsedMSec(toFlush.getFirst().enqueueTime) > maxGroupWaitInMSec)) {
+                            shouldFlush = true;
+                        } else if ((bc.position() > lastFlushPosition + bufferedWritesThreshold)) {
+                            // 2. If we have buffered more than the buffWriteThreshold
+                            shouldFlush = true;
+                        } else if (qe == null) {
+                            // We should get here only if we flushWhenQueueEmpty is true else we would wait
+                            // for timeout that would put is past the maxWait threshold
+                            // 3. If the queue is empty i.e. no benefit of grouping. This happens when we have one
+                            // publish at a time - common case in tests.
+                            shouldFlush = true;
+                        }
 
+                        // toFlush is non null and not empty so should be safe to access getFirst
+                        if (shouldFlush) {
+                            bc.flush(false);
+                            lastFlushPosition = bc.position();
+
+                            // Trace the lifetime of entries through persistence
+                            if (LOG.isDebugEnabled()) {
+                                for (QueueEntry e : toFlush) {
+                                    LOG.debug("Written and queuing for flush Ledger:" + e.ledgerId + " Entry:" + e.entryId);
+                                }
+                            }
+
+                            forceWriteRequests.put(new ForceWriteRequest(logFile, logId, lastFlushPosition, toFlush, (lastFlushPosition > maxJournalSize), false));
+                            toFlush = new LinkedList<QueueEntry>();
                             // check whether journal file is over file limit
                             if (bc.position() > maxJournalSize) {
-                                logFile.close();
                                 logFile = null;
                                 continue;
                             }
@@ -548,8 +775,10 @@ class Journal extends Thread implements CheckpointSource {
                 bc.write(lenBuff);
                 bc.write(qe.entry);
 
+                // NOTE: preAlloc depends on the fact that we don't change file size while this is
+                // called or useful parts of the file will be zeroed out - in other words
+                // it depends on single threaded flushes to the JournalChannel
                 logFile.preAllocIfNeeded();
-
                 toFlush.add(qe);
                 qe = null;
             }
@@ -560,6 +789,11 @@ class Journal extends Thread implements CheckpointSource {
         } catch (InterruptedException ie) {
             LOG.warn("Journal exits when shutting down", ie);
         } finally {
+            // There could be packets queued for forceWrite on this logFile
+            // That is fine as this exception is going to anyway take down the
+            // the bookie. If we execute this as a part of graceful shutdown,
+            // close will flush the file system cache making any previous
+            // cached writes durable so this is fine as well.
             IOUtils.close(LOG, logFile);
         }
         LOG.info("Journal exited loop!");
@@ -574,6 +808,13 @@ class Journal extends Thread implements CheckpointSource {
                 return;
             }
             LOG.info("Shutting down Journal");
+            forceWriteThread.shutdown();
+            cbThreadPool.shutdown();
+            if (!cbThreadPool.awaitTermination(5, TimeUnit.SECONDS)) {
+                LOG.warn("Couldn't shutdown journal callback thread gracefully. Forcing");
+            }
+            cbThreadPool.shutdownNow();
+
             running = false;
             this.interrupt();
             this.join();

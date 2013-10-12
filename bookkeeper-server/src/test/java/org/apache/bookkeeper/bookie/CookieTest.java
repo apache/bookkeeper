@@ -21,23 +21,27 @@
 
 package org.apache.bookkeeper.bookie;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.bookkeeper.client.BookKeeperAdmin;
-import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.test.ZooKeeperUtil;
-import org.apache.bookkeeper.test.PortManager;
-import org.apache.zookeeper.ZooKeeper;
+import static org.apache.bookkeeper.bookie.UpgradeTest.newV1JournalDirectory;
+import static org.apache.bookkeeper.bookie.UpgradeTest.newV1LedgerDirectory;
+import static org.apache.bookkeeper.bookie.UpgradeTest.newV2JournalDirectory;
+import static org.apache.bookkeeper.bookie.UpgradeTest.newV2LedgerDirectory;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.junit.Test;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.test.PortManager;
+import org.apache.bookkeeper.test.ZooKeeperUtil;
+import org.apache.commons.io.FileUtils;
+import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
 import org.junit.Before;
-import static org.junit.Assert.*;
-
-import static org.apache.bookkeeper.bookie.UpgradeTest.*;
+import org.junit.Test;
 
 public class CookieTest {
     ZooKeeperUtil zkutil;
@@ -75,7 +79,7 @@ public class CookieTest {
      */
     @Test(timeout=60000)
     public void testCleanStart() throws Exception {
-        ServerConfiguration conf = new ServerConfiguration()
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())
             .setJournalDirName(newDirectory(false))
             .setLedgerDirNames(new String[] { newDirectory(false) })
@@ -94,7 +98,7 @@ public class CookieTest {
      */
     @Test(timeout=60000)
     public void testBadJournalCookie() throws Exception {
-        ServerConfiguration conf1 = new ServerConfiguration()
+        ServerConfiguration conf1 = TestBKConfiguration.newServerConfiguration()
             .setJournalDirName(newDirectory())
             .setLedgerDirNames(new String[] { newDirectory() })
             .setBookiePort(bookiePort);
@@ -103,7 +107,7 @@ public class CookieTest {
 
         String journalDir = newDirectory();
         String ledgerDir = newDirectory();
-        ServerConfiguration conf2 = new ServerConfiguration()
+        ServerConfiguration conf2 = TestBKConfiguration.newServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())
             .setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir })
@@ -130,7 +134,7 @@ public class CookieTest {
         String[] ledgerDirs = new String[] {
             newDirectory(), newDirectory(), newDirectory() };
         String journalDir = newDirectory();
-        ServerConfiguration conf = new ServerConfiguration()
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())
             .setJournalDirName(journalDir)
             .setLedgerDirNames(ledgerDirs)
@@ -171,7 +175,7 @@ public class CookieTest {
     public void testDirectoryAdded() throws Exception {
         String ledgerDir0 = newDirectory();
         String journalDir = newDirectory();
-        ServerConfiguration conf = new ServerConfiguration()
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())
             .setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir0 })
@@ -203,7 +207,7 @@ public class CookieTest {
     public void testDirectoryCleared() throws Exception {
         String ledgerDir0 = newDirectory();
         String journalDir = newDirectory();
-        ServerConfiguration conf = new ServerConfiguration()
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())
             .setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir0 , newDirectory() })
@@ -228,7 +232,7 @@ public class CookieTest {
      */
     @Test(timeout=60000)
     public void testBookiePortChanged() throws Exception {
-        ServerConfiguration conf = new ServerConfiguration()
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())
             .setJournalDirName(newDirectory())
             .setLedgerDirNames(new String[] { newDirectory() , newDirectory() })
@@ -254,7 +258,7 @@ public class CookieTest {
      */
     @Test(timeout=60000)
     public void testNewBookieStartingWithAnotherBookiesPort() throws Exception {
-        ServerConfiguration conf = new ServerConfiguration()
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())
             .setJournalDirName(newDirectory())
             .setLedgerDirNames(new String[] { newDirectory() , newDirectory() })
@@ -263,7 +267,7 @@ public class CookieTest {
         b.start();
         b.shutdown();
 
-        conf = new ServerConfiguration()
+        conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())
             .setJournalDirName(newDirectory())
             .setLedgerDirNames(new String[] { newDirectory() , newDirectory() })
@@ -288,7 +292,7 @@ public class CookieTest {
         // Format the BK Metadata and generate INSTANCEID
         BookKeeperAdmin.format(adminConf, false, true);
 
-        ServerConfiguration bookieConf = new ServerConfiguration()
+        ServerConfiguration bookieConf = TestBKConfiguration.newServerConfiguration()
                 .setZkServers(zkutil.getZooKeeperConnectString())
                 .setJournalDirName(newDirectory(false))
                 .setLedgerDirNames(new String[] { newDirectory(false) })
@@ -319,7 +323,7 @@ public class CookieTest {
      */
     @Test(timeout=60000)
     public void testV2data() throws Exception {
-        ServerConfiguration conf = new ServerConfiguration()
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())
             .setJournalDirName(newV2JournalDirectory())
             .setLedgerDirNames(new String[] { newV2LedgerDirectory() })
@@ -339,7 +343,7 @@ public class CookieTest {
      */
     @Test(timeout=60000)
     public void testV1data() throws Exception {
-        ServerConfiguration conf = new ServerConfiguration()
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())
             .setJournalDirName(newV1JournalDirectory())
             .setLedgerDirNames(new String[] { newV1LedgerDirectory() })

@@ -24,6 +24,8 @@ import com.google.common.annotations.Beta;
 
 import org.apache.commons.lang.StringUtils;
 
+import com.google.common.annotations.Beta;
+
 /**
  * Configuration manages server-side settings
  */
@@ -48,7 +50,13 @@ public class ServerConfiguration extends AbstractConfiguration {
     // Journal Parameters
     protected final static String MAX_JOURNAL_SIZE = "journalMaxSizeMB";
     protected final static String MAX_BACKUP_JOURNALS = "journalMaxBackups";
+    protected final static String JOURNAL_ADAPTIVE_GROUP_WRITES = "journalAdaptiveGroupWrites";
+    protected final static String JOURNAL_MAX_GROUP_WAIT_MSEC = "journalMaxGroupWaitMSec";
+    protected final static String JOURNAL_BUFFERED_WRITES_THRESHOLD = "journalBufferedWritesThreshold";
+    protected final static String JOURNAL_FLUSH_WHEN_QUEUE_EMPTY = "journalFlushWhenQueueEmpty";
     protected final static String JOURNAL_REMOVE_FROM_PAGE_CACHE = "journalRemoveFromPageCache";
+    protected final static String JOURNAL_PRE_ALLOC_SIZE = "journalPreAllocSizeMB";
+    protected final static String JOURNAL_WRITE_BUFFER_SIZE = "journalWriteBufferSizeKB";
     // Bookie Parameters
     protected final static String BOOKIE_PORT = "bookiePort";
     protected final static String LISTENING_INTERFACE = "listeningInterface";
@@ -71,6 +79,12 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String DISK_CHECK_INTERVAL = "diskCheckInterval";
     protected final static String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
     protected final static String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
+
+    // Worker Thread parameters.
+    protected final static String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
+
+    protected final static String READ_BUFFER_SIZE = "readBufferSizeBytes";
+    protected final static String WRITE_BUFFER_SIZE = "writeBufferSizeBytes";
 
     /**
      * Construct a default configuration object
@@ -231,7 +245,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      *
      * @return max journal file size
      */
-    public long getMaxJournalSize() {
+    public long getMaxJournalSizeMB() {
         return this.getLong(MAX_JOURNAL_SIZE, 2 * 1024);
     }
 
@@ -242,9 +256,27 @@ public class ServerConfiguration extends AbstractConfiguration {
      *          new max journal file size
      * @return server configuration
      */
-    public ServerConfiguration setMaxJournalSize(long maxJournalSize) {
+    public ServerConfiguration setMaxJournalSizeMB(long maxJournalSize) {
         this.setProperty(MAX_JOURNAL_SIZE, Long.toString(maxJournalSize));
         return this;
+    }
+
+    /**
+     * How much space should we pre-allocate at a time in the journal
+     *
+     * @return journal pre-allocation size in MB
+     */
+    public int getJournalPreAllocSizeMB() {
+        return this.getInt(JOURNAL_PRE_ALLOC_SIZE, 16);
+    }
+
+    /**
+     * Size of the write buffers used for the journal
+     *
+     * @return journal write buffer size in KB
+     */
+    public int getJournalWriteBufferSizeKB() {
+        return this.getInt(JOURNAL_WRITE_BUFFER_SIZE, 64);
     }
 
     /**
@@ -648,6 +680,125 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Get the number of threads that should handle write requests.
+     * @return
+     */
+    public int getNumAddWorkerThreads() {
+        return getInt(NUM_ADD_WORKER_THREADS, 1);
+    }
+
+    /**
+     * Get the number of bytes we should use as capacity for the {@link
+     * org.apache.bookkeeper.bookie.BufferedReadChannel}
+     * Default is 512 bytes
+     * @return read buffer size
+     */
+    public int getReadBufferBytes() {
+        return getInt(READ_BUFFER_SIZE, 512);
+    }
+
+    /**
+     * Set the number of bytes we should use as capacity for the {@link
+     * org.apache.bookkeeper.bookie.BufferedReadChannel}
+     *
+     * @param readBufferSize
+     *          Read Buffer Size
+     * @return server configuration
+     */
+    public ServerConfiguration setReadBufferBytes(int readBufferSize) {
+        setProperty(READ_BUFFER_SIZE, readBufferSize);
+        return this;
+    }
+
+    /**
+     * Get the number of bytes used as capacity for the write buffer. Default is
+     * 64KB.
+     * NOTE: Make sure this value is greater than the maximum message size.
+     * @return
+     */
+    public int getWriteBufferBytes() {
+        return getInt(WRITE_BUFFER_SIZE, 65536);
+    }
+
+    /**
+     * Set the number of bytes used as capacity for the write buffer.
+     *
+     * @param writeBufferBytes
+     *          Write Buffer Bytes
+     * @return server configuration
+     */
+    public ServerConfiguration setWriteBufferBytes(int writeBufferBytes) {
+        setProperty(WRITE_BUFFER_SIZE, writeBufferBytes);
+        return this;
+    }
+
+
+    /**
+     * Should we group journal force writes
+     *
+     * @return group journal force writes
+     */
+    public boolean getJournalAdaptiveGroupWrites() {
+        return getBoolean(JOURNAL_ADAPTIVE_GROUP_WRITES, true);
+    }
+
+    /**
+     * Enable/disable group journal force writes
+     *
+     * @param enabled flag to enable/disable group journal force writes
+     */
+    public ServerConfiguration setJournalAdaptiveGroupWrites(boolean enabled) {
+        setProperty(JOURNAL_ADAPTIVE_GROUP_WRITES, enabled);
+        return this;
+    }
+
+    /**
+     * Maximum latency to impose on a journal write to achieve grouping
+     *
+     * @return max wait for grouping
+     */
+    public long getJournalMaxGroupWaitMSec() {
+        return getLong(JOURNAL_MAX_GROUP_WAIT_MSEC, 200);
+    }
+
+    /**
+     * Maximum latency to impose on a journal write to achieve grouping
+     *
+     * @return max wait for grouping
+     */
+    public long getJournalBufferedWritesThreshold() {
+        return getLong(JOURNAL_BUFFERED_WRITES_THRESHOLD, 512 * 1024);
+    }
+
+
+    /**
+     * Set if we should flush the journal when queue is empty
+     */
+    public ServerConfiguration setJournalFlushWhenQueueEmpty(boolean enabled) {
+        setProperty(JOURNAL_FLUSH_WHEN_QUEUE_EMPTY, enabled);
+        return this;
+    }
+
+    /**
+     * Should we flush the journal when queue is empty
+     *
+     * @return flush when queue is empty
+     */
+    public boolean getJournalFlushWhenQueueEmpty() {
+        return getBoolean(JOURNAL_FLUSH_WHEN_QUEUE_EMPTY, false);
+    }
+
+    /**
+     * Should we remove pages from page cache after force write
+     *
+     * @return remove pages from cache
+     */
+    @Beta
+    public boolean getJournalRemovePagesFromCache() {
+        return getBoolean(JOURNAL_REMOVE_FROM_PAGE_CACHE, false);
+    }
+
+    /**
      * Set whether the bookie is able to go into read-only mode.
      * If this is set to false, the bookie will shutdown on encountering
      * an error condition.
@@ -757,25 +908,4 @@ public class ServerConfiguration extends AbstractConfiguration {
         return getBoolean(AUTO_RECOVERY_DAEMON_ENABLED, false);
     }
 
-    /**
-     * Should we remove pages from page cache after force write
-     *
-     * @return remove pages from cache
-     */
-    @Beta
-    public boolean getJournalRemovePagesFromCache() {
-        return getBoolean(JOURNAL_REMOVE_FROM_PAGE_CACHE, false);
-    }
-
-    /**
-     * Sets that whether should we remove pages from page cache after force write.
-     *
-     * @param enabled
-     *            - true if we need to remove pages from page cache. otherwise, false
-     * @return ServerConfiguration
-     */
-    public ServerConfiguration setJournalRemovePagesFromCache(boolean enabled) {
-        setProperty(JOURNAL_REMOVE_FROM_PAGE_CACHE, enabled);
-        return this;
-    }
 }

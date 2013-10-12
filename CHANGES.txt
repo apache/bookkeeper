@@ -166,6 +166,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-658: ledger cache refactor (Robin Dhamankar via sijie)
 
+      BOOKKEEPER-657: Journal Improvement (Robin Dhamankar via sijie)
+
     NEW FEATURE:
 
       BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj)

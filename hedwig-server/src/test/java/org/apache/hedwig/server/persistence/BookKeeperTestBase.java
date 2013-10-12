@@ -108,7 +108,7 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
     // BookKeeper client instance
     protected BookKeeper bk;
 
-    protected ServerConfiguration baseConf = new ServerConfiguration();
+    protected ServerConfiguration baseConf = newServerConfiguration();
     protected ClientConfiguration baseClientConf = new ClientConfiguration();
 
     // Constructor
@@ -240,6 +240,14 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
         }
 
         return server;
+    }
+
+    // construct the basic server configuration for bookkeeper testing
+    private static ServerConfiguration newServerConfiguration() {
+        ServerConfiguration conf = new ServerConfiguration();
+        conf.setJournalFlushWhenQueueEmpty(true);
+        conf.setJournalAdaptiveGroupWrites(false);
+        return conf;
     }
 
     protected ServerConfiguration newServerConfiguration(int port, String zkServers, File journalDir, File[] ledgerDirs) {

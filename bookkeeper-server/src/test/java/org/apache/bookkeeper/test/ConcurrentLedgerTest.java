@@ -28,15 +28,16 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import junit.framework.TestCase;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import junit.framework.TestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +51,7 @@ public class ConcurrentLedgerTest extends TestCase {
     File txnDir, ledgerDir;
     int recvTimeout = 10000;
     Semaphore throttle;
-    ServerConfiguration conf = new ServerConfiguration();
+    ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
 
     @Override
     @Before

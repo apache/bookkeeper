@@ -48,4 +48,29 @@ public class MathUtils {
         return System.nanoTime() / NANOSECONDS_PER_MILLISECOND;
     }
 
+    /**
+     * Current time from some arbitrary time base in the past, counting in
+     * nanoseconds, and not affected by settimeofday or similar system clock
+     * changes. This is appropriate to use when computing how much longer to
+     * wait for an interval to expire.
+     *
+     * NOTE: only use it for measuring.
+     * http://docs.oracle.com/javase/1.5.0/docs/api/java/lang/System.html#nanoTime%28%29
+     *
+     * @return current time in nanoseconds.
+     */
+    public static long nowInNano() {
+        return System.nanoTime();
+    }
+
+    /**
+     * Milliseconds elapsed since the time specified, the input is nanoTime
+     * the only conversion happens when computing the elapsed time
+     *
+     * @param startNanoTime the start of the interval that we are measuring
+     * @return elapsed time in milliseconds.
+     */
+    public static long elapsedMSec (long startNanoTime) {
+       return (System.nanoTime() - startNanoTime)/ NANOSECONDS_PER_MILLISECOND;
+    }
 }
