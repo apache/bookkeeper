@@ -20,6 +20,8 @@ package org.apache.bookkeeper.client;
 
 import java.util.Enumeration;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
@@ -41,11 +43,10 @@ import org.slf4j.LoggerFactory;
 class LedgerRecoveryOp implements ReadCallback, AddCallback {
     static final Logger LOG = LoggerFactory.getLogger(LedgerRecoveryOp.class);
     LedgerHandle lh;
-    int numResponsesPending;
-    boolean proceedingWithRecovery = false;
-    long maxAddPushed = LedgerHandle.INVALID_ENTRY_ID;
-    long maxAddConfirmed = LedgerHandle.INVALID_ENTRY_ID;
-    long maxLength = 0;
+    AtomicLong readCount, writeCount;
+    AtomicBoolean readDone;
+    AtomicBoolean callbackDone;
+    long entryToRead;
     // keep a copy of metadata for recovery.
     LedgerMetadata metadataForRecovery;
 
@@ -66,9 +67,12 @@ class LedgerRecoveryOp implements ReadCallback, AddCallback {
     }
 
     public LedgerRecoveryOp(LedgerHandle lh, GenericCallback<Void> cb) {
+        readCount = new AtomicLong(0);
+        writeCount = new AtomicLong(0);
+        readDone = new AtomicBoolean(false);
+        callbackDone = new AtomicBoolean(false);
         this.cb = cb;
         this.lh = lh;
-        numResponsesPending = lh.metadata.getEnsembleSize();
     }
 
     public void initiate() {
@@ -78,6 +82,7 @@ class LedgerRecoveryOp implements ReadCallback, AddCallback {
                         if (rc == BKException.Code.OK) {
                             lh.lastAddPushed = lh.lastAddConfirmed = data.lastAddConfirmed;
                             lh.length = data.length;
+                            entryToRead = lh.lastAddConfirmed;
                             // keep a copy of ledger metadata before proceeding
                             // ledger recovery
                             metadataForRecovery = new LedgerMetadata(lh.getLedgerMetadata());
@@ -102,17 +107,38 @@ class LedgerRecoveryOp implements ReadCallback, AddCallback {
      * Try to read past the last confirmed.
      */
     private void doRecoveryRead() {
-        long nextEntry = lh.lastAddConfirmed + 1;
-        try {
-            new RecoveryReadOp(lh, lh.bk.scheduler, nextEntry, nextEntry, this, null).initiate();
-        } catch (InterruptedException e) {
-            readComplete(BKException.Code.InterruptedException, lh, null, null);
+        if (!callbackDone.get()) {
+            entryToRead++;
+            try {
+                new RecoveryReadOp(lh, lh.bk.scheduler, entryToRead, entryToRead, this, null).initiate();
+            } catch (InterruptedException e) {
+                readComplete(BKException.Code.InterruptedException, lh, null, null);
+            }
+        }
+    }
+
+    private void closeAndCallback() {
+        if (callbackDone.compareAndSet(false, true)) {
+            lh.asyncCloseInternal(new CloseCallback() {
+                @Override
+                public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
+                    if (rc != BKException.Code.OK) {
+                        LOG.warn("Close ledger {} failed during recovery: ",
+                            LedgerRecoveryOp.this.lh.getId(), BKException.getMessage(rc));
+                        cb.operationComplete(rc, null);
+                    } else {
+                        cb.operationComplete(BKException.Code.OK, null);
+                        LOG.debug("After closing length is: {}", lh.getLength());
+                    }
+                }
+            }, null, BKException.Code.LedgerClosedException);
         }
     }
 
     @Override
     public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
         if (rc == BKException.Code.OK) {
+            readCount.incrementAndGet();
             LedgerEntry entry = seq.nextElement();
             byte[] data = entry.getEntry();
 
@@ -125,27 +151,20 @@ class LedgerRecoveryOp implements ReadCallback, AddCallback {
                 lh.length = entry.getLength() - (long) data.length;
             }
             lh.asyncRecoveryAddEntry(data, 0, data.length, this, null);
+            doRecoveryRead();
             return;
         }
 
         if (rc == BKException.Code.NoSuchEntryException || rc == BKException.Code.NoSuchLedgerExistsException) {
-            lh.asyncCloseInternal(new CloseCallback() {
-                @Override
-                public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
-                    if (rc != BKException.Code.OK) {
-                        LOG.warn("Close failed: " + BKException.getMessage(rc));
-                        cb.operationComplete(rc, null);
-                    } else {
-                        cb.operationComplete(BKException.Code.OK, null);
-                        LOG.debug("After closing length is: {}", lh.getLength());
-                    }
-                }
-                }, null, BKException.Code.LedgerClosedException);
+            readDone.set(true);
+            if (readCount.get() == writeCount.get()) {
+                closeAndCallback();
+            }
             return;
         }
 
         // otherwise, some other error, we can't handle
-        LOG.error("Failure " + BKException.getMessage(rc) + " while reading entry: " + (lh.lastAddConfirmed + 1)
+        LOG.error("Failure " + BKException.getMessage(rc) + " while reading entry: " + entryToRead
                   + " ledger: " + lh.ledgerId + " while recovering ledger");
         cb.operationComplete(rc, null);
         return;
@@ -154,14 +173,18 @@ class LedgerRecoveryOp implements ReadCallback, AddCallback {
     @Override
     public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
         if (rc != BKException.Code.OK) {
-            // Give up, we can't recover from this error
-
             LOG.error("Failure " + BKException.getMessage(rc) + " while writing entry: " + (lh.lastAddConfirmed + 1)
                       + " ledger: " + lh.ledgerId + " while recovering ledger");
-            cb.operationComplete(rc, null);
+            if (callbackDone.compareAndSet(false, true)) {
+                // Give up, we can't recover from this error
+                cb.operationComplete(rc, null);
+            }
             return;
         }
-        doRecoveryRead();
+        long numAdd = writeCount.incrementAndGet();
+        if (readDone.get() && readCount.get() == numAdd) {
+            closeAndCallback();
+        }
     }
 
 }

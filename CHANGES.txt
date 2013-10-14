@@ -108,6 +108,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-638: Two bookies could start at the same time to access bookie data. (sijie via ivank)
 
+        BOOKKEEPER-676: Make add asynchrounous in ledger recovery (aniruddha via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
