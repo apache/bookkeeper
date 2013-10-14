@@ -40,7 +40,7 @@ import org.junit.Test;
  * This class tests the entry log compaction functionality.
  */
 public class CompactionTest extends BookKeeperClusterTestCase {
-    static Logger LOG = LoggerFactory.getLogger(CompactionTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(CompactionTest.class);
     DigestType digestType;
 
     static int ENTRY_SIZE = 1024;

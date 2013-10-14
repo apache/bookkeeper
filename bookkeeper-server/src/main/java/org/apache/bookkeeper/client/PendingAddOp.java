@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 class PendingAddOp implements WriteCallback {
-    final static Logger LOG = LoggerFactory.getLogger(PendingAddOp.class);
+    private final static Logger LOG = LoggerFactory.getLogger(PendingAddOp.class);
 
     ChannelBuffer toSend;
     AddCallback cb;

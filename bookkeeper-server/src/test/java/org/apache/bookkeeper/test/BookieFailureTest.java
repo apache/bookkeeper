@@ -54,8 +54,8 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
 
     // Depending on the taste, select the amount of logging
     // by decommenting one of the two lines below
-    // static Logger LOG = Logger.getRootLogger();
-    static Logger LOG = LoggerFactory.getLogger(BookieFailureTest.class);
+    // private final static Logger LOG = Logger.getRootLogger();
+    private final static Logger LOG = LoggerFactory.getLogger(BookieFailureTest.class);
 
     byte[] ledgerPassword = "aaa".getBytes();
     LedgerHandle lh, lh2;

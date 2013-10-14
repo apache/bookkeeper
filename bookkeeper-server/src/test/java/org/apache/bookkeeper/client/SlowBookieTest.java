@@ -40,7 +40,7 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 
 public class SlowBookieTest extends BookKeeperClusterTestCase {
-    static Logger LOG = LoggerFactory.getLogger(SlowBookieTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(SlowBookieTest.class);
 
     public SlowBookieTest() {
         super(4);

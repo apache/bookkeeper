@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
  * file and maintains an index file for each ledger.
  */
 class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
-    final static Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
+    private final static Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
 
     // Hold the last checkpoint
     static class CheckpointHolder {

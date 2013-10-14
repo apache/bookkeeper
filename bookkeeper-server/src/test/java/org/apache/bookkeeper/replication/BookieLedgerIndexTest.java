@@ -50,7 +50,7 @@ public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
 
     // Depending on the taste, select the amount of logging
     // by decommenting one of the two lines below
-    // static Logger LOG = Logger.getRootLogger();
+    // private final static Logger LOG = Logger.getRootLogger();
     private static final Logger LOG = LoggerFactory
             .getLogger(BookieLedgerIndexTest.class);
 

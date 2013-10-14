@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
  * LedgerCache related test cases
  */
 public class LedgerCacheTest extends TestCase {
-    static Logger LOG = LoggerFactory.getLogger(LedgerCacheTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(LedgerCacheTest.class);
 
     SnapshotMap<Long, Boolean> activeLedgers;
     LedgerManagerFactory ledgerManagerFactory;

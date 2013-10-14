@@ -62,7 +62,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
 
     // Depending on the taste, select the amount of logging
     // by decommenting one of the two lines below
-    // static Logger LOG = Logger.getRootLogger();
+    // private final static Logger LOG = Logger.getRootLogger();
     private final static Logger LOG = LoggerFactory
             .getLogger(AuditorLedgerCheckerTest.class);
 

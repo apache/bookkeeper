@@ -40,7 +40,7 @@ import org.junit.Test;
  * This class tests that index corruption cases
  */
 public class IndexCorruptionTest extends BookKeeperClusterTestCase {
-    static Logger LOG = LoggerFactory.getLogger(IndexCorruptionTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(IndexCorruptionTest.class);
 
     DigestType digestType;
 

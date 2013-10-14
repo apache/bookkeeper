@@ -39,7 +39,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
     private static final byte[] TEST_LEDGER_ENTRY_DATA = "TestCheckerData"
             .getBytes();
     private static final byte[] TEST_LEDGER_PASSWORD = "testpasswd".getBytes();
-    static Logger LOG = LoggerFactory.getLogger(TestLedgerChecker.class);
+    private final static Logger LOG = LoggerFactory.getLogger(TestLedgerChecker.class);
 
     public TestLedgerChecker() {
         super(3);

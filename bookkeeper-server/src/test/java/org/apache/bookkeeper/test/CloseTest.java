@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  */
 
 public class CloseTest extends BaseTestCase {
-    static Logger LOG = LoggerFactory.getLogger(CloseTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(CloseTest.class);
     DigestType digestType;
 
     public CloseTest(DigestType digestType) {

@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class TestSpeculativeRead extends BaseTestCase {
-    static Logger LOG = LoggerFactory.getLogger(TestSpeculativeRead.class);
+    private final static Logger LOG = LoggerFactory.getLogger(TestSpeculativeRead.class);
 
     DigestType digestType;
     byte[] passwd = "specPW".getBytes();

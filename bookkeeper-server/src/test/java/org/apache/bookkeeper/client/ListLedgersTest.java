@@ -31,7 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ListLedgersTest extends BaseTestCase {
-    static Logger LOG = LoggerFactory.getLogger(ListLedgersTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(ListLedgersTest.class);
 
     DigestType digestType;
 

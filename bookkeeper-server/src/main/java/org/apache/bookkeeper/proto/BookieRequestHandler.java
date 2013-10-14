@@ -52,7 +52,7 @@ import org.slf4j.LoggerFactory;
 class BookieRequestHandler extends SimpleChannelHandler
     implements BookkeeperInternalCallbacks.WriteCallback {
 
-    static Logger LOG = LoggerFactory.getLogger(BookieRequestHandler.class);
+    private final static Logger LOG = LoggerFactory.getLogger(BookieRequestHandler.class);
     private final Bookie bookie;
     private final ChannelGroup allChannels;
 

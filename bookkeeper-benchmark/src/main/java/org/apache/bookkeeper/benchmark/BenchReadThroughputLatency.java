@@ -56,7 +56,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BenchReadThroughputLatency {
-    static Logger LOG = LoggerFactory.getLogger(BenchReadThroughputLatency.class);
+    static final Logger LOG = LoggerFactory.getLogger(BenchReadThroughputLatency.class);
 
     private static final Pattern LEDGER_PATTERN = Pattern.compile("L([0-9]+)$");
 

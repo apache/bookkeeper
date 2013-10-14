@@ -53,7 +53,7 @@ import org.slf4j.LoggerFactory;
  * ZKLedgerUnderreplicationManager and replicates to it.
  */
 public class ReplicationWorker implements Runnable {
-    private static Logger LOG = LoggerFactory
+    private final static Logger LOG = LoggerFactory
             .getLogger(ReplicationWorker.class);
     final private LedgerUnderreplicationManager underreplicationManager;
     private ServerConfiguration conf;

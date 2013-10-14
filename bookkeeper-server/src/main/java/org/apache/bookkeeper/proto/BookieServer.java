@@ -59,7 +59,7 @@ public class BookieServer {
     private volatile boolean running = false;
     Bookie bookie;
     DeathWatcher deathWatcher;
-    static Logger LOG = LoggerFactory.getLogger(BookieServer.class);
+    private final static Logger LOG = LoggerFactory.getLogger(BookieServer.class);
 
     int exitCode = ExitCode.OK;
 

@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
  */
 
 public class LedgerRecoveryTest extends BaseTestCase {
-    static Logger LOG = LoggerFactory.getLogger(LedgerRecoveryTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(LedgerRecoveryTest.class);
 
     DigestType digestType;
 

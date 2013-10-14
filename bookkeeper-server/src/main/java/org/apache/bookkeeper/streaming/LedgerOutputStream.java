@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  * out the entry to the ledger.
  */
 public class LedgerOutputStream extends OutputStream {
-    Logger LOG = LoggerFactory.getLogger(LedgerOutputStream.class);
+    private final static Logger LOG = LoggerFactory.getLogger(LedgerOutputStream.class);
     private LedgerHandle lh;
     private ByteBuffer bytebuff;
     byte[] bbytes;

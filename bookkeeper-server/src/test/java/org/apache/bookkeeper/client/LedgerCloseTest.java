@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  */
 public class LedgerCloseTest extends BookKeeperClusterTestCase {
 
-    static Logger LOG = LoggerFactory.getLogger(LedgerCloseTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(LedgerCloseTest.class);
 
     static final int READ_TIMEOUT = 1;
 

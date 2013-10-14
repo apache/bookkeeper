@@ -26,7 +26,7 @@ import com.sun.jna.LastErrorException;
 import com.sun.jna.Native;
 
 public final class NativeIO {
-    private static Logger LOG = LoggerFactory.getLogger(NativeIO.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NativeIO.class);
 
     private static final int POSIX_FADV_DONTNEED = 4; /* fadvise.h */
 

@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *Checks the complete ledger and finds the UnderReplicated fragments if any
  */
 public class LedgerChecker {
-    private static Logger LOG = LoggerFactory.getLogger(LedgerChecker.class);
+    private final static Logger LOG = LoggerFactory.getLogger(LedgerChecker.class);
 
     public final BookieClient bookieClient;
 

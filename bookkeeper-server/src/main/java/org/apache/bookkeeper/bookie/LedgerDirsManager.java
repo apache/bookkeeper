@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * This class manages ledger directories used by the bookie.
  */
 public class LedgerDirsManager {
-    private static Logger LOG = LoggerFactory
+    private final static Logger LOG = LoggerFactory
             .getLogger(LedgerDirsManager.class);
 
     private volatile List<File> filledDirs;

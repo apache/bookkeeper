@@ -50,7 +50,7 @@ import org.junit.After;
 import static org.junit.Assert.*;
 
 public class TestSyncThread {
-    static Logger LOG = LoggerFactory.getLogger(TestSyncThread.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestSyncThread.class);
 
     ExecutorService executor = null;
 

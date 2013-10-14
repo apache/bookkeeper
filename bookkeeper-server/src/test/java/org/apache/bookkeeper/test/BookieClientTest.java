@@ -48,7 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BookieClientTest extends TestCase {
-    static Logger LOG = LoggerFactory.getLogger(BookieClientTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(BookieClientTest.class);
     BookieServer bs;
     File tmpDir;
     public int port = 13645;

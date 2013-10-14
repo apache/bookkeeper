@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
  * Tests of the main BookKeeper client
  */
 public class BookKeeperTest extends BaseTestCase {
-    static Logger LOG = LoggerFactory.getLogger(BookKeeperTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(BookKeeperTest.class);
 
     DigestType digestType;
 

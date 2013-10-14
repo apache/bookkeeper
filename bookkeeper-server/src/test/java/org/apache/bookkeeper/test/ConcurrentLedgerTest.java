@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
  * Tests writing to concurrent ledgers
  */
 public class ConcurrentLedgerTest extends TestCase {
-    static Logger LOG = LoggerFactory.getLogger(ConcurrentLedgerTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(ConcurrentLedgerTest.class);
 
     Bookie bookie;
     File txnDir, ledgerDir;

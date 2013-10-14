@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
  */
 class Journal extends BookieThread implements CheckpointSource {
 
-    static Logger LOG = LoggerFactory.getLogger(Journal.class);
+    private final static Logger LOG = LoggerFactory.getLogger(Journal.class);
 
     /**
      * Filter to pickup journals

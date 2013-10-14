@@ -64,7 +64,7 @@ import com.google.protobuf.TextFormat;
  * with the cluster. It's better to fail early and obviously.
  */
 class Cookie {
-    static Logger LOG = LoggerFactory.getLogger(Cookie.class);
+    private final static Logger LOG = LoggerFactory.getLogger(Cookie.class);
 
     static final int CURRENT_COOKIE_LAYOUT_VERSION = 4;
     private int layoutVersion = 0;

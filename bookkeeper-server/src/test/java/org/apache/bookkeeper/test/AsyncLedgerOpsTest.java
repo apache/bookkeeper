@@ -51,7 +51,7 @@ import org.junit.Test;
 public class AsyncLedgerOpsTest extends MultiLedgerManagerMultiDigestTestCase
     implements AddCallback, ReadCallback, CreateCallback,
     CloseCallback, OpenCallback {
-    static Logger LOG = LoggerFactory.getLogger(AsyncLedgerOpsTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(AsyncLedgerOpsTest.class);
 
     DigestType digestType;
 

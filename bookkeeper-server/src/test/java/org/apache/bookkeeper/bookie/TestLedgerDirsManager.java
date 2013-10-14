@@ -33,7 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TestLedgerDirsManager extends TestCase {
-    static Logger LOG = LoggerFactory.getLogger(TestLedgerDirsManager.class);
+    private final static Logger LOG = LoggerFactory.getLogger(TestLedgerDirsManager.class);
 
     ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
     File curDir;

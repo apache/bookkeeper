@@ -43,7 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TestLedgerManager extends BookKeeperClusterTestCase {
-    static Logger LOG = LoggerFactory.getLogger(TestLedgerManager.class);
+    private final static Logger LOG = LoggerFactory.getLogger(TestLedgerManager.class);
 
     public TestLedgerManager() {
         super(0);

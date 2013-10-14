@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
 public class AuditorBookieTest extends BookKeeperClusterTestCase {
     // Depending on the taste, select the amount of logging
     // by decommenting one of the two lines below
-    // static Logger LOG = Logger.getRootLogger();
+    // private final static Logger LOG = Logger.getRootLogger();
     private final static Logger LOG = LoggerFactory
             .getLogger(AuditorBookieTest.class);
     private String electionPath;

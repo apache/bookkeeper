@@ -48,7 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class UpgradeTest {
-    static Logger LOG = LoggerFactory.getLogger(FileInfo.class);
+    private final static Logger LOG = LoggerFactory.getLogger(FileInfo.class);
 
     ZooKeeperUtil zkutil;
     ZooKeeper zkc = null;

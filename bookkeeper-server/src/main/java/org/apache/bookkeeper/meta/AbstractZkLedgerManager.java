@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
  */
 abstract class AbstractZkLedgerManager implements LedgerManager {
 
-    static Logger LOG = LoggerFactory.getLogger(AbstractZkLedgerManager.class);
+    private final static Logger LOG = LoggerFactory.getLogger(AbstractZkLedgerManager.class);
 
     protected final AbstractConfiguration conf;
     protected final ZooKeeper zk;

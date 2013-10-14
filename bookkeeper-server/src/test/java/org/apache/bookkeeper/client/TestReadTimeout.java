@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class TestReadTimeout extends BookKeeperClusterTestCase {
-    static Logger LOG = LoggerFactory.getLogger(TestReadTimeout.class);
+    private final static Logger LOG = LoggerFactory.getLogger(TestReadTimeout.class);
 
     DigestType digestType;
 

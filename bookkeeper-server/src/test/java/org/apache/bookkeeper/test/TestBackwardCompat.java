@@ -42,7 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TestBackwardCompat {
-    static Logger LOG = LoggerFactory.getLogger(TestBackwardCompat.class);
+    private final static Logger LOG = LoggerFactory.getLogger(TestBackwardCompat.class);
 
     private static ZooKeeperUtil zkUtil = new ZooKeeperUtil();;
     private static byte[] ENTRY_DATA = "ThisIsAnEntry".getBytes();

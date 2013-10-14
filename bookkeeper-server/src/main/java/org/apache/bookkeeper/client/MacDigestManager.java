@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import static com.google.common.base.Charsets.UTF_8;
 
 class MacDigestManager extends DigestManager {
-    final static Logger LOG = LoggerFactory.getLogger(MacDigestManager.class);
+    private final static Logger LOG = LoggerFactory.getLogger(MacDigestManager.class);
 
     public static String DIGEST_ALGORITHM = "SHA-1";
     public static String KEY_ALGORITHM = "HmacSHA1";

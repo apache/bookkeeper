@@ -33,7 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BookieProtoEncoding {
-    static Logger LOG = LoggerFactory.getLogger(BookieProtoEncoding.class);
+    private final static Logger LOG = LoggerFactory.getLogger(BookieProtoEncoding.class);
 
     public static class RequestEncoder extends OneToOneEncoder {
         @Override

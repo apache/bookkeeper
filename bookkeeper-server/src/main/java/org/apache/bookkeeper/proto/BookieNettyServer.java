@@ -54,7 +54,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  * Netty server for serving bookie requests
  */
 class BookieNettyServer {
-    static Logger LOG = LoggerFactory.getLogger(BookieNettyServer.class);
+    private final static Logger LOG = LoggerFactory.getLogger(BookieNettyServer.class);
 
     final static int maxMessageSize = 0xfffff;
     final ServerConfiguration conf;

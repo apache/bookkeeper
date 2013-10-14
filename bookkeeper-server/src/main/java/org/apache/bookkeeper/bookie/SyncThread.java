@@ -55,7 +55,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  * </p>
  */
 class SyncThread {
-    static Logger LOG = LoggerFactory.getLogger(SyncThread.class);
+    private final static Logger LOG = LoggerFactory.getLogger(SyncThread.class);
 
     final ScheduledExecutorService executor;
     final int flushInterval;

@@ -43,7 +43,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
 
     private static final byte[] TEST_PSSWD = "testpasswd".getBytes();
     private static final DigestType TEST_DIGEST_TYPE = BookKeeper.DigestType.CRC32;
-    private static Logger LOG = LoggerFactory
+    private final static Logger LOG = LoggerFactory
             .getLogger(TestLedgerFragmentReplication.class);
 
     public TestLedgerFragmentReplication() {

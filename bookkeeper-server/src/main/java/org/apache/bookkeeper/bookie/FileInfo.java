@@ -54,7 +54,7 @@ import com.google.common.annotations.VisibleForTesting;
  * </p>
  */
 class FileInfo {
-    static Logger LOG = LoggerFactory.getLogger(FileInfo.class);
+    private final static Logger LOG = LoggerFactory.getLogger(FileInfo.class);
 
     static final int NO_MASTER_KEY = -1;
     static final int STATE_FENCED_BIT = 0x1;

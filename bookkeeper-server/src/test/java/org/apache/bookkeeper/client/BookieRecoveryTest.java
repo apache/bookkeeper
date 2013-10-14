@@ -55,7 +55,7 @@ import org.junit.Test;
  * This class tests the bookie recovery admin functionality.
  */
 public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
-    static Logger LOG = LoggerFactory.getLogger(BookieRecoveryTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(BookieRecoveryTest.class);
 
     // Object used for synchronizing async method calls
     class SyncObject {

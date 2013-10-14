@@ -51,7 +51,7 @@ import org.slf4j.LoggerFactory;
  * Tests conditional set of the ledger metadata znode.
  */
 public class ConditionalSetTest extends BaseTestCase {
-    static Logger LOG = LoggerFactory.getLogger(ConditionalSetTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(ConditionalSetTest.class);
 
     byte[] entry;
     DigestType digestType;

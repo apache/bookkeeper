@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class TestFencing extends BaseTestCase {
-    static Logger LOG = LoggerFactory.getLogger(TestFencing.class);
+    private final static Logger LOG = LoggerFactory.getLogger(TestFencing.class);
 
     DigestType digestType;
 

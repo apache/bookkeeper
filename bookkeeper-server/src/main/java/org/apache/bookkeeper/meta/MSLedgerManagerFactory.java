@@ -65,7 +65,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  */
 public class MSLedgerManagerFactory extends LedgerManagerFactory {
 
-    static Logger LOG = LoggerFactory.getLogger(MSLedgerManagerFactory.class);
+    private final static Logger LOG = LoggerFactory.getLogger(MSLedgerManagerFactory.class);
 
     public static final int CUR_VERSION = 1;
 

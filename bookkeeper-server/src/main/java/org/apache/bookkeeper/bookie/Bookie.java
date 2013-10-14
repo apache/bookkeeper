@@ -80,7 +80,7 @@ import com.google.common.annotations.VisibleForTesting;
 
 public class Bookie extends BookieThread {
 
-    static Logger LOG = LoggerFactory.getLogger(Bookie.class);
+    private final static Logger LOG = LoggerFactory.getLogger(Bookie.class);
 
     final File journalDirectory;
     final ServerConfiguration conf;

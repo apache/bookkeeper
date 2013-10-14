@@ -40,7 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class EntryLogTest extends TestCase {
-    static Logger LOG = LoggerFactory.getLogger(EntryLogTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(EntryLogTest.class);
 
     @Before
     public void setUp() throws Exception {

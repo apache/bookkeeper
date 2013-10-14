@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class EntryFormatter {
 
-    static Logger LOG = LoggerFactory.getLogger(EntryFormatter.class);
+    private final static Logger LOG = LoggerFactory.getLogger(EntryFormatter.class);
 
     protected Configuration conf;
 

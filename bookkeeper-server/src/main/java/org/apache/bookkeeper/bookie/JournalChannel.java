@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  * information to the file.
  */
 class JournalChannel implements Closeable {
-    static Logger LOG = LoggerFactory.getLogger(JournalChannel.class);
+    private final static Logger LOG = LoggerFactory.getLogger(JournalChannel.class);
 
     final RandomAccessFile randomAccessFile;
     final FileChannel fc;

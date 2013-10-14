@@ -35,7 +35,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import org.apache.zookeeper.KeeperException;
 
 public class MySqlClient {
-    static Logger LOG = LoggerFactory.getLogger(MySqlClient.class);
+    static final Logger LOG = LoggerFactory.getLogger(MySqlClient.class);
 
     BookKeeper x;
     LedgerHandle lh;

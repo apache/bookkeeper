@@ -51,7 +51,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
-    Logger LOG = LoggerFactory.getLogger(PendingReadOp.class);
+    private final static Logger LOG = LoggerFactory.getLogger(PendingReadOp.class);
 
     final int speculativeReadTimeout;
     final private ScheduledExecutorService scheduler;

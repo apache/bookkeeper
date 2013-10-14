@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * This class tests that bookie rolling journals
  */
 public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
-    static Logger LOG = LoggerFactory.getLogger(BookieJournalRollingTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(BookieJournalRollingTest.class);
 
     DigestType digestType;
 

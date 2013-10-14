@@ -63,7 +63,7 @@ import static com.google.common.base.Charsets.UTF_8;
  * Admin client for BookKeeper clusters
  */
 public class BookKeeperAdmin {
-    private static Logger LOG = LoggerFactory.getLogger(BookKeeperAdmin.class);
+    private final static Logger LOG = LoggerFactory.getLogger(BookKeeperAdmin.class);
     // ZK client instance
     private ZooKeeper zk;
     // ZK ledgers related String constants

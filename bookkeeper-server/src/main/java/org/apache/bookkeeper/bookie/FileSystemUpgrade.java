@@ -63,7 +63,7 @@ import static com.google.common.base.Charsets.UTF_8;
  * between versions
  */
 public class FileSystemUpgrade {
-    static Logger LOG = LoggerFactory.getLogger(FileSystemUpgrade.class);
+    private final static Logger LOG = LoggerFactory.getLogger(FileSystemUpgrade.class);
 
     static FilenameFilter BOOKIE_FILES_FILTER = new FilenameFilter() {
             private boolean containsIndexFiles(File dir, String name) {

@@ -48,6 +48,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-686: Bookie startup will fail if one of the configured ledgerDir is full and the same is used for replaying the journal (Rakesh via sijie)
 
+      BOOKKEEPER-605: Use static Logger objects everywhere for bookkeeper (sijie via ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)

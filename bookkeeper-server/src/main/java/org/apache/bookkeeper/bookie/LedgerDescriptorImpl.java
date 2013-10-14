@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class LedgerDescriptorImpl extends LedgerDescriptor {
-    final static Logger LOG = LoggerFactory.getLogger(LedgerDescriptor.class);
+    private final static Logger LOG = LoggerFactory.getLogger(LedgerDescriptor.class);
     final LedgerStorage ledgerStorage;
     private long ledgerId;
 

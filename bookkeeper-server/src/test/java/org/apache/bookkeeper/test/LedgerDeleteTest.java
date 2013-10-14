@@ -39,7 +39,7 @@ import org.junit.Test;
  * client and the server side.
  */
 public class LedgerDeleteTest extends MultiLedgerManagerTestCase {
-    static Logger LOG = LoggerFactory.getLogger(LedgerDeleteTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(LedgerDeleteTest.class);
     DigestType digestType;
 
     public LedgerDeleteTest(String ledgerManagerFactory) {

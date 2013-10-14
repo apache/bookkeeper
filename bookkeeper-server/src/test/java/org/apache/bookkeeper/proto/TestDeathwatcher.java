@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  * Tests for the BookieServer death watcher
  */
 public class TestDeathwatcher extends BookKeeperClusterTestCase {
-    static Logger LOG = LoggerFactory.getLogger(TestDeathwatcher.class);
+    private final static Logger LOG = LoggerFactory.getLogger(TestDeathwatcher.class);
 
     public TestDeathwatcher() {
         super(1);

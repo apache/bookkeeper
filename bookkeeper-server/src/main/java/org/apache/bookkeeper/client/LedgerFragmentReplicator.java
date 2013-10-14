@@ -54,7 +54,7 @@ public class LedgerFragmentReplicator {
         this.bkc = bkc;
     }
 
-    private static Logger LOG = LoggerFactory
+    private final static Logger LOG = LoggerFactory
             .getLogger(LedgerFragmentReplicator.class);
 
     private void replicateFragmentInternal(final LedgerHandle lh,

@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class BookKeeperTools {
-    private static Logger LOG = LoggerFactory.getLogger(BookKeeperTools.class);
+    private final static Logger LOG = LoggerFactory.getLogger(BookKeeperTools.class);
 
     /**
      * Main method so we can invoke the bookie recovery via command line.

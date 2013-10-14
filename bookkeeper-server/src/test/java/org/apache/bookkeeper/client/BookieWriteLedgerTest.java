@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
 public class BookieWriteLedgerTest extends
         MultiLedgerManagerMultiDigestTestCase implements AddCallback {
 
-    private static Logger LOG = LoggerFactory
+    private final static Logger LOG = LoggerFactory
             .getLogger(BookieWriteLedgerTest.class);
 
     byte[] ledgerPassword = "aaa".getBytes();

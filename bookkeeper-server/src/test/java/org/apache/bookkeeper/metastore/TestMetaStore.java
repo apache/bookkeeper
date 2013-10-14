@@ -49,7 +49,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 public class TestMetaStore extends TestCase {
-    final static Logger logger = LoggerFactory.getLogger(TestMetaStore.class);
+    private final static Logger logger = LoggerFactory.getLogger(TestMetaStore.class);
 
     protected final static String TABLE = "myTable";
     protected final static String RECORDID = "test";
