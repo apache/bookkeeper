@@ -258,13 +258,14 @@ public class LedgerHandle {
                     prevLastEntryId = metadata.getLastEntryId();
                     prevLength = metadata.getLength();
 
+                    // error out pending adds first
+                    errorOutPendingAdds(rc);
+
                     // synchronized on LedgerHandle.this to ensure that 
                     // lastAddPushed can not be updated after the metadata 
                     // is closed. 
                     metadata.setLength(length);
-
                     metadata.close(lastAddConfirmed);
-                    errorOutPendingAdds(rc);
                     lastAddPushed = lastAddConfirmed;
                 }
 
@@ -510,7 +511,7 @@ public class LedgerHandle {
                 public void safeRun() {
                     ChannelBuffer toSend = macManager.computeDigestAndPackageForSending(
                                                entryId, lastAddConfirmed, currentLength, data, offset, length);
-                    op.initiate(toSend);
+                    op.initiate(toSend, length);
                 }
             });
         } catch (RuntimeException e) {
@@ -631,6 +632,7 @@ public class LedgerHandle {
     void errorOutPendingAdds(int rc) {
         PendingAddOp pendingAddOp;
         while ((pendingAddOp = pendingAddOps.poll()) != null) {
+            addToLength(-pendingAddOp.entryLength);
             pendingAddOp.submitCallback(rc);
         }
     }

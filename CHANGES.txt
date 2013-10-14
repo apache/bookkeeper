@@ -110,6 +110,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-676: Make add asynchrounous in ledger recovery (aniruddha via ivank)
 
+        BOOKKEEPER-673: Ledger length can be inaccurate in failure case (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
