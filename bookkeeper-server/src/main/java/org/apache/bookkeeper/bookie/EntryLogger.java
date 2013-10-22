@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -73,7 +74,8 @@ public class EntryLogger {
     final long logSizeLimit;
     private List<BufferedChannel> logChannelsToFlush;
     private volatile BufferedChannel logChannel;
-    private final EntryLogListener listener;
+    private final CopyOnWriteArrayList<EntryLogListener> listeners
+        = new CopyOnWriteArrayList<EntryLogListener>();
 
     /**
      * The 1K block at the head of the entry logger file
@@ -136,7 +138,9 @@ public class EntryLogger {
             LedgerDirsManager ledgerDirsManager, EntryLogListener listener)
                     throws IOException {
         this.ledgerDirsManager = ledgerDirsManager;
-        this.listener = listener;
+        if (listener != null) {
+            addListener(listener);
+        }
         // log size limit
         this.logSizeLimit = conf.getEntryLogSizeLimit();
 
@@ -161,6 +165,12 @@ public class EntryLogger {
         }
         this.leastUnflushedLogId = logId + 1;
         initialize();
+    }
+
+    void addListener(EntryLogListener listener) {
+        if (null != listener) {
+            listeners.add(listener);
+        }
     }
 
     /**
@@ -236,7 +246,7 @@ public class EntryLogger {
             // so the readers could access the data from filesystem.
             logChannel.flush(false);
             logChannelsToFlush.add(logChannel);
-            if (null != listener) {
+            for (EntryLogListener listener : listeners) {
                 listener.onRotateEntryLog();
             }
         }
@@ -432,12 +442,16 @@ public class EntryLogger {
         return (logId << 32L) | pos;
     }
 
+    static long logIdForOffset(long offset) {
+        return offset >> 32L;
+    }
+
     synchronized boolean reachEntryLogLimit(long size) {
         return logChannel.position() + size > logSizeLimit;
     }
 
     byte[] readEntry(long ledgerId, long entryId, long location) throws IOException, Bookie.NoEntryException {
-        long entryLogId = location >> 32L;
+        long entryLogId = logIdForOffset(location);
         long pos = location & 0xffffffffL;
         ByteBuffer sizeBuff = ByteBuffer.allocate(4);
         pos -= 4; // we want to get the ledgerId and length to check

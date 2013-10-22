@@ -41,7 +41,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.bookkeeper.bookie.GarbageCollectorThread.SafeEntryAdder;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
@@ -420,8 +419,7 @@ public class Bookie extends BookieThread {
         // instantiate the journal
         journal = new Journal(conf, ledgerDirsManager);
         ledgerStorage = new InterleavedLedgerStorage(conf, ledgerManager,
-                                                     ledgerDirsManager, journal,
-                                                     new BookieSafeEntryAdder());
+                                                     ledgerDirsManager, journal);
         syncThread = new SyncThread(conf, getLedgerDirsListener(),
                                     ledgerStorage, journal);
 
@@ -1087,37 +1085,6 @@ public class Bookie extends BookieThread {
         return true;
     }
 
-    private class BookieSafeEntryAdder implements SafeEntryAdder {
-        @Override
-        public void safeAddEntry(final long ledgerId, final ByteBuffer buffer,
-                                 final GenericCallback<Void> cb) {
-            journal.logAddEntry(buffer, new WriteCallback() {
-                    @Override
-                    public void writeComplete(int rc, long ledgerId2, long entryId,
-                                              InetSocketAddress addr, Object ctx) {
-                        if (rc != BookieException.Code.OK) {
-                            LOG.error("Error rewriting to journal (ledger {}, entry {})", ledgerId2, entryId);
-                            cb.operationComplete(rc, null);
-                            return;
-                        }
-                        try {
-                            addEntryByLedgerId(ledgerId, buffer);
-                            cb.operationComplete(rc, null);
-                        } catch (IOException ioe) {
-                            LOG.error("Error adding to ledger storage (ledger " + ledgerId2
-                                      + ", entry " + entryId + ")", ioe);
-                            // couldn't add to ledger storage
-                            cb.operationComplete(BookieException.Code.IllegalOpException, null);
-                        } catch (BookieException bke) {
-                            LOG.error("Bookie error adding to ledger storage (ledger " + ledgerId2
-                                      + ", entry " + entryId + ")", bke);
-                            // couldn't add to ledger storage
-                            cb.operationComplete(bke.getCode(), null);
-                        }
-                    }
-                }, null);
-        }
-    }
     /**
      * @param args
      * @throws IOException

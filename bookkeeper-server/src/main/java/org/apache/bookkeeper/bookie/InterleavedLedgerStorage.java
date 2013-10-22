@@ -80,14 +80,14 @@ class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
     private volatile boolean somethingWritten = false;
 
     InterleavedLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
-            LedgerDirsManager ledgerDirsManager, CheckpointSource checkpointSource,
-            GarbageCollectorThread.SafeEntryAdder safeEntryAdder) throws IOException {
+                             LedgerDirsManager ledgerDirsManager, CheckpointSource checkpointSource)
+            throws IOException {
         activeLedgers = new SnapshotMap<Long, Boolean>();
         this.checkpointSource = checkpointSource;
         entryLogger = new EntryLogger(conf, ledgerDirsManager, this);
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers, ledgerDirsManager);
         gcThread = new GarbageCollectorThread(conf, ledgerCache, entryLogger,
-                activeLedgers, safeEntryAdder, ledgerManager);
+                activeLedgers, ledgerManager);
     }
 
     @Override
@@ -207,6 +207,7 @@ class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
         // current entry logger file isn't flushed yet.
         flushOrCheckpoint(true);
         // after the ledger storage finished checkpointing, try to clear the done checkpoint
+
         checkpointHolder.clearLastCheckpoint(lastCheckpoint);
         return lastCheckpoint;
     }

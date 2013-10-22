@@ -176,6 +176,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-657: Journal Improvement (Robin Dhamankar via sijie)
 
+      BOOKKEEPER-664: Compaction increases latency on journal writes (ivank via sijie)
+
     NEW FEATURE:
 
       BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj)

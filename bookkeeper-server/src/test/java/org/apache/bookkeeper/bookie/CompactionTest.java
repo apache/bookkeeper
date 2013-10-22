@@ -21,14 +21,29 @@ package org.apache.bookkeeper.bookie;
  *
  */
 import java.io.File;
-import java.util.Arrays;
+import java.io.IOException;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Collections;
 import java.util.Enumeration;
 
+import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.TestUtils;
+
+import org.apache.zookeeper.AsyncCallback;
+import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
+import org.apache.bookkeeper.versioning.Version;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -293,5 +308,158 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         // even entry log files are removed, we still can access entries for ledger1
         // since those entries has been compacted to new entry log
         verifyLedger(lhs[0].getId(), 0, lhs[0].getLastAddConfirmed());
+    }
+
+    /**
+     * Test that compaction doesnt add to index without having persisted
+     * entrylog first. This is needed because compaction doesn't go through the journal.
+     * {@see https://issues.apache.org/jira/browse/BOOKKEEPER-530}
+     * {@see https://issues.apache.org/jira/browse/BOOKKEEPER-664}
+     */
+    @Test(timeout=60000)
+    public void testCompactionSafety() throws Exception {
+        tearDown(); // I dont want the test infrastructure
+        ServerConfiguration conf = new ServerConfiguration();
+        final Set<Long> ledgers = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
+        LedgerManager manager = new LedgerManager() {
+                @Override
+                public void createLedger(LedgerMetadata metadata, GenericCallback<Long> cb) {
+                    unsupported();
+                }
+                @Override
+                public void removeLedgerMetadata(long ledgerId, Version version,
+                                                 GenericCallback<Void> vb) {
+                    unsupported();
+                }
+                @Override
+                public void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> readCb) {
+                    unsupported();
+                }
+                @Override
+                public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
+                        GenericCallback<Void> cb) {
+                    unsupported();
+                }
+                @Override
+                public void asyncProcessLedgers(Processor<Long> processor,
+                                                AsyncCallback.VoidCallback finalCb,
+                        Object context, int successRc, int failureRc) {
+                    unsupported();
+                }
+                @Override
+                public void close() throws IOException {}
+
+                void unsupported() {
+                    LOG.error("Unsupported operation called", new Exception());
+                    throw new RuntimeException("Unsupported op");
+                }
+                @Override
+                public LedgerRangeIterator getLedgerRanges() {
+                    final AtomicBoolean hasnext = new AtomicBoolean(true);
+                    return new LedgerManager.LedgerRangeIterator() {
+                        @Override
+                        public boolean hasNext() throws IOException {
+                            return hasnext.get();
+                        }
+                        @Override
+                        public LedgerManager.LedgerRange next() throws IOException {
+                            hasnext.set(false);
+                            return new LedgerManager.LedgerRange(ledgers);
+                        }
+                    };
+                 }
+            };
+
+        File tmpDir = File.createTempFile("bkTest", ".dir");
+        tmpDir.delete();
+        tmpDir.mkdir();
+        File curDir = Bookie.getCurrentDirectory(tmpDir);
+        Bookie.checkDirectoryStructure(curDir);
+        conf.setLedgerDirNames(new String[] {tmpDir.toString()});
+
+        conf.setEntryLogSizeLimit(EntryLogger.LOGFILE_HEADER_SIZE + 3 * (4+ENTRY_SIZE));
+        conf.setGcWaitTime(100);
+        conf.setMinorCompactionThreshold(0.7f);
+        conf.setMajorCompactionThreshold(0.0f);
+        conf.setMinorCompactionInterval(1);
+        conf.setMajorCompactionInterval(10);
+        conf.setPageLimit(1);
+
+        CheckpointSource checkpointSource = new CheckpointSource() {
+                AtomicInteger idGen = new AtomicInteger(0);
+                class MyCheckpoint implements CheckpointSource.Checkpoint {
+                    int id = idGen.incrementAndGet();
+                    @Override
+                    public int compareTo(CheckpointSource.Checkpoint o) {
+                        if (o == CheckpointSource.Checkpoint.MAX) {
+                            return -1;
+                        } else if (o == CheckpointSource.Checkpoint.MIN) {
+                            return 1;
+                        }
+                        return id - ((MyCheckpoint)o).id;
+                    }
+                }
+
+                @Override
+                public CheckpointSource.Checkpoint newCheckpoint() {
+                    return new MyCheckpoint();
+                }
+
+                public void checkpointComplete(CheckpointSource.Checkpoint checkpoint, boolean compact)
+                        throws IOException {
+                }
+            };
+        final byte[] KEY = "foobar".getBytes();
+        File log0 = new File(curDir, "0.log");
+        LedgerDirsManager dirs = new LedgerDirsManager(conf);
+        assertFalse("Log shouldnt exist", log0.exists());
+        InterleavedLedgerStorage storage = new InterleavedLedgerStorage(conf, manager,
+                                                                        dirs, checkpointSource);
+        ledgers.add(1l);
+        ledgers.add(2l);
+        ledgers.add(3l);
+        storage.setMasterKey(1, KEY);
+        storage.setMasterKey(2, KEY);
+        storage.setMasterKey(3, KEY);
+        storage.addEntry(genEntry(1, 1, ENTRY_SIZE));
+        storage.addEntry(genEntry(2, 1, ENTRY_SIZE));
+        storage.addEntry(genEntry(2, 2, ENTRY_SIZE));
+        storage.addEntry(genEntry(3, 2, ENTRY_SIZE));
+        storage.flush();
+        storage.shutdown();
+
+        assertTrue("Log should exist", log0.exists());
+        ledgers.remove(2l);
+        ledgers.remove(3l);
+
+        storage = new InterleavedLedgerStorage(conf, manager, dirs, checkpointSource);
+        storage.start();
+        for (int i = 0; i < 10; i++) {
+            if (!log0.exists()) {
+                break;
+            }
+            Thread.sleep(1000);
+            storage.entryLogger.flush(); // simulate sync thread
+        }
+        assertFalse("Log shouldnt exist", log0.exists());
+
+        ledgers.add(4l);
+        storage.setMasterKey(4, KEY);
+        storage.addEntry(genEntry(4, 1, ENTRY_SIZE)); // force ledger 1 page to flush
+
+        storage = new InterleavedLedgerStorage(conf, manager, dirs, checkpointSource);
+        storage.getEntry(1, 1); // entry should exist
+    }
+
+    private ByteBuffer genEntry(long ledger, long entry, int size) {
+        byte[] data = new byte[size];
+        ByteBuffer bb = ByteBuffer.wrap(new byte[size]);
+        bb.putLong(ledger);
+        bb.putLong(entry);
+        while (bb.hasRemaining()) {
+            bb.put((byte)0xFF);
+        }
+        bb.flip();
+        return bb;
     }
 }
