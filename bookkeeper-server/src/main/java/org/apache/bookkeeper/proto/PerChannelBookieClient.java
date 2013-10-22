@@ -238,15 +238,20 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         final int entrySize = toSend.readableBytes();
         final CompletionKey completionKey = new CompletionKey(ledgerId, entryId);
         addCompletions.put(completionKey, new AddCompletion(cb, entrySize, ctx));
+        final Channel c = channel;
+        if (c == null) {
+            errorOutAddKey(completionKey);
+            return;
+        }
         try {
-            ChannelFuture future = channel.write(r);
+            ChannelFuture future = c.write(r);
             future.addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
                     if (future.isSuccess()) {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Successfully wrote request for adding entry: " + entryId + " ledger-id: " + ledgerId
-                                                            + " bookie: " + channel.getRemoteAddress() + " entry length: " + entrySize);
+                                                            + " bookie: " + c.getRemoteAddress() + " entry length: " + entrySize);
                         }
                         // totalBytesOutstanding.addAndGet(entrySize);
                     } else {
@@ -270,15 +275,21 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                 BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, entryId,
                 BookieProtocol.FLAG_DO_FENCING, masterKey);
 
+        final Channel c = channel;
+        if (c == null) {
+            errorOutReadKey(key);
+            return;
+        }
+
         try {
-            ChannelFuture future = channel.write(r);
+            ChannelFuture future = c.write(r);
             future.addListener(new ChannelFutureListener() {
                     @Override
                     public void operationComplete(ChannelFuture future) throws Exception {
                         if (future.isSuccess()) {
                             if (LOG.isDebugEnabled()) {
                                 LOG.debug("Successfully wrote request {} to {}",
-                                          r, channel.getRemoteAddress());
+                                          r, c.getRemoteAddress());
                             }
                         } else {
                             errorOutReadKey(key);
@@ -299,15 +310,21 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                 BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, entryId,
                 BookieProtocol.FLAG_NONE);
 
+        final Channel c = channel;
+        if (c == null) {
+            errorOutReadKey(key);
+            return;
+        }
+
         try{
-            ChannelFuture future = channel.write(r);
+            ChannelFuture future = c.write(r);
             future.addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
                     if (future.isSuccess()) {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Successfully wrote request {} to {}",
-                                      r, channel.getRemoteAddress());
+                                      r, c.getRemoteAddress());
                         }
                     } else {
                         errorOutReadKey(key);

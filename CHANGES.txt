@@ -112,6 +112,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-673: Ledger length can be inaccurate in failure case (sijie via ivank)
 
+        BOOKKEEPER-688: NPE exception in PerChannelBookieClient (ivank via sijie)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
