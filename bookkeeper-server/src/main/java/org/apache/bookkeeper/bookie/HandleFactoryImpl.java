@@ -22,12 +22,13 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 class HandleFactoryImpl implements HandleFactory {
-    HashMap<Long, LedgerDescriptor> ledgers = new HashMap<Long, LedgerDescriptor>();
-    HashMap<Long, LedgerDescriptor> readOnlyLedgers
-        = new HashMap<Long, LedgerDescriptor>();
+    ConcurrentMap<Long, LedgerDescriptor> ledgers = new ConcurrentHashMap<Long, LedgerDescriptor>();
+    ConcurrentMap<Long, LedgerDescriptor> readOnlyLedgers
+        = new ConcurrentHashMap<Long, LedgerDescriptor>();
 
     final LedgerStorage ledgerStorage;
 
@@ -39,14 +40,16 @@ class HandleFactoryImpl implements HandleFactory {
     public LedgerDescriptor getHandle(long ledgerId, byte[] masterKey)
             throws IOException, BookieException {
         LedgerDescriptor handle = null;
-        synchronized (ledgers) {
-            handle = ledgers.get(ledgerId);
-            if (handle == null) {
-                handle = LedgerDescriptor.create(masterKey, ledgerId, ledgerStorage);
-                ledgers.put(ledgerId, handle);
+        if (null == (handle = ledgers.get(ledgerId))) {
+            // LedgerDescriptor#create sets the master key in the ledger storage, calling it
+            // twice on the same ledgerId is safe because it eventually puts a value in the ledger cache
+            // that guarantees synchronized access across all cached entries.
+            handle = ledgers.putIfAbsent(ledgerId, LedgerDescriptor.create(masterKey, ledgerId, ledgerStorage));
+            if (null == handle) {
+                handle = ledgers.get(ledgerId);
             }
-            handle.checkAccess(masterKey);
         }
+        handle.checkAccess(masterKey);
         return handle;
     }
 
@@ -54,11 +57,10 @@ class HandleFactoryImpl implements HandleFactory {
     public LedgerDescriptor getReadOnlyHandle(long ledgerId)
             throws IOException, Bookie.NoLedgerException {
         LedgerDescriptor handle = null;
-        synchronized (ledgers) {
-            handle = readOnlyLedgers.get(ledgerId);
-            if (handle == null) {
-                handle = LedgerDescriptor.createReadOnly(ledgerId, ledgerStorage);
-                readOnlyLedgers.put(ledgerId, handle);
+        if (null == (handle = readOnlyLedgers.get(ledgerId))) {
+            handle = readOnlyLedgers.putIfAbsent(ledgerId, LedgerDescriptor.createReadOnly(ledgerId, ledgerStorage));
+            if (null == handle) {
+                handle = readOnlyLedgers.get(ledgerId);
             }
         }
         return handle;

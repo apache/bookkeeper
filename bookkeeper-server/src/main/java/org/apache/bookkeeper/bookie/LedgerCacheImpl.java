@@ -162,16 +162,6 @@ public class LedgerCacheImpl implements LedgerCache {
             }
 
             @Override
-            public int getNumCleanLedgers() {
-                return LedgerCacheImpl.this.indexPageManager.getNumCleanLedgers();
-            }
-
-            @Override
-            public int getNumDirtyLedgers() {
-                return LedgerCacheImpl.this.indexPageManager.getNumDirtyLedgers();
-            }
-
-            @Override
             public int getNumOpenLedgers() {
                 return LedgerCacheImpl.this.indexPersistenceManager.getNumOpenLedgers();
             }

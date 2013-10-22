@@ -859,8 +859,7 @@ public class BookieShell implements Tool {
         lep.usePage();
         try {
             while (curSize < size) {
-                lep.setLedger(ledgerId);
-                lep.setFirstEntry(curEntry);
+                lep.setLedgerAndFirstEntry(ledgerId, curEntry);
                 lep.readPage(fi);
 
                 // process a page

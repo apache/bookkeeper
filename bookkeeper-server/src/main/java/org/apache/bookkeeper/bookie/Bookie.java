@@ -35,6 +35,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -114,7 +116,7 @@ public class Bookie extends BookieThread {
     BookieBean jmxBookieBean;
     BKMBeanInfo jmxLedgerStorageBean;
 
-    Map<Long, byte[]> masterKeyCache = Collections.synchronizedMap(new HashMap<Long, byte[]>());
+    final ConcurrentMap<Long, byte[]> masterKeyCache = new ConcurrentHashMap<Long, byte[]>();
 
     final private String zkBookieRegPath;
 
@@ -122,7 +124,7 @@ public class Bookie extends BookieThread {
 
     public static class NoLedgerException extends IOException {
         private static final long serialVersionUID = 1L;
-        private long ledgerId;
+        private final long ledgerId;
         public NoLedgerException(long ledgerId) {
             super("Ledger " + ledgerId + " not found");
             this.ledgerId = ledgerId;
@@ -133,8 +135,8 @@ public class Bookie extends BookieThread {
     }
     public static class NoEntryException extends IOException {
         private static final long serialVersionUID = 1L;
-        private long ledgerId;
-        private long entryId;
+        private final long ledgerId;
+        private final long entryId;
         public NoEntryException(long ledgerId, long entryId) {
             this("Entry " + entryId + " not found in " + ledgerId, ledgerId, entryId);
         }
@@ -885,8 +887,9 @@ public class Bookie extends BookieThread {
             bb.put(masterKey);
             bb.flip();
 
-            journal.logAddEntry(bb, new NopWriteCallback(), null);
-            masterKeyCache.put(ledgerId, masterKey);
+            if (null == masterKeyCache.putIfAbsent(ledgerId, masterKey)) {
+                journal.logAddEntry(bb, new NopWriteCallback(), null);
+            }
         }
         return l;
     }

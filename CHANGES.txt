@@ -114,6 +114,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-688: NPE exception in PerChannelBookieClient (ivank via sijie)
 
+        BOOKKEEPER-659: LRU page management in ledger cache. (Aniruddha, Robin Dhamankar & sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

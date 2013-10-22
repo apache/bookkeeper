@@ -44,16 +44,6 @@ public interface LedgerCacheMXBean {
     public int getPageLimit();
 
     /**
-     * @return number of clean ledgers
-     */
-    public int getNumCleanLedgers();
-
-    /**
-     * @return number of dirty ledgers
-     */
-    public int getNumDirtyLedgers();
-
-    /**
      * @return number of open ledgers
      */
     public int getNumOpenLedgers();

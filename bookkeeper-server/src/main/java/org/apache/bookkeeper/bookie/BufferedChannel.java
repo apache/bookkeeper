@@ -28,8 +28,10 @@ import java.nio.channels.FileChannel;
 /**
  * Provides a buffering layer in front of a FileChannel.
  */
-public class BufferedChannel
-{
+public class BufferedChannel {
+
+    static final byte zeroPage[] = new byte[64 * 1024];
+
     ByteBuffer writeBuffer;
     ByteBuffer readBuffer;
     private FileChannel bc;
@@ -193,7 +195,7 @@ public class BufferedChannel
                 if (readBufferStartPosition + readBuffer.capacity() >= writeBufferStartPosition) {
                     readBufferStartPosition = writeBufferStartPosition - readBuffer.capacity();
                     if (readBufferStartPosition < 0) {
-                        readBuffer.put(LedgerEntryPage.zeroPage, 0, (int)-readBufferStartPosition);
+                        readBuffer.put(zeroPage, 0, (int) -readBufferStartPosition);
                     }
                 }
                 while(readBuffer.remaining() > 0) {
@@ -201,7 +203,7 @@ public class BufferedChannel
                         throw new IOException("Short read");
                     }
                 }
-                readBuffer.put(LedgerEntryPage.zeroPage, 0, readBuffer.remaining());
+                readBuffer.put(zeroPage, 0, readBuffer.remaining());
                 readBuffer.clear();
             }
         }

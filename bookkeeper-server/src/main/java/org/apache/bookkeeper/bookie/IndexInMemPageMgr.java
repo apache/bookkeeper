@@ -20,28 +20,293 @@
  */
 package org.apache.bookkeeper.bookie;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicInteger;
+
 class IndexInMemPageMgr {
     private final static Logger LOG = LoggerFactory.getLogger(IndexInMemPageMgr.class);
+    private final static ConcurrentHashMap<Long, LedgerEntryPage> EMPTY_PAGE_MAP
+        = new ConcurrentHashMap<Long, LedgerEntryPage>();
+
+    private static class InMemPageCollection implements LEPStateChangeCallback {
+
+        ConcurrentMap<Long, ConcurrentMap<Long,LedgerEntryPage>> pages;
+
+        Map<EntryKey, LedgerEntryPage> lruCleanPageMap;
+
+        public InMemPageCollection() {
+            pages = new ConcurrentHashMap<Long, ConcurrentMap<Long,LedgerEntryPage>>();
+            lruCleanPageMap =
+                Collections.synchronizedMap(new LinkedHashMap<EntryKey, LedgerEntryPage>(16, 0.75f, true));
+        }
+
+        /**
+         * Retrieve the LedgerEntryPage corresponding to the ledger and firstEntry
+         *
+         * @param ledgerId
+         *          Ledger id
+         * @param firstEntry
+         *          Id of the first entry in the page
+         * @returns LedgerEntryPage if present
+         */
+        private LedgerEntryPage getPage(long ledgerId, long firstEntry) {
+            ConcurrentMap<Long, LedgerEntryPage> map = pages.get(ledgerId);
+            if (null != map) {
+                return map.get(firstEntry);
+            }
+            return null;
+        }
+
+        /**
+         * Add a LedgerEntryPage to the page map
+         *
+         * @param lep
+         *          Ledger Entry Page object
+         */
+        private LedgerEntryPage putPage(LedgerEntryPage lep) {
+            // Do a get here to avoid too many new ConcurrentHashMaps() as putIntoTable is called frequently.
+            ConcurrentMap<Long, LedgerEntryPage> map = pages.get(lep.getLedger());
+            if (null == map) {
+                ConcurrentMap<Long, LedgerEntryPage> mapToPut = new ConcurrentHashMap<Long, LedgerEntryPage>();
+                map = pages.putIfAbsent(lep.getLedger(), mapToPut);
+                if (null == map) {
+                    map = mapToPut;
+                }
+            }
+            LedgerEntryPage oldPage = map.putIfAbsent(lep.getFirstEntry(), lep);
+            if (null == oldPage) {
+                oldPage = lep;
+                // Also include this in the clean page map if it qualifies.
+                // Note: This is done for symmetry and correctness, however it should never
+                // get exercised since we shouldn't attempt a put without the page being in use
+                addToCleanPagesList(lep);
+            }
+            return oldPage;
+        }
+
+        /**
+         * Traverse the pages for a given ledger in memory and find the highest
+         * entry amongst these pages
+         *
+         * @param ledgerId
+         *          Ledger id
+         * @returns last entry in the in memory pages
+         */
+        private long getLastEntryInMem(long ledgerId) {
+            long lastEntry = 0;
+            // Find the last entry in the cache
+            ConcurrentMap<Long, LedgerEntryPage> map = pages.get(ledgerId);
+            if (map != null) {
+                for(LedgerEntryPage lep: map.values()) {
+                    if (lep.getMaxPossibleEntry() < lastEntry) {
+                        continue;
+                    }
+                    lep.usePage();
+                    long highest = lep.getLastEntry();
+                    if (highest > lastEntry) {
+                        lastEntry = highest;
+                    }
+                    lep.releasePage();
+                }
+            }
+            return lastEntry;
+        }
+
+        /**
+         * Removes ledger entry pages for a given ledger
+         *
+         * @param ledgerId
+         *          Ledger id
+         * @returns number of pages removed
+         */
+        private int removeEntriesForALedger(long ledgerId) {
+            // remove pages first to avoid page flushed when deleting file info
+            ConcurrentMap<Long, LedgerEntryPage> lPages = pages.remove(ledgerId);
+            if (null != lPages) {
+                for (long entryId: lPages.keySet()) {
+                    synchronized(lruCleanPageMap) {
+                        lruCleanPageMap.remove(new EntryKey(ledgerId, entryId));
+                    }
+                }
+                return lPages.size();
+            }
+            return 0;
+        }
+
+        /**
+         * Gets the list of pages in memory that have been changed and hence need to
+         * be written as a part of the flush operation that is being issued
+         *
+         * @param ledgerId
+         *          Ledger id
+         * @returns last entry in the in memory pages.
+         */
+        private LinkedList<Long> getFirstEntryListToBeFlushed(long ledgerId) {
+            ConcurrentMap<Long, LedgerEntryPage> pageMap = pages.get(ledgerId);
+            if (pageMap == null || pageMap.isEmpty()) {
+                return null;
+            }
+
+            LinkedList<Long> firstEntryList = new LinkedList<Long>();
+            for(ConcurrentMap.Entry<Long, LedgerEntryPage> entry: pageMap.entrySet()) {
+                LedgerEntryPage lep = entry.getValue();
+                if (lep.isClean()) {
+                    if (!lep.inUse()) {
+                        addToCleanPagesList(lep);
+                    }
+                    if (LOG.isTraceEnabled()) {
+                        LOG.trace("Page is clean " + lep);
+                    }
+                } else {
+                    firstEntryList.add(lep.getFirstEntry());
+                }
+            }
+            return firstEntryList;
+        }
+
+        /**
+         * Add the LedgerEntryPage to the clean page LRU map
+         *
+         * @param lep
+         *          Ledger Entry Page object
+         */
+        private void addToCleanPagesList(LedgerEntryPage lep) {
+            synchronized(lruCleanPageMap) {
+                if (lep.isClean() && !lep.inUse()) {
+                    lruCleanPageMap.put(lep.getEntryKey(), lep);
+                }
+            }
+        }
+
+        /**
+         * Remove the LedgerEntryPage from the clean page LRU map
+         *
+         * @param lep
+         *          Ledger Entry Page object
+         */
+        private void removeFromCleanPageList(LedgerEntryPage lep) {
+            synchronized(lruCleanPageMap) {
+                if (!lep.isClean() || lep.inUse()) {
+                    lruCleanPageMap.remove(lep.getEntryKey());
+                }
+            }
+        }
+
+        /**
+         * Get the set of active ledgers
+         *
+         */
+        Set<Long> getActiveLedgers() {
+            return pages.keySet();
+        }
+
+        /**
+         * Get a clean page and provision it for the specified ledger and firstEntry within
+         * the ledger
+         *
+         * @param ledgerId
+         *          Ledger id
+         * @param firstEntry
+         *          Id of the first entry in the page
+         * @returns LedgerEntryPage if present
+         */
+        LedgerEntryPage grabCleanPage(long ledgerId, long firstEntry) {
+            LedgerEntryPage lep = null;
+            while (lruCleanPageMap.size() > 0) {
+                lep = null;
+                synchronized(lruCleanPageMap) {
+                    Iterator<Map.Entry<EntryKey,LedgerEntryPage>> iterator = lruCleanPageMap.entrySet().iterator();
+
+                    Map.Entry<EntryKey,LedgerEntryPage> entry = null;
+                    while (iterator.hasNext())
+                    {
+                        entry = iterator.next();
+                        iterator.remove();
+                        if (entry.getValue().isClean() &&
+                                !entry.getValue().inUse()) {
+                            lep = entry.getValue();
+                            break;
+                        }
+                    }
+
+                    if (null == lep) {
+                        LOG.debug("Did not find eligible page in the first pass");
+                        return null;
+                    }
+                }
+
+                // We found a candidate page, lets see if we can reclaim it before its re-used
+                ConcurrentMap<Long, LedgerEntryPage> pageMap = pages.get(lep.getLedger());
+                // Remove from map only if nothing has changed since we checked this lep.
+                // Its possible for the ledger to have been deleted or the page to have already
+                // been reclaimed. The page map is the definitive source of information, if anything
+                // has changed we should leave this page along and continue iterating to find
+                // another suitable page.
+                if ((null != pageMap) && (pageMap.remove(lep.getFirstEntry(), lep))) {
+                    if (!lep.isClean()) {
+                        // Someone wrote to this page while we were reclaiming it.
+                        pageMap.put(lep.getFirstEntry(), lep);
+                        lep = null;
+                    } else {
+                        // Do some bookkeeping on the page table
+                        pages.remove(lep.getLedger(), EMPTY_PAGE_MAP);
+                        // We can now safely reset this lep and return it.
+                        lep.usePage();
+                        lep.zeroPage();
+                        lep.setLedgerAndFirstEntry(ledgerId, firstEntry);
+                        return lep;
+                    }
+                } else {
+                    lep = null;
+                }
+            }
+            return lep;
+        }
+
+        @Override
+        public void onSetInUse(LedgerEntryPage lep) {
+            removeFromCleanPageList(lep);
+        }
+
+        @Override
+        public void onResetInUse(LedgerEntryPage lep) {
+            addToCleanPagesList(lep);
+        }
+
+        @Override
+        public void onSetClean(LedgerEntryPage lep) {
+            addToCleanPagesList(lep);
+        }
+
+        @Override
+        public void onSetDirty(LedgerEntryPage lep) {
+            removeFromCleanPageList(lep);
+        }
+    }
 
     final int pageSize;
-    final int pageLimit;
     final int entriesPerPage;
-    final HashMap<Long, HashMap<Long, LedgerEntryPage>> pages;
+    final int pageLimit;
+    final InMemPageCollection pageMapAndList;
 
     // The number of pages that have actually been used
-    private int pageCount = 0;
+    private final AtomicInteger pageCount = new AtomicInteger(0);
 
     // The persistence manager that this page manager uses to
     // flush and read pages
@@ -50,20 +315,17 @@ class IndexInMemPageMgr {
     /**
      * the list of potentially dirty ledgers
      */
-    LinkedList<Long> dirtyLedgers = new LinkedList<Long>();
-    /**
-     * the list of potentially clean ledgers
-     */
-    LinkedList<Long> cleanLedgers = new LinkedList<Long>();
+    private final ConcurrentLinkedQueue<Long> ledgersToFlush = new ConcurrentLinkedQueue<Long>();
+    private final ConcurrentSkipListSet<Long> ledgersFlushing = new ConcurrentSkipListSet<Long>();
 
     public IndexInMemPageMgr(int pageSize,
                              int entriesPerPage,
-                             ServerConfiguration conf, 
+                             ServerConfiguration conf,
                              IndexPersistenceMgr indexPersistenceManager) {
         this.pageSize = pageSize;
         this.entriesPerPage = entriesPerPage;
         this.indexPersistenceManager = indexPersistenceManager;
-        this.pages = new HashMap<Long, HashMap<Long, LedgerEntryPage>>();
+        this.pageMapAndList = new InMemPageCollection();
 
         if (conf.getPageLimit() <= 0) {
             // allocate half of the memory to the page cache
@@ -100,51 +362,21 @@ class IndexInMemPageMgr {
      * @return number of page used in ledger cache
      */
     public int getNumUsedPages() {
-        return pageCount;
+        return pageCount.get();
     }
 
-    public int getNumCleanLedgers() {
-        return cleanLedgers.size();
-    }
-
-    public int getNumDirtyLedgers() {
-        return dirtyLedgers.size();
-    }
-
-    private void putIntoTable(HashMap<Long, HashMap<Long,LedgerEntryPage>> table, LedgerEntryPage lep) {
-        HashMap<Long, LedgerEntryPage> map = table.get(lep.getLedger());
-        if (map == null) {
-            map = new HashMap<Long, LedgerEntryPage>();
-            table.put(lep.getLedger(), map);
-        }
-        map.put(lep.getFirstEntry(), lep);
-    }
-
-    private static LedgerEntryPage getFromTable(HashMap<Long, HashMap<Long,LedgerEntryPage>> table,
-                                                Long ledger, Long firstEntry) {
-        HashMap<Long, LedgerEntryPage> map = table.get(ledger);
-        if (map != null) {
-            return map.get(firstEntry);
-        }
-        return null;
-    }
-
-    synchronized protected LedgerEntryPage getLedgerEntryPage(Long ledger, Long firstEntry, boolean onlyDirty) {
-        LedgerEntryPage lep = getFromTable(pages, ledger, firstEntry);
-        if (lep == null) {
+    LedgerEntryPage getLedgerEntryPage(Long ledger, Long firstEntry, boolean onlyDirty) {
+        LedgerEntryPage lep = pageMapAndList.getPage(ledger, firstEntry);
+        if (onlyDirty && null != lep && lep.isClean()) {
             return null;
         }
-
-        lep.usePage();
-
-        if (onlyDirty && lep.isClean()) {
-            return null;
-        } else {
-            return lep;
+        if (null != lep) {
+            lep.usePage();
         }
+        return lep;
     }
 
-    /** 
+    /**
      * Grab ledger entry page whose first entry is <code>pageEntry</code>.
      *
      * If the page doesn't existed before, we allocate a memory page.
@@ -158,11 +390,18 @@ class IndexInMemPageMgr {
     private LedgerEntryPage grabLedgerEntryPage(long ledger, long pageEntry) throws IOException {
         LedgerEntryPage lep = grabCleanPage(ledger, pageEntry);
         try {
-            // should update page before we put it into table
-            // otherwise we would put an empty page in it
+            // should get the up to date page from the persistence manager
+            // before we put it into table otherwise we would put
+            // an empty page in it
             indexPersistenceManager.updatePage(lep);
-            synchronized (this) {
-                putIntoTable(pages, lep);
+            LedgerEntryPage oldLep;
+            if (lep != (oldLep = pageMapAndList.putPage(lep))) {
+                lep.releasePage();
+                // Decrement the page count because we couldn't put this lep in the page cache.
+                pageCount.decrementAndGet();
+                // Increment the use count of the old lep because this is unexpected
+                oldLep.usePage();
+                lep = oldLep;
             }
         } catch (IOException ie) {
             // if we grab a clean page, but failed to update the page
@@ -170,154 +409,70 @@ class IndexInMemPageMgr {
             // since this page will be never used, so we need to decrement
             // page count of ledger cache.
             lep.releasePage();
-            synchronized (this) {
-                --pageCount;
-            }
+            pageCount.decrementAndGet();
             throw ie;
         }
         return lep;
     }
 
     void removePagesForLedger(long ledgerId) {
-        // remove pages first to avoid page flushed when deleting file info
-        synchronized (this) {
-            Map<Long, LedgerEntryPage> lpages = pages.remove(ledgerId);
-            if (null != lpages) {
-                pageCount -= lpages.size();
-                if (pageCount < 0) {
-                    LOG.error("Page count of ledger cache has been decremented to be less than zero.");
-                }
-            }
+        int removedPageCount = pageMapAndList.removeEntriesForALedger(ledgerId);
+        if (pageCount.addAndGet(-removedPageCount) < 0) {
+            throw new RuntimeException("Page count of ledger cache has been decremented to be less than zero.");
         }
+        ledgersToFlush.remove(ledgerId);
     }
 
     long getLastEntryInMem(long ledgerId) {
-        long lastEntry = 0;
-        // Find the last entry in the cache
-        synchronized (this) {
-            Map<Long, LedgerEntryPage> map = pages.get(ledgerId);
-            if (map != null) {
-                for (LedgerEntryPage lep : map.values()) {
-                    if (lep.getFirstEntry() + entriesPerPage < lastEntry) {
-                        continue;
-                    }
-                    lep.usePage();
-                    long highest = lep.getLastEntry();
-                    if (highest > lastEntry) {
-                        lastEntry = highest;
-                    }
-                    lep.releasePage();
-                }
-            }
-        }
-        return lastEntry;
+        return pageMapAndList.getLastEntryInMem(ledgerId);
     }
 
     private LedgerEntryPage grabCleanPage(long ledger, long entry) throws IOException {
         if (entry % entriesPerPage != 0) {
             throw new IllegalArgumentException(entry + " is not a multiple of " + entriesPerPage);
         }
-        outerLoop: while (true) {
-            synchronized (this) {
-                if (pageCount < pageLimit) {
-                    // let's see if we can allocate something
-                    LedgerEntryPage lep = new LedgerEntryPage(pageSize, entriesPerPage);
-                    lep.setLedger(ledger);
-                    lep.setFirstEntry(entry);
 
-                    // note, this will not block since it is a new page
-                    lep.usePage();
-                    pageCount++;
-                    return lep;
-                }
+        while(true) {
+            boolean canAllocate = false;
+            if (pageCount.incrementAndGet() <= pageLimit) {
+                canAllocate = true;
+            } else {
+                pageCount.decrementAndGet();
             }
 
-            synchronized (cleanLedgers) {
-                if (cleanLedgers.isEmpty()) {
-                    flushOneOrMoreLedgers(false);
-                    synchronized (this) {
-                        for (Long l : pages.keySet()) {
-                            cleanLedgers.add(l);
-                        }
-                    }
-                }
-                synchronized (this) {
-                    // if ledgers deleted between checking pageCount and putting
-                    // ledgers into cleanLedgers list, the cleanLedgers list would be empty.
-                    // so give it a chance to go back to check pageCount again because
-                    // deleteLedger would decrement pageCount to return the number of pages
-                    // occupied by deleted ledgers.
-                    if (cleanLedgers.isEmpty()) {
-                        continue outerLoop;
-                    }
-                    Long cleanLedger = cleanLedgers.getFirst();
-                    Map<Long, LedgerEntryPage> map = pages.get(cleanLedger);
-                    while (map == null || map.isEmpty()) {
-                        cleanLedgers.removeFirst();
-                        if (cleanLedgers.isEmpty()) {
-                            continue outerLoop;
-                        }
-                        cleanLedger = cleanLedgers.getFirst();
-                        map = pages.get(cleanLedger);
-                    }
-                    Iterator<Map.Entry<Long, LedgerEntryPage>> it = map.entrySet().iterator();
-                    LedgerEntryPage lep = it.next().getValue();
-                    while ((lep.inUse() || !lep.isClean())) {
-                        if (!it.hasNext()) {
-                            // no clean page found in this ledger
-                            cleanLedgers.removeFirst();
-                            continue outerLoop;
-                        }
-                        lep = it.next().getValue();
-                    }
-                    it.remove();
-                    if (map.isEmpty()) {
-                        pages.remove(lep.getLedger());
-                    }
-                    lep.usePage();
-                    lep.zeroPage();
-                    lep.setLedger(ledger);
-                    lep.setFirstEntry(entry);
-                    return lep;
-                }
+            if (canAllocate) {
+                LedgerEntryPage lep = new LedgerEntryPage(pageSize, entriesPerPage, pageMapAndList);
+                lep.setLedgerAndFirstEntry(ledger, entry);
+                lep.usePage();
+                return lep;
             }
+
+            LedgerEntryPage lep = pageMapAndList.grabCleanPage(ledger, entry);
+            if (null != lep) {
+                return lep;
+            }
+            LOG.info("Could not grab a clean page for ledger {}, entry {}, force flushing dirty ledgers.",
+                    ledger, entry);
+            flushOneOrMoreLedgers(false);
         }
     }
 
     void flushOneOrMoreLedgers(boolean doAll) throws IOException {
-        synchronized (dirtyLedgers) {
-            if (dirtyLedgers.isEmpty()) {
-                synchronized (this) {
-                    for (Long l : pages.keySet()) {
-                        if (LOG.isTraceEnabled()) {
-                            LOG.trace("Adding {} to dirty pages", Long.toHexString(l));
-                        }
-                        dirtyLedgers.add(l);
-                    }
-                }
+        if (ledgersToFlush.isEmpty()) {
+            ledgersToFlush.addAll(pageMapAndList.getActiveLedgers());
+        }
+        Long potentiallyDirtyLedger;
+        while (null != (potentiallyDirtyLedger = ledgersToFlush.poll())) {
+            if (!ledgersFlushing.add(potentiallyDirtyLedger)) {
+                continue;
             }
-            if (dirtyLedgers.isEmpty()) {
-                return;
+            try {
+                flushSpecificLedger(potentiallyDirtyLedger);
+            } finally {
+                ledgersFlushing.remove(potentiallyDirtyLedger);
             }
-
-            indexPersistenceManager.relocateIndexFileIfDirFull(dirtyLedgers);
-
-            while (!dirtyLedgers.isEmpty()) {
-                Long l = dirtyLedgers.removeFirst();
-
-                flushSpecificLedger(l);
-
-                if (!doAll) {
-                    break;
-                }
-                // Yield. if we are doing all the ledgers we don't want to block other flushes that
-                // need to happen
-                try {
-                    dirtyLedgers.wait(1);
-                } catch (InterruptedException e) {
-                    // just pass it on
-                    Thread.currentThread().interrupt();
-                }
+            if (!doAll) {
+                break;
             }
         }
     }
@@ -325,31 +480,18 @@ class IndexInMemPageMgr {
     /**
      * Flush a specified ledger
      *
-     * @param l 
+     * @param ledger
      *          Ledger Id
      * @throws IOException
      */
-    private void flushSpecificLedger(long l) throws IOException {
-        LinkedList<Long> firstEntryList;
-        synchronized(this) {
-            HashMap<Long, LedgerEntryPage> pageMap = pages.get(l);
-            if (pageMap == null || pageMap.isEmpty()) {
-                indexPersistenceManager.flushLedgerHeader(l);
-                return;
-            }
-            firstEntryList = new LinkedList<Long>();
-            for(Map.Entry<Long, LedgerEntryPage> entry: pageMap.entrySet()) {
-                LedgerEntryPage lep = entry.getValue();
-                if (lep.isClean()) {
-                    LOG.trace("Page is clean {}", lep);
-                    continue;
-                }
-                firstEntryList.add(lep.getFirstEntry());
-            }
-        }
+    private void flushSpecificLedger(long ledger) throws IOException {
+        LinkedList<Long> firstEntryList = pageMapAndList.getFirstEntryListToBeFlushed(ledger);
 
-        if (firstEntryList.size() == 0) {
-            LOG.debug("Nothing to flush for ledger {}.", l);
+        // flush ledger index file header if necessary
+        indexPersistenceManager.flushLedgerHeader(ledger);
+
+        if (null == firstEntryList || firstEntryList.size() == 0) {
+            LOG.debug("Nothing to flush for ledger {}.", ledger);
             // nothing to do
             return;
         }
@@ -358,12 +500,12 @@ class IndexInMemPageMgr {
         List<LedgerEntryPage> entries = new ArrayList<LedgerEntryPage>(firstEntryList.size());
         try {
             for(Long firstEntry: firstEntryList) {
-                LedgerEntryPage lep = getLedgerEntryPage(l, firstEntry, true);
+                LedgerEntryPage lep = getLedgerEntryPage(ledger, firstEntry, true);
                 if (lep != null) {
                     entries.add(lep);
                 }
             }
-            indexPersistenceManager.flushLedgerEntries(l, entries);
+            indexPersistenceManager.flushLedgerEntries(ledger, entries);
         } finally {
             for(LedgerEntryPage lep: entries) {
                 lep.releasePage();
@@ -380,7 +522,8 @@ class IndexInMemPageMgr {
         if (lep == null) {
             lep = grabLedgerEntryPage(ledger, pageEntry);
         }
-        lep.setOffset(offset, offsetInPage * 8);
+        assert lep != null;
+        lep.setOffset(offset, offsetInPage * LedgerEntryPage.getIndexEntrySize());
         lep.releasePage();
     }
 
@@ -394,7 +537,7 @@ class IndexInMemPageMgr {
             if (lep == null) {
                 lep = grabLedgerEntryPage(ledger, pageEntry);
             }
-            return lep.getOffset(offsetInPage * 8);
+            return lep.getOffset(offsetInPage * LedgerEntryPage.getIndexEntrySize());
         } finally {
             if (lep != null) {
                 lep.releasePage();
