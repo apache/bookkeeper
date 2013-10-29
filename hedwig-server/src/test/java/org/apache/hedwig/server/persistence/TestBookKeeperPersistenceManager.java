@@ -255,6 +255,7 @@ public class TestBookKeeperPersistenceManager extends TestCase {
         });
     }
 
+    @SuppressWarnings("deprecation")
     private void startCluster(long delay) throws Exception {
         bktb = new BookKeeperTestBase(numBookies, 0L);
         bktb.setUp();

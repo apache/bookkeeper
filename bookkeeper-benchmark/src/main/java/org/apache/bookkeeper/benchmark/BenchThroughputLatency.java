@@ -230,6 +230,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public static void main(String[] args)
             throws KeeperException, IOException, InterruptedException, ParseException, BKException {
         Options options = new Options();

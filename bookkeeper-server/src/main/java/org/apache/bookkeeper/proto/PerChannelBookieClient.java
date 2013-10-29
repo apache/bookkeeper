@@ -24,13 +24,13 @@ import java.util.Set;
 import java.util.Collections;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.common.collect.ImmutableSet;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
@@ -39,7 +39,6 @@ import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -79,6 +78,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     AtomicLong totalBytesOutstanding;
     ClientSocketChannelFactory channelFactory;
     OrderedSafeExecutor executor;
+    ScheduledExecutorService timeoutExecutor;
 
     ConcurrentHashMap<CompletionKey, AddCompletion> addCompletions = new ConcurrentHashMap<CompletionKey, AddCompletion>();
     ConcurrentHashMap<CompletionKey, ReadCompletion> readCompletions = new ConcurrentHashMap<CompletionKey, ReadCompletion>();
@@ -90,26 +90,77 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     Queue<GenericCallback<Void>> pendingOps = new ArrayDeque<GenericCallback<Void>>();
     volatile Channel channel = null;
 
+    private class TimeoutTask implements Runnable {
+        @Override
+        public void run() {
+            errorOutTimedOutEntries();
+        }
+    }
+
     enum ConnectionState {
         DISCONNECTED, CONNECTING, CONNECTED, CLOSED
-            };
+    };
 
     volatile ConnectionState state;
     private final ClientConfiguration conf;
 
+    /**
+     * Error out any entries that have timed out.
+     */
+    private void errorOutTimedOutEntries() {
+        int numAdd = 0, numRead = 0;
+        int total = 0;
+        try {
+            for (CompletionKey key : addCompletions.keySet()) {
+                total++;
+                if (key.shouldTimeout(conf.getAddEntryTimeout() * 1000)) {
+                    errorOutAddKey(key);
+                    numAdd++;
+                }
+            }
+            for (CompletionKey key : readCompletions.keySet()) {
+                total++;
+                if (key.shouldTimeout(conf.getReadEntryTimeout() * 1000)) {
+                    errorOutReadKey(key);
+                    numRead++;
+                }
+            }
+        } catch (Throwable t) {
+            LOG.error("Caught RuntimeException while erroring out timed out entries : ", t);
+        }
+        if (numAdd + numRead > 0) {
+            LOG.info("Timeout task iterated through a total of {} keys.", total);
+            LOG.info("Timeout Task errored out {} add entry requests.", numAdd);
+            LOG.info("Timeout Task errored out {} read entry requests.", numRead);
+        }
+    }
+
+    public PerChannelBookieClient(OrderedSafeExecutor executor, ClientSocketChannelFactory channelFactory,
+                                  InetSocketAddress addr, AtomicLong totalBytesOutstanding,
+                                  ScheduledExecutorService timeoutExecutor) {
+        this(new ClientConfiguration(), executor, channelFactory, addr, totalBytesOutstanding, timeoutExecutor);
+    }
+
     public PerChannelBookieClient(OrderedSafeExecutor executor, ClientSocketChannelFactory channelFactory,
                                   InetSocketAddress addr, AtomicLong totalBytesOutstanding) {
-        this(new ClientConfiguration(), executor, channelFactory, addr, totalBytesOutstanding);
+        this(new ClientConfiguration(), executor, channelFactory, addr, totalBytesOutstanding, null);
     }
-            
-    public PerChannelBookieClient(ClientConfiguration conf, OrderedSafeExecutor executor, ClientSocketChannelFactory channelFactory,
-                                  InetSocketAddress addr, AtomicLong totalBytesOutstanding) {
+
+    public PerChannelBookieClient(ClientConfiguration conf, OrderedSafeExecutor executor,
+                                  ClientSocketChannelFactory channelFactory, InetSocketAddress addr,
+                                  AtomicLong totalBytesOutstanding, ScheduledExecutorService timeoutExecutor) {
         this.conf = conf;
         this.addr = addr;
         this.executor = executor;
         this.totalBytesOutstanding = totalBytesOutstanding;
         this.channelFactory = channelFactory;
         this.state = ConnectionState.DISCONNECTED;
+        this.timeoutExecutor = timeoutExecutor;
+        // scheudle the timeout task
+        if (null != this.timeoutExecutor) {
+            this.timeoutExecutor.scheduleWithFixedDelay(new TimeoutTask(), conf.getTimeoutTaskIntervalMillis(),
+                    conf.getTimeoutTaskIntervalMillis(), TimeUnit.MILLISECONDS);
+        }
     }
 
     private void connect() {
@@ -462,8 +513,6 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = Channels.pipeline();
 
-        pipeline.addLast("readTimeout", new ReadTimeoutHandler(new HashedWheelTimer(),
-                                                               conf.getReadTimeout()));
         pipeline.addLast("lengthbasedframedecoder", new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 0, 4, 0, 4));
         pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
         pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.RequestEncoder());
@@ -508,19 +557,6 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         if (t instanceof CorruptedFrameException || t instanceof TooLongFrameException) {
             LOG.error("Corrupted frame received from bookie: {}",
                       e.getChannel().getRemoteAddress());
-            return;
-        }
-        if (t instanceof ReadTimeoutException) {
-            for (CompletionKey key : addCompletions.keySet()) {
-                if (key.shouldTimeout()) {
-                    errorOutAddKey(key);
-                }
-            }
-            for (CompletionKey key : readCompletions.keySet()) {
-                if (key.shouldTimeout()) {
-                    errorOutReadKey(key);
-                }
-            }
             return;
         }
 
@@ -701,15 +737,15 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     }
 
     // visable for testing
-    class CompletionKey {
+    static class CompletionKey {
         long ledgerId;
         long entryId;
-        final long timeoutAt;
+        final long requestAt;
 
         CompletionKey(long ledgerId, long entryId) {
             this.ledgerId = ledgerId;
             this.entryId = entryId;
-            this.timeoutAt = MathUtils.now() + (conf.getReadTimeout()*1000);
+            this.requestAt = MathUtils.nowInNano();
         }
 
         @Override
@@ -726,12 +762,17 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             return ((int) ledgerId << 16) ^ ((int) entryId);
         }
 
+        @Override
         public String toString() {
             return String.format("LedgerEntry(%d, %d)", ledgerId, entryId);
         }
 
-        public boolean shouldTimeout() {
-            return this.timeoutAt <= MathUtils.now();
+        public boolean shouldTimeout(long timeout) {
+            return elapsedTime() >= timeout;
+        }
+
+        public long elapsedTime() {
+            return MathUtils.elapsedMSec(requestAt);
         }
     }
 

@@ -151,6 +151,7 @@ public class BenchReadThroughputLatency {
         formatter.printHelp("BenchReadThroughputLatency <options>", options);
     }
 
+    @SuppressWarnings("deprecation")
     public static void main(String[] args) throws Exception {
         Options options = new Options();
         options.addOption("ledger", true, "Ledger to read. If empty, read all ledgers which come available. " 

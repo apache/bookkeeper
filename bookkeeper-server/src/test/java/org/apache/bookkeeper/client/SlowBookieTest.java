@@ -39,6 +39,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 
+@SuppressWarnings("deprecation")
 public class SlowBookieTest extends BookKeeperClusterTestCase {
     private final static Logger LOG = LoggerFactory.getLogger(SlowBookieTest.class);
 

@@ -200,6 +200,7 @@ public class TestDeadlock extends HedwigHubTestBase {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     protected ServerConfiguration getServerConfiguration(int serverPort, int sslServerPort) {
         ServerConfiguration serverConf = new TestServerConfiguration(serverPort, sslServerPort);

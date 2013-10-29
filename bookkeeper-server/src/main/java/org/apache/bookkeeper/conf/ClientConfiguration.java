@@ -17,7 +17,10 @@
  */
 package org.apache.bookkeeper.conf;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
@@ -25,7 +28,6 @@ import org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
-import static com.google.common.base.Charsets.UTF_8;
 
 /**
  * Configuration settings for client side
@@ -48,6 +50,10 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String CLIENT_TCP_NODELAY = "clientTcpNoDelay";
     protected final static String READ_TIMEOUT = "readTimeout";
     protected final static String SPECULATIVE_READ_TIMEOUT = "speculativeReadTimeout";
+    // Timeout Setting
+    protected final static String ADD_ENTRY_TIMEOUT_SEC = "addEntryTimeoutSec";
+    protected final static String READ_ENTRY_TIMEOUT_SEC = "readEntryTimeoutSec";
+    protected final static String TIMEOUT_TASK_INTERVAL_MILLIS = "timeoutTaskIntervalMillis";
 
     // Number Woker Threads
     protected final static String NUM_WORKER_THREADS = "numWorkerThreads";
@@ -241,7 +247,9 @@ public class ClientConfiguration extends AbstractConfiguration {
      * The default is 5 seconds.
      *
      * @return the current read timeout in seconds
+     * @deprecated use {@link getReadEntryTimeout()} or {@link getAddEntryTimeout()} instead
      */
+    @Deprecated
     public int getReadTimeout() {
         return getInt(READ_TIMEOUT, 5);
     }
@@ -251,9 +259,80 @@ public class ClientConfiguration extends AbstractConfiguration {
      * @see #getReadTimeout()
      * @param timeout The new read timeout in seconds
      * @return client configuration
+     * @deprecated use {@link setReadEntryTimeout(int)} or {@link setAddEntryTimeout(int)} instead
      */
+    @Deprecated
     public ClientConfiguration setReadTimeout(int timeout) {
         setProperty(READ_TIMEOUT, Integer.toString(timeout));
+        return this;
+    }
+
+    /**
+     * Get the timeout for add request. This is the number of seconds we wait without hearing
+     * a response for add request from a bookie before we consider it failed.
+     *
+     * The default value is 5 second for backwards compatibility.
+     *
+     * @return add entry timeout.
+     */
+    @SuppressWarnings("deprecation")
+    public int getAddEntryTimeout() {
+        return getInt(ADD_ENTRY_TIMEOUT_SEC, getReadTimeout());
+    }
+
+    /**
+     * Set timeout for add entry request.
+     * @see #getAddEntryTimeout()
+     *
+     * @param timeout
+     *          The new add entry timeout in seconds.
+     * @return client configuration.
+     */
+    public ClientConfiguration setAddEntryTimeout(int timeout) {
+        setProperty(ADD_ENTRY_TIMEOUT_SEC, timeout);
+        return this;
+    }
+
+    /**
+     * Get the timeout for read entry. This is the number of seconds we wait without hearing
+     * a response for read entry request from a bookie before we consider it failed. By default,
+     * we use socket timeout specified at {@link #getReadTimeout()}.
+     *
+     * @return read entry timeout.
+     */
+    @SuppressWarnings("deprecation")
+    public int getReadEntryTimeout() {
+        return getInt(READ_ENTRY_TIMEOUT_SEC, getReadTimeout());
+    }
+
+    /**
+     * Set the timeout for read entry request.
+     * @see #getReadEntryTimeout()
+     *
+     * @param timeout
+     *          The new read entry timeout in seconds.
+     * @return client configuration.
+     */
+    public ClientConfiguration setReadEntryTimeout(int timeout) {
+        setProperty(READ_ENTRY_TIMEOUT_SEC, timeout);
+        return this;
+    }
+
+    /**
+     * Get the interval between successive executions of the PerChannelBookieClient's
+     * TimeoutTask. This value is in milliseconds. Every X milliseconds, the timeout task
+     * will be executed and it will error out entries that have timed out.
+     *
+     * We do it more aggressive to not accumulate pending requests due to slow responses.
+     * @return
+     */
+    public long getTimeoutTaskIntervalMillis() {
+        return getLong(TIMEOUT_TASK_INTERVAL_MILLIS,
+                TimeUnit.SECONDS.toMillis(Math.min(getAddEntryTimeout(), getReadEntryTimeout())));
+    }
+
+    public ClientConfiguration setTimeoutTaskIntervalMillis(long timeoutMillis) {
+        setProperty(TIMEOUT_TASK_INTERVAL_MILLIS, Long.toString(timeoutMillis));
         return this;
     }
 

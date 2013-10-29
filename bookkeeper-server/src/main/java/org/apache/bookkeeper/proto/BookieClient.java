@@ -21,23 +21,25 @@ package org.apache.bookkeeper.proto;
  *
  */
 
-import java.util.Set;
-import java.util.HashSet;
+import static com.google.common.base.Charsets.UTF_8;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.bookkeeper.conf.ClientConfiguration;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -48,6 +50,8 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.google.common.base.Charsets.UTF_8;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implements the client-side part of the BookKeeper protocol.
@@ -57,15 +61,16 @@ public class BookieClient {
     static final Logger LOG = LoggerFactory.getLogger(BookieClient.class);
 
     // This is global state that should be across all BookieClients
-    AtomicLong totalBytesOutstanding = new AtomicLong();
+    final AtomicLong totalBytesOutstanding = new AtomicLong();
 
-    OrderedSafeExecutor executor;
-    ClientSocketChannelFactory channelFactory;
-    ConcurrentHashMap<InetSocketAddress, PerChannelBookieClient> channels = new ConcurrentHashMap<InetSocketAddress, PerChannelBookieClient>();
-
+    final OrderedSafeExecutor executor;
+    final ClientSocketChannelFactory channelFactory;
+    final ConcurrentHashMap<InetSocketAddress, PerChannelBookieClient> channels =
+        new ConcurrentHashMap<InetSocketAddress, PerChannelBookieClient>();
+    final ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
     private final ClientConfiguration conf;
     private volatile boolean closed;
-    private ReentrantReadWriteLock closeLock;
+    private final ReentrantReadWriteLock closeLock;
 
     public BookieClient(ClientConfiguration conf, ClientSocketChannelFactory channelFactory, OrderedSafeExecutor executor) {
         this.conf = conf;
@@ -84,7 +89,8 @@ public class BookieClient {
                 if (closed) {
                     return null;
                 }
-                channel = new PerChannelBookieClient(conf, executor, channelFactory, addr, totalBytesOutstanding);
+                channel = new PerChannelBookieClient(conf, executor, channelFactory, addr, totalBytesOutstanding,
+                        timeoutExecutor);
                 PerChannelBookieClient prevChannel = channels.putIfAbsent(addr, channel);
                 if (prevChannel != null) {
                     channel = prevChannel;
