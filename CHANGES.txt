@@ -50,6 +50,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-605: Use static Logger objects everywhere for bookkeeper (sijie via ivank)
 
+      BOOKKEEPER-614: Generic stats interface, which multiple providers can be plugged into (sijie & ivank via ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)
