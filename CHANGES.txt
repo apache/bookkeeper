@@ -52,6 +52,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-614: Generic stats interface, which multiple providers can be plugged into (sijie & ivank via ivank)
 
+      BOOKKEEPER-615: Twitter stats implementation of stats interface (sijie via ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)
