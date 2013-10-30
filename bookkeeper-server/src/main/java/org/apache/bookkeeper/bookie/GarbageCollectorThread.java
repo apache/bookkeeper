@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.RateLimiter;
 
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
@@ -147,6 +148,10 @@ public class GarbageCollectorThread extends Thread {
 
         synchronized private void waitEntrylogFlushed() throws IOException {
             try {
+                if (offsets.size() <= 0) {
+                    LOG.debug("Skipping entry log flushing, as there is no offset!");
+                    return;
+                }
                 synchronized (flushLock) {
                     Offset lastOffset = offsets.get(offsets.size()-1);
                     long lastOffsetLogId = EntryLogger.logIdForOffset(lastOffset.offset);
@@ -351,7 +356,8 @@ public class GarbageCollectorThread extends Thread {
      * would not be compacted.
      * </p>
      */
-    private void doCompactEntryLogs(double threshold) {
+    @VisibleForTesting
+    void doCompactEntryLogs(double threshold) {
         LOG.info("Do compaction to compact those files lower than " + threshold);
         // sort the ledger meta by occupied unused space
         Comparator<EntryLogMetadata> sizeComparator = new Comparator<EntryLogMetadata>() {

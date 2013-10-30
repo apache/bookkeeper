@@ -22,7 +22,6 @@ package org.apache.bookkeeper.bookie;
  */
 import java.io.File;
 import java.io.IOException;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -321,54 +320,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         tearDown(); // I dont want the test infrastructure
         ServerConfiguration conf = new ServerConfiguration();
         final Set<Long> ledgers = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
-        LedgerManager manager = new LedgerManager() {
-                @Override
-                public void createLedger(LedgerMetadata metadata, GenericCallback<Long> cb) {
-                    unsupported();
-                }
-                @Override
-                public void removeLedgerMetadata(long ledgerId, Version version,
-                                                 GenericCallback<Void> vb) {
-                    unsupported();
-                }
-                @Override
-                public void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> readCb) {
-                    unsupported();
-                }
-                @Override
-                public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
-                        GenericCallback<Void> cb) {
-                    unsupported();
-                }
-                @Override
-                public void asyncProcessLedgers(Processor<Long> processor,
-                                                AsyncCallback.VoidCallback finalCb,
-                        Object context, int successRc, int failureRc) {
-                    unsupported();
-                }
-                @Override
-                public void close() throws IOException {}
-
-                void unsupported() {
-                    LOG.error("Unsupported operation called", new Exception());
-                    throw new RuntimeException("Unsupported op");
-                }
-                @Override
-                public LedgerRangeIterator getLedgerRanges() {
-                    final AtomicBoolean hasnext = new AtomicBoolean(true);
-                    return new LedgerManager.LedgerRangeIterator() {
-                        @Override
-                        public boolean hasNext() throws IOException {
-                            return hasnext.get();
-                        }
-                        @Override
-                        public LedgerManager.LedgerRange next() throws IOException {
-                            hasnext.set(false);
-                            return new LedgerManager.LedgerRange(ledgers);
-                        }
-                    };
-                 }
-            };
+        LedgerManager manager = getLedgerManager(ledgers);
 
         File tmpDir = File.createTempFile("bkTest", ".dir");
         tmpDir.delete();
@@ -451,8 +403,98 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         storage.getEntry(1, 1); // entry should exist
     }
 
+    private LedgerManager getLedgerManager(final Set<Long> ledgers) {
+        LedgerManager manager = new LedgerManager() {
+                @Override
+                public void createLedger(LedgerMetadata metadata, GenericCallback<Long> cb) {
+                    unsupported();
+                }
+                @Override
+                public void removeLedgerMetadata(long ledgerId, Version version,
+                                                 GenericCallback<Void> vb) {
+                    unsupported();
+                }
+                @Override
+                public void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> readCb) {
+                    unsupported();
+                }
+                @Override
+                public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
+                        GenericCallback<Void> cb) {
+                    unsupported();
+                }
+                @Override
+                public void asyncProcessLedgers(Processor<Long> processor,
+                                                AsyncCallback.VoidCallback finalCb,
+                        Object context, int successRc, int failureRc) {
+                    unsupported();
+                }
+                @Override
+                public void close() throws IOException {}
+
+                void unsupported() {
+                    LOG.error("Unsupported operation called", new Exception());
+                    throw new RuntimeException("Unsupported op");
+                }
+                @Override
+                public LedgerRangeIterator getLedgerRanges() {
+                    final AtomicBoolean hasnext = new AtomicBoolean(true);
+                    return new LedgerManager.LedgerRangeIterator() {
+                        @Override
+                        public boolean hasNext() throws IOException {
+                            return hasnext.get();
+                        }
+                        @Override
+                        public LedgerManager.LedgerRange next() throws IOException {
+                            hasnext.set(false);
+                            return new LedgerManager.LedgerRange(ledgers);
+                        }
+                    };
+                 }
+            };
+        return manager;
+    }
+
+    /**
+     * Test that compaction should execute silently when there is no entry logs
+     * to compact. {@see https://issues.apache.org/jira/browse/BOOKKEEPER-700}
+     */
+    @Test(timeout = 60000)
+    public void testWhenNoLogsToCompact() throws Exception {
+        tearDown(); // I dont want the test infrastructure
+        ServerConfiguration conf = new ServerConfiguration();
+        File tmpDir = File.createTempFile("bkTest", ".dir");
+        tmpDir.delete();
+        tmpDir.mkdir();
+        File curDir = Bookie.getCurrentDirectory(tmpDir);
+        Bookie.checkDirectoryStructure(curDir);
+        conf.setLedgerDirNames(new String[] { tmpDir.toString() });
+
+        LedgerDirsManager dirs = new LedgerDirsManager(conf);
+        final Set<Long> ledgers = Collections
+                .newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
+        LedgerManager manager = getLedgerManager(ledgers);
+        CheckpointSource checkpointSource = new CheckpointSource() {
+
+            @Override
+            public Checkpoint newCheckpoint() {
+                return null;
+            }
+
+            @Override
+            public void checkpointComplete(Checkpoint checkpoint,
+                    boolean compact) throws IOException {
+            }
+        };
+        InterleavedLedgerStorage storage = new InterleavedLedgerStorage(conf,
+                manager, dirs, checkpointSource);
+
+        double threshold = 0.1;
+        // shouldn't throw exception
+        storage.gcThread.doCompactEntryLogs(threshold);
+    }
+
     private ByteBuffer genEntry(long ledger, long entry, int size) {
-        byte[] data = new byte[size];
         ByteBuffer bb = ByteBuffer.wrap(new byte[size]);
         bb.putLong(ledger);
         bb.putLong(entry);
