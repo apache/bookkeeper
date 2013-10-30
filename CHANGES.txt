@@ -186,6 +186,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-602: we should have request timeouts rather than channel timeout in PerChannelBookieClient (Aniruddha, ivank via sijie)
 
+      BOOKKEEPER-698: Bookie client closure is not considering timeoutExecutor (rakesh via sijie)
+
     NEW FEATURE:
 
       BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj)

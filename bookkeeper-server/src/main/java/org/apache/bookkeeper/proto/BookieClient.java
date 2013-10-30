@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -47,12 +48,8 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import static com.google.common.base.Charsets.UTF_8;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 /**
  * Implements the client-side part of the BookKeeper protocol.
  *
@@ -67,7 +64,9 @@ public class BookieClient {
     final ClientSocketChannelFactory channelFactory;
     final ConcurrentHashMap<InetSocketAddress, PerChannelBookieClient> channels =
         new ConcurrentHashMap<InetSocketAddress, PerChannelBookieClient>();
-    final ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
+    final ScheduledExecutorService timeoutExecutor = Executors
+            .newSingleThreadScheduledExecutor(new ThreadFactoryBuilder()
+                    .setNameFormat("BKClient-TimeoutTaskExecutor-%d").build());
     private final ClientConfiguration conf;
     private volatile boolean closed;
     private final ReentrantReadWriteLock closeLock;
@@ -217,6 +216,16 @@ public class BookieClient {
             channels.clear();
         } finally {
             closeLock.writeLock().unlock();
+        }
+        timeoutExecutor.shutdown();
+        try {
+            if (!timeoutExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                LOG.warn("BKClient-TimeoutTaskExecutor did not shutdown cleanly!");
+            }
+        } catch (InterruptedException ie) {
+            LOG.warn(
+                    "Interrupted when shutting down BKClient-TimeoutTaskExecutor",
+                    ie);
         }
     }
 
