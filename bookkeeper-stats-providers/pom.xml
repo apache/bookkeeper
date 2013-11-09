@@ -33,6 +33,7 @@
   <modules>
     <module>twitter-science-provider</module>
     <module>twitter-ostrich-provider</module>
+    <module>codahale-metrics-provider</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
