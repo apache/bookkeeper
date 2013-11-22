@@ -122,6 +122,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-700: GarbageCollectorThread exsiting with ArrayIndexOutOfBoundsException (rakeshr via ivank)
 
+        BOOKKEEPER-678: BookieServer shutdown hangs indefinitely at NioServerSocketChannelFactory.releaseExternalResources (rakeshr via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

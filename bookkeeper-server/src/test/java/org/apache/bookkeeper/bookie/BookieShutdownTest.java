@@ -20,17 +20,88 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import java.nio.ByteBuffer;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BookieShutdownTest extends BookKeeperClusterTestCase {
 
+    private final static Logger LOG = LoggerFactory.getLogger(BookieShutdownTest.class);
+
     public BookieShutdownTest() {
-        super(1);
+        super(3);
+    }
+
+    private LedgerHandle lh;
+    private int numEntriesToWrite = 200;
+    private int maxInt = 2147483647;
+    private Random rng = new Random(System.currentTimeMillis());
+    private DigestType digestType = DigestType.CRC32;
+
+    class SyncObj {
+    }
+
+    /**
+     * Tests verifies the bookkeeper shutdown while writing entries.
+     * Continuously restarting the bookie server to see all the external
+     * resources are releasing properly. BOOKKEEPER-678
+     */
+    @Test(timeout = 150000)
+    public void testBookieRestartContinuously() throws Exception {
+        for (int index = 0; index < 100; index++) {
+            SyncObj sync = new SyncObj();
+            try {
+                // Create a ledger
+                lh = bkc.createLedger(3, 2, digestType, "aaa".getBytes());
+                LOG.info("Ledger ID: " + lh.getId());
+                for (int i = 0; i < numEntriesToWrite; i++) {
+                    ByteBuffer entry = ByteBuffer.allocate(4);
+                    entry.putInt(rng.nextInt(maxInt));
+                    entry.position(0);
+
+                    lh.asyncAddEntry(entry.array(),
+                            new LedgerEntryAddCallback(), sync);
+                }
+
+                LOG.info("Wrote " + numEntriesToWrite
+                        + " and now going to fail bookie.");
+                // Shutdown one Bookie server and restarting new one to continue
+                // writing
+                bsConfs.remove(0);
+                bs.get(0).shutdown();
+                bs.remove(0);
+                startNewBookie();
+                LOG.info("Shutdown one bookie server and started new bookie server...");
+            } catch (BKException e) {
+                LOG.error("Caught BKException", e);
+                fail(e.toString());
+            } catch (InterruptedException e) {
+                LOG.error("Caught InterruptedException", e);
+                fail(e.toString());
+            }
+        }
+    }
+
+    private class LedgerEntryAddCallback implements AddCallback {
+        @Override
+        public void addComplete(int rc, LedgerHandle lh, long entryId,
+                Object ctx) {
+            SyncObj x = (SyncObj) ctx;
+            synchronized (x) {
+                x.notify();
+            }
+        }
     }
 
     /**
