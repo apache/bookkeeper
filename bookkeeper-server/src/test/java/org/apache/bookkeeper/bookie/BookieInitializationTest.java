@@ -374,7 +374,7 @@ public class BookieInitializationTest {
         try {
             // LedgerDirsManager#init() is used in Bookie instantiation.
             // Simulating disk errors by directly calling #init
-            LedgerDirsManager ldm = new LedgerDirsManager(conf);
+            LedgerDirsManager ldm = new LedgerDirsManager(conf, conf.getLedgerDirs());
             ldm.init();
         } finally {
             FileUtils.deleteDirectory(parent);

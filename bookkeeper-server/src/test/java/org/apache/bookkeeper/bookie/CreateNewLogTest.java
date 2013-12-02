@@ -82,7 +82,7 @@ public class CreateNewLogTest {
         // Creating a new configuration with a number of 
         // ledger directories.
         conf.setLedgerDirNames(ledgerDirs);
-        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf);
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs());
         EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
         
         // Extracted from createNewLog()

@@ -67,6 +67,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     protected final static String JOURNAL_DIR = "journalDirectory";
     protected final static String LEDGER_DIRS = "ledgerDirectories";
+    protected final static String INDEX_DIRS = "indexDirectories";
     // NIO Parameters
     protected final static String SERVER_TCP_NODELAY = "serverTcpNoDelay";
     // Zookeeper Parameters
@@ -457,6 +458,47 @@ public class ServerConfiguration extends AbstractConfiguration {
             ledgerDirs[i] = new File(ledgerDirNames[i]);
         }
         return ledgerDirs;
+    }
+
+    /** 
+     * Get dir name to store index files.
+     *   
+     * @return ledger index dir name, if no index dirs provided return null
+     */  
+    public String[] getIndexDirNames() {
+        if (!this.containsKey(INDEX_DIRS)) {
+            return null;
+        }
+        return this.getStringArray(INDEX_DIRS);
+    }   
+
+    /** 
+     * Set dir name to store index files.
+     *
+     * @param indexDirs
+     *          Index dir names
+     * @return server configuration.
+     */
+    public ServerConfiguration setIndexDirName(String[] indexDirs) {
+        this.setProperty(INDEX_DIRS, indexDirs);
+        return this;
+    }
+
+    /**
+     * Get index dir to store ledger index files.
+     *
+     * @return index dirs, if no index dirs provided return null
+     */
+    public File[] getIndexDirs() {
+        String[] idxDirNames = getIndexDirNames();
+        if (null == idxDirNames) {
+            return null;
+        }
+        File[] idxDirs = new File[idxDirNames.length];
+        for (int i=0; i<idxDirNames.length; i++) {
+            idxDirs[i] = new File(idxDirNames[i]);
+        }
+        return idxDirs;
     }
 
     /**

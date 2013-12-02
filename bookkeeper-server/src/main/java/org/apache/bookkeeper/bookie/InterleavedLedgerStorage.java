@@ -82,10 +82,18 @@ class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
     InterleavedLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
                              LedgerDirsManager ledgerDirsManager, CheckpointSource checkpointSource)
             throws IOException {
+        this(conf, ledgerManager, ledgerDirsManager, ledgerDirsManager, checkpointSource);
+    }
+
+    InterleavedLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
+                             LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
+                             CheckpointSource checkpointSource)
+            throws IOException {
         activeLedgers = new SnapshotMap<Long, Boolean>();
         this.checkpointSource = checkpointSource;
         entryLogger = new EntryLogger(conf, ledgerDirsManager, this);
-        ledgerCache = new LedgerCacheImpl(conf, activeLedgers, ledgerDirsManager);
+        ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
+                null == indexDirsManager ? ledgerDirsManager : indexDirsManager);
         gcThread = new GarbageCollectorThread(conf, ledgerCache, entryLogger,
                 activeLedgers, ledgerManager);
     }

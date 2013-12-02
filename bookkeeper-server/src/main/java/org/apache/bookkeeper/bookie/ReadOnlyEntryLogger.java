@@ -32,7 +32,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 public class ReadOnlyEntryLogger extends EntryLogger {
 
     public ReadOnlyEntryLogger(ServerConfiguration conf) throws IOException {
-        super(conf, new LedgerDirsManager(conf));
+        super(conf, new LedgerDirsManager(conf, conf.getLedgerDirs()));
     }
 
     @Override

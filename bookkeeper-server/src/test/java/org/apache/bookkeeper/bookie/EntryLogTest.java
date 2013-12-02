@@ -171,7 +171,7 @@ public class EntryLogTest extends TestCase {
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
         EntryLogger entryLogger = null;
         try {
-            entryLogger = new EntryLogger(conf, new LedgerDirsManager(conf));
+            entryLogger = new EntryLogger(conf, new LedgerDirsManager(conf, conf.getLedgerDirs()));
             fail("Expecting FileNotFoundException");
         } catch (FileNotFoundException e) {
             assertEquals("Entry log directory does not exist", e

@@ -363,7 +363,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
             };
         final byte[] KEY = "foobar".getBytes();
         File log0 = new File(curDir, "0.log");
-        LedgerDirsManager dirs = new LedgerDirsManager(conf);
+        LedgerDirsManager dirs = new LedgerDirsManager(conf, conf.getLedgerDirs());
         assertFalse("Log shouldnt exist", log0.exists());
         InterleavedLedgerStorage storage = new InterleavedLedgerStorage(conf, manager,
                                                                         dirs, checkpointSource);
@@ -470,7 +470,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         Bookie.checkDirectoryStructure(curDir);
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
 
-        LedgerDirsManager dirs = new LedgerDirsManager(conf);
+        LedgerDirsManager dirs = new LedgerDirsManager(conf, conf.getLedgerDirs());
         final Set<Long> ledgers = Collections
                 .newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
         LedgerManager manager = getLedgerManager(ledgers);

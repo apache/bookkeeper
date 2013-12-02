@@ -50,7 +50,7 @@ public class TestLedgerDirsManager extends TestCase {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
 
-        dirsManager = new LedgerDirsManager(conf);
+        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs());
     }
 
     @Test(timeout=60000)

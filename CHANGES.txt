@@ -124,6 +124,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-678: BookieServer shutdown hangs indefinitely at NioServerSocketChannelFactory.releaseExternalResources (rakeshr via ivank)
 
+        BOOKKEEPER-565: Make an option to separate storing entry log files from index files. (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

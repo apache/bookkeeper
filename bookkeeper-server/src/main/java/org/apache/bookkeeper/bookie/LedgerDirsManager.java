@@ -50,9 +50,9 @@ public class LedgerDirsManager {
     private LedgerDirsMonitor monitor;
     private final Random rand = new Random();
 
-    public LedgerDirsManager(ServerConfiguration conf) {
+    public LedgerDirsManager(ServerConfiguration conf, File[] dirs) {
         this.ledgerDirectories = Arrays.asList(Bookie
-                .getCurrentDirectories(conf.getLedgerDirs()));
+                .getCurrentDirectories(dirs));
         this.writableLedgerDirectories = new ArrayList<File>(ledgerDirectories);
         this.filledDirs = new ArrayList<File>();
         listeners = new ArrayList<LedgerDirsManager.LedgerDirsListener>();
