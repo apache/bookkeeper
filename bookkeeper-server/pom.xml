@@ -38,6 +38,11 @@
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-proto</artifactId>
       <version>${project.parent.version}</version>
+	</dependency>
+    <dependency>
+      <groupId>org.rocksdb</groupId>
+      <artifactId>rocksdbjni</artifactId>
+      <version>5.8.6</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

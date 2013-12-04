@@ -26,6 +26,7 @@ import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPAC
 import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 
 import com.google.common.collect.MapMaker;
+import com.google.common.collect.Sets;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -40,6 +41,7 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -52,6 +54,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -203,7 +206,7 @@ public class EntryLogger {
     /**
      * Scan entries in a entry log file.
      */
-    interface EntryLogScanner {
+    public interface EntryLogScanner {
         /**
          * Tests whether or not the entries belongs to the specified ledger
          * should be processed.
@@ -837,7 +840,7 @@ public class EntryLogger {
         leastUnflushedLogId = flushedLogId + 1;
     }
 
-    void flush() throws IOException {
+    public synchronized void flush() throws IOException {
         flushRotatedLogs();
         flushCurrentLog();
     }
@@ -867,7 +870,7 @@ public class EntryLogger {
         }
     };
 
-    synchronized long addEntry(long ledger, ByteBuf entry, boolean rollLog) throws IOException {
+    public synchronized long addEntry(long ledger, ByteBuf entry, boolean rollLog) throws IOException {
         int entrySize = entry.readableBytes() + 4; // Adding 4 bytes to prepend the size
         boolean reachEntryLogLimit =
             rollLog ? reachEntryLogLimit(entrySize) : readEntryLogHardLimit(entrySize);
@@ -963,7 +966,6 @@ public class EntryLogger {
         }
     }
 
-
     private void incrementBytesWrittenAndMaybeFlush(long bytesWritten) throws IOException {
         if (!doRegularFlushes) {
             return;
@@ -986,7 +988,8 @@ public class EntryLogger {
         return logChannel.position() + size > Integer.MAX_VALUE;
     }
 
-    ByteBuf readEntry(long ledgerId, long entryId, long location) throws IOException, Bookie.NoEntryException {
+    public ByteBuf internalReadEntry(long ledgerId, long entryId, long location)
+            throws IOException, Bookie.NoEntryException {
         long entryLogId = logIdForOffset(location);
         long pos = location & 0xffffffffL;
         ByteBuf sizeBuff = sizeBuffer.get();
@@ -1035,6 +1038,15 @@ public class EntryLogger {
                                               + pos + "(" + rc + "!=" + entrySize + ")", ledgerId, entryId);
         }
         data.writerIndex(entrySize);
+
+        return data;
+    }
+
+    public ByteBuf readEntry(long ledgerId, long entryId, long location) throws IOException, Bookie.NoEntryException {
+        long entryLogId = logIdForOffset(location);
+        long pos = location & 0xffffffffL;
+
+        ByteBuf data = internalReadEntry(ledgerId, entryId, location);
         long thisLedgerId = data.getLong(0);
         if (thisLedgerId != ledgerId) {
             data.release();
@@ -1112,6 +1124,30 @@ public class EntryLogger {
         return false;
     }
 
+    /**
+     * Returns a set with the ids of all the entry log files.
+     *
+     * @throws IOException
+     */
+    public Set<Long> getEntryLogsSet() throws IOException {
+        Set<Long> entryLogs = Sets.newTreeSet();
+
+        final FilenameFilter logFileFilter = new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.endsWith(".log");
+            }
+        };
+
+        for (File d : ledgerDirsManager.getAllLedgerDirs()) {
+            for (File f : d.listFiles(logFileFilter)) {
+                Long entryLogId = Long.parseLong(f.getName().split(".log")[0], 16);
+                entryLogs.add(entryLogId);
+            }
+        }
+        return entryLogs;
+    }
+
     private File findFile(long logId) throws FileNotFoundException {
         for (File d : ledgerDirsManager.getAllLedgerDirs()) {
             File f = new File(d, Long.toHexString(logId) + ".log");
@@ -1129,7 +1165,7 @@ public class EntryLogger {
      * @param scanner Entry Log Scanner
      * @throws IOException
      */
-    protected void scanEntryLog(long entryLogId, EntryLogScanner scanner) throws IOException {
+    public void scanEntryLog(long entryLogId, EntryLogScanner scanner) throws IOException {
         // Buffer where to read the entrySize (4 bytes) and the ledgerId (8 bytes)
         ByteBuf headerBuffer = Unpooled.buffer(4 + 8);
         BufferedReadChannel bc;
