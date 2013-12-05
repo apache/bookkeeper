@@ -8,6 +8,8 @@ Release 4.2.3 - 2013-12-04
 
         BOOKKEEPER-711: bookkeeper-daemon.sh will not remove the pid file one successful stop (vinay via sijie)
 
+        BOOKKEEPER-712: bookkeeper script should use 'java' from JAVA_HOME (vinay via sijie)
+
 Release 4.2.2 - 2013-10-02
 
   Backward compatible changes:
