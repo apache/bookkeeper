@@ -140,8 +140,7 @@ case $startStop in
          done
         
         if [ "$count" != "$BOOKIE_STOP_TIMEOUT" ]; then
-                 echo "Shutdown completed."
-                exit 0
+            echo "Shutdown completed."
         fi
                  
         if kill -0 $TARGET_PID > /dev/null 2>&1; then
