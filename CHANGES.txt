@@ -126,6 +126,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-565: Make an option to separate storing entry log files from index files. (sijie via ivank)
 
+        BOOKKEEPER-711: bookkeeper-daemon.sh will not remove the pid file one successful stop (vinay via sijie)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
