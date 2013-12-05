@@ -128,6 +128,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-711: bookkeeper-daemon.sh will not remove the pid file one successful stop (vinay via sijie)
 
+        BOOKKEEPER-712: bookkeeper script should use 'java' from JAVA_HOME (vinay via sijie)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
