@@ -27,6 +27,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
 
+import org.apache.bookkeeper.bookie.BookieThread;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -94,7 +95,7 @@ public class ReplicationWorker implements Runnable {
         this.bkc = new BookKeeper(new ClientConfiguration(conf), zkc);
         this.admin = new BookKeeperAdmin(bkc);
         this.ledgerChecker = new LedgerChecker(bkc);
-        this.workerThread = new Thread(this, "ReplicationWorker");
+        this.workerThread = new BookieThread(this, "ReplicationWorker");
         this.openLedgerRereplicationGracePeriod = conf
                 .getOpenLedgerRereplicationGracePeriod();
         this.pendingReplicationTimer = new Timer("PendingReplicationTimer");
@@ -322,7 +323,7 @@ public class ReplicationWorker implements Runnable {
      * Gives the running status of ReplicationWorker
      */
     boolean isRunning() {
-        return workerRunning;
+        return workerRunning && workerThread.isAlive();
     }
 
     private boolean isTargetBookieExistsInFragmentEnsemble(LedgerHandle lh,

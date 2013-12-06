@@ -20,36 +20,26 @@ package org.apache.bookkeeper.bookie;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/*
-* Wrapper that wraps bookie threads
-* Any common handing that we require for all bookie threads
-* should be implemented here
-*/
-public class BookieThread extends Thread implements
-        Thread.UncaughtExceptionHandler {
-
+/**
+ * Thread is marked as critical and will exit, when there is an uncaught
+ * exception occurred in thread.
+ */
+public class BookieCriticalThread extends BookieThread {
     private static final Logger LOG = LoggerFactory
-            .getLogger(BookieThread.class);
+            .getLogger(BookieCriticalThread.class);
+
+    public BookieCriticalThread(String name) {
+        super(name);
+    }
+
+    public BookieCriticalThread(Runnable thread, String name) {
+        super(thread, name);
+    }
 
     @Override
-    public void uncaughtException(Thread t, Throwable e) {
-        handleException(t, e);
-    }
-
-    public BookieThread(String name) {
-        super(name);
-        setUncaughtExceptionHandler(this);
-    }
-
-    public BookieThread(Runnable thread, String name) {
-        super(thread, name);
-        setUncaughtExceptionHandler(this);
-    }
-
-    /**
-     * Handles uncaught exception occurred in thread
-     */
     protected void handleException(Thread t, Throwable e) {
-        LOG.error("Uncaught exception in thread {}", t.getName(), e);
+        LOG.error("Uncaught exception in thread {} and is exiting!",
+                t.getName(), e);
+        Runtime.getRuntime().exit(ExitCode.BOOKIE_EXCEPTION);
     }
 }

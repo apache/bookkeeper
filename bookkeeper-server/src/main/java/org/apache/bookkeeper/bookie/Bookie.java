@@ -31,10 +31,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -51,7 +48,6 @@ import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.jmx.BKMBeanRegistry;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.IOUtils;
@@ -79,7 +75,7 @@ import com.google.common.annotations.VisibleForTesting;
  *
  */
 
-public class Bookie extends BookieThread {
+public class Bookie extends BookieCriticalThread {
 
     private final static Logger LOG = LoggerFactory.getLogger(Bookie.class);
 
@@ -835,11 +831,12 @@ public class Bookie extends BookieThread {
         }
         LOG.info("Triggering shutdown of Bookie-{} with exitCode {}",
                  conf.getBookiePort(), exitCode);
-        new Thread("BookieShutdownTrigger") {
+        BookieThread th = new BookieThread("BookieShutdownTrigger") {
             public void run() {
                 Bookie.this.shutdown(exitCode);
             }
-        }.start();
+        };
+        th.start();
     }
 
     // provided a public shutdown method for other caller

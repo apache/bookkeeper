@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Provide journal related management.
  */
-class Journal extends BookieThread implements CheckpointSource {
+class Journal extends BookieCriticalThread implements CheckpointSource {
 
     private final static Logger LOG = LoggerFactory.getLogger(Journal.class);
 
@@ -286,7 +286,7 @@ class Journal extends BookieThread implements CheckpointSource {
         }
     }
 
-    private class ForceWriteRequest implements Runnable {
+    private class ForceWriteRequest extends BookieCriticalThread {
         private final JournalChannel logFile;
         private final LinkedList<QueueEntry> forceWriteWaiters;
         private boolean shouldClose;
@@ -300,6 +300,7 @@ class Journal extends BookieThread implements CheckpointSource {
                           LinkedList<QueueEntry> forceWriteWaiters,
                           boolean shouldClose,
                           boolean isMarker) {
+            super("ForceWriteRequestThread");
             this.forceWriteWaiters = forceWriteWaiters;
             this.logFile = logFile;
             this.logId = logId;
@@ -357,7 +358,7 @@ class Journal extends BookieThread implements CheckpointSource {
      * ForceWriteThread is a background thread which makes the journal durable periodically
      *
      */
-    private class ForceWriteThread extends BookieThread {
+    private class ForceWriteThread extends BookieCriticalThread {
         volatile boolean running = true;
         // This holds the queue entries that should be notified after a
         // successful force write

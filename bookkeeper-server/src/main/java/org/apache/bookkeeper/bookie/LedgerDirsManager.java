@@ -186,7 +186,7 @@ public class LedgerDirsManager {
     /**
      * Thread to monitor the disk space periodically.
      */
-    private class LedgerDirsMonitor extends Thread {
+    private class LedgerDirsMonitor extends BookieThread {
         private final int interval;
 
         public LedgerDirsMonitor(int interval) {

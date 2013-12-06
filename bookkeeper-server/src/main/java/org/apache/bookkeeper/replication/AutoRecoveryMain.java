@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -149,7 +150,7 @@ public class AutoRecoveryMain {
     /*
      * DeathWatcher for AutoRecovery daemons.
      */
-    private static class AutoRecoveryDeathWatcher extends Thread {
+    private static class AutoRecoveryDeathWatcher extends BookieCriticalThread {
         private int watchInterval;
         private AutoRecoveryMain autoRecoveryMain;
 

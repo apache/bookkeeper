@@ -29,6 +29,7 @@ import java.net.UnknownHostException;
 import org.apache.zookeeper.KeeperException;
 
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -205,7 +206,7 @@ public class BookieServer {
     /**
      * A thread to watch whether bookie & nioserver is still alive
      */
-    private class DeathWatcher extends Thread {
+    private class DeathWatcher extends BookieCriticalThread {
 
         private final int watchInterval;
 
