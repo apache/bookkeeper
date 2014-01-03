@@ -311,10 +311,10 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
             throws Exception {
         for (final BookieServer bookie : bs) {
             if (bookie.getLocalAddress().equals(addr)) {
+                bookie.suspendProcessing();
                 Thread sleeper = new Thread() {
                     public void run() {
                         try {
-                            bookie.suspendProcessing();
                             l.await();
                             bookie.resumeProcessing();
                         } catch (Exception e) {

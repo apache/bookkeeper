@@ -130,6 +130,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-712: bookkeeper script should use 'java' from JAVA_HOME (vinay via sijie)
 
+	BOOKKEEPER-709: SlowBookieTest#testSlowBookie fails intermittently (Rakesh R via fpj)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

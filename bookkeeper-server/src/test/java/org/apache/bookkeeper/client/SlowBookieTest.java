@@ -25,13 +25,12 @@ import java.util.Set;
 import java.util.List;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.net.InetSocketAddress;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
-import junit.framework.TestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +61,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         }
         final CountDownLatch b0latch = new CountDownLatch(1);
         final CountDownLatch b1latch = new CountDownLatch(1);
+        final CountDownLatch addEntrylatch = new CountDownLatch(1);
         List<InetSocketAddress> curEns = lh.getLedgerMetadata().currentEnsemble;
         try {
             sleepBookie(curEns.get(0), b0latch);
@@ -74,19 +74,21 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
             AsyncCallback.AddCallback cb = new AsyncCallback.AddCallback() {
                     public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
                         i.set(rc);
+                        addEntrylatch.countDown();
                     }
                 };
             lh.asyncAddEntry(entry, cb, null);
 
-            Thread.sleep(1000); // sleep a second to allow time to complete
-            assertEquals(i.get(), 0xdeadbeef);
+            Thread.sleep(3000); // sleep 3 seconds to allow time to complete
+            assertEquals("Successfully added entry!", 0xdeadbeef, i.get());
             b0latch.countDown();
             b1latch.countDown();
-            Thread.sleep(2000);
-            assertEquals(i.get(), BKException.Code.OK);
+            addEntrylatch.await(4000, TimeUnit.MILLISECONDS);
+            assertEquals("Failed to add entry!", BKException.Code.OK, i.get());
         } finally {
             b0latch.countDown();
             b1latch.countDown();
+            addEntrylatch.countDown();
         }
     }
 
@@ -99,7 +101,6 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
 
         byte[] pwd = new byte[] {};
         final LedgerHandle lh = bkc.createLedger(4, 3, 2, BookKeeper.DigestType.CRC32, pwd);
-        long lid = lh.getId();
         final AtomicBoolean finished = new AtomicBoolean(false);
         final AtomicBoolean failTest = new AtomicBoolean(false);
         final byte[] entry = "Test Entry".getBytes();
@@ -154,7 +155,6 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
 
         byte[] pwd = new byte[] {};
         final LedgerHandle lh = bkc.createLedger(4, 3, 1, BookKeeper.DigestType.CRC32, pwd);
-        long lid = lh.getId();
         final AtomicBoolean finished = new AtomicBoolean(false);
         final AtomicBoolean failTest = new AtomicBoolean(false);
         final byte[] entry = "Test Entry".getBytes();
