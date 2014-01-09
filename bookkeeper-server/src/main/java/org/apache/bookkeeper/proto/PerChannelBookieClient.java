@@ -19,16 +19,14 @@ package org.apache.bookkeeper.proto;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.util.ArrayDeque;
-import java.util.Set;
-import java.util.Collections;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.google.common.collect.ImmutableSet;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -55,10 +53,7 @@ import org.jboss.netty.handler.codec.frame.CorruptedFrameException;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
 import org.jboss.netty.handler.codec.frame.TooLongFrameException;
-import org.jboss.netty.handler.timeout.ReadTimeoutException;
 import org.jboss.netty.handler.timeout.ReadTimeoutHandler;
-import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -200,8 +195,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                         closeChannel(future.getChannel());
                         return; // pendingOps should have been completed when other channel connected
                     } else {
-                        LOG.error("Could not connect to bookie: {}, current state {}",
-                                  future.getChannel(), state);
+                        LOG.error("Could not connect to bookie: {}, current state {} : ",
+                                  new Object[] { future.getChannel(), state, future.getCause() });
                         rc = BKException.Code.BookieHandleNotAvailableException;
                         closeChannel(future.getChannel());
                         channel = null;
@@ -276,11 +271,10 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
      * @param ledgerId
      * @param masterKey
      * @param entryId
-     * @param lastConfirmed
-     * @param macCode
-     * @param data
+     * @param toSend
      * @param cb
      * @param ctx
+     * @param options
      */
     void addEntry(final long ledgerId, byte[] masterKey, final long entryId, ChannelBuffer toSend, WriteCallback cb,
                   Object ctx, final int options) {
@@ -306,6 +300,10 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                         }
                         // totalBytesOutstanding.addAndGet(entrySize);
                     } else {
+                        if (!(future.getCause() instanceof ClosedChannelException)) {
+                            LOG.warn("Writing addEntry(lid={}, eid={}) to channel {} failed : ",
+                                    new Object[] { ledgerId, entryId, c, future.getCause() });
+                        }
                         errorOutAddKey(completionKey);
                     }
                 }
@@ -343,6 +341,10 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                                           r, c.getRemoteAddress());
                             }
                         } else {
+                            if (!(future.getCause() instanceof ClosedChannelException)) {
+                                LOG.warn("Writing readEntryAndFenceLedger(lid={}, eid={}) to channel {} failed : ",
+                                        new Object[] { ledgerId, entryId, c, future.getCause() });
+                            }
                             errorOutReadKey(key);
                         }
                     }
@@ -378,6 +380,10 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                                       r, c.getRemoteAddress());
                         }
                     } else {
+                        if (!(future.getCause() instanceof ClosedChannelException)) {
+                            LOG.warn("Writing readEntry(lid={}, eid={}) to channel {} failed : ",
+                                    new Object[] { ledgerId, entryId, c, future.getCause() });
+                        }
                         errorOutReadKey(key);
                     }
                 }
@@ -689,7 +695,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
              * submits a read request with id -1, and receives a response with a
              * different entry id.
              */
-            
+
             readCompletion = readCompletions.remove(new CompletionKey(rr.getLedgerId(),
                                                                       BookieProtocol.LAST_ADD_CONFIRMED));
         }

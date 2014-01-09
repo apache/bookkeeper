@@ -132,6 +132,8 @@ Trunk (unreleased changes)
 
 	BOOKKEEPER-709: SlowBookieTest#testSlowBookie fails intermittently (Rakesh R via fpj)
 
+        BOOKKEEPER-714: Logging channel exceptions in PerChannelBookieClient (sijie)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
