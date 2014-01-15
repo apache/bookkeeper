@@ -211,6 +211,15 @@ public class EntryLogger {
             }
 
             @Override
+            public void diskAlmostFull(File disk) {
+                // If the current entry log disk is almost full, then create new entry
+                // log.
+                if (currentDir != null && currentDir.equals(disk)) {
+                    shouldCreateNewEntryLog.set(true);
+                }
+            }
+
+            @Override
             public void diskFailed(File disk) {
                 // Nothing to handle here. Will be handled in Bookie
             }

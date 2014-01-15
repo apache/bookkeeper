@@ -24,12 +24,13 @@ import java.io.IOException;
 
 import org.apache.bookkeeper.util.DiskChecker.DiskErrorException;
 import org.apache.bookkeeper.util.DiskChecker.DiskOutOfSpaceException;
+import org.apache.bookkeeper.util.DiskChecker.DiskWarnThresholdException;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
  * Test to verify {@link DiskChecker}
- * 
+ *
  */
 public class TestDiskChecker {
 
@@ -37,7 +38,7 @@ public class TestDiskChecker {
 
     @Before
     public void setup() {
-        diskChecker = new DiskChecker(0.95f);
+        diskChecker = new DiskChecker(0.95f, 0.95f);
     }
 
     /**
@@ -48,8 +49,22 @@ public class TestDiskChecker {
         File file = File.createTempFile("DiskCheck", "test");
         long usableSpace = file.getUsableSpace();
         long totalSpace = file.getTotalSpace();
-        diskChecker
-                .setDiskSpaceThreshold((1f - ((float) usableSpace / (float) totalSpace)) - 0.05f);
+        float threshold =
+                (1f - ((float) usableSpace / (float) totalSpace)) - 0.05f;
+        diskChecker.setDiskSpaceThreshold(threshold, threshold);
+        diskChecker.checkDiskFull(file);
+    }
+
+    @Test(expected = DiskWarnThresholdException.class)
+    public void testDiskWarnThresholdException() throws IOException {
+        File file = File.createTempFile("DiskCheck", "test");
+        long usableSpace = file.getUsableSpace();
+        long totalSpace = file.getTotalSpace();
+        float diskSpaceThreshold =
+                (1f - ((float) usableSpace / (float) totalSpace)) + 0.01f;
+        float diskWarnThreshold =
+                (1f - ((float) usableSpace / (float) totalSpace)) - 0.05f;
+        diskChecker.setDiskSpaceThreshold(diskSpaceThreshold, diskWarnThreshold);
         diskChecker.checkDiskFull(file);
     }
 
@@ -62,8 +77,8 @@ public class TestDiskChecker {
         File file = File.createTempFile("DiskCheck", "test");
         long usableSpace = file.getUsableSpace();
         long totalSpace = file.getTotalSpace();
-        diskChecker
-                .setDiskSpaceThreshold((1f - ((float) usableSpace / (float) totalSpace)) - 0.05f);
+        float threshold = (1f - ((float) usableSpace / (float) totalSpace)) - 0.05f;
+        diskChecker.setDiskSpaceThreshold(threshold, threshold);
         assertTrue(file.delete());
         diskChecker.checkDiskFull(file);
     }

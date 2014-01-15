@@ -28,8 +28,15 @@ import com.google.common.annotations.VisibleForTesting;
  */
 public class DiskChecker {
     private float diskUsageThreshold;
+    private float diskUsageWarnThreshold;
 
-    public static class DiskErrorException extends IOException {
+    public abstract static class DiskException extends IOException {
+        public DiskException(String msg) {
+            super(msg);
+        }
+    }
+
+    public static class DiskErrorException extends DiskException {
         private static final long serialVersionUID = 9091606022449761729L;
 
         public DiskErrorException(String msg) {
@@ -37,7 +44,7 @@ public class DiskChecker {
         }
     }
 
-    public static class DiskOutOfSpaceException extends IOException {
+    public static class DiskOutOfSpaceException extends DiskException {
         private static final long serialVersionUID = 160898797915906860L;
 
         public DiskOutOfSpaceException(String msg) {
@@ -45,9 +52,18 @@ public class DiskChecker {
         }
     }
 
-    public DiskChecker(float threshold) {
-        validateThreshold(threshold);
+    public static class DiskWarnThresholdException extends DiskException {
+        private static final long serialVersionUID = -1629284987500841657L;
+
+        public DiskWarnThresholdException(String msg) {
+            super(msg);
+        }
+    }
+
+    public DiskChecker(float threshold, float warnThreshold) {
+        validateThreshold(threshold, warnThreshold);
         this.diskUsageThreshold = threshold;
+        this.diskUsageWarnThreshold = warnThreshold;
     }
 
     /**
@@ -60,7 +76,7 @@ public class DiskChecker {
      * non-existent directory, then we signal an error; Sun's mkdir would signal
      * an error (return false) if a directory it is attempting to create already
      * exists or the mkdir fails.
-     * 
+     *
      * @param dir
      * @return true on success, false on failure
      */
@@ -82,7 +98,7 @@ public class DiskChecker {
 
     /**
      * Checks the disk space available.
-     * 
+     *
      * @param dir
      *            Directory to check for the disk space
      * @throws DiskOutOfSpaceException
@@ -90,7 +106,7 @@ public class DiskChecker {
      *             less than threshhold.
      */
     @VisibleForTesting
-    void checkDiskFull(File dir) throws DiskOutOfSpaceException {
+    void checkDiskFull(File dir) throws DiskOutOfSpaceException, DiskWarnThresholdException {
         if (null == dir) {
             return;
         }
@@ -101,7 +117,12 @@ public class DiskChecker {
             float used = 1f - free;
             if (used > diskUsageThreshold) {
                 throw new DiskOutOfSpaceException("Space left on device "
-                        + usableSpace + " < threshhold " + diskUsageThreshold);
+                        + usableSpace + " Used space fraction:" + used + " < threshhold " + diskUsageThreshold);
+            }
+            // Warn should be triggered only if disk usage threshold doesn't trigger first.
+            if (used > diskUsageWarnThreshold) {
+                throw new DiskWarnThresholdException("Space left on device:"
+                        + usableSpace + " Used space fraction:" + used +" < WarnThreshold:" + diskUsageWarnThreshold);
             }
         } else {
             checkDiskFull(dir.getParentFile());
@@ -110,16 +131,18 @@ public class DiskChecker {
 
     /**
      * Create the directory if it doesn't exist and
-     * 
+     *
      * @param dir
      *            Directory to check for the disk error/full.
      * @throws DiskErrorException
      *             If disk having errors
+     * @throws DiskWarnThresholdException
+     *             If disk has less than configured amount of free space.
      * @throws DiskOutOfSpaceException
      *             If disk is full or having less space than threshhold
      */
     public void checkDir(File dir) throws DiskErrorException,
-            DiskOutOfSpaceException {
+            DiskOutOfSpaceException, DiskWarnThresholdException {
         checkDiskFull(dir);
         if (!mkdirsWithExistsCheck(dir))
             throw new DiskErrorException("can not create directory: "
@@ -138,31 +161,22 @@ public class DiskChecker {
     }
 
     /**
-     * Returns the disk space threshold.
-     * 
-     * @return
-     */
-    @VisibleForTesting
-    float getDiskSpaceThreshold() {
-        return diskUsageThreshold;
-    }
-
-    /**
      * Set the disk space threshold
-     * 
+     *
      * @param diskSpaceThreshold
      */
     @VisibleForTesting
-    void setDiskSpaceThreshold(float diskSpaceThreshold) {
-        validateThreshold(diskSpaceThreshold);
+    void setDiskSpaceThreshold(float diskSpaceThreshold, float diskUsageWarnThreshold) {
+        validateThreshold(diskSpaceThreshold, diskSpaceThreshold);
         this.diskUsageThreshold = diskSpaceThreshold;
+        this.diskUsageWarnThreshold = diskUsageWarnThreshold;
     }
 
-    private void validateThreshold(float diskSpaceThreshold) {
-        if (diskSpaceThreshold <= 0 || diskSpaceThreshold >= 1) {
-            throw new IllegalArgumentException("Disk space threashold "
-                    + diskSpaceThreshold
-                    + " is not valid. Should be > 0 and < 1 ");
+    private void validateThreshold(float diskSpaceThreshold, float diskSpaceWarnThreshold) {
+        if (diskSpaceThreshold <= 0 || diskSpaceThreshold >= 1 || diskSpaceWarnThreshold - diskSpaceThreshold > 1e-6) {
+            throw new IllegalArgumentException("Disk space threashold: "
+                    + diskSpaceThreshold + " and warn threshold: " + diskSpaceWarnThreshold
+                    + " are not valid. Should be > 0 and < 1 and diskSpaceThreshold >= diskSpaceWarnThreshold");
         }
     }
 }

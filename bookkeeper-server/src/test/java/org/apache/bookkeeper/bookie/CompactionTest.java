@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.bookie;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +18,8 @@ package org.apache.bookkeeper.bookie;
  * under the License.
  *
  */
+package org.apache.bookkeeper.bookie;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -30,25 +30,25 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.Collections;
 import java.util.Enumeration;
 
-import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.util.TestUtils;
-
-import org.apache.zookeeper.AsyncCallback;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.util.TestUtils;
 import org.apache.bookkeeper.versioning.Version;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.zookeeper.AsyncCallback;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class tests the entry log compaction functionality.
@@ -175,6 +175,46 @@ public class CompactionTest extends BookKeeperClusterTestCase {
     }
 
     @Test(timeout=60000)
+    public void testForceGarbageCollection() throws Exception {
+        ServerConfiguration conf = newServerConfiguration();
+        conf.setGcWaitTime(60000);
+        conf.setMinorCompactionInterval(120000);
+        conf.setMajorCompactionInterval(240000);
+        LedgerDirsManager dirManager = new LedgerDirsManager(conf, conf.getLedgerDirs());
+        CheckpointSource cp = new CheckpointSource() {
+            @Override
+            public Checkpoint newCheckpoint() {
+                // Do nothing.
+                return null;
+            }
+
+            @Override
+            public void checkpointComplete(Checkpoint checkPoint, boolean compact)
+                throws IOException {
+                // Do nothing.
+            }
+        };
+        Bookie.checkDirectoryStructure(conf.getJournalDir());
+        for (File dir : dirManager.getAllLedgerDirs()) {
+            Bookie.checkDirectoryStructure(dir);
+        }
+        InterleavedLedgerStorage storage = new InterleavedLedgerStorage(conf,
+                        LedgerManagerFactory.newLedgerManagerFactory(conf, zkc).newLedgerManager(),
+                        dirManager, cp);
+        storage.start();
+        long startTime = MathUtils.now();
+        Thread.sleep(2000);
+        storage.gcThread.forceGC();
+        Thread.sleep(1000);
+        // Minor and Major compaction times should be larger than when we started
+        // this test.
+        assertTrue("Minor or major compaction did not trigger even on forcing.",
+                storage.gcThread.lastMajorCompactionTime > startTime &&
+                storage.gcThread.lastMinorCompactionTime > startTime);
+        storage.shutdown();
+    }
+
+    @Test(timeout=60000)
     public void testMinorCompaction() throws Exception {
         // prepare data
         LedgerHandle[] lhs = prepareData(3, false);
@@ -199,7 +239,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
 
         // entry logs ([0,1,2].log) should be compacted.
         for (File ledgerDirectory : tmpDirs) {
-            assertFalse("Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: " 
+            assertFalse("Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: "
                             + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1, 2));
         }
 

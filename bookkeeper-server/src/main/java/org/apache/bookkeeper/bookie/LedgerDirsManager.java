@@ -27,13 +27,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.DiskChecker.DiskErrorException;
 import org.apache.bookkeeper.util.DiskChecker.DiskOutOfSpaceException;
+import org.apache.bookkeeper.util.DiskChecker.DiskWarnThresholdException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * This class manages ledger directories used by the bookie.
@@ -45,9 +47,9 @@ public class LedgerDirsManager {
     private volatile List<File> filledDirs;
     private final List<File> ledgerDirectories;
     private volatile List<File> writableLedgerDirectories;
-    private DiskChecker diskChecker;
-    private List<LedgerDirsListener> listeners;
-    private LedgerDirsMonitor monitor;
+    private final DiskChecker diskChecker;
+    private final List<LedgerDirsListener> listeners;
+    private final LedgerDirsMonitor monitor;
     private final Random rand = new Random();
 
     public LedgerDirsManager(ServerConfiguration conf, File[] dirs) {
@@ -56,7 +58,7 @@ public class LedgerDirsManager {
         this.writableLedgerDirectories = new ArrayList<File>(ledgerDirectories);
         this.filledDirs = new ArrayList<File>();
         listeners = new ArrayList<LedgerDirsManager.LedgerDirsListener>();
-        diskChecker = new DiskChecker(conf.getDiskUsageThreshold());
+        diskChecker = new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold());
         monitor = new LedgerDirsMonitor(conf.getDiskCheckInterval());
     }
 
@@ -217,6 +219,10 @@ public class LedgerDirsManager {
                                 LOG.warn("{} has errors.", dir, e);
                                 listener.diskFailed(dir);
                             }
+                        } catch (DiskWarnThresholdException e) {
+                            for (LedgerDirsListener listener : listeners) {
+                                listener.diskAlmostFull(dir);
+                            }
                         } catch (DiskOutOfSpaceException e) {
                             // Notify disk full to all listeners
                             addToFilledDirs(dir);
@@ -244,6 +250,8 @@ public class LedgerDirsManager {
             for (File dir : writableDirs) {
                 try {
                     diskChecker.checkDir(dir);
+                } catch (DiskWarnThresholdException e) {
+                    // nop
                 } catch (DiskOutOfSpaceException e) {
                     addToFilledDirs(dir);
                 }
@@ -275,6 +283,13 @@ public class LedgerDirsManager {
          *            Failed disk
          */
         void diskFailed(File disk);
+
+        /**
+         * Notified when the disk usage warn threshold is exceeded on
+         * the drive.
+         * @param disk
+         */
+        void diskAlmostFull(File disk);
 
         /**
          * This will be notified on disk detected as full

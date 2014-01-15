@@ -351,6 +351,7 @@ public class BookieInitializationTest {
                 .setZkTimeout(5000).setJournalDirName(tempDir.getPath())
                 .setLedgerDirNames(new String[] { tempDir.getPath() });
         conf.setDiskUsageThreshold((1f - ((float) usableSpace / (float) totalSpace)) - 0.05f);
+        conf.setDiskUsageWarnThreshold((1f - ((float) usableSpace / (float) totalSpace)) - 0.25f);
         try {
             new Bookie(conf);
         } finally {

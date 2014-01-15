@@ -326,6 +326,10 @@ public class TestSyncThread {
         }
 
         @Override
+        public void diskAlmostFull(File disk) {
+        }
+
+        @Override
         public void diskFull(File disk) {
         }
 

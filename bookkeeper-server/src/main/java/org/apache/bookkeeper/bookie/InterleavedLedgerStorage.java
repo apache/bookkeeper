@@ -21,11 +21,14 @@
 
 package org.apache.bookkeeper.bookie;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener;
+import org.apache.bookkeeper.bookie.LedgerDirsManager;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -96,6 +99,36 @@ class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager);
         gcThread = new GarbageCollectorThread(conf, ledgerCache, entryLogger,
                 activeLedgers, ledgerManager);
+        ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
+    }
+
+    private LedgerDirsListener getLedgerDirsListener() {
+        return new LedgerDirsListener() {
+            @Override
+            public void diskFailed(File disk) {
+                // do nothing.
+            }
+
+            @Override
+            public void diskAlmostFull(File disk) {
+                gcThread.forceGC();
+            }
+
+            @Override
+            public void diskFull(File disk) {
+                gcThread.forceGC();
+            }
+
+            @Override
+            public void allDisksFull() {
+                gcThread.forceGC();
+            }
+
+            @Override
+            public void fatalError() {
+                // do nothing.
+            }
+        };
     }
 
     @Override

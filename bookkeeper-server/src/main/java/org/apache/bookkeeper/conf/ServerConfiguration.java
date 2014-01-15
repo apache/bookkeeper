@@ -80,6 +80,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String READ_ONLY_MODE_ENABLED = "readOnlyModeEnabled";
     //Disk utilization
     protected final static String DISK_USAGE_THRESHOLD = "diskUsageThreshold";
+    protected final static String DISK_USAGE_WARN_THRESHOLD = "diskUsageWarnThreshold";
     protected final static String DISK_CHECK_INTERVAL = "diskCheckInterval";
     protected final static String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
     protected final static String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
@@ -854,6 +855,27 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public boolean isReadOnlyModeEnabled() {
         return getBoolean(READ_ONLY_MODE_ENABLED, false);
+    }
+
+    /**
+     * Set the warning threshold for disk usage.
+     *
+     * @param threshold warning threshold to force gc.
+     *
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setDiskUsageWarnThreshold(float threshold) {
+        setProperty(DISK_USAGE_WARN_THRESHOLD, threshold);
+        return this;
+    }
+
+    /**
+     * Returns the warning threshold for disk usage. If disk usage
+     * goes beyond this, a garbage collection cycle will be forced.
+     * @return
+     */
+    public float getDiskUsageWarnThreshold() {
+        return getFloat(DISK_USAGE_WARN_THRESHOLD, 0.90f);
     }
 
     /**

@@ -89,6 +89,9 @@ public class GarbageCollectorThread extends BookieThread {
     // track the last scanned successfully log id
     long scannedLogId = 0;
 
+    // Boolean to trigger a forced GC.
+    final AtomicBoolean forceGarbageCollection = new AtomicBoolean(false);
+
     final GarbageCollector garbageCollector;
     final GarbageCleaner garbageCleaner;
 
@@ -273,6 +276,13 @@ public class GarbageCollectorThread extends BookieThread {
         lastMinorCompactionTime = lastMajorCompactionTime = MathUtils.now();
     }
 
+    synchronized void forceGC() {
+        if (forceGarbageCollection.compareAndSet(false, true)) {
+            LOG.info("Forced garbage collection triggered by thread: {}", Thread.currentThread().getName());
+            notify();
+        }
+    }
+
     @Override
     public void run() {
         while (running) {
@@ -283,6 +293,10 @@ public class GarbageCollectorThread extends BookieThread {
                     Thread.currentThread().interrupt();
                     continue;
                 }
+            }
+            boolean force = forceGarbageCollection.get();
+            if (force) {
+                LOG.info("Garbage collector thread forced to perform GC before expiry of wait time.");
             }
 
             // Extract all of the ledger ID's that comprise all of the entry logs
@@ -296,8 +310,8 @@ public class GarbageCollectorThread extends BookieThread {
             doGcEntryLogs();
 
             long curTime = MathUtils.now();
-            if (enableMajorCompaction &&
-                curTime - lastMajorCompactionTime > majorCompactionInterval) {
+            if (force || (enableMajorCompaction &&
+                curTime - lastMajorCompactionTime > majorCompactionInterval)) {
                 // enter major compaction
                 LOG.info("Enter major compaction");
                 doCompactEntryLogs(majorCompactionThreshold);
@@ -307,13 +321,14 @@ public class GarbageCollectorThread extends BookieThread {
                 continue;
             }
 
-            if (enableMinorCompaction &&
-                curTime - lastMinorCompactionTime > minorCompactionInterval) {
+            if (force || (enableMinorCompaction &&
+                curTime - lastMinorCompactionTime > minorCompactionInterval)) {
                 // enter minor compaction
                 LOG.info("Enter minor compaction");
                 doCompactEntryLogs(minorCompactionThreshold);
                 lastMinorCompactionTime = MathUtils.now();
             }
+            forceGarbageCollection.set(false);
         }
         LOG.info("GarbageCollectorThread exited loop!");
     }
