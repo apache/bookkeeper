@@ -138,7 +138,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
 
         // get the ledger metadata back
         try {
-            lh = new ReadOnlyLedgerHandle(bk, ledgerId, metadata, digestType, passwd);
+            lh = new ReadOnlyLedgerHandle(bk, ledgerId, metadata, digestType, passwd, !doRecovery);
         } catch (GeneralSecurityException e) {
             LOG.error("Security exception while opening ledger: " + ledgerId, e);
             cb.openComplete(BKException.Code.DigestNotInitializedException, null, this.ctx);

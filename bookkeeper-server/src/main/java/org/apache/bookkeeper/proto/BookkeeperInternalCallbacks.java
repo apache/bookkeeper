@@ -25,6 +25,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.zookeeper.AsyncCallback;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.slf4j.Logger;
@@ -44,6 +45,21 @@ public class BookkeeperInternalCallbacks {
      * of write operations (operations to add an entry to a ledger).
      *
      */
+
+    /**
+     * Listener on ledger metadata changes.
+     */
+    public interface LedgerMetadataListener {
+        /**
+         * Triggered each time ledger metadata changed.
+         *
+         * @param ledgerId
+         *          ledger id.
+         * @param metadata
+         *          new ledger metadata.
+         */
+        void onChanged(long ledgerId, LedgerMetadata metadata);
+    }
 
     public interface WriteCallback {
         void writeComplete(int rc, long ledgerId, long entryId, InetSocketAddress addr, Object ctx);

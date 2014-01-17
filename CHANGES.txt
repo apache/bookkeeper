@@ -136,6 +136,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-662: Major GC should kick in immediately if remaining space reaches a warning threshold (sijie via ivank)
 
+        BOOKKEEPER-710: OpenLedgerNoRecovery should watch ensemble change. (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

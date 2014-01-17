@@ -43,6 +43,7 @@ import org.apache.bookkeeper.metastore.MetastoreScannableTable;
 import org.apache.bookkeeper.metastore.MetastoreTableItem;
 import org.apache.bookkeeper.metastore.Value;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.util.StringUtils;
@@ -207,6 +208,16 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                     .setNameFormat("MSLedgerManagerScheduler-%d");
             this.scheduler = Executors.newSingleThreadScheduledExecutor(tfb
                     .build());
+        }
+
+        @Override
+        public void registerLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener) {
+            // TODO: should provide ledger metadata listener in metadata store.
+        }
+
+        @Override
+        public void unregisterLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener) {
+            // TODO: should provide ledger metadata listener in metadata store.
         }
 
         @Override

@@ -27,6 +27,7 @@ import java.util.TreeSet;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.versioning.Version;
@@ -92,6 +93,26 @@ public interface LedgerManager extends Closeable {
      *          {@link BKException.Code.ZKException} return code when other issues happen.
      */
     public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<Void> cb);
+
+    /**
+     * Register the ledger metadata <i>listener</i> on <i>ledgerId</i>.
+     *
+     * @param ledgerId
+     *          ledger id.
+     * @param listener
+     *          listener.
+     */
+    public abstract void registerLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener);
+
+    /**
+     * Unregister the ledger metadata <i>listener</i> on <i>ledgerId</i>.
+     *
+     * @param ledgerId
+     *          ledger id.
+     * @param listener
+     *          ledger metadata listener.
+     */
+    public abstract void unregisterLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener);
 
     /**
      * Loop to process all ledgers.

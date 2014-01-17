@@ -38,6 +38,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.MathUtils;
@@ -467,6 +468,16 @@ public class CompactionTest extends BookKeeperClusterTestCase {
                 public void asyncProcessLedgers(Processor<Long> processor,
                                                 AsyncCallback.VoidCallback finalCb,
                         Object context, int successRc, int failureRc) {
+                    unsupported();
+                }
+                @Override
+                public void registerLedgerMetadataListener(long ledgerId,
+                        LedgerMetadataListener listener) {
+                    unsupported();
+                }
+                @Override
+                public void unregisterLedgerMetadataListener(long ledgerId,
+                        LedgerMetadataListener listener) {
                     unsupported();
                 }
                 @Override

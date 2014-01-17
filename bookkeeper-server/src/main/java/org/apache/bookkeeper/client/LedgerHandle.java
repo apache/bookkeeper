@@ -536,6 +536,16 @@ public class LedgerHandle {
      */
 
     public void asyncReadLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
+        boolean isClosed;
+        long lastEntryId;
+        synchronized (this) {
+            isClosed = metadata.isClosed();
+            lastEntryId = metadata.getLastEntryId();
+        }
+        if (isClosed) {
+            cb.readLastConfirmedComplete(BKException.Code.OK, lastEntryId, ctx);
+            return;
+        }
         ReadLastConfirmedOp.LastConfirmedDataCallback innercb = new ReadLastConfirmedOp.LastConfirmedDataCallback() {
                 @Override
                 public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {

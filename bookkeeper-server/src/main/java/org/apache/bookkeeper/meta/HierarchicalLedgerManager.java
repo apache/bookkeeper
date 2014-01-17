@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.meta;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,6 +15,7 @@ package org.apache.bookkeeper.meta;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -45,8 +44,6 @@ import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 /**
  * Hierarchical Ledger Manager which manages ledger meta in zookeeper using 2-level hierarchical znodes.
  *
@@ -74,9 +71,6 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
     // Path to generate global id
     private final String idGenPath;
 
-    // we use this to prevent long stack chains from building up in callbacks
-    ScheduledExecutorService scheduler;
-
     /**
      * Constructor
      *
@@ -89,21 +83,6 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
         super(conf, zk);
 
         this.idGenPath = ledgerRootPath + IDGENERATION_PREFIX;
-        ThreadFactoryBuilder tfb = new ThreadFactoryBuilder().setNameFormat(
-                "HierarchialLedgerManagerScheduler-%d");
-        this.scheduler = Executors
-                .newSingleThreadScheduledExecutor(tfb.build());
-        LOG.debug("Using HierarchicalLedgerManager with root path : {}", ledgerRootPath);
-    }
-
-    @Override
-    public void close() {
-        try {
-            scheduler.shutdown();
-        } catch (Exception e) {
-            LOG.warn("Error when closing HierarchicalLedgerManager : ", e);
-        }
-        super.close();
     }
 
     @Override
