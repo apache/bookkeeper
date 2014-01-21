@@ -103,7 +103,8 @@ public class BookKeeper implements AutoCloseable {
     private OpStatsLogger addOpLogger;
     private OpStatsLogger writeLacOpLogger;
     private OpStatsLogger readLacOpLogger;
-
+    private OpStatsLogger recoverAddEntriesStats;
+    private OpStatsLogger recoverReadEntriesStats;
 
     // whether the event loop group is one we created, or is owned by whoever
     // instantiated us
@@ -1245,6 +1246,8 @@ public class BookKeeper implements AutoCloseable {
         addOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP);
         writeLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.WRITE_LAC_OP);
         readLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAC_OP);
+        recoverAddEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_ADD_ENTRIES);
+        recoverReadEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_READ_ENTRIES);
     }
 
     OpStatsLogger getCreateOpLogger() { return createOpLogger; }
@@ -1254,6 +1257,8 @@ public class BookKeeper implements AutoCloseable {
     OpStatsLogger getAddOpLogger() { return addOpLogger; }
     OpStatsLogger getWriteLacOpLogger() { return writeLacOpLogger; }
     OpStatsLogger getReadLacOpLogger() { return readLacOpLogger; }
+    OpStatsLogger getRecoverAddCountLogger() { return recoverAddEntriesStats; }
+    OpStatsLogger getRecoverReadCountLogger() { return recoverReadEntriesStats; }
 
     static EventLoopGroup getDefaultEventLoopGroup() {
         ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("bookkeeper-io-%s").build();
