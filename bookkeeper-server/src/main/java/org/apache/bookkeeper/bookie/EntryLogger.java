@@ -42,8 +42,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -62,8 +62,8 @@ public class EntryLogger {
     private static final Logger LOG = LoggerFactory.getLogger(EntryLogger.class);
 
     volatile File currentDir;
-    private LedgerDirsManager ledgerDirsManager;
-    private AtomicBoolean shouldCreateNewEntryLog = new AtomicBoolean(false);
+    private final LedgerDirsManager ledgerDirsManager;
+    private final AtomicBoolean shouldCreateNewEntryLog = new AtomicBoolean(false);
 
     private long logId;
     private volatile long leastUnflushedLogId;
@@ -231,6 +231,16 @@ public class EntryLogger {
 
             @Override
             public void fatalError() {
+                // Nothing to handle here. Will be handled in Bookie
+            }
+
+            @Override
+            public void diskWritable(File disk) {
+                // Nothing to handle here. Will be handled in Bookie
+            }
+
+            @Override
+            public void diskJustWritable(File disk) {
                 // Nothing to handle here. Will be handled in Bookie
             }
         };

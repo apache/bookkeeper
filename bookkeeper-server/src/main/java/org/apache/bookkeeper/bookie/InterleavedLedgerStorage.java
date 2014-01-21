@@ -111,22 +111,34 @@ class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
 
             @Override
             public void diskAlmostFull(File disk) {
-                gcThread.forceGC();
+                gcThread.enableForceGC();
             }
 
             @Override
             public void diskFull(File disk) {
-                gcThread.forceGC();
+                gcThread.enableForceGC();
             }
 
             @Override
             public void allDisksFull() {
-                gcThread.forceGC();
+                gcThread.enableForceGC();
             }
 
             @Override
             public void fatalError() {
                 // do nothing.
+            }
+
+            @Override
+            public void diskWritable(File disk) {
+                // we have enough space now, disable force gc.
+                gcThread.disableForceGC();
+            }
+
+            @Override
+            public void diskJustWritable(File disk) {
+                // if a disk is just writable, we still need force gc.
+                gcThread.enableForceGC();
             }
         };
     }

@@ -205,7 +205,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         storage.start();
         long startTime = MathUtils.now();
         Thread.sleep(2000);
-        storage.gcThread.forceGC();
+        storage.gcThread.enableForceGC();
         Thread.sleep(1000);
         // Minor and Major compaction times should be larger than when we started
         // this test.

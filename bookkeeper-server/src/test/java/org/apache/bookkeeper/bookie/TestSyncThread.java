@@ -340,5 +340,13 @@ public class TestSyncThread {
         @Override
         public void fatalError() {
         }
+
+        @Override
+        public void diskWritable(File disk) {
+        }
+
+        @Override
+        public void diskJustWritable(File disk) {
+        }
     }
 }

@@ -23,6 +23,7 @@ package org.apache.bookkeeper.bookie;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -365,6 +366,16 @@ public class IndexPersistenceMgr {
 
             @Override
             public void fatalError() {
+                // Nothing to handle here. Will be handled in Bookie
+            }
+
+            @Override
+            public void diskWritable(File disk) {
+                // Nothing to handle here. Will be handled in Bookie
+            }
+
+            @Override
+            public void diskJustWritable(File disk) {
                 // Nothing to handle here. Will be handled in Bookie
             }
         };

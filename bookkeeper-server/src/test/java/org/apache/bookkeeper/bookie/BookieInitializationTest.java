@@ -32,8 +32,6 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.netty.channel.ChannelException;
 import junit.framework.Assert;
 
-import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -120,6 +118,32 @@ public class BookieInitializationTest {
         bkServer.join();
         Assert.assertEquals("Failed to return ExitCode.ZK_REG_FAIL",
                 ExitCode.ZK_REG_FAIL, bkServer.getExitCode());
+    }
+
+    @Test(timeout = 20000)
+    public void testBookieRegistrationWithSameZooKeeperClient() throws Exception {
+        File tmpDir = File.createTempFile("bookie", "test");
+        tmpDir.delete();
+        tmpDir.mkdir();
+
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+                .setZkServers(null).setJournalDirName(tmpDir.getPath())
+                .setLedgerDirNames(new String[] { tmpDir.getPath() });
+
+        final String bkRegPath = conf.getZkAvailableBookiesPath() + "/"
+                + InetAddress.getLocalHost().getHostAddress() + ":"
+                + conf.getBookiePort();
+
+        MockBookie b = new MockBookie(conf);
+        b.zk = zkc;
+        b.testRegisterBookie(conf);
+        Assert.assertNotNull("Bookie registration node doesn't exists!",
+                             zkc.exists(bkRegPath, false));
+
+        // test register bookie again if the registeration node is created by itself.
+        b.testRegisterBookie(conf);
+        Assert.assertNotNull("Bookie registration node doesn't exists!",
+                zkc.exists(bkRegPath, false));
     }
 
     /**

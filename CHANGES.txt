@@ -144,6 +144,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-696: stats collection on bookkeeper client (Aniruddha, ivank via sijie)
 
+        BOOKKEEPER-661: Turn readonly back to writable if spaces are reclaimed. (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
