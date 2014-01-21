@@ -78,6 +78,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
         final AtomicBoolean complete = new AtomicBoolean(false);
 
+        int rc = BKException.Code.OK;
         int firstError = BKException.Code.OK;
         int numMissedEntryReads = 0;
 
@@ -117,6 +118,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             }
 
             if (!complete.getAndSet(true)) {
+                rc = BKException.Code.OK;
                 /*
                  * The length is a long and it is the last field of the metadata of an entry.
                  * Consequently, we have to subtract 8 from METADATA_LENGTH to get the length.
@@ -139,6 +141,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
          */
         boolean fail(int rc) {
             if (complete.compareAndSet(false, true)) {
+                this.rc = rc;
                 submitCallback(rc);
                 return true;
             } else {
@@ -156,7 +159,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
          * @param rc
          *          read result code
          */
-        void logErrorAndReattemptRead(BookieSocketAddress host, String errMsg, int rc) {
+        synchronized void logErrorAndReattemptRead(BookieSocketAddress host, String errMsg, int rc) {
             if (BKException.Code.OK == firstError ||
                 BKException.Code.NoSuchEntryException == firstError ||
                 BKException.Code.NoSuchLedgerExistsException == firstError) {
@@ -201,6 +204,15 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
          */
         boolean isComplete() {
             return complete.get();
+        }
+
+        /**
+         * Get result code of this entry.
+         *
+         * @return result code.
+         */
+        int getRc() {
+            return rc;
         }
 
         @Override
@@ -404,7 +416,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         return lh.metadata;
     }
 
-    private void cancelSpeculativeTask(boolean mayInterruptIfRunning) {
+    protected void cancelSpeculativeTask(boolean mayInterruptIfRunning) {
         if (speculativeTask != null) {
             speculativeTask.cancel(mayInterruptIfRunning);
             speculativeTask = null;
@@ -465,9 +477,11 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             }
             seq.add(entry);
             i++;
-
-            entry.read();
         } while (i <= endEntryId);
+        // read the entries.
+        for (LedgerEntryRequest entry : seq) {
+            entry.read();
+        }
     }
 
     private static class ReadContext {
@@ -502,20 +516,19 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         heardFromHosts.add(rctx.to);
 
         if (entry.complete(rctx.to, buffer)) {
-            numPendingEntries--;
-            if (numPendingEntries == 0) {
-                submitCallback(BKException.Code.OK);
-            }
+            submitCallback(BKException.Code.OK);
         }
 
         if(numPendingEntries < 0)
             LOG.error("Read too many values");
     }
 
-    private void submitCallback(int code) {
-        if (cb == null) {
-            // Callback had already been triggered before
-            return;
+    protected void submitCallback(int code) {
+        if (BKException.Code.OK == code) {
+            numPendingEntries--;
+            if (numPendingEntries != 0) {
+                return;
+            }
         }
 
         // ensure callback once
