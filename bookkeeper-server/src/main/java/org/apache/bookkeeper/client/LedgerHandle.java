@@ -22,6 +22,7 @@ package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Charsets.UTF_8;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.ByteBuf;
@@ -49,7 +50,9 @@ import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.TimedGenericCallback;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
@@ -1431,15 +1434,42 @@ public class LedgerHandle implements AutoCloseable {
         bk.getLedgerManager().readLedgerMetadata(ledgerId, cb);
     }
 
-    void recover(final GenericCallback<Void> cb) {
+    void recover(GenericCallback<Void> finalCb) {
+        recover(finalCb, null, false);
+    }
+
+    /**
+     * Recover the ledger.
+     *
+     * @param finalCb
+     *          callback after recovery is done.
+     * @param listener
+     *          read entry listener on recovery reads.
+     * @param forceRecovery
+     *          force the recovery procedure even the ledger metadata shows the ledger is closed.
+     */
+    void recover(GenericCallback<Void> finalCb,
+                 final @VisibleForTesting BookkeeperInternalCallbacks.ReadEntryListener listener,
+                 final boolean forceRecovery) {
+        final GenericCallback<Void> cb = new TimedGenericCallback<Void>(
+            finalCb,
+            BKException.Code.OK,
+            bk.getRecoverOpLogger());
         boolean wasClosed = false;
         boolean wasInRecovery = false;
 
         synchronized (this) {
             if (metadata.isClosed()) {
-                lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
-                length = metadata.getLength();
-                wasClosed = true;
+                if (forceRecovery) {
+                    wasClosed = false;
+                    // mark the ledger back to in recovery state, so it would proceed ledger recovery again.
+                    wasInRecovery = false;
+                    metadata.markLedgerInRecovery();
+                } else {
+                    lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
+                    length = metadata.getLength();
+                    wasClosed = true;
+                }
             } else {
                 wasClosed = false;
                 if (metadata.isInRecovery()) {
@@ -1463,6 +1493,7 @@ public class LedgerHandle implements AutoCloseable {
             new LedgerRecoveryOp(LedgerHandle.this, cb)
                     .parallelRead(bk.getConf().getEnableParallelRecoveryRead())
                     .readBatchSize(bk.getConf().getRecoveryReadBatchSize())
+                    .setEntryListener(listener)
                     .initiate();
             return;
         }
@@ -1479,7 +1510,7 @@ public class LedgerHandle implements AutoCloseable {
                                 cb.operationComplete(rc, null);
                             } else {
                                 metadata = newMeta;
-                                recover(cb);
+                                recover(cb, listener, forceRecovery);
                             }
                         }
 
@@ -1489,12 +1520,16 @@ public class LedgerHandle implements AutoCloseable {
                         }
                     });
                 } else if (rc == BKException.Code.OK) {
+                    // we only could issue recovery operation after we successfully update the ledger state to in recovery
+                    // otherwise, it couldn't prevent us advancing last confirmed while the other writer is closing the ledger,
+                    // which will cause inconsistent last add confirmed on bookies & zookeeper metadata.
                     new LedgerRecoveryOp(LedgerHandle.this, cb)
-                            .parallelRead(bk.getConf().getEnableParallelRecoveryRead())
-                            .readBatchSize(bk.getConf().getRecoveryReadBatchSize())
-                            .initiate();
+                        .parallelRead(bk.getConf().getEnableParallelRecoveryRead())
+                        .readBatchSize(bk.getConf().getRecoveryReadBatchSize())
+                        .setEntryListener(listener)
+                        .initiate();
                 } else {
-                    LOG.error("Error writing ledger config " + rc + " of ledger " + ledgerId);
+                    LOG.error("Error writing ledger config {} of ledger {}", rc, ledgerId);
                     cb.operationComplete(rc, null);
                 }
             }
