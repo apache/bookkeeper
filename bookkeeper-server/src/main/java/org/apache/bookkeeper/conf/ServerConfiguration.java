@@ -60,6 +60,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String JOURNAL_REMOVE_FROM_PAGE_CACHE = "journalRemoveFromPageCache";
     protected final static String JOURNAL_PRE_ALLOC_SIZE = "journalPreAllocSizeMB";
     protected final static String JOURNAL_WRITE_BUFFER_SIZE = "journalWriteBufferSizeKB";
+    protected final static String NUM_JOURNAL_CALLBACK_THREADS = "numJournalCallbackThreads";
     // Bookie Parameters
     protected final static String BOOKIE_PORT = "bookiePort";
     protected final static String LISTENING_INTERFACE = "listeningInterface";
@@ -87,6 +88,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     // Worker Thread parameters.
     protected final static String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
+    protected final static String NUM_READ_WORKER_THREADS = "numReadWorkerThreads";
 
     protected final static String READ_BUFFER_SIZE = "readBufferSizeBytes";
     protected final static String WRITE_BUFFER_SIZE = "writeBufferSizeBytes";
@@ -726,14 +728,6 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get the number of threads that should handle write requests.
-     * @return
-     */
-    public int getNumAddWorkerThreads() {
-        return getInt(NUM_ADD_WORKER_THREADS, 1);
-    }
-
-    /**
      * Get the number of bytes we should use as capacity for the {@link
      * org.apache.bookkeeper.bookie.BufferedReadChannel}
      * Default is 512 bytes
@@ -757,6 +751,46 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Set the number of threads that would handle write requests.
+     *
+     * @param numThreads
+     *          number of threads to handle write requests.
+     * @return server configuration
+     */
+    public ServerConfiguration setNumAddWorkerThreads(int numThreads) {
+        setProperty(NUM_ADD_WORKER_THREADS, numThreads);
+        return this;
+    }
+
+    /**
+     * Get the number of threads that should handle write requests.
+     *
+     * @return the number of threads that handle write requests.
+     */
+    public int getNumAddWorkerThreads() {
+        return getInt(NUM_ADD_WORKER_THREADS, 1);
+    }
+
+    /**
+     * Set the number of threads that would handle read requests.
+     *
+     * @param numThreads
+     *          Number of threads to handle read requests.
+     * @return server configuration
+     */
+    public ServerConfiguration setNumReadWorkerThreads(int numThreads) {
+        setProperty(NUM_READ_WORKER_THREADS, numThreads);
+        return this;
+    }
+
+    /**
+     * Get the number of threads that should handle read requests.
+     */
+    public int getNumReadWorkerThreads() {
+        return getInt(NUM_READ_WORKER_THREADS, 8);
+    }
+
+    /**
      * Get the number of bytes used as capacity for the write buffer. Default is
      * 64KB.
      * NOTE: Make sure this value is greater than the maximum message size.
@@ -776,6 +810,27 @@ public class ServerConfiguration extends AbstractConfiguration {
     public ServerConfiguration setWriteBufferBytes(int writeBufferBytes) {
         setProperty(WRITE_BUFFER_SIZE, writeBufferBytes);
         return this;
+    }
+
+    /**
+     * Set the number of threads that would handle journal callbacks.
+     *
+     * @param numThreads
+     *          number of threads to handle journal callbacks.
+     * @return server configuration
+     */
+    public ServerConfiguration setNumJournalCallbackThreads(int numThreads) {
+        setProperty(NUM_JOURNAL_CALLBACK_THREADS, numThreads);
+        return this;
+    }
+
+    /**
+     * Get the number of threads that should handle journal callbacks.
+     *
+     * @return the number of threads that handle journal callbacks.
+     */
+    public int getNumJournalCallbackThreads() {
+        return getInt(NUM_JOURNAL_CALLBACK_THREADS, 1);
     }
 
 

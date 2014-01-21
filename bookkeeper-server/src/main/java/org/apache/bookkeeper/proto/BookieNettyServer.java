@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.zookeeper.KeeperException;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -59,16 +60,16 @@ class BookieNettyServer {
     final static int maxMessageSize = 0xfffff;
     final ServerConfiguration conf;
     final ChannelFactory serverChannelFactory;
-    final Bookie bookie;
+    final RequestProcessor requestProcessor;
     final ChannelGroup allChannels = new CleanupChannelGroup();
     final AtomicBoolean isRunning = new AtomicBoolean(false);
     Object suspensionLock = new Object();
     boolean suspended = false;
 
-    BookieNettyServer(ServerConfiguration conf, Bookie bookie)
+    BookieNettyServer(ServerConfiguration conf, RequestProcessor processor)
             throws IOException, KeeperException, InterruptedException, BookieException  {
         this.conf = conf;
-        this.bookie = bookie;
+        this.requestProcessor = processor;
 
         ThreadFactoryBuilder tfb = new ThreadFactoryBuilder();
         String base = "bookie-" + conf.getBookiePort() + "-netty";
@@ -141,7 +142,8 @@ class BookieNettyServer {
 
             pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.RequestDecoder());
             pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.ResponseEncoder());
-            SimpleChannelHandler requestHandler = isRunning.get() ? new BookieRequestHandler(conf, bookie, allChannels)
+            SimpleChannelHandler requestHandler = isRunning.get() ?
+                    new BookieRequestHandler(conf, requestProcessor, allChannels)
                     : new RejectRequestHandler();
             pipeline.addLast("bookieRequestHandler", requestHandler);
             return pipeline;

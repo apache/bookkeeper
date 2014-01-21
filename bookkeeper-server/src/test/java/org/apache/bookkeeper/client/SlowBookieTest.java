@@ -44,6 +44,8 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
 
     public SlowBookieTest() {
         super(4);
+        baseConf.setNumAddWorkerThreads(0);
+        baseConf.setNumReadWorkerThreads(0);
     }
 
     @Test(timeout=60000)

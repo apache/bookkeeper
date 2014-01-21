@@ -138,6 +138,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-710: OpenLedgerNoRecovery should watch ensemble change. (sijie via ivank)
 
+        BOOKKEEPER-429: Provide separate read and write threads in the bookkeeper server (Aniruddha via sijie)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

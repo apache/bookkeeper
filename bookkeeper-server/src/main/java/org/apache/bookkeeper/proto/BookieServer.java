@@ -34,6 +34,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.jmx.BKMBeanRegistry;
+import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -69,12 +70,16 @@ public class BookieServer {
     AutoRecoveryMain autoRecoveryMain = null;
     private boolean isAutoRecoveryDaemonEnabled;
 
+    // request processor
+    private final RequestProcessor requestProcessor;
+
     public BookieServer(ServerConfiguration conf) throws IOException,
             KeeperException, InterruptedException, BookieException,
             UnavailableException, CompatibilityException {
         this.conf = conf;
         this.bookie = newBookie(conf);
-        this.nettyServer = new BookieNettyServer(this.conf, this.bookie);
+        this.requestProcessor = new BookieRequestProcessor(conf, bookie);
+        this.nettyServer = new BookieNettyServer(this.conf, requestProcessor);
         isAutoRecoveryDaemonEnabled = conf.isAutoRecoveryDaemonEnabled();
         if (isAutoRecoveryDaemonEnabled) {
             this.autoRecoveryMain = new AutoRecoveryMain(conf);
@@ -144,6 +149,7 @@ public class BookieServer {
         if (isAutoRecoveryDaemonEnabled && this.autoRecoveryMain != null) {
             this.autoRecoveryMain.shutdown();
         }
+        this.requestProcessor.close();
         running = false;
 
         // unregister JMX

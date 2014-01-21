@@ -184,8 +184,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
         lh.close();
     }
 
-    @Test(timeout=60000)
-    public void testReadWriteAsyncSingleClient() throws IOException {
+    private void testReadWriteAsyncSingleClient(int numEntries) throws IOException {
         SyncObj sync = new SyncObj();
         try {
             // Create a ledger
@@ -263,6 +262,11 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             LOG.error("Test failed", e);
             fail("Test failed due to interruption");
         }
+    }
+
+    @Test
+    public void testReadWriteAsyncSingleClient200() throws IOException {
+        testReadWriteAsyncSingleClient(200);
     }
 
     /**
