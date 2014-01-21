@@ -54,6 +54,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-615: Twitter stats implementation of stats interface (sijie via ivank)
 
+      BOOKKEEPER-719: Inconsistent synchronization of org.apache.bookkeeper.stats.CodahaleMetricsProvider.metrics (sijie via ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)

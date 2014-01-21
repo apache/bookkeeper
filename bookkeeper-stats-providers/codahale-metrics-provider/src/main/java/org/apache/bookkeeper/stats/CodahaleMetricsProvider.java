@@ -60,6 +60,10 @@ public class CodahaleMetricsProvider implements StatsProvider {
         }
     }
 
+    synchronized MetricRegistry getMetrics() {
+        return metrics;
+    }
+
     @Override
     public void start(Configuration conf) {
         initIfNecessary();
@@ -75,7 +79,7 @@ public class CodahaleMetricsProvider implements StatsProvider {
             HostAndPort addr = HostAndPort.fromString(graphiteHost);
             final Graphite graphite = new Graphite(
                     new InetSocketAddress(addr.getHostText(), addr.getPort()));
-            reporters.add(GraphiteReporter.forRegistry(metrics)
+            reporters.add(GraphiteReporter.forRegistry(getMetrics())
                           .prefixedWith(prefix)
                           .convertRatesTo(TimeUnit.SECONDS)
                           .convertDurationsTo(TimeUnit.MILLISECONDS)
@@ -93,14 +97,14 @@ public class CodahaleMetricsProvider implements StatsProvider {
                 outdir = new File(csvDir);
             }
             LOG.info("Configuring stats with csv output to directory [{}]", outdir.getAbsolutePath());
-            reporters.add(CsvReporter.forRegistry(metrics)
+            reporters.add(CsvReporter.forRegistry(getMetrics())
                           .convertRatesTo(TimeUnit.SECONDS)
                           .convertDurationsTo(TimeUnit.MILLISECONDS)
                           .build(outdir));
         }
         if (!Strings.isNullOrEmpty(slf4jCat)) {
             LOG.info("Configuring stats with slf4j");
-            reporters.add(Slf4jReporter.forRegistry(metrics)
+            reporters.add(Slf4jReporter.forRegistry(getMetrics())
                           .outputTo(LoggerFactory.getLogger(slf4jCat))
                           .convertRatesTo(TimeUnit.SECONDS)
                           .convertDurationsTo(TimeUnit.MILLISECONDS)
@@ -122,6 +126,6 @@ public class CodahaleMetricsProvider implements StatsProvider {
     @Override
     public StatsLogger getStatsLogger(String name) {
         initIfNecessary();
-        return new CodahaleStatsLogger(metrics, name);
+        return new CodahaleStatsLogger(getMetrics(), name);
     }
 }
