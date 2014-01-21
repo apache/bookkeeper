@@ -21,9 +21,11 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Charsets.UTF_8;
+
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -39,7 +41,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.AddLacCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
@@ -56,9 +57,6 @@ import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.RateLimiter;
 
 /**
  * Ledger handle contains ledger metadata and is used to access the read and
@@ -311,9 +309,9 @@ public class LedgerHandle implements AutoCloseable {
      * of the ledger is. This ensures that, once the ledger has been closed, all
      * reads from the ledger will return the same set of entries.
      *
-     * @param cb
+     * @param origCb
      *          callback implementation
-     * @param ctx
+     * @param origCtx
      *          control object
      */
     public void asyncClose(CloseCallback cb, Object ctx) {
@@ -1467,7 +1465,9 @@ public class LedgerHandle implements AutoCloseable {
             // if metadata is already in recover, dont try to write again,
             // just do the recovery from the starting point
             new LedgerRecoveryOp(LedgerHandle.this, cb)
-                    .parallelRead(bk.getConf().getEnableParallelRecoveryRead()).initiate();
+                    .parallelRead(bk.getConf().getEnableParallelRecoveryRead())
+                    .readBatchSize(bk.getConf().getRecoveryReadBatchSize())
+                    .initiate();
             return;
         }
 
@@ -1494,7 +1494,9 @@ public class LedgerHandle implements AutoCloseable {
                     });
                 } else if (rc == BKException.Code.OK) {
                     new LedgerRecoveryOp(LedgerHandle.this, cb)
-                            .parallelRead(bk.getConf().getEnableParallelRecoveryRead()).initiate();
+                            .parallelRead(bk.getConf().getEnableParallelRecoveryRead())
+                            .readBatchSize(bk.getConf().getRecoveryReadBatchSize())
+                            .initiate();
                 } else {
                     LOG.error("Error writing ledger config " + rc + " of ledger " + ledgerId);
                     cb.operationComplete(rc, null);
@@ -1550,8 +1552,8 @@ public class LedgerHandle implements AutoCloseable {
          *
          * @param rc
          *          return code
-         * @param leder
-         *          ledger identifier
+         * @param lh
+         *          ledger handle
          * @param seq
          *          sequence of entries
          * @param ctx
@@ -1572,8 +1574,8 @@ public class LedgerHandle implements AutoCloseable {
          *
          * @param rc
          *          return code
-         * @param leder
-         *          ledger identifier
+         * @param lh
+         *          ledger handle
          * @param entry
          *          entry identifier
          * @param ctx
