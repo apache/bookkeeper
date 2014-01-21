@@ -36,6 +36,9 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -72,6 +75,14 @@ public class BookKeeper {
     final static int zkConnectTimeoutMs = 5000;
     final ClientSocketChannelFactory channelFactory;
 
+    // The stats logger for this client.
+    private final StatsLogger statsLogger;
+    private OpStatsLogger createOpLogger;
+    private OpStatsLogger openOpLogger;
+    private OpStatsLogger deleteOpLogger;
+    private OpStatsLogger readOpLogger;
+    private OpStatsLogger addOpLogger;
+
     // whether the socket factory is one we created, or is owned by whoever
     // instantiated us
     boolean ownChannelFactory = false;
@@ -97,6 +108,63 @@ public class BookKeeper {
     interface ZKConnectCallback {
         public void connected();
         public void connectionFailed(int code);
+    }
+
+    static class Builder {
+        final ClientConfiguration conf;
+
+        ZooKeeper zk = null;
+        ClientSocketChannelFactory channelFactory = null;
+        StatsLogger statsLogger = NullStatsLogger.INSTANCE;
+
+        Builder(ClientConfiguration conf) {
+            this.conf = conf;
+        }
+
+        Builder setChannelFactory(ClientSocketChannelFactory f) {
+            channelFactory = f;
+            return this;
+        }
+
+        Builder setZookeeper(ZooKeeper zk) {
+            this.zk = zk;
+            return this;
+        }
+
+        Builder setStatsLogger(StatsLogger statsLogger) {
+            this.statsLogger = statsLogger;
+            return this;
+        }
+
+        BookKeeper build() throws IOException, InterruptedException, KeeperException {
+            boolean ownZK = false;
+            boolean ownChannelFactory = false;
+            if (zk == null) {
+                ownZK = true;
+                ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(conf.getZkTimeout());
+                zk = ZkUtils.createConnectedZookeeperClient(conf.getZkServers(), w);
+                w.waitForConnection();
+            }
+            if (channelFactory == null) {
+                ownChannelFactory = true;
+                ThreadFactoryBuilder tfb = new ThreadFactoryBuilder();
+                channelFactory = new NioClientSocketChannelFactory(
+                        Executors.newCachedThreadPool(tfb.setNameFormat(
+                                                              "BookKeeper-NIOBoss-%d").build()),
+                        Executors.newCachedThreadPool(tfb.setNameFormat(
+                                                              "BookKeeper-NIOWorker-%d").build()));
+            }
+
+            BookKeeper bk = new BookKeeper(conf, zk, channelFactory, statsLogger);
+            bk.ownZKHandle = ownZK;
+            bk.ownChannelFactory = ownChannelFactory;
+
+            return bk;
+        }
+    }
+
+    public static Builder forConfig(final ClientConfiguration conf) {
+        return new Builder(conf);
     }
 
     /**
@@ -142,6 +210,8 @@ public class BookKeeper {
                         "BookKeeper-NIOWorker-%d").build()));
         this.scheduler = Executors.newSingleThreadScheduledExecutor(tfb
                 .setNameFormat("BookKeeperClientScheduler-%d").build());
+        this.statsLogger = NullStatsLogger.INSTANCE;
+        initOpLoggers(this.statsLogger);
         // initialize the ensemble placement
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf);
 
@@ -156,7 +226,7 @@ public class BookKeeper {
 
         ownChannelFactory = true;
         ownZKHandle = true;
-     }
+    }
 
     /**
      * Create a bookkeeper client but use the passed in zookeeper client instead
@@ -202,6 +272,15 @@ public class BookKeeper {
      */
     public BookKeeper(ClientConfiguration conf, ZooKeeper zk, ClientSocketChannelFactory channelFactory)
             throws IOException, InterruptedException, KeeperException {
+        this(conf, zk, channelFactory, NullStatsLogger.INSTANCE);
+    }
+
+    /**
+     * Contructor for use with the builder. Other constructors also use it.
+     */
+    private BookKeeper(ClientConfiguration conf, ZooKeeper zk,
+                       ClientSocketChannelFactory channelFactory, StatsLogger statsLogger)
+            throws IOException, InterruptedException, KeeperException {
         if (zk == null || channelFactory == null) {
             throw new NullPointerException();
         }
@@ -216,12 +295,15 @@ public class BookKeeper {
                 "BookKeeperClientScheduler-%d");
         this.scheduler = Executors
                 .newSingleThreadScheduledExecutor(tfb.build());
+        this.statsLogger = statsLogger.scope(BookKeeperClientStats.CLIENT_SCOPE);
+        initOpLoggers(this.statsLogger);
+
         // initialize the ensemble placement
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf);
 
         mainWorkerPool = new OrderedSafeExecutor(conf.getNumWorkerThreads(),
                 "BookKeeperClientWorker");
-        bookieClient = new BookieClient(conf, channelFactory, mainWorkerPool);
+        bookieClient = new BookieClient(conf, channelFactory, mainWorkerPool, statsLogger);
         bookieWatcher = new BookieWatcher(conf, scheduler, placementPolicy, this);
         bookieWatcher.readBookiesBlocking();
 
@@ -260,6 +342,10 @@ public class BookKeeper {
 
     protected ClientConfiguration getConf() {
         return conf;
+    }
+
+    StatsLogger getStatsLogger() {
+        return statsLogger;
     }
 
     /**
@@ -747,6 +833,17 @@ public class BookKeeper {
         }
     }
 
+    private final void initOpLoggers(StatsLogger stats) {
+        createOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.CREATE_OP);
+        deleteOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.DELETE_OP);
+        openOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.OPEN_OP);
+        readOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_OP);
+        addOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP);
+    }
 
-
+    OpStatsLogger getCreateOpLogger() { return createOpLogger; }
+    OpStatsLogger getOpenOpLogger() { return openOpLogger; }
+    OpStatsLogger getDeleteOpLogger() { return deleteOpLogger; }
+    OpStatsLogger getReadOpLogger() { return readOpLogger; }
+    OpStatsLogger getAddOpLogger() { return addOpLogger; }
 }

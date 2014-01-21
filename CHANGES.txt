@@ -140,6 +140,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-429: Provide separate read and write threads in the bookkeeper server (Aniruddha via sijie)
 
+        BOOKKEEPER-696: stats collection on bookkeeper client (Aniruddha, ivank via sijie)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

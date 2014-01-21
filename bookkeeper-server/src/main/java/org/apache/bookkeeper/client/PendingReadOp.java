@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.client;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +18,8 @@ package org.apache.bookkeeper.client;
  * under the License.
  *
  */
+package org.apache.bookkeeper.client;
+
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -38,6 +38,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.util.MathUtils;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.slf4j.Logger;
@@ -64,6 +66,9 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     long numPendingEntries;
     long startEntryId;
     long endEntryId;
+    long requestTimeMillis;
+    OpStatsLogger readOpLogger;
+
     final int maxMissedReadsAllowed;
 
     class LedgerEntryRequest extends LedgerEntry {
@@ -238,6 +243,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             return complete.get();
         }
 
+        @Override
         public String toString() {
             return String.format("L%d-E%d", ledgerId, entryId);
         }
@@ -257,24 +263,37 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
                 - getLedgerMetadata().getAckQuorumSize();
         speculativeReadTimeout = lh.bk.getConf().getSpeculativeReadTimeout();
         heardFromHosts = new HashSet<InetSocketAddress>();
+
+        readOpLogger = lh.bk.getReadOpLogger();
     }
 
     protected LedgerMetadata getLedgerMetadata() {
         return lh.metadata;
     }
 
+    private void cancelSpeculativeTask(boolean mayInterruptIfRunning) {
+        if (speculativeTask != null) {
+            speculativeTask.cancel(mayInterruptIfRunning);
+            speculativeTask = null;
+        }
+    }
+
     public void initiate() throws InterruptedException {
         long nextEnsembleChange = startEntryId, i = startEntryId;
-
+        this.requestTimeMillis = MathUtils.now();
         ArrayList<InetSocketAddress> ensemble = null;
 
         if (speculativeReadTimeout > 0) {
             speculativeTask = scheduler.scheduleWithFixedDelay(new Runnable() {
+                    @Override
                     public void run() {
                         int x = 0;
                         for (LedgerEntryRequest r : seq) {
                             if (!r.isComplete()) {
-                                if (null != r.maybeSendSpeculativeRead(heardFromHosts)) {
+                                if (null == r.maybeSendSpeculativeRead(heardFromHosts)) {
+                                    // Subsequent speculative read will not materialize anyway
+                                    cancelSpeculativeTask(false);
+                                } else {
                                     LOG.debug("Send speculative read for {}. Hosts heard are {}.",
                                               r, heardFromHosts);
                                     ++x;
@@ -343,10 +362,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     }
 
     private void submitCallback(int code) {
-        if (speculativeTask != null) {
-            speculativeTask.cancel(true);
-            speculativeTask = null;
-        }
+        long latencyMillis = MathUtils.now() - requestTimeMillis;
         if (code != BKException.Code.OK) {
             long firstUnread = LedgerHandle.INVALID_ENTRY_ID;
             for (LedgerEntryRequest req : seq) {
@@ -357,13 +373,20 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             }
             LOG.error("Read of ledger entry failed: L{} E{}-E{}, Heard from {}. First unread entry is {}",
                     new Object[] { lh.getId(), startEntryId, endEntryId, heardFromHosts, firstUnread });
+            readOpLogger.registerFailedEvent(latencyMillis);
+        } else {
+            readOpLogger.registerSuccessfulEvent(latencyMillis);
         }
+        cancelSpeculativeTask(true);
         cb.readComplete(code, lh, PendingReadOp.this, PendingReadOp.this.ctx);
     }
+
+    @Override
     public boolean hasMoreElements() {
         return !seq.isEmpty();
     }
 
+    @Override
     public LedgerEntry nextElement() throws NoSuchElementException {
         return seq.remove();
     }

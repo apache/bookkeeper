@@ -35,9 +35,11 @@
     <module>hedwig-client</module>
     <module>hedwig-server</module>
     <module>hedwig-protocol</module>
+    <module>hedwig-client-jms</module>
+    <module>bookkeeper-stats</module>
     <module>bookkeeper-server</module>
     <module>bookkeeper-benchmark</module>
-    <module>hedwig-client-jms</module>
+    <module>bookkeeper-stats-providers</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

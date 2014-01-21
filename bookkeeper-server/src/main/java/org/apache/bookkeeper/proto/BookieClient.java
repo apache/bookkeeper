@@ -39,6 +39,8 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -70,13 +72,20 @@ public class BookieClient {
     private final ClientConfiguration conf;
     private volatile boolean closed;
     private final ReentrantReadWriteLock closeLock;
+    private final StatsLogger statsLogger;
 
     public BookieClient(ClientConfiguration conf, ClientSocketChannelFactory channelFactory, OrderedSafeExecutor executor) {
+        this(conf, channelFactory, executor, NullStatsLogger.INSTANCE);
+    }
+
+    public BookieClient(ClientConfiguration conf, ClientSocketChannelFactory channelFactory, OrderedSafeExecutor executor,
+                        StatsLogger statsLogger) {
         this.conf = conf;
         this.channelFactory = channelFactory;
         this.executor = executor;
         this.closed = false;
         this.closeLock = new ReentrantReadWriteLock();
+        this.statsLogger = statsLogger;
     }
 
     public PerChannelBookieClient lookupClient(InetSocketAddress addr) {
@@ -89,7 +98,7 @@ public class BookieClient {
                     return null;
                 }
                 channel = new PerChannelBookieClient(conf, executor, channelFactory, addr, totalBytesOutstanding,
-                        timeoutExecutor);
+                        timeoutExecutor, statsLogger);
                 PerChannelBookieClient prevChannel = channels.putIfAbsent(addr, channel);
                 if (prevChannel != null) {
                     channel = prevChannel;
