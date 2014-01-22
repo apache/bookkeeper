@@ -52,7 +52,7 @@ public interface CheckpointSource {
                 if (o == MIN) {
                     return 0;
                 }
-                return 1;
+                return -1;
             }
 
             @Override

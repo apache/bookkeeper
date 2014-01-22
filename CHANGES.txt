@@ -146,6 +146,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-661: Turn readonly back to writable if spaces are reclaimed. (sijie via ivank)
 
+        BOOKKEEPER-720: CheckpointSource.MIN#compareTo does exactly the opposite of what it should (ivank via sijie)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
