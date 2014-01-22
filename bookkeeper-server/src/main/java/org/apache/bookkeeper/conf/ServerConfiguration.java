@@ -32,6 +32,7 @@ import com.google.common.annotations.Beta;
 public class ServerConfiguration extends AbstractConfiguration {
     // Entry Log Parameters
     protected final static String ENTRY_LOG_SIZE_LIMIT = "logSizeLimit";
+    protected final static String ENTRY_LOG_FILE_PREALLOCATION_ENABLED = "entryLogFilePreallocationEnabled";
     protected final static String MINOR_COMPACTION_INTERVAL = "minorCompactionInterval";
     protected final static String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
     protected final static String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
@@ -128,6 +129,27 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setEntryLogSizeLimit(long logSizeLimit) {
         this.setProperty(ENTRY_LOG_SIZE_LIMIT, Long.toString(logSizeLimit));
+        return this;
+    }
+
+    /**
+     * Is entry log file preallocation enabled.
+     *
+     * @return whether entry log file preallocation is enabled or not.
+     */
+    public boolean isEntryLogFilePreAllocationEnabled() {
+        return this.getBoolean(ENTRY_LOG_FILE_PREALLOCATION_ENABLED, true);
+    }
+
+    /**
+     * Enable/disable entry log file preallocation.
+     *
+     * @param enabled
+     *          enable/disable entry log file preallocation.
+     * @return server configuration object.
+     */
+    public ServerConfiguration setEntryLogFilePreAllocationEnabled(boolean enabled) {
+        this.setProperty(ENTRY_LOG_FILE_PREALLOCATION_ENABLED, enabled);
         return this;
     }
 

@@ -148,6 +148,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-720: CheckpointSource.MIN#compareTo does exactly the opposite of what it should (ivank via sijie)
 
+        BOOKKEEPER-643: Improve concurrency of entry logger (sijie & Aniruddha via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

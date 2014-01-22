@@ -57,6 +57,7 @@ public class LedgerDeleteTest extends MultiLedgerManagerTestCase {
         // Set up the configuration properties needed.
         baseConf.setEntryLogSizeLimit(2 * 1024 * 1024L);
         baseConf.setGcWaitTime(1000);
+        baseConf.setEntryLogFilePreAllocationEnabled(false);
         super.setUp();
     }
 
