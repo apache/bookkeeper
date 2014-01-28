@@ -180,10 +180,11 @@ if [ -z "$BOOKIE_LOG_CONF" ]; then
 fi
 
 BOOKIE_CLASSPATH="$BOOKIE_JAR:$BOOKIE_CLASSPATH:$BOOKIE_EXTRA_CLASSPATH"
-BOOKIE_CLASSPATH="`dirname $BOOKIE_LOG_CONF`:$BOOKIE_CLASSPATH"
-OPTS="$OPTS -Dlog4j.configuration=`basename $BOOKIE_LOG_CONF`"
-
-OPTS="-cp $BOOKIE_CLASSPATH $OPTS"
+if [ "$BOOKIE_LOG_CONF" != "" ]; then
+    BOOKIE_CLASSPATH="`dirname $BOOKIE_LOG_CONF`:$BOOKIE_CLASSPATH"
+    OPTS="$OPTS -Dlog4j.configuration=`basename $BOOKIE_LOG_CONF`"
+fi
+OPTS="-cp $BOOKIE_CLASSPATH -Djava.library.path=$BK_HOME/target/native/target/usr/local/lib $OPTS"
 
 OPTS="$OPTS $BOOKIE_EXTRA_OPTS"
 

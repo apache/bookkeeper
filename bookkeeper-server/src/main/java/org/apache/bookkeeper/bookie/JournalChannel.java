@@ -28,13 +28,23 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Stopwatch;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.NativeIO;
 import org.apache.bookkeeper.util.ZeroBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.*;
+import static org.apache.bookkeeper.util.NativeIO.*;
 
 /**
  * Simple wrapper around FileChannel to add versioning
@@ -81,28 +91,36 @@ class JournalChannel implements Closeable {
     // The position of the file channel's last drop position
     private long lastDropPosition = 0L;
 
+    // Stats
+    private final OpStatsLogger journalPreallocationStats;
+    private final Counter journalForceWriteCounter;
+    private final OpStatsLogger journalForceWriteStats;
+
     // Mostly used by tests
     JournalChannel(File journalDirectory, long logId) throws IOException {
-        this(journalDirectory, logId, 4 * 1024 * 1024, 65536, START_OF_FILE);
+        this(journalDirectory, logId, 4 * 1024 * 1024, 65536, START_OF_FILE, NullStatsLogger.INSTANCE);
     }
 
     // Open journal for scanning starting from the first record in journal.
-    JournalChannel(File journalDirectory, long logId, long preAllocSize, int writeBufferSize) throws IOException {
-        this(journalDirectory, logId, preAllocSize, writeBufferSize, START_OF_FILE);
+    JournalChannel(File journalDirectory, long logId, long preAllocSize, int writeBufferSize, StatsLogger statsLogger)
+            throws IOException {
+        this(journalDirectory, logId, preAllocSize, writeBufferSize, START_OF_FILE, statsLogger);
     }
 
     // Open journal for scanning starting from given position.
     JournalChannel(File journalDirectory, long logId,
-                   long preAllocSize, int writeBufferSize, long position) throws IOException {
-         this(journalDirectory, logId, preAllocSize, writeBufferSize, SECTOR_SIZE, position, false, V5);
+                   long preAllocSize, int writeBufferSize, long position, StatsLogger statsLogger)
+            throws IOException {
+         this(journalDirectory, logId, preAllocSize, writeBufferSize, SECTOR_SIZE, position, false, V5, statsLogger);
     }
 
     // Open journal to write
     JournalChannel(File journalDirectory, long logId,
                    long preAllocSize, int writeBufferSize, int journalAlignSize,
-                   boolean fRemoveFromPageCache, int formatVersionToWrite) throws IOException {
+                   boolean fRemoveFromPageCache, int formatVersionToWrite,
+                   StatsLogger statsLogger) throws IOException {
         this(journalDirectory, logId, preAllocSize, writeBufferSize, journalAlignSize,
-             START_OF_FILE, fRemoveFromPageCache, formatVersionToWrite);
+             START_OF_FILE, fRemoveFromPageCache, formatVersionToWrite, statsLogger);
     }
 
     /**
@@ -124,12 +142,20 @@ class JournalChannel implements Closeable {
      *          whether to remove cached pages from page cache.
      * @param formatVersionToWrite
      *          format version to write
+     * @param statsLogger
+     *          stats logger to record stats
      * @throws IOException
      */
-    private JournalChannel(File journalDirectory, long logId,
-                           long preAllocSize, int writeBufferSize, int journalAlignSize,
-                           long position, boolean fRemoveFromPageCache,
-                           int formatVersionToWrite) throws IOException {
+    private JournalChannel(File journalDirectory,
+                           long logId,
+                           long preAllocSize,
+                           int writeBufferSize,
+                           int journalAlignSize,
+                           long position,
+                           boolean fRemoveFromPageCache,
+                           int formatVersionToWrite,
+                           StatsLogger statsLogger)
+            throws IOException {
         this.journalAlignSize = journalAlignSize;
         this.zeros = ByteBuffer.allocate(journalAlignSize);
         this.preAllocSize = preAllocSize - preAllocSize % journalAlignSize;
@@ -149,8 +175,12 @@ class JournalChannel implements Closeable {
                         + " suddenly appeared, is another bookie process running?");
             }
             randomAccessFile = new RandomAccessFile(fn, "rw");
+            fd = NativeIO.getSysFileDescriptor(randomAccessFile.getFD());
             fc = randomAccessFile.getChannel();
             formatVersion = formatVersionToWrite;
+
+            // preallocate the space the header
+            preallocate();
 
             int headerSize = (V4 == formatVersion) ? VERSION_HEADER_SIZE : HEADER_SIZE;
             ByteBuffer bb = ByteBuffer.allocate(headerSize);
@@ -162,11 +192,12 @@ class JournalChannel implements Closeable {
             fc.write(bb);
 
             bc = new BufferedChannel(fc, writeBufferSize);
-            forceWrite(true);
-            nextPrealloc = this.preAllocSize;
-            fc.write(zeros, nextPrealloc - journalAlignSize);
+
+            // sync the file
+            // syncRangeOrForceWrite(0, HEADER_SIZE);
         } else {  // open an existing file
             randomAccessFile = new RandomAccessFile(fn, "r");
+            fd = NativeIO.getSysFileDescriptor(randomAccessFile.getFD());
             fc = randomAccessFile.getChannel();
             bc = null; // readonly
 
@@ -215,7 +246,13 @@ class JournalChannel implements Closeable {
                 LOG.error("Bookie journal file can seek to position :", e);
             }
         }
-        this.fd = NativeIO.getSysFileDescriptor(randomAccessFile.getFD());
+
+        // Stats
+        this.journalForceWriteCounter = statsLogger.getCounter(JOURNAL_NUM_FORCE_WRITES);
+        this.journalForceWriteStats = statsLogger.getOpStatsLogger(JOURNAL_FORCE_WRITE_LATENCY);
+        this.journalPreallocationStats = statsLogger.getOpStatsLogger(JOURNAL_PREALLOCATION);
+
+        LOG.info("Opened journal {} : fd {}", fn, fd);
     }
 
     int getFormatVersion() {
@@ -229,11 +266,30 @@ class JournalChannel implements Closeable {
         return bc;
     }
 
-    void preAllocIfNeeded(long size) throws IOException {
-        if (bc.position() + size > nextPrealloc) {
-            nextPrealloc += preAllocSize;
+    private void preallocate() throws IOException {
+        long prevPrealloc = nextPrealloc;
+        nextPrealloc = prevPrealloc + preAllocSize;
+        if (!NativeIO.fallocateIfPossible(fd, prevPrealloc, preAllocSize)) {
             zeros.clear();
             fc.write(zeros, nextPrealloc - journalAlignSize);
+        }
+    }
+
+    void preAllocIfNeeded(long size) throws IOException {
+        preAllocIfNeeded(size, null);
+    }
+
+    void preAllocIfNeeded(long size, Stopwatch stopwatch) throws IOException {
+        if (bc.position() + size > nextPrealloc) {
+            if (null != stopwatch) {
+                stopwatch.reset().start();
+            }
+            preallocate();
+            if (null != stopwatch) {
+                journalPreallocationStats.registerSuccessfulEvent(
+                        stopwatch.stop().elapsedTime(TimeUnit.MICROSECONDS),
+                        TimeUnit.MICROSECONDS);
+            }
         }
     }
 
@@ -246,11 +302,33 @@ class JournalChannel implements Closeable {
         fc.close();
     }
 
+    public void startSyncRange(long offset, long bytes) throws IOException {
+        NativeIO.syncFileRangeIfPossible(fd, offset, bytes, SYNC_FILE_RANGE_WRITE);
+    }
+
+    public boolean syncRangeIfPossible(long offset, long bytes) throws IOException {
+        if (NativeIO.syncFileRangeIfPossible(fd, offset, bytes,
+                SYNC_FILE_RANGE_WAIT_BEFORE | SYNC_FILE_RANGE_WRITE | SYNC_FILE_RANGE_WAIT_AFTER)) {
+            removeFromPageCacheIfPossible(offset + bytes);
+            return false;
+        } else {
+            return false;
+        }
+    }
+
     public void forceWrite(boolean forceMetadata) throws IOException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Journal ForceWrite");
         }
-        long newForceWritePosition = bc.forceWrite(forceMetadata);
+        long startTimeNanos = MathUtils.nowInNano();
+        forceWriteImpl(forceMetadata);
+        // collect stats
+        journalForceWriteCounter.inc();
+        journalForceWriteStats.registerSuccessfulEvent(
+                MathUtils.elapsedMicroSec(startTimeNanos), TimeUnit.MICROSECONDS);
+    }
+
+    private void removeFromPageCacheIfPossible(long offset) {
         //
         // For POSIX_FADV_DONTNEED, we want to drop from the beginning
         // of the file to a position prior to the current position.
@@ -265,11 +343,28 @@ class JournalChannel implements Closeable {
         // lastDropPosition     newDropPos             lastForceWritePosition
         //
         if (fRemoveFromPageCache) {
-            long newDropPos = newForceWritePosition - CACHE_DROP_LAG_BYTES;
+            long newDropPos = offset - CACHE_DROP_LAG_BYTES;
             if (lastDropPosition < newDropPos) {
                 NativeIO.bestEffortRemoveFromPageCache(fd, lastDropPosition, newDropPos - lastDropPosition);
             }
             this.lastDropPosition = newDropPos;
         }
+    }
+
+    private void forceWriteImpl(boolean forceMetadata) throws IOException {
+        long newForceWritePosition = bc.forceWrite(forceMetadata);
+        removeFromPageCacheIfPossible(newForceWritePosition);
+    }
+
+    public void syncRangeOrForceWrite(long offset, long bytes) throws IOException {
+        long startTimeNanos = MathUtils.nowInNano();
+        if (!syncRangeIfPossible(offset, bytes)) {
+            forceWriteImpl(false);
+        }
+        // collect stats
+        journalForceWriteCounter.inc();
+        journalForceWriteStats.registerSuccessfulEvent(
+                MathUtils.elapsedMicroSec(startTimeNanos),
+                TimeUnit.MICROSECONDS);
     }
 }

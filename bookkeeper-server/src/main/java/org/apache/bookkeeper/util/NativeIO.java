@@ -20,34 +20,56 @@ package org.apache.bookkeeper.util;
 
 import java.lang.reflect.Field;
 import java.io.FileDescriptor;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.sun.jna.LastErrorException;
-import com.sun.jna.Native;
 
 public final class NativeIO {
     private static final Logger LOG = LoggerFactory.getLogger(NativeIO.class);
 
     private static final int POSIX_FADV_DONTNEED = 4; /* fadvise.h */
 
+    /**
+     *  Wait upon writeout of all pages in the range before performing the write.
+     */
+    public static final int SYNC_FILE_RANGE_WAIT_BEFORE = 1;
+    /**
+     * Initiate writeout of all those dirty pages in the range which are not presently
+     * under writeback.
+     */
+    public static final int SYNC_FILE_RANGE_WRITE = 2;
+    /**
+     * Wait upon writeout of all pages in the range after performing the write.
+     */
+    public static final int SYNC_FILE_RANGE_WAIT_AFTER = 4;
+
+    private static final int FALLOC_FL_KEEP_SIZE = 1;
+
     private static boolean initialized = false;
     private static boolean fadvisePossible = true;
+    private static boolean syncFileRangePossible = true;
+    private static boolean sysFallocatePossible = true;
+    private static boolean posixFallocatePossible = true;
 
     static {
         try {
-            Native.register("c");
+            LOG.info("Loading bookkeeper native library.");
+            System.loadLibrary("bookkeeper");
             initialized = true;
-        } catch (NoClassDefFoundError e) {
-            LOG.info("JNA not found. Native methods will be disabled.");
-        } catch (UnsatisfiedLinkError e) {
-            LOG.info("Unable to link C library. Native methods will be disabled.");
-        } catch (NoSuchMethodError e) {
-            LOG.warn("Obsolete version of JNA present; unable to register C library");
+            LOG.info("Loaded bookkeeper native library. Enabled Native IO.");
+        } catch (Throwable t) {
+            LOG.info("Unable to load bookkeeper native library. Native methods will be disabled : ", t);
         }
     }
 
     // fadvice
-    public static native int posix_fadvise(int fd, long offset, long len, int flag) throws LastErrorException;
+    public static native int posix_fadvise(int fd, long offset, long len, int flag);
+    // posix_fallocate
+    public static native int posix_fallocate(int fd, long offset, long len);
+    // fallocate
+    public static native int fallocate(int fd, int mode, long offset, long len);
+    // sync_file_range(2)
+    public static native int sync_file_range(int fd, long offset, long len, int flags);
 
     private NativeIO() {}
 
@@ -66,6 +88,7 @@ public final class NativeIO {
 
         return field;
     }
+
     /**
      * Get system file descriptor (int) from FileDescriptor object.
      * @param descriptor - FileDescriptor object to get fd from
@@ -82,6 +105,92 @@ public final class NativeIO {
         return -1;
     }
 
+    public static boolean fallocateIfPossible(int fd, long offset, long nbytes) {
+        if (!initialized || fd < 0) {
+            return false;
+        }
+        boolean allocated = false;
+        if (sysFallocatePossible) {
+            allocated = sysFallocateIfPossible(fd, offset, nbytes);
+        }
+        if (!allocated && posixFallocatePossible) {
+            allocated = posixFallocateIfPossible(fd, offset, nbytes);
+        }
+        return allocated;
+    }
+
+    private static boolean sysFallocateIfPossible(int fd, long offset, long nbytes) {
+        try {
+            int rc = fallocate(fd, FALLOC_FL_KEEP_SIZE, offset, nbytes);
+            if (rc != 0) {
+                LOG.error("Failed on sys fallocate file descriptor {}, offset {}, bytes {}, rc {} : {}",
+                        new Object[] { fd, offset, nbytes, rc, Errno.strerror() });
+                return false;
+            }
+        } catch (UnsupportedOperationException uoe) {
+            LOG.warn("sys fallocate isn't supported : ", uoe);
+            sysFallocatePossible = false;
+        }  catch (UnsatisfiedLinkError nle) {
+            LOG.warn("Unsatisfied Link error: sys fallocate failed on file descriptor {}, offset {}, bytes {} : ",
+                    new Object[] { fd, offset, nbytes, nle });
+            sysFallocatePossible = false;
+        } catch (Exception e) {
+            LOG.error("Unknown exception: sys fallocate failed on file descriptor {}, offset {}, bytes {} : ",
+                    new Object[] { fd, offset, nbytes, e });
+            return false;
+        }
+        return sysFallocatePossible;
+    }
+
+    private static boolean posixFallocateIfPossible(int fd, long offset, long nbytes) {
+        try {
+            int rc = posix_fallocate(fd, offset, nbytes);
+            if (rc != 0) {
+                LOG.error("Failed on posix_fallocate file descriptor {}, offset {}, bytes {}, rc {} : {}",
+                        new Object[] { fd, offset, nbytes, rc, Errno.strerror() });
+                return false;
+            }
+        } catch (UnsupportedOperationException uoe) {
+            LOG.warn("posix_fallocate isn't supported : ", uoe);
+            posixFallocatePossible = false;
+        }  catch (UnsatisfiedLinkError nle) {
+            LOG.warn("Unsatisfied Link error: posix_fallocate failed on file descriptor {}, offset {}, bytes {} : ",
+                    new Object[] { fd, offset, nbytes, nle });
+            posixFallocatePossible = false;
+        } catch (Exception e) {
+            LOG.error("Unknown exception: posix_fallocate failed on file descriptor {}, offset {}, bytes {} : ",
+                    new Object[] { fd, offset, nbytes, e });
+            return false;
+        }
+        return posixFallocatePossible;
+    }
+
+    public static boolean syncFileRangeIfPossible(int fd, long offset, long nbytes, int flags) {
+        if (!initialized || !syncFileRangePossible || fd < 0) {
+            return false;
+        }
+        try {
+            int rc = sync_file_range(fd, offset, nbytes, flags);
+            if (rc != 0) {
+                LOG.error("Failed on syncing file descriptor {}, offset {}, bytes {}, rc {} : {}",
+                        new Object[] { fd, offset, nbytes, rc, Errno.strerror() });
+                return false;
+            }
+        } catch (UnsupportedOperationException uoe) {
+            LOG.warn("sync_file_range isn't supported : ", uoe);
+            syncFileRangePossible = false;
+        }  catch (UnsatisfiedLinkError nle) {
+            LOG.warn("Unsatisfied Link error: sync_file_range failed on file descriptor {}, offset {}, bytes {} : ",
+                    new Object[] { fd, offset, nbytes, nle });
+            syncFileRangePossible = false;
+        } catch (Exception e) {
+            LOG.error("Unknown exception: sync_file_range failed on file descriptor {}, offset {}, bytes {} : ",
+                    new Object[] { fd, offset, nbytes, e });
+            return false;
+        }
+        return syncFileRangePossible;
+    }
+
     /**
      * Remove pages from the file system page cache when they wont
      * be accessed again
@@ -89,16 +198,22 @@ public final class NativeIO {
      * @param fd     The file descriptor of the source file.
      * @param offset The offset within the file.
      * @param len    The length to be flushed.
-     *
-     * @throws nothing => Best effort
      */
-
     public static void bestEffortRemoveFromPageCache(int fd, long offset, long len) {
+        posixFadviseIfPossible(fd, offset, len, POSIX_FADV_DONTNEED);
+    }
+
+    public static boolean posixFadviseIfPossible(int fd, long offset, long len, int flags) {
         if (!initialized || !fadvisePossible || fd < 0) {
-            return;
+            return false;
         }
         try {
-            posix_fadvise(fd, offset, len, POSIX_FADV_DONTNEED);
+            int rc = posix_fadvise(fd, offset, len, flags);
+            if (rc != 0) {
+                LOG.error("Failed on posix_fadvise file descriptor {}, offset {}, bytes {}, flags {}, rc {} : {}",
+                        new Object[] { fd, offset, len, flags, rc, Errno.strerror() });
+                return false;
+            }
         } catch (UnsupportedOperationException uoe) {
             LOG.warn("posix_fadvise is not supported : ", uoe);
             fadvisePossible = false;
@@ -113,7 +228,9 @@ public final class NativeIO {
             // exception and forget
             LOG.warn("Unknown exception: posix_fadvise failed on file descriptor {}, offset {} : ",
                     new Object[] { fd, offset, e });
+            return false;
         }
+        return fadvisePossible;
     }
 
 }
