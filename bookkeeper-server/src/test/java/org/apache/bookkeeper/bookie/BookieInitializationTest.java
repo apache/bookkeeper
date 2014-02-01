@@ -364,6 +364,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             ldm.init();
         } catch (Exception e) {
             // expected
+            ldm.checkAllDirs();
+        } finally {
+            FileUtils.deleteDirectory(parent);
         }
     }
 

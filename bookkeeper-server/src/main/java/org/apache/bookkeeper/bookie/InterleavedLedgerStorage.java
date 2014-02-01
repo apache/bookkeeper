@@ -90,6 +90,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     // contain any active ledgers in them; and compacts the entry logs that
     // has lower remaining percentage to reclaim disk space.
     GarbageCollectorThread gcThread;
+    LedgerDirsManager ledgerDirsManager;
+    LedgerDirsManager indexDirsManager;
 
     // this indicates that a write has happened since the last flush
     private volatile boolean somethingWritten = false;
@@ -110,13 +112,19 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
 
         this.checkpointSource = checkpointSource;
         entryLogger = new EntryLogger(conf, ledgerDirsManager, this);
-        ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
-                null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
+        this.ledgerDirsManager = ledgerDirsManager;
+        this.indexDirsManager = null == indexDirsManager ? ledgerDirsManager : indexDirsManager;
+        ledgerCache = new LedgerCacheImpl(conf, activeLedgers, indexDirsManager, statsLogger);
         gcThread = new GarbageCollectorThread(conf, ledgerManager, this);
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         // Expose Stats
         getOffsetStats = statsLogger.getOpStatsLogger(STORAGE_GET_OFFSET);
         getEntryStats = statsLogger.getOpStatsLogger(STORAGE_GET_ENTRY);
+    }
+
+    @Override
+    public void reclaimDiskSpace() throws IOException {
+        gcThread.gc();
     }
 
     private LedgerDirsListener getLedgerDirsListener() {
@@ -189,6 +197,11 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     @Override
     public void start() {
         gcThread.start();
+        // register listener after gc thread is started.
+        ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
+        if (indexDirsManager != ledgerDirsManager) {
+            indexDirsManager.addLedgerDirsListener(getLedgerDirsListener());
+        }
     }
 
     @Override
