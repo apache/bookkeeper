@@ -224,6 +224,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-701: Improve exception handling of Bookkeeper threads (rakesh via sijie)
 
+      BOOKKEEPER-708: Shade protobuf library to avoid incompatible versions (rakesh, ivank via sijie)
+
     NEW FEATURE:
 
       BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj)
