@@ -72,10 +72,10 @@ public class BookieRequestProcessor implements RequestProcessor, BookkeeperInter
         this.bookie = bookie;
         this.readThreadPool =
             createExecutor(this.serverCfg.getNumReadWorkerThreads(),
-                           "BookieWriteThread-" + serverCfg.getBookiePort() + "-%d");
+                           "BookieReadThread-" + serverCfg.getBookiePort() + "-%d");
         this.writeThreadPool =
             createExecutor(this.serverCfg.getNumAddWorkerThreads(),
-                           "BookieReadThread-" + serverCfg.getBookiePort() + "-%d");
+                           "BookieWriteThread-" + serverCfg.getBookiePort() + "-%d");
         this.statsEnabled = serverCfg.isStatisticsEnabled();
     }
 

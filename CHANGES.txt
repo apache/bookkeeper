@@ -154,6 +154,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-703: Document all the settings added in BOOKKEEPER-656 (sijie)
 
+        BOOKKEEPER-727: Names of bookie write/read threads are backwards (ivank via fpj)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
