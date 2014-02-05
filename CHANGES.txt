@@ -56,6 +56,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-719: Inconsistent synchronization of org.apache.bookkeeper.stats.CodahaleMetricsProvider.metrics (sijie via ivank)
 
+      BOOKKEEPER-644: Provide a bookie address wrapper (sijie via fpj)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)

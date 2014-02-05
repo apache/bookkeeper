@@ -48,11 +48,11 @@ import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.jmx.BKMBeanRegistry;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.util.net.DNS;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
@@ -158,7 +158,7 @@ public class Bookie extends BookieCriticalThread {
     static class NopWriteCallback implements WriteCallback {
         @Override
         public void writeComplete(int rc, long ledgerId, long entryId,
-                                  InetSocketAddress addr, Object ctx) {
+                                  BookieSocketAddress addr, Object ctx) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
                           new Object[] { entryId, ledgerId, addr, rc });
@@ -225,7 +225,7 @@ public class Bookie extends BookieCriticalThread {
 
         @Override
         public void writeComplete(int rc, long ledgerId, long entryId,
-                                  InetSocketAddress addr, Object ctx) {
+                                  BookieSocketAddress addr, Object ctx) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
                           new Object[] { entryId, ledgerId, addr, rc });
@@ -352,16 +352,16 @@ public class Bookie extends BookieCriticalThread {
     /**
      * Return the configured address of the bookie.
      */
-    public static InetSocketAddress getBookieAddress(ServerConfiguration conf)
+    public static BookieSocketAddress getBookieAddress(ServerConfiguration conf)
             throws UnknownHostException {
         String iface = conf.getListeningInterface();
         if (iface == null) {
             iface = "default";
         }
-        InetSocketAddress addr = new InetSocketAddress(
-                DNS.getDefaultHost(iface),
-                conf.getBookiePort());
-        if (addr.getAddress().isLoopbackAddress()
+        InetSocketAddress inetAddr = new InetSocketAddress(DNS.getDefaultHost(iface), conf.getBookiePort());
+        BookieSocketAddress addr =
+            new BookieSocketAddress(inetAddr.getAddress().getHostAddress(), conf.getBookiePort());
+        if (addr.getSocketAddress().getAddress().isLoopbackAddress()
             && !conf.getAllowLoopback()) {
             throw new UnknownHostException("Trying to listen on loopback address, "
                     + addr + " but this is forbidden by default "
@@ -452,7 +452,7 @@ public class Bookie extends BookieCriticalThread {
     }
 
     private String getMyId() throws UnknownHostException {
-        return StringUtils.addrToString(Bookie.getBookieAddress(conf));
+        return Bookie.getBookieAddress(conf).toString();
     }
 
     void readJournal() throws IOException, BookieException {
@@ -1108,7 +1108,7 @@ public class Bookie extends BookieCriticalThread {
         int count;
 
         @Override
-        synchronized public void writeComplete(int rc, long l, long e, InetSocketAddress addr, Object ctx) {
+        synchronized public void writeComplete(int rc, long l, long e, BookieSocketAddress addr, Object ctx) {
             count--;
             if (count == 0) {
                 notifyAll();

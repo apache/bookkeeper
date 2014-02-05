@@ -19,8 +19,9 @@ package org.apache.bookkeeper.client;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.net.InetSocketAddress;
+
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -138,7 +139,7 @@ class PendingAddOp implements WriteCallback {
     }
 
     @Override
-    public void writeComplete(int rc, long ledgerId, long entryId, InetSocketAddress addr, Object ctx) {
+    public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
         int bookieIndex = (Integer) ctx;
 
         if (completed) {

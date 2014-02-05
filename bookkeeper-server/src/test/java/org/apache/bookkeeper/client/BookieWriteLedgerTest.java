@@ -20,7 +20,6 @@
  */
 package org.apache.bookkeeper.client;
 
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -28,6 +27,7 @@ import java.util.Random;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.MultiLedgerManagerMultiDigestTestCase;
 import org.junit.Before;
 import org.junit.Test;
@@ -107,7 +107,7 @@ public class BookieWriteLedgerTest extends
         startNewBookie();
 
         // Shutdown three bookies in the last ensemble and continue writing
-        ArrayList<InetSocketAddress> ensemble = lh.getLedgerMetadata()
+        ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata()
                 .getEnsembles().entrySet().iterator().next().getValue();
         killBookie(ensemble.get(0));
         killBookie(ensemble.get(1));
@@ -156,7 +156,7 @@ public class BookieWriteLedgerTest extends
         startNewBookie();
 
         // Shutdown three bookies in the last ensemble and continue writing
-        ArrayList<InetSocketAddress> ensemble = lh.getLedgerMetadata()
+        ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata()
                 .getEnsembles().entrySet().iterator().next().getValue();
         killBookie(ensemble.get(0));
         killBookie(ensemble.get(1));

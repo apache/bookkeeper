@@ -21,23 +21,19 @@ package org.apache.bookkeeper.client;
  *
  */
 
-import org.junit.*;
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.Enumeration;
-import java.util.concurrent.TimeUnit;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.LedgerEntry;
-import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.BKException;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BaseTestCase;
-
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -132,7 +128,7 @@ public class TestSpeculativeRead extends BaseTestCase {
 
         // sleep second bookie
         CountDownLatch sleepLatch = new CountDownLatch(1);
-        InetSocketAddress second = lnospec.getLedgerMetadata().getEnsembles().get(0L).get(1);
+        BookieSocketAddress second = lnospec.getLedgerMetadata().getEnsembles().get(0L).get(1);
         sleepBookie(second, sleepLatch);
 
         try {
@@ -287,10 +283,10 @@ public class TestSpeculativeRead extends BaseTestCase {
 
         LedgerHandle l = bkspec.openLedger(id, digestType, passwd);
 
-        ArrayList<InetSocketAddress> ensemble = l.getLedgerMetadata().getEnsembles().get(0L);
-        Set<InetSocketAddress> allHosts = new HashSet<InetSocketAddress>(ensemble);
-        Set<InetSocketAddress> noHost = new HashSet<InetSocketAddress>();
-        Set<InetSocketAddress> secondHostOnly = new HashSet<InetSocketAddress>();
+        ArrayList<BookieSocketAddress> ensemble = l.getLedgerMetadata().getEnsembles().get(0L);
+        Set<BookieSocketAddress> allHosts = new HashSet<BookieSocketAddress>(ensemble);
+        Set<BookieSocketAddress> noHost = new HashSet<BookieSocketAddress>();
+        Set<BookieSocketAddress> secondHostOnly = new HashSet<BookieSocketAddress>();
         secondHostOnly.add(ensemble.get(1));
         PendingReadOp.LedgerEntryRequest req0 = null, req2 = null, req4 = null;
         try {

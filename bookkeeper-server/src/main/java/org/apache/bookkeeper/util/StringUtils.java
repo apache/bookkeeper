@@ -19,7 +19,6 @@ package org.apache.bookkeeper.util;
  */
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 /**
  * Provided utilites for parsing network addresses, ledger-id from node paths
@@ -30,34 +29,6 @@ public class StringUtils {
 
     // Ledger Node Prefix
     static public final String LEDGER_NODE_PREFIX = "L";
-
-    /**
-     * Parses address into IP and port.
-     *
-     * @param addr
-     *            String
-     */
-
-    public static InetSocketAddress parseAddr(String s) throws IOException {
-
-        String parts[] = s.split(":");
-        if (parts.length != 2) {
-            throw new IOException(s + " does not have the form host:port");
-        }
-        int port;
-        try {
-            port = Integer.parseInt(parts[1]);
-        } catch (NumberFormatException e) {
-            throw new IOException(s + " does not have the form host:port");
-        }
-
-        InetSocketAddress addr = new InetSocketAddress(parts[0], port);
-        return addr;
-    }
-
-    public static String addrToString(InetSocketAddress addr) {
-        return addr.getAddress().getHostAddress() + ":" + addr.getPort();
-    }
 
     /**
      * Formats ledger ID according to ZooKeeper rules

@@ -17,7 +17,6 @@
  */
 package org.apache.bookkeeper.replication;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -30,10 +29,10 @@ import java.util.concurrent.CountDownLatch;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
-import org.apache.bookkeeper.util.StringUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,12 +74,12 @@ public class BookieLedgerIndexer {
                     public void operationComplete(final int rc,
                             LedgerMetadata ledgerMetadata) {
                         if (rc == BKException.Code.OK) {
-                            for (Map.Entry<Long, ArrayList<InetSocketAddress>> ensemble : ledgerMetadata
+                            for (Map.Entry<Long, ArrayList<BookieSocketAddress>> ensemble : ledgerMetadata
                                     .getEnsembles().entrySet()) {
-                                for (InetSocketAddress bookie : ensemble
+                                for (BookieSocketAddress bookie : ensemble
                                         .getValue()) {
                                     putLedger(bookie2ledgersMap,
-                                              StringUtils.addrToString(bookie),
+                                              bookie.toString(),
                                               ledgerId);
                                 }
                             }

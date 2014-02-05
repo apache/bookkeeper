@@ -17,12 +17,11 @@
  */
 package org.apache.bookkeeper.client;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Set;
 
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.commons.configuration.Configuration;
 
 /**
@@ -55,8 +54,8 @@ public interface EnsemblePlacementPolicy {
      *          All the bookies in the cluster available for readonly.
      * @return the dead bookies during this cluster change.
      */
-    public Set<InetSocketAddress> onClusterChanged(Set<InetSocketAddress> writableBookies,
-            Set<InetSocketAddress> readOnlyBookies);
+    public Set<BookieSocketAddress> onClusterChanged(Set<BookieSocketAddress> writableBookies,
+            Set<BookieSocketAddress> readOnlyBookies);
 
     /**
      * Choose <i>numBookies</i> bookies for ensemble. If the count is more than the number of available
@@ -71,8 +70,8 @@ public interface EnsemblePlacementPolicy {
      * @return list of bookies chosen as targets.
      * @throws BKNotEnoughBookiesException if not enough bookies available.
      */
-    public ArrayList<InetSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize,
-            Set<InetSocketAddress> excludeBookies) throws BKNotEnoughBookiesException;
+    public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize,
+            Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException;
 
     /**
      * Choose a new bookie to replace <i>bookieToReplace</i>. If no bookie available in the cluster,
@@ -85,6 +84,6 @@ public interface EnsemblePlacementPolicy {
      * @return the bookie chosen as target.
      * @throws BKNotEnoughBookiesException
      */
-    public InetSocketAddress replaceBookie(InetSocketAddress bookieToReplace,
-            Set<InetSocketAddress> excludeBookies) throws BKNotEnoughBookiesException;
+    public BookieSocketAddress replaceBookie(BookieSocketAddress bookieToReplace,
+            Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException;
 }

@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.client;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,36 +18,37 @@ package org.apache.bookkeeper.client;
  * under the License.
  *
  */
+package org.apache.bookkeeper.client;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Map;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Collections;
-import java.util.Random;
-
-import org.jboss.netty.buffer.ChannelBuffer;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import org.apache.bookkeeper.test.MultiLedgerManagerMultiDigestTestCase;
+import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.MSLedgerManagerFactory;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.bookkeeper.test.MultiLedgerManagerMultiDigestTestCase;
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This class tests the bookie recovery admin functionality.
@@ -244,7 +243,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         for (int i = 0; i < numEntries; i++) {
             lh.addEntry(data);
         }
-        InetSocketAddress bookieToKill = lh.getLedgerMetadata().getEnsemble(numEntries - 1).get(1);
+        BookieSocketAddress bookieToKill = lh.getLedgerMetadata().getEnsemble(numEntries - 1).get(1);
         killBookie(bookieToKill);
         startNewBookie();
         for (int i = 0; i < numEntries; i++) {
@@ -299,8 +298,10 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         writeEntriestoLedgers(numMsgs, 10, lhs);
 
         // Call the async recover bookie method.
-        InetSocketAddress bookieSrc = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), initialPort);
-        InetSocketAddress bookieDest = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), newBookiePort);
+        BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
+                initialPort);
+        BookieSocketAddress bookieDest = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
+                newBookiePort);
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc + ") and replicate it to the new one ("
                  + bookieDest + ")");
         // Initiate the sync object
@@ -355,8 +356,9 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         writeEntriestoLedgers(numMsgs, 10, lhs);
 
         // Call the async recover bookie method.
-        InetSocketAddress bookieSrc = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), initialPort);
-        InetSocketAddress bookieDest = null;
+        BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
+                initialPort);
+        BookieSocketAddress bookieDest = null;
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc
                  + ") and replicate it to a random available one");
         // Initiate the sync object
@@ -408,8 +410,10 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         writeEntriestoLedgers(numMsgs, 10, lhs);
 
         // Call the sync recover bookie method.
-        InetSocketAddress bookieSrc = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), initialPort);
-        InetSocketAddress bookieDest = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), newBookiePort);
+        BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
+                initialPort);
+        BookieSocketAddress bookieDest = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
+                newBookiePort);
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc + ") and replicate it to the new one ("
                  + bookieDest + ")");
         bkAdmin.recoverBookieData(bookieSrc, bookieDest);
@@ -454,8 +458,9 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         writeEntriestoLedgers(numMsgs, 10, lhs);
 
         // Call the sync recover bookie method.
-        InetSocketAddress bookieSrc = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), initialPort);
-        InetSocketAddress bookieDest = null;
+        BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
+                initialPort);
+        BookieSocketAddress bookieDest = null;
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc
                  + ") and replicate it to a random available one");
         bkAdmin.recoverBookieData(bookieSrc, bookieDest);
@@ -476,7 +481,6 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         @Override
         public void readEntryComplete(int rc, long ledgerId, long entryId, ChannelBuffer buffer, Object ctx) {
             if (LOG.isDebugEnabled()) {
-                InetSocketAddress addr = (InetSocketAddress)ctx;
                 LOG.debug("Got " + rc + " for ledger " + ledgerId + " entry " + entryId + " from " + ctx);
             }
             if (rc == BKException.Code.OK) {
@@ -498,7 +502,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
     private boolean verifyFullyReplicated(LedgerHandle lh, long untilEntry) throws Exception {
         LedgerMetadata md = getLedgerMetadata(lh);
 
-        Map<Long, ArrayList<InetSocketAddress>> ensembles = md.getEnsembles();
+        Map<Long, ArrayList<BookieSocketAddress>> ensembles = md.getEnsembles();
 
         HashMap<Long, Long> ranges = new HashMap<Long, Long>();
         ArrayList<Long> keyList = Collections.list(
@@ -509,7 +513,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         }
         ranges.put(keyList.get(keyList.size()-1), untilEntry);
 
-        for (Map.Entry<Long, ArrayList<InetSocketAddress>> e : ensembles.entrySet()) {
+        for (Map.Entry<Long, ArrayList<BookieSocketAddress>> e : ensembles.entrySet()) {
             int quorum = md.getAckQuorumSize();
             long startEntryId = e.getKey();
             long endEntryId = ranges.get(startEntryId);
@@ -518,7 +522,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
 
             ReplicationVerificationCallback cb = new ReplicationVerificationCallback(numRequests);
             for (long i = startEntryId; i < endEntryId; i++) {
-                for (InetSocketAddress addr : e.getValue()) {
+                for (BookieSocketAddress addr : e.getValue()) {
                     bkc.bookieClient.readEntry(addr, lh.getId(), i, cb, addr);
                 }
             }
@@ -577,11 +581,11 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         long numDupes = 0;
         for (LedgerHandle lh : lhs) {
             LedgerMetadata md = getLedgerMetadata(lh);
-            for (Map.Entry<Long, ArrayList<InetSocketAddress>> e : md.getEnsembles().entrySet()) {
-                HashSet<InetSocketAddress> set = new HashSet<InetSocketAddress>();
+            for (Map.Entry<Long, ArrayList<BookieSocketAddress>> e : md.getEnsembles().entrySet()) {
+                HashSet<BookieSocketAddress> set = new HashSet<BookieSocketAddress>();
                 long fragment = e.getKey();
 
-                for (InetSocketAddress addr : e.getValue()) {
+                for (BookieSocketAddress addr : e.getValue()) {
                     if (set.contains(addr)) {
                         LOG.error("Dupe " + addr + " found in ensemble for fragment " + fragment
                                 + " of ledger " + lh.getId());
@@ -610,15 +614,15 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         closeLedgers(lhs);
 
         // Shutdown last bookie server in last ensemble
-        ArrayList<InetSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
+        ArrayList<BookieSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
                                                        .entrySet().iterator().next().getValue();
-        InetSocketAddress bookieToKill = lastEnsemble.get(lastEnsemble.size() - 1);
+        BookieSocketAddress bookieToKill = lastEnsemble.get(lastEnsemble.size() - 1);
         killBookie(bookieToKill);
 
         // start a new bookie
         startNewBookie();
 
-        InetSocketAddress bookieDest = null;
+        BookieSocketAddress bookieDest = null;
         LOG.info("Now recover the data on the killed bookie (" + bookieToKill
                + ") and replicate it to a random available one");
 
@@ -640,15 +644,15 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         writeEntriestoLedgers(numMsgs, 0, lhs);
 
         // Shutdown the first bookie server
-        ArrayList<InetSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
+        ArrayList<BookieSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
                                                        .entrySet().iterator().next().getValue();
-        InetSocketAddress bookieToKill = lastEnsemble.get(lastEnsemble.size() - 1);
+        BookieSocketAddress bookieToKill = lastEnsemble.get(lastEnsemble.size() - 1);
         killBookie(bookieToKill);
 
         // start a new bookie
         startNewBookie();
 
-        InetSocketAddress bookieDest = null;
+        BookieSocketAddress bookieDest = null;
         LOG.info("Now recover the data on the killed bookie (" + bookieToKill
                + ") and replicate it to a random available one");
 
@@ -677,13 +681,13 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         writeEntriestoLedgers(numMsgs, 0, lhs);
 
         // Shutdown the first bookie server
-        ArrayList<InetSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
+        ArrayList<BookieSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
                                                        .entrySet().iterator().next().getValue();
         // removed bookie
-        InetSocketAddress bookieToKill = lastEnsemble.get(0);
+        BookieSocketAddress bookieToKill = lastEnsemble.get(0);
         killBookie(bookieToKill);
         // temp failure
-        InetSocketAddress bookieToKill2 = lastEnsemble.get(1);
+        BookieSocketAddress bookieToKill2 = lastEnsemble.get(1);
         ServerConfiguration conf2 = killBookie(bookieToKill2);
 
         // start a new bookie
@@ -720,7 +724,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         List<LedgerHandle> newLhs = openLedgers(lhs);
         for (LedgerHandle newLh : newLhs) {
             // first ensemble should contains bookieToKill2 and not contain bookieToKill
-            Map.Entry<Long, ArrayList<InetSocketAddress>> entry =
+            Map.Entry<Long, ArrayList<BookieSocketAddress>> entry =
                 newLh.getLedgerMetadata().getEnsembles().entrySet().iterator().next();
             assertFalse(entry.getValue().contains(bookieToKill));
             assertTrue(entry.getValue().contains(bookieToKill2));
@@ -745,8 +749,8 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         bs.remove(0);
 
         // Call the async recover bookie method.
-        InetSocketAddress bookieSrc = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), initialPort);
-        InetSocketAddress bookieDest = null;
+        BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
+                initialPort);
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc
                  + ") and replicate it to a random available one");
         // Initiate the sync object
@@ -774,7 +778,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         // Shutdown the first bookie server
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
         int removeIndex = r.nextInt(bs.size());
-        InetSocketAddress bookieSrc = bs.get(removeIndex).getLocalAddress();
+        BookieSocketAddress bookieSrc = bs.get(removeIndex).getLocalAddress();
         bs.get(removeIndex).shutdown();
         bs.remove(removeIndex);
 
@@ -808,7 +812,6 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         byte[] passwdCorrect = "AAAAAA".getBytes();
         byte[] passwdBad = "BBBBBB".getBytes();
         DigestType digestCorrect = digestType;
-        DigestType digestBad = (digestType == DigestType.MAC) ? DigestType.CRC32 : DigestType.MAC;
 
         LedgerHandle lh = bkc.createLedger(3, 2, digestCorrect, passwdCorrect);
         long ledgerId = lh.getId();
@@ -817,7 +820,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         }
         lh.close();
 
-        InetSocketAddress bookieSrc = bs.get(0).getLocalAddress();
+        BookieSocketAddress bookieSrc = bs.get(0).getLocalAddress();
         bs.get(0).shutdown();
         bs.remove(0);
         startNewBookie();
@@ -919,9 +922,9 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         bkc41.close();
 
         // Startup a new bookie server
-        int newBookiePort = startNewBookie();
+        startNewBookie();
         int removeIndex = 0;
-        InetSocketAddress bookieSrc = bs.get(removeIndex).getLocalAddress();
+        BookieSocketAddress bookieSrc = bs.get(removeIndex).getLocalAddress();
         bs.get(removeIndex).shutdown();
         bs.remove(removeIndex);
 

@@ -30,14 +30,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
@@ -45,7 +45,6 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.MultiLedgerManagerTestCase;
-import org.apache.bookkeeper.util.StringUtils;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -111,7 +110,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
 
     private void startAuditorElectors() throws Exception {
         for (BookieServer bserver : bs) {
-            String addr = StringUtils.addrToString(bserver.getLocalAddress());
+            String addr = bserver.getLocalAddress().toString();
             AuditorElector auditorElector = new AuditorElector(addr,
                     baseConf, zkc);
             auditorElectors.put(addr, auditorElector);
@@ -346,7 +345,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
 
     private String shutdownBookie(int bkShutdownIndex) throws Exception {
         BookieServer bkServer = bs.get(bkShutdownIndex);
-        String bookieAddr = StringUtils.addrToString(bkServer.getLocalAddress());
+        String bookieAddr = bkServer.getLocalAddress().toString();
         LOG.debug("Shutting down bookie:" + bookieAddr);
         killBookie(bkShutdownIndex);
         auditorElectors.get(bookieAddr).shutdown();

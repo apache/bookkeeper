@@ -20,34 +20,31 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.BufferedWriter;
-import java.io.IOException;
 import java.io.StringReader;
-
 import java.net.UnknownHostException;
 
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.Stat;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.ZooDefs.Ids;
-
-import org.apache.bookkeeper.util.BookKeeperConstants;
-import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.DataFormats.CookieFormat;
-
+import org.apache.bookkeeper.util.BookKeeperConstants;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Charsets.UTF_8;
 import com.google.protobuf.TextFormat;
 
 /**
@@ -209,7 +206,7 @@ class Cookie {
             throws UnknownHostException {
         Cookie c = new Cookie();
         c.layoutVersion = CURRENT_COOKIE_LAYOUT_VERSION;
-        c.bookieHost = StringUtils.addrToString(Bookie.getBookieAddress(conf));
+        c.bookieHost = Bookie.getBookieAddress(conf).toString();
         c.journalDir = conf.getJournalDirName();
         StringBuilder b = new StringBuilder();
         String[] dirs = conf.getLedgerDirNames();
@@ -257,6 +254,6 @@ class Cookie {
             throws UnknownHostException {
         String bookieCookiePath = conf.getZkLedgersRootPath() + "/"
                 + BookKeeperConstants.COOKIE_NODE;
-        return bookieCookiePath + "/" + StringUtils.addrToString(Bookie.getBookieAddress(conf));
+        return bookieCookiePath + "/" + Bookie.getBookieAddress(conf);
     }
 }

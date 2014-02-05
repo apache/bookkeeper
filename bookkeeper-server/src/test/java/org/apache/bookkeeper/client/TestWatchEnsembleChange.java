@@ -21,12 +21,12 @@
 package org.apache.bookkeeper.client;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -52,9 +52,9 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         LedgerHandle readLh = bkc.openLedgerNoRecovery(lh.getId(), digestType, "".getBytes());
         long lastLAC = readLh.getLastAddConfirmed();
         assertEquals(numEntries - 2, lastLAC);
-        ArrayList<InetSocketAddress> ensemble =
+        ArrayList<BookieSocketAddress> ensemble =
                 lh.getLedgerMetadata().currentEnsemble;
-        for (InetSocketAddress addr : ensemble) {
+        for (BookieSocketAddress addr : ensemble) {
             killBookie(addr);
         }
         // write another batch of entries, which will trigger ensemble change

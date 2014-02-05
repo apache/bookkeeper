@@ -20,6 +20,26 @@
  */
 package org.apache.bookkeeper.replication;
 
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieAccessor;
+import org.apache.bookkeeper.bookie.IndexPersistenceMgr;
+import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
+import org.apache.zookeeper.ZooKeeper;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
@@ -32,27 +52,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.bookie.BookieAccessor;
-import org.apache.bookkeeper.bookie.IndexPersistenceMgr;
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.LedgerManagerFactory;
-import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.util.StringUtils;
-import org.apache.bookkeeper.util.ZkUtils;
-import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
-import org.apache.zookeeper.ZooKeeper;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This test verifies that the period check on the auditor
@@ -81,7 +80,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             ServerConfiguration conf = new ServerConfiguration(bsConfs.get(i));
             conf.setAuditorPeriodicCheckInterval(CHECK_INTERVAL);
 
-            String addr = StringUtils.addrToString(bs.get(i).getLocalAddress());
+            String addr = bs.get(i).getLocalAddress().toString();
 
             ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(10000);
             ZooKeeper zk = ZkUtils.createConnectedZookeeperClient(
@@ -309,7 +308,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             lh.close();
         }
         final Auditor auditor = new Auditor(
-                StringUtils.addrToString(Bookie.getBookieAddress(bsConfs.get(0))),
+                Bookie.getBookieAddress(bsConfs.get(0)).toString(),
                 bsConfs.get(0), zkc);
         final AtomicBoolean exceptionCaught = new AtomicBoolean(false);
         final CountDownLatch latch = new CountDownLatch(1);

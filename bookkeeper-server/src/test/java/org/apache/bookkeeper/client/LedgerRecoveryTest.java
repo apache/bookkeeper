@@ -22,7 +22,6 @@ package org.apache.bookkeeper.client;
  */
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +32,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.test.BaseTestCase;
 import org.junit.Test;
@@ -179,7 +179,7 @@ public class LedgerRecoveryTest extends BaseTestCase {
         // kill first bookie server to start a fake one to simulate a slow bookie
         // and failed to add entry on crash
         // until write succeed
-        InetSocketAddress host = beforelh.getLedgerMetadata().currentEnsemble.get(slowBookieIdx);
+        BookieSocketAddress host = beforelh.getLedgerMetadata().currentEnsemble.get(slowBookieIdx);
         ServerConfiguration conf = killBookie(host);
 
         Bookie fakeBookie = new Bookie(conf) {
@@ -253,7 +253,7 @@ public class LedgerRecoveryTest extends BaseTestCase {
         bs.add(startBookie(conf, deadBookie1));
 
         // kill first bookie server
-        InetSocketAddress bookie1 = lhbefore.getLedgerMetadata().currentEnsemble.get(0);
+        BookieSocketAddress bookie1 = lhbefore.getLedgerMetadata().currentEnsemble.get(0);
         ServerConfiguration conf1 = killBookie(bookie1);
 
         // Try to recover and fence the ledger after killing one bookie in the
@@ -268,7 +268,7 @@ public class LedgerRecoveryTest extends BaseTestCase {
         // restart the first server, kill the second
         bsConfs.add(conf1);
         bs.add(startBookie(conf1));
-        InetSocketAddress bookie2 = lhbefore.getLedgerMetadata().currentEnsemble.get(1);
+        BookieSocketAddress bookie2 = lhbefore.getLedgerMetadata().currentEnsemble.get(1);
         ServerConfiguration conf2 = killBookie(bookie2);
 
         // using async, because this could trigger an assertion
@@ -334,8 +334,8 @@ public class LedgerRecoveryTest extends BaseTestCase {
         bs.add(startBookie(conf, deadBookie1));
 
         // kill first bookie server
-        InetSocketAddress bookie1 = lhbefore.getLedgerMetadata().currentEnsemble.get(0);
-        ServerConfiguration conf1 = killBookie(bookie1);
+        BookieSocketAddress bookie1 = lhbefore.getLedgerMetadata().currentEnsemble.get(0);
+        killBookie(bookie1);
 
         // Try to recover and fence the ledger after killing one bookie in the
         // ensemble in the ensemble, and another bookie is available in zk but not writtable
@@ -386,9 +386,9 @@ public class LedgerRecoveryTest extends BaseTestCase {
             fail("Failed to add " + numEntries + " to ledger handle " + lh.getId());
         }
         // kill first 2 bookies to replace bookies
-        InetSocketAddress bookie1 = lh.getLedgerMetadata().currentEnsemble.get(0);
+        BookieSocketAddress bookie1 = lh.getLedgerMetadata().currentEnsemble.get(0);
         ServerConfiguration conf1 = killBookie(bookie1);
-        InetSocketAddress bookie2 = lh.getLedgerMetadata().currentEnsemble.get(1);
+        BookieSocketAddress bookie2 = lh.getLedgerMetadata().currentEnsemble.get(1);
         ServerConfiguration conf2 = killBookie(bookie2);
 
         // replace these two bookies

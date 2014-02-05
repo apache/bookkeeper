@@ -18,12 +18,10 @@
  * under the License.
  *
  */
-
 package org.apache.bookkeeper.test;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Random;

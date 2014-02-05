@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.client;
 
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,6 +30,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.conf.Configurable;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.CachedDNSToSwitchMapping;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
@@ -38,7 +38,6 @@ import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.net.NodeBase;
 import org.apache.bookkeeper.net.ScriptBasedMapping;
 import org.apache.bookkeeper.util.ReflectionUtils;
-import org.apache.bookkeeper.util.StringUtils;
 import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +79,7 @@ public class RackawareEnsemblePlacementPolicy implements EnsemblePlacementPolicy
         /**
          * @return list of addresses representing the ensemble
          */
-        public ArrayList<InetSocketAddress> toList();
+        public ArrayList<BookieSocketAddress> toList();
     }
 
     protected static class TruePredicate implements Predicate {
@@ -97,7 +96,7 @@ public class RackawareEnsemblePlacementPolicy implements EnsemblePlacementPolicy
     protected static class EnsembleForReplacement implements Ensemble {
 
         public static final EnsembleForReplacement instance = new EnsembleForReplacement();
-        static final ArrayList<InetSocketAddress> EMPTY_LIST = new ArrayList<InetSocketAddress>(0);
+        static final ArrayList<BookieSocketAddress> EMPTY_LIST = new ArrayList<BookieSocketAddress>(0);
 
         @Override
         public void addBookie(BookieNode node) {
@@ -105,7 +104,7 @@ public class RackawareEnsemblePlacementPolicy implements EnsemblePlacementPolicy
         }
 
         @Override
-        public ArrayList<InetSocketAddress> toList() {
+        public ArrayList<BookieSocketAddress> toList() {
             return EMPTY_LIST;
         }
 
@@ -181,8 +180,8 @@ public class RackawareEnsemblePlacementPolicy implements EnsemblePlacementPolicy
         }
 
         @Override
-        public ArrayList<InetSocketAddress> toList() {
-            ArrayList<InetSocketAddress> addresses = new ArrayList<InetSocketAddress>(ensembleSize);
+        public ArrayList<BookieSocketAddress> toList() {
+            ArrayList<BookieSocketAddress> addresses = new ArrayList<BookieSocketAddress>(ensembleSize);
             for (BookieNode bn : chosenNodes) {
                 addresses.add(bn.getAddr());
             }
@@ -198,20 +197,20 @@ public class RackawareEnsemblePlacementPolicy implements EnsemblePlacementPolicy
 
     protected static class BookieNode implements Node {
 
-        private final InetSocketAddress addr; // identifier of a bookie node.
+        private final BookieSocketAddress addr; // identifier of a bookie node.
 
         private int level; // the level in topology tree
         private Node parent; // its parent in topology tree
         private String location = NetworkTopology.DEFAULT_RACK; // its network location
         private final String name;
 
-        BookieNode(InetSocketAddress addr, String networkLoc) {
+        BookieNode(BookieSocketAddress addr, String networkLoc) {
             this.addr = addr;
-            this.name = StringUtils.addrToString(addr);
+            this.name = addr.toString();
             setNetworkLocation(networkLoc);
         }
 
-        public InetSocketAddress getAddr() {
+        public BookieSocketAddress getAddr() {
             return addr;
         }
 
@@ -292,18 +291,18 @@ public class RackawareEnsemblePlacementPolicy implements EnsemblePlacementPolicy
     // for now, we just maintain the writable bookies' topology
     private final NetworkTopology topology;
     private DNSToSwitchMapping dnsResolver;
-    private final Map<InetSocketAddress, BookieNode> knownBookies;
+    private final Map<BookieSocketAddress, BookieNode> knownBookies;
     private BookieNode localNode;
     private final ReentrantReadWriteLock rwLock;
 
     public RackawareEnsemblePlacementPolicy() {
         topology = new NetworkTopology();
-        knownBookies = new HashMap<InetSocketAddress, BookieNode>();
+        knownBookies = new HashMap<BookieSocketAddress, BookieNode>();
 
         rwLock = new ReentrantReadWriteLock();
     }
 
-    private BookieNode createBookieNode(InetSocketAddress addr) {
+    private BookieNode createBookieNode(BookieSocketAddress addr) {
         return new BookieNode(addr, resolveNetworkLocation(addr));
     }
 
@@ -322,7 +321,7 @@ public class RackawareEnsemblePlacementPolicy implements EnsemblePlacementPolicy
 
         BookieNode bn;
         try {
-            bn = createBookieNode(new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), 0));
+            bn = createBookieNode(new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(), 0));
         } catch (UnknownHostException e) {
             LOG.error("Failed to get local host address : ", e);
             bn = null;
@@ -338,12 +337,12 @@ public class RackawareEnsemblePlacementPolicy implements EnsemblePlacementPolicy
         // do nothing
     }
 
-    private String resolveNetworkLocation(InetSocketAddress addr) {
+    private String resolveNetworkLocation(BookieSocketAddress addr) {
         List<String> names = new ArrayList<String>(1);
         if (dnsResolver instanceof CachedDNSToSwitchMapping) {
-            names.add(addr.getAddress().getHostAddress());
+            names.add(addr.getSocketAddress().getAddress().getHostAddress());
         } else {
-            names.add(addr.getHostName());
+            names.add(addr.getSocketAddress().getHostName());
         }
         // resolve network addresses
         List<String> rNames = dnsResolver.resolve(names);
@@ -359,12 +358,12 @@ public class RackawareEnsemblePlacementPolicy implements EnsemblePlacementPolicy
     }
 
     @Override
-    public Set<InetSocketAddress> onClusterChanged(Set<InetSocketAddress> writableBookies,
-            Set<InetSocketAddress> readOnlyBookies) {
+    public Set<BookieSocketAddress> onClusterChanged(Set<BookieSocketAddress> writableBookies,
+            Set<BookieSocketAddress> readOnlyBookies) {
         rwLock.writeLock().lock();
         try {
-            ImmutableSet<InetSocketAddress> joinedBookies, leftBookies, deadBookies;
-            Set<InetSocketAddress> oldBookieSet = knownBookies.keySet();
+            ImmutableSet<BookieSocketAddress> joinedBookies, leftBookies, deadBookies;
+            Set<BookieSocketAddress> oldBookieSet = knownBookies.keySet();
             // left bookies : bookies in known bookies, but not in new writable bookie cluster.
             leftBookies = Sets.difference(oldBookieSet, writableBookies).immutableCopy();
             // joined bookies : bookies in new writable bookie cluster, but not in known bookies
@@ -378,7 +377,7 @@ public class RackawareEnsemblePlacementPolicy implements EnsemblePlacementPolicy
             }
 
             // node left
-            for (InetSocketAddress addr : leftBookies) {
+            for (BookieSocketAddress addr : leftBookies) {
                 BookieNode node = knownBookies.remove(addr);
                 topology.remove(node);
                 if (LOG.isDebugEnabled()) {
@@ -387,7 +386,7 @@ public class RackawareEnsemblePlacementPolicy implements EnsemblePlacementPolicy
             }
 
             // node joined
-            for (InetSocketAddress addr : joinedBookies) {
+            for (BookieSocketAddress addr : joinedBookies) {
                 BookieNode node = createBookieNode(addr);
                 topology.add(node);
                 knownBookies.put(addr, node);
@@ -402,9 +401,9 @@ public class RackawareEnsemblePlacementPolicy implements EnsemblePlacementPolicy
         }
     }
 
-    private Set<Node> convertBookiesToNodes(Set<InetSocketAddress> excludeBookies) {
+    private Set<Node> convertBookiesToNodes(Set<BookieSocketAddress> excludeBookies) {
         Set<Node> nodes = new HashSet<Node>();
-        for (InetSocketAddress addr : excludeBookies) {
+        for (BookieSocketAddress addr : excludeBookies) {
             BookieNode bn = knownBookies.get(addr);
             if (null == bn) {
                 bn = createBookieNode(addr);
@@ -415,8 +414,8 @@ public class RackawareEnsemblePlacementPolicy implements EnsemblePlacementPolicy
     }
 
     @Override
-    public ArrayList<InetSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize,
-            Set<InetSocketAddress> excludeBookies) throws BKNotEnoughBookiesException {
+    public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize,
+            Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException {
         rwLock.readLock().lock();
         try {
             Set<Node> excludeNodes = convertBookiesToNodes(excludeBookies);
@@ -427,7 +426,7 @@ public class RackawareEnsemblePlacementPolicy implements EnsemblePlacementPolicy
             if (numRacks < 2) {
                 List<BookieNode> bns = selectRandom(ensembleSize, excludeNodes,
                         EnsembleForReplacement.instance);
-                ArrayList<InetSocketAddress> addrs = new ArrayList<InetSocketAddress>(ensembleSize);
+                ArrayList<BookieSocketAddress> addrs = new ArrayList<BookieSocketAddress>(ensembleSize);
                 for (BookieNode bn : bns) {
                     addrs.add(bn.addr);
                 }
@@ -454,8 +453,8 @@ public class RackawareEnsemblePlacementPolicy implements EnsemblePlacementPolicy
     }
 
     @Override
-    public InetSocketAddress replaceBookie(InetSocketAddress bookieToReplace,
-            Set<InetSocketAddress> excludeBookies) throws BKNotEnoughBookiesException {
+    public BookieSocketAddress replaceBookie(BookieSocketAddress bookieToReplace,
+            Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException {
         rwLock.readLock().lock();
         try {
             BookieNode bn = knownBookies.get(bookieToReplace);

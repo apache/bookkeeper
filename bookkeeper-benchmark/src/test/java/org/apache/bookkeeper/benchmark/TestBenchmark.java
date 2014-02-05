@@ -24,27 +24,25 @@ import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.Assert;
 
-import java.net.InetSocketAddress;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.util.LocalBookKeeper;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import java.util.Arrays;
-import java.util.List;
-
+import org.apache.bookkeeper.util.LocalBookKeeper;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
+import org.apache.zookeeper.ZooKeeper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TestBenchmark extends BookKeeperClusterTestCase {
     protected static final Logger LOG = LoggerFactory.getLogger(TestBenchmark.class);
@@ -68,9 +66,9 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
 
     @Test(timeout=60000)
     public void testBookie() throws Exception {
-        InetSocketAddress bookie = getBookie(0);
+        BookieSocketAddress bookie = getBookie(0);
         BenchBookie.main(new String[] {
-                "--host", bookie.getHostName(),
+                "--host", bookie.getSocketAddress().getHostName(),
                 "--port", String.valueOf(bookie.getPort()),
                 "--zookeeper", zkUtil.getZooKeeperConnectString()
                 });

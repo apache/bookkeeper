@@ -20,54 +20,46 @@
  */
 package org.apache.bookkeeper.replication;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Set;
-
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-
-import java.net.InetSocketAddress;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.client.BookKeeperAdmin;
-import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.LedgerHandle;
+import com.google.common.collect.Sets;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.client.BookiesListener;
 import org.apache.bookkeeper.client.LedgerChecker;
 import org.apache.bookkeeper.client.LedgerFragment;
-import org.apache.bookkeeper.client.BookiesListener;
-import org.apache.bookkeeper.util.StringUtils;
-
-import org.apache.bookkeeper.util.ZkUtils;
-import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
-
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
-
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.collections.CollectionUtils;
-import com.google.common.collect.Sets;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.AsyncCallback;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Auditor is a single entity in the entire Bookie cluster and will be watching
@@ -115,7 +107,6 @@ public class Auditor implements BookiesListener {
 
             this.bkc = new BookKeeper(new ClientConfiguration(conf), zkc);
             this.admin = new BookKeeperAdmin(bkc);
-
         } catch (CompatibilityException ce) {
             throw new UnavailableException(
                     "CompatibilityException while initializing Auditor", ce);
@@ -272,13 +263,13 @@ public class Auditor implements BookiesListener {
         // Watching on only available bookies is sufficient, as changes in readonly bookies also changes in available
         // bookies
         admin.notifyBookiesChanged(this);
-        Collection<InetSocketAddress> availableBkAddresses = admin.getAvailableBookies();
-        Collection<InetSocketAddress> readOnlyBkAddresses = admin.getReadOnlyBookies();
+        Collection<BookieSocketAddress> availableBkAddresses = admin.getAvailableBookies();
+        Collection<BookieSocketAddress> readOnlyBkAddresses = admin.getReadOnlyBookies();
         availableBkAddresses.addAll(readOnlyBkAddresses);
 
         List<String> availableBookies = new ArrayList<String>();
-        for (InetSocketAddress addr : availableBkAddresses) {
-            availableBookies.add(StringUtils.addrToString(addr));
+        for (BookieSocketAddress addr : availableBkAddresses) {
+            availableBookies.add(addr.toString());
         }
         return availableBookies;
     }
@@ -352,13 +343,12 @@ public class Auditor implements BookiesListener {
         public void operationComplete(int rc, Set<LedgerFragment> fragments) {
             try {
                 if (rc == BKException.Code.OK) {
-                    Set<InetSocketAddress> bookies = Sets.newHashSet();
+                    Set<BookieSocketAddress> bookies = Sets.newHashSet();
                     for (LedgerFragment f : fragments) {
                         bookies.add(f.getAddress());
                     }
-                    for (InetSocketAddress bookie : bookies) {
-                        publishSuspectedLedgers(StringUtils.addrToString(bookie),
-                                                Sets.newHashSet(lh.getId()));
+                    for (BookieSocketAddress bookie : bookies) {
+                        publishSuspectedLedgers(bookie.toString(), Sets.newHashSet(lh.getId()));
                     }
                 }
                 lh.close();
@@ -508,7 +498,7 @@ public class Auditor implements BookiesListener {
 
     /**
      * Return true if auditor is running otherwise return false
-     * 
+     *
      * @return auditor status
      */
     public boolean isRunning() {

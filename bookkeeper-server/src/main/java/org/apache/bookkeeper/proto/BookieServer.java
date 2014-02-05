@@ -22,11 +22,8 @@ package org.apache.bookkeeper.proto;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
-
-import org.apache.zookeeper.KeeperException;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
@@ -34,22 +31,22 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.jmx.BKMBeanRegistry;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
-
-import com.google.common.annotations.VisibleForTesting;
-
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.cli.BasicParser;
-import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * Implements the server-side part of the BookKeeper protocol.
@@ -112,7 +109,7 @@ public class BookieServer {
     }
 
     @VisibleForTesting
-    public InetSocketAddress getLocalAddress() throws UnknownHostException {
+    public BookieSocketAddress getLocalAddress() throws UnknownHostException {
         return Bookie.getBookieAddress(conf);
     }
 

@@ -19,10 +19,11 @@
  */
 package org.apache.bookkeeper.client;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
+
+import org.apache.bookkeeper.net.BookieSocketAddress;
 
 /**
  * Represents the entries of a segment of a ledger which are stored on a single
@@ -32,7 +33,7 @@ import java.util.SortedMap;
  */
 public class LedgerFragment {
     private final int bookieIndex;
-    private final List<InetSocketAddress> ensemble;
+    private final List<BookieSocketAddress> ensemble;
     private final long firstEntryId;
     private final long lastKnownEntryId;
     private final long ledgerId;
@@ -47,7 +48,7 @@ public class LedgerFragment {
         this.bookieIndex = bookieIndex;
         this.ensemble = lh.getLedgerMetadata().getEnsemble(firstEntryId);
         this.schedule = lh.getDistributionSchedule();
-        SortedMap<Long, ArrayList<InetSocketAddress>> ensembles = lh
+        SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles = lh
                 .getLedgerMetadata().getEnsembles();
         this.isLedgerClosed = lh.getLedgerMetadata().isClosed()
                 || !ensemble.equals(ensembles.get(ensembles.lastKey()));
@@ -82,7 +83,7 @@ public class LedgerFragment {
     /**
      * Gets the failedBookie address
      */
-    public InetSocketAddress getAddress() {
+    public BookieSocketAddress getAddress() {
         return ensemble.get(bookieIndex);
     }
     
@@ -133,7 +134,7 @@ public class LedgerFragment {
      * 
      * @return the ensemble for the segment which this fragment is a part of
      */
-    public List<InetSocketAddress> getEnsemble() {
+    public List<BookieSocketAddress> getEnsemble() {
         return this.ensemble;
     }
 

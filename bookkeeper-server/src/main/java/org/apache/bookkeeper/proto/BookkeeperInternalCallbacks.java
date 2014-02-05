@@ -21,11 +21,11 @@
 
 package org.apache.bookkeeper.proto;
 
-import java.net.InetSocketAddress;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.zookeeper.AsyncCallback;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.slf4j.Logger;
@@ -62,7 +62,7 @@ public class BookkeeperInternalCallbacks {
     }
 
     public interface WriteCallback {
-        void writeComplete(int rc, long ledgerId, long entryId, InetSocketAddress addr, Object ctx);
+        void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx);
     }
 
     public interface GenericCallback<T> {

@@ -21,28 +21,23 @@
 
 package org.apache.bookkeeper.proto;
 
-import org.apache.bookkeeper.util.OrderedSafeExecutor;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.jboss.netty.buffer.ChannelBuffer;
+import static org.junit.Assert.assertEquals;
 
-import org.apache.bookkeeper.client.BKException;
-
-import org.apache.bookkeeper.test.BaseTestCase;
-import org.apache.bookkeeper.test.BookieClientTest;
-import static org.junit.Assert.*;
-import org.junit.Test;
-import org.junit.Before;
-import org.junit.After;
-
-import java.util.concurrent.TimeUnit;
-
+import java.net.InetAddress;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.net.InetSocketAddress;
-import java.net.InetAddress;
+
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import org.apache.bookkeeper.test.BookieClientTest;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class TestProtoVersions {
     private BookieClientTest base;
@@ -60,7 +55,8 @@ public class TestProtoVersions {
 
     private void testVersion(byte version, int expectedresult) throws Exception {
         PerChannelBookieClient bc = new PerChannelBookieClient(base.executor, base.channelFactory, 
-                new InetSocketAddress(InetAddress.getLocalHost(), base.port), new AtomicLong(0));
+                new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(), base.port),
+                new AtomicLong(0));
         final AtomicInteger outerrc = new AtomicInteger(-1);
         final CountDownLatch connectLatch = new CountDownLatch(1);
         bc.connectIfNeededAndDoOp(new GenericCallback<Void>() {

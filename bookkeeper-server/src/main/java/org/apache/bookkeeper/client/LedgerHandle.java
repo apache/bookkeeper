@@ -22,7 +22,6 @@ package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Charsets.UTF_8;
 
-import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +35,7 @@ import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State;
@@ -677,11 +677,11 @@ public class LedgerHandle {
 
     }
 
-    ArrayList<InetSocketAddress> replaceBookieInMetadata(final InetSocketAddress addr, final int bookieIndex)
+    ArrayList<BookieSocketAddress> replaceBookieInMetadata(final BookieSocketAddress addr, final int bookieIndex)
             throws BKException.BKNotEnoughBookiesException {
-        InetSocketAddress newBookie;
+        BookieSocketAddress newBookie;
         LOG.info("Handling failure of bookie: {} index: {}", addr, bookieIndex);
-        final ArrayList<InetSocketAddress> newEnsemble = new ArrayList<InetSocketAddress>();
+        final ArrayList<BookieSocketAddress> newEnsemble = new ArrayList<BookieSocketAddress>();
         final long newEnsembleStartEntry = lastAddConfirmed + 1;
 
         // avoid parallel ensemble changes to same ensemble.
@@ -702,7 +702,7 @@ public class LedgerHandle {
         return newEnsemble;
     }
 
-    void handleBookieFailure(final InetSocketAddress addr, final int bookieIndex) {
+    void handleBookieFailure(final BookieSocketAddress addr, final int bookieIndex) {
         blockAddCompletions.incrementAndGet();
 
         synchronized (metadata) {
@@ -715,7 +715,7 @@ public class LedgerHandle {
             }
 
             try {
-                ArrayList<InetSocketAddress> newEnsemble = replaceBookieInMetadata(addr, bookieIndex);
+                ArrayList<BookieSocketAddress> newEnsemble = replaceBookieInMetadata(addr, bookieIndex);
 
                 EnsembleInfo ensembleInfo = new EnsembleInfo(newEnsemble, bookieIndex,
                                                              addr);
@@ -731,12 +731,12 @@ public class LedgerHandle {
 
     // Contains newly reformed ensemble, bookieIndex, failedBookieAddress
     private static final class EnsembleInfo {
-        private final ArrayList<InetSocketAddress> newEnsemble;
+        private final ArrayList<BookieSocketAddress> newEnsemble;
         private final int bookieIndex;
-        private final InetSocketAddress addr;
+        private final BookieSocketAddress addr;
 
-        public EnsembleInfo(ArrayList<InetSocketAddress> newEnsemble,
-                int bookieIndex, InetSocketAddress addr) {
+        public EnsembleInfo(ArrayList<BookieSocketAddress> newEnsemble, int bookieIndex,
+                            BookieSocketAddress addr) {
             this.newEnsemble = newEnsemble;
             this.bookieIndex = bookieIndex;
             this.addr = addr;

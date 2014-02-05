@@ -20,7 +20,6 @@
 package org.apache.bookkeeper.replication;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
@@ -34,6 +33,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -120,7 +120,7 @@ public class BookieAutoRecoveryTest extends
         List<LedgerHandle> listOfLedgerHandle = createLedgersAndAddEntries(1, 5);
         LedgerHandle lh = listOfLedgerHandle.get(0);
         int ledgerReplicaIndex = 0;
-        InetSocketAddress replicaToKillAddr = LedgerHandleAdapter
+        BookieSocketAddress replicaToKillAddr = LedgerHandleAdapter
                 .getLedgerMetadata(lh).getEnsembles().get(0L).get(0);
 
         final String urLedgerZNode = getUrLedgerZNode(lh);
@@ -169,7 +169,7 @@ public class BookieAutoRecoveryTest extends
         closeLedgers(listOfLedgerHandle);
         LedgerHandle lhandle = listOfLedgerHandle.get(0);
         int ledgerReplicaIndex = 0;
-        InetSocketAddress replicaToKillAddr = LedgerHandleAdapter
+        BookieSocketAddress replicaToKillAddr = LedgerHandleAdapter
                 .getLedgerMetadata(lhandle).getEnsembles().get(0L).get(0);
 
         CountDownLatch latch = new CountDownLatch(listOfLedgerHandle.size());
@@ -231,7 +231,7 @@ public class BookieAutoRecoveryTest extends
                 numberOfLedgers, 5);
         closeLedgers(listOfLedgerHandle);
         LedgerHandle handle = listOfLedgerHandle.get(0);
-        InetSocketAddress replicaToKillAddr = LedgerHandleAdapter
+        BookieSocketAddress replicaToKillAddr = LedgerHandleAdapter
                 .getLedgerMetadata(handle).getEnsembles().get(0L).get(0);
         LOG.info("Killing Bookie:" + replicaToKillAddr);
 
@@ -310,7 +310,7 @@ public class BookieAutoRecoveryTest extends
             assertNull("UrLedger already exists!",
                     watchUrLedgerNode(getUrLedgerZNode(lh), latch));
         }
-        InetSocketAddress replicaToKillAddr = LedgerHandleAdapter
+        BookieSocketAddress replicaToKillAddr = LedgerHandleAdapter
                 .getLedgerMetadata(listOfLedgerHandle.get(0)).getEnsembles()
                 .get(0L).get(0);
         killBookie(replicaToKillAddr);
@@ -343,11 +343,11 @@ public class BookieAutoRecoveryTest extends
     }
 
     private int getReplicaIndexInLedger(LedgerHandle lh,
-            InetSocketAddress replicaToKill) {
-        SortedMap<Long, ArrayList<InetSocketAddress>> ensembles = LedgerHandleAdapter
+ BookieSocketAddress replicaToKill) {
+        SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles = LedgerHandleAdapter
                 .getLedgerMetadata(lh).getEnsembles();
         int ledgerReplicaIndex = -1;
-        for (InetSocketAddress addr : ensembles.get(0L)) {
+        for (BookieSocketAddress addr : ensembles.get(0L)) {
             ++ledgerReplicaIndex;
             if (addr.equals(replicaToKill)) {
                 break;
@@ -362,7 +362,7 @@ public class BookieAutoRecoveryTest extends
         LedgerHandle openLedger = bkc
                 .openLedger(lh.getId(), digestType, PASSWD);
 
-        InetSocketAddress inetSocketAddress = LedgerHandleAdapter
+        BookieSocketAddress inetSocketAddress = LedgerHandleAdapter
                 .getLedgerMetadata(openLedger).getEnsembles().get(0L)
                 .get(ledgerReplicaIndex);
         assertEquals("Rereplication has been failed and ledgerReplicaIndex :"

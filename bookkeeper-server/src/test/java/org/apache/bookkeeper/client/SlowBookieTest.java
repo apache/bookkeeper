@@ -21,22 +21,20 @@
 
 package org.apache.bookkeeper.client;
 
-import java.util.Set;
 import java.util.List;
-
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.net.InetSocketAddress;
-import org.junit.Test;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("deprecation")
 public class SlowBookieTest extends BookKeeperClusterTestCase {
@@ -64,7 +62,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final CountDownLatch b0latch = new CountDownLatch(1);
         final CountDownLatch b1latch = new CountDownLatch(1);
         final CountDownLatch addEntrylatch = new CountDownLatch(1);
-        List<InetSocketAddress> curEns = lh.getLedgerMetadata().currentEnsemble;
+        List<BookieSocketAddress> curEns = lh.getLedgerMetadata().currentEnsemble;
         try {
             sleepBookie(curEns.get(0), b0latch);
             for (int i = 0; i < 10; i++) {

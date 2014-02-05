@@ -28,12 +28,9 @@ import junit.framework.Assert;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
-
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.util.StringUtils;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -166,7 +163,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
         for (String child : children) {
             byte[] data = zkc.getData(electionPath + '/' + child, false, null);
             String bookieIP = new String(data);
-            String addr = StringUtils.addrToString(auditor.getLocalAddress());
+            String addr = auditor.getLocalAddress().toString();
             Assert.assertFalse("AuditorElection cleanup fails", bookieIP
                     .contains(addr));
         }
@@ -181,7 +178,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
         BookieServer auditor = verifyAuditor();
 
         shutdownBookie(auditor);
-        String addr = StringUtils.addrToString(auditor.getLocalAddress());
+        String addr = auditor.getLocalAddress().toString();
 
         // restarting Bookie with same configurations.
         int indexOfDownBookie = bs.indexOf(auditor);
@@ -222,7 +219,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
 
     private void startAuditorElectors() throws Exception {
         for (BookieServer bserver : bs) {
-            String addr = StringUtils.addrToString(bserver.getLocalAddress());
+            String addr = bserver.getLocalAddress().toString();
             startAuditorElector(addr);
         }
     }
@@ -255,7 +252,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
     }
 
     private void shutdownBookie(BookieServer bkServer) throws Exception {
-        String addr = StringUtils.addrToString(bkServer.getLocalAddress());
+        String addr = bkServer.getLocalAddress().toString();
         LOG.debug("Shutting down bookie:" + addr);
 
         // shutdown bookie which is an auditor

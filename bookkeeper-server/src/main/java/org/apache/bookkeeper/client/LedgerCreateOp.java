@@ -21,13 +21,13 @@
 
 package org.apache.bookkeeper.client;
 
-import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
@@ -95,7 +95,7 @@ class LedgerCreateOp implements GenericCallback<Long> {
          * Adding bookies to ledger handle
          */
 
-        ArrayList<InetSocketAddress> ensemble;
+        ArrayList<BookieSocketAddress> ensemble;
         try {
             ensemble = bk.bookieWatcher
                     .newEnsemble(metadata.getEnsembleSize(), metadata.getWriteQuorumSize());

@@ -20,7 +20,6 @@
 package org.apache.bookkeeper.replication;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Set;
 import java.util.Timer;
@@ -29,18 +28,19 @@ import java.util.concurrent.CountDownLatch;
 
 import org.apache.bookkeeper.bookie.BookieThread;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BKException.BKBookieHandleNotAvailableException;
+import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
+import org.apache.bookkeeper.client.BKException.BKReadException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerChecker;
 import org.apache.bookkeeper.client.LedgerFragment;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.BKException.BKBookieHandleNotAvailableException;
-import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
-import org.apache.bookkeeper.client.BKException.BKReadException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -62,7 +62,7 @@ public class ReplicationWorker implements Runnable {
     private volatile boolean workerRunning = false;
     final private BookKeeperAdmin admin;
     private LedgerChecker ledgerChecker;
-    private InetSocketAddress targetBookie;
+    private BookieSocketAddress targetBookie;
     private BookKeeper bkc;
     private Thread workerThread;
     private long openLedgerRereplicationGracePeriod;
@@ -82,7 +82,7 @@ public class ReplicationWorker implements Runnable {
      *            local Bookie address.
      */
     public ReplicationWorker(final ZooKeeper zkc,
-            final ServerConfiguration conf, InetSocketAddress targetBKAddr)
+            final ServerConfiguration conf, BookieSocketAddress targetBKAddr)
             throws CompatibilityException, KeeperException,
             InterruptedException, IOException {
         this.zkc = zkc;
@@ -328,8 +328,8 @@ public class ReplicationWorker implements Runnable {
 
     private boolean isTargetBookieExistsInFragmentEnsemble(LedgerHandle lh,
             LedgerFragment ledgerFragment) {
-        List<InetSocketAddress> ensemble = ledgerFragment.getEnsemble();
-        for (InetSocketAddress bkAddr : ensemble) {
+        List<BookieSocketAddress> ensemble = ledgerFragment.getEnsemble();
+        for (BookieSocketAddress bkAddr : ensemble) {
             if (targetBookie.equals(bkAddr)) {
                 return true;
             }

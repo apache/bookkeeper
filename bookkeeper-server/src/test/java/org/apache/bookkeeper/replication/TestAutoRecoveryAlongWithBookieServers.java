@@ -21,16 +21,16 @@
 package org.apache.bookkeeper.replication;
 
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.junit.Test;
@@ -59,13 +59,13 @@ public class TestAutoRecoveryAlongWithBookieServers extends
             lh.addEntry(testData);
         }
         lh.close();
-        InetSocketAddress replicaToKill = LedgerHandleAdapter
+        BookieSocketAddress replicaToKill = LedgerHandleAdapter
                 .getLedgerMetadata(lh).getEnsembles().get(0L).get(0);
 
         killBookie(replicaToKill);
 
         int startNewBookie = startNewBookie();
-        InetSocketAddress newBkAddr = new InetSocketAddress(InetAddress
+        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
                 .getLocalHost().getHostAddress(), startNewBookie);
 
         while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(),
@@ -74,11 +74,11 @@ public class TestAutoRecoveryAlongWithBookieServers extends
         }
 
         // Killing all bookies except newly replicated bookie
-        Set<Entry<Long, ArrayList<InetSocketAddress>>> entrySet = LedgerHandleAdapter
+        Set<Entry<Long, ArrayList<BookieSocketAddress>>> entrySet = LedgerHandleAdapter
                 .getLedgerMetadata(lh).getEnsembles().entrySet();
-        for (Entry<Long, ArrayList<InetSocketAddress>> entry : entrySet) {
-            ArrayList<InetSocketAddress> bookies = entry.getValue();
-            for (InetSocketAddress bookie : bookies) {
+        for (Entry<Long, ArrayList<BookieSocketAddress>> entry : entrySet) {
+            ArrayList<BookieSocketAddress> bookies = entry.getValue();
+            for (BookieSocketAddress bookie : bookies) {
                 if (bookie.equals(newBkAddr)) {
                     continue;
                 }

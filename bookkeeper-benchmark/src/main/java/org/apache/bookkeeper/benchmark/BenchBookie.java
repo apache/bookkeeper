@@ -19,13 +19,10 @@
  */
 package org.apache.bookkeeper.benchmark;
 
-import java.net.InetSocketAddress;
+import java.io.IOException;
 import java.util.concurrent.Executors;
 
-import java.io.IOException;
-
-import org.apache.zookeeper.KeeperException;
-
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
@@ -34,11 +31,6 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
@@ -46,6 +38,11 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.PosixParser;
 import org.apache.commons.cli.ParseException;
+import org.apache.zookeeper.KeeperException;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
+import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +54,7 @@ public class BenchBookie {
         boolean complete;
         @Override
         synchronized public void writeComplete(int rc, long ledgerId, long entryId,
-                InetSocketAddress addr, Object ctx) {
+                BookieSocketAddress addr, Object ctx) {
             if (rc != 0) {
                 LOG.error("Got error " + rc);
             }
@@ -78,7 +75,7 @@ public class BenchBookie {
         int count;
         int waitingCount = Integer.MAX_VALUE;
         synchronized public void writeComplete(int rc, long ledgerId, long entryId,
-                InetSocketAddress addr, Object ctx) {
+                BookieSocketAddress addr, Object ctx) {
             if (rc != 0) {
                 LOG.error("Got error " + rc);
             }
@@ -162,7 +159,7 @@ public class BenchBookie {
             toSend.writeLong(ledger);
             toSend.writeLong(entry);
             toSend.writerIndex(toSend.capacity());
-            bc.addEntry(new InetSocketAddress(addr, port), ledger, new byte[20],
+            bc.addEntry(new BookieSocketAddress(addr, port), ledger, new byte[20],
                         entry, toSend, tc, null, BookieProtocol.FLAG_NONE);
         }
         LOG.info("Waiting for warmup");
@@ -180,7 +177,7 @@ public class BenchBookie {
             toSend.writeLong(entry);
             toSend.writerIndex(toSend.capacity());
             lc.resetComplete();
-            bc.addEntry(new InetSocketAddress(addr, port), ledger, new byte[20],
+            bc.addEntry(new BookieSocketAddress(addr, port), ledger, new byte[20],
                         entry, toSend, lc, null, BookieProtocol.FLAG_NONE);
             lc.waitForComplete();
         }
@@ -200,7 +197,7 @@ public class BenchBookie {
             toSend.writeLong(ledger);
             toSend.writeLong(entry);
             toSend.writerIndex(toSend.capacity());
-            bc.addEntry(new InetSocketAddress(addr, port), ledger, new byte[20],
+            bc.addEntry(new BookieSocketAddress(addr, port), ledger, new byte[20],
                         entry, toSend, tc, null, BookieProtocol.FLAG_NONE);
         }
         tc.waitFor(entryCount);

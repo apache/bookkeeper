@@ -81,7 +81,7 @@ class BookieNettyServer {
             // listen on all interfaces
             bindAddress = new InetSocketAddress(conf.getBookiePort());
         } else {
-            bindAddress = Bookie.getBookieAddress(conf);
+            bindAddress = Bookie.getBookieAddress(conf).getSocketAddress();
         }
         listenOn(bindAddress);
     }

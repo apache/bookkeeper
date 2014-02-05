@@ -17,12 +17,12 @@
  */
 package org.apache.hedwig.server.benchmark;
 
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +39,7 @@ public class BookieBenchmark extends AbstractBenchmark {
     static final Logger logger = LoggerFactory.getLogger(BookkeeperBenchmark.class);
 
     BookieClient bkc;
-    InetSocketAddress addr;
+    BookieSocketAddress addr;
     ClientSocketChannelFactory channelFactory;
     OrderedSafeExecutor executor = new OrderedSafeExecutor(1, "BookieBenchmarkScheduler");
 
@@ -48,8 +48,7 @@ public class BookieBenchmark extends AbstractBenchmark {
         channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
         bkc = new BookieClient(new ClientConfiguration(), channelFactory, executor);
         String[] hostPort = bookieHostPort.split(":");
-        addr = new InetSocketAddress(hostPort[0], Integer.parseInt(hostPort[1]));
-
+        addr = new BookieSocketAddress(hostPort[0], Integer.parseInt(hostPort[1]));
     }
 
 
@@ -64,7 +63,7 @@ public class BookieBenchmark extends AbstractBenchmark {
 
             @Override
             public void writeComplete(int rc, long ledgerId, long entryId,
-            InetSocketAddress addr, Object ctx) {
+            BookieSocketAddress addr, Object ctx) {
                 handler.handle(rc == BKException.Code.OK, ctx);
             }
         };

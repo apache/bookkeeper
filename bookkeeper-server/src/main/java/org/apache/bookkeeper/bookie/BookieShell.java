@@ -18,45 +18,41 @@
 
 package org.apache.bookkeeper.bookie;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Formatter;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.bookkeeper.meta.LedgerManagerFactory;
-import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
-
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.Tool;
 import org.apache.bookkeeper.util.ZkUtils;
-import org.apache.bookkeeper.util.StringUtils;
-
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.cli.BasicParser;
-import org.apache.commons.cli.MissingArgumentException;
-import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.MissingArgumentException;
+import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Formatter;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Bookie Shell is to provide utilities for users to administer a bookkeeper cluster.
@@ -262,9 +258,9 @@ public class BookieShell implements Tool {
                         + "(host:port expected): " + args[0]);
                 return -1;
             }
-            final InetSocketAddress bookieSrc = new InetSocketAddress(
+            final BookieSocketAddress bookieSrc = new BookieSocketAddress(
                     bookieSrcString[0], Integer.parseInt(bookieSrcString[1]));
-            InetSocketAddress bookieDest = null;
+            BookieSocketAddress bookieDest = null;
             if (args.length >= 2) {
                 final String bookieDestString[] = args[1].split(":");
                 if (bookieDestString.length < 2) {
@@ -272,7 +268,7 @@ public class BookieShell implements Tool {
                             + "(host:port expected): " + args[1]);
                     return -1;
                 }
-                bookieDest = new InetSocketAddress(bookieDestString[0],
+                bookieDest = new BookieSocketAddress(bookieDestString[0],
                         Integer.parseInt(bookieDestString[1]));
             }
 
@@ -505,20 +501,20 @@ public class BookieShell implements Tool {
             BookKeeperAdmin bka = new BookKeeperAdmin(clientconf);
 
             int count = 0;
-            Collection<InetSocketAddress> bookies = new ArrayList<InetSocketAddress>();
+            Collection<BookieSocketAddress> bookies = new ArrayList<BookieSocketAddress>();
             if (cmdLine.hasOption("rw")) {
-                Collection<InetSocketAddress> availableBookies = bka
+                Collection<BookieSocketAddress> availableBookies = bka
                         .getAvailableBookies();
                 bookies.addAll(availableBookies);
             } else if (cmdLine.hasOption("ro")) {
-                Collection<InetSocketAddress> roBookies = bka
+                Collection<BookieSocketAddress> roBookies = bka
                         .getReadOnlyBookies();
                 bookies.addAll(roBookies);
             }
-            for (InetSocketAddress b : bookies) {
-                System.out.print(StringUtils.addrToString(b));
+            for (BookieSocketAddress b : bookies) {
+                System.out.print(b);
                 if (cmdLine.hasOption("h")) {
-                    System.out.print("\t" + b.getHostName());
+                    System.out.print("\t" + b.getSocketAddress().getHostName());
                 }
                 System.out.println("");
                 count++;
@@ -1003,6 +999,7 @@ public class BookieShell implements Tool {
         for (byte b : data) {
             formatter.format("%02x", b);
         }
+        formatter.close();
         return sb.toString();
     }
 }
