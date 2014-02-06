@@ -164,6 +164,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-726: PerChannelBookieClient should print address that it failed to connect to when it fails to correct (ivank via sijie)
 
+        BOOKKEEPER-724: Shade introduces RAT error (sijie via fpj)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
