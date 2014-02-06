@@ -160,6 +160,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-729: Bookie shouldn't exit with 0, if exiting from deathwatcher and thread death was caused by OOM (ivank via fpj)
 
+        BOOKKEEPER-725: AutoRecoveryMain should exit with error code if deathwatcher finds dead thread (ivank via sijie)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
