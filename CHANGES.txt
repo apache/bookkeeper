@@ -158,6 +158,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-728: Bookkeeper#Builder is not public, so can't be used outside of client package (ivank via fpj)
 
+        BOOKKEEPER-729: Bookie shouldn't exit with 0, if exiting from deathwatcher and thread death was caused by OOM (ivank via fpj)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

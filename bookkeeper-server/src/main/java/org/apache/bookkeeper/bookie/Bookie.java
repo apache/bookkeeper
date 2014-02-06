@@ -939,7 +939,9 @@ public class Bookie extends BookieCriticalThread {
                 // the exitCode only set when first shutdown usually due to exception found
                 LOG.info("Shutting down Bookie-{} with exitCode {}",
                          conf.getBookiePort(), exitCode);
-                this.exitCode = exitCode;
+                if (this.exitCode == ExitCode.OK) {
+                    this.exitCode = exitCode;
+                }
                 // mark bookie as in shutting down progress
                 shuttingdown = true;
 
@@ -967,13 +969,13 @@ public class Bookie extends BookieCriticalThread {
 
                 // Shutdown the ZK client
                 if(zk != null) zk.close();
-
-                // setting running to false here, so watch thread
-                // in bookie server know it only after bookie shut down
-                running = false;
             }
         } catch (InterruptedException ie) {
             LOG.error("Interrupted during shutting down bookie : ", ie);
+        } finally {
+            // setting running to false here, so watch thread
+            // in bookie server know it only after bookie shut down
+            running = false;
         }
         return this.exitCode;
     }
