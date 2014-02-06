@@ -162,6 +162,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-725: AutoRecoveryMain should exit with error code if deathwatcher finds dead thread (ivank via sijie)
 
+        BOOKKEEPER-726: PerChannelBookieClient should print address that it failed to connect to when it fails to correct (ivank via sijie)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
