@@ -156,6 +156,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-727: Names of bookie write/read threads are backwards (ivank via fpj)
 
+        BOOKKEEPER-728: Bookkeeper#Builder is not public, so can't be used outside of client package (ivank via fpj)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

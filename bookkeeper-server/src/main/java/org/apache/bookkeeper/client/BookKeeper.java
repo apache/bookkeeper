@@ -110,7 +110,7 @@ public class BookKeeper {
         public void connectionFailed(int code);
     }
 
-    static class Builder {
+    public static class Builder {
         final ClientConfiguration conf;
 
         ZooKeeper zk = null;
@@ -121,22 +121,22 @@ public class BookKeeper {
             this.conf = conf;
         }
 
-        Builder setChannelFactory(ClientSocketChannelFactory f) {
+        public Builder setChannelFactory(ClientSocketChannelFactory f) {
             channelFactory = f;
             return this;
         }
 
-        Builder setZookeeper(ZooKeeper zk) {
+        public Builder setZookeeper(ZooKeeper zk) {
             this.zk = zk;
             return this;
         }
 
-        Builder setStatsLogger(StatsLogger statsLogger) {
+        public Builder setStatsLogger(StatsLogger statsLogger) {
             this.statsLogger = statsLogger;
             return this;
         }
 
-        BookKeeper build() throws IOException, InterruptedException, KeeperException {
+        public BookKeeper build() throws IOException, InterruptedException, KeeperException {
             boolean ownZK = false;
             boolean ownChannelFactory = false;
             if (zk == null) {
