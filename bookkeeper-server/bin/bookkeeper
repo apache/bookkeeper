@@ -99,6 +99,8 @@ Environment variables:
    BOOKIE_EXTRA_OPTS      Extra options to be passed to the jvm
    BOOKIE_EXTRA_CLASSPATH Add extra paths to the bookkeeper classpath
    ENTRY_FORMATTER_CLASS  Entry formatter class to format entries.
+   BOOKIE_PID_DIR         Folder where the Bookie server PID file should be stored
+   BOOKIE_STOP_TIMEOUT    Wait time before forcefully kill the Bookie server instance, if the stop is not successful
 
 These variable can also be set in conf/bkenv.sh
 EOF

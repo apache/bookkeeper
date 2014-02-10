@@ -242,6 +242,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-732: Add env variable ENTRY_FORMATTER_CLASS to the bkenv.sh (rakesh via sijie)
 
+      BOOKKEEPER-731: Missing BOOKIE_PID_DIR and BOOKIE_STOP_TIMEOUT in env variables list (rakesh via sijie)
+
     NEW FEATURE:
 
       BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj)
