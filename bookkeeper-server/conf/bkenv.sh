@@ -42,3 +42,6 @@
 
 #Wait time before forcefully kill the Bookie server instance, if the stop is not successful
 #BOOKIE_STOP_TIMEOUT=
+
+#Entry formatter class to format entries.
+#ENTRY_FORMATTER_CLASS=

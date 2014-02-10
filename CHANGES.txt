@@ -240,6 +240,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-708: Shade protobuf library to avoid incompatible versions (rakesh, ivank via sijie)
 
+      BOOKKEEPER-732: Add env variable ENTRY_FORMATTER_CLASS to the bkenv.sh (rakesh via sijie)
+
     NEW FEATURE:
 
       BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj)
