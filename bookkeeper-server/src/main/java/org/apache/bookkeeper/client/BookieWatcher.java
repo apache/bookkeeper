@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -143,7 +144,11 @@ class BookieWatcher implements Watcher, ChildrenCallback {
         if (rc != KeeperException.Code.OK.intValue()) {
             //logger.error("Error while reading bookies", KeeperException.create(Code.get(rc), path));
             // try the read after a second again
-            scheduler.schedule(reReadTask, ZK_CONNECT_BACKOFF_SEC, TimeUnit.SECONDS);
+            try {
+                scheduler.schedule(reReadTask, ZK_CONNECT_BACKOFF_SEC, TimeUnit.SECONDS);
+            } catch (RejectedExecutionException ree) {
+                logger.warn("Failed to schedule reading bookies task : ", ree);
+            }
             return;
         }
 

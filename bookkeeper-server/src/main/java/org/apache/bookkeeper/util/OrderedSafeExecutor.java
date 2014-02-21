@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.util;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,17 +15,21 @@ package org.apache.bookkeeper.util;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.util;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.commons.lang.StringUtils;
-
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class provides 2 things over the java {@link ScheduledExecutorService}.
@@ -45,12 +47,13 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  *
  */
 public class OrderedSafeExecutor {
-    ExecutorService threads[];
-    Random rand = new Random();
+    final ExecutorService threads[];
+    final long threadIds[];
+    final Random rand = new Random();
 
     /**
      * Constructs Safe executor
-     * 
+     *
      * @param numThreads
      *            - number of threads
      * @param threadName
@@ -65,6 +68,7 @@ public class OrderedSafeExecutor {
             threadName = "OrderedSafeExecutor";
         }
         threads = new ExecutorService[numThreads];
+        threadIds = new long[numThreads];
         for (int i = 0; i < numThreads; i++) {
             StringBuilder thName = new StringBuilder(threadName);
             thName.append("-");
@@ -73,6 +77,19 @@ public class OrderedSafeExecutor {
             ThreadFactoryBuilder tfb = new ThreadFactoryBuilder()
                     .setNameFormat(thName.toString());
             threads[i] = Executors.newSingleThreadExecutor(tfb.build());
+            final int tid = i;
+            try {
+                threads[i].submit(new SafeRunnable() {
+                    @Override
+                    public void safeRun() {
+                        threadIds[tid] = Thread.currentThread().getId();
+                    }
+                }).get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Couldn't start thread " + i, e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException("Couldn't start thread " + i, e);
+            }
         }
     }
 
@@ -112,6 +129,15 @@ public class OrderedSafeExecutor {
         chooseThread(orderingKey).submit(r);
     }
 
+    private long getThreadID(Object orderingKey) {
+        // skip hashcode generation in this special case
+        if (threadIds.length == 1) {
+            return threadIds[0];
+        }
+
+        return threadIds[MathUtils.signSafeMod(orderingKey.hashCode(), threadIds.length)];
+    }
+
     public void shutdown() {
         for (int i = 0; i < threads.length; i++) {
             threads[i].shutdown();
@@ -132,6 +158,8 @@ public class OrderedSafeExecutor {
      */
     public static abstract class OrderedSafeGenericCallback<T>
             implements GenericCallback<T> {
+        private final Logger LOG = LoggerFactory.getLogger(OrderedSafeGenericCallback.class);
+
         private final OrderedSafeExecutor executor;
         private final Object orderingKey;
 
@@ -147,12 +175,24 @@ public class OrderedSafeExecutor {
 
         @Override
         public final void operationComplete(final int rc, final T result) {
-            executor.submitOrdered(orderingKey, new SafeRunnable() {
-                    @Override
-                    public void safeRun() {
-                        safeOperationComplete(rc, result);
-                    }
-                });
+            // during closing, callbacks that are error out might try to submit to
+            // the scheduler again. if the submission will go to same thread, we
+            // don't need to submit to executor again. this is also an optimization for
+            // callback submission
+            if (Thread.currentThread().getId() == executor.getThreadID(orderingKey)) {
+                safeOperationComplete(rc, result);
+            } else {
+                try {
+                    executor.submitOrdered(orderingKey, new SafeRunnable() {
+                            @Override
+                            public void safeRun() {
+                                safeOperationComplete(rc, result);
+                            }
+                        });
+                } catch (RejectedExecutionException re) {
+                    LOG.warn("Failed to submit callback for {} : ", orderingKey, re);
+                }
+            }
         }
 
         public abstract void safeOperationComplete(int rc, T result);

@@ -156,7 +156,10 @@ public class LedgerChecker {
         }
 
         public void operationComplete(int rc, LedgerFragment result) {
-            if (rc != BKException.Code.OK) {
+            if (rc == BKException.Code.ClientClosedException) {
+                cb.operationComplete(BKException.Code.ClientClosedException, badFragments);
+                return;
+            } else if (rc != BKException.Code.OK) {
                 badFragments.add(result);
             }
             if (numFragments.decrementAndGet() == 0) {

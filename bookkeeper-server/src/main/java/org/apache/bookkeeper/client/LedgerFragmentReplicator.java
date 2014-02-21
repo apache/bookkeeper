@@ -247,7 +247,7 @@ public class LedgerFragmentReplicator {
             @Override
             public void readComplete(int rc, LedgerHandle lh,
                     Enumeration<LedgerEntry> seq, Object ctx) {
-                if (rc != Code.OK.intValue()) {
+                if (rc != BKException.Code.OK) {
                     LOG.error("BK error reading ledger entry: " + entryId,
                             BKException.create(rc));
                     ledgerFragmentEntryMcb.processResult(rc, null, null);
@@ -270,7 +270,7 @@ public class LedgerFragmentReplicator {
                             public void writeComplete(int rc, long ledgerId,
                                     long entryId, BookieSocketAddress addr,
                                     Object ctx) {
-                                if (rc != Code.OK.intValue()) {
+                                if (rc != BKException.Code.OK) {
                                     LOG.error(
                                             "BK error writing entry for ledgerId: "
                                                     + ledgerId + ", entryId: "
@@ -322,7 +322,7 @@ public class LedgerFragmentReplicator {
 
         @Override
         public void processResult(int rc, String path, Object ctx) {
-            if (rc != Code.OK.intValue()) {
+            if (rc != BKException.Code.OK) {
                 LOG.error("BK error replicating ledger fragments for ledger: "
                         + lh.getId(), BKException.create(rc));
                 ledgerFragmentsMcb.processResult(rc, null, null);

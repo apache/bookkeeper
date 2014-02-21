@@ -90,6 +90,8 @@ public abstract class BKException extends Exception {
             return new BKWriteOnReadOnlyBookieException();
         case Code.ReplicationException:
             return new BKReplicationException();
+        case Code.ClientClosedException:
+            return new BKClientClosedException();
         case Code.IllegalOpException:
             return new BKIllegalOpException();
         default:
@@ -121,6 +123,7 @@ public abstract class BKException extends Exception {
         int ProtocolVersionException = -16;
         int MetadataVersionException = -17;
         int MetaStoreException = -18;
+        int ClientClosedException = -19;
 
         int IllegalOpException = -100;
         int LedgerFencedException = -101;
@@ -193,6 +196,8 @@ public abstract class BKException extends Exception {
             return "Attempting to write on ReadOnly bookie";
         case Code.ReplicationException:
             return "Errors in replication pipeline";
+        case Code.ClientClosedException:
+            return "BookKeeper client is closed";
         case Code.IllegalOpException:
             return "Invalid operation";
         default:
@@ -349,4 +354,11 @@ public abstract class BKException extends Exception {
             super(Code.ReplicationException);
         }
     }
+
+    public static class BKClientClosedException extends BKException {
+        public BKClientClosedException() {
+            super(Code.ClientClosedException);
+        }
+    }
+
 }

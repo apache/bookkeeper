@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -239,10 +240,21 @@ public class LedgerHandle {
      *          callback implementation
      * @param ctx
      *          control object
-     * @throws InterruptedException
      */
     public void asyncClose(CloseCallback cb, Object ctx) {
         asyncCloseInternal(cb, ctx, BKException.Code.LedgerClosedException);
+    }
+
+    void asyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
+        try {
+            doAsyncCloseInternal(cb, ctx, rc);
+        } catch (RejectedExecutionException re) {
+            LOG.debug("Failed to close ledger {} : ", ledgerId, re);
+            synchronized (this) {
+                errorOutPendingAdds(bk.getReturnRc(rc));
+            }
+            cb.closeComplete(bk.getReturnRc(BKException.Code.InterruptedException), this, ctx);
+        }
     }
 
     /**
@@ -254,7 +266,7 @@ public class LedgerHandle {
      * @param ctx
      * @param rc
      */
-    void asyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
+    void doAsyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
         bk.mainWorkerPool.submitOrdered(ledgerId, new SafeRunnable() {
             @Override
             public void safeRun() {
@@ -276,9 +288,9 @@ public class LedgerHandle {
                     // error out pending adds first
                     errorOutPendingAdds(rc);
 
-                    // synchronized on LedgerHandle.this to ensure that 
-                    // lastAddPushed can not be updated after the metadata 
-                    // is closed. 
+                    // synchronized on LedgerHandle.this to ensure that
+                    // lastAddPushed can not be updated after the metadata
+                    // is closed.
                     metadata.setLength(length);
                     metadata.close(lastAddConfirmed);
                     lastAddPushed = lastAddConfirmed;
@@ -529,8 +541,8 @@ public class LedgerHandle {
                     op.initiate(toSend, length);
                 }
             });
-        } catch (RuntimeException e) {
-            cb.addComplete(BKException.Code.InterruptedException,
+        } catch (RejectedExecutionException e) {
+            cb.addComplete(bk.getReturnRc(BKException.Code.InterruptedException),
                     LedgerHandle.this, INVALID_ENTRY_ID, ctx);
         }
     }

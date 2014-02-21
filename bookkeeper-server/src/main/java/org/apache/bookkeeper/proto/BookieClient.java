@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -86,7 +87,19 @@ public class BookieClient {
         this.statsLogger = statsLogger;
     }
 
-    public PerChannelBookieClient lookupClient(BookieSocketAddress addr) {
+    private int getRc(int rc) {
+        if (BKException.Code.OK == rc) {
+            return rc;
+        } else {
+            if (closed) {
+                return BKException.Code.ClientClosedException;
+            } else {
+                return rc;
+            }
+        }
+    }
+
+    private PerChannelBookieClient lookupClient(BookieSocketAddress addr) {
         PerChannelBookieClient channel = channels.get(addr);
 
         if (channel == null) {
@@ -110,52 +123,67 @@ public class BookieClient {
     }
 
     public void closeClients(Set<BookieSocketAddress> addrs) {
-        final HashSet<PerChannelBookieClient> clients = new HashSet<PerChannelBookieClient>();
-        for (BookieSocketAddress a : addrs) {
-            PerChannelBookieClient c = channels.get(a);
-            if (c != null) {
-                clients.add(c);
-            }
-        }
-
-        if (clients.size() == 0) {
-            return;
-        }
-        executor.submit(new SafeRunnable() {
-                @Override
-                public void safeRun() {
-                    for (PerChannelBookieClient c : clients) {
-                        c.disconnect();
-                    }
+        closeLock.readLock().lock();
+        try {
+            final HashSet<PerChannelBookieClient> clients = new HashSet<PerChannelBookieClient>();
+            for (BookieSocketAddress a : addrs) {
+                PerChannelBookieClient c = channels.get(a);
+                if (c != null) {
+                    clients.add(c);
                 }
-            });
+            }
+
+            if (clients.size() == 0) {
+                return;
+            }
+            executor.submit(new SafeRunnable() {
+                    @Override
+                    public void safeRun() {
+                        for (PerChannelBookieClient c : clients) {
+                            c.disconnect();
+                        }
+                    }
+                });
+        } finally {
+            closeLock.readLock().unlock();
+        }
     }
 
     public void addEntry(final BookieSocketAddress addr, final long ledgerId, final byte[] masterKey,
             final long entryId,
             final ChannelBuffer toSend, final WriteCallback cb, final Object ctx, final int options) {
-        final PerChannelBookieClient client = lookupClient(addr);
-        if (client == null) {
-            cb.writeComplete(BKException.Code.BookieHandleNotAvailableException,
-                             ledgerId, entryId, addr, ctx);
-            return;
-        }
-
-        client.connectIfNeededAndDoOp(new GenericCallback<Void>() {
-            @Override
-            public void operationComplete(final int rc, Void result) {
-                if (rc != BKException.Code.OK) {
-                    executor.submitOrdered(ledgerId, new SafeRunnable() {
-                        @Override
-                        public void safeRun() {
-                            cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
-                        }
-                    });
-                    return;
-                }
-                client.addEntry(ledgerId, masterKey, entryId, toSend, cb, ctx, options);
+        closeLock.readLock().lock();
+        try {
+            final PerChannelBookieClient client = lookupClient(addr);
+            if (client == null) {
+                cb.writeComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
+                                 ledgerId, entryId, addr, ctx);
+                return;
             }
-        });
+
+            client.connectIfNeededAndDoOp(new GenericCallback<Void>() {
+                @Override
+                public void operationComplete(final int rc, Void result) {
+                    if (rc != BKException.Code.OK) {
+                        try {
+                            executor.submitOrdered(ledgerId, new SafeRunnable() {
+                                @Override
+                                public void safeRun() {
+                                    cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
+                                }
+                            });
+                        } catch (RejectedExecutionException re) {
+                            cb.writeComplete(getRc(BKException.Code.InterruptedException),
+                                    ledgerId, entryId, addr, ctx);
+                        }
+                        return;
+                    }
+                    client.addEntry(ledgerId, masterKey, entryId, toSend, cb, ctx, options);
+                }
+            });
+        } finally {
+            closeLock.readLock().unlock();
+        }
     }
 
     public void readEntryAndFenceLedger(final BookieSocketAddress addr,
@@ -164,54 +192,78 @@ public class BookieClient {
                                         final long entryId,
                                         final ReadEntryCallback cb,
                                         final Object ctx) {
-        final PerChannelBookieClient client = lookupClient(addr);
-        if (client == null) {
-            cb.readEntryComplete(BKException.Code.BookieHandleNotAvailableException,
-                                 ledgerId, entryId, null, ctx);
-            return;
-        }
-
-        client.connectIfNeededAndDoOp(new GenericCallback<Void>() {
-            @Override
-            public void operationComplete(final int rc, Void result) {
-                if (rc != BKException.Code.OK) {
-                    executor.submitOrdered(ledgerId, new SafeRunnable() {
-                        @Override
-                        public void safeRun() {
-                            cb.readEntryComplete(rc, ledgerId, entryId, null, ctx);
-                        }
-                    });
-                    return;
-                }
-                client.readEntryAndFenceLedger(ledgerId, masterKey, entryId, cb, ctx);
+        closeLock.readLock().lock();
+        try {
+            final PerChannelBookieClient client = lookupClient(addr);
+            if (client == null) {
+                cb.readEntryComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
+                                     ledgerId, entryId, null, ctx);
+                return;
             }
-        });
+
+            client.connectIfNeededAndDoOp(new GenericCallback<Void>() {
+                @Override
+                public void operationComplete(final int rc, Void result) {
+                    if (rc != BKException.Code.OK) {
+                        try {
+                            executor.submitOrdered(ledgerId, new SafeRunnable() {
+                                @Override
+                                public void safeRun() {
+                                    cb.readEntryComplete(rc, ledgerId, entryId, null, ctx);
+                                }
+                            });
+                        } catch (RejectedExecutionException re) {
+                            cb.readEntryComplete(getRc(BKException.Code.InterruptedException),
+                                    ledgerId, entryId, null, ctx);
+                        }
+                        return;
+                    }
+                    client.readEntryAndFenceLedger(ledgerId, masterKey, entryId, cb, ctx);
+                }
+            });
+        } finally {
+            closeLock.readLock().unlock();
+        }
     }
 
     public void readEntry(final BookieSocketAddress addr, final long ledgerId, final long entryId,
                           final ReadEntryCallback cb, final Object ctx) {
-        final PerChannelBookieClient client = lookupClient(addr);
-        if (client == null) {
-            cb.readEntryComplete(BKException.Code.BookieHandleNotAvailableException,
-                                 ledgerId, entryId, null, ctx);
-            return;
-        }
-
-        client.connectIfNeededAndDoOp(new GenericCallback<Void>() {
-            @Override
-            public void operationComplete(final int rc, Void result) {
-                if (rc != BKException.Code.OK) {
-                    executor.submitOrdered(ledgerId, new SafeRunnable() {
-                        @Override
-                        public void safeRun() {
-                            cb.readEntryComplete(rc, ledgerId, entryId, null, ctx);
-                        }
-                    });
-                    return;
-                }
-                client.readEntry(ledgerId, entryId, cb, ctx);
+        closeLock.readLock().lock();
+        try {
+            final PerChannelBookieClient client = lookupClient(addr);
+            if (client == null) {
+                cb.readEntryComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
+                                     ledgerId, entryId, null, ctx);
+                return;
             }
-        });
+
+            client.connectIfNeededAndDoOp(new GenericCallback<Void>() {
+                @Override
+                public void operationComplete(final int rc, Void result) {
+                    if (rc != BKException.Code.OK) {
+                        try {
+                            executor.submitOrdered(ledgerId, new SafeRunnable() {
+                                @Override
+                                public void safeRun() {
+                                    cb.readEntryComplete(rc, ledgerId, entryId, null, ctx);
+                                }
+                            });
+                        } catch (RejectedExecutionException re) {
+                            cb.readEntryComplete(getRc(BKException.Code.InterruptedException),
+                                    ledgerId, entryId, null, ctx);
+                        }
+                        return;
+                    }
+                    client.readEntry(ledgerId, entryId, cb, ctx);
+                }
+            });
+        } finally {
+            closeLock.readLock().unlock();
+        }
+    }
+
+    public boolean isClosed() {
+        return closed;
     }
 
     public void close() {

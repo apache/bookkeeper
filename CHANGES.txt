@@ -166,6 +166,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-724: Shade introduces RAT error (sijie via fpj)
 
+        BOOKKEEPER-654: Bookkeeper client operations are allowed even after its closure, bk#close() (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

@@ -29,6 +29,7 @@ import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -284,28 +285,34 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         ArrayList<BookieSocketAddress> ensemble = null;
 
         if (speculativeReadTimeout > 0) {
-            speculativeTask = scheduler.scheduleWithFixedDelay(new Runnable() {
-                    @Override
-                    public void run() {
-                        int x = 0;
-                        for (LedgerEntryRequest r : seq) {
-                            if (!r.isComplete()) {
-                                if (null == r.maybeSendSpeculativeRead(heardFromHosts)) {
-                                    // Subsequent speculative read will not materialize anyway
-                                    cancelSpeculativeTask(false);
-                                } else {
-                                    LOG.debug("Send speculative read for {}. Hosts heard are {}.",
-                                              r, heardFromHosts);
-                                    ++x;
-                                }
+            Runnable readTask = new Runnable() {
+                public void run() {
+                    int x = 0;
+                    for (LedgerEntryRequest r : seq) {
+                        if (!r.isComplete()) {
+                            if (null == r.maybeSendSpeculativeRead(heardFromHosts)) {
+                                // Subsequent speculative read will not materialize anyway
+                                cancelSpeculativeTask(false);
+                            } else {
+                                LOG.debug("Send speculative read for {}. Hosts heard are {}.",
+                                          r, heardFromHosts);
+                                ++x;
                             }
                         }
-                        if (x > 0) {
-                            LOG.debug("Send {} speculative reads for ledger {} ({}, {}). Hosts heard are {}.",
-                                      new Object[] { x, lh.getId(), startEntryId, endEntryId, heardFromHosts });
-                        }
                     }
-                }, speculativeReadTimeout, speculativeReadTimeout, TimeUnit.MILLISECONDS);
+                    if (x > 0) {
+                        LOG.debug("Send {} speculative reads for ledger {} ({}, {}). Hosts heard are {}.",
+                                  new Object[] { x, lh.getId(), startEntryId, endEntryId, heardFromHosts });
+                    }
+                }
+            };
+            try {
+                speculativeTask = scheduler.scheduleWithFixedDelay(readTask,
+                        speculativeReadTimeout, speculativeReadTimeout, TimeUnit.MILLISECONDS);
+            } catch (RejectedExecutionException re) {
+                LOG.debug("Failed to schedule speculative reads for ledger {} ({}, {}) : ",
+                    new Object[] { lh.getId(), startEntryId, endEntryId, re });
+            }
         }
 
         do {
