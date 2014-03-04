@@ -10,6 +10,8 @@ Release 4.2.3 - 2013-12-04
 
         BOOKKEEPER-712: bookkeeper script should use 'java' from JAVA_HOME (vinay via sijie)
 
+        BOOKKEEPER-688: NPE exception in PerChannelBookieClient (ivank via sijie)
+
 Release 4.2.2 - 2013-10-02
 
   Backward compatible changes:
