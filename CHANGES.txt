@@ -102,6 +102,8 @@ Release 4.2.2 - 2013-10-02
 
         BOOKKEEPER-708: Shade protobuf library to avoid incompatible versions (ivank)
 
+        BOOKKEEPER-730: Shade pom file missing apache license header (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)

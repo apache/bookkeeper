@@ -187,6 +187,30 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>1.6</version>
+        <configuration>
+          <canUpdateCopyright>false</canUpdateCopyright>
+          <roots><root>${project.basedir}</root></roots>
+        </configuration>
+        <executions>
+          <execution>
+            <id>update-pom-license</id>
+            <goals>
+              <goal>update-file-header</goal>
+            </goals>
+            <phase>package</phase>
+            <configuration>
+              <licenseName>apache_v2</licenseName>
+              <includes>
+                <include>dependency-reduced-pom.xml</include>
+              </includes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <version>2.2</version>
@@ -249,7 +273,13 @@
               <directory>${project.libdir}</directory>
               <followSymlinks>false</followSymlinks>
             </fileset>
-	  </filesets>
+            <fileset>
+              <directory>${project.basedir}</directory>
+              <includes>
+                <include>dependency-reduced-pom.xml</include>
+              </includes>
+            </fileset>
+          </filesets>
 	</configuration>
       </plugin>
     </plugins>

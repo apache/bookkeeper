@@ -30,6 +30,7 @@
   <artifactId>bookkeeper</artifactId>
   <packaging>pom</packaging>
   <name>bookkeeper</name>
+  <inceptionYear>2011</inceptionYear>
   <modules>
     <module>compat-deps</module>
     <module>hedwig-client</module>
