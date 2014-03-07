@@ -172,6 +172,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-715: bookie: delay dropping journal cached pages (sijie via ivank)
 
+        BOOKKEEPER-730: Shade pom file missing apache license header (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

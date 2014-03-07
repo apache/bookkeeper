@@ -89,6 +89,8 @@ pre)
     exit $EXITCODE
     ;;
 post)
+    mvn clean ${MVNPASSTHRU} >> ${TEMPDIR}/${TASKNAME}.txt
+    EXITCODE=$?
     ;;
 report)
     echo "{color:green}+1 ${TASKNAME}{color}" >> $SUMMARYFILE
