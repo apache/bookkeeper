@@ -100,6 +100,8 @@ Release 4.2.2 - 2013-10-02
 
         BOOKKEEPER-685: Race in compaction algorithm from BOOKKEEPER-664 (ivank)
 
+        BOOKKEEPER-708: Shade protobuf library to avoid incompatible versions (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-579: TestSubAfterCloseSub was put in a wrong package (sijie via ivank)
