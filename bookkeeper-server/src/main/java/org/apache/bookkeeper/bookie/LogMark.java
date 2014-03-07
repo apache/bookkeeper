@@ -33,46 +33,46 @@ class LogMark {
     }
 
     public LogMark(LogMark other) {
-        setLogMark(other.logFileId, other.logFileOffset);
+        setLogMark(other.getLogFileId(), other.getLogFileOffset());
     }
 
     public LogMark(long logFileId, long logFileOffset) {
         setLogMark(logFileId, logFileOffset);
     }
 
-    public long getLogFileId() {
+    public synchronized long getLogFileId() {
         return logFileId;
     }
 
-    public long getLogFileOffset() {
+    public synchronized long getLogFileOffset() {
         return logFileOffset;
     }
 
-    public void readLogMark(ByteBuffer bb) {
+    public synchronized void readLogMark(ByteBuffer bb) {
         logFileId = bb.getLong();
         logFileOffset = bb.getLong();
     }
 
-    public void writeLogMark(ByteBuffer bb) {
+    public synchronized void writeLogMark(ByteBuffer bb) {
         bb.putLong(logFileId);
         bb.putLong(logFileOffset);
     }
 
-    public void setLogMark(long logFileId, long logFileOffset) {
+    public synchronized void setLogMark(long logFileId, long logFileOffset) {
         this.logFileId = logFileId;
         this.logFileOffset = logFileOffset;
     }
 
-    public int compare(LogMark other) {
-        long ret = this.logFileId - other.logFileId;
+    public synchronized int compare(LogMark other) {
+        long ret = this.logFileId - other.getLogFileId();
         if (ret == 0) {
-            ret = this.logFileOffset - other.logFileOffset;
+            ret = this.logFileOffset - other.getLogFileOffset();
         }
         return (ret < 0)? -1 : ((ret > 0)? 1 : 0);
     }
 
     @Override
-    public String toString() {
+    public synchronized String toString() {
         StringBuilder sb = new StringBuilder();
 
         sb.append("LogMark: logFileId - ").append(logFileId)

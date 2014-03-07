@@ -168,6 +168,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-654: Bookkeeper client operations are allowed even after its closure, bk#close() (sijie via ivank)
 
+        BOOKKEEPER-717: journal should look forward to group time-out entries (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

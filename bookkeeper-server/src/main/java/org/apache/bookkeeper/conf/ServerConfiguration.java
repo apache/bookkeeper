@@ -57,6 +57,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String JOURNAL_ADAPTIVE_GROUP_WRITES = "journalAdaptiveGroupWrites";
     protected final static String JOURNAL_MAX_GROUP_WAIT_MSEC = "journalMaxGroupWaitMSec";
     protected final static String JOURNAL_BUFFERED_WRITES_THRESHOLD = "journalBufferedWritesThreshold";
+    protected final static String JOURNAL_BUFFERED_ENTRIES_THRESHOLD = "journalBufferedEntriesThreshold";
     protected final static String JOURNAL_FLUSH_WHEN_QUEUE_EMPTY = "journalFlushWhenQueueEmpty";
     protected final static String JOURNAL_REMOVE_FROM_PAGE_CACHE = "journalRemoveFromPageCache";
     protected final static String JOURNAL_PRE_ALLOC_SIZE = "journalPreAllocSizeMB";
@@ -485,19 +486,19 @@ public class ServerConfiguration extends AbstractConfiguration {
         return ledgerDirs;
     }
 
-    /** 
+    /**
      * Get dir name to store index files.
-     *   
+     *
      * @return ledger index dir name, if no index dirs provided return null
-     */  
+     */
     public String[] getIndexDirNames() {
         if (!this.containsKey(INDEX_DIRS)) {
             return null;
         }
         return this.getStringArray(INDEX_DIRS);
-    }   
+    }
 
-    /** 
+    /**
      * Set dir name to store index files.
      *
      * @param indexDirs
@@ -718,18 +719,18 @@ public class ServerConfiguration extends AbstractConfiguration {
         setProperty(MAJOR_COMPACTION_INTERVAL, interval);
         return this;
     }
-    
+
     /**
      * Set the grace period which the rereplication worker will wait before
      * fencing and rereplicating a ledger fragment which is still being written
      * to, on bookie failure.
-     * 
-     * The grace period allows the writer to detect the bookie failure, and
-     * start replicating the ledger fragment. If the writer writes nothing
+     *
+     * The grace period allows the writer to detect the bookie failure, and and
+     * start writing to another ledger fragment. If the writer writes nothing
      * during the grace period, the rereplication worker assumes that it has
-     * crashed and fences the ledger, preventing any further writes to that 
-     * ledger.
-     * 
+     * crashed and therefore fences the ledger, preventing any further writes to
+     * that ledger.
+     *
      * @see org.apache.bookkeeper.client.BookKeeper#openLedger
      * 
      * @param waitTime time to wait before replicating ledger fragment
@@ -885,14 +886,38 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Maximum latency to impose on a journal write to achieve grouping
+     * Maximum bytes to buffer to impose on a journal write to achieve grouping
      *
-     * @return max wait for grouping
+     * @return max bytes to buffer
      */
     public long getJournalBufferedWritesThreshold() {
         return getLong(JOURNAL_BUFFERED_WRITES_THRESHOLD, 512 * 1024);
     }
 
+    /**
+     * Maximum entries to buffer to impose on a journal write to achieve grouping.
+     * Use {@link #getJournalBufferedWritesThreshold()} if this is set to zero or
+     * less than zero.
+     *
+     * @return max entries to buffer.
+     */
+    public long getJournalBufferedEntriesThreshold() {
+        return getLong(JOURNAL_BUFFERED_ENTRIES_THRESHOLD, 0);
+    }
+
+    /**
+     * Set maximum entries to buffer to impose on a journal write to achieve grouping.
+     * Use {@link #getJournalBufferedWritesThreshold()} set this to zero or less than
+     * zero.
+     *
+     * @param maxEntries
+     *          maximum entries to buffer.
+     * @return server configuration.
+     */
+    public ServerConfiguration setJournalBufferedEntriesThreshold(int maxEntries) {
+        setProperty(JOURNAL_BUFFERED_ENTRIES_THRESHOLD, maxEntries);
+        return this;
+    }
 
     /**
      * Set if we should flush the journal when queue is empty
