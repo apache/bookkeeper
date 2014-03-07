@@ -170,6 +170,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-717: journal should look forward to group time-out entries (sijie via ivank)
 
+        BOOKKEEPER-715: bookie: delay dropping journal cached pages (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

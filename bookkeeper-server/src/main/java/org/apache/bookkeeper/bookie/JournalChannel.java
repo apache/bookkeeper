@@ -45,6 +45,7 @@ class JournalChannel implements Closeable {
     private final static Logger LOG = LoggerFactory.getLogger(JournalChannel.class);
 
     final RandomAccessFile randomAccessFile;
+    final int fd;
     final FileChannel fc;
     final BufferedChannel bc;
     final int formatVersion;
@@ -53,6 +54,7 @@ class JournalChannel implements Closeable {
     final byte[] MAGIC_WORD = "BKLG".getBytes(UTF_8);
 
     private final static int START_OF_FILE = -12345;
+    private static long CACHE_DROP_LAG_BYTES = 8 * 1024 * 1024;
 
     int HEADER_SIZE = 8; // 4byte magic word, 4 byte version
     int MIN_COMPAT_JOURNAL_FORMAT_VERSION = 1;
@@ -62,8 +64,8 @@ class JournalChannel implements Closeable {
     private boolean fRemoveFromPageCache;
     public final static ByteBuffer zeros = ByteBuffer.allocate(512);
 
-    // The position of the file channel's last force write.
-    private long lastForceWritePosition = 0;
+    // The position of the file channel's last drop position
+    private long lastDropPosition = 0L;
 
     // Mostly used by tests
     JournalChannel(File journalDirectory, long logId) throws IOException {
@@ -159,10 +161,8 @@ class JournalChannel implements Closeable {
             } catch (IOException e) {
                 LOG.error("Bookie journal file can seek to position :", e);
             }
-
-            // Anything we read has been force written
-            lastForceWritePosition = fc.position();
         }
+        this.fd = NativeIO.getSysFileDescriptor(randomAccessFile.getFD());
     }
 
     int getFormatVersion() {
@@ -198,14 +198,25 @@ class JournalChannel implements Closeable {
             LOG.debug("Journal ForceWrite");
         }
         long newForceWritePosition = bc.forceWrite(forceMetadata);
-        if (newForceWritePosition > lastForceWritePosition) {
-            if (fRemoveFromPageCache) {
-                NativeIO.bestEffortRemoveFromPageCache(randomAccessFile.getFD(),
-                    lastForceWritePosition, (int)(newForceWritePosition - lastForceWritePosition));
+        //
+        // For POSIX_FADV_DONTNEED, we want to drop from the beginning
+        // of the file to a position prior to the current position.
+        //
+        // The CACHE_DROP_LAG_BYTES is to prevent dropping a page that will
+        // be appended again, which would introduce random seeking on journal
+        // device.
+        //
+        // <======== drop ==========>
+        //                           <-----------LAG------------>
+        // +------------------------+---------------------------O
+        // lastDropPosition     newDropPos             lastForceWritePosition
+        //
+        if (fRemoveFromPageCache) {
+            long newDropPos = newForceWritePosition - CACHE_DROP_LAG_BYTES;
+            if (lastDropPosition < newDropPos) {
+                NativeIO.bestEffortRemoveFromPageCache(fd, lastDropPosition, newDropPos - lastDropPosition);
             }
-            synchronized (this) {
-                lastForceWritePosition = newForceWritePosition;
-            }
+            this.lastDropPosition = newDropPos;
         }
     }
 }

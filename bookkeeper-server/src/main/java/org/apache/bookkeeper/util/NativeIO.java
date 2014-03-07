@@ -30,12 +30,11 @@ public final class NativeIO {
 
     private static final int POSIX_FADV_DONTNEED = 4; /* fadvise.h */
 
-    private static boolean initializationAttempted = false;
     private static boolean initialized = false;
+    private static boolean fadvisePossible = true;
 
-    private static void onDemandInitialization() {
+    static {
         try {
-            initializationAttempted = true;
             Native.register("c");
             initialized = true;
         } catch (NoClassDefFoundError e) {
@@ -48,7 +47,7 @@ public final class NativeIO {
     }
 
     // fadvice
-    public static native int posix_fadvise(int fd, long offset, int len, int flag) throws LastErrorException;
+    public static native int posix_fadvise(int fd, long offset, long len, int flag) throws LastErrorException;
 
     private NativeIO() {}
 
@@ -72,8 +71,7 @@ public final class NativeIO {
      * @param descriptor - FileDescriptor object to get fd from
      * @return file descriptor, -1 or error
      */
-    private static int getSysFileDescriptor(FileDescriptor descriptor) {
-        // field would not be null due to 'assert false' in getFieldByReflection
+    public static int getSysFileDescriptor(FileDescriptor descriptor) {
         Field field = getFieldByReflection(descriptor.getClass(), "fd");
         try {
             return field.getInt(descriptor);
@@ -88,44 +86,33 @@ public final class NativeIO {
      * Remove pages from the file system page cache when they wont
      * be accessed again
      *
-     * @param fileDescriptor     The file descriptor of the source file.
+     * @param fd     The file descriptor of the source file.
      * @param offset The offset within the file.
      * @param len    The length to be flushed.
      *
      * @throws nothing => Best effort
      */
 
-    public static void bestEffortRemoveFromPageCache(FileDescriptor fileDescriptor, long offset, int len) {
-        if (!initializationAttempted) {
-            onDemandInitialization();
-        }
-
-        if (!initialized) {
+    public static void bestEffortRemoveFromPageCache(int fd, long offset, long len) {
+        if (!initialized || !fadvisePossible || fd < 0) {
             return;
         }
-
-        int sysFileDesc = getSysFileDescriptor(fileDescriptor);
-
-        if (sysFileDesc < 0) {
-            return;
-        }
-
         try {
-            if (System.getProperty("os.name").toLowerCase().contains("linux")) {
-                posix_fadvise(sysFileDesc, offset, len, POSIX_FADV_DONTNEED);
-            } else {
-                LOG.debug("posix_fadvise skipped on file descriptor {}, offset {}", fileDescriptor, offset);
-            }
-        } catch (UnsatisfiedLinkError e) {
+            posix_fadvise(fd, offset, len, POSIX_FADV_DONTNEED);
+        } catch (UnsupportedOperationException uoe) {
+            LOG.warn("posix_fadvise is not supported : ", uoe);
+            fadvisePossible = false;
+        } catch (UnsatisfiedLinkError ule) {
             // if JNA is unavailable just skipping Direct I/O
             // instance of this class will act like normal RandomAccessFile
-            LOG.warn("Unsatisfied Link error: posix_fadvise failed on file descriptor {}, offset {}",
-                fileDescriptor, offset);
+            LOG.warn("Unsatisfied Link error: posix_fadvise failed on file descriptor {}, offset {} : ",
+                    new Object[] { fd, offset, ule });
+            fadvisePossible = false;
         } catch (Exception e) {
             // This is best effort anyway so lets just log that there was an
             // exception and forget
-            LOG.warn("Unknown exception: posix_fadvise failed on file descriptor {}, offset {}",
-                fileDescriptor, offset);
+            LOG.warn("Unknown exception: posix_fadvise failed on file descriptor {}, offset {} : ",
+                    new Object[] { fd, offset, e });
         }
     }
 
