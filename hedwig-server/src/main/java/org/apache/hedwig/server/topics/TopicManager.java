@@ -23,6 +23,8 @@ import org.apache.hedwig.server.persistence.PersistenceManager;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.HedwigSocketAddress;
 
+import java.util.List;
+
 /**
  * An implementor of this interface is basically responsible for ensuring that
  * there is at most a single host responsible for a given topic at a given time.
@@ -79,6 +81,23 @@ public interface TopicManager {
      *             If there is an error in claiming responsibility for the topic
      */
     public void releaseTopic(ByteString topic, Callback<Void> cb, Object ctx);
+
+    /**
+     * Release numTopics topics. If you hold fewer, release all.
+     * @param numTopics
+     *          Number of topics to release.
+     * @param callback
+     *          The callback should be invoked with the number of topics the hub
+     *          released successfully.
+     * @param ctx
+     */
+    public void releaseTopics(int numTopics, Callback<Long> callback, Object ctx);
+
+    /**
+     * Get the list of topics this hub believes it is responsible for.
+     * @return
+     */
+    public List<ByteString> getTopicList();
 
     /**
      * Stop topic manager

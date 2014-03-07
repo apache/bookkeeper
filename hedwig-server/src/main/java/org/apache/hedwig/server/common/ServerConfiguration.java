@@ -27,14 +27,15 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
-
-import com.google.protobuf.ByteString;
-import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.hedwig.conf.AbstractConfiguration;
 import org.apache.hedwig.server.meta.MetadataManagerFactory;
+import org.apache.hedwig.server.topics.HubLoad;
 import org.apache.hedwig.util.HedwigSocketAddress;
+
+import com.google.protobuf.ByteString;
 
 public class ServerConfiguration extends AbstractConfiguration {
     public final static String REGION = "region";
@@ -75,6 +76,9 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String NUM_DELIVERY_THREADS = "num_delivery_threads";
 
     protected final static String MAX_ENTRIES_PER_LEDGER = "max_entries_per_ledger";
+    protected final static String REBALANCE_TOLERANCE_PERCENTAGE = "rebalance_tolerance";
+    protected final static String REBALANCE_MAX_SHED = "rebalance_max_shed";
+    protected final static String REBALANCE_INTERVAL_SEC = "rebalance_interval_sec";
 
     // manager related settings
     protected final static String METADATA_MANAGER_BASED_TOPIC_MANAGER_ENABLED = "metadata_manager_based_topic_manager_enabled";
@@ -153,7 +157,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Maximum number of messages to read ahead. Default is 10.
-     * 
+     *
      * @return int
      */
     public int getReadAheadCount() {
@@ -162,7 +166,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Maximum number of bytes to read ahead. Default is 4MB.
-     * 
+     *
      * @return long
      */
     public long getReadAheadSizeBytes() {
@@ -172,7 +176,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Maximum cache size. By default is the smallest of 2G or
      * half the heap size.
-     * 
+     *
      * @return long
      */
     public long getMaximumCacheSize() {
@@ -193,16 +197,16 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * After a scan of a log fails, how long before we retry (in msec)
-     * 
+     *
      * @return long
      */
     public long getScanBackoffPeriodMs() {
         return conf.getLong(SCAN_BACKOFF_MSEC, 1000);
     }
-    
+
     /**
      * Returns server port.
-     * 
+     *
      * @return int
      */
     public int getServerPort() {
@@ -211,7 +215,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Returns SSL server port.
-     * 
+     *
      * @return int
      */
     public int getSSLServerPort() {
@@ -220,7 +224,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Returns ZooKeeper path prefix.
-     * 
+     *
      * @return string
      */
     public String getZkPrefix() {
@@ -263,7 +267,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Return ZooKeeper list of servers. Default is localhost.
-     * 
+     *
      * @return String
      */
     public String getZkHost() {
@@ -276,16 +280,16 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Return ZooKeeper session timeout. Default is 2s.
-     * 
+     *
      * @return int
      */
     public int getZkTimeout() {
         return conf.getInt(ZK_TIMEOUT, 2000);
     }
 
-    /** 
+    /**
      * Returns true if read-ahead enabled. Default is true.
-     * 
+     *
      * @return boolean
      */
     public boolean getReadAheadEnabled() {
@@ -296,7 +300,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Returns true if standalone. Default is false.
-     * 
+     *
      * @return boolean
      */
     public boolean isStandalone() {
@@ -304,8 +308,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Returns list of regions. 
-     * 
+     * Returns list of regions.
+     *
      * @return List<String>
      */
     public List<String> getRegions() {
@@ -317,7 +321,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      *  Returns the name of the SSL certificate if available as a resource.
-     * 
+     *
      * @return String
      */
     public String getCertName() {
@@ -326,7 +330,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * This is the path to the SSL certificate if it is available as a file.
-     * 
+     *
      * @return String
      */
     public String getCertPath() {
@@ -351,7 +355,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Returns the password used for BookKeeper ledgers. Default
      * is the empty string.
-     * 
+     *
      * @return
      */
     public String getPassword() {
@@ -360,7 +364,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Returns true if SSL is enabled. Default is false.
-     * 
+     *
      * @return boolean
      */
     public boolean isSSLEnabled() {
@@ -372,7 +376,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * information about consumed messages. A value greater than
      * one avoids persisting information about consumed messages
      * upon every consumed message. Default is 50.
-     * 
+     *
      * @return int
      */
     public int getConsumeInterval() {
@@ -383,7 +387,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * Returns the interval to release a topic. If this
      * parameter is greater than zero, then schedule a
      * task to release an owned topic. Default is 0 (never released).
-     * 
+     *
      * @return int
      */
     public int getRetentionSecs() {
@@ -422,7 +426,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * True if SSL is enabled across regions.
-     * 
+     *
      * @return boolean
      */
     public boolean isInterRegionSSLEnabled() {
@@ -430,10 +434,10 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * This parameter is used to determine how often we run the 
-     * SubscriptionManager's Messages Consumed timer task thread 
+     * This parameter is used to determine how often we run the
+     * SubscriptionManager's Messages Consumed timer task thread
      * (in milliseconds).
-     * 
+     *
      * @return int
      */
     public int getMessagesConsumedThreadRunInterval() {
@@ -444,7 +448,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * This parameter is used to determine how often we run a thread
      * to retry those failed remote subscriptions in asynchronous mode
      * (in milliseconds).
-     * 
+     *
      * @return int
      */
     public int getRetryRemoteSubscribeThreadRunInterval() {
@@ -455,7 +459,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * This parameter is for setting the default maximum number of messages which
      * can be delivered to a subscriber without being consumed.
      * we pause messages delivery to a subscriber when reaching the window size
-     * 
+     *
      * @return int
      */
     public int getDefaultMessageWindowSize() {
@@ -466,7 +470,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * This parameter is used when Bookkeeper is the persistence
      * store and indicates what the ensemble size is (i.e. how
      * many bookie servers to stripe the ledger entries across).
-     * 
+     *
      * @return int
      */
     public int getBkEnsembleSize() {
@@ -478,7 +482,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * This parameter is used when Bookkeeper is the persistence store
      * and indicates what the quorum size is (i.e. how many redundant
      * copies of each ledger entry is written).
-     * 
+     *
      * @return int
      * @deprecated please use #getBkWriteQuorumSize() and #getBkAckQuorumSize()
      */
@@ -525,6 +529,33 @@ public class ServerConfiguration extends AbstractConfiguration {
         return conf.getLong(MAX_ENTRIES_PER_LEDGER, 0L);
     }
 
+    /**
+     * Get the tolerance percentage for the rebalancer. The rebalancer will not
+     * shed load if it's current load is less than average + average*tolerancePercentage/100.0
+     *
+     * @return the tolerance percentage for the rebalancer.
+     */
+    public double getRebalanceTolerance() {
+        return conf.getDouble(REBALANCE_TOLERANCE_PERCENTAGE, 10.0);
+    }
+
+    /**
+     * Get the maximum load the rebalancer can shed at once. Default is 50.
+     * @return
+     */
+    public HubLoad getRebalanceMaxShed() {
+        return new HubLoad(conf.getLong(REBALANCE_MAX_SHED, 50));
+    }
+
+    /**
+     * Get the interval(in seconds) between rebalancing attempts. The default is
+     * 5 minutes.
+     * @return
+     */
+    public long getRebalanceInterval() {
+        return conf.getLong(REBALANCE_INTERVAL_SEC, 300);
+    }
+
     /*
      * Is this a valid configuration that we can run with? This code might grow
      * over time.
@@ -553,7 +584,14 @@ public class ServerConfiguration extends AbstractConfiguration {
             throw new ConfigurationException("BK write quorum size (" + getBkWriteQuorumSize()
                                              + ") is less than the ack quorum size (" + getBkAckQuorumSize() + ")");
         }
-
+        // Validate that the rebalance tolerance percentage is not negative.
+        if (getRebalanceTolerance() < 0.0) {
+            throw new ConfigurationException("The rebalance tolerance percentage cannot be negative.");
+        }
+        // Validate that the maximum load to shed during a rebalance is not negative.
+        if (getRebalanceMaxShed().getNumTopics() < 0L) {
+            throw new ConfigurationException("The maximum load to shed during a rebalance cannot be negative.");
+        }
         // add other checks here
     }
 

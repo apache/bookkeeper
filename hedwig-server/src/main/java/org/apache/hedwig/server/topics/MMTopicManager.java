@@ -60,14 +60,14 @@ public class MMTopicManager extends AbstractTopicManager implements TopicManager
     // all of the Ops put into the queuer will fail automatically.
     protected volatile boolean isSuspended = false;
 
-    public MMTopicManager(ServerConfiguration cfg, ZooKeeper zk, 
+    public MMTopicManager(ServerConfiguration cfg, ZooKeeper zk,
                           MetadataManagerFactory mmFactory,
                           ScheduledExecutorService scheduler)
             throws UnknownHostException, PubSubException {
         super(cfg, scheduler);
         // initialize topic ownership manager
         this.mm = mmFactory.newTopicOwnershipManager();
-        this.hubManager = new ZkHubServerManager(cfg, zk, addr);
+        this.hubManager = new ZkHubServerManager(cfg, zk, addr, this);
 
         final SynchronousQueue<Either<HubInfo, PubSubException>> queue =
             new SynchronousQueue<Either<HubInfo, PubSubException>>();
@@ -289,6 +289,11 @@ public class MMTopicManager extends AbstractTopicManager implements TopicManager
     @Override
     protected void postReleaseCleanup(final ByteString topic,
                                       final Callback<Void> cb, final Object ctx) {
+
+        // Reduce load. We've removed the topic from our topic set, so do this as well.
+        // When we reclaim the topic, we will increment the load again.
+        hubManager.uploadSelfLoadData(myHubLoad.setNumTopics(topics.size()));
+
         mm.readOwnerInfo(topic, new Callback<Versioned<HubInfo>>() {
             @Override
             public void operationFinished(Object ctx, Versioned<HubInfo> owner) {

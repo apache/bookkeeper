@@ -38,6 +38,8 @@ public class HubLoad implements Comparable<HubLoad> {
     public static final HubLoad MIN_LOAD = new HubLoad(0);
 
     public static class InvalidHubLoadException extends Exception {
+        private static final long serialVersionUID = 5870487176956413387L;
+
         public InvalidHubLoadException(String msg) {
             super(msg);
         }
@@ -48,7 +50,7 @@ public class HubLoad implements Comparable<HubLoad> {
     }
 
     // how many topics that a hub server serves
-    long numTopics; 
+    long numTopics;
 
     public HubLoad(long num) {
         this.numTopics = num;
@@ -58,9 +60,14 @@ public class HubLoad implements Comparable<HubLoad> {
         this.numTopics = data.getNumTopics();
     }
 
+    // TODO: Make this threadsafe (BOOKKEEPER-379)
     public HubLoad setNumTopics(long numTopics) {
         this.numTopics = numTopics;
         return this;
+    }
+
+    public long getNumTopics() {
+        return this.numTopics;
     }
 
     public HubLoadData toHubLoadData() {

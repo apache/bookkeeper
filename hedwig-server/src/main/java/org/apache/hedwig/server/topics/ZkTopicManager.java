@@ -77,7 +77,7 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
 
         super(cfg, scheduler);
         this.zk = zk;
-        this.hubManager = new ZkHubServerManager(cfg, zk, addr);
+        this.hubManager = new ZkHubServerManager(cfg, zk, addr, this);
 
         myHubLoad = new HubLoad(topics.size());
         this.hubManager.registerListener(new HubServerManager.ManagerListener() {
@@ -274,6 +274,10 @@ public class ZkTopicManager extends AbstractTopicManager implements TopicManager
 
     @Override
     protected void postReleaseCleanup(final ByteString topic, final Callback<Void> cb, Object ctx) {
+
+        // Reduce load. We've removed the topic from our topic set, so do this as well.
+        // When we reclaim the topic, we will increment the load again.
+        hubManager.uploadSelfLoadData(myHubLoad.setNumTopics(topics.size()));
 
         zk.getData(hubPath(topic), false, new SafeAsyncZKCallback.DataCallback() {
             @Override

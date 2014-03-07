@@ -182,6 +182,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-683: TestSubAfterCloseSub fails on 4.2 (jiannan via ivank)
 
+        BOOKKEEPER-363: Re-distributing topics among newly added hubs. (aniruddha via ivank)
+
       hedwig-client:
 
         BOOKKEEPER-598: Fails to compile - RESUBSCRIBE_EXCEPTION conflict (Matthew Farrellee via sijie)
