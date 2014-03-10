@@ -67,6 +67,7 @@ public class TestSpeculativeRead extends BaseTestCase {
         return l.getId();
     }
 
+    @SuppressWarnings("deprecation")
     BookKeeper createClient(int specTimeout) throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
             .setSpeculativeReadTimeout(specTimeout)

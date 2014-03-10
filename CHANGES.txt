@@ -12,6 +12,8 @@ Release 4.2.3 - 2013-12-04
 
         BOOKKEEPER-688: NPE exception in PerChannelBookieClient (ivank via sijie)
 
+        BOOKKEEPER-602: we should have request timeouts rather than channel timeout in PerChannelBookieClient (Aniruddha via sijie)
+
 Release 4.2.2 - 2013-10-02
 
   Backward compatible changes:

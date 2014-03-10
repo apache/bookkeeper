@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This class tests the ledger close logic.
  */
+@SuppressWarnings("deprecation")
 public class LedgerCloseTest extends BookKeeperClusterTestCase {
 
     static Logger LOG = LoggerFactory.getLogger(LedgerCloseTest.class);
