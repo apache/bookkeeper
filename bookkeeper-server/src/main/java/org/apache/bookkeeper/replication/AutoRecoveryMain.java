@@ -120,13 +120,17 @@ public class AutoRecoveryMain {
         try {
             deathWatcher.interrupt();
             deathWatcher.join();
-
-            auditorElector.shutdown();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LOG.warn("Interrupted shutting down auto recovery", e);
         }
 
+        try {
+            auditorElector.shutdown();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.warn("Interrupted shutting down auditor elector", e);
+        }
         replicationWorker.shutdown();
         try {
             zk.close();
