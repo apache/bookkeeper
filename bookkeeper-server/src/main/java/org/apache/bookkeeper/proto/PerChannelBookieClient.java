@@ -199,8 +199,9 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                         closeChannel(future.getChannel());
                         return; // pendingOps should have been completed when other channel connected
                     } else {
-                        LOG.error("Could not connect to bookie: {}, current state {} : ",
-                                  new Object[] { future.getChannel(), state, future.getCause() });
+                        LOG.error("Could not connect to bookie: {}/{}, current state {} : ",
+                                  new Object[] { future.getChannel(), addr,
+                                                 state, future.getCause() });
                         rc = BKException.Code.BookieHandleNotAvailableException;
                         closeChannel(future.getChannel());
                         channel = null;

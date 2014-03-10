@@ -16,6 +16,8 @@ Release 4.2.3 - 2013-12-04
 
         BOOKKEEPER-714: Logging channel exceptions in PerChannelBookieClient (sijie)
 
+        BOOKKEEPER-726: PerChannelBookieClient should print address that it failed to connect to when it fails to correct (ivank via sijie)
+
 Release 4.2.2 - 2013-10-02
 
   Backward compatible changes:
