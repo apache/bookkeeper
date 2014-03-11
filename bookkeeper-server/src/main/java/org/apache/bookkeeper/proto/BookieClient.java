@@ -25,7 +25,6 @@ import static com.google.common.base.Charsets.UTF_8;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -52,7 +51,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.ExtensionRegistry;
 
 import io.netty.buffer.ByteBuf;
@@ -210,14 +208,42 @@ public class BookieClient implements PerChannelBookieClientFactory {
         }
     }
 
-    public void addEntry(final BookieSocketAddress addr, final long ledgerId, final byte[] masterKey,
-            final long entryId, final ByteBuf toSend, final WriteCallback cb, final Object ctx, final int options) {
+    private void completeAdd(final int rc,
+                             final long ledgerId,
+                             final long entryId,
+                             final BookieSocketAddress addr,
+                             final WriteCallback cb,
+                             final Object ctx) {
+        try {
+            executor.submitOrdered(ledgerId, new SafeRunnable() {
+                @Override
+                public void safeRun() {
+                    cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
+                }
+                @Override
+                public String toString() {
+                    return String.format("CompleteWrite(ledgerId=%d, entryId=%d, addr=%s)", ledgerId, entryId, addr);
+                }
+            });
+        } catch (RejectedExecutionException ree) {
+            cb.writeComplete(getRc(BKException.Code.InterruptedException), ledgerId, entryId, addr, ctx);
+        }
+    }
+
+    public void addEntry(final BookieSocketAddress addr,
+                         final long ledgerId,
+                         final byte[] masterKey,
+                         final long entryId,
+                         final ByteBuf toSend,
+                         final WriteCallback cb,
+                         final Object ctx,
+                         final int options) {
         closeLock.readLock().lock();
         try {
             final PerChannelBookieClientPool client = lookupClient(addr, entryId);
             if (client == null) {
-                cb.writeComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
-                                 ledgerId, entryId, addr, ctx);
+                completeAdd(getRc(BKException.Code.BookieHandleNotAvailableException),
+                            ledgerId, entryId, addr, cb, ctx);
                 return;
             }
 
@@ -229,17 +255,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 @Override
                 public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
                     if (rc != BKException.Code.OK) {
-                        try {
-                            executor.submitOrdered(ledgerId, new SafeRunnable() {
-                                @Override
-                                public void safeRun() {
-                                    cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
-                                }
-                            });
-                        } catch (RejectedExecutionException re) {
-                            cb.writeComplete(getRc(BKException.Code.InterruptedException),
-                                    ledgerId, entryId, addr, ctx);
-                        }
+                        completeAdd(rc, ledgerId, entryId, addr, cb, ctx);
                     } else {
                         pcbc.addEntry(ledgerId, masterKey, entryId, toSend, cb, ctx, options);
                     }
@@ -248,6 +264,25 @@ public class BookieClient implements PerChannelBookieClientFactory {
             }, ledgerId);
         } finally {
             closeLock.readLock().unlock();
+        }
+    }
+    
+    private void completeRead(final int rc,
+                              final long ledgerId,
+                              final long entryId,
+                              final ByteBuf entry,
+                              final ReadEntryCallback cb,
+                              final Object ctx) {
+        try {
+            executor.submitOrdered(ledgerId, new SafeRunnable() {
+                @Override
+                public void safeRun() {
+                    cb.readEntryComplete(rc, ledgerId, entryId, entry, ctx);
+                }
+            });
+        } catch (RejectedExecutionException ree) {
+            cb.readEntryComplete(getRc(BKException.Code.InterruptedException),
+                                 ledgerId, entryId, entry, ctx);
         }
     }
 
@@ -261,8 +296,8 @@ public class BookieClient implements PerChannelBookieClientFactory {
         try {
             final PerChannelBookieClientPool client = lookupClient(addr, entryId);
             if (client == null) {
-                cb.readEntryComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
-                                     ledgerId, entryId, null, ctx);
+                completeRead(getRc(BKException.Code.BookieHandleNotAvailableException),
+                             ledgerId, entryId, null, cb, ctx);
                 return;
             }
 
@@ -270,17 +305,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 @Override
                 public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
                     if (rc != BKException.Code.OK) {
-                        try {
-                            executor.submitOrdered(ledgerId, new SafeRunnable() {
-                                @Override
-                                public void safeRun() {
-                                    cb.readEntryComplete(rc, ledgerId, entryId, null, ctx);
-                                }
-                            });
-                        } catch (RejectedExecutionException re) {
-                            cb.readEntryComplete(getRc(BKException.Code.InterruptedException),
-                                    ledgerId, entryId, null, ctx);
-                        }
+                        completeRead(rc, ledgerId, entryId, null, cb, ctx);
                         return;
                     }
                     pcbc.readEntryAndFenceLedger(ledgerId, masterKey, entryId, cb, ctx);

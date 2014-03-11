@@ -45,6 +45,7 @@ import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
 import org.apache.bookkeeper.meta.CleanupLedgerManager;
@@ -122,7 +123,10 @@ public class BookKeeper implements AutoCloseable {
     final HashedWheelTimer requestTimer;
     final boolean ownTimer;
     final FeatureProvider featureProvider;
-    ScheduledExecutorService bookieInfoScheduler;
+    final ScheduledExecutorService bookieInfoScheduler;
+
+    // Features
+    final Feature disableEnsembleChangeFeature;
 
     // Ledger manager responsible for how to store ledger meta data
     final LedgerManagerFactory ledgerManagerFactory;
@@ -135,6 +139,7 @@ public class BookKeeper implements AutoCloseable {
 
     final ClientConfiguration conf;
     final int explicitLacInterval;
+    final boolean delayEnsembleChange;
 
     // Close State
     boolean closed = false;
@@ -296,6 +301,7 @@ public class BookKeeper implements AutoCloseable {
                        FeatureProvider featureProvider)
             throws IOException, InterruptedException, KeeperException {
         this.conf = conf;
+        this.delayEnsembleChange = conf.getDelayEnsembleChange();
 
         // initialize zookeeper client
         if (zkc == null) {
@@ -341,6 +347,9 @@ public class BookKeeper implements AutoCloseable {
         } else {
             this.featureProvider = featureProvider;
         }
+        
+        // get features
+        this.disableEnsembleChangeFeature = this.featureProvider.getFeature(conf.getDisableEnsembleChangeFeatureName());
 
         // initialize scheduler
         ThreadFactoryBuilder tfb = new ThreadFactoryBuilder().setNameFormat(
@@ -378,6 +387,7 @@ public class BookKeeper implements AutoCloseable {
             this.bookieInfoReader.start();
         } else {
             LOG.info("Weighted ledger placement is not enabled");
+            this.bookieInfoScheduler = null;
             this.bookieInfoReader = new BookieInfoReader(this, conf, null);
             this.bookieWatcher.readBookiesBlocking();
         }
