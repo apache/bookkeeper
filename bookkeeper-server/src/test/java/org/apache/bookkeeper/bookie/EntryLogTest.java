@@ -211,12 +211,9 @@ public class EntryLogTest extends TestCase {
         bookie.getLedgerDirsManager().addToFilledDirs(entryLogger.currentDir);
         ledgerStorage.addEntry(generateEntry(3, 1));
         // Verify written entries
-        Assert.assertArrayEquals(generateEntry(1, 1).array(), ledgerStorage
-                .getEntry(1, 1).array());
-        Assert.assertArrayEquals(generateEntry(2, 1).array(), ledgerStorage
-                .getEntry(2, 1).array());
-        Assert.assertArrayEquals(generateEntry(3, 1).array(), ledgerStorage
-                .getEntry(3, 1).array());
+        Assert.assertTrue(0 == generateEntry(1, 1).compareTo(ledgerStorage.getEntry(1, 1)));
+        Assert.assertTrue(0 == generateEntry(2, 1).compareTo(ledgerStorage.getEntry(2, 1)));
+        Assert.assertTrue(0 == generateEntry(3, 1).compareTo(ledgerStorage.getEntry(3, 1)));
     }
 
     @After

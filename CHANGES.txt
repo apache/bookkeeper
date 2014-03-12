@@ -176,6 +176,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-740: AutoRecoveryMainTest#testAutoRecoverySessionLoss is failing (Rakesh via sijie)
 
+        BOOKKEEPER-432: Improve performance of entry log range read per ledger entries (yixue, sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

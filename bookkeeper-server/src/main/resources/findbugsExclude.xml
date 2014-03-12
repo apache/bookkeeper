@@ -20,4 +20,17 @@
     <!-- generated code, we can't be held responsible for findbugs in it //-->
     <Class name="~org\.apache\.bookkeeper\.proto\.DataFormats.*" />
   </Match>
+  <Match>
+    <!-- it is safe to store external bytes reference here. since we are using
+         bytes from a slab. //-->
+    <Class name="org.apache.bookkeeper.bookie.EntryKeyValue" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+  <Match>
+    <!-- it is safe to store external bytes reference here. since we are using
+         bytes from a slab. //-->
+    <Class name="org.apache.bookkeeper.bookie.EntryKeyValue" />
+    <Method name="getBuffer" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
 </FindBugsFilter>

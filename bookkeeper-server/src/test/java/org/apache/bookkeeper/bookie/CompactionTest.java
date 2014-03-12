@@ -102,6 +102,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         baseConf.setMinorCompactionInterval(minorCompactionInterval);
         baseConf.setMajorCompactionInterval(majorCompactionInterval);
         baseConf.setEntryLogFilePreAllocationEnabled(false);
+        baseConf.setSortedLedgerStorageEnabled(false);
 
         super.setUp();
     }

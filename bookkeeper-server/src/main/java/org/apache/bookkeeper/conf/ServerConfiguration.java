@@ -21,10 +21,8 @@ import java.io.File;
 import java.util.List;
 
 import com.google.common.annotations.Beta;
-
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
-
-import com.google.common.annotations.Beta;
 
 /**
  * Configuration manages server-side settings
@@ -94,6 +92,11 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     protected final static String READ_BUFFER_SIZE = "readBufferSizeBytes";
     protected final static String WRITE_BUFFER_SIZE = "writeBufferSizeBytes";
+
+    protected final static String SORTED_LEDGER_STORAGE_ENABLED = "sortedLedgerStorageEnabled";
+    protected final static String SKIP_LIST_SIZE_LIMIT = "skipListSizeLimit";
+    protected final static String SKIP_LIST_CHUNK_SIZE_ENTRY = "skipListArenaChunkSize";
+    protected final static String SKIP_LIST_MAX_ALLOC_ENTRY = "skipListArenaMaxAllocSize";
 
     /**
      * Construct a default configuration object
@@ -732,7 +735,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * that ledger.
      *
      * @see org.apache.bookkeeper.client.BookKeeper#openLedger
-     * 
+     *
      * @param waitTime time to wait before replicating ledger fragment
      */
     public void setOpenLedgerRereplicationGracePeriod(String waitTime) {
@@ -743,7 +746,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * Get the grace period which the rereplication worker to wait before
      * fencing and rereplicating a ledger fragment which is still being written
      * to, on bookie failure.
-     * 
+     *
      * @return long
      */
     public long getOpenLedgerRereplicationGracePeriod() {
@@ -856,6 +859,76 @@ public class ServerConfiguration extends AbstractConfiguration {
         return getInt(NUM_JOURNAL_CALLBACK_THREADS, 1);
     }
 
+    /**
+     * Set sorted-ledger storage enabled or not
+     *
+     * @param enabled
+     */
+    public ServerConfiguration setSortedLedgerStorageEnabled(boolean enabled) {
+        this.setProperty(SORTED_LEDGER_STORAGE_ENABLED, enabled);
+        return this;
+    }
+
+    /**
+     * Check if sorted-ledger storage enabled (default true)
+     *
+     * @return
+     */
+    public boolean getSortedLedgerStorageEnabled() {
+        return this.getBoolean(SORTED_LEDGER_STORAGE_ENABLED, true);
+    }
+
+    /**
+     * Get skip list data size limitation (default 64MB)
+     *
+     * @return skip list data size limitation
+     */
+    public long getSkipListSizeLimit() {
+        return this.getLong(SKIP_LIST_SIZE_LIMIT, 64 * 1024 * 1024L);
+    }
+
+    /**
+     * Set skip list size limit.
+     *
+     * @param size skip list size limit.
+     * @return server configuration object.
+     */
+    public ServerConfiguration setSkipListSizeLimit(int size) {
+        setProperty(SKIP_LIST_SIZE_LIMIT, size);
+        return this;
+    }
+
+    /**
+     * Get the number of bytes we should use as chunk allocation for the {@link
+     * org.apache.bookkeeper.bookie.SkipListArena}
+     * Default is 4 MB
+     * @return
+     */
+    public int getSkipListArenaChunkSize() {
+        return getInt(SKIP_LIST_CHUNK_SIZE_ENTRY, 4096 * 1024);
+    }
+
+    /**
+     * Set the number of bytes w used as chunk allocation for {@link
+     * org.apache.bookkeeper.bookie.SkipListArena}.
+     *
+     * @param size chunk size.
+     * @return server configuration object.
+     */
+    public ServerConfiguration setSkipListArenaChunkSize(int size) {
+        setProperty(SKIP_LIST_CHUNK_SIZE_ENTRY, size);
+        return this;
+    }
+
+    /**
+     * Get the max size we should delegate memory allocation to VM for the {@link
+     * org.apache.bookkeeper.bookie.SkipListArena}
+     * Default is 128 KB
+     * @return
+     */
+    public int getSkipListArenaMaxAllocSize() {
+        return getInt(SKIP_LIST_MAX_ALLOC_ENTRY, 128 * 1024);
+    }
 
     /**
      * Should we group journal force writes
@@ -940,10 +1013,10 @@ public class ServerConfiguration extends AbstractConfiguration {
      * Set whether the bookie is able to go into read-only mode.
      * If this is set to false, the bookie will shutdown on encountering
      * an error condition.
-     * 
+     *
      * @param enabled whether to enable read-only mode.
-     * 
-     * @return ServerConfiguration 
+     *
+     * @return ServerConfiguration
      */
     public ServerConfiguration setReadOnlyModeEnabled(boolean enabled) {
         setProperty(READ_ONLY_MODE_ENABLED, enabled);
@@ -952,7 +1025,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Get whether read-only mode is enabled. The default is false.
-     * 
+     *
      * @return boolean
      */
     public boolean isReadOnlyModeEnabled() {
@@ -983,9 +1056,9 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Set the Disk free space threshold as a fraction of the total
      * after which disk will be considered as full during disk check.
-     * 
+     *
      * @param threshold threshold to declare a disk full
-     * 
+     *
      * @return ServerConfiguration
      */
     public ServerConfiguration setDiskUsageThreshold(float threshold) {
@@ -995,7 +1068,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Returns disk free space threshold. By default it is 0.95.
-     * 
+     *
      * @return float
      */
     public float getDiskUsageThreshold() {
@@ -1004,9 +1077,9 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Set the disk checker interval to monitor ledger disk space
-     * 
+     *
      * @param interval interval between disk checks for space.
-     * 
+     *
      * @return ServerConfiguration
      */
     public ServerConfiguration setDiskCheckInterval(int interval) {
@@ -1016,7 +1089,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Get the disk checker interval
-     * 
+     *
      * @return int
      */
     public int getDiskCheckInterval() {
@@ -1139,5 +1212,15 @@ public class ServerConfiguration extends AbstractConfiguration {
     public ServerConfiguration setJournalRemovePagesFromCache(boolean enabled) {
         setProperty(JOURNAL_REMOVE_FROM_PAGE_CACHE, enabled);
         return this;
+    }
+
+    /**
+     * Validate the configuration.
+     * @throws ConfigurationException
+     */
+    public void validate() throws ConfigurationException {
+        if (getSkipListArenaChunkSize() < getSkipListArenaMaxAllocSize()) {
+            throw new ConfigurationException("Arena max allocation size should be smaller than the chunk size.");
+        }
     }
 }

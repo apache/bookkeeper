@@ -437,9 +437,16 @@ public class Bookie extends BookieCriticalThread {
         this.ledgerDirsManager.init();
         // instantiate the journal
         journal = new Journal(conf, ledgerDirsManager);
-        ledgerStorage = new InterleavedLedgerStorage(conf, ledgerManager,
-                                                     ledgerDirsManager, indexDirsManager,
-                                                     journal);
+        // Check the type of storage.
+        if (conf.getSortedLedgerStorageEnabled()) {
+            ledgerStorage = new SortedLedgerStorage(conf, ledgerManager,
+                                                    ledgerDirsManager, indexDirsManager,
+                                                    journal);
+        } else {
+            ledgerStorage = new InterleavedLedgerStorage(conf, ledgerManager,
+                                                         ledgerDirsManager, indexDirsManager,
+                                                         journal);
+        }
         syncThread = new SyncThread(conf, getLedgerDirsListener(),
                                     ledgerStorage, journal);
 

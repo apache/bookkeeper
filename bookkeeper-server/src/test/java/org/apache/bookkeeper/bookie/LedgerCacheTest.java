@@ -220,7 +220,7 @@ public class LedgerCacheTest extends TestCase {
 
             // flush all first to clean previous dirty ledgers
             ledgerCache.flushLedger(true);
-            // flush all 
+            // flush all
             ledgerCache.flushLedger(true);
 
             // delete serveral ledgers
@@ -320,7 +320,8 @@ public class LedgerCacheTest extends TestCase {
             .setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setFlushInterval(1000)
-            .setPageLimit(1);
+            .setPageLimit(1)
+            .setSortedLedgerStorageEnabled(false);
 
         Bookie b = new Bookie(conf);
         b.start();

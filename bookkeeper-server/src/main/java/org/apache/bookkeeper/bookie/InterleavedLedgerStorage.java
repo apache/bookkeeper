@@ -46,22 +46,22 @@ class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
     private final static Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
 
     // Hold the last checkpoint
-    static class CheckpointHolder {
+    protected static class CheckpointHolder {
         Checkpoint lastCheckpoint = Checkpoint.MAX;
 
-        synchronized void setNextCheckpoint(Checkpoint cp) {
+        protected synchronized void setNextCheckpoint(Checkpoint cp) {
             if (Checkpoint.MAX.equals(lastCheckpoint) || lastCheckpoint.compareTo(cp) < 0) {
                 lastCheckpoint = cp;
             }
         }
 
-        synchronized void clearLastCheckpoint(Checkpoint done) {
+        protected synchronized void clearLastCheckpoint(Checkpoint done) {
             if (0 == lastCheckpoint.compareTo(done)) {
                 lastCheckpoint = Checkpoint.MAX;
             }
         }
 
-        synchronized Checkpoint getLastCheckpoint() {
+        protected synchronized Checkpoint getLastCheckpoint() {
             return lastCheckpoint;
         }
     }
@@ -69,7 +69,7 @@ class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
     EntryLogger entryLogger;
     LedgerCache ledgerCache;
     private final CheckpointSource checkpointSource;
-    private final CheckpointHolder checkpointHolder = new CheckpointHolder();
+    protected final CheckpointHolder checkpointHolder = new CheckpointHolder();
 
     // A sorted map to stored all active ledger ids
     protected final SnapshotMap<Long, Boolean> activeLedgers;
