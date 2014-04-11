@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.meta;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,6 +15,7 @@ package org.apache.bookkeeper.meta;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -72,9 +71,6 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
     // Path to generate global id
     private final String idGenPath;
 
-    // we use this to prevent long stack chains from building up in callbacks
-    ScheduledExecutorService scheduler;
-
     /**
      * Constructor
      *
@@ -87,18 +83,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
         super(conf, zk);
 
         this.idGenPath = ledgerRootPath + IDGENERATION_PREFIX;
-        this.scheduler = Executors.newSingleThreadScheduledExecutor();
         LOG.debug("Using HierarchicalLedgerManager with root path : {}", ledgerRootPath);
-    }
-
-    @Override
-    public void close() {
-        try {
-            scheduler.shutdown();
-        } catch (Exception e) {
-            LOG.warn("Error when closing HierarchicalLedgerManager : ", e);
-        }
-        super.close();
     }
 
     @Override

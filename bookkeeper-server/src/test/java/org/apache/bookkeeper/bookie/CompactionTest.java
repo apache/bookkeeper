@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.bookie;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +18,8 @@ package org.apache.bookkeeper.bookie;
  * under the License.
  *
  */
+package org.apache.bookkeeper.bookie;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.IOException;
@@ -41,6 +41,7 @@ import org.apache.bookkeeper.util.TestUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.versioning.Version;
 
@@ -341,6 +342,16 @@ public class CompactionTest extends BookKeeperClusterTestCase {
                 public void asyncProcessLedgers(Processor<Long> processor,
                                                 AsyncCallback.VoidCallback finalCb,
                         Object context, int successRc, int failureRc) {
+                    unsupported();
+                }
+                @Override
+                public void registerLedgerMetadataListener(long ledgerId,
+                        LedgerMetadataListener listener) {
+                    unsupported();
+                }
+                @Override
+                public void unregisterLedgerMetadataListener(long ledgerId,
+                        LedgerMetadataListener listener) {
                     unsupported();
                 }
                 @Override

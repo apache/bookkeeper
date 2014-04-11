@@ -54,7 +54,7 @@ public class BookieLedgerIndexer {
     /**
      * Generating bookie vs its ledgers map by reading all the ledgers in each
      * bookie and parsing its metadata.
-     * 
+     *
      * @return bookie2ledgersMap map of bookie vs ledgers
      * @throws BKAuditException
      *             exception while getting bookie-ledgers
