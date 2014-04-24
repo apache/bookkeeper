@@ -64,7 +64,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
     private HashMap<String, AuditorElector> auditorElectors = new HashMap<String, AuditorElector>();
     private List<ZooKeeper> zkClients = new LinkedList<ZooKeeper>();
 
-    private final static int CHECK_INTERVAL = 100; // run every 100ms
+    private final static int CHECK_INTERVAL = 1; // run every second
 
     public AuditorPeriodicCheckTest() {
         super(3);
@@ -151,7 +151,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             if (underReplicatedLedger != -1) {
                 break;
             }
-            Thread.sleep(CHECK_INTERVAL);
+            Thread.sleep(CHECK_INTERVAL * 1000);
         }
         assertEquals("Ledger should be under replicated", ledgerId, underReplicatedLedger);
         underReplicationManager.close();
@@ -199,7 +199,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             if (underReplicatedLedger != -1) {
                 break;
             }
-            Thread.sleep(CHECK_INTERVAL);
+            Thread.sleep(CHECK_INTERVAL * 1000);
         }
         assertEquals("Ledger should be under replicated", ledgerToCorrupt, underReplicatedLedger);
         underReplicationManager.close();
@@ -256,14 +256,14 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         bsConfs.add(conf);
         bs.add(startBookie(conf, deadBookie));
 
-        Thread.sleep(CHECK_INTERVAL * 2);
+        Thread.sleep(CHECK_INTERVAL * 2000);
         assertEquals("Nothing should have tried to read", 0, numReads.get());
         underReplicationManager.enableLedgerReplication();
-        Thread.sleep(CHECK_INTERVAL * 2); // give it time to run
+        Thread.sleep(CHECK_INTERVAL * 2000); // give it time to run
 
         underReplicationManager.disableLedgerReplication();
         // give it time to stop, from this point nothing new should be marked
-        Thread.sleep(CHECK_INTERVAL * 2);
+        Thread.sleep(CHECK_INTERVAL * 2000);
 
         int numUnderreplicated = 0;
         long underReplicatedLedger = -1;
@@ -277,7 +277,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             underReplicationManager.markLedgerReplicated(underReplicatedLedger);
         } while (underReplicatedLedger != -1);
 
-        Thread.sleep(CHECK_INTERVAL * 2); // give a chance to run again (it shouldn't, it's disabled)
+        Thread.sleep(CHECK_INTERVAL * 2000); // give a chance to run again (it shouldn't, it's disabled)
 
         // ensure that nothing is marked as underreplicated
         underReplicatedLedger = underReplicationManager.pollLedgerToRereplicate();

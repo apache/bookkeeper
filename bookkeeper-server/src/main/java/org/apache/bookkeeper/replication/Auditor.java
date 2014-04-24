@@ -224,7 +224,7 @@ public class Auditor implements BookiesListener {
                                           +"running periodic check", ue);
                             }
                         }
-                    }, interval, interval, TimeUnit.MILLISECONDS);
+                    }, interval, interval, TimeUnit.SECONDS);
             } else {
                 LOG.info("Periodic checking disabled");
             }

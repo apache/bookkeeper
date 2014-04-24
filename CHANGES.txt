@@ -180,6 +180,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-742: Fix for empty ledgers losing quorum. (ivank)
 
+        BOOKKEEPER-743: Periodic ledger check running too often as doc doesn't match implementation. (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
