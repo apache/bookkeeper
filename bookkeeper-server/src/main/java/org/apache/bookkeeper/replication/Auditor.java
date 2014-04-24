@@ -43,6 +43,8 @@ import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.zookeeper.AsyncCallback;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.SettableFuture;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -54,6 +56,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -137,48 +140,49 @@ public class Auditor implements BookiesListener {
         }
     }
 
-    private synchronized void submitAuditTask() {
-        synchronized (this) {
-            if (executor.isShutdown()) {
-                return;
-            }
-            executor.submit(new Runnable() {
-                    @SuppressWarnings("unchecked")
-                    public void run() {
-                        try {
-                            waitIfLedgerReplicationDisabled();
-
-                            List<String> availableBookies = getAvailableBookies();
-
-                            // casting to String, as knownBookies and availableBookies
-                            // contains only String values
-                            // find new bookies(if any) and update the known bookie list
-                            Collection<String> newBookies = CollectionUtils.subtract(
-                                    availableBookies, knownBookies);
-                            knownBookies.addAll(newBookies);
-
-                            // find lost bookies(if any)
-                            Collection<String> lostBookies = CollectionUtils.subtract(
-                                    knownBookies, availableBookies);
-
-                            if (lostBookies.size() > 0) {
-                                knownBookies.removeAll(lostBookies);
-                                Map<String, Set<Long>> ledgerDetails = generateBookie2LedgersIndex();
-                                handleLostBookies(lostBookies, ledgerDetails);
-                            }
-                        } catch (BKException bke) {
-                            LOG.error("Exception getting bookie list", bke);
-                        } catch (InterruptedException ie) {
-                            Thread.currentThread().interrupt();
-                            LOG.error("Interrupted while watching available bookies ", ie);
-                        } catch (BKAuditException bke) {
-                            LOG.error("Exception while watching available bookies", bke);
-                        } catch (UnavailableException ue) {
-                            LOG.error("Exception while watching available bookies", ue);
-                        }
-                    }
-                });
+    @VisibleForTesting
+    synchronized Future<?> submitAuditTask() {
+        if (executor.isShutdown()) {
+            SettableFuture<Void> f = SettableFuture.<Void>create();
+            f.setException(new BKAuditException("Auditor shutting down"));
+            return f;
         }
+        return executor.submit(new Runnable() {
+                @SuppressWarnings("unchecked")
+                public void run() {
+                    try {
+                        waitIfLedgerReplicationDisabled();
+
+                        List<String> availableBookies = getAvailableBookies();
+
+                        // casting to String, as knownBookies and availableBookies
+                        // contains only String values
+                        // find new bookies(if any) and update the known bookie list
+                        Collection<String> newBookies = CollectionUtils.subtract(
+                                availableBookies, knownBookies);
+                        knownBookies.addAll(newBookies);
+
+                        // find lost bookies(if any)
+                        Collection<String> lostBookies = CollectionUtils.subtract(
+                                knownBookies, availableBookies);
+
+                        if (lostBookies.size() > 0) {
+                            knownBookies.removeAll(lostBookies);
+                            Map<String, Set<Long>> ledgerDetails = generateBookie2LedgersIndex();
+                            handleLostBookies(lostBookies, ledgerDetails);
+                        }
+                    } catch (BKException bke) {
+                        LOG.error("Exception getting bookie list", bke);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        LOG.error("Interrupted while watching available bookies ", ie);
+                    } catch (BKAuditException bke) {
+                        LOG.error("Exception while watching available bookies", bke);
+                    } catch (UnavailableException ue) {
+                        LOG.error("Exception while watching available bookies", ue);
+                    }
+                }
+            });
     }
 
     public void start() {
