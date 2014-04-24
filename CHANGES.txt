@@ -22,6 +22,8 @@ Release 4.2.3 - 2013-12-04
 
         BOOKKEEPER-742: Fix for empty ledgers losing quorum. (ivank)
 
+        BOOKKEEPER-743: Periodic ledger check running too often as doc doesn't match implementation. (ivank)
+
 Release 4.2.2 - 2013-10-02
 
   Backward compatible changes:
