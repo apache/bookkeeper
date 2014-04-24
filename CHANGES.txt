@@ -20,6 +20,8 @@ Release 4.2.3 - 2013-12-04
        
         BOOKKEEPER-710: OpenLedgerNoRecovery should watch ensemble change. (sijie, ivank via fpj)
 
+        BOOKKEEPER-742: Fix for empty ledgers losing quorum. (ivank)
+
 Release 4.2.2 - 2013-10-02
 
   Backward compatible changes:

@@ -43,6 +43,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.metastore.InMemoryMetaStore;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
+import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.commons.io.FileUtils;
@@ -528,5 +529,15 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
             LOG.debug("Shutdown Auditor Recovery for the bookie:"
                     + autoRecoveryProcess.getKey().getLocalAddress());
         }
+    }
+
+    public Auditor getAuditor() throws Exception {
+        for (AutoRecoveryMain p : autoRecoveryProcesses.values()) {
+            Auditor a = p.getAuditor();
+            if (a != null) {
+                return a;
+            }
+        }
+        throw new Exception("No auditor found");
     }
 }

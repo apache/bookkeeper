@@ -24,6 +24,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -138,6 +140,11 @@ public class AutoRecoveryMain {
 
     private int getExitCode() {
         return exitCode;
+    }
+
+    @VisibleForTesting
+    public Auditor getAuditor() {
+        return auditorElector.getAuditor();
     }
 
     /** Is auto-recovery service running? */

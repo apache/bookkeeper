@@ -70,5 +70,9 @@ public abstract class ReplicationException extends Exception {
         BKAuditException(String message, Throwable cause) {
             super(message, cause);
         }
+
+        BKAuditException(String message) {
+            super(message);
+        }
     }
 }

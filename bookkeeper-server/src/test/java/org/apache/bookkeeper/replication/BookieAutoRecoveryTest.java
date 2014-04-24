@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -37,7 +38,7 @@ import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
-import org.apache.bookkeeper.test.MultiLedgerManagerTestCase;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -52,8 +53,7 @@ import org.slf4j.LoggerFactory;
  * Auditor-rereplication process: Auditor will publish the bookie failures,
  * consequently ReplicationWorker will get the notifications and act on it.
  */
-public class BookieAutoRecoveryTest extends
-        MultiLedgerManagerTestCase {
+public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory
             .getLogger(BookieAutoRecoveryTest.class);
     private static final byte[] PASSWD = "admin".getBytes();
@@ -68,15 +68,15 @@ public class BookieAutoRecoveryTest extends
     private final String UNDERREPLICATED_PATH = baseClientConf
             .getZkLedgersRootPath() + "/underreplication/ledgers";
 
-    public BookieAutoRecoveryTest(String ledgerManagerFactory) throws IOException, KeeperException,
+    public BookieAutoRecoveryTest() throws IOException, KeeperException,
             InterruptedException, UnavailableException, CompatibilityException {
         super(3);
-        LOG.info("Running test case using ledger manager : "
-                + ledgerManagerFactory);
-        // set ledger manager name
-        baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
+
+        baseConf.setLedgerManagerFactoryClassName(
+                "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
         baseConf.setOpenLedgerRereplicationGracePeriod(openLedgerRereplicationGracePeriod);
-        baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
+        baseClientConf.setLedgerManagerFactoryClassName(
+                "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
         this.digestType = DigestType.MAC;
         setAutoRecoveryEnabled(true);
     }
@@ -340,6 +340,51 @@ public class BookieAutoRecoveryTest extends
             assertNull("UrLedger still exists after rereplication",
                     watchUrLedgerNode(getUrLedgerZNode(lh), latch));
         }
+    }
+
+    /**
+     * Test that if a empty ledger loses the bookie not in the quorum for entry 0, it will
+     * still be openable when it loses enough bookies to lose a whole quorum.
+     */
+    @Test(timeout=10000)
+    public void testEmptyLedgerLosesQuorumEventually() throws Exception {
+        LedgerHandle lh = bkc.createLedger(3, 2, 2, DigestType.CRC32, PASSWD);
+        CountDownLatch latch = new CountDownLatch(1);
+        String urZNode = getUrLedgerZNode(lh);
+        watchUrLedgerNode(urZNode, latch);
+
+        InetSocketAddress replicaToKill = LedgerHandleAdapter
+            .getLedgerMetadata(lh).getEnsembles().get(0L).get(2);
+        LOG.info("Killing last bookie, {}, in ensemble {}", replicaToKill,
+                 LedgerHandleAdapter.getLedgerMetadata(lh).getEnsembles().get(0L));
+        killBookie(replicaToKill);
+
+        getAuditor().submitAuditTask().get(); // ensure auditor runs
+
+        assertTrue("Should be marked as underreplicated", latch.await(5, TimeUnit.SECONDS));
+        latch = new CountDownLatch(1);
+        Stat s = watchUrLedgerNode(urZNode, latch); // should be marked as replicated
+        if (s != null) {
+            assertTrue("Should be marked as replicated", latch.await(10, TimeUnit.SECONDS));
+        }
+
+        replicaToKill = LedgerHandleAdapter
+            .getLedgerMetadata(lh).getEnsembles().get(0L).get(1);
+        LOG.info("Killing second bookie, {}, in ensemble {}", replicaToKill,
+                 LedgerHandleAdapter.getLedgerMetadata(lh).getEnsembles().get(0L));
+        killBookie(replicaToKill);
+
+        getAuditor().submitAuditTask().get(); // ensure auditor runs
+
+        assertTrue("Should be marked as underreplicated", latch.await(5, TimeUnit.SECONDS));
+        latch = new CountDownLatch(1);
+        s = watchUrLedgerNode(urZNode, latch); // should be marked as replicated
+        if (s != null) {
+            assertTrue("Should be marked as replicated", latch.await(5, TimeUnit.SECONDS));
+        }
+
+        // should be able to open ledger without issue
+        bkc.openLedger(lh.getId(), DigestType.CRC32, PASSWD);
     }
 
     private int getReplicaIndexInLedger(LedgerHandle lh,

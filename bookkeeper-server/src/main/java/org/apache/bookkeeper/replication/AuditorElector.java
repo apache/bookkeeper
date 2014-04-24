@@ -269,6 +269,11 @@ public class AuditorElector {
         executor.submit(r);
     }
 
+    @VisibleForTesting
+    Auditor getAuditor() {
+        return auditor;
+    }
+
     /**
      * Shutting down AuditorElector
      */
