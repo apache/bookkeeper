@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.client;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,17 +15,23 @@ package org.apache.bookkeeper.client;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.client;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 
 public class ClientUtil {
-    public static ChannelBuffer generatePacket(long ledgerId, long entryId, long lastAddConfirmed, 
-                                        long length, byte[] data) {
+    public static ChannelBuffer generatePacket(long ledgerId, long entryId, long lastAddConfirmed,
+                                               long length, byte[] data) {
+        return generatePacket(ledgerId, entryId, lastAddConfirmed, length, data, 0, data.length);
+    }
+
+    public static ChannelBuffer generatePacket(long ledgerId, long entryId, long lastAddConfirmed,
+                                               long length, byte[] data, int offset, int len) {
         CRC32DigestManager dm = new CRC32DigestManager(ledgerId);
         return dm.computeDigestAndPackageForSending(entryId, lastAddConfirmed, length,
-                                                    data, 0, data.length);
+                                                    data, offset, len);
     }
-    
+
     /** Returns that whether ledger is in open state */
     public static boolean isLedgerOpen(LedgerHandle handle) {
         return !handle.metadata.isClosed();

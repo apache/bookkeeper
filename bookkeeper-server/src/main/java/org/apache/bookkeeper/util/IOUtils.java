@@ -21,6 +21,8 @@
 package org.apache.bookkeeper.util;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.WritableByteChannel;
 
 import org.slf4j.Logger;
 
@@ -32,7 +34,7 @@ public class IOUtils {
     /**
      * Close the Closeable objects and <b>ignore</b> any {@link IOException} or
      * null pointers. Must only be used for cleanup in exception handlers.
-     * 
+     *
      * @param log
      *            the log to record problems to at debug level. Can be null.
      * @param closeables
@@ -54,7 +56,7 @@ public class IOUtils {
 
     /**
      * Confirm prompt for the console operations.
-     * 
+     *
      * @param prompt
      *            Prompt message to be displayed on console
      * @return Returns true if confirmed as 'Y', returns false if confirmed as
@@ -84,5 +86,19 @@ public class IOUtils {
             System.out.println("Invalid input: " + response);
             // else ask them again
         }
+    }
+
+    /**
+     * Write a ByteBuffer to a WritableByteChannel, handling short writes.
+     *
+     * @param bc               The WritableByteChannel to write to
+     * @param buf              The input buffer
+     * @throws IOException     On I/O error
+     */
+    public static void writeFully(WritableByteChannel bc, ByteBuffer buf)
+            throws IOException {
+        do {
+            bc.write(buf);
+        } while (buf.remaining() > 0);
     }
 }

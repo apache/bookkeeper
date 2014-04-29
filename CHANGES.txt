@@ -182,6 +182,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-743: Periodic ledger check running too often as doc doesn't match implementation. (ivank)
 
+        BOOKKEEPER-716: padding writes for bookie journal (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

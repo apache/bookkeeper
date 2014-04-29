@@ -471,7 +471,7 @@ public class Bookie extends BookieCriticalThread {
                 try {
                     LOG.debug("Replay journal - ledger id : {}, entry id : {}.", ledgerId, entryId);
                     if (entryId == METAENTRY_ID_LEDGER_KEY) {
-                        if (journalVersion >= 3) {
+                        if (journalVersion >= JournalChannel.V3) {
                             int masterKeyLen = recBuff.getInt();
                             byte[] masterKey = new byte[masterKeyLen];
 
@@ -483,7 +483,7 @@ public class Bookie extends BookieCriticalThread {
                                     + ") is too old to hold this");
                         }
                     } else if (entryId == METAENTRY_ID_FENCE_KEY) {
-                        if (journalVersion >= 4) {
+                        if (journalVersion >= JournalChannel.V4) {
                             byte[] key = masterKeyCache.get(ledgerId);
                             if (key == null) {
                                 key = ledgerStorage.readMasterKey(ledgerId);

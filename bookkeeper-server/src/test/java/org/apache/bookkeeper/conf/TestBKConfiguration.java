@@ -26,6 +26,8 @@ public class TestBKConfiguration {
     public static ServerConfiguration newServerConfiguration() {
         ServerConfiguration confReturn = new ServerConfiguration();
         confReturn.setJournalFlushWhenQueueEmpty(true);
+        // enable journal format version
+        confReturn.setJournalFormatVersionToWrite(5);
         return confReturn;
     }
 
