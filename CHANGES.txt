@@ -184,6 +184,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-716: padding writes for bookie journal (sijie via ivank)
 
+        BOOKKEEPER-744: Run the auditor bookie check periodically (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
