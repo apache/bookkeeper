@@ -287,8 +287,22 @@ public class Bookie extends BookieCriticalThread {
             return;
         }
         try {
-            String instanceId = getInstanceId(zk);
             boolean newEnv = false;
+            List<File> missedCookieDirs = new ArrayList<File>();
+            Cookie journalCookie = null;
+            // try to read cookie from journal directory. 
+            try {
+                journalCookie = Cookie.readFromDirectory(journalDirectory);
+                if (journalCookie.isBookieHostCreatedFromIp()) {
+                    conf.setUseHostNameAsBookieID(false);
+                } else {
+                    conf.setUseHostNameAsBookieID(true);
+                }
+            } catch (FileNotFoundException fnf) {
+                newEnv = true;
+                missedCookieDirs.add(journalDirectory);
+            }
+            String instanceId = getInstanceId(zk);
             Cookie masterCookie = Cookie.generateCookie(conf);
             if (null != instanceId) {
                 masterCookie.setInstanceId(instanceId);
@@ -297,17 +311,14 @@ public class Bookie extends BookieCriticalThread {
                 Cookie zkCookie = Cookie.readFromZooKeeper(zk, conf);
                 masterCookie.verify(zkCookie);
             } catch (KeeperException.NoNodeException nne) {
-                newEnv = true;
+                // can occur in cases:
+                // 1) new environment or 
+                // 2) done only metadata format and started bookie server.
             }
-            List<File> missedCookieDirs = new ArrayList<File>();
             checkDirectoryStructure(journalDirectory);
 
-            // try to read cookie from journal directory
-            try {
-                Cookie journalCookie = Cookie.readFromDirectory(journalDirectory);
+            if(!newEnv){
                 journalCookie.verify(masterCookie);
-            } catch (FileNotFoundException fnf) {
-                missedCookieDirs.add(journalDirectory);
             }
             for (File dir : allLedgerDirs) {
                 checkDirectoryStructure(dir);
@@ -359,8 +370,12 @@ public class Bookie extends BookieCriticalThread {
             iface = "default";
         }
         InetSocketAddress inetAddr = new InetSocketAddress(DNS.getDefaultHost(iface), conf.getBookiePort());
+        String hostAddress = inetAddr.getAddress().getHostAddress();
+        if (conf.getUseHostNameAsBookieID()) {
+            hostAddress = inetAddr.getAddress().getCanonicalHostName();
+        }
         BookieSocketAddress addr =
-            new BookieSocketAddress(inetAddr.getAddress().getHostAddress(), conf.getBookiePort());
+                new BookieSocketAddress(hostAddress, conf.getBookiePort());
         if (addr.getSocketAddress().getAddress().isLoopbackAddress()
             && !conf.getAllowLoopback()) {
             throw new UnknownHostException("Trying to listen on loopback address, "

@@ -186,6 +186,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-744: Run the auditor bookie check periodically (ivank)
 
+        BOOKKEEPER-629: Support hostname based ledger metadata to help users to change IP with existing installation (rakeshr via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

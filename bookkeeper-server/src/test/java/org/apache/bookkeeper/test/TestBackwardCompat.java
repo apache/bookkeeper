@@ -265,12 +265,14 @@ public class TestBackwardCompat {
         org.apache.bookkeeper.conf.ServerConfiguration conf;
         org.apache.bookkeeper.proto.BookieServer server = null;
 
-        ServerCurrent(File journalDir, File ledgerDir, int port) throws Exception {
+        ServerCurrent(File journalDir, File ledgerDir, int port,
+                boolean useHostNameAsBookieID) throws Exception {
             conf = TestBKConfiguration.newServerConfiguration();
             conf.setBookiePort(port);
             conf.setZkServers(zkUtil.getZooKeeperConnectString());
             conf.setJournalDirName(journalDir.getPath());
             conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
+            conf.setUseHostNameAsBookieID(useHostNameAsBookieID);
         }
 
         void start() throws Exception {
@@ -381,7 +383,7 @@ public class TestBackwardCompat {
 
         // Format the metadata using current version
         ServerCurrent currentServer = new ServerCurrent(journalDir, ledgerDir,
-                port);
+                port, false);
         BookKeeperAdmin.format(new ClientConfiguration(currentServer.conf),
                 false, true);
         // start the current version server with old version cookie
@@ -400,7 +402,7 @@ public class TestBackwardCompat {
                 Bookie.format(currentServer.conf, false, true));
         try {
             currentServer = null;
-            currentServer = new ServerCurrent(journalDir, ledgerDir, port);
+            currentServer = new ServerCurrent(journalDir, ledgerDir, port, false);
             currentServer.start();
         } finally {
             if (null != currentServer) {
@@ -447,7 +449,7 @@ public class TestBackwardCompat {
         s400.stop();
 
         // Start the current server, will require a filesystem upgrade
-        ServerCurrent scur = new ServerCurrent(journalDir, ledgerDir, port);
+        ServerCurrent scur = new ServerCurrent(journalDir, ledgerDir, port, false);
         try {
             scur.start();
             fail("Shouldn't be able to start without directory upgrade");
@@ -531,7 +533,7 @@ public class TestBackwardCompat {
         s410.stop();
 
         // Start the current server, will not require a filesystem upgrade
-        ServerCurrent scur = new ServerCurrent(journalDir, ledgerDir, port);
+        ServerCurrent scur = new ServerCurrent(journalDir, ledgerDir, port, false);
         scur.start();
 
         // check that old client can read its old ledgers on new server
@@ -614,5 +616,96 @@ public class TestBackwardCompat {
         lcur.close();
 
         scur.stop();
+    }
+
+    /**
+     * Test compatability between version 4.1.0 and the current version. - 4.1.0
+     * server restarts with useHostNameAsBookieID=true. Read ledgers with old
+     * and new clients
+     */
+    @Test(timeout = 60000)
+    public void testCompat410ReadLedgerOnRestartedServer() throws Exception {
+        File journalDir = File.createTempFile("bookie", "journal");
+        journalDir.delete();
+        journalDir.mkdir();
+        File ledgerDir = File.createTempFile("bookie", "ledger");
+        ledgerDir.delete();
+        ledgerDir.mkdir();
+
+        int port = PortManager.nextFreePort();
+        // start server, upgrade
+        Server410 s410 = new Server410(journalDir, ledgerDir, port);
+        s410.start();
+
+        Ledger410 l410 = Ledger410.newLedger();
+        l410.write100();
+        long oldLedgerId = l410.getId();
+        l410.close();
+
+        // Check that current client can to write to old server
+        LedgerCurrent lcur = LedgerCurrent.newLedger();
+        lcur.write100();
+        lcur.close();
+
+        s410.stop();
+
+        // Start the current server, will not require a filesystem upgrade
+        ServerCurrent scur = new ServerCurrent(journalDir, ledgerDir, port,
+                true);
+        scur.start();
+
+        // check that old client can read its old ledgers on new server
+        l410 = Ledger410.openLedger(oldLedgerId);
+        assertEquals(100, l410.readAll());
+        l410.close();
+
+        // Check that current client can read old ledgers on new server
+        final LedgerCurrent curledger = LedgerCurrent.openLedger(lcur.getId());
+        assertEquals("Failed to read entries!", 100, curledger.readAll());
+        curledger.close();
+    }
+
+    /**
+     * Test compatability between version 4.1.0 and the current version. - 4.1.0
+     * server restarts with useHostNameAsBookieID=true. Write ledgers with old
+     * and new clients
+     */
+    @Test(timeout = 60000)
+    public void testCompat410WriteLedgerOnRestartedServer() throws Exception {
+        File journalDir = File.createTempFile("bookie", "journal");
+        journalDir.delete();
+        journalDir.mkdir();
+        File ledgerDir = File.createTempFile("bookie", "ledger");
+        ledgerDir.delete();
+        ledgerDir.mkdir();
+
+        int port = PortManager.nextFreePort();
+        // start server, upgrade
+        Server410 s410 = new Server410(journalDir, ledgerDir, port);
+        s410.start();
+        s410.stop();
+
+        // Start the current server, will not require a filesystem upgrade
+        ServerCurrent scur = new ServerCurrent(journalDir, ledgerDir, port,
+                true);
+        scur.start();
+
+        // Check that current client can to write to server
+        LedgerCurrent lcur = LedgerCurrent.newLedger();
+        lcur.write100();
+        lcur.close();
+        final LedgerCurrent curledger = LedgerCurrent.openLedger(lcur.getId());
+        assertEquals("Failed to read entries!", 100, curledger.readAll());
+
+        // Check that current client can write to server
+        Ledger410 l410 = Ledger410.newLedger();
+        l410.write100();
+        long oldLedgerId = l410.getId();
+        l410.close();
+
+        // check that new client can read old ledgers on new server
+        LedgerCurrent oldledger = LedgerCurrent.openLedger(oldLedgerId);
+        assertEquals("Failed to read entries!", 100, oldledger.readAll());
+        oldledger.close();
     }
 }

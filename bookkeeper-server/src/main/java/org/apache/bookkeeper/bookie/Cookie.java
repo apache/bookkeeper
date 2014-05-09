@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -255,5 +256,30 @@ class Cookie {
         String bookieCookiePath = conf.getZkLedgersRootPath() + "/"
                 + BookKeeperConstants.COOKIE_NODE;
         return bookieCookiePath + "/" + Bookie.getBookieAddress(conf);
+    }
+
+    /**
+     * Check whether the 'bookieHost' was created using a hostname or an IP
+     * address. Represent as 'hostname/IPaddress' if the InetSocketAddress was
+     * created using hostname. Represent as '/IPaddress' if the
+     * InetSocketAddress was created using an IPaddress
+     * 
+     * @return true if the 'bookieHost' was created using an IP address, false
+     *         if the 'bookieHost' was created using a hostname
+     */
+    public boolean isBookieHostCreatedFromIp() throws IOException {
+        String parts[] = bookieHost.split(":");
+        if (parts.length != 2) {
+            throw new IOException(bookieHost + " does not have the form host:port");
+        }
+        int port;
+        try {
+            port = Integer.parseInt(parts[1]);
+        } catch (NumberFormatException e) {
+            throw new IOException(bookieHost + " does not have the form host:port");
+        }
+
+        InetSocketAddress addr = new InetSocketAddress(parts[0], port);
+        return addr.toString().startsWith("/");
     }
 }

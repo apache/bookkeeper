@@ -95,6 +95,9 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     protected final static String READ_BUFFER_SIZE = "readBufferSizeBytes";
     protected final static String WRITE_BUFFER_SIZE = "writeBufferSizeBytes";
+    // Whether the bookie should use its hostname or ipaddress for the
+    // registration.
+    protected final static String USE_HOST_NAME_AS_BOOKIE_ID = "useHostNameAsBookieID";
 
     protected final static String SORTED_LEDGER_STORAGE_ENABLED = "sortedLedgerStorageEnabled";
     protected final static String SKIP_LIST_SIZE_LIMIT = "skipListSizeLimit";
@@ -1297,5 +1300,29 @@ public class ServerConfiguration extends AbstractConfiguration {
         if (getJournalAlignmentSize() > getJournalPreAllocSizeMB() * 1024 * 1024) {
             throw new ConfigurationException("Invalid preallocation size : " + getJournalPreAllocSizeMB() + " MB");
         }
+    }
+
+    /**
+     * Get whether bookie is using hostname for registration and in ledger
+     * metadata. Defaults to false.
+     * 
+     * @return true, then bookie will be registered with its hostname and
+     *         hostname will be used in ledger metadata. Otherwise bookie will
+     *         use its ipaddress
+     */
+    public boolean getUseHostNameAsBookieID() {
+        return getBoolean(USE_HOST_NAME_AS_BOOKIE_ID, false);
+    }
+
+    /**
+     * Configure the bookie to use its hostname to register with the
+     * co-ordination service(eg: zookeeper) and in ledger metadata
+     * 
+     * @see #getUseHostNameAsBookieID
+     * @param useHostName
+     *            whether to use hostname for registration and in ledgermetadata
+     */
+    public void setUseHostNameAsBookieID(boolean useHostName) {
+        setProperty(USE_HOST_NAME_AS_BOOKIE_ID, useHostName);
     }
 }

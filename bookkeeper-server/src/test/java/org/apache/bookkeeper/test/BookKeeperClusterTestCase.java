@@ -405,7 +405,12 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
         server.start();
 
         int port = conf.getBookiePort();
-        while(bkc.getZkHandle().exists("/ledgers/available/" + InetAddress.getLocalHost().getHostAddress() + ":" + port, false) == null) {
+        String host = InetAddress.getLocalHost().getHostAddress();
+        if (conf.getUseHostNameAsBookieID()) {
+            host = InetAddress.getLocalHost().getCanonicalHostName();
+        }
+        while (bkc.getZkHandle().exists(
+                "/ledgers/available/" + host + ":" + port, false) == null) {
             Thread.sleep(500);
         }
 
@@ -437,7 +442,12 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
         server.start();
 
         int port = conf.getBookiePort();
-        while(bkc.getZkHandle().exists("/ledgers/available/" + InetAddress.getLocalHost().getHostAddress() + ":" + port, false) == null) {
+        String host = InetAddress.getLocalHost().getHostAddress();
+        if (conf.getUseHostNameAsBookieID()) {
+            host = InetAddress.getLocalHost().getCanonicalHostName();
+        }
+        while (bkc.getZkHandle().exists(
+                "/ledgers/available/" + host + ":" + port, false) == null) {
             Thread.sleep(500);
         }
 
@@ -538,5 +548,20 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
             }
         }
         throw new Exception("No auditor found");
+    }
+
+    /**
+     * Check whether the InetSocketAddress was created using a hostname or an IP
+     * address. Represent as 'hostname/IPaddress' if the InetSocketAddress was
+     * created using hostname. Represent as '/IPaddress' if the
+     * InetSocketAddress was created using an IPaddress
+     * 
+     * @param addr
+     *            inetaddress
+     * @return true if the address was created using an IP address, false if the
+     *         address was created using a hostname
+     */
+    public static boolean isCreatedFromIp(BookieSocketAddress addr) {
+        return addr.getSocketAddress().toString().startsWith("/");
     }
 }
