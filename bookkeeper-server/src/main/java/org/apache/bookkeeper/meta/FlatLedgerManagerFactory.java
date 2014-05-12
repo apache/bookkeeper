@@ -30,7 +30,7 @@ import org.apache.zookeeper.ZooKeeper;
 /**
  * Flat Ledger Manager Factory
  */
-class FlatLedgerManagerFactory extends LedgerManagerFactory {
+public class FlatLedgerManagerFactory extends LedgerManagerFactory {
 
     public static final String NAME = "flat";
     public static final int CUR_VERSION = 1;

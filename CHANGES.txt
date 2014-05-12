@@ -268,6 +268,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-731: Missing BOOKIE_PID_DIR and BOOKIE_STOP_TIMEOUT in env variables list (rakesh via sijie)
 
+      BOOKKEEPER-747: Implement register/unregister LedgerMetadataListener in MSLedgerManagerFactory (fpj via sijie)
+
     NEW FEATURE:
 
       BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj)

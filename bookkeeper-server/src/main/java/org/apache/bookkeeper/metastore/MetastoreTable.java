@@ -56,6 +56,27 @@ public interface MetastoreTable {
     public void get(String key, MetastoreCallback<Versioned<Value>> cb, Object ctx);
 
     /**
+     * Get all fields of a key.
+     *
+     * <p>
+     * Return Code:<ul>
+     * <li>{@link MSException.Code.OK}: success returning the key</li>
+     * <li>{@link MSException.Code.NoKey}: no key found</li>
+     * <li>{@link MSException.Code.IllegalOp}/{@link MSException.Code.ServiceDown}: other issues</li>
+     * </ul></p>
+     *
+     * @param key
+     *          Key Name
+     * @param watcher
+     *          Watcher object to receive notifications
+     * @param cb
+     *          Callback to return all fields of the key
+     * @param ctx
+     *          Callback context
+     */
+    public void get(String key, MetastoreWatcher watcher, MetastoreCallback<Versioned<Value>> cb, Object ctx);
+    
+    /**
      * Get specified fields of a key.
      *
      * <p>
