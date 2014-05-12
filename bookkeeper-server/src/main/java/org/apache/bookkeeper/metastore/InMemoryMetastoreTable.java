@@ -91,10 +91,12 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
 
     private String name;
     private TreeMap<String, Versioned<Value>> map = null;
+    private TreeMap<String, MetastoreWatcher> watcherMap = null;
     private ScheduledExecutorService scheduler;
 
     public InMemoryMetastoreTable(InMemoryMetaStore metastore, String name) {
         this.map = new TreeMap<String, Versioned<Value>>();
+        this.watcherMap = new TreeMap<String,MetastoreWatcher>();
         this.name = name;
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
     }
@@ -138,6 +140,19 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
             }
         });
     }
+    
+    @Override
+    public void get(final String key, final MetastoreWatcher watcher, final MetastoreCallback<Versioned<Value>> cb, final Object ctx) {
+        scheduler.submit(new Runnable() {
+            @Override
+            public void run() {
+                scheduleGet(key, ALL_FIELDS, cb, ctx);
+                synchronized(watcherMap) {
+                    watcherMap.put( key, watcher );
+                }
+            }
+        });
+    }
 
     @Override
     public void get(final String key, final Set<String> fields, final MetastoreCallback<Versioned<Value>> cb,
@@ -176,10 +191,18 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
                 }
                 Result<Version> result = put(key, value, version);
                 cb.complete(result.code.getCode(), result.value, ctx);
+                
+                /*
+                 * If there is a watcher set for this key, we need
+                 * to trigger it.
+                 */
+                if(result.code == MSException.Code.OK){
+                    triggerWatch(key, MSWatchedEvent.EventType.CHANGED);
+                }
             }
         });
     }
-
+    
     @Override
     public void remove(final String key, final Version version, final MetastoreCallback<Void> cb, final Object ctx) {
         scheduler.submit(new Runnable() {
@@ -191,6 +214,10 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
                 }
                 Code code = remove(key, version);
                 cb.complete(code.getCode(), null, ctx);
+                
+                if(code == MSException.Code.OK){
+                    triggerWatch(key, MSWatchedEvent.EventType.REMOVED);
+                }
             }
         });
     }
@@ -232,6 +259,16 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
         });
     }
 
+    private void triggerWatch(String key, MSWatchedEvent.EventType type) {
+        synchronized(watcherMap){
+            if(watcherMap.containsKey( key )) {
+                MSWatchedEvent event = new MSWatchedEvent(key, type);
+                watcherMap.get( key ).process( event );
+                watcherMap.remove( key );
+            }
+        }
+    }
+    
     private synchronized Versioned<Value> get(String key) {
         return map.get(key);
     }

@@ -21,18 +21,24 @@ import static org.apache.bookkeeper.metastore.MetastoreTable.ALL_FIELDS;
 import static org.apache.bookkeeper.metastore.MetastoreTable.NON_FIELDS;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManager.ReadLedgerMetadataTask;
 import org.apache.bookkeeper.metastore.MSException;
+import org.apache.bookkeeper.metastore.MSWatchedEvent;
 import org.apache.bookkeeper.metastore.MetaStore;
 import org.apache.bookkeeper.metastore.MetastoreCallback;
 import org.apache.bookkeeper.metastore.MetastoreCursor;
@@ -41,6 +47,8 @@ import org.apache.bookkeeper.metastore.MetastoreException;
 import org.apache.bookkeeper.metastore.MetastoreFactory;
 import org.apache.bookkeeper.metastore.MetastoreScannableTable;
 import org.apache.bookkeeper.metastore.MetastoreTableItem;
+import org.apache.bookkeeper.metastore.MetastoreWatcher;
+import org.apache.bookkeeper.metastore.MSWatchedEvent.EventType;
 import org.apache.bookkeeper.metastore.Value;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
@@ -65,6 +73,8 @@ import org.slf4j.LoggerFactory;
 public class MSLedgerManagerFactory extends LedgerManagerFactory {
 
     static Logger LOG = LoggerFactory.getLogger(MSLedgerManagerFactory.class);
+
+    static int MS_CONNECT_BACKOFF_MS = 200;
 
     public static final int CUR_VERSION = 1;
 
@@ -168,7 +178,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         }
     }
 
-    static class MsLedgerManager implements LedgerManager {
+    static class MsLedgerManager implements LedgerManager, MetastoreWatcher {
         final ZooKeeper zk;
         final AbstractConfiguration conf;
 
@@ -179,12 +189,65 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         static final String IDGEN_ZNODE = "ms-idgen";
         static final String IDGENERATION_PREFIX = "/" + IDGEN_ZNODE + "/ID-";
 
+        // ledger metadata listeners
+        protected final ConcurrentMap<Long, Set<LedgerMetadataListener>> listeners =
+                new ConcurrentHashMap<Long, Set<LedgerMetadataListener>>();
+
         // Path to generate global id
         private final String idGenPath;
 
         // we use this to prevent long stack chains from building up in
         // callbacks
         ScheduledExecutorService scheduler;
+
+        protected class ReadLedgerMetadataTask implements Runnable, GenericCallback<LedgerMetadata> {
+
+            final long ledgerId;
+
+            ReadLedgerMetadataTask(long ledgerId) {
+                this.ledgerId = ledgerId;
+            }
+
+            @Override
+            public void run() {
+                if (null != listeners.get(ledgerId)) {
+                    LOG.debug("Re-read ledger metadata for {}.", ledgerId);
+                    readLedgerMetadata(ledgerId, ReadLedgerMetadataTask.this);
+                } else {
+                    LOG.debug("Ledger metadata listener for ledger {} is already removed.", ledgerId);
+                }
+            }
+
+            @Override
+            public void operationComplete(int rc, final LedgerMetadata result) {
+                if (BKException.Code.OK == rc) {
+                    final Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
+                    if (null != listenerSet) {
+                        LOG.debug("Ledger metadata is changed for {} : {}.", ledgerId, result);
+                        scheduler.submit(new Runnable() {
+                            @Override
+                            public void run() {
+                                synchronized(listenerSet){
+                                    for (LedgerMetadataListener listener : listenerSet) {
+                                        listener.onChanged(ledgerId, result);
+                                    }
+                                }
+                            }
+                        });
+                    }
+                } else if (BKException.Code.NoSuchLedgerExistsException == rc) {
+                    // the ledger is removed, do nothing
+                    Set<LedgerMetadataListener> listenerSet = listeners.remove(ledgerId);
+                    if (null != listenerSet) {
+                        LOG.debug("Removed ledger metadata listener set on ledger {} as its ledger is deleted : {}",
+                                ledgerId, listenerSet.size());
+                    }
+                } else {
+                    LOG.warn("Failed on read ledger metadata of ledger {} : {}", ledgerId, rc);
+                    scheduler.schedule(this, MS_CONNECT_BACKOFF_MS, TimeUnit.MILLISECONDS);
+                }
+            }
+        }
 
         MsLedgerManager(final AbstractConfiguration conf, final ZooKeeper zk, final MetaStore metastore) {
             this.conf = conf;
@@ -206,13 +269,66 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         }
 
         @Override
+        public void process(MSWatchedEvent e){
+            long ledgerId = key2LedgerId(e.getKey());
+            
+            switch(e.getType()) {
+            case CHANGED:
+                new ReadLedgerMetadataTask(key2LedgerId(e.getKey())).run();
+
+                break;
+            case REMOVED:
+                Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
+                if (listenerSet != null) {
+                    synchronized (listenerSet) {
+                        for(LedgerMetadataListener l : listenerSet){
+                            unregisterLedgerMetadataListener(ledgerId, l);
+                            l.onChanged( ledgerId, null );
+                        }
+                    }
+                }
+
+                break;
+            default:
+                LOG.warn("Unknown type: {}", e.getType());
+                break;
+            }
+        }
+        
+        @Override
         public void registerLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener) {
-            // TODO BOOKKEEPER-747: should provide ledger metadata listener in metadata store.
+            if (null != listener) {
+                LOG.info("Registered ledger metadata listener {} on ledger {}.", listener, ledgerId);
+                Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
+                if (listenerSet == null) {
+                    Set<LedgerMetadataListener> newListenerSet = new HashSet<LedgerMetadataListener>();
+                    Set<LedgerMetadataListener> oldListenerSet = listeners.putIfAbsent(ledgerId, newListenerSet);
+                    if (null != oldListenerSet) {
+                        listenerSet = oldListenerSet;
+                    } else {
+                        listenerSet = newListenerSet;
+                    }
+                }
+                synchronized (listenerSet) {
+                    listenerSet.add(listener);
+                }
+                new ReadLedgerMetadataTask(ledgerId).run();
+            }
         }
 
         @Override
         public void unregisterLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener) {
-            // TODO BOOKKEEPER-747: should provide ledger metadata listener in metadata store.
+            Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
+            if (listenerSet != null) {
+                synchronized (listenerSet) {
+                    if (listenerSet.remove(listener)) {
+                        LOG.info("Unregistered ledger metadata listener {} on ledger {}.", listener, ledgerId);
+                    }
+                    if (listenerSet.isEmpty()) {
+                        listeners.remove(ledgerId, listenerSet);
+                    }
+                }
+            }
         }
 
         @Override
@@ -349,7 +465,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                     readCb.operationComplete(BKException.Code.OK, metadata);
                 }
             };
-            ledgerTable.get(key, msCallback, ALL_FIELDS);
+            ledgerTable.get(key, this, msCallback, ALL_FIELDS);
         }
 
         @Override

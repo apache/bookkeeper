@@ -30,7 +30,7 @@ import org.apache.zookeeper.ZooKeeper;
 /**
  * Hierarchical Ledger Manager Factory
  */
-class HierarchicalLedgerManagerFactory extends LedgerManagerFactory {
+public class HierarchicalLedgerManagerFactory extends LedgerManagerFactory {
 
     public static final String NAME = "hierarchical";
     public static final int CUR_VERSION = 1;

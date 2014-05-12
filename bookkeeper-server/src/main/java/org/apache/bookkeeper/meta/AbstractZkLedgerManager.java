@@ -100,8 +100,10 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
                     scheduler.submit(new Runnable() {
                         @Override
                         public void run() {
-                            for (LedgerMetadataListener listener : listenerSet) {
-                                listener.onChanged(ledgerId, result);
+                            synchronized(listenerSet) {
+                                for (LedgerMetadataListener listener : listenerSet) {
+                                    listener.onChanged(ledgerId, result);
+                                }
                             }
                         }
                     });
@@ -189,10 +191,16 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
         }
         switch (event.getType()) {
         case NodeDeleted:
-            Set<LedgerMetadataListener> listenerSet = listeners.remove(ledgerId);
+            Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
             if (null != listenerSet) {
-                LOG.debug("Removed ledger metadata listeners on ledger {} : {}",
-                        ledgerId, listenerSet);
+                synchronized(listenerSet) {
+                    LOG.debug("Removed ledger metadata listeners on ledger {} : {}",
+                            ledgerId, listenerSet);
+                    for(LedgerMetadataListener l : listenerSet) {
+                        unregisterLedgerMetadataListener(ledgerId, l);
+                        l.onChanged( ledgerId, null );
+                    }
+                }
             } else {
                 LOG.debug("No ledger metadata listeners to remove from ledger {} after it's deleted.",
                         ledgerId);

@@ -26,6 +26,10 @@ Release 4.2.3 - 2013-12-04
 
         BOOKKEEPER-744: Run the auditor bookie check periodically (ivank)
 
+    IMPROVEMENT:
+
+        BOOKKEEPER-747: Implement register/unregister LedgerMetadataListener in MSLedgerManagerFactory (fpj via sijie)
+
 Release 4.2.2 - 2013-10-02
 
   Backward compatible changes:
