@@ -1182,10 +1182,10 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Get the interval between auditor bookie check runs.
      * @see #setAuditorPeriodicBookieCheckInterval(long)
-     * @return the interval between bookie check runs, in seconds. Default is 84600 (= 1 day)
+     * @return the interval between bookie check runs, in seconds. Default is 86400 (= 1 day)
      */
     public long getAuditorPeriodicBookieCheckInterval() {
-        return getLong(AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL, 84600);
+        return getLong(AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL, 86400);
     }
 
     /**
