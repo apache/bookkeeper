@@ -26,6 +26,8 @@ Release 4.2.3 - 2013-12-04
 
         BOOKKEEPER-744: Run the auditor bookie check periodically (ivank)
 
+	BOOKKEEPER-755: Incorrect number of seconds specified in a day (Joseph Redfern via fpj)
+
     IMPROVEMENT:
 
         BOOKKEEPER-747: Implement register/unregister LedgerMetadataListener in MSLedgerManagerFactory (fpj via sijie)
