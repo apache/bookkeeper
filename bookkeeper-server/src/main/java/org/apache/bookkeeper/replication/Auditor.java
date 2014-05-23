@@ -189,7 +189,7 @@ public class Auditor implements BookiesListener {
     }
 
     public void start() {
-        LOG.info("Im starting as Auditor Bookie. ID: {}", bookieIdentifier);
+        LOG.info("I'm starting as Auditor Bookie. ID: {}", bookieIdentifier);
         // on startup watching available bookie and based on the
         // available bookies determining the bookie failures.
         synchronized (this) {
