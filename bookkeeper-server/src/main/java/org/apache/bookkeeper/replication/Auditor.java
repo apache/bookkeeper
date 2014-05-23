@@ -81,10 +81,13 @@ public class Auditor implements BookiesListener {
     private LedgerUnderreplicationManager ledgerUnderreplicationManager;
     private final ScheduledExecutorService executor;
     private List<String> knownBookies = new ArrayList<String>();
+    private final String bookieIdentifier;
 
     public Auditor(final String bookieIdentifier, ServerConfiguration conf,
                    ZooKeeper zkc) throws UnavailableException {
         this.conf = conf;
+        this.bookieIdentifier = bookieIdentifier;
+
         initialize(conf, zkc);
 
         executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -186,7 +189,7 @@ public class Auditor implements BookiesListener {
     }
 
     public void start() {
-        LOG.info("I'm starting as Auditor Bookie");
+        LOG.info("Im starting as Auditor Bookie. ID: {}", bookieIdentifier);
         // on startup watching available bookie and based on the
         // available bookies determining the bookie failures.
         synchronized (this) {

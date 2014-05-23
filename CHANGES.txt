@@ -189,6 +189,8 @@ Trunk (unreleased changes)
         BOOKKEEPER-629: Support hostname based ledger metadata to help users to change IP with existing installation (rakeshr via ivank)
 
 	BOOKKEEPER-755: Incorrect number of seconds specified in a day (Joseph Redfern via fpj)
+	
+	BOOKKEEPER-750: Flake in BookieAutoRecoveryTest#testEmptyLedgerLosesQuorumEventually (ivank via fpj)
 
       hedwig-server:
 
