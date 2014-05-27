@@ -28,6 +28,8 @@ Release 4.2.3 - 2013-12-04
 
 	BOOKKEEPER-755: Incorrect number of seconds specified in a day (Joseph Redfern via fpj)
 
+        BOOKKEEPER-752: Deadlock on NIOServer shutdown (sijie via ivank)
+
     IMPROVEMENT:
 
         BOOKKEEPER-747: Implement register/unregister LedgerMetadataListener in MSLedgerManagerFactory (fpj via sijie)

@@ -513,17 +513,23 @@ public class NIOServerFactory extends Thread {
             makeWritable(sk);
         }
 
-        synchronized public void sendResponse(ByteBuffer... bb) {
-            if (closed) {
-                return;
-            }
-            sendBuffers(bb);
-            synchronized (NIOServerFactory.this) {
+        public void sendResponse(ByteBuffer... bb) {
+            synchronized (this) {
+                if (closed) {
+                    return;
+                }
+                sendBuffers(bb);
                 outstandingRequests--;
-                // check throttling
-                if (outstandingRequests < outstandingLimit) {
-                    sk.selector().wakeup();
-                    enableRecv();
+            }
+            // acquire these monitors in order to avoid deadlock during shutdown
+            // it doesn't matter much whether we do this synchronusly with sendBuffers, as long as it happens
+            synchronized (NIOServerFactory.this) {
+                synchronized (this) {
+                    // check throttling
+                    if (outstandingRequests < outstandingLimit) {
+                        sk.selector().wakeup();
+                        enableRecv();
+                    }
                 }
             }
         }
