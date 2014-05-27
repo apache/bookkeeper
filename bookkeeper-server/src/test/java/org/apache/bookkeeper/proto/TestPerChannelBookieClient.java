@@ -44,7 +44,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Tests for PerChannelBookieClient. Historically, this class has
@@ -73,13 +72,11 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
                 "BKClientOrderedSafeExecutor");
 
         BookieSocketAddress addr = getBookie(0);
-        AtomicLong bytesOutstanding = new AtomicLong(0);
         for (int i = 0; i < 1000; i++) {
-            PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory,
-                                                                       addr, bytesOutstanding);
-            client.connectIfNeededAndDoOp(new GenericCallback<Void>() {
+            PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory, addr);
+            client.connectIfNeededAndDoOp(new GenericCallback<PerChannelBookieClient>() {
                     @Override
-                    public void operationComplete(int rc, Void result) {
+                    public void operationComplete(int rc, PerChannelBookieClient client) {
                         // do nothing, we don't care about doing anything with the connection,
                         // we just want to trigger it connecting.
                     }
@@ -97,9 +94,9 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
      */
     @Test(timeout=60000)
     public void testConnectRace() throws Exception {
-        GenericCallback<Void> nullop = new GenericCallback<Void>() {
+        GenericCallback<PerChannelBookieClient> nullop = new GenericCallback<PerChannelBookieClient>() {
             @Override
-            public void operationComplete(int rc, Void result) {
+            public void operationComplete(int rc, PerChannelBookieClient pcbc) {
                 // do nothing, we don't care about doing anything with the connection,
                 // we just want to trigger it connecting.
             }
@@ -111,10 +108,8 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
                 "BKClientOrderedSafeExecutor");
 
         BookieSocketAddress addr = getBookie(0);
-        AtomicLong bytesOutstanding = new AtomicLong(0);
         for (int i = 0; i < 100; i++) {
-            PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory,
-                                                                       addr, bytesOutstanding);
+            PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory, addr);
             for (int j = i; j < 10; j++) {
                 client.connectIfNeededAndDoOp(nullop);
             }
@@ -132,9 +127,9 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
      */
     @Test(timeout=60000)
     public void testDisconnectRace() throws Exception {
-        final GenericCallback<Void> nullop = new GenericCallback<Void>() {
+        final GenericCallback<PerChannelBookieClient> nullop = new GenericCallback<PerChannelBookieClient>() {
             @Override
-            public void operationComplete(int rc, Void result) {
+            public void operationComplete(int rc, PerChannelBookieClient client) {
                 // do nothing, we don't care about doing anything with the connection,
                 // we just want to trigger it connecting.
             }
@@ -147,10 +142,9 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
                 "BKClientOrderedSafeExecutor");
         BookieSocketAddress addr = getBookie(0);
 
-        AtomicLong bytesOutstanding = new AtomicLong(0);
-        final PerChannelBookieClient client = new PerChannelBookieClient(executor,
-                channelFactory, addr, bytesOutstanding);
+        final PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory, addr);
         final AtomicBoolean shouldFail = new AtomicBoolean(false);
+        final AtomicBoolean inconsistent = new AtomicBoolean(false);
         final AtomicBoolean running = new AtomicBoolean(true);
         final CountDownLatch disconnectRunning = new CountDownLatch(1);
         Thread connectThread = new Thread() {
@@ -245,10 +239,8 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         final OrderedSafeExecutor executor = new OrderedSafeExecutor(1,
                 "BKClientOrderedSafeExecutor");
         BookieSocketAddress addr = getBookie(0);
-        AtomicLong bytesOutstanding = new AtomicLong(0);
 
-        final PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory,
-                                                                         addr, bytesOutstanding);
+        final PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory, addr);
         final CountDownLatch completion = new CountDownLatch(1);
         final ReadEntryCallback cb = new ReadEntryCallback() {
                 @Override
@@ -258,9 +250,9 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
                 }
             };
 
-        client.connectIfNeededAndDoOp(new GenericCallback<Void>() {
+        client.connectIfNeededAndDoOp(new GenericCallback<PerChannelBookieClient>() {
             @Override
-            public void operationComplete(final int rc, Void result) {
+            public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
                 if (rc != BKException.Code.OK) {
                     executor.submitOrdered(1, new SafeRunnable() {
                         @Override

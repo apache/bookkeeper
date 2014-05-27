@@ -27,7 +27,6 @@ import java.net.InetAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -54,19 +53,18 @@ public class TestProtoVersions {
     }
 
     private void testVersion(byte version, int expectedresult) throws Exception {
-        PerChannelBookieClient bc = new PerChannelBookieClient(base.executor, base.channelFactory, 
-                new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(), base.port),
-                new AtomicLong(0));
+        PerChannelBookieClient bc = new PerChannelBookieClient(base.executor, base.channelFactory,
+                new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(), base.port));
         final AtomicInteger outerrc = new AtomicInteger(-1);
         final CountDownLatch connectLatch = new CountDownLatch(1);
-        bc.connectIfNeededAndDoOp(new GenericCallback<Void>() {
-                public void operationComplete(int rc, Void result) {
+        bc.connectIfNeededAndDoOp(new GenericCallback<PerChannelBookieClient>() {
+                public void operationComplete(int rc, PerChannelBookieClient pcbc) {
                     outerrc.set(rc);
                     connectLatch.countDown();
                 }
             });
         connectLatch.await(5, TimeUnit.SECONDS);
-        
+
         assertEquals("client not connected", BKException.Code.OK, outerrc.get());
         outerrc.set(-1000);
         final CountDownLatch readLatch = new CountDownLatch(1);
@@ -76,15 +74,15 @@ public class TestProtoVersions {
                     readLatch.countDown();
                 }
             };
-        bc.readCompletions.put(bc.newCompletionKey(1, 1),
+        bc.readCompletions.put(bc.newCompletionKey(1, 1, BookieProtocol.READENTRY),
                                new PerChannelBookieClient.ReadCompletion(cb, this));
-        
+
         BookieProtocol.ReadRequest req = new BookieProtocol.ReadRequest(version, 1L, 1L, (short)0);
-        
+
         bc.channel.write(req).awaitUninterruptibly();
         readLatch.await(5, TimeUnit.SECONDS);
         assertEquals("Expected result differs", expectedresult, outerrc.get());
-        
+
         bc.close();
     }
 

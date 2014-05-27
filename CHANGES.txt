@@ -192,6 +192,8 @@ Trunk (unreleased changes)
 	
 	BOOKKEEPER-750: Flake in BookieAutoRecoveryTest#testEmptyLedgerLosesQuorumEventually (ivank via fpj)
 
+        BOOKKEEPER-756: Use HashedwheelTimer for request timeouts for PCBC (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

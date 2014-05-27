@@ -48,12 +48,16 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     // NIO Parameters
     protected final static String CLIENT_TCP_NODELAY = "clientTcpNoDelay";
+    protected final static String NUM_CHANNELS_PER_BOOKIE = "numChannelsPerBookie";
+    // Read Parameters
     protected final static String READ_TIMEOUT = "readTimeout";
     protected final static String SPECULATIVE_READ_TIMEOUT = "speculativeReadTimeout";
     // Timeout Setting
     protected final static String ADD_ENTRY_TIMEOUT_SEC = "addEntryTimeoutSec";
     protected final static String READ_ENTRY_TIMEOUT_SEC = "readEntryTimeoutSec";
     protected final static String TIMEOUT_TASK_INTERVAL_MILLIS = "timeoutTaskIntervalMillis";
+    protected final static String PCBC_TIMEOUT_TIMER_TICK_DURATION_MS = "pcbcTimeoutTimerTickDurationMs";
+    protected final static String PCBC_TIMEOUT_TIMER_NUM_TICKS = "pcbcTimeoutTimerNumTicks";
 
     // Number Woker Threads
     protected final static String NUM_WORKER_THREADS = "numWorkerThreads";
@@ -92,7 +96,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     /**
      * Set throttle value.
      *
-     * Since BookKeeper process requests in asynchrous way, it will holds 
+     * Since BookKeeper process requests in asynchrous way, it will holds
      * those pending request in queue. You may easily run it out of memory
      * if producing too many requests than the capability of bookie servers can handle.
      * To prevent that from happeding, you can set a throttle value here.
@@ -179,7 +183,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      *
      * This settings is used to enabled/disabled Nagle's algorithm, which is a means of
      * improving the efficiency of TCP/IP networks by reducing the number of packets
-     * that need to be sent over the network. If you are sending many small messages, 
+     * that need to be sent over the network. If you are sending many small messages,
      * such that more than one can fit in a single IP packet, setting client.tcpnodelay
      * to false to enable Nagle algorithm can provide better performance.
      * <br>
@@ -191,6 +195,27 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setClientTcpNoDelay(boolean noDelay) {
         setProperty(CLIENT_TCP_NODELAY, Boolean.toString(noDelay));
+        return this;
+    }
+
+    /**
+     * Get num channels per bookie.
+     *
+     * @return num channels per bookie.
+     */
+    public int getNumChannelsPerBookie() {
+        return getInt(NUM_CHANNELS_PER_BOOKIE, 1);
+    }
+
+    /**
+     * Set num channels per bookie.
+     *
+     * @param numChannelsPerBookie
+     *          num channels per bookie.
+     * @return client configuration.
+     */
+    public ClientConfiguration setNumChannelsPerBookie(int numChannelsPerBookie) {
+        setProperty(NUM_CHANNELS_PER_BOOKIE, numChannelsPerBookie);
         return this;
     }
 
@@ -247,7 +272,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      * The default is 5 seconds.
      *
      * @return the current read timeout in seconds
-     * @deprecated use {@link getReadEntryTimeout()} or {@link getAddEntryTimeout()} instead
+     * @deprecated use {@link #getReadEntryTimeout()} or {@link #getAddEntryTimeout()} instead
      */
     @Deprecated
     public int getReadTimeout() {
@@ -259,7 +284,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      * @see #getReadTimeout()
      * @param timeout The new read timeout in seconds
      * @return client configuration
-     * @deprecated use {@link setReadEntryTimeout(int)} or {@link setAddEntryTimeout(int)} instead
+     * @deprecated use {@link #setReadEntryTimeout(int)} or {@link #setAddEntryTimeout(int)} instead
      */
     @Deprecated
     public ClientConfiguration setReadTimeout(int timeout) {
@@ -326,13 +351,75 @@ public class ClientConfiguration extends AbstractConfiguration {
      * We do it more aggressive to not accumulate pending requests due to slow responses.
      * @return
      */
+    @Deprecated
     public long getTimeoutTaskIntervalMillis() {
         return getLong(TIMEOUT_TASK_INTERVAL_MILLIS,
-                TimeUnit.SECONDS.toMillis(Math.min(getAddEntryTimeout(), getReadEntryTimeout())));
+                TimeUnit.SECONDS.toMillis(Math.min(getAddEntryTimeout(), getReadEntryTimeout())) / 2);
     }
 
+    @Deprecated
     public ClientConfiguration setTimeoutTaskIntervalMillis(long timeoutMillis) {
         setProperty(TIMEOUT_TASK_INTERVAL_MILLIS, Long.toString(timeoutMillis));
+        return this;
+    }
+
+    /**
+     * Get the tick duration in milliseconds that used for the
+     * {@link org.jboss.netty.util.HashedWheelTimer} that used by PCBC to timeout
+     * requests.
+     *
+     * @see org.jboss.netty.util.HashedWheelTimer
+     *
+     * @return tick duration in milliseconds
+     */
+    public long getPCBCTimeoutTimerTickDurationMs() {
+        return getLong(PCBC_TIMEOUT_TIMER_TICK_DURATION_MS, 100);
+    }
+
+    /**
+     * Set the tick duration in milliseconds that used for
+     * {@link org.jboss.netty.util.HashedWheelTimer} that used by PCBC to timeout
+     * requests. Be aware of {@link org.jboss.netty.util.HashedWheelTimer} if you
+     * are going to modify this setting.
+     *
+     * @see #getPCBCTimeoutTimerTickDurationMs()
+     *
+     * @param tickDuration
+     *          tick duration in milliseconds.
+     * @return client configuration.
+     */
+    public ClientConfiguration setPCBCTimeoutTimerTickDurationMs(long tickDuration) {
+        setProperty(PCBC_TIMEOUT_TIMER_TICK_DURATION_MS, tickDuration);
+        return this;
+    }
+
+    /**
+     * Get number of ticks that used for
+     * {@link org.jboss.netty.util.HashedWheelTimer} that used by PCBC to timeout
+     * requests.
+     *
+     * @see org.jboss.netty.util.HashedWheelTimer
+     *
+     * @return number of ticks that used for timeout timer.
+     */
+    public int getPCBCTimeoutTimerNumTicks() {
+        return getInt(PCBC_TIMEOUT_TIMER_NUM_TICKS, 1024);
+    }
+
+    /**
+     * Set number of ticks that used for
+     * {@link org.jboss.netty.util.HashedWheelTimer} that used by PCBC to timeout request.
+     * Be aware of {@link org.jboss.netty.util.HashedWheelTimer} if you are going to modify
+     * this setting.
+     *
+     * @see #getPCBCTimeoutTimerNumTicks()
+     *
+     * @param numTicks
+     *          number of ticks that used for timeout timer.
+     * @return client configuration.
+     */
+    public ClientConfiguration setPCBCTimeoutTimerNumTicks(int numTicks) {
+        setProperty(PCBC_TIMEOUT_TIMER_NUM_TICKS, numTicks);
         return this;
     }
 
