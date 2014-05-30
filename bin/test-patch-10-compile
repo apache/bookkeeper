@@ -104,7 +104,7 @@ parseArgs "$@"
 
 case $OP in
 pre)
-    mvn clean package -DskipTests ${MVNPASSTHRU} | tee ${REPORTDIR}/${TASKNAME}-clean.txt >> $STDOUT
+    mvn clean install -DskipTests ${MVNPASSTHRU} | tee ${REPORTDIR}/${TASKNAME}-clean.txt >> $STDOUT
     if [[ ${PIPESTATUS[0]} == 0 ]] ; then
         echo "{color:green}+1{color} HEAD compiles" >> ${TEMPDIR}/${TASKNAME}-compile.txt
     else
@@ -112,7 +112,7 @@ pre)
     fi
     ;;
 post)
-    mvn clean package -DskipTests ${MVNPASSTHRU} | tee ${REPORTDIR}/${TASKNAME}-patch.txt >> $STDOUT
+    mvn clean install -DskipTests ${MVNPASSTHRU} | tee ${REPORTDIR}/${TASKNAME}-patch.txt >> $STDOUT
     if [[ ${PIPESTATUS[0]} == 0 ]] ; then
         echo "{color:green}+1{color} patch compiles" >> ${TEMPDIR}/${TASKNAME}-compile.txt
     else

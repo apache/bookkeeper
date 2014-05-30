@@ -58,6 +58,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-644: Provide a bookie address wrapper (sijie via fpj)
 
+      BOOKKEEPER-763: findbugs fails to run on jenkins (ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)
