@@ -43,6 +43,7 @@ class PendingAddOp implements WriteCallback {
     AddCallback cb;
     Object ctx;
     long entryId;
+    int entryLength;
     Set<Integer> writeSet;
 
     DistributionSchedule.AckSet ackSet;
@@ -121,8 +122,9 @@ class PendingAddOp implements WriteCallback {
         sendWriteRequest(bookieIndex);
     }
 
-    void initiate(ChannelBuffer toSend) {
+    void initiate(ChannelBuffer toSend, int entryLength) {
         this.toSend = toSend;
+        this.entryLength = entryLength;
         for (int bookieIndex : writeSet) {
             sendWriteRequest(bookieIndex);
         }

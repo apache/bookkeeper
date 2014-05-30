@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -55,6 +56,33 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
         // set timeout to a large value which disable it.
         baseClientConf.setReadTimeout(99999);
         baseConf.setGcWaitTime(999999);
+    }
+
+    @Test(timeout = 60000)
+    public void testLedgerCloseWithConsistentLength() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString()).setReadTimeout(1);
+
+        BookKeeper bkc = new BookKeeper(conf);
+        LedgerHandle lh = bkc.createLedger(6, 3, DigestType.CRC32, new byte[] {});
+        final CountDownLatch latch = new CountDownLatch(1);
+        stopBKCluster();
+        final AtomicInteger i = new AtomicInteger(0xdeadbeef);
+        AsyncCallback.AddCallback cb = new AsyncCallback.AddCallback() {
+            @Override
+            public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+                i.set(rc);
+                latch.countDown();
+            }
+        };
+        lh.asyncAddEntry("Test Entry".getBytes(), cb, null);
+        latch.await();
+        assertEquals(i.get(), BKException.Code.NotEnoughBookiesException);
+        assertEquals(0, lh.getLength());
+        assertEquals(LedgerHandle.INVALID_ENTRY_ID, lh.getLastAddConfirmed());
+        LedgerHandle newLh = bkc.openLedger(lh.getId(), DigestType.CRC32, new byte[] {});
+        assertEquals(0, newLh.getLength());
+        assertEquals(LedgerHandle.INVALID_ENTRY_ID, newLh.getLastAddConfirmed());
     }
 
     @Test(timeout = 60000)

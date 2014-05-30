@@ -30,6 +30,8 @@ Release 4.2.3 - 2013-12-04
 
         BOOKKEEPER-752: Deadlock on NIOServer shutdown (sijie via ivank)
 
+        BOOKKEEPER-673: Ledger length can be inaccurate in failure case (sijie via ivank)
+
     IMPROVEMENT:
 
         BOOKKEEPER-747: Implement register/unregister LedgerMetadataListener in MSLedgerManagerFactory (fpj via sijie)
