@@ -32,6 +32,8 @@ Release 4.2.3 - 2013-12-04
 
         BOOKKEEPER-673: Ledger length can be inaccurate in failure case (sijie via ivank)
 
+        BOOKKEEPER-751: Ensure all the bookkeeper callbacks not run under ledger handle lock (sijie via ivank)
+
     IMPROVEMENT:
 
         BOOKKEEPER-747: Implement register/unregister LedgerMetadataListener in MSLedgerManagerFactory (fpj via sijie)
