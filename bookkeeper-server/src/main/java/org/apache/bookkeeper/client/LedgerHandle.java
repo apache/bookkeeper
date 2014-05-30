@@ -26,6 +26,7 @@ import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -255,9 +256,7 @@ public class LedgerHandle {
             doAsyncCloseInternal(cb, ctx, rc);
         } catch (RejectedExecutionException re) {
             LOG.debug("Failed to close ledger {} : ", ledgerId, re);
-            synchronized (this) {
-                errorOutPendingAdds(bk.getReturnRc(rc));
-            }
+            errorOutPendingAdds(bk.getReturnRc(rc));
             cb.closeComplete(bk.getReturnRc(BKException.Code.InterruptedException), this, ctx);
         }
     }
@@ -278,6 +277,7 @@ public class LedgerHandle {
                 final long prevLastEntryId;
                 final long prevLength;
                 final State prevState;
+                List<PendingAddOp> pendingAdds;
 
                 synchronized(LedgerHandle.this) {
                     // if the metadata is already closed, we don't need to proceed the process
@@ -290,8 +290,8 @@ public class LedgerHandle {
                     prevLastEntryId = metadata.getLastEntryId();
                     prevLength = metadata.getLength();
 
-                    // error out pending adds first
-                    errorOutPendingAdds(rc);
+                    // drain pending adds first
+                    pendingAdds = drainPendingAddsToErrorOut();
 
                     // synchronized on LedgerHandle.this to ensure that
                     // lastAddPushed can not be updated after the metadata
@@ -300,6 +300,10 @@ public class LedgerHandle {
                     metadata.close(lastAddConfirmed);
                     lastAddPushed = lastAddConfirmed;
                 }
+
+                // error out all pending adds during closing, the callbacks shouldn't be
+                // running under any bk locks.
+                errorOutPendingAdds(rc, pendingAdds);
 
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Closing ledger: " + ledgerId + " at entryId: "
@@ -520,21 +524,28 @@ public class LedgerHandle {
 
         final long entryId;
         final long currentLength;
+        boolean wasClosed = false;
         synchronized(this) {
             // synchronized on this to ensure that
             // the ledger isn't closed between checking and
             // updating lastAddPushed
             if (metadata.isClosed()) {
-                LOG.warn("Attempt to add to closed ledger: " + ledgerId);
-                cb.addComplete(BKException.Code.LedgerClosedException,
-                               LedgerHandle.this, INVALID_ENTRY_ID, ctx);
-                return;
+                wasClosed = true;
+                entryId = -1;
+                currentLength = 0;
+            } else {
+                entryId = ++lastAddPushed;
+                currentLength = addToLength(length);
+                op.setEntryId(entryId);
+                pendingAddOps.add(op);
             }
+        }
 
-            entryId = ++lastAddPushed;
-            currentLength = addToLength(length);
-            op.setEntryId(entryId);
-            pendingAddOps.add(op);
+        if (wasClosed) {
+            LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
+            cb.addComplete(BKException.Code.LedgerClosedException,
+                           LedgerHandle.this, INVALID_ENTRY_ID, ctx);
+            return;
         }
 
         try {
@@ -748,10 +759,22 @@ public class LedgerHandle {
     }
 
     void errorOutPendingAdds(int rc) {
+        errorOutPendingAdds(rc, drainPendingAddsToErrorOut());
+    }
+
+    synchronized List<PendingAddOp> drainPendingAddsToErrorOut() {
         PendingAddOp pendingAddOp;
+        List<PendingAddOp> opsDrained = new ArrayList<PendingAddOp>(pendingAddOps.size());
         while ((pendingAddOp = pendingAddOps.poll()) != null) {
             addToLength(-pendingAddOp.entryLength);
-            pendingAddOp.submitCallback(rc);
+            opsDrained.add(pendingAddOp);
+        }
+        return opsDrained;
+    }
+
+    void errorOutPendingAdds(int rc, List<PendingAddOp> ops) {
+        for (PendingAddOp op : ops) {
+            op.submitCallback(rc);
         }
     }
 
@@ -1007,24 +1030,38 @@ public class LedgerHandle {
         bk.getLedgerManager().readLedgerMetadata(ledgerId, cb);
     }
 
-    synchronized void recover(final GenericCallback<Void> cb) {
-        if (metadata.isClosed()) {
-            lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
-            length = metadata.getLength();
+    void recover(final GenericCallback<Void> cb) {
+        boolean wasClosed = false;
+        boolean wasInRecovery = false;
 
+        synchronized (this) {
+            if (metadata.isClosed()) {
+                lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
+                length = metadata.getLength();
+                wasClosed = true;
+            } else {
+                wasClosed = false;
+                if (metadata.isInRecovery()) {
+                    wasInRecovery = true;
+                } else {
+                    wasInRecovery = false;
+                    metadata.markLedgerInRecovery();
+                }
+            }
+        }
+
+        if (wasClosed) {
             // We are already closed, nothing to do
             cb.operationComplete(BKException.Code.OK, null);
             return;
         }
 
-        // if metadata is already in recover, dont try to write again,
-        // just do the recovery from the starting point
-        if (metadata.isInRecovery()) {
+        if (wasInRecovery) {
+            // if metadata is already in recover, dont try to write again,
+            // just do the recovery from the starting point
             new LedgerRecoveryOp(LedgerHandle.this, cb).initiate();
             return;
         }
-
-        metadata.markLedgerInRecovery();
 
         writeLedgerConfig(new OrderedSafeGenericCallback<Void>(bk.mainWorkerPool, ledgerId) {
             @Override

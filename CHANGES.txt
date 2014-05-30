@@ -198,6 +198,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-758: Add TryReadLastAddConfirmed API (sijie via ivank)
 
+        BOOKKEEPER-751: Ensure all the bookkeeper callbacks not run under ledger handle lock (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
