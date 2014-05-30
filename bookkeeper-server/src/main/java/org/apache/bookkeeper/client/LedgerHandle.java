@@ -29,6 +29,7 @@ import java.util.Enumeration;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -79,6 +80,8 @@ public class LedgerHandle {
     final Queue<PendingAddOp> pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
 
     final Counter ensembleChangeCounter;
+    final Counter lacUpdateHitsCounter;
+    final Counter lacUpdateMissesCounter;
 
     LedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
                  DigestType digestType, byte[] password)
@@ -104,6 +107,8 @@ public class LedgerHandle {
                 metadata.getWriteQuorumSize(), metadata.getAckQuorumSize(), metadata.getEnsembleSize());
 
         ensembleChangeCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.ENSEMBLE_CHANGES);
+        lacUpdateHitsCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_HITS);
+        lacUpdateMissesCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_MISSES);
         bk.getStatsLogger().registerGauge(BookKeeperClientStats.PENDING_ADDS,
                                           new Gauge<Integer>() {
                                               public Integer getDefaultValue() {
@@ -547,6 +552,17 @@ public class LedgerHandle {
         }
     }
 
+    synchronized void updateLastConfirmed(long lac, long len) {
+        if (lac > lastAddConfirmed) {
+            lastAddConfirmed = lac;
+            lacUpdateHitsCounter.inc();
+        } else {
+            lacUpdateMissesCounter.inc();
+        }
+        lastAddPushed = Math.max(lastAddPushed, lac);
+        length = Math.max(length, len);
+    }
+
     /**
      * Obtains asynchronously the last confirmed write from a quorum of bookies. This
      * call obtains the the last add confirmed each bookie has received for this ledger
@@ -577,9 +593,7 @@ public class LedgerHandle {
                 @Override
                 public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
                     if (rc == BKException.Code.OK) {
-                        lastAddConfirmed = Math.max(lastAddConfirmed, data.lastAddConfirmed);
-                        lastAddPushed = Math.max(lastAddPushed, data.lastAddConfirmed);
-                        length = Math.max(length, data.length);
+                        updateLastConfirmed(data.lastAddConfirmed, data.length);
                         cb.readLastConfirmedComplete(rc, data.lastAddConfirmed, ctx);
                     } else {
                         cb.readLastConfirmedComplete(rc, INVALID_ENTRY_ID, ctx);
@@ -589,6 +603,49 @@ public class LedgerHandle {
         new ReadLastConfirmedOp(this, innercb).initiate();
     }
 
+    /**
+     * Obtains asynchronously the last confirmed write from a quorum of bookies.
+     * It is similar as
+     * {@link #asyncTryReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, Object)},
+     * but it doesn't wait all the responses from the quorum. It would callback
+     * immediately if it received a LAC which is larger than current LAC.
+     *
+     * @see #asyncTryReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, Object)
+     *
+     * @param cb
+     *          callback to return read last confirmed
+     * @param ctx
+     *          callback context
+     */
+    public void asyncTryReadLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
+        boolean isClosed;
+        long lastEntryId;
+        synchronized (this) {
+            isClosed = metadata.isClosed();
+            lastEntryId = metadata.getLastEntryId();
+        }
+        if (isClosed) {
+            cb.readLastConfirmedComplete(BKException.Code.OK, lastEntryId, ctx);
+            return;
+        }
+        ReadLastConfirmedOp.LastConfirmedDataCallback innercb = new ReadLastConfirmedOp.LastConfirmedDataCallback() {
+            AtomicBoolean completed = new AtomicBoolean(false);
+            @Override
+            public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
+                if (rc == BKException.Code.OK) {
+                    updateLastConfirmed(data.lastAddConfirmed, data.length);
+                    if (completed.compareAndSet(false, true)) {
+                        cb.readLastConfirmedComplete(rc, data.lastAddConfirmed, ctx);
+                    }
+                } else {
+                    if (completed.compareAndSet(false, true)) {
+                        cb.readLastConfirmedComplete(rc, INVALID_ENTRY_ID, ctx);
+                    }
+                }
+            }
+        };
+        new TryReadLastConfirmedOp(this, innercb, getLastAddConfirmed()).initiate();
+    }
 
     /**
      * Context objects for synchronous call to read last confirmed.
@@ -650,6 +707,31 @@ public class LedgerHandle {
         }
 
         if(ctx.getRC() != BKException.Code.OK) throw BKException.create(ctx.getRC());
+        return ctx.getlastConfirmed();
+    }
+
+    /**
+     * Obtains synchronously the last confirmed write from a quorum of bookies.
+     * It is similar as {@link #readLastConfirmed()}, but it doesn't wait all the responses
+     * from the quorum. It would callback immediately if it received a LAC which is larger
+     * than current LAC.
+     *
+     * @see #readLastConfirmed()
+     *
+     * @return The entry id of the last confirmed write or {@link #INVALID_ENTRY_ID INVALID_ENTRY_ID}
+     *         if no entry has been confirmed
+     * @throws InterruptedException
+     * @throws BKException
+     */
+    public long tryReadLastConfirmed() throws InterruptedException, BKException {
+        LastConfirmedCtx ctx = new LastConfirmedCtx();
+        asyncTryReadLastConfirmed(new SyncReadLastConfirmedCallback(), ctx);
+        synchronized (ctx) {
+            while (!ctx.ready()) {
+                ctx.wait();
+            }
+        }
+        if (ctx.getRC() != BKException.Code.OK) throw BKException.create(ctx.getRC());
         return ctx.getlastConfirmed();
     }
 

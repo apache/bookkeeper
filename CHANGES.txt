@@ -196,6 +196,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-756: Use HashedwheelTimer for request timeouts for PCBC (sijie via ivank)
 
+        BOOKKEEPER-758: Add TryReadLastAddConfirmed API (sijie via ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

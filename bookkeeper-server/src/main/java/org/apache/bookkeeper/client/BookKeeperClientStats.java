@@ -30,6 +30,8 @@ public interface BookKeeperClientStats {
     public final static String READ_OP = "READ_ENTRY";
     public final static String PENDING_ADDS = "NUM_PENDING_ADD";
     public final static String ENSEMBLE_CHANGES = "NUM_ENSEMBLE_CHANGE";
+    public final static String LAC_UPDATE_HITS = "LAC_UPDATE_HITS";
+    public final static String LAC_UPDATE_MISSES = "LAC_UPDATE_MISSES";
 
     // per channel stats
     public final static String CHANNEL_SCOPE = "per_channel_bookie_client";
