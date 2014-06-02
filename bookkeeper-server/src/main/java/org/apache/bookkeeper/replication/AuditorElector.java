@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.io.Serializable;
+import java.io.IOException;
+import java.net.InetSocketAddress;
 
 import org.apache.bookkeeper.proto.DataFormats.AuditorVoteFormat;
 import com.google.common.annotations.VisibleForTesting;
@@ -68,6 +70,7 @@ public class AuditorElector {
     private static final String VOTE_PREFIX = "V_";
     // Represents path Separator
     private static final String PATH_SEPARATOR = "/";
+    private static final String ELECTION_ZNODE = "auditorelection";
     // Represents urLedger path in zk
     private final String basePath;
     // Represents auditor election path in zk
@@ -102,7 +105,7 @@ public class AuditorElector {
         this.zkc = zkc;
         basePath = conf.getZkLedgersRootPath() + '/'
                 + BookKeeperConstants.UNDER_REPLICATION_NODE;
-        electionPath = basePath + "/auditorelection";
+        electionPath = basePath + '/' + ELECTION_ZNODE;
         createElectorPath();
         executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
                 @Override
@@ -272,6 +275,31 @@ public class AuditorElector {
     @VisibleForTesting
     Auditor getAuditor() {
         return auditor;
+    }
+
+    /**
+     * Query zookeeper for the currently elected auditor
+     * @return the bookie id of the current auditor
+     */
+    public static InetSocketAddress getCurrentAuditor(ServerConfiguration conf, ZooKeeper zk)
+            throws KeeperException, InterruptedException, IOException {
+        String electionRoot = conf.getZkLedgersRootPath() + '/'
+            + BookKeeperConstants.UNDER_REPLICATION_NODE + '/' + ELECTION_ZNODE;
+
+        List<String> children = zk.getChildren(electionRoot, false);
+        Collections.sort(children, new AuditorElector.ElectionComparator());
+        if (children.size() < 1) {
+            return null;
+        }
+        String ledger = electionRoot + "/" + children.get(AUDITOR_INDEX);
+        byte[] data = zk.getData(ledger, false, null);
+
+        AuditorVoteFormat.Builder builder = AuditorVoteFormat.newBuilder();
+        TextFormat.merge(new String(data, UTF_8), builder);
+        AuditorVoteFormat v = builder.build();
+        String[] parts = v.getBookieId().split(":");
+        return new InetSocketAddress(parts[0],
+                                       Integer.valueOf(parts[1]));
     }
 
     /**

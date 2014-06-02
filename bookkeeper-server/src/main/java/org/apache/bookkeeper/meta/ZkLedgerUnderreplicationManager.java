@@ -38,6 +38,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.ZooDefs.Ids;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.TextFormat;
 import com.google.common.base.Joiner;
 import static com.google.common.base.Charsets.UTF_8;
@@ -210,6 +211,15 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         return getUrLedgerZnode(urLedgerPath, ledgerId);
     }
 
+    @VisibleForTesting
+    public UnderreplicatedLedgerFormat getLedgerUnreplicationInfo(long ledgerId)
+            throws KeeperException, TextFormat.ParseException, InterruptedException {
+        String znode = getUrLedgerZnode(ledgerId);
+        UnderreplicatedLedgerFormat.Builder builder = UnderreplicatedLedgerFormat.newBuilder();
+        byte[] data = zkc.getData(znode, false, null);
+        TextFormat.merge(new String(data, UTF_8), builder);
+        return builder.build();
+    }
 
     @Override
     public void markLedgerUnderreplicated(long ledgerId, String missingReplica)
