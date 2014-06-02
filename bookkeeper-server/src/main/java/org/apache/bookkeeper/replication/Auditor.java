@@ -171,8 +171,8 @@ public class Auditor implements BookiesListener {
 
                         if (lostBookies.size() > 0) {
                             knownBookies.removeAll(lostBookies);
-                            Map<String, Set<Long>> ledgerDetails = generateBookie2LedgersIndex();
-                            handleLostBookies(lostBookies, ledgerDetails);
+
+                            auditBookies();
                         }
                     } catch (BKException bke) {
                         LOG.error("Exception getting bookie list", bke);
@@ -183,6 +183,8 @@ public class Auditor implements BookiesListener {
                         LOG.error("Exception while watching available bookies", bke);
                     } catch (UnavailableException ue) {
                         LOG.error("Exception while watching available bookies", ue);
+                    } catch (KeeperException ke) {
+                        LOG.error("Exception reading bookie list", ke);
                     }
                 }
             });
@@ -233,37 +235,21 @@ public class Auditor implements BookiesListener {
             } else {
                 LOG.info("Periodic checking disabled");
             }
-
-            Runnable bookieCheck = new Runnable() {
-                    public void run() {
-                        try {
-                            knownBookies = getAvailableBookies();
-                            auditingBookies(knownBookies);
-                        } catch (BKException bke) {
-                            LOG.error("Exception getting bookie list", bke);
-                            submitShutdownTask();
-                        } catch (KeeperException ke) {
-                            LOG.error("Exception while watching available bookies", ke);
-                            submitShutdownTask();
-                        } catch (InterruptedException ie) {
-                            Thread.currentThread().interrupt();
-                            LOG.error("Interrupted while watching available bookies ", ie);
-                            submitShutdownTask();
-                        } catch (BKAuditException bke) {
-                            LOG.error("Exception while watching available bookies", bke);
-                            submitShutdownTask();
-                        }
-                    }
-                };
+            try {
+                knownBookies = getAvailableBookies();
+            } catch (BKException bke) {
+                LOG.error("Couldn't get bookie list, exiting", bke);
+                submitShutdownTask();
+            }
 
             long bookieCheckInterval = conf.getAuditorPeriodicBookieCheckInterval();
             if (bookieCheckInterval == 0) {
                 LOG.info("Auditor periodic bookie checking disabled, running once check now anyhow");
-                executor.submit(bookieCheck);
+                executor.submit(BOOKIE_CHECK);
             } else {
                 LOG.info("Auditor periodic bookie checking enabled"
                          + " 'auditorPeriodicBookieCheckInterval' {} seconds", bookieCheckInterval);
-                executor.scheduleAtFixedRate(bookieCheck, 0, bookieCheckInterval, TimeUnit.SECONDS);
+                executor.scheduleAtFixedRate(BOOKIE_CHECK, 0, bookieCheckInterval, TimeUnit.SECONDS);
             }
         }
     }
@@ -294,11 +280,33 @@ public class Auditor implements BookiesListener {
     }
 
     @SuppressWarnings("unchecked")
-    private void auditingBookies(List<String> availableBookies)
-            throws BKAuditException, KeeperException, InterruptedException {
+    private void auditBookies()
+            throws BKAuditException, KeeperException,
+            InterruptedException, BKException {
+        try {
+            waitIfLedgerReplicationDisabled();
+        } catch (UnavailableException ue) {
+            LOG.error("Underreplication unavailable, skipping audit."
+                      + "Will retry after a period");
+            return;
+        }
 
+        // put exit cases here
         Map<String, Set<Long>> ledgerDetails = generateBookie2LedgersIndex();
+        try {
+            if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+                // has been disabled while we were generating the index
+                // discard this run, and schedule a new one
+                executor.submit(BOOKIE_CHECK);
+                return;
+            }
+        } catch (UnavailableException ue) {
+            LOG.error("Underreplication unavailable, skipping audit."
+                      + "Will retry after a period");
+            return;
+        }
 
+        List<String> availableBookies = getAvailableBookies();
         // find lost bookies
         Set<String> knownBookies = ledgerDetails.keySet();
         Collection<String> lostBookies = CollectionUtils.subtract(knownBookies,
@@ -523,4 +531,26 @@ public class Auditor implements BookiesListener {
     public boolean isRunning() {
         return !executor.isShutdown();
     }
+
+    private final Runnable BOOKIE_CHECK = new Runnable() {
+            public void run() {
+                try {
+                    auditBookies();
+                } catch (BKException bke) {
+                    LOG.error("Couldn't get bookie list, exiting", bke);
+                    submitShutdownTask();
+                } catch (KeeperException ke) {
+                    LOG.error("Exception while watching available bookies", ke);
+                    submitShutdownTask();
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    LOG.error("Interrupted while watching available bookies ", ie);
+                    submitShutdownTask();
+                } catch (BKAuditException bke) {
+                    LOG.error("Exception while watching available bookies", bke);
+                    submitShutdownTask();
+                }
+            }
+        };
+
 }

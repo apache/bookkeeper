@@ -20,7 +20,9 @@
  */
 package org.apache.bookkeeper.test;
 
+import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import com.google.common.util.concurrent.AbstractFuture;
 
@@ -36,6 +38,18 @@ public class TestCallbacks {
                 setException(BKException.create(rc));
             } else {
                 set(value);
+            }
+        }
+    }
+
+    public static class AddCallbackFuture
+        extends AbstractFuture<Long> implements AddCallback {
+        @Override
+        public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+            if (rc != BKException.Code.OK) {
+                setException(BKException.create(rc));
+            } else {
+                set(entryId);
             }
         }
     }

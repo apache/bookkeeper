@@ -200,6 +200,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-751: Ensure all the bookkeeper callbacks not run under ledger handle lock (sijie via ivank)
 
+        BOOKKEEPER-745: Fix for false reports of ledger unreplication during rolling restarts. (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
