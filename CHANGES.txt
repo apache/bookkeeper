@@ -36,6 +36,10 @@ Release 4.2.3 - 2013-12-04
 
         BOOKKEEPER-745: Fix for false reports of ledger unreplication during rolling restarts. (ivank)
 
+        BOOKKEEPER-708: Shade protobuf library to avoid incompatible versions (ivank)
+
+        BOOKKEEPER-730: Shade pom file missing apache license header (ivank)
+
     IMPROVEMENT:
 
         BOOKKEEPER-747: Implement register/unregister LedgerMetadataListener in MSLedgerManagerFactory (fpj via sijie)
@@ -129,10 +133,6 @@ Release 4.2.2 - 2013-10-02
         BOOKKEEPER-627: LedgerDirsMonitor is missing thread name (rakeshr via ivank)
 
         BOOKKEEPER-685: Race in compaction algorithm from BOOKKEEPER-664 (ivank)
-
-        BOOKKEEPER-708: Shade protobuf library to avoid incompatible versions (ivank)
-
-        BOOKKEEPER-730: Shade pom file missing apache license header (ivank)
 
       hedwig-server:
 
