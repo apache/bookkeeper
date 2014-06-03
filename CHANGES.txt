@@ -202,6 +202,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-745: Fix for false reports of ledger unreplication during rolling restarts. (ivank)
 
+        BOOKKEEPER-746: 5 new shell commands. List ledgers, list metadata, list underreplicated, show auditor and simpletest (ivank)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)

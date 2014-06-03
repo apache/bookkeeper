@@ -20,6 +20,8 @@ package org.apache.bookkeeper.meta;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.ReplicationException;
 
+import java.util.Iterator;
+
 /**
  * Interface for marking ledgers which need to be rereplicated
  */
@@ -37,6 +39,14 @@ public interface LedgerUnderreplicationManager {
      */
     void markLedgerReplicated(long ledgerId)
             throws ReplicationException.UnavailableException;
+
+    /**
+     * Get a list of all the ledgers which have been
+     * marked for rereplication.
+     *
+     * @return an iterator which returns ledger ids
+     */
+    Iterator<Long> listLedgersToRereplicate();
 
     /**
      * Acquire a underreplicated ledger for rereplication. The ledger

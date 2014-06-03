@@ -51,7 +51,12 @@ import java.util.Map;
 import java.util.List;
 import java.util.Collections;
 import java.util.Arrays;
-
+import java.util.Deque;
+import java.util.ArrayDeque;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.ArrayList;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -311,6 +316,56 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         } finally {
             releaseUnderreplicatedLedger(ledgerId);
         }
+    }
+
+    @Override
+    public Iterator<Long> listLedgersToRereplicate() {
+        final Queue<String> queue = new LinkedList<String>();
+        queue.add(urLedgerPath);
+
+        return new Iterator<Long>() {
+            final Queue<Long> curBatch = new LinkedList<Long>();
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean hasNext() {
+                if (curBatch.size() > 0) {
+                    return true;
+                }
+
+                while (queue.size() > 0 && curBatch.size() == 0) {
+                    String parent = queue.remove();
+                    try {
+                        for (String c : zkc.getChildren(parent,false)) {
+                            String child = parent + "/" + c;
+                            if (c.startsWith("urL")) {
+                                curBatch.add(getLedgerId(child));
+                            } else {
+                                queue.add(child);
+                            }
+                        }
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        return false;
+                    } catch (KeeperException.NoNodeException nne) {
+                        // ignore
+                    } catch (Exception e) {
+                        throw new RuntimeException("Error reading list", e);
+                    }
+                }
+                return curBatch.size() > 0;
+            }
+
+            @Override
+            public Long next() {
+                assert curBatch.size() > 0;
+                return curBatch.remove();
+            }
+        };
     }
 
     private long getLedgerToRereplicateFromHierarchy(String parent, long depth, Watcher w)
