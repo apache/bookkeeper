@@ -177,7 +177,7 @@ public class AutoRecoveryMain {
                 // If any one service not running, then shutdown peer.
                 if (!autoRecoveryMain.auditorElector.isRunning()
                     || !autoRecoveryMain.replicationWorker.isRunning()) {
-                    autoRecoveryMain.shutdown();
+                    autoRecoveryMain.shutdown(ExitCode.SERVER_EXCEPTION);
                     break;
                 }
             }

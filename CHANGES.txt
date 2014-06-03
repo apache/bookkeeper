@@ -40,6 +40,8 @@ Release 4.2.3 - 2013-12-04
 
         BOOKKEEPER-730: Shade pom file missing apache license header (ivank)
 
+        BOOKKEEPER-725: AutoRecoveryMain should exit with error code if deathwatcher finds dead thread (ivank)
+
     IMPROVEMENT:
 
         BOOKKEEPER-747: Implement register/unregister LedgerMetadataListener in MSLedgerManagerFactory (fpj via sijie)
