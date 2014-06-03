@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import junit.framework.TestCase;
 
@@ -531,12 +532,16 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
         }
     }
 
-    public Auditor getAuditor() throws Exception {
-        for (AutoRecoveryMain p : autoRecoveryProcesses.values()) {
-            Auditor a = p.getAuditor();
-            if (a != null) {
-                return a;
+    public Auditor getAuditor(int timeout, TimeUnit unit) throws Exception {
+        final long timeoutAt = System.nanoTime() + TimeUnit.NANOSECONDS.convert(timeout, unit);
+        while (System.nanoTime() < timeoutAt) {
+            for (AutoRecoveryMain p : autoRecoveryProcesses.values()) {
+                Auditor a = p.getAuditor();
+                if (a != null) {
+                    return a;
+                }
             }
+            Thread.sleep(100);
         }
         throw new Exception("No auditor found");
     }

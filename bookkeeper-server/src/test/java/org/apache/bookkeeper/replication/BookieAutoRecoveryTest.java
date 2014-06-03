@@ -359,7 +359,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
                  LedgerHandleAdapter.getLedgerMetadata(lh).getEnsembles().get(0L));
         killBookie(replicaToKill);
 
-        getAuditor().submitAuditTask().get(); // ensure auditor runs
+        getAuditor(10, TimeUnit.SECONDS).submitAuditTask().get(); // ensure auditor runs
 
         assertTrue("Should be marked as underreplicated", latch.await(5, TimeUnit.SECONDS));
         latch = new CountDownLatch(1);
@@ -374,7 +374,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
                  LedgerHandleAdapter.getLedgerMetadata(lh).getEnsembles().get(0L));
         killBookie(replicaToKill);
 
-        getAuditor().submitAuditTask().get(); // ensure auditor runs
+        getAuditor(10, TimeUnit.SECONDS).submitAuditTask().get(); // ensure auditor runs
 
         assertTrue("Should be marked as underreplicated", latch.await(5, TimeUnit.SECONDS));
         latch = new CountDownLatch(1);
