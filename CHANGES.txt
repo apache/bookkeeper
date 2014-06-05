@@ -60,6 +60,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-763: findbugs fails to run on jenkins (ivank)
 
+      BOOKKEEPER-766: Update notice.txt files to include 2014 (ivank via fpj)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)
