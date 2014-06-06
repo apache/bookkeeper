@@ -31,6 +31,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
@@ -62,7 +63,6 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
     public AuditorPeriodicBookieCheckTest() {
         super(3);
         baseConf.setPageLimit(1); // to make it easy to push ledger out of cache
-        baseConf.setAllowLoopback(true);
     }
 
     @Before
@@ -70,8 +70,7 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
     public void setUp() throws Exception {
         super.setUp();
 
-        ServerConfiguration conf = new ServerConfiguration(bsConfs.get(0));
-        conf.setAllowLoopback(true);
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setAuditorPeriodicBookieCheckInterval(CHECK_INTERVAL);
         String addr = bs.get(0).getLocalAddress().toString();
 

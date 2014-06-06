@@ -98,7 +98,7 @@ public class BookieInitializationTest {
         tmpDir.delete();
         tmpDir.mkdir();
 
-        final ServerConfiguration conf = new ServerConfiguration()
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
                 .setZkServers(null).setJournalDirName(tmpDir.getPath())
                 .setLedgerDirNames(new String[] { tmpDir.getPath() });
 
@@ -370,7 +370,7 @@ public class BookieInitializationTest {
         tempDir.mkdir();
         long usableSpace = tempDir.getUsableSpace();
         long totalSpace = tempDir.getTotalSpace();
-        final ServerConfiguration conf = new ServerConfiguration()
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
                 .setZkServers(zkutil.getZooKeeperConnectString())
                 .setZkTimeout(5000).setJournalDirName(tempDir.getPath())
                 .setLedgerDirNames(new String[] { tempDir.getPath() });
@@ -392,7 +392,7 @@ public class BookieInitializationTest {
         parent.delete();
         parent.mkdir();
         File child = File.createTempFile("DiskCheck", "test", parent);
-        final ServerConfiguration conf = new ServerConfiguration()
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
                 .setZkServers(zkutil.getZooKeeperConnectString())
                 .setZkTimeout(5000).setJournalDirName(child.getPath())
                 .setLedgerDirNames(new String[] { child.getPath() });

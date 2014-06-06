@@ -502,6 +502,7 @@ public class TestBackwardCompat extends TestCase {
                 getClass().getName() + port, "test");
             org.apache.bookkeeper.conf.ServerConfiguration conf = newServerConfiguration(
                 port, zkUtil.getZooKeeperConnectString(), tmpDir, new File[] { tmpDir });
+            conf.setAllowLoopback(true);
             bks.add(startBookie(conf));
             bkConfs.add(conf);
         }
@@ -510,6 +511,7 @@ public class TestBackwardCompat extends TestCase {
             int port, String zkServers, File journalDir, File[] ledgerDirs) {
             org.apache.bookkeeper.conf.ServerConfiguration conf =
                 new org.apache.bookkeeper.conf.ServerConfiguration();
+            conf.setAllowLoopback(true);
             conf.setBookiePort(port);
             conf.setZkServers(zkServers);
             conf.setJournalDirName(journalDir.getPath());

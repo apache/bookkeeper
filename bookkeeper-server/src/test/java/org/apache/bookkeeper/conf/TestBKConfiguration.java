@@ -28,6 +28,7 @@ public class TestBKConfiguration {
         confReturn.setJournalFlushWhenQueueEmpty(true);
         // enable journal format version
         confReturn.setJournalFormatVersionToWrite(5);
+        confReturn.setAllowLoopback(true);
         return confReturn;
     }
 

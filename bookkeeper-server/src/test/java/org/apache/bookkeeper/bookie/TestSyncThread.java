@@ -33,6 +33,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
@@ -75,7 +76,7 @@ public class TestSyncThread {
     @Test(timeout=60000)
     public void testSyncThreadLongShutdown() throws Exception {
         int flushInterval = 100;
-        ServerConfiguration conf = new ServerConfiguration().setFlushInterval(flushInterval);
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         CheckpointSource checkpointSource = new DummyCheckpointSource();
         LedgerDirsListener listener = new DummyLedgerDirsListener();
 
@@ -150,7 +151,7 @@ public class TestSyncThread {
     @Test(timeout=60000)
     public void testSyncThreadSuspension() throws Exception {
         int flushInterval = 100;
-        ServerConfiguration conf = new ServerConfiguration().setFlushInterval(flushInterval);
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         CheckpointSource checkpointSource = new DummyCheckpointSource();
         LedgerDirsListener listener = new DummyLedgerDirsListener();
 
@@ -194,7 +195,7 @@ public class TestSyncThread {
     @Test(timeout=60000)
     public void testSyncThreadShutdownOnError() throws Exception {
         int flushInterval = 100;
-        ServerConfiguration conf = new ServerConfiguration().setFlushInterval(flushInterval);
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         CheckpointSource checkpointSource = new DummyCheckpointSource();
         final CountDownLatch fatalLatch = new CountDownLatch(1);
         LedgerDirsListener listener = new DummyLedgerDirsListener() {
@@ -225,7 +226,7 @@ public class TestSyncThread {
     @Test(timeout=60000)
     public void testSyncThreadDisksFull() throws Exception {
         int flushInterval = 100;
-        ServerConfiguration conf = new ServerConfiguration().setFlushInterval(flushInterval);
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         CheckpointSource checkpointSource = new DummyCheckpointSource();
         final CountDownLatch diskFullLatch = new CountDownLatch(1);
         LedgerDirsListener listener = new DummyLedgerDirsListener() {
