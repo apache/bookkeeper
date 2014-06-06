@@ -244,6 +244,7 @@ public class BookKeeperTestBase extends ZooKeeperTestBase {
 
     protected ServerConfiguration newServerConfiguration(int port, String zkServers, File journalDir, File[] ledgerDirs) {
         ServerConfiguration conf = new ServerConfiguration(baseConf);
+        conf.setAllowLoopback(true);
         conf.setBookiePort(port);
         conf.setZkServers(zkServers);
         conf.setJournalDirName(journalDir.getPath());

@@ -73,6 +73,7 @@ public class LedgerCacheTest extends TestCase {
 
         conf = new ServerConfiguration();
         conf.setZkServers(null);
+        conf.setAllowLoopback(true);
         conf.setJournalDirName(txnDir.getPath());
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
         bookie = new Bookie(conf);
@@ -214,6 +215,8 @@ public class LedgerCacheTest extends TestCase {
         conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(),
                 ledgerDir2.getAbsolutePath() });
         conf.setOpenFileLimit(1);
+        conf.setAllowLoopback(true);
+
         Bookie bookie = new Bookie(conf);
         InterleavedLedgerStorage ledgerStorage = ((InterleavedLedgerStorage) bookie.ledgerStorage);
         final LedgerCacheImpl ledgerCache = (LedgerCacheImpl) ledgerStorage.ledgerCache;
@@ -306,7 +309,7 @@ public class LedgerCacheTest extends TestCase {
         ledgerDir1.delete();
         File ledgerDir2 = File.createTempFile("bkTest", ".dir");
         ledgerDir2.delete();
-        ServerConfiguration conf = new ServerConfiguration();
+        ServerConfiguration conf = new ServerConfiguration().setAllowLoopback(true);
         conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(), ledgerDir2.getAbsolutePath() });
 
         Bookie bookie = new Bookie(conf);
@@ -364,6 +367,7 @@ public class LedgerCacheTest extends TestCase {
 
         ServerConfiguration conf = new ServerConfiguration()
             .setZkServers(null)
+            .setAllowLoopback(true)
             .setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setFlushInterval(1000)
@@ -377,6 +381,7 @@ public class LedgerCacheTest extends TestCase {
         }
 
         conf = new ServerConfiguration()
+            .setAllowLoopback(true)
             .setZkServers(null)
             .setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });

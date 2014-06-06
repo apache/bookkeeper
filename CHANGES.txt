@@ -6,6 +6,8 @@ Release 4.2.3 - 2013-12-04
 
      BOOKKEEPER-766: Update notice.txt files to include 2014 (ivank via fpj)
 
+     BOOKKEEPER-767: Allow loopback in tests (ivank via fpj)
+
       bookkeeper-server:
 
         BOOKKEEPER-711: bookkeeper-daemon.sh will not remove the pid file one successful stop (vinay via sijie)

@@ -50,7 +50,7 @@ public class ConcurrentLedgerTest extends TestCase {
     File txnDir, ledgerDir;
     int recvTimeout = 10000;
     Semaphore throttle;
-    ServerConfiguration conf = new ServerConfiguration();
+    ServerConfiguration conf;
 
     @Override
     @Before
@@ -71,6 +71,8 @@ public class ConcurrentLedgerTest extends TestCase {
         ledgerDir = new File(tmpFile.getParent(), tmpFile.getName()+".dir");
         ledgerDir.mkdirs();
 
+        conf = new ServerConfiguration();
+        conf.setAllowLoopback(true);
         conf.setBookiePort(5000);
         conf.setZkServers(null);
         conf.setJournalDirName(txnDir.getPath());

@@ -165,6 +165,7 @@ public class UpgradeTest {
 
     private static void testUpgradeProceedure(String zkServers, String journalDir, String ledgerDir) throws Exception {
         ServerConfiguration conf = new ServerConfiguration()
+            .setAllowLoopback(true)
             .setZkServers(zkServers)
             .setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir })
@@ -222,6 +223,7 @@ public class UpgradeTest {
         testUpgradeProceedure(zkutil.getZooKeeperConnectString(), journalDir, ledgerDir);
         // Upgrade again
         ServerConfiguration conf = new ServerConfiguration()
+            .setAllowLoopback(true)
             .setZkServers(zkutil.getZooKeeperConnectString())
             .setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir })

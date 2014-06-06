@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 public class TestLedgerDirsManager extends TestCase {
     static Logger LOG = LoggerFactory.getLogger(TestLedgerDirsManager.class);
 
-    ServerConfiguration conf = new ServerConfiguration();
+    ServerConfiguration conf;
     File curDir;
     LedgerDirsManager dirsManager;
 
@@ -48,6 +48,7 @@ public class TestLedgerDirsManager extends TestCase {
         Bookie.checkDirectoryStructure(curDir);
 
         ServerConfiguration conf = new ServerConfiguration();
+        conf.setAllowLoopback(true);
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
 
         dirsManager = new LedgerDirsManager(conf);
