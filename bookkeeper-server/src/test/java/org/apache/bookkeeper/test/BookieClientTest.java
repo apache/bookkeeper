@@ -53,7 +53,7 @@ public class BookieClientTest extends TestCase {
     public int port = 13645;
     public ClientSocketChannelFactory channelFactory;
     public OrderedSafeExecutor executor;
-    ServerConfiguration conf = new ServerConfiguration();
+    ServerConfiguration conf;
 
     @Override
     public void setUp() throws Exception {
@@ -67,6 +67,7 @@ public class BookieClientTest extends TestCase {
         ServerConfiguration conf = new ServerConfiguration();
         conf.setZkServers(null).setBookiePort(port)
             .setJournalDirName(tmpDir.getPath())
+            .setAllowLoopback(true)
             .setLedgerDirNames(new String[] { tmpDir.getPath() });
         bs = new BookieServer(conf);
         bs.start();

@@ -201,6 +201,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
 
         // set flush interval to a large value
         ServerConfiguration newConf = new ServerConfiguration();
+        newConf.setAllowLoopback(true);
         newConf.setFlushInterval(999999999);
         // restart bookies
         restartBookies(newConf);
@@ -239,6 +240,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         // restart bookies with flush interval set to a large value
         ServerConfiguration newConf = new ServerConfiguration();
         newConf.setFlushInterval(999999999);
+        newConf.setAllowLoopback(true);
         // restart bookies
         restartBookies(newConf);
 

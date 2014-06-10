@@ -82,6 +82,7 @@ public class CreateNewLogTest {
         // Creating a new configuration with a number of 
         // ledger directories.
         conf.setLedgerDirNames(ledgerDirs);
+        conf.setAllowLoopback(true);
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf);
         EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
         

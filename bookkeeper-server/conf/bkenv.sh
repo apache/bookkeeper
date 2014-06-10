@@ -20,6 +20,9 @@
 # * limitations under the License.
 # */
 
+# Set JAVA_HOME here to override the environment setting
+# JAVA_HOME=
+
 # default settings for starting bookkeeper
 
 # Configuration file of settings used in bookie server

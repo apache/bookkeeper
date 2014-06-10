@@ -47,6 +47,7 @@ public class NIOServerFactoryTest extends TestCase {
     @Test(timeout=60000)
     public void testProblemProcessor() throws Exception {
         ServerConfiguration conf = new ServerConfiguration();
+        conf.setAllowLoopback(true);
         int port = PortManager.nextFreePort();
         conf.setBookiePort(port);
         NIOServerFactory factory = new NIOServerFactory(conf, problemProcessor);

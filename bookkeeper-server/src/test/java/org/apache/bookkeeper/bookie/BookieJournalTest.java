@@ -216,6 +216,7 @@ public class BookieJournalTest {
         writeIndexFileForLedger(Bookie.getCurrentDirectory(ledgerDir), 1, "testPasswd".getBytes());
 
         ServerConfiguration conf = new ServerConfiguration()
+            .setAllowLoopback(true)
             .setZkServers(null)
             .setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
@@ -254,6 +255,7 @@ public class BookieJournalTest {
         writeJunkJournal(Bookie.getCurrentDirectory(journalDir));
 
         ServerConfiguration conf = new ServerConfiguration()
+            .setAllowLoopback(true)
             .setZkServers(null)
             .setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
@@ -292,6 +294,7 @@ public class BookieJournalTest {
         writePreV2Journal(Bookie.getCurrentDirectory(journalDir), 0);
 
         ServerConfiguration conf = new ServerConfiguration()
+            .setAllowLoopback(true)
             .setZkServers(null)
             .setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
@@ -318,6 +321,7 @@ public class BookieJournalTest {
         writePostV2Journal(Bookie.getCurrentDirectory(journalDir), 0);
 
         ServerConfiguration conf = new ServerConfiguration()
+            .setAllowLoopback(true)
             .setZkServers(null)
             .setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
@@ -348,6 +352,7 @@ public class BookieJournalTest {
         writeIndexFileForLedger(ledgerDir, 1, "testPasswd".getBytes());
 
         ServerConfiguration conf = new ServerConfiguration()
+            .setAllowLoopback(true)
             .setZkServers(null)
             .setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
@@ -392,6 +397,7 @@ public class BookieJournalTest {
                                 1, "testPasswd".getBytes());
 
         ServerConfiguration conf = new ServerConfiguration()
+            .setAllowLoopback(true)
             .setZkServers(null)
             .setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
@@ -440,6 +446,7 @@ public class BookieJournalTest {
                                 1, "testPasswd".getBytes());
 
         ServerConfiguration conf = new ServerConfiguration()
+            .setAllowLoopback(true)
             .setZkServers(null)
             .setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
@@ -506,6 +513,7 @@ public class BookieJournalTest {
                                        1, "testPasswd".getBytes(), truncateMasterKey);
 
         ServerConfiguration conf = new ServerConfiguration()
+            .setAllowLoopback(true)
             .setZkServers(null)
             .setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
@@ -568,6 +576,7 @@ public class BookieJournalTest {
                                        truncateMasterKey);
 
         ServerConfiguration conf = new ServerConfiguration()
+            .setAllowLoopback(true)
             .setZkServers(null)
             .setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });

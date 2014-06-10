@@ -20,13 +20,6 @@
 # * limitations under the License.
 # */
 
-# Check for the Java
-if [[ -z $JAVA_HOME ]]; then
-   echo "Error: JAVA_HOME is not set" 1>&2
-   exit 1
-fi
-JAVA=$JAVA_HOME/bin/java
-
 # check if net.ipv6.bindv6only is set to 1
 bindv6only=$(/sbin/sysctl -n net.ipv6.bindv6only 2> /dev/null)
 if [ -n "$bindv6only" ] && [ "$bindv6only" -eq "1" ]
@@ -63,6 +56,19 @@ DEFAULT_CONF=$BK_HOME/conf/bk_server.conf
 DEFAULT_LOG_CONF=$BK_HOME/conf/log4j.properties
 
 source $BK_HOME/conf/bkenv.sh
+
+# Check for the java to use
+if [[ -z $JAVA_HOME ]]; then
+    JAVA=$(which java)
+    if [ $? = 0 ]; then
+        echo "JAVA_HOME not set, using java from PATH. ($JAVA)"
+    else
+        echo "Error: JAVA_HOME not set, and no java executable found in $PATH." 1>&2
+        exit 1
+    fi
+else
+    JAVA=$JAVA_HOME/bin/java
+fi
 
 # exclude tests jar
 RELEASE_JAR=`ls $BK_HOME/bookkeeper-server-*.jar 2> /dev/null | grep -v tests | tail -1` 

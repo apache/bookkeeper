@@ -97,8 +97,8 @@ public class BookieInitializationTest {
         tmpDir.mkdir();
 
         final ServerConfiguration conf = new ServerConfiguration()
-                .setZkServers(null).setJournalDirName(tmpDir.getPath())
-                .setLedgerDirNames(new String[] { tmpDir.getPath() });
+            .setZkServers(null).setJournalDirName(tmpDir.getPath())
+            .setAllowLoopback(true).setLedgerDirNames(new String[] { tmpDir.getPath() });
 
         // simulating ZooKeeper exception by assigning a closed zk client to bk
         BookieServer bkServer = new BookieServer(conf) {
@@ -130,8 +130,8 @@ public class BookieInitializationTest {
         tmpDir.mkdir();
 
         final ServerConfiguration conf = new ServerConfiguration()
-                .setZkServers(null).setJournalDirName(tmpDir.getPath())
-                .setLedgerDirNames(new String[] { tmpDir.getPath() });
+            .setZkServers(null).setJournalDirName(tmpDir.getPath())
+            .setAllowLoopback(true).setLedgerDirNames(new String[] { tmpDir.getPath() });
 
         final String bkRegPath = conf.getZkAvailableBookiesPath() + "/"
                 + InetAddress.getLocalHost().getHostAddress() + ":"
@@ -196,8 +196,9 @@ public class BookieInitializationTest {
         tmpDir.mkdir();
 
         ServerConfiguration conf = new ServerConfiguration().setZkServers(null)
-                .setJournalDirName(tmpDir.getPath()).setLedgerDirNames(
-                        new String[] { tmpDir.getPath() });
+            .setAllowLoopback(true)
+            .setJournalDirName(tmpDir.getPath())
+            .setLedgerDirNames(new String[] { tmpDir.getPath() });
 
         String bkRegPath = conf.getZkAvailableBookiesPath() + "/"
                 + InetAddress.getLocalHost().getHostAddress() + ":"
@@ -252,9 +253,10 @@ public class BookieInitializationTest {
 
         ServerConfiguration conf = new ServerConfiguration();
         int port = 12555;
-        conf.setZkServers(null).setBookiePort(port).setJournalDirName(
-                tmpDir.getPath()).setLedgerDirNames(
-                new String[] { tmpDir.getPath() });
+        conf.setZkServers(null).setBookiePort(port)
+            .setAllowLoopback(true)
+            .setJournalDirName(tmpDir.getPath())
+            .setLedgerDirNames(new String[] { tmpDir.getPath() });
         BookieServer bs1 = new BookieServer(conf);
         bs1.start();
 
@@ -281,9 +283,9 @@ public class BookieInitializationTest {
         tmpDir.mkdir();
 
         final ServerConfiguration conf = new ServerConfiguration()
-                .setZkServers(zkutil.getZooKeeperConnectString())
-                .setZkTimeout(5000).setJournalDirName(tmpDir.getPath())
-                .setLedgerDirNames(new String[] { tmpDir.getPath() });
+            .setZkServers(zkutil.getZooKeeperConnectString())
+            .setZkTimeout(5000).setJournalDirName(tmpDir.getPath())
+            .setAllowLoopback(true).setLedgerDirNames(new String[] { tmpDir.getPath() });
         try {
             new Bookie(conf);
             fail("Should throw ConnectionLossException as ZKServer is not running!");
@@ -308,6 +310,7 @@ public class BookieInitializationTest {
         final ServerConfiguration conf = new ServerConfiguration()
             .setZkServers(zkutil.getZooKeeperConnectString())
             .setZkTimeout(5000).setJournalDirName(tmpDir.getPath())
+            .setAllowLoopback(true)
             .setLedgerDirNames(new String[] { tmpDir.getPath() });
         conf.setZkLedgersRootPath(ZK_ROOT);
         try {

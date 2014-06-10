@@ -317,7 +317,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
     @Test(timeout=60000)
     public void testCompactionSafety() throws Exception {
         tearDown(); // I dont want the test infrastructure
-        ServerConfiguration conf = new ServerConfiguration();
+        ServerConfiguration conf = new ServerConfiguration().setAllowLoopback(true);
         final Set<Long> ledgers = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
         LedgerManager manager = new LedgerManager() {
                 @Override

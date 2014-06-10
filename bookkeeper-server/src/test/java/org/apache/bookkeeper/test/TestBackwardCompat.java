@@ -267,6 +267,7 @@ public class TestBackwardCompat {
         ServerCurrent(File journalDir, File ledgerDir, int port) throws Exception {
             conf = new org.apache.bookkeeper.conf.ServerConfiguration();
             conf.setBookiePort(port);
+            conf.setAllowLoopback(true);
             conf.setZkServers(zkUtil.getZooKeeperConnectString());
             conf.setJournalDirName(journalDir.getPath());
             conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
