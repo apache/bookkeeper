@@ -64,6 +64,8 @@ Trunk (unreleased changes)
       
       BOOKKEEPER-767: Allow loopback in tests (ivank via fpj)
 
+      BOOKKEEPER-765: bookkeeper script should fall back to java in path if JAVA_HOME is not set (ivank)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)
