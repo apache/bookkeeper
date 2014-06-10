@@ -58,6 +58,19 @@ DEFAULT_LOG_CONF=$HW_HOME/conf/log4j.properties
 
 . $HW_HOME/conf/hwenv.sh
 
+# Check for the java to use
+if [[ -z $JAVA_HOME ]]; then
+    JAVA=$(which java)
+    if [ $? = 0 ]; then
+        echo "JAVA_HOME not set, using java from PATH. ($JAVA)"
+    else
+        echo "Error: JAVA_HOME not set, and no java executable found in $PATH." 1>&2
+        exit 1
+    fi
+else
+    JAVA=$JAVA_HOME/bin/java
+fi
+
 RELEASE_JAR=`ls $HW_HOME/hedwig-server-*.jar 2> /dev/null | tail -1`
 if [ $? == 0 ]; then
     HEDWIG_JAR=$RELEASE_JAR
@@ -171,7 +184,7 @@ OPTS="$OPTS -Dhedwig.log.file=$HEDWIG_LOG_FILE"
 # Change to HW_HOME to support relative paths
 cd "$BK_HOME"
 if [ $COMMAND == "server" ]; then
-    exec java $OPTS $JMX_ARGS org.apache.hedwig.server.netty.PubSubServer $HEDWIG_SERVER_CONF $HEDWIG_REGION_CLIENT_CONF $@
+    exec $JAVA $OPTS $JMX_ARGS org.apache.hedwig.server.netty.PubSubServer $HEDWIG_SERVER_CONF $HEDWIG_REGION_CLIENT_CONF $@
 elif [ $COMMAND == "console" ]; then
     # hedwig console configuration server part
     if [ -z "$HEDWIG_CONSOLE_SERVER_CONF" ]; then
@@ -181,11 +194,11 @@ elif [ $COMMAND == "console" ]; then
     if [ -n "$HEDWIG_CONSOLE_CLIENT_CONF" ]; then
         HEDWIG_CONSOLE_CLIENT_OPTIONS="-client-cfg $HEDWIG_CONSOLE_CLIENT_CONF"
     fi
-    exec java $OPTS org.apache.hedwig.admin.console.HedwigConsole -server-cfg $HEDWIG_CONSOLE_SERVER_CONF $HEDWIG_CONSOLE_CLIENT_OPTIONS $@
+    exec $JAVA $OPTS org.apache.hedwig.admin.console.HedwigConsole -server-cfg $HEDWIG_CONSOLE_SERVER_CONF $HEDWIG_CONSOLE_CLIENT_OPTIONS $@
 elif [ $COMMAND == "help" ]; then
     hedwig_help;
 else
-    exec java $OPTS $COMMAND $@
+    exec $JAVA $OPTS $COMMAND $@
 fi
 
 
