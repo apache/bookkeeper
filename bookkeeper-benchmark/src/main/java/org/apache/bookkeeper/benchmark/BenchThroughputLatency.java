@@ -384,7 +384,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
 
         long tp = (long)((double)(numcompletions*1000.0)/(double)bench.getDuration());
 
-        LOG.info(numcompletions + " completions in " + bench.getDuration() + " seconds: " + tp + " ops/sec");
+        LOG.info(numcompletions + " completions in " + bench.getDuration() + " milliseconds: " + tp + " ops/sec");
 
         if (zk != null) {
             zk.create(coordinationZnode + "/worker-",
