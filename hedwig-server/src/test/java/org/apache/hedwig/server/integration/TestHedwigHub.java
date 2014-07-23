@@ -18,8 +18,6 @@
 package org.apache.hedwig.server.integration;
 
 import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.SynchronousQueue;
 
@@ -36,7 +34,6 @@ import org.apache.hedwig.client.exceptions.AlreadyStartDeliveryException;
 import org.apache.hedwig.client.HedwigClient;
 import org.apache.hedwig.client.api.Client;
 import org.apache.hedwig.client.api.Publisher;
-import org.apache.hedwig.client.api.Subscriber;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.exceptions.PubSubException.ClientNotSubscribedException;
 import org.apache.hedwig.protocol.PubSubProtocol.Message;
@@ -61,6 +58,8 @@ import org.apache.hedwig.util.ConcurrencyUtils;
 import org.apache.hedwig.util.HedwigSocketAddress;
 import org.apache.bookkeeper.test.PortManager;
 import org.apache.hedwig.server.LoggingExceptionHandler;
+
+import static org.junit.Assert.*;
 
 public abstract class TestHedwigHub extends HedwigHubTestBase {
 

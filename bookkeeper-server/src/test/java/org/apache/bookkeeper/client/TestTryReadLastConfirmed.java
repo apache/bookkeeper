@@ -29,6 +29,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.*;
+
 public class TestTryReadLastConfirmed extends BookKeeperClusterTestCase {
 
     static final Logger logger = LoggerFactory.getLogger(TestTryReadLastConfirmed.class);

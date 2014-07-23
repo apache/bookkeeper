@@ -39,6 +39,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.Assert.*;
+
 /**
  * This class tests that bookie rolling journals
  */
@@ -181,7 +183,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         // Sleep for a while to ensure data are flushed
         Thread.sleep(2000);
 
-        // verify that we only keep at most journal files 
+        // verify that we only keep at most journal files
         for (File journalDir : tmpDirs) {
             File[] journals = journalDir.listFiles();
             int numJournals = 0;
@@ -194,7 +196,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
             assertTrue(numJournals <= 2);
         }
 
-        // restart bookies 
+        // restart bookies
         // ensure after restart we can read the entries since journals rolls
         restartBookies();
         validLedgerEntries(ledgerIds, 1024, 1024);

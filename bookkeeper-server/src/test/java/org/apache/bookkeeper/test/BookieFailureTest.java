@@ -26,7 +26,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Random;
-import java.util.Set;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
@@ -41,6 +40,8 @@ import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.KeeperException;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * This test tests read and write, synchronous and asynchronous, strings and
@@ -366,7 +367,7 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
      * the future.addlistener() in PerChannelBookieClient after the connection
      * establishment. Now the future.addlistener() will notify back in the same
      * thread and simultaneously invoke the pendingOp.operationComplete() event.
-     * 
+     *
      * BOOKKEEPER-326
      */
     @Test(timeout=60000)

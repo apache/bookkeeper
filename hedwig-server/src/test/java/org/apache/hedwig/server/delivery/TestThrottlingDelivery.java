@@ -54,6 +54,8 @@ import org.junit.runners.Parameterized.Parameters;
 
 import com.google.protobuf.ByteString;
 
+import static org.junit.Assert.*;
+
 @RunWith(Parameterized.class)
 public class TestThrottlingDelivery extends HedwigHubTestBase {
 

@@ -25,10 +25,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import junit.framework.TestCase;
-
-import junit.framework.TestCase;
-
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -46,10 +42,12 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.Assert.*;
+
 /**
  * LedgerCache related test cases
  */
-public class LedgerCacheTest extends TestCase {
+public class LedgerCacheTest {
     private final static Logger LOG = LoggerFactory.getLogger(LedgerCacheTest.class);
 
     SnapshotMap<Long, Boolean> activeLedgers;
@@ -61,7 +59,6 @@ public class LedgerCacheTest extends TestCase {
 
     private Bookie bookie;
 
-    @Override
     @Before
     public void setUp() throws Exception {
         txnDir = File.createTempFile("ledgercache", "txn");
@@ -85,7 +82,6 @@ public class LedgerCacheTest extends TestCase {
         ledgerCache = ((InterleavedLedgerStorage) bookie.ledgerStorage).ledgerCache;
     }
 
-    @Override
     @After
     public void tearDown() throws Exception {
         if (flushThread != null) {

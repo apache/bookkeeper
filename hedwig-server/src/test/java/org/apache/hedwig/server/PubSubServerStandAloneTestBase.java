@@ -17,8 +17,6 @@
  */
 package org.apache.hedwig.server;
 
-import junit.framework.TestCase;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.junit.After;
@@ -27,7 +25,6 @@ import org.junit.Before;
 import org.apache.bookkeeper.test.PortManager;
 
 import org.apache.hedwig.client.conf.ClientConfiguration;
-import org.apache.hedwig.server.LoggingExceptionHandler;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.netty.PubSubServer;
 import org.apache.hedwig.util.HedwigSocketAddress;
@@ -35,7 +32,7 @@ import org.apache.hedwig.util.HedwigSocketAddress;
 /**
  * This is a base class for any tests that need a StandAlone PubSubServer setup.
  */
-public abstract class PubSubServerStandAloneTestBase extends TestCase {
+public abstract class PubSubServerStandAloneTestBase {
 
     protected static Logger logger = LoggerFactory.getLogger(PubSubServerStandAloneTestBase.class);
 
@@ -67,22 +64,20 @@ public abstract class PubSubServerStandAloneTestBase extends TestCase {
     protected ServerConfiguration conf;
     protected HedwigSocketAddress defaultAddress;
 
-    @Override
     @Before
     public void setUp() throws Exception {
-        logger.info("STARTING " + getName());
+        logger.info("STARTING " + getClass());
         conf = getStandAloneServerConfiguration();
         startHubServer(conf);
         logger.info("Standalone PubSubServer test setup finished");
     }
 
 
-    @Override
     @After
     public void tearDown() throws Exception {
         logger.info("tearDown starting");
         tearDownHubServer();
-        logger.info("FINISHED " + getName());
+        logger.info("FINISHED " + getClass());
     }
 
     protected HedwigSocketAddress getDefaultHedwigAddress() {

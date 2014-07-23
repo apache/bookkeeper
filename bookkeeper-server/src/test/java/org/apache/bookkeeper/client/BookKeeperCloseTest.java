@@ -45,6 +45,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.*;
+
 /**
  * This unit test verifies the behavior of bookkeeper apis, where the operations
  * are being executed through a closed bookkeeper client

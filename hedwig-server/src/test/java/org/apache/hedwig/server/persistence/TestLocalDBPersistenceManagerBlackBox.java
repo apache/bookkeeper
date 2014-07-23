@@ -20,15 +20,22 @@ package org.apache.hedwig.server.persistence;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
-import org.apache.hedwig.server.persistence.LocalDBPersistenceManager;
-import org.apache.hedwig.server.persistence.PersistenceManager;
+import org.junit.After;
+import org.junit.Before;
 
 public class TestLocalDBPersistenceManagerBlackBox extends TestPersistenceManagerBlackBox {
 
+    @After
     @Override
-    protected void tearDown() throws Exception {
+    public void tearDown() throws Exception {
         super.tearDown();
         ((LocalDBPersistenceManager) persistenceManager).reset();
+    }
+
+    @Before
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
     }
 
     @Override
@@ -44,10 +51,6 @@ public class TestLocalDBPersistenceManagerBlackBox extends TestPersistenceManage
     @Override
     public long getExpectedSeqId(int numPublished) {
         return numPublished;
-    }
-
-    public static Test suite() {
-        return new TestSuite(TestLocalDBPersistenceManagerBlackBox.class);
     }
 
 }

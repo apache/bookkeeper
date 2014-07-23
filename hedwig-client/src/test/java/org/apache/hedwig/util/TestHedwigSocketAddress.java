@@ -19,11 +19,11 @@ package org.apache.hedwig.util;
 
 import java.net.InetSocketAddress;
 
-import junit.framework.TestCase;
-
 import org.junit.Test;
 
-public class TestHedwigSocketAddress extends TestCase {
+import static org.junit.Assert.*;
+
+public class TestHedwigSocketAddress {
 
     // Common values used by tests
     private String hostname = "localhost";

@@ -29,8 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import junit.framework.TestCase;
-
 import org.apache.bookkeeper.metastore.InMemoryMetastoreTable.MetadataVersion;
 import org.apache.bookkeeper.metastore.MSException.Code;
 import org.apache.bookkeeper.metastore.MetastoreScannableTable.Order;
@@ -48,7 +46,9 @@ import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-public class TestMetaStore extends TestCase {
+import static org.junit.Assert.*;
+
+public class TestMetaStore {
     private final static Logger logger = LoggerFactory.getLogger(TestMetaStore.class);
 
     protected final static String TABLE = "myTable";
@@ -190,7 +190,6 @@ public class TestMetaStore extends TestCase {
         return v1.compare(v2) == Version.Occurred.CONCURRENTLY;
     }
 
-    @Override
     @Before
     public void setUp() throws Exception {
         metastore = MetastoreFactory.createMetaStore(getMetaStoreName());
@@ -204,7 +203,6 @@ public class TestMetaStore extends TestCase {
         clearTable();
     }
 
-    @Override
     @After
     public void tearDown() throws Exception {
         // also clear table after test

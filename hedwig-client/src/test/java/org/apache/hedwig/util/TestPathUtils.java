@@ -19,11 +19,11 @@ package org.apache.hedwig.util;
 
 import java.util.Arrays;
 
-import junit.framework.TestCase;
-
 import org.junit.Test;
 
-public class TestPathUtils extends TestCase {
+import static org.junit.Assert.*;
+
+public class TestPathUtils {
 
     @Test(timeout=60000)
     public void testPrefixes() {

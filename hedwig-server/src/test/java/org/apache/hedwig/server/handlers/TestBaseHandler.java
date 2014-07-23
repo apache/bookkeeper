@@ -18,7 +18,6 @@
 package org.apache.hedwig.server.handlers;
 
 import java.util.List;
-import junit.framework.TestCase;
 
 import org.jboss.netty.channel.Channel;
 import org.junit.Before;
@@ -32,7 +31,9 @@ import org.apache.hedwig.server.netty.WriteRecordingChannel;
 import org.apache.hedwig.server.topics.StubTopicManager;
 import org.apache.hedwig.server.topics.TopicManager;
 
-public class TestBaseHandler extends TestCase {
+import static org.junit.Assert.*;
+
+public class TestBaseHandler {
 
     MyBaseHandler handler;
     StubTopicManager tm;
@@ -58,7 +59,6 @@ public class TestBaseHandler extends TestCase {
 
     }
 
-    @Override
     @Before
     public void setUp() throws Exception {
         ServerConfiguration conf = new ServerConfiguration();

@@ -296,6 +296,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-747: Implement register/unregister LedgerMetadataListener in MSLedgerManagerFactory (fpj via sijie)
 
+      BOOKKEEPER-739: Test timeouts mostly ignored (sijie via fpj)
+
     NEW FEATURE:
 
       BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj)

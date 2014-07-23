@@ -35,6 +35,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.Assert.*;
+
 public class BookieShutdownTest extends BookKeeperClusterTestCase {
 
     private final static Logger LOG = LoggerFactory.getLogger(BookieShutdownTest.class);
@@ -106,7 +108,7 @@ public class BookieShutdownTest extends BookKeeperClusterTestCase {
 
     /**
      * Test whether Bookie can be shutdown when the call comes inside bookie thread.
-     * 
+     *
      * @throws Exception
      */
     @Test(timeout = 60000)

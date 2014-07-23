@@ -54,6 +54,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.Assert.*;
+
 /**
  * Tests publishing of under replicated ledgers by the Auditor bookie node when
  * corresponding bookies identifes as not running
@@ -153,7 +155,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
 
         /*
          * Sample data format present in the under replicated ledger path
-         * 
+         *
          * {4=replica: "10.18.89.153:5002"}
          */
         assertTrue("Ledger is not marked as underreplicated:" + ledgerId,

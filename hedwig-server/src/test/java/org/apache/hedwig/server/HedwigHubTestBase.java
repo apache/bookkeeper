@@ -21,7 +21,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import junit.framework.TestCase;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.junit.After;
@@ -74,7 +73,6 @@ public abstract class HedwigHubTestBase extends TestCase {
     }
 
     public HedwigHubTestBase(String name, int numServers) {
-        super(name);
         this.numServers = numServers;
         init();
     }
@@ -172,10 +170,9 @@ public abstract class HedwigHubTestBase extends TestCase {
         serversList.clear();
     }
 
-    @Override
     @Before
     protected void setUp() throws Exception {
-        logger.info("STARTING " + getName());
+        logger.info("STARTING " + getClass());
         if (! standalone) {
             bktb = new BookKeeperTestBase(numBookies, readDelay);
             bktb.setUp();
@@ -184,13 +181,12 @@ public abstract class HedwigHubTestBase extends TestCase {
         logger.info("HedwigHub test setup finished");
     }
 
-    @Override
     @After
     protected void tearDown() throws Exception {
         logger.info("tearDown starting");
         stopHubServers();
         if (null != bktb) bktb.tearDown();
-        logger.info("FINISHED " + getName());
+        logger.info("FINISHED " + getClass());
     }
 
 }

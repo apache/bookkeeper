@@ -45,6 +45,8 @@ import java.util.Enumeration;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import static org.junit.Assert.*;
+
 /**
  * Test the ReplicationWroker, where it has to replicate the fragments from
  * failed Bookies to given target Bookie.

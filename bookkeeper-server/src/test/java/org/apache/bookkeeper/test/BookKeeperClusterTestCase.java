@@ -32,8 +32,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import junit.framework.TestCase;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
@@ -59,7 +57,7 @@ import org.slf4j.LoggerFactory;
 /**
  * A class runs several bookie servers for testing.
  */
-public abstract class BookKeeperClusterTestCase extends TestCase {
+public abstract class BookKeeperClusterTestCase {
 
     static final Logger LOG = LoggerFactory.getLogger(BookKeeperClusterTestCase.class);
 
@@ -86,9 +84,8 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
     }
 
     @Before
-    @Override
     public void setUp() throws Exception {
-        LOG.info("Setting up test {}", getName());
+        LOG.info("Setting up test {}", getClass());
         InMemoryMetaStore.reset();
         setMetastoreImplClass(baseConf);
         setMetastoreImplClass(baseClientConf);
@@ -105,14 +102,13 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
     }
 
     @After
-    @Override
     public void tearDown() throws Exception {
         LOG.info("TearDown");
         // stop bookkeeper service
         stopBKCluster();
         // stop zookeeper service
         stopZKCluster();
-        LOG.info("Tearing down test {}", getName());
+        LOG.info("Tearing down test {}", getClass());
     }
 
     /**
@@ -304,7 +300,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      *
      * @param addr
      *          Socket Address
-     * @param latch
+     * @param l
      *          Latch to wait on
      * @throws InterruptedException
      * @throws IOException
@@ -379,8 +375,6 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      * number. Also, starts the auto recovery process, if the
      * isAutoRecoveryEnabled is set true.
      *
-     * @param port
-     *            Port to start the new bookie server on
      * @throws IOException
      */
     public int startNewBookie()
@@ -560,7 +554,7 @@ public abstract class BookKeeperClusterTestCase extends TestCase {
      * address. Represent as 'hostname/IPaddress' if the InetSocketAddress was
      * created using hostname. Represent as '/IPaddress' if the
      * InetSocketAddress was created using an IPaddress
-     * 
+     *
      * @param addr
      *            inetaddress
      * @return true if the address was created using an IP address, false if the

@@ -25,7 +25,6 @@ import java.util.List;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-import junit.framework.TestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

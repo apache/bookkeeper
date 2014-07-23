@@ -37,6 +37,8 @@ import org.junit.Test;
 
 import com.google.protobuf.ByteString;
 
+import static org.junit.Assert.*;
+
 public class TestSubAfterCloseSub extends HedwigHubTestBase {
 
     class TestClientConfiguration extends HubClientConfiguration {

@@ -21,9 +21,9 @@ import java.io.File;
 
 import org.junit.Test;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
-public class TestFileUtils extends TestCase {
+public class TestFileUtils {
 
     @Test(timeout=60000)
     public void testCreateTmpDirectory() throws Exception {

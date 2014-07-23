@@ -31,6 +31,8 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.junit.Test;
 
+import static org.junit.Assert.*;
+
 public class LedgerLayoutTest extends BookKeeperClusterTestCase {
 
     public LedgerLayoutTest() {
@@ -43,7 +45,7 @@ public class LedgerLayoutTest extends BookKeeperClusterTestCase {
         conf.setLedgerManagerFactoryClass(HierarchicalLedgerManagerFactory.class);
         String ledgerRootPath = "/testLedgerLayout";
 
-        zkc.create(ledgerRootPath, new byte[0], 
+        zkc.create(ledgerRootPath, new byte[0],
                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 
         LedgerLayout layout = LedgerLayout.readLayout(zkc, ledgerRootPath);
@@ -82,7 +84,7 @@ public class LedgerLayoutTest extends BookKeeperClusterTestCase {
                           FlatLedgerManagerFactory.class.getName(),
                           FlatLedgerManagerFactory.CUR_VERSION,
                           LedgerLayout.LAYOUT_FORMAT_VERSION + 1);
-        
+
         try {
             LedgerLayout.readLayout(zkc, conf.getZkLedgersRootPath());
             fail("Shouldn't reach here!");

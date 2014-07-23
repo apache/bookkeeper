@@ -47,6 +47,8 @@ import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.*;
+
 @RunWith(Parameterized.class)
 public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
 
@@ -99,7 +101,7 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         readLh.close();
         lh.close();
     }
-    
+
     @Test(timeout = 60000)
     public void testWatchMetadataRemoval() throws Exception {
        LedgerManagerFactory factory = ReflectionUtils.newInstance(lmFactoryCls);
@@ -108,21 +110,21 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
        final ByteBuffer bbLedgerId = ByteBuffer.allocate(8);
        final CountDownLatch createLatch = new CountDownLatch(1);
        final CountDownLatch removeLatch = new CountDownLatch(1);
-       
-       manager.createLedger( new LedgerMetadata(4, 2, 2, digestType, "fpj was here".getBytes()), 
+
+       manager.createLedger( new LedgerMetadata(4, 2, 2, digestType, "fpj was here".getBytes()),
                 new BookkeeperInternalCallbacks.GenericCallback<Long>(){
-          
+
            @Override
            public void operationComplete(int rc, Long result) {
                bbLedgerId.putLong(result);
                bbLedgerId.flip();
                createLatch.countDown();
            }
-       }); 
+       });
        assertTrue(createLatch.await(2000, TimeUnit.MILLISECONDS));
        final long createdLid = bbLedgerId.getLong();
-       
-       manager.registerLedgerMetadataListener( createdLid, 
+
+       manager.registerLedgerMetadataListener( createdLid,
                new LedgerMetadataListener() {
 
            @Override
@@ -130,12 +132,12 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
                assertEquals(ledgerId, createdLid);
                assertEquals(metadata, null);
                removeLatch.countDown();
-           }   
+           }
        });
-       
+
        manager.removeLedgerMetadata( createdLid, Version.ANY,
                new BookkeeperInternalCallbacks.GenericCallback<Void>() {
-           
+
            @Override
            public void operationComplete(int rc, Void result) {
                assertEquals(rc, BKException.Code.OK);

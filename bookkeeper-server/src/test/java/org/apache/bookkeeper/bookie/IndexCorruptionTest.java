@@ -22,9 +22,7 @@ package org.apache.bookkeeper.bookie;
  */
 
 import java.util.Enumeration;
-import java.util.List;
 
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -35,6 +33,8 @@ import org.slf4j.LoggerFactory;
 
 import org.junit.Assert;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * This class tests that index corruption cases

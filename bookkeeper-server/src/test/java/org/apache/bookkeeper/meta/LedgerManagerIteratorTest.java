@@ -24,6 +24,8 @@ package org.apache.bookkeeper.meta;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.junit.Test;
 
+import static org.junit.Assert.*;
+
 public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
     public LedgerManagerIteratorTest(Class<? extends LedgerManagerFactory> lmFactoryCls) {
         super(lmFactoryCls);

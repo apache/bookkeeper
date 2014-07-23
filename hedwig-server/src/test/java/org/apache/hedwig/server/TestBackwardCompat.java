@@ -19,7 +19,6 @@ package org.apache.hedwig.server;
 
 import java.net.InetAddress;
 import java.io.File;
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -27,8 +26,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.protobuf.ByteString;
-
-import junit.framework.TestCase;
 
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -39,14 +36,13 @@ import org.apache.bookkeeper.test.PortManager;
 import org.apache.hedwig.util.HedwigSocketAddress;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Test Backward Compatability between different versions
  */
-public class TestBackwardCompat extends TestCase {
+public class TestBackwardCompat {
 
     private static Logger logger = LoggerFactory.getLogger(TestBackwardCompat.class);
 

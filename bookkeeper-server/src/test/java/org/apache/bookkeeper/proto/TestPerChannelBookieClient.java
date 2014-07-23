@@ -45,6 +45,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.junit.Assert.*;
+
 /**
  * Tests for PerChannelBookieClient. Historically, this class has
  * had a few race conditions, so this is what these tests focus on.

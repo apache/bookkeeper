@@ -34,6 +34,8 @@ import org.slf4j.LoggerFactory;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.*;
+
 /**
  * This class tests the ledger delete functionality both from the BookKeeper
  * client and the server side.

@@ -31,8 +31,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import junit.framework.TestCase;
-
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 
@@ -70,8 +68,10 @@ import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
 
+import static org.junit.Assert.*;
+
 @RunWith(Parameterized.class)
-public class TestBookKeeperPersistenceManager extends TestCase {
+public class TestBookKeeperPersistenceManager {
     static Logger logger = LoggerFactory.getLogger(TestPersistenceManagerBlackBox.class);
 
     BookKeeperTestBase bktb;
@@ -300,18 +300,14 @@ public class TestBookKeeperPersistenceManager extends TestCase {
         bktb.tearDown();
     }
 
-    @Override
     @Before
     public void setUp() throws Exception {
-        super.setUp();
         startCluster(0L);
     }
 
-    @Override
     @After
     public void tearDown() throws Exception {
         stopCluster();
-        super.tearDown();
     }
 
     class RangeScanVerifier implements ScanCallback {
@@ -497,7 +493,7 @@ public class TestBookKeeperPersistenceManager extends TestCase {
         Boolean b = statusQueue.poll(10 * readDelay, TimeUnit.MILLISECONDS);
         assertTrue("Should succeed to scan messages after deleted consumed ledger.", b);
 
-        // consumed 
+        // consumed
         consumedUntil(topic, (numLedgers + 1) * 2L);
         // Wait until ledger ranges is updated.
         Thread.sleep(2000L);

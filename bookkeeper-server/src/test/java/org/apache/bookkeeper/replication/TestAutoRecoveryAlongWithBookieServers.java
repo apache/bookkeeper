@@ -35,6 +35,8 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.junit.Test;
 
+import static org.junit.Assert.*;
+
 public class TestAutoRecoveryAlongWithBookieServers extends
         BookKeeperClusterTestCase {
 

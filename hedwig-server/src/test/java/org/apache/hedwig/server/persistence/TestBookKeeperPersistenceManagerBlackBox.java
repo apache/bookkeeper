@@ -36,9 +36,9 @@ public class TestBookKeeperPersistenceManagerBlackBox extends TestPersistenceMan
 
     MetadataManagerFactory metadataManagerFactory = null;
 
-    @Override
     @Before
-    protected void setUp() throws Exception {
+    @Override
+    public void setUp() throws Exception {
         // We need to setUp this class first since the super.setUp() method will
         // need the BookKeeperTestBase to be instantiated.
         bktb = new BookKeeperTestBase(numBookies);
@@ -46,9 +46,10 @@ public class TestBookKeeperPersistenceManagerBlackBox extends TestPersistenceMan
         super.setUp();
     }
 
-    @Override
+
     @After
-    protected void tearDown() throws Exception {
+    @Override
+    public void tearDown() throws Exception {
         bktb.tearDown();
         super.tearDown();
         if (null != metadataManagerFactory) {
@@ -77,10 +78,6 @@ public class TestBookKeeperPersistenceManagerBlackBox extends TestPersistenceMan
     @Override
     public long getExpectedSeqId(int numPublished) {
         return numPublished;
-    }
-
-    public static Test suite() {
-        return new TestSuite(TestBookKeeperPersistenceManagerBlackBox.class);
     }
 
 }

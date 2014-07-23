@@ -32,6 +32,8 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.junit.Test;
 
+import static org.junit.Assert.*;
+
 /**
  * Test to verify the readonly feature of bookies
  */

@@ -23,8 +23,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import junit.framework.TestCase;
-
 import org.apache.hedwig.protocol.PubSubProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +35,9 @@ import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.server.topics.TopicOwnershipChangeListener;
 import org.apache.hedwig.util.Callback;
 
-public abstract class TestPersistenceManagerBlackBox extends TestCase {
+import static org.junit.Assert.*;
+
+public abstract class TestPersistenceManagerBlackBox {
     protected PersistenceManager persistenceManager;
     protected int NUM_MESSAGES_TO_TEST = 5;
     protected int NUM_TOPICS_TO_TEST = 5;
@@ -215,9 +215,8 @@ public abstract class TestPersistenceManagerBlackBox extends TestCase {
 
     }
 
-    @Override
-    protected void setUp() throws Exception {
-        logger.info("STARTING " + getName());
+    public void setUp() throws Exception {
+        logger.info("STARTING " + getClass());
         persistenceManager = instantiatePersistenceManager();
         failureException = null;
         logger.info("Persistence Manager test setup finished");
@@ -227,12 +226,10 @@ public abstract class TestPersistenceManagerBlackBox extends TestCase {
 
     abstract PersistenceManager instantiatePersistenceManager() throws Exception;
 
-    @Override
-    protected void tearDown() throws Exception {
+    public void tearDown() throws Exception {
         logger.info("tearDown starting");
         persistenceManager.stop();
-        super.tearDown();
-        logger.info("FINISHED " + getName());
+        logger.info("FINISHED " + getClass());
     }
 
     protected ByteString getTopicName(int number) {

@@ -29,7 +29,6 @@ import static org.junit.Assert.*;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import java.util.HashSet;
-import junit.framework.TestCase;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.bookie.Bookie;
 

@@ -47,6 +47,8 @@ import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.HedwigSocketAddress;
 import org.apache.hedwig.zookeeper.SafeAsyncZKCallback;
 
+import static org.junit.Assert.*;
+
 public class TestPubSubServer extends PubSubServerStandAloneTestBase {
 
     @Test(timeout=60000)

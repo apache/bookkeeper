@@ -23,11 +23,11 @@ package org.apache.bookkeeper.test;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 
-import junit.framework.TestCase;
-
 import org.junit.Test;
 
-public class ConfigurationTest extends TestCase {
+import static org.junit.Assert.*;
+
+public class ConfigurationTest {
     @Test(timeout=60000)
     public void testConfigurationOverwrite() {
         System.clearProperty("zkServers");

@@ -53,6 +53,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.*;
+
 /**
  * This test verifies that the period check on the auditor
  * will pick up on missing data in the client

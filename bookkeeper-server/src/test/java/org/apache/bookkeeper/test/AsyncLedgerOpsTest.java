@@ -42,6 +42,8 @@ import org.slf4j.LoggerFactory;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.*;
+
 /**
  * This test tests read and write, synchronous and asynchronous, strings and
  * integers for a BookKeeper client. The test deployment uses a ZooKeeper server

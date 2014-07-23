@@ -21,6 +21,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+
+import org.junit.Before;
 import org.junit.Test;
 
 import com.google.protobuf.ByteString;
@@ -51,9 +53,9 @@ import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.server.topics.TrivialOwnAllTopicManager;
 import org.apache.hedwig.util.ConcurrencyUtils;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
-public class TestSubUnsubHandler extends TestCase {
+public class TestSubUnsubHandler {
 
     SubscribeHandler sh;
     StubDeliveryManager dm;
@@ -67,10 +69,8 @@ public class TestSubUnsubHandler extends TestCase {
     ByteString subscriberId;
     UnsubscribeHandler ush;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-
+    @Before
+    public void setUp() throws Exception {
         ServerConfiguration conf = new ServerConfiguration();
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 

@@ -41,9 +41,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import junit.framework.TestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.junit.Assert.*;
 
 /**
  * Tests conditional set of the ledger metadata znode.
@@ -72,8 +73,8 @@ public class ConditionalSetTest extends BaseTestCase {
      * Opens a ledger before the ledger writer, which triggers ledger recovery.
      * When the ledger writer tries to close the ledger, the close operation
      * should fail.
-     * 
-     * 
+     *
+     *
      * @throws IOException
      * @throws InterruptedException
      * @throws BKException

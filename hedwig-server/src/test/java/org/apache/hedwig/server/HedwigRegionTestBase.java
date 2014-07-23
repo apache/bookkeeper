@@ -22,8 +22,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.junit.After;
@@ -35,7 +33,6 @@ import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.netty.PubSubServer;
 import org.apache.hedwig.server.persistence.BookKeeperTestBase;
 import org.apache.hedwig.util.HedwigSocketAddress;
-import org.apache.hedwig.server.LoggingExceptionHandler;
 
 import org.apache.bookkeeper.test.PortManager;
 
@@ -45,7 +42,7 @@ import org.apache.bookkeeper.test.PortManager;
  * the required BookKeeper and ZooKeeper instances.
  *
  */
-public abstract class HedwigRegionTestBase extends TestCase {
+public abstract class HedwigRegionTestBase {
 
     protected static Logger logger = LoggerFactory.getLogger(HedwigRegionTestBase.class);
 
@@ -182,10 +179,9 @@ public abstract class HedwigRegionTestBase extends TestCase {
         };
     }
 
-    @Override
     @Before
     public void setUp() throws Exception {
-        logger.info("STARTING " + getName());
+        logger.info("STARTING " + getClass());
         bktb = new BookKeeperTestBase(numBookies);
         bktb.setUp();
 
@@ -211,7 +207,6 @@ public abstract class HedwigRegionTestBase extends TestCase {
         logger.info("HedwigRegion test setup finished");
     }
 
-    @Override
     @After
     public void tearDown() throws Exception {
         logger.info("tearDown starting");
@@ -230,7 +225,7 @@ public abstract class HedwigRegionTestBase extends TestCase {
         regionServersMap.clear();
         // Shutdown the BookKeeper and ZooKeeper stuff
         bktb.tearDown();
-        logger.info("FINISHED " + getName());
+        logger.info("FINISHED " + getClass());
     }
 
     protected void stopRegion(int regionIdx) throws Exception {

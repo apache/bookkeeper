@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.SynchronousQueue;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,6 +41,8 @@ import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.integration.TestHedwigHub.TestCallback;
 import org.apache.hedwig.server.integration.TestHedwigHub.TestMessageHandler;
 import org.apache.hedwig.util.HedwigSocketAddress;
+
+import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
 public class TestHedwigRegion extends HedwigRegionTestBase {
@@ -220,7 +221,7 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
     @Test(timeout=60000)
     public void testAttachExistingSubscriptionsWhenARegionDown() throws Exception {
         int batchSize = 10;
-        
+
         SubscriptionOptions opts = SubscriptionOptions.newBuilder()
             .setCreateOrAttach(CreateOrAttach.CREATE_OR_ATTACH).build();
 
@@ -286,7 +287,7 @@ public class TestHedwigRegion extends HedwigRegionTestBase {
 
         // Now start publishing messages for the subscribed topics in one of the
         // regions and verify that it gets delivered and consumed in all of the
-        // other ones.        
+        // other ones.
         Publisher publisher = client.getPublisher();
         for (int i = 0; i < batchSize; i++) {
             publisher.asyncPublish(ByteString.copyFromUtf8("Topic" + i), Message.newBuilder().setBody(

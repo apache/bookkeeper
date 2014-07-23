@@ -21,16 +21,22 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 
 import org.apache.hedwig.server.common.ServerConfiguration;
-import org.apache.hedwig.server.persistence.LocalDBPersistenceManager;
-import org.apache.hedwig.server.persistence.PersistenceManager;
-import org.apache.hedwig.server.persistence.ReadAheadCache;
+import org.junit.After;
+import org.junit.Before;
 
 public class TestReadAheadCacheBlackBox extends TestPersistenceManagerBlackBox {
 
+    @After
     @Override
-    protected void tearDown() throws Exception {
+    public void tearDown() throws Exception {
         super.tearDown();
         LocalDBPersistenceManager.instance().reset();
+    }
+
+    @Before
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
     }
 
     @Override
@@ -48,7 +54,4 @@ public class TestReadAheadCacheBlackBox extends TestPersistenceManagerBlackBox {
         return new ReadAheadCache(LocalDBPersistenceManager.instance(), new ServerConfiguration()).start();
     }
 
-    public static Test suite() {
-        return new TestSuite(TestReadAheadCacheBlackBox.class);
-    }
 }

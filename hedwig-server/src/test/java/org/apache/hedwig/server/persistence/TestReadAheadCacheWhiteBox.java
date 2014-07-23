@@ -94,11 +94,6 @@ public class TestReadAheadCacheWhiteBox {
         cacheBasedPersistenceManager = new MyReadAheadCache(stubPersistenceManager, myConf).start();
     }
 
-    @After
-    public void tearDown() throws Exception {
-
-    }
-
     @Test(timeout=60000)
     public void testPersistMessage() throws Exception {
         StubCallback<PubSubProtocol.MessageSeqId> callback = new StubCallback<PubSubProtocol.MessageSeqId>();

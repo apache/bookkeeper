@@ -27,8 +27,6 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import junit.framework.TestCase;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -41,10 +39,12 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.Assert.*;
+
 /**
  * Tests writing to concurrent ledgers
  */
-public class ConcurrentLedgerTest extends TestCase {
+public class ConcurrentLedgerTest {
     private final static Logger LOG = LoggerFactory.getLogger(ConcurrentLedgerTest.class);
 
     Bookie bookie;
@@ -53,7 +53,6 @@ public class ConcurrentLedgerTest extends TestCase {
     Semaphore throttle;
     ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
 
-    @Override
     @Before
     public void setUp() throws Exception {
         String txnDirName = System.getProperty("txnDir");
@@ -91,7 +90,6 @@ public class ConcurrentLedgerTest extends TestCase {
         }
     }
 
-    @Override
     @After
     public void tearDown() {
         bookie.shutdown();

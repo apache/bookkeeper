@@ -22,8 +22,6 @@ import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-import junit.framework.TestCase;
-
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.hedwig.protocol.PubSubProtocol;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
@@ -46,7 +44,9 @@ import org.apache.hedwig.util.ConcurrencyUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TestBookkeeperPersistenceManagerWhiteBox extends TestCase {
+import static org.junit.Assert.*;
+
+public class TestBookkeeperPersistenceManagerWhiteBox {
 
     protected static Logger logger =
         LoggerFactory.getLogger(TestBookkeeperPersistenceManagerWhiteBox.class);
@@ -60,10 +60,8 @@ public class TestBookkeeperPersistenceManagerWhiteBox extends TestCase {
     TopicManager tm;
     ByteString topic = ByteString.copyFromUtf8("topic0");
 
-    @Override
     @Before
-    protected void setUp() throws Exception {
-        super.setUp();
+    public void setUp() throws Exception {
         bktb = new BookKeeperTestBase(numBookies);
         bktb.setUp();
 
@@ -76,12 +74,10 @@ public class TestBookkeeperPersistenceManagerWhiteBox extends TestCase {
         bkpm = new BookkeeperPersistenceManager(bktb.bk, mm, tm, conf, scheduler);
     }
 
-    @Override
     @After
-    protected void tearDown() throws Exception {
+    public void tearDown() throws Exception {
         mm.shutdown();
         bktb.tearDown();
-        super.tearDown();
     }
 
     @Test(timeout=60000)

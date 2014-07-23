@@ -20,10 +20,11 @@
  */
 package org.apache.bookkeeper.replication;
 
-import java.util.concurrent.CountDownLatch;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /*
  * Test the AuditorPeer

@@ -26,8 +26,6 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.Executors;
 
-import junit.framework.TestCase;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -43,11 +41,15 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BookieClientTest extends TestCase {
+import static org.junit.Assert.*;
+
+public class BookieClientTest {
     private final static Logger LOG = LoggerFactory.getLogger(BookieClientTest.class);
     BookieServer bs;
     File tmpDir;
@@ -56,7 +58,7 @@ public class BookieClientTest extends TestCase {
     public OrderedSafeExecutor executor;
     ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
 
-    @Override
+    @Before
     public void setUp() throws Exception {
         tmpDir = File.createTempFile("bookie", "test");
         tmpDir.delete();
@@ -76,7 +78,7 @@ public class BookieClientTest extends TestCase {
         executor = new OrderedSafeExecutor(2, "BKClientOrderedSafeExecutor");
     }
 
-    @Override
+    @After
     public void tearDown() throws Exception {
         bs.shutdown();
         recursiveDelete(tmpDir);

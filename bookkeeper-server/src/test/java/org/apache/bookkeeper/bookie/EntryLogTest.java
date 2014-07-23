@@ -26,8 +26,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 
-import junit.framework.TestCase;
-
 import org.apache.bookkeeper.bookie.GarbageCollectorThread.EntryLogMetadata;
 import org.apache.bookkeeper.bookie.GarbageCollectorThread.ExtractionScanner;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -39,7 +37,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class EntryLogTest extends TestCase {
+import static org.junit.Assert.*;
+
+public class EntryLogTest {
     private final static Logger LOG = LoggerFactory.getLogger(EntryLogTest.class);
 
     @Before

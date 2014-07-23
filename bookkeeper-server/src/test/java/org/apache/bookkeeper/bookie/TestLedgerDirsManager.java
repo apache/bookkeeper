@@ -22,8 +22,6 @@ package org.apache.bookkeeper.bookie;
 
 import java.io.File;
 
-import junit.framework.TestCase;
-
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -32,7 +30,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TestLedgerDirsManager extends TestCase {
+import static org.junit.Assert.*;
+
+public class TestLedgerDirsManager {
     private final static Logger LOG = LoggerFactory.getLogger(TestLedgerDirsManager.class);
 
     ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();

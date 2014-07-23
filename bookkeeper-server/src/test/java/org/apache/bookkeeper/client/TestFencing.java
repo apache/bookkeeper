@@ -32,6 +32,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.Assert.*;
+
 /**
  * This unit test tests ledger fencing;
  *
@@ -68,7 +70,7 @@ public class TestFencing extends BaseTestCase {
          */
         LedgerHandle readlh = bkc.openLedger(writelh.getId(), digestType, "password".getBytes());
         // should have triggered recovery and fencing
-        
+
         try {
             writelh.addEntry(tmp.getBytes());
             LOG.error("Should have thrown an exception");
@@ -76,11 +78,11 @@ public class TestFencing extends BaseTestCase {
         } catch (BKException.BKLedgerFencedException e) {
             // correct behaviour
         }
-                
+
         /*
          * Check if has recovered properly.
          */
-        assertTrue("Has not recovered correctly: " + readlh.getLastAddConfirmed() 
+        assertTrue("Has not recovered correctly: " + readlh.getLastAddConfirmed()
                    + " original " + writelh.getLastAddConfirmed(),
                    readlh.getLastAddConfirmed() == writelh.getLastAddConfirmed());
     }
@@ -91,7 +93,7 @@ public class TestFencing extends BaseTestCase {
         private final long ledgerId;
         private long lastConfirmedEntry = 0;
 
-        
+
         private final DigestType digestType;
         private final CyclicBarrier barrier;
 
@@ -102,7 +104,7 @@ public class TestFencing extends BaseTestCase {
             this.digestType = digestType;
             this.barrier = barrier;
         }
-        
+
         @Override
         public void run() {
             LedgerHandle lh = null;
@@ -112,8 +114,8 @@ public class TestFencing extends BaseTestCase {
                 while(true) {
                     try {
                         bk = new BookKeeper(new ClientConfiguration(baseClientConf), bkc.getZkHandle());
-                        
-                        lh = bk.openLedger(ledgerId, 
+
+                        lh = bk.openLedger(ledgerId,
                                            digestType, "".getBytes());
                         lastConfirmedEntry = lh.getLastAddConfirmed();
                         lh.close();
@@ -146,7 +148,7 @@ public class TestFencing extends BaseTestCase {
 
     /**
      * Try to open a ledger many times in parallel.
-     * All opens should result in a ledger with an equals number of 
+     * All opens should result in a ledger with an equals number of
      * entries.
      */
     @Test(timeout=60000)
@@ -186,10 +188,10 @@ public class TestFencing extends BaseTestCase {
 
         writethread.join();
         long lastConfirmed = writelh.getLastAddConfirmed();
-        
+
         for (int i = 0; i < numRecovery; i++) {
             threads[i].join();
-            assertTrue("Added confirmed is incorrect", 
+            assertTrue("Added confirmed is incorrect",
                        lastConfirmed <= threads[i].getLastConfirmedEntry());
         }
     }
@@ -215,10 +217,10 @@ public class TestFencing extends BaseTestCase {
         /*
          * Try to open ledger.
          */
-        LedgerHandle readlh = bkc.openLedgerNoRecovery(writelh.getId(), 
+        LedgerHandle readlh = bkc.openLedgerNoRecovery(writelh.getId(),
                                                         digestType, "".getBytes());
         // should not have triggered recovery and fencing
-        
+
         writelh.addEntry(tmp.getBytes());
         long numReadable = readlh.getLastAddConfirmed();
         LOG.error("numRead " + numReadable);
@@ -240,7 +242,7 @@ public class TestFencing extends BaseTestCase {
     }
 
     /**
-     * create a ledger and write entries. 
+     * create a ledger and write entries.
      * kill a bookie in the ensemble. Recover.
      * Fence the ledger. Kill another bookie. Recover.
      */
@@ -252,9 +254,9 @@ public class TestFencing extends BaseTestCase {
         BookKeeperAdmin admin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
 
         LedgerHandle writelh = bkc.createLedger(digestType, "testPasswd".getBytes());
-        
+
         String tmp = "Foobar";
-        
+
         final int numEntries = 10;
         for (int i = 0; i < numEntries; i++) {
             writelh.addEntry(tmp.getBytes());
@@ -270,12 +272,12 @@ public class TestFencing extends BaseTestCase {
         }
 
         admin.recoverBookieData(bookieToKill, null);
-        
+
         for (int i = 0; i < numEntries; i++) {
             writelh.addEntry(tmp.getBytes());
         }
 
-        LedgerHandle readlh = bkc.openLedger(writelh.getId(), 
+        LedgerHandle readlh = bkc.openLedger(writelh.getId(),
                                              digestType, "testPasswd".getBytes());
         try {
             writelh.addEntry(tmp.getBytes());
@@ -290,7 +292,7 @@ public class TestFencing extends BaseTestCase {
     }
 
     /**
-     * create a ledger and write entries. 
+     * create a ledger and write entries.
      * Fence the ledger. Kill a bookie. Recover.
      * Ensure that recover doesn't reallow adding
      */
@@ -302,15 +304,15 @@ public class TestFencing extends BaseTestCase {
         BookKeeperAdmin admin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
 
         LedgerHandle writelh = bkc.createLedger(digestType, "testPasswd".getBytes());
-        
+
         String tmp = "Foobar";
-        
+
         final int numEntries = 10;
         for (int i = 0; i < numEntries; i++) {
             writelh.addEntry(tmp.getBytes());
         }
 
-        LedgerHandle readlh = bkc.openLedger(writelh.getId(), 
+        LedgerHandle readlh = bkc.openLedger(writelh.getId(),
                                              digestType, "testPasswd".getBytes());
         // should be fenced by now
         BookieSocketAddress bookieToKill
