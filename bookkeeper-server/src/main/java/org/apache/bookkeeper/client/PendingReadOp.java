@@ -186,15 +186,19 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
         synchronized void logErrorAndReattemptRead(BookieSocketAddress host, String errMsg, int rc) {
             if (BKException.Code.OK == firstError ||
-                BKException.Code.NoSuchEntryException == firstError) {
+                BKException.Code.NoSuchEntryException == firstError ||
+                BKException.Code.NoSuchLedgerExistsException == firstError) {
                 firstError = rc;
             } else if (BKException.Code.BookieHandleNotAvailableException == firstError &&
-                       BKException.Code.NoSuchEntryException != rc) {
-                // if other exception rather than NoSuchEntryException is returned
-                // we need to update firstError to indicate that it might be a valid read but just failed.
+                       BKException.Code.NoSuchEntryException != rc &&
+                       BKException.Code.NoSuchLedgerExistsException != rc) {
+                // if other exception rather than NoSuchEntryException or NoSuchLedgerExistsException is
+                // returned we need to update firstError to indicate that it might be a valid read but just
+                // failed.
                 firstError = rc;
             }
-            if (BKException.Code.NoSuchEntryException == rc) {
+            if (BKException.Code.NoSuchEntryException == rc ||
+                BKException.Code.NoSuchLedgerExistsException == rc) {
                 ++numMissedEntryReads;
                 LOG.debug("No such entry found on bookie.  L{} E{} bookie: {}",
                         new Object[] { lh.ledgerId, entryId, host });

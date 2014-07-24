@@ -21,6 +21,10 @@
     <Class name="~org\.apache\.bookkeeper\.proto\.DataFormats.*" />
   </Match>
   <Match>
+    <!-- generated code, we can't be held responsible for findbugs in it //-->
+    <Class name="~org\.apache\.bookkeeper\.proto\.BookkeeperProtocol.*" />
+  </Match>
+  <Match>
     <!-- it is safe to store external bytes reference here. since we are using
          bytes from a slab. //-->
     <Class name="org.apache.bookkeeper.bookie.EntryKeyValue" />

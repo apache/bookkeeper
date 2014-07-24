@@ -125,6 +125,30 @@
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>hedwig-server-compat420</artifactId>
+      <version>4.2.0</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>bookkeeper-server</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>hedwig-server</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>hedwig-protocol</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>hedwig-client</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
       <artifactId>hedwig-server-compat410</artifactId>
       <version>4.1.0</version>
       <scope>test</scope>

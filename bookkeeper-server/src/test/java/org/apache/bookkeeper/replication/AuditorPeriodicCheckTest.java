@@ -226,7 +226,9 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             for (int j = 0; j < 100; j++) {
                 lh.asyncAddEntry("testdata".getBytes(), new AddCallback() {
                         public void addComplete(int rc2, LedgerHandle lh, long entryId, Object ctx) {
-                            rc.compareAndSet(BKException.Code.OK, rc2);
+                            if (rc.compareAndSet(BKException.Code.OK, rc2)) {
+                                LOG.info("Failed to add entry : {}", BKException.getMessage(rc2));
+                            }
                             completeLatch.countDown();
                         }
                     }, null);

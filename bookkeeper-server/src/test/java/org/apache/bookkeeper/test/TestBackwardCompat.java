@@ -259,6 +259,103 @@ public class TestBackwardCompat {
     }
 
     /**
+     * Version 4.2.0 classes
+     */
+    static class Server420 {
+        org.apache.bk_v4_2_0.bookkeeper.conf.ServerConfiguration conf;
+        org.apache.bk_v4_2_0.bookkeeper.proto.BookieServer server = null;
+
+        Server420(File journalDir, File ledgerDir, int port) throws Exception {
+            conf = new org.apache.bk_v4_2_0.bookkeeper.conf.ServerConfiguration();
+            conf.setBookiePort(port);
+            conf.setZkServers(zkUtil.getZooKeeperConnectString());
+            conf.setJournalDirName(journalDir.getPath());
+            conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
+        }
+
+        void start() throws Exception {
+            server = new org.apache.bk_v4_2_0.bookkeeper.proto.BookieServer(conf);
+            server.start();
+            waitUp(conf.getBookiePort());
+        }
+
+        org.apache.bk_v4_2_0.bookkeeper.conf.ServerConfiguration getConf() {
+            return conf;
+        }
+
+        void stop() throws Exception {
+            if (server != null) {
+                server.shutdown();
+            }
+        }
+    }
+
+    static class Ledger420 {
+        org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper bk;
+        org.apache.bk_v4_2_0.bookkeeper.client.LedgerHandle lh;
+
+        private Ledger420(org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper bk,
+                          org.apache.bk_v4_2_0.bookkeeper.client.LedgerHandle lh) {
+            this.bk = bk;
+            this.lh = lh;
+        }
+
+        static Ledger420 newLedger() throws Exception {
+            org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper newbk
+                = new org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper(zkUtil.getZooKeeperConnectString());
+            org.apache.bk_v4_2_0.bookkeeper.client.LedgerHandle newlh
+                = newbk.createLedger(1, 1,
+                                  org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper.DigestType.CRC32,
+                                  "foobar".getBytes());
+            return new Ledger420(newbk, newlh);
+        }
+
+        static Ledger420 openLedger(long id) throws Exception {
+            org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper newbk
+                = new org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper(zkUtil.getZooKeeperConnectString());
+            org.apache.bk_v4_2_0.bookkeeper.client.LedgerHandle newlh
+                = newbk.openLedger(id,
+                                org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper.DigestType.CRC32,
+                                "foobar".getBytes());
+            return new Ledger420(newbk, newlh);
+        }
+
+        long getId() {
+            return lh.getId();
+        }
+
+        void write100() throws Exception {
+            for (int i = 0; i < 100; i++) {
+                lh.addEntry(ENTRY_DATA);
+            }
+        }
+
+        long readAll() throws Exception {
+            long count = 0;
+            Enumeration<org.apache.bk_v4_2_0.bookkeeper.client.LedgerEntry> entries
+                = lh.readEntries(0, lh.getLastAddConfirmed());
+            while (entries.hasMoreElements()) {
+                assertTrue("entry data doesn't match",
+                           Arrays.equals(entries.nextElement().getEntry(), ENTRY_DATA));
+                count++;
+            }
+            return count;
+        }
+
+        void close() throws Exception {
+            try {
+                if (lh != null) {
+                    lh.close();
+                }
+            } finally {
+                if (bk != null) {
+                    bk.close();
+                }
+            }
+        }
+    }
+
+    /**
      * Current verion classes
      */
     static class ServerCurrent {
@@ -527,7 +624,12 @@ public class TestBackwardCompat {
 
         // Check that current client can to write to old server
         LedgerCurrent lcur = LedgerCurrent.newLedger();
-        lcur.write100();
+        try {
+            lcur.write100();
+            fail("Shouldn't be able to write");
+        } catch (Exception e) {
+            // correct behaviour
+        }
         lcur.close();
 
         s410.stop();
@@ -619,12 +721,12 @@ public class TestBackwardCompat {
     }
 
     /**
-     * Test compatability between version 4.1.0 and the current version. - 4.1.0
-     * server restarts with useHostNameAsBookieID=true. Read ledgers with old
-     * and new clients
+     * Test compatability between old versions and the current version.
+     * - old server restarts with useHostNameAsBookieID=true.
+     * - Read ledgers with old and new clients
      */
     @Test(timeout = 60000)
-    public void testCompat410ReadLedgerOnRestartedServer() throws Exception {
+    public void testCompatReads() throws Exception {
         File journalDir = File.createTempFile("bookie", "journal");
         journalDir.delete();
         journalDir.mkdir();
@@ -642,10 +744,11 @@ public class TestBackwardCompat {
         long oldLedgerId = l410.getId();
         l410.close();
 
-        // Check that current client can to write to old server
-        LedgerCurrent lcur = LedgerCurrent.newLedger();
-        lcur.write100();
-        lcur.close();
+        // Check that 420 client can to write to 410 server
+        Ledger420 l420 = Ledger420.newLedger();
+        l420.write100();
+        long lid420 = l420.getId();
+        l420.close();
 
         s410.stop();
 
@@ -659,19 +762,25 @@ public class TestBackwardCompat {
         assertEquals(100, l410.readAll());
         l410.close();
 
+        // Check that 420 client can read old ledgers on new server
+        l420 = Ledger420.openLedger(lid420);
+        assertEquals("Failed to read entries!", 100, l420.readAll());
+        l420.close();
+
         // Check that current client can read old ledgers on new server
-        final LedgerCurrent curledger = LedgerCurrent.openLedger(lcur.getId());
+        final LedgerCurrent curledger = LedgerCurrent.openLedger(lid420);
         assertEquals("Failed to read entries!", 100, curledger.readAll());
         curledger.close();
     }
 
     /**
-     * Test compatability between version 4.1.0 and the current version. - 4.1.0
-     * server restarts with useHostNameAsBookieID=true. Write ledgers with old
-     * and new clients
+     * Test compatability between version old version and the current version.
+     * - 4.1.0 server restarts with useHostNameAsBookieID=true.
+     * - Write ledgers with old and new clients
+     * - Read ledgers written by old clients.
      */
     @Test(timeout = 60000)
-    public void testCompat410WriteLedgerOnRestartedServer() throws Exception {
+    public void testCompatWrites() throws Exception {
         File journalDir = File.createTempFile("bookie", "journal");
         journalDir.delete();
         journalDir.mkdir();
@@ -697,14 +806,25 @@ public class TestBackwardCompat {
         final LedgerCurrent curledger = LedgerCurrent.openLedger(lcur.getId());
         assertEquals("Failed to read entries!", 100, curledger.readAll());
 
-        // Check that current client can write to server
+        // Check that 410 client can write to server
         Ledger410 l410 = Ledger410.newLedger();
         l410.write100();
         long oldLedgerId = l410.getId();
         l410.close();
 
+        // Check that 420 client can write to server
+        Ledger410 l420 = Ledger410.newLedger();
+        l420.write100();
+        long lid420 = l420.getId();
+        l420.close();
+
         // check that new client can read old ledgers on new server
         LedgerCurrent oldledger = LedgerCurrent.openLedger(oldLedgerId);
+        assertEquals("Failed to read entries!", 100, oldledger.readAll());
+        oldledger.close();
+
+        // check that new client can read old ledgers on new server
+        oldledger = LedgerCurrent.openLedger(lid420);
         assertEquals("Failed to read entries!", 100, oldledger.readAll());
         oldledger.close();
     }

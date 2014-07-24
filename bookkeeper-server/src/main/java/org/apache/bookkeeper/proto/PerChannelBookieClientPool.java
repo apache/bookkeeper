@@ -28,6 +28,11 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 interface PerChannelBookieClientPool {
 
     /**
+     * intialize the pool. the implementation should not be blocked.
+     */
+    void intialize();
+
+    /**
      * Obtain a channel from channel pool to execute operations.
      *
      * @param callback
@@ -37,12 +42,18 @@ interface PerChannelBookieClientPool {
 
     /**
      * Disconnect the connections in the pool.
+     *
+     * @param wait
+     *          whether need to wait until pool disconnected.
      */
-    void disconnect();
+    void disconnect(boolean wait);
 
     /**
      * Close the pool.
+     *
+     * @param wait
+     *          whether need to wait until pool closed.
      */
-    void close();
+    void close(boolean wait);
 
 }

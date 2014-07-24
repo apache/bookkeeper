@@ -22,7 +22,6 @@ package org.apache.bookkeeper.proto;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
-import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
@@ -71,6 +70,7 @@ class BookieRequestHandler extends SimpleChannelHandler {
         LOG.debug("Channel connected {}", e);
     }
 
+    @Override
     public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e)
             throws Exception {
         LOG.debug("Channel disconnected {}", e);
@@ -78,14 +78,12 @@ class BookieRequestHandler extends SimpleChannelHandler {
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-        if (!(e.getMessage() instanceof BookieProtocol.Request)) {
+        Object event = e.getMessage();
+        if (!(event instanceof BookkeeperProtocol.Request || event instanceof BookieProtocol.Request)) {
             ctx.sendUpstream(e);
             return;
         }
-        BookieProtocol.Request r = (BookieProtocol.Request)e.getMessage();
-        Channel c = ctx.getChannel();
-        requestProcessor.processRequest(r, c);
+        requestProcessor.processRequest(event, ctx.getChannel());
     }
-
 
 }

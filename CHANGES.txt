@@ -303,6 +303,9 @@ Trunk (unreleased changes)
       BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj)
 
       BOOKKEEPER-257: Ability to list all ledgers (fpj via ivank)
+  
+      BOOKKEEPER-582: Make bookie and client use protobuf for requests (non-wire part)
+      (sijie via fpj)
 
 Release 4.2.0 - 2013-01-14
 

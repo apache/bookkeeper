@@ -52,14 +52,19 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
         this.clients = new PerChannelBookieClient[coreSize];
         for (int i = 0; i < coreSize; i++) {
             this.clients[i] = factory.create(address);
-            // connect proactively
-            this.clients[i].connectIfNeededAndDoOp(this);
         }
     }
 
     @Override
     public void operationComplete(int rc, PerChannelBookieClient pcbc) {
         // nop
+    }
+
+    @Override
+    public void intialize() {
+        for (PerChannelBookieClient pcbc : this.clients) {
+            pcbc.connectIfNeededAndDoOp(this);
+        }
     }
 
     @Override
@@ -73,16 +78,16 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
     }
 
     @Override
-    public void disconnect() {
+    public void disconnect(boolean wait) {
         for (PerChannelBookieClient pcbc : clients) {
-            pcbc.disconnect();
+            pcbc.disconnect(wait);
         }
     }
 
     @Override
-    public void close() {
+    public void close(boolean wait) {
         for (PerChannelBookieClient pcbc : clients) {
-            pcbc.close();
+            pcbc.close(wait);
         }
     }
 }

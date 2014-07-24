@@ -161,6 +161,18 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>bookkeeper-server-compat420</artifactId>
+      <version>4.2.0</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>bookkeeper-server</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -249,6 +261,7 @@
           <excludes>
             <!-- exclude generated file //-->
             <exclude>**/DataFormats.java</exclude>
+            <exclude>**/BookkeeperProtocol.java</exclude>
           </excludes>
         </configuration>
       </plugin>

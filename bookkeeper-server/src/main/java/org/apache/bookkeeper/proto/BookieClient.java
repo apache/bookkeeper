@@ -118,9 +118,11 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 PerChannelBookieClientPool oldClientPool = channels.putIfAbsent(addr, newClientPool);
                 if (null == oldClientPool) {
                     clientPool = newClientPool;
+                    // initialize the pool only after we put the pool into the map
+                    clientPool.intialize();
                 } else {
                     clientPool = oldClientPool;
-                    newClientPool.close();
+                    newClientPool.close(false);
                 }
             } finally {
                 closeLock.readLock().unlock();
@@ -130,10 +132,10 @@ public class BookieClient implements PerChannelBookieClientFactory {
     }
 
     public void closeClients(Set<BookieSocketAddress> addrs) {
+        final HashSet<PerChannelBookieClientPool> clients =
+                new HashSet<PerChannelBookieClientPool>();
         closeLock.readLock().lock();
         try {
-            final HashSet<PerChannelBookieClientPool> clients =
-                    new HashSet<PerChannelBookieClientPool>();
             for (BookieSocketAddress a : addrs) {
                 PerChannelBookieClientPool c = channels.get(a);
                 if (c != null) {
@@ -144,16 +146,11 @@ public class BookieClient implements PerChannelBookieClientFactory {
             if (clients.size() == 0) {
                 return;
             }
-            executor.submit(new SafeRunnable() {
-                    @Override
-                    public void safeRun() {
-                        for (PerChannelBookieClientPool c : clients) {
-                            c.disconnect();
-                        }
-                    }
-                });
         } finally {
             closeLock.readLock().unlock();
+        }
+        for (PerChannelBookieClientPool c : clients) {
+            c.disconnect(false);
         }
     }
 
@@ -279,7 +276,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
         try {
             closed = true;
             for (PerChannelBookieClientPool pool : channels.values()) {
-                pool.close();
+                pool.close(true);
             }
             channels.clear();
         } finally {
