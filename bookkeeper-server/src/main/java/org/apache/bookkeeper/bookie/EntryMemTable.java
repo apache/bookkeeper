@@ -27,11 +27,21 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.ConcurrentSkipListMap;
 
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_FLUSH_BYTES;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_GET_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_PUT_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_SNAPSHOT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_THROTTLING;
 
 /**
  * The EntryMemTable holds in-memory representation to the entries not-yet flushed.
@@ -101,11 +111,19 @@ public class EntryMemTable {
         return new EntrySkipList(checkpointSource.newCheckpoint());
     }
 
+    // Stats
+    private final OpStatsLogger snapshotStats;
+    private final OpStatsLogger putEntryStats;
+    private final OpStatsLogger getEntryStats;
+    private final Counter flushBytesCounter;
+    private final Counter throttlingCounter;
+
     /**
     * Constructor.
     * @param conf Server configuration
     */
-    public EntryMemTable(final ServerConfiguration conf, final CheckpointSource source) {
+    public EntryMemTable(final ServerConfiguration conf, final CheckpointSource source,
+                         final StatsLogger statsLogger) {
         this.checkpointSource = source;
         this.kvmap = newSkipList();
         this.snapshot = EntrySkipList.EMPTY_VALUE;
@@ -114,6 +132,13 @@ public class EntryMemTable {
         this.allocator = new SkipListArena(conf);
         // skip list size limit
         this.skipListSizeLimit = conf.getSkipListSizeLimit();
+
+        // Stats
+        this.snapshotStats = statsLogger.getOpStatsLogger(SKIP_LIST_SNAPSHOT);
+        this.putEntryStats = statsLogger.getOpStatsLogger(SKIP_LIST_PUT_ENTRY);
+        this.getEntryStats = statsLogger.getOpStatsLogger(SKIP_LIST_GET_ENTRY);
+        this.flushBytesCounter = statsLogger.getCounter(SKIP_LIST_FLUSH_BYTES);
+        this.throttlingCounter = statsLogger.getCounter(SKIP_LIST_THROTTLING);
     }
 
     void dump() {
@@ -143,6 +168,7 @@ public class EntryMemTable {
         // No-op if snapshot currently has entries
         if (this.snapshot.isEmpty() &&
                 this.kvmap.compareTo(oldCp) < 0) {
+            final long startTimeNanos = MathUtils.nowInNano();
             this.lock.writeLock().lock();
             try {
                 if (this.snapshot.isEmpty() && !this.kvmap.isEmpty()
@@ -158,6 +184,12 @@ public class EntryMemTable {
                 }
             } finally {
                 this.lock.writeLock().unlock();
+            }
+
+            if (null != cp) {
+                snapshotStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
+            } else {
+                snapshotStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
             }
         }
         return cp;
@@ -207,6 +239,7 @@ public class EntryMemTable {
                             }
                         }
                     }
+                    flushBytesCounter.add(size);
                     clearSnapshot(keyValues);
                 }
             }
@@ -242,6 +275,7 @@ public class EntryMemTable {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+        throttlingCounter.inc();
     }
 
     /**
@@ -252,24 +286,34 @@ public class EntryMemTable {
     public long addEntry(long ledgerId, long entryId, final ByteBuffer entry, final CacheCallback cb)
             throws IOException {
         long size = 0;
-        if (isSizeLimitReached()) {
-            Checkpoint cp = snapshot();
-            if (null != cp) {
-                cb.onSizeLimitReached();
+        long startTimeNanos = MathUtils.nowInNano();
+        boolean success = false;
+        try {
+            if (isSizeLimitReached()) {
+                Checkpoint cp = snapshot();
+                if (null != cp) {
+                    cb.onSizeLimitReached();
+                } else {
+                    throttleWriters();
+                }
+            }
+
+            this.lock.readLock().lock();
+            try {
+                EntryKeyValue toAdd = cloneWithAllocator(ledgerId, entryId, entry);
+                size = internalAdd(toAdd);
+            } finally {
+                this.lock.readLock().unlock();
+            }
+            success = true;
+            return size;
+        } finally {
+            if (success) {
+                putEntryStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
             } else {
-                throttleWriters();
+                putEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
             }
         }
-
-        this.lock.readLock().lock();
-        try {
-            EntryKeyValue toAdd = cloneWithAllocator(ledgerId, entryId, entry);
-            size = internalAdd(toAdd);
-        } finally {
-            this.lock.readLock().unlock();
-        }
-
-        return size;
     }
 
     /**
@@ -326,14 +370,22 @@ public class EntryMemTable {
     public EntryKeyValue getEntry(long ledgerId, long entryId) throws IOException {
         EntryKey key = new EntryKey(ledgerId, entryId);
         EntryKeyValue value = null;
+        long startTimeNanos = MathUtils.nowInNano();
+        boolean success = false;
         this.lock.readLock().lock();
         try {
             value = this.kvmap.get(key);
             if (value == null) {
                 value = this.snapshot.get(key);
             }
+            success = true;
         } finally {
             this.lock.readLock().unlock();
+            if (success) {
+                getEntryStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
+            } else {
+                getEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
+            }
         }
 
         return value;
@@ -347,14 +399,22 @@ public class EntryMemTable {
     public EntryKeyValue getLastEntry(long ledgerId) throws IOException {
         EntryKey result = null;
         EntryKey key = new EntryKey(ledgerId, Long.MAX_VALUE);
+        long startTimeNanos = MathUtils.nowInNano();
+        boolean success = false;
         this.lock.readLock().lock();
         try {
             result = this.kvmap.floorKey(key);
             if (result == null || result.getLedgerId() != ledgerId) {
                 result = this.snapshot.floorKey(key);
             }
+            success = true;
         } finally {
             this.lock.readLock().unlock();
+            if (success) {
+                getEntryStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
+            } else {
+                getEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
+            }
         }
 
         if (result == null || result.getLedgerId() != ledgerId) {

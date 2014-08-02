@@ -50,6 +50,10 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.Gauge;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
@@ -71,11 +75,16 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_BYTES;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_STATUS;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_BYTES;
+
 /**
  * Implements a bookie.
  *
  */
-
 public class Bookie extends BookieCriticalThread {
 
     private final static Logger LOG = LoggerFactory.getLogger(Bookie.class);
@@ -120,6 +129,10 @@ public class Bookie extends BookieCriticalThread {
     final private String zkBookieReadOnlyPath;
 
     final private AtomicBoolean readOnly = new AtomicBoolean(false);
+
+    // Expose Stats
+    private final Counter writeBytes;
+    private final Counter readBytes;
 
     public static class NoLedgerException extends IOException {
         private static final long serialVersionUID = 1L;
@@ -290,7 +303,7 @@ public class Bookie extends BookieCriticalThread {
             boolean newEnv = false;
             List<File> missedCookieDirs = new ArrayList<File>();
             Cookie journalCookie = null;
-            // try to read cookie from journal directory. 
+            // try to read cookie from journal directory.
             try {
                 journalCookie = Cookie.readFromDirectory(journalDirectory);
                 if (journalCookie.isBookieHostCreatedFromIp()) {
@@ -312,7 +325,7 @@ public class Bookie extends BookieCriticalThread {
                 masterCookie.verify(zkCookie);
             } catch (KeeperException.NoNodeException nne) {
                 // can occur in cases:
-                // 1) new environment or 
+                // 1) new environment or
                 // 2) done only metadata format and started bookie server.
             }
             checkDirectoryStructure(journalDirectory);
@@ -424,19 +437,25 @@ public class Bookie extends BookieCriticalThread {
         return currentDirs;
     }
 
-
     public Bookie(ServerConfiguration conf)
+            throws IOException, KeeperException, InterruptedException, BookieException {
+        this(conf, NullStatsLogger.INSTANCE);
+    }
+
+    public Bookie(ServerConfiguration conf, StatsLogger statsLogger)
             throws IOException, KeeperException, InterruptedException, BookieException {
         super("Bookie-" + conf.getBookiePort());
         this.bookieRegistrationPath = conf.getZkAvailableBookiesPath() + "/";
         this.conf = conf;
         this.journalDirectory = getCurrentDirectory(conf.getJournalDir());
-        this.ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs());
+        this.ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                statsLogger.scope(LD_LEDGER_SCOPE));
         File[] idxDirs = conf.getIndexDirs();
         if (null == idxDirs) {
             this.indexDirsManager = this.ledgerDirsManager;
         } else {
-            this.indexDirsManager = new LedgerDirsManager(conf, idxDirs);
+            this.indexDirsManager = new LedgerDirsManager(conf, idxDirs,
+                    statsLogger.scope(LD_INDEX_SCOPE));
         }
 
         // instantiate zookeeper client to initialize ledger manager
@@ -456,11 +475,11 @@ public class Bookie extends BookieCriticalThread {
         if (conf.getSortedLedgerStorageEnabled()) {
             ledgerStorage = new SortedLedgerStorage(conf, ledgerManager,
                                                     ledgerDirsManager, indexDirsManager,
-                                                    journal);
+                                                    journal, statsLogger);
         } else {
             ledgerStorage = new InterleavedLedgerStorage(conf, ledgerManager,
                                                          ledgerDirsManager, indexDirsManager,
-                                                         journal);
+                                                         journal, statsLogger);
         }
         syncThread = new SyncThread(conf, getLedgerDirsListener(),
                                     ledgerStorage, journal);
@@ -471,6 +490,22 @@ public class Bookie extends BookieCriticalThread {
         String myID = getMyId();
         zkBookieRegPath = this.bookieRegistrationPath + myID;
         zkBookieReadOnlyPath = this.bookieRegistrationPath + BookKeeperConstants.READONLY + "/" + myID;
+
+        // Expose Stats
+        writeBytes = statsLogger.getCounter(WRITE_BYTES);
+        readBytes = statsLogger.getCounter(READ_BYTES);
+        // 1 : up, 0 : readonly
+        statsLogger.registerGauge(SERVER_STATUS, new Gauge<Number>() {
+            @Override
+            public Number getDefaultValue() {
+                return 0;
+            }
+
+            @Override
+            public Number getSample() {
+                return readOnly.get() ? 0 : 1;
+            }
+        });
     }
 
     private String getMyId() throws UnknownHostException {
@@ -1029,13 +1064,6 @@ public class Bookie extends BookieCriticalThread {
         return l;
     }
 
-    protected void addEntryByLedgerId(long ledgerId, ByteBuffer entry)
-        throws IOException, BookieException {
-        byte[] key = ledgerStorage.readMasterKey(ledgerId);
-        LedgerDescriptor handle = handles.getHandle(ledgerId, key);
-        handle.addEntry(entry);
-    }
-
     /**
      * Add an entry to a ledger as specified by handle.
      */
@@ -1046,6 +1074,8 @@ public class Bookie extends BookieCriticalThread {
         long entryId = handle.addEntry(entry);
 
         entry.rewind();
+        writeBytes.add(entry.remaining());
+
         LOG.trace("Adding {}@{}", entryId, ledgerId);
         journal.logAddEntry(entry, cb, ctx);
     }
@@ -1124,7 +1154,9 @@ public class Bookie extends BookieCriticalThread {
             throws IOException, NoLedgerException {
         LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
         LOG.trace("Reading {}@{}", entryId, ledgerId);
-        return handle.readEntry(entryId);
+        ByteBuffer entry = handle.readEntry(entryId);
+        readBytes.add(entry.remaining());
+        return entry;
     }
 
     // The rest of the code is test stuff

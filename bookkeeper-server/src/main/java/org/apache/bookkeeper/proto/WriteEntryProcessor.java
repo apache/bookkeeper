@@ -19,7 +19,6 @@ package org.apache.bookkeeper.proto;
 
 import java.io.IOException;
 
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol.Request;
@@ -36,10 +35,11 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
 
     private final static Logger LOG = LoggerFactory.getLogger(WriteEntryProcessor.class);
 
-    long startTime;
+    long startTimeNanos;
 
-    public WriteEntryProcessor(Request request, Channel channel, Bookie bookie) {
-        super(request, channel, bookie);
+    public WriteEntryProcessor(Request request, Channel channel,
+                               BookieRequestProcessor requestProcessor) {
+        super(request, channel, requestProcessor);
     }
 
     @Override
@@ -47,23 +47,24 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
         assert (request instanceof BookieProtocol.AddRequest);
         BookieProtocol.AddRequest add = (BookieProtocol.AddRequest) request;
 
-        if (bookie.isReadOnly()) {
+        if (requestProcessor.bookie.isReadOnly()) {
             LOG.warn("BookieServer is running in readonly mode,"
                     + " so rejecting the request from the client!");
-            channel.write(ResponseBuilder.buildErrorResponse(BookieProtocol.EREADONLY, add));
-            BKStats.getInstance().getOpStats(BKStats.STATS_ADD).incrementFailedOps();
+            sendResponse(BookieProtocol.EREADONLY,
+                         ResponseBuilder.buildErrorResponse(BookieProtocol.EREADONLY, add),
+                         requestProcessor.addRequestStats);
             return;
         }
 
-        startTime = MathUtils.now();
+        startTimeNanos = MathUtils.nowInNano();
         int rc = BookieProtocol.EOK;
         try {
             if (add.isRecoveryAdd()) {
-                bookie.recoveryAddEntry(add.getDataAsByteBuffer(),
-                                        this, channel, add.getMasterKey());
+                requestProcessor.bookie.recoveryAddEntry(add.getDataAsByteBuffer(),
+                                                         this, channel, add.getMasterKey());
             } else {
-                bookie.addEntry(add.getDataAsByteBuffer(),
-                                this, channel, add.getMasterKey());
+                requestProcessor.bookie.addEntry(add.getDataAsByteBuffer(),
+                                                 this, channel, add.getMasterKey());
             }
         } catch (IOException e) {
             LOG.error("Error writing " + add, e);
@@ -76,23 +77,23 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
             rc = BookieProtocol.EUA;
         }
         if (rc != BookieProtocol.EOK) {
-            channel.write(ResponseBuilder.buildErrorResponse(rc, add));
-            BKStats.getInstance().getOpStats(BKStats.STATS_ADD).incrementFailedOps();
+            requestProcessor.addEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
+            sendResponse(rc,
+                         ResponseBuilder.buildErrorResponse(rc, add),
+                         requestProcessor.addRequestStats);
         }
     }
 
     @Override
     public void writeComplete(int rc, long ledgerId, long entryId,
                               BookieSocketAddress addr, Object ctx) {
-        channel.write(ResponseBuilder.buildAddResponse(request));
-
-        // compute the latency
-        if (0 == rc) {
-            // for add operations, we compute latency in writeComplete callbacks.
-            long elapsedTime = MathUtils.now() - startTime;
-            BKStats.getInstance().getOpStats(BKStats.STATS_ADD).updateLatency(elapsedTime);
+        if (BookieProtocol.EOK == rc) {
+            requestProcessor.addEntryStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
         } else {
-            BKStats.getInstance().getOpStats(BKStats.STATS_ADD).incrementFailedOps();
+            requestProcessor.addEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
         }
+        sendResponse(rc,
+                     ResponseBuilder.buildAddResponse(request),
+                     requestProcessor.addRequestStats);
     }
 }

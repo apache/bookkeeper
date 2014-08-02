@@ -20,22 +20,36 @@
  */
 package org.apache.bookkeeper.proto;
 
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
+import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.util.MathUtils;
 import org.jboss.netty.channel.Channel;
 
 public abstract class PacketProcessorBaseV3 {
 
     final Request request;
     final Channel channel;
-    final Bookie  bookie;
+    final BookieRequestProcessor requestProcessor;
+    final long enqueueNanos;
 
-    public PacketProcessorBaseV3(Request request, Channel channel, Bookie bookie) {
+    public PacketProcessorBaseV3(Request request, Channel channel,
+                                 BookieRequestProcessor requestProcessor) {
         this.request = request;
         this.channel = channel;
-        this.bookie = bookie;
+        this.requestProcessor = requestProcessor;
+        this.enqueueNanos = MathUtils.nowInNano();
+    }
+
+    protected void sendResponse(StatusCode code, Object response, OpStatsLogger statsLogger) {
+        channel.write(response);
+        if (StatusCode.EOK == code) {
+            statsLogger.registerSuccessfulEvent(MathUtils.elapsedMSec(enqueueNanos));
+        } else {
+            statsLogger.registerFailedEvent(MathUtils.elapsedMSec(enqueueNanos));
+        }
     }
 
     protected boolean isVersionCompatible() {

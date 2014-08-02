@@ -26,11 +26,17 @@ import java.util.concurrent.Executors;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.processor.RequestProcessor;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY_REQUEST;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_REQUEST;
 
 public class BookieRequestProcessor implements RequestProcessor {
 
@@ -39,12 +45,12 @@ public class BookieRequestProcessor implements RequestProcessor {
      * The server configuration. We use this for getting the number of add and read
      * worker threads.
      */
-    private ServerConfiguration serverCfg;
+    private final ServerConfiguration serverCfg;
 
     /**
      * This is the Bookie instance that is used to handle all read and write requests.
      */
-    private Bookie bookie;
+    final Bookie bookie;
 
     /**
      * The threadpool used to execute all read entry requests issued to this server.
@@ -56,10 +62,16 @@ public class BookieRequestProcessor implements RequestProcessor {
      */
     private final ExecutorService writeThreadPool;
 
+    // Expose Stats
     private final BKStats bkStats = BKStats.getInstance();
     private final boolean statsEnabled;
+    final OpStatsLogger addRequestStats;
+    final OpStatsLogger addEntryStats;
+    final OpStatsLogger readRequestStats;
+    final OpStatsLogger readEntryStats;
 
-    public BookieRequestProcessor(ServerConfiguration serverCfg, Bookie bookie) {
+    public BookieRequestProcessor(ServerConfiguration serverCfg, Bookie bookie,
+                                  StatsLogger statsLogger) {
         this.serverCfg = serverCfg;
         this.bookie = bookie;
         this.readThreadPool =
@@ -68,7 +80,12 @@ public class BookieRequestProcessor implements RequestProcessor {
         this.writeThreadPool =
             createExecutor(this.serverCfg.getNumAddWorkerThreads(),
                            "BookieWriteThread-" + serverCfg.getBookiePort() + "-%d");
+        // Expose Stats
         this.statsEnabled = serverCfg.isStatisticsEnabled();
+        this.addEntryStats = statsLogger.getOpStatsLogger(ADD_ENTRY);
+        this.addRequestStats = statsLogger.getOpStatsLogger(ADD_ENTRY_REQUEST);
+        this.readEntryStats = statsLogger.getOpStatsLogger(READ_ENTRY);
+        this.readRequestStats = statsLogger.getOpStatsLogger(READ_ENTRY_REQUEST);
     }
 
     @Override
@@ -138,7 +155,7 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processAddRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
-        WriteEntryProcessorV3 write = new WriteEntryProcessorV3(r, c, bookie);
+        WriteEntryProcessorV3 write = new WriteEntryProcessorV3(r, c, this);
         if (null == writeThreadPool) {
             write.run();
         } else {
@@ -147,7 +164,7 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processReadRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
-        ReadEntryProcessorV3 read = new ReadEntryProcessorV3(r, c, bookie);
+        ReadEntryProcessorV3 read = new ReadEntryProcessorV3(r, c, this);
         if (null == readThreadPool) {
             read.run();
         } else {
@@ -156,7 +173,7 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processAddRequest(final BookieProtocol.Request r, final Channel c) {
-        WriteEntryProcessor write = new WriteEntryProcessor(r, c, bookie);
+        WriteEntryProcessor write = new WriteEntryProcessor(r, c, this);
         if (null == writeThreadPool) {
             write.run();
         } else {
@@ -165,7 +182,7 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processReadRequest(final BookieProtocol.Request r, final Channel c) {
-        ReadEntryProcessor read = new ReadEntryProcessor(r, c, bookie);
+        ReadEntryProcessor read = new ReadEntryProcessor(r, c, this);
         if (null == readThreadPool) {
             read.run();
         } else {

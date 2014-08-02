@@ -17,8 +17,10 @@
  */
 package org.apache.bookkeeper.proto;
 
-import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookieProtocol.Request;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.util.MathUtils;
 import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,12 +29,14 @@ abstract class PacketProcessorBase implements Runnable {
     private final static Logger logger = LoggerFactory.getLogger(PacketProcessorBase.class);
     final Request request;
     final Channel channel;
-    final Bookie bookie;
+    final BookieRequestProcessor requestProcessor;
+    final long enqueueNanos;
 
-    PacketProcessorBase(Request request, Channel channel, Bookie bookie) {
+    PacketProcessorBase(Request request, Channel channel, BookieRequestProcessor requestProcessor) {
         this.request = request;
         this.channel = channel;
-        this.bookie = bookie;
+        this.requestProcessor = requestProcessor;
+        this.enqueueNanos = MathUtils.nowInNano();
     }
 
     protected boolean isVersionCompatible() {
@@ -48,10 +52,21 @@ abstract class PacketProcessorBase implements Runnable {
         return true;
     }
 
+    protected void sendResponse(int rc, Object response, OpStatsLogger statsLogger) {
+        channel.write(response);
+        if (BookieProtocol.EOK == rc) {
+            statsLogger.registerSuccessfulEvent(MathUtils.elapsedMSec(enqueueNanos));
+        } else {
+            statsLogger.registerFailedEvent(MathUtils.elapsedMSec(enqueueNanos));
+        }
+    }
+
     @Override
     public void run() {
         if (!isVersionCompatible()) {
-            channel.write(ResponseBuilder.buildErrorResponse(BookieProtocol.EBADVERSION, request));
+            sendResponse(BookieProtocol.EBADVERSION,
+                         ResponseBuilder.buildErrorResponse(BookieProtocol.EBADVERSION, request),
+                         requestProcessor.readRequestStats);
             return;
         }
         processPacket();

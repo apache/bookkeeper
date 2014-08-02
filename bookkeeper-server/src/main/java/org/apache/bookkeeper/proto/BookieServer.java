@@ -36,6 +36,10 @@ import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.StatsProvider;
+import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -47,6 +51,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
+
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_SCOPE;
 
 /**
  * Implements the server-side part of the BookKeeper protocol.
@@ -70,12 +77,23 @@ public class BookieServer {
     // request processor
     private final RequestProcessor requestProcessor;
 
+    // Expose Stats
+    private final StatsLogger statsLogger;
+
     public BookieServer(ServerConfiguration conf) throws IOException,
             KeeperException, InterruptedException, BookieException,
             UnavailableException, CompatibilityException {
+        this(conf, NullStatsLogger.INSTANCE);
+    }
+
+    public BookieServer(ServerConfiguration conf, StatsLogger statsLogger)
+            throws IOException, KeeperException, InterruptedException,
+            BookieException, UnavailableException, CompatibilityException {
         this.conf = conf;
+        this.statsLogger = statsLogger;
         this.bookie = newBookie(conf);
-        this.requestProcessor = new BookieRequestProcessor(conf, bookie);
+        this.requestProcessor = new BookieRequestProcessor(conf, bookie,
+                statsLogger.scope(SERVER_SCOPE));
         this.nettyServer = new BookieNettyServer(this.conf, requestProcessor);
         isAutoRecoveryDaemonEnabled = conf.isAutoRecoveryDaemonEnabled();
         if (isAutoRecoveryDaemonEnabled) {
@@ -85,7 +103,7 @@ public class BookieServer {
 
     protected Bookie newBookie(ServerConfiguration conf)
         throws IOException, KeeperException, InterruptedException, BookieException {
-        return new Bookie(conf);
+        return new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE));
     }
 
     public void start() throws IOException, UnavailableException {
@@ -349,7 +367,13 @@ public class BookieServer {
                            conf.getJournalDirName(), sb);
         LOG.info(hello);
         try {
-            final BookieServer bs = new BookieServer(conf);
+            // Initialize Stats Provider
+            Class<? extends StatsProvider> statsProviderClass =
+                    conf.getStatsProviderClass();
+            final StatsProvider statsProvider = ReflectionUtils.newInstance(statsProviderClass);
+            statsProvider.start(conf);
+
+            final BookieServer bs = new BookieServer(conf, statsProvider.getStatsLogger(""));
             bs.start();
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 @Override
@@ -361,6 +385,8 @@ public class BookieServer {
             LOG.info("Register shutdown hook successfully");
             bs.join();
 
+            statsProvider.stop();
+            LOG.info("Stop stats provider");
             System.exit(bs.getExitCode());
         } catch (Exception e) {
             LOG.error("Exception running bookie server : ", e);

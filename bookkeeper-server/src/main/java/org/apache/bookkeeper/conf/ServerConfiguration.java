@@ -21,6 +21,9 @@ import java.io.File;
 import java.util.List;
 
 import com.google.common.annotations.Beta;
+import org.apache.bookkeeper.stats.NullStatsProvider;
+import org.apache.bookkeeper.stats.StatsProvider;
+import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
 
@@ -76,8 +79,6 @@ public class ServerConfiguration extends AbstractConfiguration {
     // Zookeeper Parameters
     protected final static String ZK_TIMEOUT = "zkTimeout";
     protected final static String ZK_SERVERS = "zkServers";
-    // Statistics Parameters
-    protected final static String ENABLE_STATISTICS = "enableStatistics";
     protected final static String OPEN_LEDGER_REREPLICATION_GRACE_PERIOD = "openLedgerRereplicationGracePeriod";
     //ReadOnly mode support on all disk full
     protected final static String READ_ONLY_MODE_ENABLED = "readOnlyModeEnabled";
@@ -103,6 +104,10 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String SKIP_LIST_SIZE_LIMIT = "skipListSizeLimit";
     protected final static String SKIP_LIST_CHUNK_SIZE_ENTRY = "skipListArenaChunkSize";
     protected final static String SKIP_LIST_MAX_ALLOC_ENTRY = "skipListArenaMaxAllocSize";
+
+    // Statistics Parameters
+    protected final static String ENABLE_STATISTICS = "enableStatistics";
+    protected final static String STATS_PROVIDER_CLASS = "statsProviderClass";
 
     /**
      * Construct a default configuration object
@@ -1287,6 +1292,57 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Get whether bookie is using hostname for registration and in ledger
+     * metadata. Defaults to false.
+     *
+     * @return true, then bookie will be registered with its hostname and
+     *         hostname will be used in ledger metadata. Otherwise bookie will
+     *         use its ipaddress
+     */
+    public boolean getUseHostNameAsBookieID() {
+        return getBoolean(USE_HOST_NAME_AS_BOOKIE_ID, false);
+    }
+
+    /**
+     * Configure the bookie to use its hostname to register with the
+     * co-ordination service(eg: zookeeper) and in ledger metadata
+     *
+     * @see #getUseHostNameAsBookieID
+     * @param useHostName
+     *            whether to use hostname for registration and in ledgermetadata
+     * @return server configuration
+     */
+    public ServerConfiguration setUseHostNameAsBookieID(boolean useHostName) {
+        setProperty(USE_HOST_NAME_AS_BOOKIE_ID, useHostName);
+        return this;
+    }
+
+    /**
+     * Get the stats provider used by bookie.
+     *
+     * @return stats provider class
+     * @throws ConfigurationException
+     */
+    public Class<? extends StatsProvider> getStatsProviderClass()
+        throws ConfigurationException {
+        return ReflectionUtils.getClass(this, STATS_PROVIDER_CLASS,
+                                        NullStatsProvider.class, StatsProvider.class,
+                                        defaultLoader);
+    }
+
+    /**
+     * Set the stats provider used by bookie.
+     *
+     * @param providerClass
+     *          stats provider class
+     * @return server configuration
+     */
+    public ServerConfiguration setStatsProviderClass(Class<? extends StatsProvider> providerClass) {
+        setProperty(STATS_PROVIDER_CLASS, providerClass.getName());
+        return this;
+    }
+
+    /**
      * Validate the configuration.
      * @throws ConfigurationException
      */
@@ -1302,27 +1358,4 @@ public class ServerConfiguration extends AbstractConfiguration {
         }
     }
 
-    /**
-     * Get whether bookie is using hostname for registration and in ledger
-     * metadata. Defaults to false.
-     * 
-     * @return true, then bookie will be registered with its hostname and
-     *         hostname will be used in ledger metadata. Otherwise bookie will
-     *         use its ipaddress
-     */
-    public boolean getUseHostNameAsBookieID() {
-        return getBoolean(USE_HOST_NAME_AS_BOOKIE_ID, false);
-    }
-
-    /**
-     * Configure the bookie to use its hostname to register with the
-     * co-ordination service(eg: zookeeper) and in ledger metadata
-     * 
-     * @see #getUseHostNameAsBookieID
-     * @param useHostName
-     *            whether to use hostname for registration and in ledgermetadata
-     */
-    public void setUseHostNameAsBookieID(boolean useHostName) {
-        setProperty(USE_HOST_NAME_AS_BOOKIE_ID, useHostName);
-    }
 }

@@ -21,6 +21,8 @@
 package org.apache.bookkeeper.bookie;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.stats.Gauge;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +40,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_INDEX_PAGES;
 
 class IndexInMemPageMgr {
     private final static Logger LOG = LoggerFactory.getLogger(IndexInMemPageMgr.class);
@@ -321,7 +325,8 @@ class IndexInMemPageMgr {
     public IndexInMemPageMgr(int pageSize,
                              int entriesPerPage,
                              ServerConfiguration conf,
-                             IndexPersistenceMgr indexPersistenceManager) {
+                             IndexPersistenceMgr indexPersistenceManager,
+                             StatsLogger statsLogger) {
         this.pageSize = pageSize;
         this.entriesPerPage = entriesPerPage;
         this.indexPersistenceManager = indexPersistenceManager;
@@ -335,6 +340,18 @@ class IndexInMemPageMgr {
         }
         LOG.info("maxMemory = {}, pageSize = {}, pageLimit = {}", new Object[] { Runtime.getRuntime().maxMemory(),
                         pageSize, pageLimit });
+        // Expose Stats
+        statsLogger.registerGauge(NUM_INDEX_PAGES, new Gauge<Number>() {
+            @Override
+            public Number getDefaultValue() {
+                return 0;
+            }
+
+            @Override
+            public Number getSample() {
+                return getNumUsedPages();
+            }
+        });
     }
 
     /**

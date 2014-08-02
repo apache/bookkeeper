@@ -24,6 +24,8 @@ package org.apache.bookkeeper.bookie;
 import java.io.IOException;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.SnapshotMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,12 +43,18 @@ public class LedgerCacheImpl implements LedgerCache {
     private final int entriesPerPage;
 
     public LedgerCacheImpl(ServerConfiguration conf, SnapshotMap<Long, Boolean> activeLedgers,
-                    LedgerDirsManager ledgerDirsManager) throws IOException {
+                           LedgerDirsManager ledgerDirsManager) throws IOException {
+        this(conf, activeLedgers, ledgerDirsManager, NullStatsLogger.INSTANCE);
+    }
+
+    public LedgerCacheImpl(ServerConfiguration conf, SnapshotMap<Long, Boolean> activeLedgers,
+                           LedgerDirsManager ledgerDirsManager, StatsLogger statsLogger) throws IOException {
         this.pageSize = conf.getPageSize();
         this.entriesPerPage = pageSize / 8;
         this.indexPersistenceManager = new IndexPersistenceMgr(pageSize, entriesPerPage, conf, activeLedgers,
-                        ledgerDirsManager);
-        this.indexPageManager = new IndexInMemPageMgr(pageSize, entriesPerPage, conf, indexPersistenceManager);
+                ledgerDirsManager, statsLogger);
+        this.indexPageManager = new IndexInMemPageMgr(pageSize, entriesPerPage, conf,
+                indexPersistenceManager, statsLogger);
     }
 
     IndexPersistenceMgr getIndexPersistenceManager() {

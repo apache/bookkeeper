@@ -23,7 +23,6 @@ package org.apache.bookkeeper.proto;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
@@ -31,6 +30,7 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.AddResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
+import org.apache.bookkeeper.util.MathUtils;
 import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,12 +38,14 @@ import org.slf4j.LoggerFactory;
 class WriteEntryProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     private final static Logger logger = LoggerFactory.getLogger(WriteEntryProcessorV3.class);
 
-    public WriteEntryProcessorV3(Request request, Channel channel, Bookie bookie) {
-        super(request, channel, bookie);
+    public WriteEntryProcessorV3(Request request, Channel channel,
+                                 BookieRequestProcessor requestProcessor) {
+        super(request, channel, requestProcessor);
     }
 
     // Returns null if there is no exception thrown
     private AddResponse getAddResponse() {
+        final long startTimeNanos = MathUtils.nowInNano();
         AddRequest addRequest = request.getAddRequest();
         long ledgerId = addRequest.getLedgerId();
         long entryId = addRequest.getEntryId();
@@ -57,7 +59,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             return addResponse.build();
         }
 
-        if (bookie.isReadOnly()) {
+        if (requestProcessor.bookie.isReadOnly()) {
             logger.warn("BookieServer is running as readonly mode, so rejecting the request from the client!");
             addResponse.setStatus(StatusCode.EREADONLY);
             return addResponse.build();
@@ -67,6 +69,12 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             @Override
             public void writeComplete(int rc, long ledgerId, long entryId,
                                       BookieSocketAddress addr, Object ctx) {
+                if (BookieProtocol.EOK == rc) {
+                    requestProcessor.addEntryStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
+                } else {
+                    requestProcessor.addEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
+                }
+
                 Channel conn = (Channel) ctx;
                 StatusCode status;
                 switch (rc) {
@@ -86,7 +94,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
                         .setStatus(addResponse.getStatus())
                         .setAddResponse(addResponse);
                 Response resp = response.build();
-                conn.write(resp);
+                sendResponse(status, resp, requestProcessor.addRequestStats);
             }
         };
         StatusCode status = null;
@@ -94,9 +102,9 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         ByteBuffer entryToAdd = addRequest.getBody().asReadOnlyByteBuffer();
         try {
             if (addRequest.hasFlag() && addRequest.getFlag().equals(AddRequest.Flag.RECOVERY_ADD)) {
-                bookie.recoveryAddEntry(entryToAdd, wcb, channel, masterKey);
+                requestProcessor.bookie.recoveryAddEntry(entryToAdd, wcb, channel, masterKey);
             } else {
-                bookie.addEntry(entryToAdd, wcb, channel, masterKey);
+                requestProcessor.bookie.addEntry(entryToAdd, wcb, channel, masterKey);
             }
             status = StatusCode.EOK;
         } catch (IOException e) {
@@ -137,7 +145,8 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
                     .setStatus(addResponse.getStatus())
                     .setAddResponse(addResponse);
             Response resp = response.build();
-            channel.write(resp);
+            sendResponse(addResponse.getStatus(), resp,
+                         requestProcessor.addRequestStats);
         }
     }
 }

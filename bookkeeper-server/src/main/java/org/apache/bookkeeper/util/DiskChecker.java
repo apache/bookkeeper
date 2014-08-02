@@ -22,11 +22,16 @@ import java.io.File;
 import java.io.IOException;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class that provides utility functions for checking disk problems
  */
 public class DiskChecker {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DiskChecker.class);
+
     private float diskUsageThreshold;
     private float diskUsageWarnThreshold;
 
@@ -47,16 +52,30 @@ public class DiskChecker {
     public static class DiskOutOfSpaceException extends DiskException {
         private static final long serialVersionUID = 160898797915906860L;
 
-        public DiskOutOfSpaceException(String msg) {
+        private final float usage;
+
+        public DiskOutOfSpaceException(String msg, float usage) {
             super(msg);
+            this.usage = usage;
+        }
+
+        public float getUsage() {
+            return usage;
         }
     }
 
     public static class DiskWarnThresholdException extends DiskException {
         private static final long serialVersionUID = -1629284987500841657L;
 
-        public DiskWarnThresholdException(String msg) {
+        private final float usage;
+
+        public DiskWarnThresholdException(String msg, float usage) {
             super(msg);
+            this.usage = usage;
+        }
+
+        public float getUsage() {
+            return usage;
         }
     }
 
@@ -106,9 +125,9 @@ public class DiskChecker {
      *             less than threshhold.
      */
     @VisibleForTesting
-    void checkDiskFull(File dir) throws DiskOutOfSpaceException, DiskWarnThresholdException {
+    float checkDiskFull(File dir) throws DiskOutOfSpaceException, DiskWarnThresholdException {
         if (null == dir) {
-            return;
+            return 0f;
         }
         if (dir.exists()) {
             long usableSpace = dir.getUsableSpace();
@@ -116,16 +135,22 @@ public class DiskChecker {
             float free = (float) usableSpace / (float) totalSpace;
             float used = 1f - free;
             if (used > diskUsageThreshold) {
+                LOG.error("Space left on device {} : {}, Used space fraction: {} < threshold {}.",
+                        new Object[] { dir, usableSpace, used, diskUsageThreshold });
                 throw new DiskOutOfSpaceException("Space left on device "
-                        + usableSpace + " Used space fraction:" + used + " < threshhold " + diskUsageThreshold);
+                        + usableSpace + " Used space fraction:" + used + " < threshold " + diskUsageThreshold, used);
             }
             // Warn should be triggered only if disk usage threshold doesn't trigger first.
             if (used > diskUsageWarnThreshold) {
+                LOG.warn("Space left on device {} : {}, Used space fraction: {} < WarnThreshold {}.",
+                        new Object[] { dir, usableSpace, used, diskUsageThreshold });
                 throw new DiskWarnThresholdException("Space left on device:"
-                        + usableSpace + " Used space fraction:" + used +" < WarnThreshold:" + diskUsageWarnThreshold);
+                        + usableSpace + " Used space fraction:" + used +" < WarnThreshold:" + diskUsageWarnThreshold,
+                        used);
             }
+            return used;
         } else {
-            checkDiskFull(dir.getParentFile());
+            return checkDiskFull(dir.getParentFile());
         }
     }
 
@@ -141,9 +166,9 @@ public class DiskChecker {
      * @throws DiskOutOfSpaceException
      *             If disk is full or having less space than threshhold
      */
-    public void checkDir(File dir) throws DiskErrorException,
+    public float checkDir(File dir) throws DiskErrorException,
             DiskOutOfSpaceException, DiskWarnThresholdException {
-        checkDiskFull(dir);
+        float usage = checkDiskFull(dir);
         if (!mkdirsWithExistsCheck(dir))
             throw new DiskErrorException("can not create directory: "
                     + dir.toString());
@@ -158,6 +183,7 @@ public class DiskChecker {
         if (!dir.canWrite())
             throw new DiskErrorException("directory is not writable: "
                     + dir.toString());
+        return usage;
     }
 
     /**

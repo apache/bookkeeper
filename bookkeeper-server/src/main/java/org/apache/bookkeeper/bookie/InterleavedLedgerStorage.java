@@ -27,15 +27,21 @@ import java.nio.ByteBuffer;
 
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener;
-import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SnapshotMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFFSET;
 
 /**
  * Interleave ledger storage
@@ -82,24 +88,31 @@ class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
     // this indicates that a write has happened since the last flush
     private volatile boolean somethingWritten = false;
 
+    // Expose Stats
+    private final OpStatsLogger getOffsetStats;
+    private final OpStatsLogger getEntryStats;
+
     InterleavedLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
                              LedgerDirsManager ledgerDirsManager, CheckpointSource checkpointSource)
             throws IOException {
-        this(conf, ledgerManager, ledgerDirsManager, ledgerDirsManager, checkpointSource);
+        this(conf, ledgerManager, ledgerDirsManager, ledgerDirsManager, checkpointSource, NullStatsLogger.INSTANCE);
     }
 
     InterleavedLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
                              LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                             CheckpointSource checkpointSource)
+                             CheckpointSource checkpointSource, StatsLogger statsLogger)
             throws IOException {
         activeLedgers = new SnapshotMap<Long, Boolean>();
         this.checkpointSource = checkpointSource;
         entryLogger = new EntryLogger(conf, ledgerDirsManager, this);
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
-                null == indexDirsManager ? ledgerDirsManager : indexDirsManager);
+                null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
         gcThread = new GarbageCollectorThread(conf, ledgerCache, entryLogger,
                 activeLedgers, ledgerManager);
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
+        // Expose Stats
+        getOffsetStats = statsLogger.getOpStatsLogger(STORAGE_GET_OFFSET);
+        getEntryStats = statsLogger.getOpStatsLogger(STORAGE_GET_ENTRY);
     }
 
     private LedgerDirsListener getLedgerDirsListener() {
@@ -208,11 +221,36 @@ class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
             entryId = ledgerCache.getLastEntry(ledgerId);
         }
 
-        offset = ledgerCache.getEntryOffset(ledgerId, entryId);
-        if (offset == 0) {
-            throw new Bookie.NoEntryException(ledgerId, entryId);
+        // Get Offset
+        long startTimeNanos = MathUtils.nowInNano();
+        boolean success = false;
+        try {
+            offset = ledgerCache.getEntryOffset(ledgerId, entryId);
+            if (offset == 0) {
+                throw new Bookie.NoEntryException(ledgerId, entryId);
+            }
+            success = true;
+        } finally {
+            if (success) {
+                getOffsetStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
+            } else {
+                getOffsetStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
+            }
         }
-        return ByteBuffer.wrap(entryLogger.readEntry(ledgerId, entryId, offset));
+        // Get Entry
+        startTimeNanos = MathUtils.nowInNano();
+        success = false;
+        try {
+            byte[] retBytes = entryLogger.readEntry(ledgerId, entryId, offset);
+            success = true;
+            return ByteBuffer.wrap(retBytes);
+        } finally {
+            if (success) {
+                getEntryStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
+            } else {
+                getEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
+            }
+        }
     }
 
     private void flushOrCheckpoint(boolean isCheckpointFlush)

@@ -42,12 +42,13 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
 
     private final static Logger LOG = LoggerFactory.getLogger(ReadEntryProcessorV3.class);
 
-    public ReadEntryProcessorV3(Request request, Channel channel, Bookie bookie) {
-        super(request, channel, bookie);
+    public ReadEntryProcessorV3(Request request, Channel channel,
+                                BookieRequestProcessor requestProcessor) {
+        super(request, channel, requestProcessor);
     }
 
     private ReadResponse getReadResponse() {
-        long startTime = MathUtils.now();
+        long startTimeNanos = MathUtils.nowInNano();
         ReadRequest readRequest = request.getReadRequest();
         long ledgerId = readRequest.getLedgerId();
         long entryId = readRequest.getEntryId();
@@ -58,7 +59,6 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
 
         if (!isVersionCompatible()) {
             readResponse.setStatus(StatusCode.EBADVERSION);
-            BKStats.getInstance().getOpStats(BKStats.STATS_READ).incrementFailedOps();
             return readResponse.build();
         }
 
@@ -73,15 +73,14 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
 
                 if (readRequest.hasMasterKey()) {
                     byte[] masterKey = readRequest.getMasterKey().toByteArray();
-                    fenceResult = bookie.fenceLedger(ledgerId, masterKey);
+                    fenceResult = requestProcessor.bookie.fenceLedger(ledgerId, masterKey);
                 } else {
                     LOG.error("Fence ledger request received without master key for ledger:{} from address: {}",
                               ledgerId, channel.getRemoteAddress());
-                    BKStats.getInstance().getOpStats(BKStats.STATS_READ).incrementFailedOps();
                     throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
                 }
             }
-            entryBody = bookie.readEntry(ledgerId, entryId);
+            entryBody = requestProcessor.bookie.readEntry(ledgerId, entryId);
             if (null != fenceResult) {
                 // TODO:
                 // currently we don't have readCallback to run in separated read
@@ -135,10 +134,9 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         }
 
         if (status == StatusCode.EOK) {
-            long elapsedTime = MathUtils.now() - startTime;
-            BKStats.getInstance().getOpStats(BKStats.STATS_READ).updateLatency(elapsedTime);
+            requestProcessor.readEntryStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
         } else {
-            BKStats.getInstance().getOpStats(BKStats.STATS_READ).incrementFailedOps();
+            requestProcessor.readEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
         }
 
         // Finally set status and return. The body would have been updated if
@@ -150,11 +148,17 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     @Override
     public void run() {
         ReadResponse readResponse = getReadResponse();
+        sendResponse(readResponse);
+    }
+
+    private void sendResponse(ReadResponse readResponse) {
         Response.Builder response = Response.newBuilder()
                 .setHeader(getHeader())
                 .setStatus(readResponse.getStatus())
                 .setReadResponse(readResponse);
-        channel.write(response.build());
+        sendResponse(response.getStatus(),
+                     response.build(),
+                     requestProcessor.readRequestStats);
     }
 }
 

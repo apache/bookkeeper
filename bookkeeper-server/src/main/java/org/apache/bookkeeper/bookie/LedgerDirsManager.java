@@ -26,8 +26,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.stats.Gauge;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.DiskChecker.DiskErrorException;
 import org.apache.bookkeeper.util.DiskChecker.DiskOutOfSpaceException;
@@ -36,6 +41,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
+
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_WRITABLE_DIRS;
 
 /**
  * This class manages ledger directories used by the bookie.
@@ -51,15 +58,48 @@ public class LedgerDirsManager {
     private final List<LedgerDirsListener> listeners;
     private final LedgerDirsMonitor monitor;
     private final Random rand = new Random();
+    private final ConcurrentMap<File, Float> diskUsages =
+            new ConcurrentHashMap<File, Float>();
 
     public LedgerDirsManager(ServerConfiguration conf, File[] dirs) {
+        this(conf, dirs, NullStatsLogger.INSTANCE);
+    }
+
+    LedgerDirsManager(ServerConfiguration conf, File[] dirs, StatsLogger statsLogger) {
         this.ledgerDirectories = Arrays.asList(Bookie
                 .getCurrentDirectories(dirs));
         this.writableLedgerDirectories = new ArrayList<File>(ledgerDirectories);
         this.filledDirs = new ArrayList<File>();
-        listeners = new ArrayList<LedgerDirsManager.LedgerDirsListener>();
+        listeners = new ArrayList<LedgerDirsListener>();
         diskChecker = new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold());
         monitor = new LedgerDirsMonitor(conf.getDiskCheckInterval());
+        for (File dir : dirs) {
+            diskUsages.put(dir, 0f);
+            String statName = "dir_" + dir.getPath().replace('/', '_') + "_usage";
+            final File targetDir = dir;
+            statsLogger.registerGauge(statName, new Gauge<Number>() {
+                @Override
+                public Number getDefaultValue() {
+                    return 0;
+                }
+
+                @Override
+                public Number getSample() {
+                    return diskUsages.get(targetDir) * 100;
+                }
+            });
+        }
+        statsLogger.registerGauge(LD_WRITABLE_DIRS, new Gauge<Number>() {
+            @Override
+            public Number getDefaultValue() {
+                return 0;
+            }
+
+            @Override
+            public Number getSample() {
+                return writableLedgerDirectories.size();
+            }
+        });
     }
 
     /**
@@ -192,7 +232,7 @@ public class LedgerDirsManager {
 
     /**
      * Sweep through all the directories to check disk errors or disk full.
-     * 
+     *
      * @throws DiskErrorException
      *             If disk having errors
      * @throws NoWritableLedgerDirException
@@ -246,18 +286,22 @@ public class LedgerDirsManager {
                 // Check all writable dirs disk space usage.
                 for (File dir : writableDirs) {
                     try {
-                        diskChecker.checkDir(dir);
+                        diskUsages.put(dir, diskChecker.checkDir(dir));
                     } catch (DiskErrorException e) {
+                        LOG.error("Ledger directory {} failed on disk checking : ", dir, e);
                         // Notify disk failure to all listeners
                         for (LedgerDirsListener listener : listeners) {
-                            LOG.warn("{} has errors.", dir, e);
                             listener.diskFailed(dir);
                         }
                     } catch (DiskWarnThresholdException e) {
+                        LOG.warn("Ledger directory {} is almost full.", dir);
+                        diskUsages.put(dir, e.getUsage());
                         for (LedgerDirsListener listener : listeners) {
                             listener.diskAlmostFull(dir);
                         }
                     } catch (DiskOutOfSpaceException e) {
+                        LOG.error("Ledger directory {} is out-of-space.", dir);
+                        diskUsages.put(dir, e.getUsage());
                         // Notify disk full to all listeners
                         addToFilledDirs(dir);
                     }
@@ -266,7 +310,7 @@ public class LedgerDirsManager {
                 // Check all full-filled disk space usage
                 for (File dir : fullfilledDirs) {
                     try {
-                        diskChecker.checkDir(dir);
+                        diskUsages.put(dir, diskChecker.checkDir(dir));
                         addToWritableDirs(dir, true);
                     } catch (DiskErrorException e) {
                         //Notify disk failure to all the listeners
@@ -274,10 +318,12 @@ public class LedgerDirsManager {
                             listener.diskFailed(dir);
                         }
                     } catch (DiskWarnThresholdException e) {
+                        diskUsages.put(dir, e.getUsage());
                         // the full-filled dir become writable but still above warn threshold
                         addToWritableDirs(dir, false);
                     } catch (DiskOutOfSpaceException e) {
                         // the full-filled dir is still full-filled
+                        diskUsages.put(dir, e.getUsage());
                     }
                 }
                 try {

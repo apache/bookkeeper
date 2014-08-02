@@ -23,7 +23,6 @@ package org.apache.bookkeeper.bookie;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -35,11 +34,17 @@ import java.util.concurrent.ConcurrentMap;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.Gauge;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.SnapshotMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
+
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_NUM_EVICTED_LEDGERS;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_OPEN_LEDGERS;
 
 public class IndexPersistenceMgr {
     private final static Logger LOG = LoggerFactory.getLogger(IndexPersistenceMgr.class);
@@ -72,11 +77,15 @@ public class IndexPersistenceMgr {
     private LedgerDirsManager ledgerDirsManager;
     final LinkedList<Long> openLedgers = new LinkedList<Long>();
 
+    // Stats
+    private final Counter evictedLedgersCounter;
+
     public IndexPersistenceMgr(int pageSize,
                                int entriesPerPage,
                                ServerConfiguration conf,
                                SnapshotMap<Long, Boolean> activeLedgers,
-                               LedgerDirsManager ledgerDirsManager) throws IOException {
+                               LedgerDirsManager ledgerDirsManager,
+                               StatsLogger statsLogger) throws IOException {
         this.openFileLimit = conf.getOpenFileLimit();
         this.activeLedgers = activeLedgers;
         this.ledgerDirsManager = ledgerDirsManager;
@@ -86,6 +95,20 @@ public class IndexPersistenceMgr {
         // Retrieve all of the active ledgers.
         getActiveLedgers();
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
+
+        // Expose Stats
+        evictedLedgersCounter = statsLogger.getCounter(LEDGER_CACHE_NUM_EVICTED_LEDGERS);
+        statsLogger.registerGauge(NUM_OPEN_LEDGERS, new Gauge<Integer>() {
+            @Override
+            public Integer getDefaultValue() {
+                return 0;
+            }
+
+            @Override
+            public Integer getSample() {
+                return getNumOpenLedgers();
+            }
+        });
     }
 
     FileInfo getFileInfo(Long ledger, byte masterKey[]) throws IOException {
@@ -270,8 +293,7 @@ public class IndexPersistenceMgr {
                 // was executing.
                 return;
             }
-            // TODO Add a statistic here, we don't care really which
-            // ledger is evicted, but the rate at which they get evicted
+            evictedLedgersCounter.inc();
             FileInfo fi = fileInfoCache.remove(ledgerToRemove);
             if (null == fi) {
                 // Seems like someone else already closed the file.

@@ -35,8 +35,9 @@ import org.slf4j.LoggerFactory;
 class ReadEntryProcessor extends PacketProcessorBase {
     private final static Logger LOG = LoggerFactory.getLogger(ReadEntryProcessor.class);
 
-    public ReadEntryProcessor(Request request, Channel channel, Bookie bookie) {
-        super(request, channel, bookie);
+    public ReadEntryProcessor(Request request, Channel channel,
+                              BookieRequestProcessor requestProcessor) {
+        super(request, channel, requestProcessor);
     }
 
     @Override
@@ -46,7 +47,7 @@ class ReadEntryProcessor extends PacketProcessorBase {
 
         LOG.debug("Received new read request: {}", request);
         int errorCode = BookieProtocol.EIO;
-        long startTime = MathUtils.now();
+        long startTimeNanos = MathUtils.nowInNano();
         ByteBuffer data = null;
         try {
             Future<Boolean> fenceResult = null;
@@ -54,14 +55,13 @@ class ReadEntryProcessor extends PacketProcessorBase {
                 LOG.warn("Ledger " + request.getLedgerId() + " fenced by " + channel.getRemoteAddress());
 
                 if (read.hasMasterKey()) {
-                    fenceResult = bookie.fenceLedger(read.getLedgerId(), read.getMasterKey());
+                    fenceResult = requestProcessor.bookie.fenceLedger(read.getLedgerId(), read.getMasterKey());
                 } else {
                     LOG.error("Password not provided, Not safe to fence {}", read.getLedgerId());
-                    BKStats.getInstance().getOpStats(BKStats.STATS_READ).incrementFailedOps();
                     throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
                 }
             }
-            data = bookie.readEntry(request.getLedgerId(), request.getEntryId());
+            data = requestProcessor.bookie.readEntry(request.getLedgerId(), request.getEntryId());
             LOG.debug("##### Read entry ##### {}", data.remaining());
             if (null != fenceResult) {
                 // TODO:
@@ -120,14 +120,14 @@ class ReadEntryProcessor extends PacketProcessorBase {
         LOG.trace("Read entry rc = {} for {}",
                 new Object[] { errorCode, read });
         if (errorCode == BookieProtocol.EOK) {
-            assert data != null;
+            requestProcessor.readEntryStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
+            sendResponse(errorCode, ResponseBuilder.buildReadResponse(data, read),
+                         requestProcessor.readRequestStats);
 
-            channel.write(ResponseBuilder.buildReadResponse(data, read));
-            long elapsedTime = MathUtils.now() - startTime;
-            BKStats.getInstance().getOpStats(BKStats.STATS_READ).updateLatency(elapsedTime);
         } else {
-            channel.write(ResponseBuilder.buildErrorResponse(errorCode, read));
-            BKStats.getInstance().getOpStats(BKStats.STATS_READ).incrementFailedOps();
+            requestProcessor.readEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
+            sendResponse(errorCode, ResponseBuilder.buildErrorResponse(errorCode, read),
+                         requestProcessor.readRequestStats);
         }
     }
 }

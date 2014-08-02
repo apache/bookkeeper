@@ -298,6 +298,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-739: Test timeouts mostly ignored (sijie via fpj)
 
+      BOOKKEEPER-697: stats collection on bookkeeper server (sijie via fpj)
+
     NEW FEATURE:
 
       BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj)
