@@ -80,14 +80,23 @@ public class ZooKeeperUtil {
         ZkTmpDir.delete();
         ZkTmpDir.mkdir();
 
+        // start the server and client.
+        restartServer();
+
+        // initialize the zk client with values
+        zkc.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        zkc.create("/ledgers/available", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+    }
+
+    public void restartServer() throws Exception {
         zks = new ZooKeeperServer(ZkTmpDir, ZkTmpDir,
-                                  ZooKeeperServer.DEFAULT_TICK_TIME);
+                ZooKeeperServer.DEFAULT_TICK_TIME);
         serverFactory = new NIOServerCnxnFactory();
         serverFactory.configure(zkaddr, 100);
         serverFactory.startup(zks);
 
         boolean b = ClientBase.waitForServerUp(getZooKeeperConnectString(),
-                                               ClientBase.CONNECTION_TIMEOUT);
+                ClientBase.CONNECTION_TIMEOUT);
         LOG.debug("Server up: " + b);
 
         // create a zookeeper client
@@ -95,10 +104,6 @@ public class ZooKeeperUtil {
         ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(10000);
         zkc = ZkUtils.createConnectedZookeeperClient(
                 getZooKeeperConnectString(), w);
-
-        // initialize the zk client with values
-        zkc.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        zkc.create("/ledgers/available", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
     }
 
     public void sleepServer(final int seconds, final CountDownLatch l)
@@ -137,7 +142,7 @@ public class ZooKeeperUtil {
         zk2.close();
     }
 
-    public void killServer() throws Exception {
+    public void stopServer() throws Exception {
         if (zkc != null) {
             zkc.close();
         }
@@ -146,12 +151,16 @@ public class ZooKeeperUtil {
         if (serverFactory != null) {
             serverFactory.shutdown();
             assertTrue("waiting for server down",
-                       ClientBase.waitForServerDown(getZooKeeperConnectString(),
-                                                    ClientBase.CONNECTION_TIMEOUT));
+                    ClientBase.waitForServerDown(getZooKeeperConnectString(),
+                            ClientBase.CONNECTION_TIMEOUT));
         }
         if (zks != null) {
             zks.getTxnLogFactory().close();
         }
+    }
+
+    public void killServer() throws Exception {
+        stopServer();
         // ServerStats.unregister();
         FileUtils.deleteDirectory(ZkTmpDir);
     }
