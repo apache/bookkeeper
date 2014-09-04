@@ -75,7 +75,6 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
                     requestProcessor.addEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
                 }
 
-                Channel conn = (Channel) ctx;
                 StatusCode status;
                 switch (rc) {
                     case BookieProtocol.EOK:
