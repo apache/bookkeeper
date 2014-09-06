@@ -82,6 +82,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
         assertEquals(i.get(), BKException.Code.NotEnoughBookiesException);
         assertEquals(0, lh.getLength());
         assertEquals(LedgerHandle.INVALID_ENTRY_ID, lh.getLastAddConfirmed());
+        startBKCluster();
         LedgerHandle newLh = bkc.openLedger(lh.getId(), DigestType.CRC32, new byte[] {});
         assertEquals(0, newLh.getLength());
         assertEquals(LedgerHandle.INVALID_ENTRY_ID, newLh.getLastAddConfirmed());
