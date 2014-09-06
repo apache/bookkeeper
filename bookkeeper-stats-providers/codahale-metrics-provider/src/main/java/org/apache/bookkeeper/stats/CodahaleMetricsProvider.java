@@ -23,6 +23,7 @@ import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Slf4jReporter;
+import com.codahale.metrics.JmxReporter;
 import com.google.common.base.Strings;
 import com.google.common.net.HostAndPort;
 import static com.codahale.metrics.MetricRegistry.name;
@@ -51,6 +52,7 @@ public class CodahaleMetricsProvider implements StatsProvider {
 
     MetricRegistry metrics = null;
     List<ScheduledReporter> reporters = new ArrayList<ScheduledReporter>();
+    JmxReporter jmx = null;
 
     synchronized void initIfNecessary() {
         if (metrics == null) {
@@ -73,6 +75,7 @@ public class CodahaleMetricsProvider implements StatsProvider {
         String graphiteHost = conf.getString("codahaleStatsGraphiteEndpoint");
         String csvDir = conf.getString("codahaleStatsCSVEndpoint");
         String slf4jCat = conf.getString("codahaleStatsSlf4jEndpoint");
+        String jmxDomain = conf.getString("codahaleStatsJmxEndpoint");
 
         if (!Strings.isNullOrEmpty(graphiteHost)) {
             LOG.info("Configuring stats with graphite");
@@ -110,6 +113,16 @@ public class CodahaleMetricsProvider implements StatsProvider {
                           .convertDurationsTo(TimeUnit.MILLISECONDS)
                           .build());
         }
+        if (!Strings.isNullOrEmpty(jmxDomain)) {
+            LOG.info("Configuring stats with jmx");
+            jmx = JmxReporter.forRegistry(metrics)
+                .inDomain(jmxDomain)
+                .convertRatesTo(TimeUnit.SECONDS)
+                .convertDurationsTo(TimeUnit.MILLISECONDS)
+                .build();
+            jmx.start();
+        }
+
         for (ScheduledReporter r : reporters) {
             r.start(metricsOutputFrequency, TimeUnit.SECONDS);
         }
@@ -120,6 +133,9 @@ public class CodahaleMetricsProvider implements StatsProvider {
         for (ScheduledReporter r : reporters) {
             r.report();
             r.stop();
+        }
+        if (jmx != null) {
+            jmx.stop();
         }
     }
 
