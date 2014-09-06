@@ -222,6 +222,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-718: AuditorLedgerCheckerTest is flakey (ivank via sijie)
 
+        BOOKKEEPER-736: Stats for AutoRecovery (sijie)
+
       bookkeeper-benchmark:
 
         BOOKKEEPER-768: fix typo 'seconds' to milliseconds in benchmark output (jialin via sijie)

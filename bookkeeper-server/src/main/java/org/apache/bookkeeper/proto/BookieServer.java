@@ -54,6 +54,7 @@ import com.google.common.annotations.VisibleForTesting;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_SCOPE;
+import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_SCOPE;
 
 /**
  * Implements the server-side part of the BookKeeper protocol.
@@ -97,7 +98,7 @@ public class BookieServer {
         this.nettyServer = new BookieNettyServer(this.conf, requestProcessor);
         isAutoRecoveryDaemonEnabled = conf.isAutoRecoveryDaemonEnabled();
         if (isAutoRecoveryDaemonEnabled) {
-            this.autoRecoveryMain = new AutoRecoveryMain(conf);
+            this.autoRecoveryMain = new AutoRecoveryMain(conf, statsLogger.scope(REPLICATION_SCOPE));
         }
     }
 

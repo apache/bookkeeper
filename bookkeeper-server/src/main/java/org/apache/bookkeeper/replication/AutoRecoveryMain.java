@@ -32,6 +32,8 @@ import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.cli.BasicParser;
@@ -46,6 +48,9 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
+import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;
 
 /**
  * Class to start/stop the AutoRecovery daemons Auditor and ReplicationWorker
@@ -66,6 +71,12 @@ public class AutoRecoveryMain {
     public AutoRecoveryMain(ServerConfiguration conf) throws IOException,
             InterruptedException, KeeperException, UnavailableException,
             CompatibilityException {
+        this(conf, NullStatsLogger.INSTANCE);
+    }
+
+    public AutoRecoveryMain(ServerConfiguration conf, StatsLogger statsLogger)
+            throws IOException, InterruptedException, KeeperException, UnavailableException,
+            CompatibilityException {
         this.conf = conf;
         ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(conf.getZkTimeout()) {
             @Override
@@ -81,9 +92,10 @@ public class AutoRecoveryMain {
             }
         };
         zk = ZkUtils.createConnectedZookeeperClient(conf.getZkServers(), w);
-        auditorElector = new AuditorElector(Bookie.getBookieAddress(conf).toString(), conf, zk);
+        auditorElector = new AuditorElector(Bookie.getBookieAddress(conf).toString(), conf,
+                zk, statsLogger.scope(AUDITOR_SCOPE));
         replicationWorker = new ReplicationWorker(zk, conf,
-                Bookie.getBookieAddress(conf));
+                Bookie.getBookieAddress(conf), statsLogger.scope(REPLICATION_WORKER_SCOPE));
         deathWatcher = new AutoRecoveryDeathWatcher(this);
     }
 
