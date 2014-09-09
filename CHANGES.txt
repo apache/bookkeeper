@@ -320,6 +320,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-697: stats collection on bookkeeper server (sijie via fpj)
 
+      BOOKKEEPER-781: Fix OOM on Hedwig Tests (sijie via fpj)
+
     NEW FEATURE:
 
       BOOKKEEPER-562: Ability to tell if a ledger is closed or not (fpj)
