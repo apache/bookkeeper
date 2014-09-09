@@ -137,15 +137,14 @@ public class TestTryReadLastConfirmed extends BookKeeperClusterTestCase {
             assertTrue(success.get());
             assertTrue(numCallbacks.get() == 1);
 
-            lh.close();
-            readLh.close();
-
             // start the bookies
             for (ServerConfiguration conf : confs) {
                 bs.add(startBookie(conf));
                 bsConfs.add(conf);
             }
         }
+        lh.close();
+        readLh.close();
     }
 
     @Test(timeout = 60000)
