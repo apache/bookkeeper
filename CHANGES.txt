@@ -66,6 +66,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-765: bookkeeper script should fall back to java in path if JAVA_HOME is not set (ivank)
 
+      BOOKKEEPER-776: Flaky test BookieRecoveryTest (ivank via fpj)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)

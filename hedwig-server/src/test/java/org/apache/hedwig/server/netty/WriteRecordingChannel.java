@@ -167,4 +167,9 @@ public class WriteRecordingChannel implements Channel {
         throw new RuntimeException("Not intended");
     }
 
+    @Override
+    public void setAttachment(Object attachment) {}
+
+    @Override
+    public Object getAttachment() { throw new RuntimeException("Not intended"); }
 }
