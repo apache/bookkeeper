@@ -226,6 +226,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-736: Stats for AutoRecovery (sijie)
 
+	BOOKKEEPER-775: Improve MultipleThreadReadTest to reduce flakiness (sijie via fpj)
+
       bookkeeper-benchmark:
 
         BOOKKEEPER-768: fix typo 'seconds' to milliseconds in benchmark output (jialin via sijie)

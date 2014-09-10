@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.test;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +18,7 @@ package org.apache.bookkeeper.test;
  * under the License.
  *
  */
+package org.apache.bookkeeper.test;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,11 +26,10 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.NoSuchElementException;
-
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -41,22 +39,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.*;
+import static com.google.common.base.Charsets.UTF_8;
 
 public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
     static Logger LOG = LoggerFactory.getLogger(MultipleThreadReadTest.class);
+
     BookKeeper.DigestType digestType;
-    byte[] ledgerPassword = "aaa".getBytes();
+    byte [] ledgerPassword = "aaa".getBytes();
     private int entriesPerLedger = 1000;
     final SyncObj mainSyncObj = new SyncObj();
 
     class SyncObj {
         volatile int counter;
-        boolean value;
         boolean failed;
-
         public SyncObj() {
             counter = 0;
-            value = false;
             failed = false;
         }
     }
@@ -64,8 +61,9 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
     final List<BookKeeperTestClient> clients = new ArrayList<BookKeeperTestClient>();
 
     public MultipleThreadReadTest() {
-        super(3);
-        this.digestType = DigestType.CRC32;
+        super(6);
+        this.digestType = BookKeeper.DigestType.CRC32;
+        baseClientConf.setAddEntryTimeout(20);
     }
 
     private void createClients(int numClients) {
@@ -94,28 +92,24 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
         clients.clear();
     }
 
-    private Thread getWriterThread(final int tNo, final LedgerHandle lh) {
+    private Thread getWriterThread(final int tNo, final LedgerHandle lh, final AtomicBoolean resultHolder) {
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
                 final SyncObj tSync = new SyncObj();
                 for (int j = 0; j < entriesPerLedger; j++) {
-                    byte[] entry = ("Entry-" + tNo + "-" + j).getBytes();
+                    final byte[] entry = ("Entry-" + tNo + "-" + j).getBytes();
                     lh.asyncAddEntry(entry, new AsyncCallback.AddCallback() {
                         @Override
                         public void addComplete(int rc, LedgerHandle ledgerHandle, long eid, Object o) {
-                            SyncObj syncObj = (SyncObj) o;
-                            try {
+                            SyncObj syncObj = (SyncObj)o;
+                            synchronized (syncObj) {
                                 if (rc != BKException.Code.OK) {
-                                    fail("Add entries returned a code that is not OK. rc:" + rc);
-                                }
-                                synchronized (syncObj) {
-                                    syncObj.counter++;
-                                    syncObj.notify();
-                                }
-                            } catch (AssertionError e) {
-                                synchronized (syncObj) {
+                                    LOG.error("Add entry {} failed : rc = {}", new String(entry, UTF_8), rc);
                                     syncObj.failed = true;
+                                    syncObj.notify();
+                                } else {
+                                    syncObj.counter++;
                                     syncObj.notify();
                                 }
                             }
@@ -130,20 +124,19 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
                             Thread.currentThread().interrupt();
                         }
                     }
-                    if (tSync.failed) {
-                        fail("Failed to add entries.");
-                    }
+                    resultHolder.set(!tSync.failed);
                 }
                 // close this handle
                 try {
                     lh.close();
-                } catch (Exception e) {
-                    if (e instanceof InterruptedException) {
-                        Thread.currentThread().interrupt();
-                    }
+                } catch (InterruptedException ie) {
+                    LOG.error("Interrupted on closing ledger handle {} : ", lh.getId(), ie);
+                    Thread.currentThread().interrupt();
+                } catch (BKException bke) {
+                    LOG.error("Error on closing ledger handle {} : ", lh.getId(), bke);
                 }
             }
-        });
+        }, "WriteThread(Lid=" + lh.getId() + ")");
         t.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread thread, Throwable throwable) {
@@ -155,66 +148,73 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
         return t;
     }
 
-    private Thread getReaderThread(final int tNo, final LedgerHandle lh, final int ledgerNumber) {
+    private Thread getReaderThread(final int tNo, final LedgerHandle lh, final int ledgerNumber,
+                                   final AtomicBoolean resultHolder) {
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
-                try {
-                    final SyncObj tSync = new SyncObj();
-                    lh.asyncReadEntries(0, entriesPerLedger - 1, new AsyncCallback.ReadCallback() {
-                        @Override
-                        public void readComplete(int rc, LedgerHandle ledgerHandle, Enumeration<LedgerEntry> list,
-                                        Object o) {
-                            SyncObj syncObj = (SyncObj) o;
+                //LedgerHandle lh = clientList.get(0).openLedger(ledgerIds.get(tNo % numLedgers), digestType, ledgerPassword);
+                long startEntryId = 0;
+                long endEntryId;
+                long eid = 0;
+                while (startEntryId <= entriesPerLedger - 1) {
+                    endEntryId = Math.min(startEntryId + 50 - 1, entriesPerLedger - 1);
+                    final long numEntries = (endEntryId - startEntryId) + 1;
+                    boolean success = true;
+                    try {
+                        Enumeration<LedgerEntry> list = lh.readEntries(startEntryId, endEntryId);
+                        for (int j = 0; j < numEntries; j++) {
+                            LedgerEntry e;
                             try {
-                                if (rc != BKException.Code.OK) {
-                                    fail("Read entries returned a code that is not OK. rc:" + rc);
-                                }
-                                for (int j = 0; j < entriesPerLedger; j++) {
-                                    LedgerEntry e = null;
-                                    try {
-                                        e = list.nextElement();
-                                    } catch (NoSuchElementException exception) {
-                                        fail("Short read for ledger:" + ledgerHandle.getId());
-                                    }
-                                    byte[] data = e.getEntry();
-                                    if (!Arrays.equals(("Entry-" + ledgerNumber + "-" + j).getBytes(), data)) {
-                                        fail("Wrong entry while reading from ledger");
-                                    }
-                                }
-                                if (list.hasMoreElements()) {
-                                    fail("Read more elements than we wrote for ledger:" + ledgerHandle.getId());
-                                }
-                            } catch (AssertionError e) {
-                                synchronized (syncObj) {
-                                    syncObj.failed = true;
-                                    syncObj.notify();
-                                }
-                            } finally {
-                                synchronized (syncObj) {
-                                    syncObj.value = true;
-                                    syncObj.notify();
-                                }
+                                e = list.nextElement();
+                            } catch (NoSuchElementException exception) {
+                                success = false;
+                                break;
+                            }
+                            long curEid = eid++;
+                            if (e.getEntryId() != curEid) {
+                                LOG.error("Expected entry id {} for ledger {} but {} found.",
+                                          new Object[] { curEid, lh.getId(), e.getEntryId() });
+                                success = false;
+                                break;
+                            }
+                            byte[] data = e.getEntry();
+                            if (!Arrays.equals(("Entry-" + ledgerNumber + "-" + e.getEntryId()).getBytes(), data)) {
+                                LOG.error("Expected entry data 'Entry-{}-{}' but {} found for ledger {}.",
+                                          new Object[] { ledgerNumber, e.getEntryId(), new String(data, UTF_8), lh.getId() });
+                                success = false;
+                                break;
                             }
                         }
-                    }, tSync);
-                    synchronized (tSync) {
-                        while (!tSync.value) {
-                            tSync.wait();
+                        if (success) {
+                            success = !list.hasMoreElements();
+                            if (!success) {
+                                LOG.error("Found more entries returned on reading ({}-{}) from ledger {}.",
+                                          new Object[] { startEntryId, endEntryId, lh.getId() });
+                            }
                         }
-                        if (tSync.failed) {
-                            fail("Invalid read while reading form ledger:" + lh.getId());
-                        }
+                    } catch (InterruptedException ie) {
+                        LOG.error("Interrupted on reading entries ({} - {}) from ledger {} : ",
+                                  new Object[] { startEntryId, endEntryId, lh.getId(), ie });
+                        Thread.currentThread().interrupt();
+                        success = false;
+                    } catch (BKException bke) {
+                        LOG.error("Failed on reading entries ({} - {}) from ledger {} : ",
+                                  new Object[] { startEntryId, endEntryId, lh.getId(), bke });
+                        success = false;
                     }
-                } catch (InterruptedException e) {
-                    fail("Interrupted while waiting for replies.");
-                    Thread.currentThread().interrupt();
+                    resultHolder.set(success);
+                    if (!success) {
+                        break;
+                    }
+                    startEntryId = endEntryId + 1;
                 }
             }
-        });
+        }, "ReadThread(Tid =" + tNo  + ", Lid=" + lh.getId() + ")");
         t.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread thread, Throwable throwable) {
+                LOG.error("Uncaught exception in thread {} : ", thread.getName(), throwable);
                 synchronized (mainSyncObj) {
                     mainSyncObj.failed = true;
                 }
@@ -229,7 +229,7 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
      * @throws java.io.IOException
      */
     public void multiLedgerMultiThreadRead(final int numLedgers,
-                    final int numThreads) throws IOException {
+                                           final int numThreads) throws IOException {
         assertTrue(numLedgers != 0 && numThreads >= numLedgers && numThreads % numLedgers == 0);
 
         // We create numThread/numLedger clients so that each client can be used to open a handle.
@@ -237,14 +237,17 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
             final List<LedgerHandle> oldLedgerHandles = new ArrayList<LedgerHandle>();
             final List<Long> ledgerIds = new ArrayList<Long>();
             List<Thread> threadList = new ArrayList<Thread>();
+            List<AtomicBoolean> writeResults = new ArrayList<AtomicBoolean>();
             // Start write threads.
             // Only one thread writes to a ledger, so just use numLedgers instead.
             for (int i = 0; i < numLedgers; i++) {
                 LedgerHandle lh = bkc.createLedger(digestType, ledgerPassword);
                 oldLedgerHandles.add(lh);
                 ledgerIds.add(lh.getId());
+                AtomicBoolean writeResult = new AtomicBoolean(false);
+                writeResults.add(writeResult);
                 Thread t;
-                threadList.add(t = getWriterThread(i, oldLedgerHandles.get(i)));
+                threadList.add(t = getWriterThread(i, oldLedgerHandles.get(i), writeResult));
                 t.start();
             }
             // Wait for the threads to complete
@@ -253,8 +256,12 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
             }
             synchronized (mainSyncObj) {
                 if (mainSyncObj.failed) {
-                    fail("Test failed because we couldn't add entries.");
+                    fail("Test failed because we encountered uncaught exception on adding entries.");
                 }
+            }
+            for (int i = 0; i < numLedgers; i++) {
+                assertTrue("Failed on adding entries for ledger " + oldLedgerHandles.get(i).getId(),
+                           writeResults.get(i).get());
             }
             // Close the ledger handles.
             for (LedgerHandle lh : oldLedgerHandles) {
@@ -274,10 +281,13 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
             closeClientsAndClear();
             createClients(numThreads / numLedgers);
 
+            List<AtomicBoolean> readResults = new ArrayList<AtomicBoolean>();
             for (int i = 0; i < numThreads; i++) {
+                AtomicBoolean readResult = new AtomicBoolean(false);
                 Thread t;
                 threadList.add(t = getReaderThread(i, clients.get(i / numLedgers)
-                    .openLedger(ledgerIds.get(i % numLedgers), digestType, ledgerPassword), i % numLedgers));
+                        .openLedger(ledgerIds.get(i % numLedgers), digestType, ledgerPassword), i % numLedgers, readResult));
+                readResults.add(readResult);
                 t.start();
             }
             // Wait for the threads to complete.
@@ -286,8 +296,11 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
             }
             synchronized (mainSyncObj) {
                 if (mainSyncObj.failed) {
-                    fail("Test failed because we couldn't read entries");
+                    fail("Test failed because we encountered uncaught exception on reading entries");
                 }
+            }
+            for (AtomicBoolean readResult : readResults) {
+                assertTrue("Failed on read entries", readResult.get());
             }
         } catch (BKException e) {
             LOG.error("Test failed", e);
@@ -298,17 +311,17 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void test10Ledgers20ThreadsRead() throws IOException {
         multiLedgerMultiThreadRead(10, 20);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void test10Ledgers200ThreadsRead() throws IOException {
         multiLedgerMultiThreadRead(10, 200);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void test1Ledger50ThreadsRead() throws IOException {
         multiLedgerMultiThreadRead(1, 50);
     }
