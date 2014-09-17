@@ -33,7 +33,6 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.zookeeper.KeeperException;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +45,7 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
 
     BookKeeper.DigestType digestType;
     byte [] ledgerPassword = "aaa".getBytes();
-    private int entriesPerLedger = 1000;
+    private int entriesPerLedger = 100;
     final SyncObj mainSyncObj = new SyncObj();
 
     class SyncObj {
@@ -58,7 +57,7 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
         }
     }
 
-    final List<BookKeeperTestClient> clients = new ArrayList<BookKeeperTestClient>();
+    BookKeeperTestClient readBkc;
 
     public MultipleThreadReadTest() {
         super(6);
@@ -66,30 +65,10 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
         baseClientConf.setAddEntryTimeout(20);
     }
 
-    private void createClients(int numClients) {
-        closeClientsAndClear();
-        for (int i = 0; i < numClients; i++) {
-            try {
-                clients.add(new BookKeeperTestClient(baseClientConf));
-            } catch (KeeperException e) {
-                fail("Keeper exception while creating clients");
-            } catch (IOException e) {
-                fail("IOException while creating clients");
-            } catch (InterruptedException e) {
-                fail("Interrupted while creating clients");
-            }
-        }
-    }
-
-    private void closeClientsAndClear() {
-        for (BookKeeperTestClient client : clients) {
-            try {
-                client.close();
-            } catch (Exception e) {
-                LOG.warn("Error closing client");
-            }
-        }
-        clients.clear();
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        readBkc = new BookKeeperTestClient(baseClientConf);
     }
 
     private Thread getWriterThread(final int tNo, final LedgerHandle lh, final AtomicBoolean resultHolder) {
@@ -158,7 +137,7 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
                 long endEntryId;
                 long eid = 0;
                 while (startEntryId <= entriesPerLedger - 1) {
-                    endEntryId = Math.min(startEntryId + 50 - 1, entriesPerLedger - 1);
+                    endEntryId = Math.min(startEntryId + 10 - 1, entriesPerLedger - 1);
                     final long numEntries = (endEntryId - startEntryId) + 1;
                     boolean success = true;
                     try {
@@ -276,17 +255,12 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
             mainSyncObj.failed = false;
             threadList.clear();
 
-            // Create clients used for reading. Each client is responsible for a disjoint range of numLedgers
-            // threads. Client X will be used by threads [numLedgers*X .. numLedgers*(X+1))
-            closeClientsAndClear();
-            createClients(numThreads / numLedgers);
-
             List<AtomicBoolean> readResults = new ArrayList<AtomicBoolean>();
             for (int i = 0; i < numThreads; i++) {
                 AtomicBoolean readResult = new AtomicBoolean(false);
                 Thread t;
-                threadList.add(t = getReaderThread(i, clients.get(i / numLedgers)
-                        .openLedger(ledgerIds.get(i % numLedgers), digestType, ledgerPassword), i % numLedgers, readResult));
+                threadList.add(t = getReaderThread(i, readBkc.openLedger(ledgerIds.get(i % numLedgers),
+                        digestType, ledgerPassword), i % numLedgers, readResult));
                 readResults.add(readResult);
                 t.start();
             }
@@ -322,13 +296,13 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
     }
 
     @Test(timeout = 60000)
-    public void test1Ledger50ThreadsRead() throws IOException {
-        multiLedgerMultiThreadRead(1, 50);
+    public void test1Ledger20ThreadsRead() throws IOException {
+        multiLedgerMultiThreadRead(1, 20);
     }
 
     @Override
     public void tearDown() throws Exception {
-        closeClientsAndClear();
+        readBkc.close();
         super.tearDown();
     }
 }
