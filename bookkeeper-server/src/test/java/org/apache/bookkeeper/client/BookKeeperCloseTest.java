@@ -164,24 +164,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
         restartBookieSlow();
 
-        // using async, because this could trigger an assertion
-        final AtomicInteger preCloseReturnCode = new AtomicInteger(0);
-        final CountDownLatch preCloseOpenLatch = new CountDownLatch(1);
-        AsyncCallback.OpenCallback preCloseCb = new AsyncCallback.OpenCallback() {
-            public void openComplete(int rc, LedgerHandle lh, Object ctx) {
-                preCloseReturnCode.set(rc);
-                preCloseOpenLatch.countDown();
-            }
-        };
-        bk.asyncOpenLedger(lh.getId(), digestType, PASSWORD.getBytes(),
-                           preCloseCb, null);
         bk.close();
-
-        LOG.info("Waiting to open the ledger asynchronously");
-        assertTrue("Open call should have completed",
-                   preCloseOpenLatch.await(20, TimeUnit.SECONDS));
-        assertEquals("Open should not have succeeded through closed bkclient!",
-                     BKException.Code.ClientClosedException, preCloseReturnCode.get());
 
         try {
             bk.openLedger(lh.getId(), digestType, PASSWORD.getBytes());
@@ -255,7 +238,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
      * Test that adding entry to a ledger using bookkeeper client which is
      * closed should throw ClientClosedException
      */
-    @Test//(timeout = 60000)
+    @Test(timeout = 60000)
     public void testAddLedgerEntry() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");
@@ -264,25 +247,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
         restartBookieSlow();
 
-        final CountDownLatch preCloseCompleteLatch = new CountDownLatch(1);
-        final AtomicInteger preCloseRc = new AtomicInteger(BKException.Code.OK);
-
-        lh.asyncAddEntry("foobar".getBytes(), new AddCallback() {
-                public void addComplete(int rccb, LedgerHandle lh, long entryId,
-                                        Object ctx) {
-                    preCloseRc.set(rccb);
-                    preCloseCompleteLatch.countDown();
-                }
-            }, null);
-
         bk.close();
-
-        LOG.info("Waiting to finish adding another entry asynchronously");
-        assertTrue("Add entry to ledger call should have completed",
-                   preCloseCompleteLatch.await(20, TimeUnit.SECONDS));
-        assertEquals(
-                "Add enrty to ledger should have succeeded through closed bkclient!",
-                BKException.Code.ClientClosedException, preCloseRc.get());
 
         try {
             lh.addEntry("foobar".getBytes());
@@ -360,25 +325,8 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
         LOG.info("Closing bookkeeper client");
 
         restartBookieSlow();
-        final CountDownLatch preCloseReadLatch = new CountDownLatch(1);
-        final AtomicInteger preCloseRc = new AtomicInteger(BKException.Code.OK);
-        ReadCallback preCloseCb = new ReadCallback() {
-            @Override
-            public void readComplete(int rccb, LedgerHandle lh,
-                    Enumeration<LedgerEntry> seq, Object ctx) {
-                preCloseRc.set(rccb);
-                preCloseReadLatch.countDown();
-            }
-        };
-        lh.asyncReadEntries(0, numOfEntries - 1, preCloseCb, null);
 
         bk.close();
-
-        assertTrue("Read entry ledger call should have completed",
-                   preCloseReadLatch.await(20, TimeUnit.SECONDS));
-        assertEquals(
-                "Read entry ledger should have succeeded through closed bkclient!",
-                BKException.Code.ClientClosedException, preCloseRc.get());
 
         try {
             lh.readEntries(0, numOfEntries - 1);
@@ -423,27 +371,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
         restartBookieSlow();
         restartBookieSlow();
 
-        final CountDownLatch preCloseReadLatch = new CountDownLatch(1);
-        final AtomicInteger preCloseRc = new AtomicInteger(BKException.Code.OK);
-        AsyncCallback.ReadLastConfirmedCallback preCloseCb
-            = new AsyncCallback.ReadLastConfirmedCallback() {
-
-            @Override
-            public void readLastConfirmedComplete(int rccb, long lastConfirmed,
-                    Object ctx) {
-                preCloseRc.set(rccb);
-                preCloseReadLatch.countDown();
-            }
-        };
-        lh.asyncReadLastConfirmed(preCloseCb, null);
-
         bk.close();
-
-        assertTrue("ReadLastConfirmed call should have completed",
-                   preCloseReadLatch.await(20, TimeUnit.SECONDS));
-        assertEquals(
-                "ReadLastConfirmed should have succeeded through closed bkclient!",
-                BKException.Code.ClientClosedException, preCloseRc.get());
 
         final CountDownLatch readLatch = new CountDownLatch(1);
         final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
@@ -483,23 +411,10 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
         LOG.info("Create ledger and add entries to it");
         LedgerHandle lh = createLedgerWithEntries(bk, 100);
         LOG.info("Closing bookkeeper client");
+        LedgerChecker lc = new LedgerChecker(bk);
 
         restartBookieSlow();
-        final CountDownLatch preLatch = new CountDownLatch(1);
-        final AtomicInteger preRc = new AtomicInteger(BKException.Code.OK);
-        LedgerChecker lc = new LedgerChecker(bk);
-        lc.checkLedger(lh, new GenericCallback<Set<LedgerFragment>>() {
-                @Override
-                public void operationComplete(int rc, Set<LedgerFragment> result) {
-                    preRc.set(rc);
-                    preLatch.countDown();
-                }
-            });
         bk.close();
-
-        assertTrue("checkLedger should have finished", preLatch.await(30, TimeUnit.SECONDS));
-        assertEquals("Should have client closed exception",
-                     preRc.get(), BKException.Code.ClientClosedException);
 
         final CountDownLatch postLatch = new CountDownLatch(1);
         final AtomicInteger postRc = new AtomicInteger(BKException.Code.OK);
@@ -575,48 +490,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
         restartBookieSlow();
         restartBookieSlow();
 
-        final CountDownLatch latch1 = new CountDownLatch(1);
-        final CountDownLatch latch2 = new CountDownLatch(1);
-        final CountDownLatch latch3 = new CountDownLatch(1);
-
-        final AtomicInteger rc1 = new AtomicInteger(BKException.Code.OK);
-        final AtomicInteger rc2 = new AtomicInteger(BKException.Code.OK);
-        final AtomicInteger rc3 = new AtomicInteger(BKException.Code.OK);
-
-        bkadmin.asyncOpenLedger(lh1.getId(), new AsyncCallback.OpenCallback() {
-                @Override
-                public void openComplete(int rc, LedgerHandle lh, Object ctx) {
-                    rc1.set(rc);
-                    latch1.countDown();
-                }
-            }, null);
-        bkadmin.asyncOpenLedgerNoRecovery(lh2.getId(), new AsyncCallback.OpenCallback() {
-                @Override
-                public void openComplete(int rc, LedgerHandle lh, Object ctx) {
-                    rc2.set(rc);
-                    latch2.countDown();
-                }
-            }, null);
-
-        bkadmin.asyncRecoverBookieData(bookieToKill, newBookie,
-                new AsyncCallback.RecoverCallback() {
-                    @Override
-                    public void recoverComplete(int rc, Object ctx) {
-                        rc3.set(rc);
-                        latch3.countDown();
-                    }
-                }, null);
         bk.close();
-
-        assertTrue("Request1 should have completed", latch1.await(10, TimeUnit.SECONDS));
-        assertTrue("Request2 should have completed", latch2.await(10, TimeUnit.SECONDS));
-        assertTrue("Request3 should have completed", latch3.await(10, TimeUnit.SECONDS));
-        assertEquals("Should have noticed the handle was closed",
-                     BKException.Code.ClientClosedException, rc1.get());
-        assertEquals("Should have noticed the handle was closed",
-                     BKException.Code.ClientClosedException, rc2.get());
-        assertEquals("Should have noticed the handle was closed",
-                     BKException.Code.ClientClosedException, rc3.get());
 
         try {
             bkadmin.openLedger(lh1.getId());

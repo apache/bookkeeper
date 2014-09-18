@@ -232,6 +232,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-785: Fix javadoc warnings in trunk (ivank via sijie)
 
+        BOOKKEEPER-784: BookKeeperCloseTest#testLedgerCheck is failing intermittently (ivank via sijie)
+
       bookkeeper-benchmark:
 
         BOOKKEEPER-768: fix typo 'seconds' to milliseconds in benchmark output (jialin via sijie)
