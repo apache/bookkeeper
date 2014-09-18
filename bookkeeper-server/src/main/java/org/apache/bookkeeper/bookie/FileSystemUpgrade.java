@@ -191,7 +191,8 @@ public class FileSystemUpgrade {
         ZooKeeper zk = newZookeeper(conf);
         try {
             Map<File,File> deferredMoves = new HashMap<File, File>();
-            Cookie c = Cookie.generateCookie(conf);
+            Cookie.Builder cookieBuilder = Cookie.generateCookie(conf);
+            Cookie c = cookieBuilder.build();
             for (File d : getAllDirectories(conf)) {
                 LOG.info("Upgrading {}", d);
                 int version = detectPreviousVersion(d);

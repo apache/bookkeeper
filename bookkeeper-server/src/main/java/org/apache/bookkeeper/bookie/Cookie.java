@@ -65,14 +65,22 @@ class Cookie {
     private final static Logger LOG = LoggerFactory.getLogger(Cookie.class);
 
     static final int CURRENT_COOKIE_LAYOUT_VERSION = 4;
-    private int layoutVersion = 0;
-    private String bookieHost = null;
-    private String journalDir = null;
-    private String ledgerDirs = null;
-    private int znodeVersion = -1;
-    private String instanceId = null;
+    private static final int DEFAULT_COOKIE_ZNODE_VERSION = Integer.MIN_VALUE;
+    private final int layoutVersion;
+    private final String bookieHost;
+    private final String journalDir;
+    private final String ledgerDirs;
+    private int znodeVersion = DEFAULT_COOKIE_ZNODE_VERSION;
+    private final String instanceId;
 
-    private Cookie() {
+    private Cookie(int layoutVersion, String bookieHost, String journalDir, String ledgerDirs, int znodeVersion,
+            String instanceId) {
+        this.layoutVersion = layoutVersion;
+        this.bookieHost = bookieHost;
+        this.journalDir = journalDir;
+        this.ledgerDirs = ledgerDirs;
+        this.znodeVersion = znodeVersion;
+        this.instanceId = instanceId;
     }
 
     public void verify(Cookie c) throws BookieException.InvalidCookieException {
@@ -121,35 +129,37 @@ class Cookie {
         return b.toString();
     }
 
-    private static Cookie parse(BufferedReader reader) throws IOException {
-        Cookie c = new Cookie();
+    private static Builder parse(BufferedReader reader) throws IOException {
+        Builder cBuilder = Cookie.newBuilder();
+        int layoutVersion = 0;
         String line = reader.readLine();
         if (null == line) {
             throw new EOFException("Exception in parsing cookie");
         }
         try {
-            c.layoutVersion = Integer.parseInt(line.trim());
+            layoutVersion = Integer.parseInt(line.trim());
+            cBuilder.setLayoutVersion(layoutVersion);
         } catch (NumberFormatException e) {
             throw new IOException("Invalid string '" + line.trim()
                     + "', cannot parse cookie.");
         }
-        if (c.layoutVersion == 3) {
-            c.bookieHost = reader.readLine();
-            c.journalDir = reader.readLine();
-            c.ledgerDirs = reader.readLine();
-        } else if (c.layoutVersion >= 4) {
-            CookieFormat.Builder builder = CookieFormat.newBuilder();
-            TextFormat.merge(reader, builder);
-            CookieFormat data = builder.build();
-            c.bookieHost = data.getBookieHost();
-            c.journalDir = data.getJournalDir();
-            c.ledgerDirs = data.getLedgerDirs();
+        if (layoutVersion == 3) {
+            cBuilder.setBookieHost(reader.readLine());
+            cBuilder.setJournalDir(reader.readLine());
+            cBuilder.setLedgerDirs(reader.readLine());
+        } else if (layoutVersion >= 4) {
+            CookieFormat.Builder cfBuilder = CookieFormat.newBuilder();
+            TextFormat.merge(reader, cfBuilder);
+            CookieFormat data = cfBuilder.build();
+            cBuilder.setBookieHost(data.getBookieHost());
+            cBuilder.setJournalDir(data.getJournalDir());
+            cBuilder.setLedgerDirs(data.getLedgerDirs());
             // Since InstanceId is optional
             if (null != data.getInstanceId() && !data.getInstanceId().isEmpty()) {
-                c.instanceId = data.getInstanceId();
+                cBuilder.setInstanceId(data.getInstanceId());
             }
         }
-        return c;
+        return cBuilder;
     }
 
     void writeToDirectory(File directory) throws IOException {
@@ -169,13 +179,25 @@ class Cookie {
         }
     }
 
+    /**
+     * Writes cookie details to ZooKeeper
+     *
+     * @param zk
+     *            ZooKeeper instance
+     * @param conf
+     *            configuration
+     *
+     * @throws KeeperException
+     * @throws InterruptedException
+     * @throws UnknownHostException
+     */
     void writeToZooKeeper(ZooKeeper zk, ServerConfiguration conf)
             throws KeeperException, InterruptedException, UnknownHostException {
         String bookieCookiePath = conf.getZkLedgersRootPath() + "/"
                 + BookKeeperConstants.COOKIE_NODE;
         String zkPath = getZkPath(conf);
         byte[] data = toString().getBytes(UTF_8);
-        if (znodeVersion != -1) {
+        if (znodeVersion != DEFAULT_COOKIE_ZNODE_VERSION) {
             zk.setData(zkPath, data, znodeVersion);
         } else {
             if (zk.exists(bookieCookiePath, false) == null) {
@@ -194,31 +216,68 @@ class Cookie {
         }
     }
 
-    void deleteFromZooKeeper(ZooKeeper zk, ServerConfiguration conf)
-            throws KeeperException, InterruptedException, UnknownHostException {
+    /**
+     * Deletes cookie from ZooKeeper and sets znode version to DEFAULT_COOKIE_ZNODE_VERSION
+     *
+     * @param zk
+     *            ZooKeeper instance
+     * @param conf
+     *            configuration
+     *
+     * @throws KeeperException
+     * @throws InterruptedException
+     * @throws UnknownHostException
+     */
+    void deleteFromZooKeeper(ZooKeeper zk, ServerConfiguration conf) throws KeeperException, InterruptedException,
+            UnknownHostException {
         String zkPath = getZkPath(conf);
-        if (znodeVersion != -1) {
+        if (znodeVersion != DEFAULT_COOKIE_ZNODE_VERSION) {
             zk.delete(zkPath, znodeVersion);
         }
-        znodeVersion = -1;
+        znodeVersion = DEFAULT_COOKIE_ZNODE_VERSION;
     }
 
-    static Cookie generateCookie(ServerConfiguration conf)
+    /**
+     * Generate cookie from the given configuration
+     *
+     * @param conf
+     *            configuration
+     *
+     * @return cookie builder object
+     *
+     * @throws UnknownHostException
+     */
+    static Builder generateCookie(ServerConfiguration conf)
             throws UnknownHostException {
-        Cookie c = new Cookie();
-        c.layoutVersion = CURRENT_COOKIE_LAYOUT_VERSION;
-        c.bookieHost = Bookie.getBookieAddress(conf).toString();
-        c.journalDir = conf.getJournalDirName();
         StringBuilder b = new StringBuilder();
         String[] dirs = conf.getLedgerDirNames();
         b.append(dirs.length);
         for (String d : dirs) {
             b.append("\t").append(d);
         }
-        c.ledgerDirs = b.toString();
-        return c;
+        Builder builder = Cookie.newBuilder();
+        builder.setLayoutVersion(CURRENT_COOKIE_LAYOUT_VERSION);
+        builder.setBookieHost(Bookie.getBookieAddress(conf).toString());
+        builder.setJournalDir(conf.getJournalDirName());
+        builder.setLedgerDirs(b.toString());
+        return builder;
     }
 
+    /**
+     * Read cookie from ZooKeeper.
+     *
+     * @param zk
+     *            ZooKeeper instance
+     * @param conf
+     *            configuration
+     *
+     * @return cookie object
+     *
+     * @throws KeeperException
+     * @throws InterruptedException
+     * @throws IOException
+     * @throws UnknownHostException
+     */
     static Cookie readFromZooKeeper(ZooKeeper zk, ServerConfiguration conf)
             throws KeeperException, InterruptedException, IOException, UnknownHostException {
         String zkPath = getZkPath(conf);
@@ -227,28 +286,34 @@ class Cookie {
         byte[] data = zk.getData(zkPath, false, stat);
         BufferedReader reader = new BufferedReader(new StringReader(new String(data, UTF_8)));
         try {
-            Cookie c = parse(reader);
-            c.znodeVersion = stat.getVersion();
-            return c;
+            Builder builder = parse(reader);
+            builder.setZnodeVersion(stat.getVersion()); // sets stat version from ZooKeeper
+            return builder.build();
         } finally {
             reader.close();
         }
     }
 
+    /**
+     * Returns cookie from the given directory
+     *
+     * @param directory
+     *            directory
+     *
+     * @return cookie object
+     *
+     * @throws IOException
+     */
     static Cookie readFromDirectory(File directory) throws IOException {
         File versionFile = new File(directory,
                 BookKeeperConstants.VERSION_FILENAME);
         BufferedReader reader = new BufferedReader(
                 new InputStreamReader(new FileInputStream(versionFile), UTF_8));
         try {
-            return parse(reader);
+            return parse(reader).build();
         } finally {
             reader.close();
         }
-    }
-
-    public void setInstanceId(String instanceId) {
-        this.instanceId = instanceId;
     }
 
     private static String getZkPath(ServerConfiguration conf)
@@ -281,5 +346,85 @@ class Cookie {
 
         InetSocketAddress addr = new InetSocketAddress(parts[0], port);
         return addr.toString().startsWith("/");
+    }
+
+    /**
+     * Cookie builder
+     */
+    public static class Builder {
+        private int layoutVersion = 0;
+        private String bookieHost = null;
+        private String journalDir = null;
+        private String ledgerDirs = null;
+        private int znodeVersion = DEFAULT_COOKIE_ZNODE_VERSION;
+        private String instanceId = null;
+
+        private Builder() {
+        }
+
+        private Builder(int layoutVersion, String bookieHost, String journalDir, String ledgerDirs,
+                int znodeVersion, String instanceId) {
+            this.layoutVersion = layoutVersion;
+            this.bookieHost = bookieHost;
+            this.journalDir = journalDir;
+            this.ledgerDirs = ledgerDirs;
+            this.znodeVersion = znodeVersion;
+            this.instanceId = instanceId;
+        }
+
+        public Builder setLayoutVersion(int layoutVersion) {
+            this.layoutVersion = layoutVersion;
+            return this;
+        }
+
+        public Builder setBookieHost(String bookieHost) {
+            this.bookieHost = bookieHost;
+            return this;
+        }
+
+        public Builder setJournalDir(String journalDir) {
+            this.journalDir = journalDir;
+            return this;
+        }
+
+        public Builder setLedgerDirs(String ledgerDirs) {
+            this.ledgerDirs = ledgerDirs;
+            return this;
+        }
+
+        public Builder setZnodeVersion(int znodeVersion) {
+            this.znodeVersion = znodeVersion;
+            return this;
+        }
+
+        public Builder setInstanceId(String instanceId) {
+            this.instanceId = instanceId;
+            return this;
+        }
+
+        public Cookie build() {
+            return new Cookie(layoutVersion, bookieHost, journalDir, ledgerDirs, znodeVersion, instanceId);
+        }
+    }
+
+    /**
+     * Returns Cookie builder
+     * 
+     * @return cookie builder
+     */
+    static Builder newBuilder() {
+        return new Builder();
+    }
+
+    /**
+     * Returns Cookie builder with the copy of given oldCookie
+     *
+     * @param oldCookie
+     *            build new cookie from this cookie
+     * @return cookie builder
+     */
+    static Builder newBuilder(Cookie oldCookie) {
+        return new Builder(oldCookie.layoutVersion, oldCookie.bookieHost, oldCookie.journalDir, oldCookie.ledgerDirs,
+                oldCookie.znodeVersion, oldCookie.instanceId);
     }
 }

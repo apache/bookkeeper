@@ -316,10 +316,11 @@ public class Bookie extends BookieCriticalThread {
                 missedCookieDirs.add(journalDirectory);
             }
             String instanceId = getInstanceId(zk);
-            Cookie masterCookie = Cookie.generateCookie(conf);
+            Cookie.Builder builder = Cookie.generateCookie(conf);
             if (null != instanceId) {
-                masterCookie.setInstanceId(instanceId);
+                builder.setInstanceId(instanceId);
             }
+            Cookie masterCookie = builder.build();
             try {
                 Cookie zkCookie = Cookie.readFromZooKeeper(zk, conf);
                 masterCookie.verify(zkCookie);

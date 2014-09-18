@@ -102,7 +102,8 @@ public class CookieTest {
             .setJournalDirName(newDirectory())
             .setLedgerDirNames(new String[] { newDirectory() })
             .setBookiePort(bookiePort);
-        Cookie c = Cookie.generateCookie(conf1);
+        Cookie.Builder cookieBuilder = Cookie.generateCookie(conf1);
+        Cookie c = cookieBuilder.build();
         c.writeToZooKeeper(zkc, conf1);
 
         String journalDir = newDirectory();
@@ -112,7 +113,8 @@ public class CookieTest {
             .setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir })
             .setBookiePort(bookiePort);
-        Cookie c2 = Cookie.generateCookie(conf2);
+        Cookie.Builder cookieBuilder2 = Cookie.generateCookie(conf2);
+        Cookie c2 = cookieBuilder2.build();
         c2.writeToDirectory(new File(journalDir, "current"));
         c2.writeToDirectory(new File(ledgerDir, "current"));
 
