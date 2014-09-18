@@ -808,8 +808,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get the number of bytes we should use as capacity for the {@link
-     * org.apache.bookkeeper.bookie.BufferedReadChannel}
+     * Get the number of bytes we should use as capacity for
+     * org.apache.bookkeeper.bookie.BufferedReadChannel
      * Default is 512 bytes
      * @return read buffer size
      */
@@ -818,8 +818,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the number of bytes we should use as capacity for the {@link
-     * org.apache.bookkeeper.bookie.BufferedReadChannel}
+     * Set the number of bytes we should use as capacity for
+     * org.apache.bookkeeper.bookie.BufferedReadChannel
      *
      * @param readBufferSize
      *          Read Buffer Size
@@ -874,7 +874,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * Get the number of bytes used as capacity for the write buffer. Default is
      * 64KB.
      * NOTE: Make sure this value is greater than the maximum message size.
-     * @return
+     * @return the size of the write buffer in bytes
      */
     public int getWriteBufferBytes() {
         return getInt(WRITE_BUFFER_SIZE, 65536);
@@ -926,7 +926,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Check if sorted-ledger storage enabled (default true)
      *
-     * @return
+     * @return true if sorted ledger storage is enabled, false otherwise
      */
     public boolean getSortedLedgerStorageEnabled() {
         return this.getBoolean(SORTED_LEDGER_STORAGE_ENABLED, true);
@@ -953,18 +953,18 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get the number of bytes we should use as chunk allocation for the {@link
-     * org.apache.bookkeeper.bookie.SkipListArena}
+     * Get the number of bytes we should use as chunk allocation for
+     * org.apache.bookkeeper.bookie.SkipListArena
      * Default is 4 MB
-     * @return
+     * @return the number of bytes to use for each chunk in the skiplist arena
      */
     public int getSkipListArenaChunkSize() {
         return getInt(SKIP_LIST_CHUNK_SIZE_ENTRY, 4096 * 1024);
     }
 
     /**
-     * Set the number of bytes w used as chunk allocation for {@link
-     * org.apache.bookkeeper.bookie.SkipListArena}.
+     * Set the number of bytes w used as chunk allocation for
+     * org.apache.bookkeeper.bookie.SkipListArena
      *
      * @param size chunk size.
      * @return server configuration object.
@@ -975,10 +975,10 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get the max size we should delegate memory allocation to VM for the {@link
-     * org.apache.bookkeeper.bookie.SkipListArena}
-     * Default is 128 KB
-     * @return
+     * Get the max size we should allocate from the skiplist arena. Allocations
+     * larger than this should be allocated directly by the VM to avoid fragmentation.
+     *
+     * @return max size allocatable from the skiplist arena (Default is 128 KB)
      */
     public int getSkipListArenaMaxAllocSize() {
         return getInt(SKIP_LIST_MAX_ALLOC_ENTRY, 128 * 1024);
@@ -1101,7 +1101,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Returns the warning threshold for disk usage. If disk usage
      * goes beyond this, a garbage collection cycle will be forced.
-     * @return
+     * @return the percentage at which a disk usage warning will trigger
      */
     public float getDiskUsageWarnThreshold() {
         return getFloat(DISK_USAGE_WARN_THRESHOLD, 0.90f);
@@ -1123,7 +1123,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Returns disk free space threshold. By default it is 0.95.
      *
-     * @return float
+     * @return the percentage at which a disk will be considered full
      */
     public float getDiskUsageThreshold() {
         return getFloat(DISK_USAGE_THRESHOLD, 0.95f);

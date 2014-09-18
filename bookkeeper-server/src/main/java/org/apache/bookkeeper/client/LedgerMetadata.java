@@ -227,11 +227,11 @@ public class LedgerMetadata {
     }
 
     /**
-     * the entry id > the given entry-id at which the next ensemble change takes
-     * place ( -1 if no further ensemble changes)
+     * the entry id greater than the given entry-id at which the next ensemble change takes
+     * place
      *
      * @param entryId
-     * @return
+     * @return the entry id of the next ensemble change (-1 if no further ensemble changes) 
      */
     long getNextEnsembleChange(long entryId) {
         SortedMap<Long, ArrayList<BookieSocketAddress>> tailMap = ensembles.tailMap(entryId + 1);
@@ -435,10 +435,10 @@ public class LedgerMetadata {
     }
 
     /**
-     * Is the metadata newer that given <i>newMeta</i>.
+     * Is the metadata newer than given <i>newMeta</i>.
      *
-     * @param newMeta
-     * @return
+     * @param newMeta the metadata to compare
+     * @return true if <i>this</i> is newer than <i>newMeta</i>, false otherwise
      */
     boolean isNewerThan(LedgerMetadata newMeta) {
         if (null == version) {

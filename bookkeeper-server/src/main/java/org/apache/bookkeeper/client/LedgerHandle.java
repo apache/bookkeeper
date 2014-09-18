@@ -187,7 +187,7 @@ public class LedgerHandle {
      *  Add to the length of the ledger in bytes.
      *
      * @param delta
-     * @return
+     * @return the length of the ledger after the addition
      */
     long addToLength(long delta) {
         this.length += delta;

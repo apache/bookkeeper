@@ -230,6 +230,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-783: Avoid running out of fds in MutlipleThreadReadTest (sijie via ivank)
 
+        BOOKKEEPER-785: Fix javadoc warnings in trunk (ivank via sijie)
+
       bookkeeper-benchmark:
 
         BOOKKEEPER-768: fix typo 'seconds' to milliseconds in benchmark output (jialin via sijie)

@@ -349,7 +349,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      * will be executed and it will error out entries that have timed out.
      *
      * We do it more aggressive to not accumulate pending requests due to slow responses.
-     * @return
+     * @return the interval at which request timeouts will be checked
      */
     @Deprecated
     public long getTimeoutTaskIntervalMillis() {
