@@ -115,7 +115,7 @@ public class CodahaleMetricsProvider implements StatsProvider {
         }
         if (!Strings.isNullOrEmpty(jmxDomain)) {
             LOG.info("Configuring stats with jmx");
-            jmx = JmxReporter.forRegistry(metrics)
+            jmx = JmxReporter.forRegistry(getMetrics())
                 .inDomain(jmxDomain)
                 .convertRatesTo(TimeUnit.SECONDS)
                 .convertDurationsTo(TimeUnit.MILLISECONDS)

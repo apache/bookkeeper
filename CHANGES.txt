@@ -246,6 +246,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-779: jmx reporter for codahale metrics provider (ivank via sijie)
 
+	BOOKKEEPER-786: Fix Findbugs Error In Codahale Stats Provider (sijie via fpj)
+
       hedwig-server:
 
         BOOKKEEPER-601: readahead cache size isn't updated correctly (sijie via fpj)
