@@ -31,12 +31,17 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.IOException;
 
+import junit.framework.Assert;
+
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
@@ -104,7 +109,7 @@ public class CookieTest {
             .setBookiePort(bookiePort);
         Cookie.Builder cookieBuilder = Cookie.generateCookie(conf1);
         Cookie c = cookieBuilder.build();
-        c.writeToZooKeeper(zkc, conf1);
+        c.writeToZooKeeper(zkc, conf1, Version.NEW);
 
         String journalDir = newDirectory();
         String ledgerDir = newDirectory();
@@ -428,5 +433,50 @@ public class CookieTest {
             assertTrue("wrong exception",
                     ice.getCause().getMessage().contains("upgrade needed"));
         }
+    }
+
+    /**
+     * Test write cookie multiple times.
+     */
+    @Test(timeout = 60000)
+    public void testWriteToZooKeeper() throws Exception {
+        String[] ledgerDirs = new String[] { newDirectory(), newDirectory(), newDirectory() };
+        String journalDir = newDirectory();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+                .setZkServers(zkutil.getZooKeeperConnectString()).setJournalDirName(journalDir)
+                .setLedgerDirNames(ledgerDirs).setBookiePort(bookiePort);
+        Bookie b = new Bookie(conf); // should work fine
+        b.start();
+        b.shutdown();
+        Versioned<Cookie> zkCookie = Cookie.readFromZooKeeper(zkc, conf);
+        Version version1 = zkCookie.getVersion();
+        Assert.assertTrue("Invalid type expected ZkVersion type", version1 instanceof ZkVersion);
+        ZkVersion zkVersion1 = (ZkVersion) version1;
+        Cookie cookie = zkCookie.getValue();
+        cookie.writeToZooKeeper(zkc, conf, version1);
+
+        zkCookie = Cookie.readFromZooKeeper(zkc, conf);
+        Version version2 = zkCookie.getVersion();
+        Assert.assertTrue("Invalid type expected ZkVersion type", version2 instanceof ZkVersion);
+        ZkVersion zkVersion2 = (ZkVersion) version2;
+        Assert.assertEquals("Version mismatches!", zkVersion1.getZnodeVersion() + 1, zkVersion2.getZnodeVersion());
+    }
+
+    /**
+     * Test delete cookie.
+     */
+    @Test(timeout = 60000)
+    public void testDeleteFromZooKeeper() throws Exception {
+        String[] ledgerDirs = new String[] { newDirectory(), newDirectory(), newDirectory() };
+        String journalDir = newDirectory();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+                .setZkServers(zkutil.getZooKeeperConnectString()).setJournalDirName(journalDir)
+                .setLedgerDirNames(ledgerDirs).setBookiePort(bookiePort);
+        Bookie b = new Bookie(conf); // should work fine
+        b.start();
+        b.shutdown();
+        Versioned<Cookie> zkCookie = Cookie.readFromZooKeeper(zkc, conf);
+        Cookie cookie = zkCookie.getValue();
+        cookie.deleteFromZooKeeper(zkc, conf, zkCookie.getVersion());
     }
 }

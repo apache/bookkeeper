@@ -23,6 +23,8 @@ package org.apache.bookkeeper.bookie;
 
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.HardLink;
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.cli.BasicParser;
@@ -240,7 +242,7 @@ public class FileSystemUpgrade {
             }
 
             try {
-                c.writeToZooKeeper(zk, conf);
+                c.writeToZooKeeper(zk, conf, Version.NEW);
             } catch (KeeperException ke) {
                 LOG.error("Error writing cookie to zookeeper");
                 throw new BookieException.UpgradeException(ke);
@@ -314,8 +316,8 @@ public class FileSystemUpgrade {
                 }
             }
             try {
-                Cookie c = Cookie.readFromZooKeeper(zk, conf);
-                c.deleteFromZooKeeper(zk, conf);
+                Versioned<Cookie> cookie = Cookie.readFromZooKeeper(zk, conf);
+                cookie.getValue().deleteFromZooKeeper(zk, conf, cookie.getVersion());
             } catch (KeeperException ke) {
                 LOG.error("Error deleting cookie from ZooKeeper");
                 throw new BookieException.UpgradeException(ke);

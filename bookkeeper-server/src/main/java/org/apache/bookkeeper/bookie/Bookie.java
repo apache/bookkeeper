@@ -59,6 +59,8 @@ import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.CreateMode;
@@ -322,8 +324,8 @@ public class Bookie extends BookieCriticalThread {
             }
             Cookie masterCookie = builder.build();
             try {
-                Cookie zkCookie = Cookie.readFromZooKeeper(zk, conf);
-                masterCookie.verify(zkCookie);
+                Versioned<Cookie> zkCookie = Cookie.readFromZooKeeper(zk, conf);
+                masterCookie.verify(zkCookie.getValue());
             } catch (KeeperException.NoNodeException nne) {
                 // can occur in cases:
                 // 1) new environment or
@@ -357,7 +359,7 @@ public class Bookie extends BookieCriticalThread {
                         masterCookie.writeToDirectory(dir);
                     }
                 }
-                masterCookie.writeToZooKeeper(zk, conf);
+                masterCookie.writeToZooKeeper(zk, conf, Version.NEW);
             }
         } catch (KeeperException ke) {
             LOG.error("Couldn't access cookie in zookeeper", ke);
