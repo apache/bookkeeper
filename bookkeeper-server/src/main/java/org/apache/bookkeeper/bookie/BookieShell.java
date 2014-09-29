@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.replication.AuditorElector;
+import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.client.BKException;
@@ -51,11 +52,10 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.Tool;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 
-import org.apache.bookkeeper.util.EntryFormatter;
-import org.apache.bookkeeper.util.Tool;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 
 import com.google.common.util.concurrent.AbstractFuture;
@@ -70,9 +70,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.lang.StringUtils;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,6 +99,7 @@ public class BookieShell implements Tool {
     static final String CMD_LASTMARK = "lastmark";
     static final String CMD_AUTORECOVERY = "autorecovery";
     static final String CMD_LISTBOOKIES = "listbookies";
+    static final String CMD_UPDATECOOKIE = "updatecookie";
     static final String CMD_HELP = "help";
 
     final ServerConfiguration bkConf = new ServerConfiguration();
@@ -1013,6 +1013,139 @@ public class BookieShell implements Tool {
         }
     }
 
+    /**
+     * Update cookie command
+     */
+    class UpdateCookieCmd extends MyCommand {
+        Options opts = new Options();
+
+        UpdateCookieCmd() {
+            super(CMD_UPDATECOOKIE);
+            opts.addOption("b", "bookieId", true, "Bookie Id");
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Update bookie id in cookie";
+        }
+
+        @Override
+        String getUsage() {
+            return "updatecookie -bookieId <hostname|ip>";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            final String bookieId = cmdLine.getOptionValue("bookieId");
+            if (StringUtils.isBlank(bookieId)) {
+                LOG.error("Invalid argument list!");
+                this.printUsage();
+                return -1;
+            }
+            if (!StringUtils.equals(bookieId, "hostname") && !StringUtils.equals(bookieId, "ip")) {
+                LOG.error("Invalid option value:" + bookieId);
+                this.printUsage();
+                return -1;
+            }
+            boolean useHostName = getOptionalValue(bookieId, "hostname");
+            if (!bkConf.getUseHostNameAsBookieID() && useHostName) {
+                LOG.error("Expects configuration useHostNameAsBookieID=true as the option value passed is 'hostname'");
+                return -1;
+            } else if (bkConf.getUseHostNameAsBookieID() && !useHostName) {
+                LOG.error("Expects configuration useHostNameAsBookieID=false as the option value passed is 'ip'");
+                return -1;
+            }
+            return updateBookieIdInCookie(bookieId, useHostName);
+        }
+
+        private int updateBookieIdInCookie(final String bookieId, final boolean useHostname) throws IOException,
+                InterruptedException {
+            ZooKeeper zk = null;
+            ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(bkConf.getZkTimeout());
+            try {
+                zk = ZkUtils.createConnectedZookeeperClient(bkConf.getZkServers(), w);
+                ServerConfiguration conf = new ServerConfiguration(bkConf);
+                String newBookieId = Bookie.getBookieAddress(conf).toString();
+                // read oldcookie
+                Versioned<Cookie> oldCookie = null;
+                try {
+                    conf.setUseHostNameAsBookieID(!useHostname);
+                    oldCookie = Cookie.readFromZooKeeper(zk, conf);
+                } catch (KeeperException.NoNodeException nne) {
+                    LOG.error("Either cookie already updated with UseHostNameAsBookieID={} or no cookie exists!",
+                            useHostname, nne);
+                    return -1;
+                }
+                Cookie newCookie = Cookie.newBuilder(oldCookie.getValue()).setBookieHost(newBookieId).build();
+                boolean hasCookieUpdatedInDirs = verifyCookie(newCookie, journalDirectory);
+                for (File dir : ledgerDirectories) {
+                    hasCookieUpdatedInDirs &= verifyCookie(newCookie, dir);
+                }
+
+                if (hasCookieUpdatedInDirs) {
+                    try {
+                        conf.setUseHostNameAsBookieID(useHostname);
+                        Cookie.readFromZooKeeper(zk, conf);
+                        // since newcookie exists, just do cleanup of oldcookie and return
+                        conf.setUseHostNameAsBookieID(!useHostname);
+                        oldCookie.getValue().deleteFromZooKeeper(zk, conf, oldCookie.getVersion());
+                        return 0;
+                    } catch (KeeperException.NoNodeException nne) {
+                        LOG.debug("Ignoring, cookie will be written to zookeeper");
+                    }
+                } else {
+                    // writes newcookie to local dirs
+                    newCookie.writeToDirectory(journalDirectory);
+                    LOG.info("Updated cookie file present in journalDirectory {}", journalDirectory);
+                    for (File dir : ledgerDirectories) {
+                        newCookie.writeToDirectory(dir);
+                    }
+                    LOG.info("Updated cookie file present in ledgerDirectories {}", ledgerDirectories);
+                }
+                // writes newcookie to zookeeper
+                conf.setUseHostNameAsBookieID(useHostname);
+                newCookie.writeToZooKeeper(zk, conf, Version.NEW);
+
+                // delete oldcookie
+                conf.setUseHostNameAsBookieID(!useHostname);
+                oldCookie.getValue().deleteFromZooKeeper(zk, conf, oldCookie.getVersion());
+            } catch (KeeperException ke) {
+                LOG.error("KeeperException during cookie updation!", ke);
+                return -1;
+            } catch (IOException ioe) {
+                LOG.error("IOException during cookie updation!", ioe);
+                return -1;
+            } finally {
+                if (zk != null) {
+                    zk.close();
+                }
+            }
+            return 0;
+        }
+
+        private boolean getOptionalValue(String optValue, String optName) {
+            if (StringUtils.equals(optValue, optName)) {
+                return true;
+            }
+            return false;
+        }
+
+        private boolean verifyCookie(Cookie oldCookie, File dir) throws IOException {
+            try {
+                Cookie cookie = Cookie.readFromDirectory(dir);
+                cookie.verify(oldCookie);
+            } catch (InvalidCookieException e) {
+                return false;
+            }
+            return true;
+        }
+    }
+
     final Map<String, MyCommand> commands = new HashMap<String, MyCommand>();
     {
         commands.put(CMD_METAFORMAT, new MetaFormatCmd());
@@ -1029,6 +1162,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_LASTMARK, new LastMarkCmd());
         commands.put(CMD_AUTORECOVERY, new AutoRecoveryCmd());
         commands.put(CMD_LISTBOOKIES, new ListBookiesCmd());
+        commands.put(CMD_UPDATECOOKIE, new UpdateCookieCmd());
         commands.put(CMD_HELP, new HelpCmd());
     }
 

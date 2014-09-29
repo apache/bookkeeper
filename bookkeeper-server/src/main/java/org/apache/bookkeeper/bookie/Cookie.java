@@ -322,7 +322,17 @@ class Cookie {
         }
     }
 
-    private static String getZkPath(ServerConfiguration conf)
+    /**
+     * Returns cookie path in zookeeper
+     *
+     * @param conf
+     *            configuration
+     *          
+     * @return cookie zk path
+     *
+     * @throws UnknownHostException
+     */
+    static String getZkPath(ServerConfiguration conf)
             throws UnknownHostException {
         String bookieCookiePath = conf.getZkLedgersRootPath() + "/"
                 + BookKeeperConstants.COOKIE_NODE;
