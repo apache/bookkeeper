@@ -68,6 +68,10 @@ Release 4.3.0 - 2014-10-03
 
       BOOKKEEPER-776: Flaky test BookieRecoveryTest (ivank via fpj)
 
+      BOOKKEEPER-790: Add JNA license in NOTICE files (sijie)
+
+      BOOKKEEPER-789: Update README to reflect bookkeeper modules (sijie)
+
       bookkeeper-server:
 
         BOOKKEEPER-567: ReadOnlyBookieTest hangs on shutdown (sijie via ivank)

@@ -26,6 +26,7 @@ This project includes:
   Commons Logging under The Apache Software License, Version 2.0
   commons Beanutils under Apache License, Version 2.0
   Commons Digester under The Apache Software License, Version 2.0
+  Java Native Access under Apache License, Version 2.0
   JLine under BSD
   SLF4J API Module under MIT License
   SLF4J LOG4J-12 Binding under MIT License

@@ -30,6 +30,7 @@ This project includes:
   Digester under The Apache Software License, Version 2.0
   Hedwig Client under The Apache Software License, Version 2.0
   Hedwig Protocol under The Apache Software License, Version 2.0
+  Java Native Access under Apache License, Version 2.0
   JLine under BSD
   Protocol Buffer Java API under New BSD license
   SLF4J API Module under MIT License
@@ -37,4 +38,3 @@ This project includes:
   The Netty Project under Apache License, Version 2.0
   ZooKeeper under Apache License, Version 2.0
   Guava under The Apache Software License, Version 2.0
-
