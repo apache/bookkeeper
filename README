@@ -12,11 +12,14 @@ Requirements:
 -------------------------------------------------------------------------------
 The BookKeeper project contains:
 
- - bookkeeper-server     (BookKeeper server and client)
- - bookkeeper-benchmark  (Benchmark suite for testing BookKeeper performance)
- - hedwig-protocol       (Hedwig network protocol)
- - hedwig-client         (Hedwig client library)
- - hedwig-server         (Hedwig server)
+ - bookkeeper-server            (BookKeeper server and client)
+ - bookkeeper-benchmark         (Benchmark suite for testing BookKeeper performance)
+ - bookkeeper-stats             (BookKeeper stats library)
+ - bookkeeper-stats-providers   (BookKeeper stats providers)
+ - hedwig-protocol              (Hedwig network protocol)
+ - hedwig-server                (Hedwig server)
+ - hedwig-client                (Hedwig client library)
+ - hedwig-client-jms            (Hedwig client jms library)
 
 BookKeeper is a system to reliably log streams of records. It is designed to 
 store  write ahead logs, such as those found in database or database like 
