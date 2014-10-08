@@ -1,0 +1,76 @@
+Title:        Hedwig Message Filter
+Notice: Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License. You may
+        obtain a copy of the License at "http://www.apache.org/licenses/LICENSE-2.0":http://www.apache.org/licenses/LICENSE-2.0.
+        .
+        .
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+        implied. See the License for the specific language governing permissions
+        and limitations under the License.
+        .
+        .
+
+h1. Message Filter
+
+Apache Hedwig provides an efficient mechanism for supporting application-defined __message filtering__.
+
+h2. Message
+
+Most message-oriented middleware (MOM) products treat messages as lightweight entities that consist of a header and a payload. The header contains fields used for message routing and identification; the payload contains the application data being sent.
+
+Hedwig messages follow a similar template, being composed of following parts:
+
+* @Header@ - All messages support both system defined fields and application defined property values. Properties provide an efficient mechanism for supporting application-defined message filtering.
+* @Body@ - Hedwig considers the message body as a opaque binary blob.
+* @SrcRegion@ - Indicates where the message comes from.
+* @MessageSeqId@ - The unique message sequence id assigned by Hedwig.
+
+h3. Message Header Properties
+
+A __Message__ object contains a built-in facility for supporting application-defined property values. In effect, this provides a mechanism for adding application-specific header fields to a message.
+
+By using properties and  __message filters__, an application can have Hedwig select, or filter, messages on its behalf using application-specific criteria.
+
+Property names must be a __String__ and must not be null, while property values are binary blobs. The flexibility of binary blobs allows applications to define their own serialize/deserialize functions, allowing structured data to be stored in the message header.
+
+h2. Message Filter
+
+A __Message Filter__ allows an application to specify, via header properties, the messages it is interested in. Only messages which pass validation of a __Message Filter__, specified by a subscriber, are be delivered to the subscriber.
+
+A message filter could be run either on the __server side__ or on the __client side__. For both __server side__ and __client side__, a __Message Filter__ implementation needs to implement the following two interfaces:
+
+* @setSubscriptionPreferences(topic, subscriberId, preferences)@: The __subscription preferences__ of the subscriber will be passed to message filter when it was attached to its subscription either on the server-side or on the client-side.
+* @testMessage(message)@: Used to test whether a particular message passes the filter or not.
+
+The __subscription preferences__ are used to specify the messages that the user is interested in. The __message filter__ uses the __subscription preferences__ to decide which messages are passed to the user.
+
+Take a book store(using topic __BookStore__) as an example:
+
+# User A may only care about History books. He subscribes to __BookStore__ with his custom preferences : type="History".
+# User B may only care about Romance books. He subscribes to __BookStore__ with his custom preferences : type="Romance".
+# A new book arrives at the book store; a message is sent to __BookStore__ with type="History" in its header
+# The message is then delivered to __BookStore__'s subscribers.
+# Subscriber A filters the message by checking messages' header to accept those messages whose type is "History".
+# Subscriber B filters out the message, as the type does not match its preferences.
+
+h3. Client Message Filter.
+
+A __ClientMessageFilter__ runs on the client side. Each subscriber can write its own filter and pass it as a parameter when starting delivery ( __startDelivery(topic, subscriberId, messageHandler, messageFilter)__ ).
+
+h3. Server Message Filter.
+
+A __ServerMessageFilter__ runs on the server side (a hub server). A hub server instantiates a server message filter, by means of reflection, using the message filter class specified in the subscription preferences which are provided by the subscriber. Since __ServerMessageFilter__s run on the hub server, all filtered-out messages are never delivered to client, reducing unnecessary network traffic. Hedwig uses a implementation of __ServerMessageFilter__ to filter unnecessary message deliveries between regions.
+
+Since hub servers use reflection to instantiate a __ServerMessageFilter__, an implementation of __ServerMessageFilter__ needs to implement two additional methods:
+
+* @initialize(conf)@: Initialize the message filter before filtering messages.
+* @uninitialize()@: Uninitialize the message filter to release resources used by the message filter.
+
+For the hub server to load the message filter, the implementation class must be in the server's classpath at startup.
+
+h3. Which message filter should be used?
+
+It depends on application requirements. Using a __ServerMessageFilter__ will reduce network traffic by filtering unnecessary messages, but it would compete for resources on the hub server(CPU, memory, etc). Conversely, __ClientMessageFilter__s have the advantage of inducing no extra load on the hub server, but at the price of higher network utilization. A filter can be installed both at the server side and on the client; Hedwig does not restrict this.
+

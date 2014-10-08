@@ -1,0 +1,38 @@
+Notice: Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License. You may
+        obtain a copy of the License at "http://www.apache.org/licenses/LICENSE-2.0":http://www.apache.org/licenses/LICENSE-2.0.
+        .        
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+        implied. See the License for the specific language governing permissions
+        and limitations under the License.
+        .
+
+h1. Pre-requisites
+
+For the core itself:
+
+* JDK 6: "http://java.sun.com/":http://java.sun.com/. Ensure @$JAVA_HOME@ is correctly set.
+* Maven 2: "http://maven.apache.org/":http://maven.apache.org/.
+
+Hedwig has been tested on Windows XP, Linux 2.6, and OS X.
+
+h1. Command-Line Instructions
+
+From the top level bookkeeper directory, run @mvn package@. This will compile and package the jars necessary for running hedwig. 
+
+See the User's Guide for instructions on running and usage.
+
+h1. Eclipse Instructions
+
+To check out, build, and develop using Eclipse:
+
+# Install the Subclipse plugin. Update site: "http://subclipse.tigris.org/update_1.4.x":http://subclipse.tigris.org/update_1.4.x.
+# Install the Maven plugin. Update site: "http://m2eclipse.sonatype.org/update":http://m2eclipse.sonatype.org/update. From the list of packages available from this site, select everything under the &quot;Maven Integration&quot; category, and from the optional components select the ones with the word &quot;SCM&quot; in them.
+# Go to Preferences &gt; Team &gt; SVN. For the SVN interface, choose &quot;Pure Java&quot;.
+# Choose File &gt; New &gt; Project... &gt; Maven &gt; Checkout Maven Projects from SCM.
+# For the SCM URL type, choose SVN. For the URL, enter SVN URL. Maven will automatically create a top-level Eclipse project for each of the 4 Maven modules (recommended). If you want fewer top-level projects, uncheck the option of having a project for each module (under Advanced).
+
+You are now ready to run and debug the client and server code. See the User's Guide for instructions on running and usage.
+

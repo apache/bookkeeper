@@ -1,0 +1,185 @@
+Title:        BookKeeper overview
+Notice: Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License. You may
+        obtain a copy of the License at "http://www.apache.org/licenses/LICENSE-2.0":http://www.apache.org/licenses/LICENSE-2.0.
+        .        
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+        implied. See the License for the specific language governing permissions
+        and limitations under the License.
+        .
+
+h1. Abstract
+
+This guide contains detailed information about using BookKeeper for logging. It discusses the basic operations BookKeeper supports, and how to create logs and perform basic read and write operations on these logs.
+
+h1. BookKeeper introduction
+
+p. BookKeeper is a replicated service to reliably log streams of records. In BookKeeper, servers are "bookies", log streams are "ledgers", and each unit of a log (aka record) is a "ledger entry". BookKeeper is designed to be reliable; bookies, the servers that store ledgers, can crash, corrupt data, discard data, but as long as there are enough bookies behaving correctly the service as a whole behaves correctly. 
+
+p. The initial motivation for BookKeeper comes from the namenode of HDFS. Namenodes have to log operations in a reliable fashion so that recovery is possible in the case of crashes. We have found the applications for BookKeeper extend far beyond HDFS, however. Essentially, any application that requires an append storage can replace their implementations with BookKeeper. BookKeeper has the advantage of writing efficiently, replicating for fault tolerance, and scaling throughput with the number of servers through striping. 
+
+p. At a high level, a bookkeeper client receives entries from a client application and stores it to sets of bookies, and there are a few advantages in having such a service: 
+
+* We can use hardware that is optimized for such a service. We currently believe that such a system has to be optimized only for disk I/O; 
+* We can have a pool of servers implementing such a log system, and shared among a number of servers; 
+* We can have a higher degree of replication with such a pool, which makes sense if the hardware necessary for it is cheaper compared to the one the application uses. 
+
+
+h1. In slightly more detail...
+
+p. BookKeeper implements highly available logs, and it has been designed with write-ahead logging in mind. Besides high availability due to the replicated nature of the service, it provides high throughput due to striping. As we write entries in a subset of bookies of an ensemble and rotate writes across available quorums, we are able to increase throughput with the number of servers for both reads and writes. Scalability is a property that is possible to achieve in this case due to the use of quorums. Other replication techniques, such as state-machine replication, do not enable such a property. 
+
+p. An application first creates a ledger before writing to bookies through a local BookKeeper client instance. Upon creating a ledger, a BookKeeper client writes metadata about the ledger to ZooKeeper. Each ledger currently has a single writer. This writer has to execute a close ledger operation before any other client can read from it. If the writer of a ledger does not close a ledger properly because, for example, it has crashed before having the opportunity of closing the ledger, then the next client that tries to open a ledger executes a procedure to recover it. As closing a ledger consists essentially of writing the last entry written to a ledger to ZooKeeper, the recovery procedure simply finds the last entry written correctly and writes it to ZooKeeper. 
+
+p. Note that currently this recovery procedure is executed automatically upon trying to open a ledger and no explicit action is necessary. Although two clients may try to recover a ledger concurrently, only one will succeed, the first one that is able to create the close znode for the ledger. 
+
+h1. Bookkeeper elements and concepts
+
+p. BookKeeper uses four basic elements: 
+
+*  _Ledger_ : A ledger is a sequence of entries, and each entry is a sequence of bytes. Entries are written sequentially to a ledger and at most once. Consequently, ledgers have an append-only semantics; 
+*  _BookKeeper client_ : A client runs along with a BookKeeper application, and it enables applications to execute operations on ledgers, such as creating a ledger and writing to it; 
+*  _Bookie_ : A bookie is a BookKeeper storage server. Bookies store the content of ledgers. For any given ledger L, we call an _ensemble_ the group of bookies storing the content of L. For performance, we store on each bookie of an ensemble only a fragment of a ledger. That is, we stripe when writing entries to a ledger such that each entry is written to sub-group of bookies of the ensemble. 
+*  _Metadata storage service_ : BookKeeper requires a metadata storage service to store information related to ledgers and available bookies. We currently use ZooKeeper for such a task. 
+
+
+h1. Bookkeeper initial design
+
+p. A set of bookies implements BookKeeper, and we use a quorum-based protocol to replicate data across the bookies. There are basically two operations to an existing ledger: read and append. Here is the complete API list (mode detail "here":bookkeeperProgrammer.html): 
+
+* Create ledger: creates a new empty ledger; 
+* Open ledger: opens an existing ledger for reading; 
+* Add entry: adds a record to a ledger either synchronously or asynchronously; 
+* Read entries: reads a sequence of entries from a ledger either synchronously or asynchronously 
+
+
+p. There is only a single client that can write to a ledger. Once that ledger is closed or the client fails, no more entries can be added. (We take advantage of this behavior to provide our strong guarantees.) There will not be gaps in the ledger. Fingers get broken, people get roughed up or end up in prison when books are manipulated, so there is no deleting or changing of entries. 
+
+!images/bk-overview.jpg!
+p. A simple use of BooKeeper is to implement a write-ahead transaction log. A server maintains an in-memory data structure (with periodic snapshots for example) and logs changes to that structure before it applies the change. The application server creates a ledger at startup and store the ledger id and password in a well known place (ZooKeeper maybe). When it needs to make a change, the server adds an entry with the change information to a ledger and apply the change when BookKeeper adds the entry successfully. The server can even use asyncAddEntry to queue up many changes for high change throughput. BooKeeper meticulously logs the changes in order and call the completion functions in order. 
+
+p. When the application server dies, a backup server will come online, get the last snapshot and then it will open the ledger of the old server and read all the entries from the time the snapshot was taken. (Since it doesn't know the last entry number it will use MAX_INTEGER). Once all the entries have been processed, it will close the ledger and start a new one for its use. 
+
+p. A client library takes care of communicating with bookies and managing entry numbers. An entry has the following fields: 
+
+|Field|Type|Description|
+|Ledger number|long|The id of the ledger of this entry|
+|Entry number|long|The id of this entry|
+|last confirmed ( _LC_ )|long|id of the last recorded entry|
+|data|byte[]|the entry data (supplied by application)|
+|authentication code|byte[]|Message authentication code that includes all other fields of the entry|
+
+
+p. The client library generates a ledger entry. None of the fields are modified by the bookies and only the first three fields are interpreted by the bookies. 
+
+p. To add to a ledger, the client generates the entry above using the ledger number. The entry number will be one more than the last entry generated. The _LC_ field contains the last entry that has been successfully recorded by BookKeeper. If the client writes entries one at a time, _LC_ is the last entry id. But, if the client is using asyncAddEntry, there may be many entries in flight. An entry is considered recorded when both of the following conditions are met: 
+
+* the entry has been accepted by a quorum of bookies 
+* all entries with a lower entry id have been accepted by a quorum of bookies 
+
+
+ _LC_ seems mysterious right now, but it is too early to explain how we use it; just smile and move on. 
+
+p. Once all the other fields have been field in, the client generates an authentication code with all of the previous fields. The entry is then sent to a quorum of bookies to be recorded. Any failures will result in the entry being sent to a new quorum of bookies. 
+
+p. To read, the client library initially contacts a bookie and starts requesting entries. If an entry is missing or invalid (a bad MAC for example), the client will make a request to a different bookie. By using quorum writes, as long as enough bookies are up we are guaranteed to eventually be able to read an entry. 
+
+h1. Bookkeeper metadata management
+
+p. There are some meta data that needs to be made available to BookKeeper clients: 
+
+* The available bookies; 
+* The list of ledgers; 
+* The list of bookies that have been used for a given ledger; 
+* The last entry of a ledger; 
+
+
+p. We maintain this information in ZooKeeper. Bookies use ephemeral nodes to indicate their availability. Clients use znodes to track ledger creation and deletion and also to know the end of the ledger and the bookies that were used to store the ledger. Bookies also watch the ledger list so that they can cleanup ledgers that get deleted. 
+
+h1. Closing out ledgers
+
+p. The process of closing out the ledger and finding the last entry is difficult due to the durability guarantees of BookKeeper: 
+
+* If an entry has been successfully recorded, it must be readable. 
+* If an entry is read once, it must always be available to be read. 
+
+
+p. If the ledger was closed gracefully, ZooKeeper will have the last entry and everything will work well. But, if the BookKeeper client that was writing the ledger dies, there is some recovery that needs to take place. 
+
+p. The problematic entries are the ones at the end of the ledger. There can be entries in flight when a BookKeeper client dies. If the entry only gets to one bookie, the entry should not be readable since the entry will disappear if that bookie fails. If the entry is only on one bookie, that doesn't mean that the entry has not been recorded successfully; the other bookies that recorded the entry might have failed. 
+
+p. The trick to making everything work is to have a correct idea of a last entry. We do it in roughly three steps: 
+
+# Find the entry with the highest last recorded entry, _LC_ ; 
+# Find the highest consecutively recorded entry, _LR_ ; 
+# Make sure that all entries between _LC_ and _LR_ are on a quorum of bookies; 
+
+h1. Data Management in Bookies
+
+p. This section gives an overview of how a bookie manages its ledger fragments. 
+
+h2. Basic
+
+p. Bookies manage data in a log-structured way, which is implemented using three kind of files:
+
+* _Journal_ : A journal file contains the BookKeeper transaction logs. Before any update takes place, a bookie ensures that a transaction describing the update is written to non-volatile storage. A new journal file is created once the bookie starts or the older journal file reaches the journal file size threshold.
+* _Entry Log_ : An entry log file manages the written entries received from BookKeeper clients. Entries from different ledgers are aggregated and written sequentially, while their offsets are kept as pointers in _LedgerCache_ for fast lookup. A new entry log file is created once the bookie starts or the older entry log file reaches the entry log size threshold. Old entry log files are removed by the _Garbage Collector Thread_ once they are not associated with any active ledger.
+* _Index File_ : An index file is created for each ledger, which comprises a header and several fixed-length index pages, recording the offsets of data stored in entry log files. 
+
+p. Since updating index files would introduce random disk I/O, for performance consideration, index files are updated lazily by a _Sync Thread_ running in the background. Before index pages are persisted to disk, they are gathered in _LedgerCache_ for lookup.
+
+* _LedgerCache_ : A memory pool caches ledger index pages, which more efficiently manage disk head scheduling.
+
+h2. Add Entry
+
+p. When a bookie receives entries from clients to be written, these entries will go through the following steps to be persisted to disk:
+
+# Append the entry in _Entry Log_, return its position { logId , offset } ;
+# Update the index of this entry in _Ledger Cache_ ;
+# Append a transaction corresponding to this entry update in _Journal_ ;
+# Respond to BookKeeper client ;
+
+* For performance reasons, _Entry Log_ buffers entries in memory and commit them in batches, while _Ledger Cache_ holds index pages in memory and flushes them lazily. We will discuss data flush and how to ensure data integrity in the following section 'Data Flush'.
+
+h2. Data Flush
+
+p. Ledger index pages are flushed to index files in the following two cases:
+
+# _LedgerCache_ memory reaches its limit. There is no more space available to hold newer index pages. Dirty index pages will be evicted from _LedgerCache_ and persisted to index files.
+# A background thread _Sync Thread_ is responsible for flushing index pages from _LedgerCache_ to index files periodically.
+
+p. Besides flushing index pages, _Sync Thread_ is responsible for rolling journal files in case that journal files use too much disk space. 
+
+p. The data flush flow in _Sync Thread_ is as follows:
+
+# Records a _LastLogMark_ in memory. The _LastLogMark_ contains two parts: first one is _txnLogId_ (file id of a journal) and the second one is _txnLogPos_ (offset in a journal). The _LastLogMark_ indicates that those entries before it have been persisted to both index and entry log files.
+# Flushes dirty index pages from _LedgerCache_ to index file, and flushes entry log files to ensure all buffered entries in entry log files are persisted to disk.
+#* Ideally, a bookie just needs to flush index pages and entry log files that contains entries before _LastLogMark_. There is no such information in _LedgerCache_ and _Entry Log_ mapping to journal files, though. Consequently, the thread flushes _LedgerCache_ and _Entry Log_ entirely here, and may flush entries after the _LastLogMark_. Flushing more is not a problem, though, just redundant.
+# Persists _LastLogMark_ to disk, which means entries added before _LastLogMark_ whose entry data and index page were also persisted to disk. It is the time to safely remove journal files created earlier than _txnLogId_.
+#* If the bookie has crashed before persisting _LastLogMark_ to disk, it still has journal files containing entries for which index pages may not have been persisted. Consequently, when this bookie restarts, it inspects journal files to restore those entries; data isn't lost.
+
+p. Using the above data flush mechanism, it is safe for the _Sync Thread_ to skip data flushing when the bookie shuts down. However, in _Entry Logger_, it uses _BufferedChannel_ to write entries in batches and there might be data buffered in _BufferedChannel_ upon a shut down. The bookie needs to ensure _Entry Logger_ flushes its buffered data during shutting down. Otherwise, _Entry Log_ files become corrupted with partial entries.
+
+p. As described above, _EntryLogger#flush_ is invoked in the following two cases:
+* in _Sync Thread_ : used to ensure entries added before _LastLogMark_ are persisted to disk.
+* in _ShutDown_ : used to ensure its buffered data persisted to disk to avoid data corruption with partial entries.
+
+h2. Data Compaction
+
+p. In bookie server, entries of different ledgers are interleaved in entry log files. A bookie server runs a _Garbage Collector_ thread to delete un-associated entry log files to reclaim disk space. If a given entry log file contains entries from a ledger that has not been deleted, then the entry log file would never be removed and the occupied disk space never reclaimed. In order to avoid such a case, a bookie server compacts entry log files in _Garbage Collector_ thread to reclaim disk space.
+
+p. There are two kinds of compaction running with different frequency, which are _Minor Compaction_ and _Major Compaction_. The differences of _Minor Compaction_ and _Major Compaction_ are just their threshold value and compaction interval.
+
+# _Threshold_ : Size percentage of an entry log file occupied by those undeleted ledgers. Default minor compaction threshold is 0.2, while major compaction threshold is 0.8.
+# _Interval_ : How long to run the compaction. Default minor compaction is 1 hour, while major compaction threshold is 1 day.
+
+p. NOTE: if either _Threshold_ or _Interval_ is set to less than or equal to zero, then compaction is disabled.
+
+p. The data compaction flow in _Garbage Collector Thread_ is as follows:
+
+# _Garbage Collector_ thread scans entry log files to get their entry log metadata, which records a list of ledgers comprising an entry log and their corresponding percentages.
+# With the normal garbage collection flow, once the bookie determines that a ledger has been deleted, the ledger will be removed from the entry log metadata and the size of the entry log reduced.
+# If the remaining size of an entry log file reaches a specified threshold, the entries of active ledgers in the entry log will be copied to a new entry log file.
+# Once all valid entries have been copied, the old entry log file is deleted.

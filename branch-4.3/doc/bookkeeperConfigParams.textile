@@ -1,0 +1,39 @@
+Title:        BookKeeper Configuration Parameters
+Notice: Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License. You may
+        obtain a copy of the License at "http://www.apache.org/licenses/LICENSE-2.0":http://www.apache.org/licenses/LICENSE-2.0.
+        .        
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+        implied. See the License for the specific language governing permissions
+        and limitations under the License.
+        .
+
+h1. BookKeeper Configuration Parameters
+
+This page contains detailed information about configuration parameters used for configuring a BookKeeper client.
+
+h3. General parameters
+
+| @zkServers@ | A list of one of more servers on which zookeeper is running. The server list can be comma separated values, e.g., zk1:2181,zk2:2181,zk3:2181 |
+| @zkTimeout@ | ZooKeeper client session timeout in milliseconds. The default value is 10,000. |
+| @throttle@ | A throttle value is used to prevent running out of memory when producing too many requests than the capability of bookie servers can handle. The default is 5,000. |
+| @readTimeout@ | This is the number of seconds bookkeeper client wait without hearing a response from a bookie before client consider it failed. The default is 5 seconds. |
+| @numWorkerThreads@ | This is the number of worker threads used by bookkeeper client to submit operations. The default value is the number of available processors. |
+
+h3. NIO server settings
+
+| @clientTcpNoDelay@ | This settings is used to enabled/disabled Nagle's algorithm, which is a means of improving the efficiency of TCP/IP networks by reducing the number of packets that need to be sent over the network. If you are sending many small messages, such that more than one can fit in a single IP packet, setting server.tcpnodelay to false to enable Nagle algorithm can provide better performance. Default value is true. |
+
+h3. Ledger manager settings
+
+| @ledgerManagerType@ | This parameter determines the type of ledger manager used to manage how ledgers are stored, manipulated, and garbage collected. See "BookKeeper Internals":./bookkeeperInternals.html for detailed info. Default value is flat. |
+| @zkLedgersRootPath@ | Root zookeeper path to store ledger metadata. Default is /ledgers. |
+
+h3. Bookie recovery settings
+
+Currently bookie recovery tool needs a digest type and passwd to open ledgers to do recovery. Currently, bookkeeper assumes that all ledgers were created with the same DigestType and Password. In the future, it needs to know for each ledger, what was the DigestType and Password used to create it before opening it.
+
+| @digestType@ | Digest type used to open ledgers from bookkie recovery tool. |
+| @passwd@ | Password used to open ledgers from bookie recovery tool. |

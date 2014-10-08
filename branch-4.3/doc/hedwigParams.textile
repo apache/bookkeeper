@@ -1,0 +1,92 @@
+Notice: Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License. You may
+        obtain a copy of the License at "http://www.apache.org/licenses/LICENSE-2.0":http://www.apache.org/licenses/LICENSE-2.0.
+        .        
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+        implied. See the License for the specific language governing permissions
+        and limitations under the License.
+        .
+        
+h1. Hedwig configuration parameters        
+        
+This page contains detailed information about configuration parameters used for Hubs, Regions, ZooKeeper, and BookKeeper.
+        
+h2. Hedwig server configuration parameters
+
+Please also refer to the configuration file that comes with the distribution: _hedwig-server/conf/hw_server.conf_.  
+
+h3. Region related parameters
+
+| @region@ | Region identifier. Default is "standalone". |
+| @regions@ | List of region identifiers, space separated. Default is empty. |
+| @inter_region_ssl_enabled (deprecated)@ | Enables SSL across regions. Default is false. *Since this parameter has been deprecated, use __ssl_enabled__ in _hedwig-server/conf/hw_region_client.conf_ to enable SSL across regions instead.* |
+| @retry_remote_subscribe_thread_run_interval@ | This parameter is used to determine how often we run a thread to retry those failed remote subscriptions in asynchronous mode (in milliseconds). Default is 2 minutes. |
+
+h3. Hub server parameters
+
+| @standalone@ | Sets the hub server to run in standalone mode (no regions). Default is false. |
+| @server_port@ | Sets the server port that receives client connections. Default is 4080. |
+| @ssl_enabled@ | Enables SSL. Default is false. |
+| @ssl_server_port@ | Sets the server port for SSL connections. Default is 9876. | 
+| @password@ | Password used for pkcs12 certificate.. Default is the empty string. |
+| @cert_name@ | Sets the name of the SSL certificate if available as a resource. Default is the null string. |
+| @cert_path@ | Sets the path to the SSL certificate if it is available as a file. Default is the null string. |
+
+h3. Read-ahead cache parameters
+
+| @readahead_enabled@ | Enables read-ahead. Enabled by default. | 
+| @readahead_count@ | Number of messages to read ahead. Default is 10. |
+| @readahead_size@ | Maximum number of bytes to read during a scan. Default is 4 megabytes. |
+
+bq. Upon a range scan request for a given topic, two hints are provided as to when scanning should stop: the number of messages scanned and the total size of messages scanned. Scanning stops whenever one of these limits is exceeded.
+
+| @cache_size@ | Sets the size of the read-ahead cache. Default is the smallest of 2G or half the heap size. | 
+| @cache_entry_ttl@ | Sets TTL for cache entries. Each time adding new entry into the cache, those expired cache entries would be discarded. If the value is set to zero or less than zero, cache entry will not be evicted until the cache is fullfilled or the messages are already consumed. Default is 0. |
+| @scan_backoff_ms@ | The backoff time (in milliseconds) to retry scans after failures. Default value is 1s (1000ms). Default is 1s. |
+| @num_readahead_cache_threads@ | Sets the number of threads to be used for the read-ahead mechanism. Default is the number of cores as returned with a call to <code>Runtime.getRuntime().availableProcessors()</code>.|
+
+h3. Publish and subscription parameters 
+
+| @max_message_size@ | Sets the maximum message size. Default is 1.2 megabytes. |
+| @default_message_window_size@ | This parameter is used for setting the default maximum number of messages that can be delivered to a subscriber without being consumed. We pause delivery to a subscriber when reaching the window size. Default is unlimited (0). |
+| @consume_interval@ | Sets the number of messages consumed before persisting information about consumed messages. A value greater than one avoids persisting information about consumed messages upon every consumed message. Default is 50.|
+| @retention_secs@ | the interval to release a topic. If this parameter is greater than zero, then schedule a task to release an owned topic. Default is 0 (never released).
+| @messages_consumed_thread_run_interval@ | Time interval (in milliseconds) to run messages consumed timer task to
+delete those consumed ledgers in BookKeeper. Default is 1 minute (60,000 ms). |
+
+
+h3. ZooKeeper parameters
+ 
+| @zk_host@ | Sets the ZooKeeper list of servers. Default is localhost:2181. |
+| @zk_timeout@ | Sets the ZooKeeper session timeout. Default is 2s. |
+
+h3. BookKeeper parameters
+
+| @bk_ensemble_size@ | Sets the ensemble size. Default is 3. |
+| @bk_write_quorum_size@ | Sets the write quorum size. Default is 2. |
+| @bk_ack_quorum_size@ | Sets the ack quorum size. Default is 2. |
+
+bq. Note that the ack quorum size must be equal or smaller than the write quorum size.
+
+| @max_entries_per_ledger@ | Maximum number of entries before we roll a ledger. Default is unlimited (0). |
+
+h3. Metadata parameters
+
+| @zk_prefix@ | Sets the ZooKeeper path prefix. Default is _/hedwig_. |
+| @metadata_manager_based_topic_manager_enabled@ | Enables the use of a metadata manager for topic management. Default is false. |
+| @metadata_manager_factory_class@ | Sets the default factory for the metadata manager. Default is null. |
+
+h2. Region manager configuration parameters
+
+Please also refer to the configuration file that comes with the distribution: _hedwig-server/conf/hw_region_client.conf_.
+
+| @ssl_enabled@ | This parameter is a boolean flag indicating if communication with the server should be done via SSL for encryption. The Hedwig server hubs also need to be SSL enabled for this to work. Default value is false. |
+| @max_message_size@ | Sets the maximum message size in bytes. The default value is 2 MB (2097152). |
+| @max_server_redirects@ | Sets the maximum number of redirects we permit before signaling an error. Default value is 2. |
+| @auto_send_consume_message_enabled@ | A flag indicating whether the client library should automatically send consume messages to the server. Default value is true. |
+| @consumed_messages_buffer_size@ | Sets the number of messages we buffer before sending a consume message to the server. Default value is 5. |
+| @max_outstanding_messages@ | Support for client side throttling, sets the maximum number of outstanding messages. Default value is 10. |
+| @server_ack_response_timeout@ | Sets the timeout (in milliseconds) before we error out any existing requests. Default value is 30s (30,000). |
+        

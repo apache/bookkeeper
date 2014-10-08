@@ -1,0 +1,208 @@
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                      http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <groupId>org.apache</groupId>
+    <artifactId>apache</artifactId>
+    <version>9</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.apache.bookkeeper</groupId>
+  <version>4.3.0</version>
+  <artifactId>bookkeeper</artifactId>
+  <packaging>pom</packaging>
+  <name>bookkeeper</name>
+  <inceptionYear>2011</inceptionYear>
+  <modules>
+    <module>compat-deps</module>
+    <module>hedwig-client</module>
+    <module>hedwig-server</module>
+    <module>hedwig-protocol</module>
+    <module>hedwig-client-jms</module>
+    <module>bookkeeper-stats</module>
+    <module>bookkeeper-server</module>
+    <module>bookkeeper-benchmark</module>
+    <module>bookkeeper-stats-providers</module>
+  </modules>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <protobuf.version>2.4.1</protobuf.version>
+    <guava.version>13.0.1</guava.version>
+    <netty.version>3.9.4.Final</netty.version>
+    <zookeeper.version>3.4.6</zookeeper.version>
+  </properties>
+  <url>http://zookeeper.apache.org/bookkeeper</url>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <version>2.5.2</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.0</version>
+        <configuration>
+          <source>1.6</source>
+          <target>1.6</target>
+          <compilerArguments>
+	    <Werror />
+	    <Xlint:deprecation />
+	    <Xlint:unchecked />
+	  </compilerArguments>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.9</version>
+        <configuration>
+          <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true</argLine>
+	  <redirectTestOutputToFile>true</redirectTestOutputToFile>
+	  <forkMode>always</forkMode>
+	  <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.8</version>
+        <configuration>
+          <additionalparam>-exclude org.apache.hedwig.client.netty:org.apache.hedwig.client.benchmark:org.apache.hedwig.client.data:org.apache.hedwig.client.exceptions:org.apache.hedwig.client.handlers:org.apache.hedwig.client.ssl</additionalparam>
+          <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.conf:org.apache.hedwig.client:org.apache.hedwig.util:org.apache.hedwig.protocol:org.apache.hedwig.exceptions</subpackages>
+          <groups>
+            <group>
+              <title>Bookkeeper</title>
+              <packages>org.apache.bookkeeper*</packages>
+            </group>
+            <group>
+              <title>Hedwig</title>
+              <packages>org.apache.hedwig*</packages>
+            </group>
+          </groups>
+        </configuration>
+        <executions>
+          <execution>
+            <id>aggregate</id>
+            <goals>
+              <goal>aggregate</goal>
+            </goals>
+            <phase>site</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.2.1</version>
+        <configuration>
+	  <tarLongFileMode>gnu</tarLongFileMode>
+          <descriptors>
+            <descriptor>src/assemble/src.xml</descriptor>
+          </descriptors>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <version>0.7</version>
+        <configuration>
+          <excludes>
+            <exclude>.git/**/*</exclude>
+            <exclude>**/.svn/**/*</exclude>
+            <exclude>CHANGES.txt</exclude>
+            <exclude>**/README</exclude>
+            <exclude>**/apidocs/*</exclude>
+	    <exclude>test-patch/**/*</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jxr-plugin</artifactId>
+        <version>2.1</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <version>2.3</version>
+        <configuration>
+          <linkXref>true</linkXref>
+          <targetJdk>1.6</targetJdk>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
+  <profiles>
+    <profile>
+      <!-- Used only when cutting a full release.  Configures the deploy plugin to mark
+          each artifact as a release (especially important for the archetype). Signs each
+          file deployed (it actually signs way too many files and we have to clean up a bit
+          once deployed). -->
+      <id>deploy</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <configuration>
+              <useAgent>true</useAgent>
+            </configuration>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      <properties>
+        <update-release-info>true</update-release-info>
+        <!--  Don't re-run tests as part of the deploy build.
+              Note we use skipTests, not maven.test.skip, since the latter skips
+              compilation too and we want to deploy tests. -->
+        <skipTests>true</skipTests>
+      </properties>
+    </profile>
+    <profile>
+      <id>consoleTestOutput</id>
+      <build>
+	<plugins>
+	  <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+	      <redirectTestOutputToFile>false</redirectTestOutputToFile>
+            </configuration>
+	  </plugin>
+	</plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

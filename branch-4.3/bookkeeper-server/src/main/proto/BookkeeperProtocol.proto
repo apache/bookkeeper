@@ -1,0 +1,122 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+ option java_package = "org.apache.bookkeeper.proto";
+ option optimize_for = SPEED;
+
+/**
+ * Protocol Versions.
+ */
+enum ProtocolVersion {
+    VERSION_ONE = 1;
+    VERSION_TWO = 2;
+    VERSION_THREE = 3;
+}
+
+/**
+ * Status codes.
+ */
+enum StatusCode {
+    EOK = 0;
+
+    // Server side Errors 4xx
+    ENOLEDGER = 402;
+    ENOENTRY = 403;
+    EBADREQ = 404;
+
+    // IO/access errors 5xx
+    EIO = 501;
+    EUA = 502;
+    EBADVERSION = 503;
+    EFENCED = 504;
+    EREADONLY = 505;
+}
+
+/**
+ * Supported operations by this protocol.
+ */
+enum OperationType {
+    READ_ENTRY = 1;
+    ADD_ENTRY = 2;
+    // Not supported yet.
+    RANGE_READ_ENTRY = 3;
+    RANGE_ADD_ENTRY = 4;
+}
+
+/**
+ * Packet header for all requests.
+ */
+message BKPacketHeader {
+    required ProtocolVersion version = 1;
+    required OperationType operation = 2;
+    required uint64 txnId = 3;
+}
+
+message Request {
+    required BKPacketHeader header = 1;
+    // Requests
+    optional ReadRequest readRequest = 100;
+    optional AddRequest addRequest = 101;
+}
+
+message ReadRequest {
+    enum Flag {
+        FENCE_LEDGER = 1;
+    }
+    optional Flag flag = 100;
+    required int64 ledgerId = 1;
+    // entryId will be -1 for reading the LAST_ADD_CONFIRMED entry.
+    required int64 entryId = 2;
+    // Used while fencing a ledger.
+    optional bytes masterKey = 3;
+}
+
+message AddRequest {
+    enum Flag {
+        RECOVERY_ADD = 1;
+    }
+    optional Flag flag = 100;
+    required int64 ledgerId = 1;
+    required int64 entryId = 2;
+    required bytes masterKey = 3;
+    required bytes body = 4;
+}
+
+message Response {
+
+    required BKPacketHeader header = 1;
+    // EOK if the underlying request succeeded. Each individual response
+    // has a more meaningful status. EBADREQ if we have an unsupported request.
+    required StatusCode status = 2;
+    // Response
+    optional ReadResponse readResponse = 100;
+    optional AddResponse addResponse = 101;
+
+}
+
+message ReadResponse {
+    required StatusCode status = 1;
+    required int64 ledgerId = 2;
+    required int64 entryId = 3;
+    optional bytes body = 4;
+}
+
+message AddResponse {
+    required StatusCode status = 1;
+    required int64 ledgerId = 2;
+    required int64 entryId = 3;
+}

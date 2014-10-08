@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+#
+#/**
+# * Copyright 2007 The Apache Software Foundation
+# *
+# * Licensed to the Apache Software Foundation (ASF) under one
+# * or more contributor license agreements.  See the NOTICE file
+# * distributed with this work for additional information
+# * regarding copyright ownership.  The ASF licenses this file
+# * to you under the Apache License, Version 2.0 (the
+# * "License"); you may not use this file except in compliance
+# * with the License.  You may obtain a copy of the License at
+# *
+# *     http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# */
+
+# check if net.ipv6.bindv6only is set to 1
+bindv6only=$(/sbin/sysctl -n net.ipv6.bindv6only 2> /dev/null)
+if [ -n "$bindv6only" ] && [ "$bindv6only" -eq "1" ]
+then
+  echo "Error: \"net.ipv6.bindv6only\" is set to 1 - Java networking could be broken"
+  echo "For more info (the following page also applies to bookkeeper): http://wiki.apache.org/hadoop/HadoopIPv6"
+  exit 1
+fi
+
+BINDIR=`dirname "$0"`
+BENCH_HOME=`cd $BINDIR/..;pwd`
+
+RELEASE_JAR=`ls $BENCH_HOME/bookkeeper-benchmark-*.jar 2> /dev/null | tail -1` 
+if [ $? == 0 ]; then
+    BENCHMARK_JAR=$RELEASE_JAR
+fi
+
+BUILT_JAR=`ls $BENCH_HOME/target/bookkeeper-benchmark-*.jar 2> /dev/null | tail -1`
+if [ $? != 0 ] && [ ! -e "$BENCHMARK_JAR" ]; then 
+    echo "\nCouldn't find benchmark jar.";
+    echo "Make sure you've run 'mvn package'\n";
+    exit 1;
+elif [ -e "$BUILT_JAR" ]; then
+    BENCHMARK_JAR=$BUILT_JAR
+fi
+
+benchmark_help() {
+    cat <<EOF
+Usage: $0 <command>
+where command is one of:
+    writes              Benchmark throughput and latency for writes
+    reads               Benchmark throughput and latency for reads
+    bookie              Benchmark an individual bookie
+    help                This help message
+
+use -help with individual commands for more options. For example,
+   $0 writes -help
+
+or command is the full name of a class with a defined main() method.
+
+Environment variables:
+   BENCHMARK_LOG_CONF        Log4j configuration file (default: conf/log4j.properties)
+   BENCHMARK_EXTRA_OPTS      Extra options to be passed to the jvm
+   BENCHMARK_EXTRA_CLASSPATH Add extra paths to the bookkeeper classpath
+
+EOF
+}
+
+add_maven_deps_to_classpath() {
+    MVN="mvn"
+    if [ "$MAVEN_HOME" != "" ]; then
+	MVN=${MAVEN_HOME}/bin/mvn
+    fi
+    
+    # Need to generate classpath from maven pom. This is costly so generate it
+    # and cache it. Save the file into our target dir so a mvn clean will get
+    # clean it up and force us create a new one.
+    f="${BENCH_HOME}/target/cached_classpath.txt"
+    if [ ! -f "${f}" ]
+    then
+	${MVN} -f "${BENCH_HOME}/pom.xml" dependency:build-classpath -Dmdep.outputFile="${f}" &> /dev/null
+    fi
+    BENCHMARK_CLASSPATH=${CLASSPATH}:`cat "${f}"`
+}
+
+if [ -d "$BENCH_HOME/lib" ]; then
+    for i in $BENCH_HOME/lib/*.jar; do
+	BENCHMARK_CLASSPATH=$BENCHMARK_CLASSPATH:$i
+    done
+else
+    add_maven_deps_to_classpath
+fi
+
+# if no args specified, show usage
+if [ $# = 0 ]; then
+    benchmark_help;
+    exit 1;
+fi
+
+# get arguments
+COMMAND=$1
+shift
+
+BENCHMARK_CLASSPATH="$BENCHMARK_JAR:$BENCHMARK_CLASSPATH:$BENCHMARK_EXTRA_CLASSPATH"
+BENCHMARK_LOG_CONF=${BENCHMARK_LOG_CONF:-$BENCH_HOME/conf/log4j.properties}
+
+if [ "$BENCHMARK_LOG_CONF" != "" ]; then
+    BENCHMARK_CLASSPATH="`dirname $BENCHMARK_LOG_CONF`:$BENCHMARK_CLASSPATH"
+    OPTS="$OPTS -Dlog4j.configuration=`basename $BENCHMARK_LOG_CONF`"
+fi
+OPTS="-cp $BENCHMARK_CLASSPATH $OPTS $BENCHMARK_EXTRA_OPTS"
+
+OPTS="$OPTS $BENCHMARK_EXTRA_OPTS"
+
+# Disable ipv6 as it can cause issues
+OPTS="$OPTS -Djava.net.preferIPv4Stack=true"
+
+if [ $COMMAND == "writes" ]; then
+    exec java $OPTS org.apache.bookkeeper.benchmark.BenchThroughputLatency $@
+elif [ $COMMAND == "reads" ]; then
+    exec java $OPTS org.apache.bookkeeper.benchmark.BenchReadThroughputLatency $@
+elif [ $COMMAND == "bookie" ]; then
+    exec java $OPTS org.apache.bookkeeper.benchmark.BenchBookie $@
+elif [ $COMMAND == "help" ]; then
+    benchmark_help;
+else
+    exec java $OPTS $COMMAND $@
+fi
+

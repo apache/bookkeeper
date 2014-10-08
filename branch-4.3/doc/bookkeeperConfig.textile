@@ -1,0 +1,167 @@
+Title:        BookKeeper Administrator's Guide
+Notice: Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License. You may
+        obtain a copy of the License at "http://www.apache.org/licenses/LICENSE-2.0":http://www.apache.org/licenses/LICENSE-2.0.
+        .
+        .        
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+        implied. See the License for the specific language governing permissions
+        and limitations under the License.
+        .
+        .
+
+h1. Abstract
+
+This document contains information about deploying, administering and maintaining BookKeeper. It also discusses best practices and common problems. 
+
+h1. Running a BookKeeper instance
+
+h2. System requirements
+
+A typical BookKeeper installation comprises a set of bookies and a set of ZooKeeper replicas. The exact number of bookies depends on the quorum mode, desired throughput, and number of clients using this installation simultaneously. The minimum number of bookies is three for self-verifying (stores a message authentication code along with each entry) and four for generic (does not store a message authentication code with each entry), and there is no upper limit on the number of bookies. Increasing the number of bookies will, in fact, enable higher throughput.
+
+For performance, we require each server to have at least two disks. It is possible to run a bookie with a single disk, but performance will be significantly lower in this case.
+
+For ZooKeeper, there is no constraint with respect to the number of replicas. Having a single machine running ZooKeeper in standalone mode is sufficient for BookKeeper. For resilience purposes, it might be a good idea to run ZooKeeper in quorum mode with multiple servers. Please refer to the ZooKeeper documentation for detail on how to configure ZooKeeper with multiple replicas.
+
+h2. Starting and Stopping Bookies
+
+To *start* a bookie, execute the following command:
+
+* To run a bookie in the foreground:
+@bookkeeper-server/bin/bookkeeper bookie@
+
+* To run a bookie in the background:
+@bookkeeper-server/bin/bookkeeper-daemon.sh start bookie@
+
+The configuration parameters can be set in bookkeeper-server/conf/bk_server.conf.
+
+The important parameters are:
+
+* @bookiePort@, Port number that the bookie listens on; 
+* @zkServers@, Comma separated list of ZooKeeper servers with a hostname:port format; 
+* @journalDir@, Path for Log Device (stores bookie write-ahead log); 
+* @ledgerDir@, Path for Ledger Device (stores ledger entries); 
+
+Ideally, @journalDir@ and @ledgerDir@ are each in a different device. See "Bookie Configuration Parameters":./bookieConfigParams.html for a full list of configuration parameters.
+
+To *stop* a bookie running in the background, execute the following command:
+
+@bookkeeper-server/bin/bookkeeper-daemon.sh stop bookie [-force]@
+@-force@ is optional, which is used to stop the bookie forcefully, if the bookie server is not stopped gracefully within the _BOOKIE_STOP_TIMEOUT_ (environment variable), which is 30 seconds, by default.
+
+h3. Upgrading
+
+From time to time, we may make changes to the filesystem layout of the bookie, which are incompatible with previous versions of bookkeeper and require that directories used with previous versions are upgraded. If you upgrade your bookkeeper software, and an upgrade is required, then the bookie will fail to start and print an error such as:
+
+@2012-05-25 10:41:50,494 - ERROR - [main:Bookie@246] - Directory layout version is less than 3, upgrade needed@
+
+BookKeeper provides a utility for upgrading the filesystem.
+@bookkeeper-server/bin/bookkeeper upgrade@
+
+The upgrade application takes 3 possible switches, @--upgrade@, @--rollback@ or @--finalize@. A normal upgrade process looks like.
+
+# @bookkeeper-server/bin/bookkeeper upgrade --upgrade@
+# @bookkeeper-server/bin/bookkeeper bookie@
+# Check everything is working. Kill bookie, ^C
+# If everything is ok, @bookkeeper-server/bin/bookkeeper upgrade --finalize@
+# Start bookie again @bookkeeper-server/bin/bookkeeper bookie@
+# If something is amiss, you can roll back the upgrade @bookkeeper-server/bin/bookkeeper upgrade --rollback@
+
+h3. Formatting
+
+To format the bookie metadata in Zookeeper, execute the following command once:
+
+@bookkeeper-server/bin/bookkeeper shell metaformat [-nonInteractive] [-force]@
+
+To format the bookie local filesystem data, execute the following command on each bookie node:
+
+@bookkeeper-server/bin/bookkeeper shell bookieformat [-nonInteractive] [-force]@
+
+The @-nonInteractive@ and @-force@ switches are optional.
+
+If @-nonInteractive@ is set, the user will not be asked to confirm the format operation if old data exists. If it exists, the format operation will abort, unless the @-force@ switch has been specified, in which case it will process.
+
+By default, the user will be prompted to confirm the format operation if old data exists.
+
+h3. Logging
+
+BookKeeper uses "slf4j":http://www.slf4j.org for logging, with the log4j bindings enabled by default. To enable logging from a bookie, create a log4j.properties file and point the environment variable BOOKIE_LOG_CONF to the configuration file. The path to the log4j.properties file must be absolute.
+
+@export BOOKIE_LOG_CONF=/tmp/log4j.properties@
+@bookkeeper-server/bin/bookkeeper bookie@
+
+h3. Missing disks or directories
+
+Replacing disks or removing directories accidentally can cause a bookie to fail while trying to read a ledger fragment which the ledger metadata has claimed exists on the bookie. For this reason, when a bookie is started for the first time, it's disk configuration is fixed for the lifetime of that bookie. Any change to the disk configuration of the bookie, such as a crashed disk or an accidental configuration change, will result in the bookie being unable to start with the following error:
+
+@2012-05-29 18:19:13,790 - ERROR - [main:BookieServer@314] - Exception running bookie server : @
+@org.apache.bookkeeper.bookie.BookieException$InvalidCookieException@
+@.......at org.apache.bookkeeper.bookie.Cookie.verify(Cookie.java:82)@
+@.......at org.apache.bookkeeper.bookie.Bookie.checkEnvironment(Bookie.java:275)@
+@.......at org.apache.bookkeeper.bookie.Bookie.<init>(Bookie.java:351)@
+
+If the change was the result of an accidental configuration change, the change can be reverted and the bookie can be restarted. However, if the change cannot be reverted, such as is the case when you want to add a new disk or replace a disk, the bookie must be wiped and then all its data re-replicated onto it. To do this, do the following:
+
+# Increment the _bookiePort_ in _bk_server.conf_.
+# Ensure that all directories specified by _journalDirectory_ and _ledgerDirectories_ are empty.
+# Start the bookie.
+# Run @bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools <zkserver> <oldbookie> <newbookie>@ to re-replicate data. <oldbookie> and <newbookie> are identified by their external IP and bookiePort. For example if this process is being run on a bookie with an external IP of 192.168.1.10, with an old _bookiePort_ of 3181 and a new _bookiePort_ of 3182, and with zookeeper running on _zk1.example.com_, the command to run would be <br/>@bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools zk1.example.com 192.168.1.10:3181 192.168.1.10:3182@. See "Bookie Recovery":./bookieRecovery.html for more details on the re-replication process.
+
+The mechanism to prevent the bookie from starting up in the case of configuration changes exists to prevent the following silent failures:
+
+# A strict subset of the ledger devices (among multiple ledger devices) has been replaced, consequently making the content of the replaced devices unavailable;
+# A strict subset of the ledger directories has been accidentally deleted.
+
+h3. Full or failing disks
+
+A bookie can go into read-only mode if it detects problems with its disks. In read-only mode, the bookie will serve read requests, but will not allow any writes. Any ledger currently writing to the bookie will replace the bookie in its ensemble. No new ledgers will select the read-only bookie for writing.
+
+The bookie goes into read-only mode in the following conditions.
+
+# All disks are full.
+# An error occurred flushing to the ledger disks.
+# An error occurred writing to the journal disk.
+
+Important parameters are:
+
+* @readOnlyModeEnabled@, whether read-only mode is enabled. If read-only mode is not enabled, the bookie will shutdown on encountering any of the above conditions. By default, read-only mode is disabled.
+* @diskUsageThreshold@, percentage threshold at which a disk will be considered full. This value must be between 0 and 1.0. By default, the value is 0.95.
+* @diskCheckInterval@, interval at which the disks are checked to see if they are full. Specified in milliseconds. By default the check occurs every 10000 milliseconds (10 seconds).
+
+h2. Running Autorecovery nodes
+
+To run autorecovery nodes, we execute the following command in every Bookie node:
+ @bookkeeper-server/bin/bookkeeper autorecovery@
+
+Configuration parameters for autorecovery can be set in *bookkeeper-server/conf/bk_server.conf*.
+
+Important parameters are:
+
+* @auditorPeriodicCheckInterval@, interval at which the auditor will do a check of all ledgers in the cluster. By default this runs once a week. The interval is set in seconds. To disable the periodic check completely, set this to 0. Note that periodic checking will put extra load on the cluster, so it should not be run more frequently than once a day.
+
+* @rereplicationEntryBatchSize@ specifies the number of entries which a replication will rereplicate in parallel. The default value is 10. A larger value for this parameter will increase the speed at which autorecovery occurs but will increate the memory requirement of the autorecovery process, and create more load on the cluster.
+
+* @openLedgerRereplicationGracePeriod@, is the amount of time, in milliseconds, which a recovery worker will wait before recovering a ledger segment which has no defined ended, i.e. the client is still writing to that segment. If the client is still active, it should detect the bookie failure, and start writing to a new ledger segment, and a new ensemble, which doesn't include the failed bookie. Creating new ledger segment will define the end of the previous segment. If, after the grace period, the ledger segment's end has not been defined, we assume the writing client has crashed. The ledger is fenced and the client is blocked from writing any more entries to the ledger. The default value is 30000ms.
+
+
+h3. Disabling Autorecovery during maintenance
+
+It is useful to disable autorecovery during maintenance, for example, to avoid a Bookie's data being unnecessarily rereplicated when it is only being taken down for a short period to update the software, or change the configuration.
+
+To disable autorecovery, run:
+@bookkeeper-server/bin/bookkeeper shell autorecovery -disable@
+
+To reenable, run:
+@bookkeeper-server/bin/bookkeeper shell autorecovery -enable@
+
+Autorecovery enable/disable only needs to be run once for the whole cluster, and not individually on each Bookie in the cluster.
+
+h2. Setting up a test ensemble
+
+Sometimes it is useful to run a ensemble of bookies on your local machine for testing. We provide a utility for doing this. It will set up N bookies, and a zookeeper instance locally. The data on these bookies and of the zookeeper instance are not persisted over restarts, so obviously this should never be used in a production environment. To run a test ensemble of 10 bookies, do the following:
+
+@bookkeeper-server/bin/bookkeeper localbookie 10@
+

@@ -1,0 +1,125 @@
+#!/bin/bash
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+if [ "${TESTPATCHDEBUG}" == "true" ] ; then
+    set -x
+fi
+
+BASEDIR=$(pwd)
+TASKNAME="TESTS"
+OP=""
+TEMPDIR=""
+REPORTDIR=""
+SUMMARYFILE=""
+STDOUT="/dev/null"
+MVNPASSTHRU=""
+
+###############################################################################
+cleanupAndExit() {
+    exit $1
+}
+###############################################################################
+printUsage() {
+    echo "Usage: $0 --taskname | (--op=pre|post|report --tempdir=<TEMP DIR> --reportdir=<REPORT DIR> --summaryfile=<SUMMARY FILE>) [--verbose] [-D<VALUE>...] [-P<VALUE>...]"
+    echo
+}
+###############################################################################
+parseArgs() {
+    for i in $*
+    do
+        case $i in
+        --taskname)
+            echo ${TASKNAME}
+            exit 0
+            ;;
+        --op=*)
+            OP=${i#*=}
+            ;;
+        --tempdir=*)
+            TEMPDIR=${i#*=}
+            ;;
+        --reportdir=*)
+            REPORTDIR=${i#*=}
+            ;;
+        --summaryfile=*)
+            SUMMARYFILE=${i#*=}
+            ;;
+        --verbose)
+            STDOUT="/dev/stdout"
+            ;;
+        -D*)
+            MVNPASSTHRU="${MVNPASSTHRU} $i"
+            ;;
+        -P*)
+            MVNPASSTHRU="${MVNPASSTHRU} $i"
+            ;;
+        esac
+    done
+    if [[ "${TASKNAME}" == "" || "${OP}" == "" || "${TEMPDIR}" == "" || "${REPORTDIR}" == "" || "${SUMMARYFILE}" == "" ]] ; then
+        echo "Missing options"
+        echo
+        printUsage
+        cleanupAndExit 1
+    fi
+    if [[ "${OP}" != "pre" && "${OP}" != "post" && "${OP}" != "report" ]] ; then
+        echo "Invalid operation"
+        echo
+        printUsage
+        cleanupAndExit 1
+    fi
+}
+###############################################################################
+
+parseArgs "$@"
+
+case $OP in
+pre)
+    ;;
+post)
+    # must use package instead of test so that compat-deps shaded jars are correct
+    mvn package ${MVNPASSTHRU} -Dmaven.test.failure.ignore=true \
+        -Dmaven.test.error.ignore=true -fae \
+        -Dtest.timeout=7200 | tee ${TEMPDIR}/${TASKNAME}.out >> $STDOUT
+    exitCode=${PIPESTATUS[0]}
+    echo "$exitCode" >  ${TEMPDIR}/${TASKNAME}.exitCode
+    ;;
+report)
+    failedTests=` find . -name '*\.txt' | grep target/surefire-reports | xargs grep  "<<< FAILURE" | grep -v "Tests run:" | sed 's/.*\.txt\://' | sed 's/ .*//'`
+    testsRun=`grep "Tests run:" ${TEMPDIR}/${TASKNAME}.out | grep -v " Time elapsed:" | awk '{print $3}' | sed 's/,//' | awk 'BEGIN {count=0} {count=count+$1} END {print count}'`
+    testsFailed=`grep "Tests run:" ${TEMPDIR}/${TASKNAME}.out | grep -v " Time elapsed:" | awk '{print $5}' | sed 's/,//' | awk 'BEGIN {count=0} {count=count+$1} END {print count}'`
+    testsErrors=`grep "Tests run:" ${TEMPDIR}/${TASKNAME}.out | grep -v " Time elapsed:" | awk '{print $7}' | sed 's/,//' | awk 'BEGIN {count=0} {count=count+$1} END {print count}'`
+    hasFailures=`expr $testsFailed + $testsErrors`
+    testsExitCode=`cat ${TEMPDIR}/${TASKNAME}.exitCode`
+    if [[ $hasFailures != 0 ]] ; then
+        echo "{color:red}-1 ${TASKNAME}{color}" >> $SUMMARYFILE
+        echo ".    Tests run: $testsRun" >> $SUMMARYFILE
+        echo ".    Tests failed: $testsFailed" >> $SUMMARYFILE
+        echo ".    Tests errors: $testsErrors" >> $SUMMARYFILE
+        echo "" >> ${SUMMARYFILE}
+        echo ".    The patch failed the following testcases:" >> $SUMMARYFILE
+        echo "" >> ${SUMMARYFILE}
+        echo "${failedTests}" | sed 's/^/.      /' >> $SUMMARYFILE
+        echo "" >> ${SUMMARYFILE}
+    else
+        if [[ "$testsExitCode" != "0" ]] ; then
+            echo "{color:red}-1 ${TASKNAME}{color} - patch does not compile, cannot run testcases" >> $SUMMARYFILE
+        else
+            echo "{color:green}+1 ${TASKNAME}{color}" >> $SUMMARYFILE
+            echo ".    Tests run: $testsRun" >> $SUMMARYFILE
+        fi
+    fi
+    ;;
+esac
+
+exit 0

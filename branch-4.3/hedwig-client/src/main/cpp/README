@@ -1,0 +1,38 @@
+= BUILDING =
+
+To build:
+   $ libtoolize
+   $ autoreconf -fi
+   $ ./configure
+   $ make
+
+The devel packages for protobuf, log4cxx & boost are required to build.
+
+= TESTING =
+
+To test, Google Test(http://code.google.com/p/googletest/) is required.
+The project must be configured with the location of gtest. Making with
+the target "check" will run all the tests.
+
+   $ ./configure --enable-gtest=/home/user/src/gtest-1.6.0
+   $ make check
+
+To run individual tests, first start a test cluster. We provide a 
+convenience script to do this.
+
+   $ sh scripts/tester.sh start-cluster
+
+Once the cluster is running, you can run individual tests using the test
+harness.
+
+   $ test/hedwigtest --gtest_filter=PublishTest.testAsyncPublish
+
+To get a list of tests:
+
+   $ test/hedwigtest --gtest_list_tests
+
+test/hedwigtest is a libtool wrapper, which cannot be used directly with
+gdb. To run a test with gdb:
+
+   $ libtool --mode=execute gdb test/hedwigtest
+   (gdb) run --gtest_filter=PublishTest.testAsyncPublish

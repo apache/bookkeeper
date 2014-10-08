@@ -1,0 +1,156 @@
+#!/bin/bash
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+if [ "${TESTPATCHDEBUG}" == "true" ] ; then
+    set -x
+fi
+
+BASEDIR=$(pwd)
+TASKNAME="FINDBUGS"
+OP=""
+TEMPDIR=""
+REPORTDIR=""
+SUMMARYFILE=""
+STDOUT="/dev/null"
+MVNPASSTHRU=""
+
+###############################################################################
+cleanupAndExit() {
+    exit $1
+}
+###############################################################################
+printUsage() {
+    echo "Usage: $0 --taskname | (--op=pre|post|report --tempdir=<TEMP DIR> --reportdir=<REPORT DIR> --summaryfile=<SUMMARY FILE>) [-D<VALUE>...] [-P<VALUE>...]"
+    echo
+}
+###############################################################################
+parseArgs() {
+    for i in $*
+    do
+        case $i in
+        --taskname)
+            echo ${TASKNAME}
+            exit 0
+            ;;
+        --op=*)
+            OP=${i#*=}
+            ;;
+        --tempdir=*)
+            TEMPDIR=${i#*=}
+            ;;
+        --reportdir=*)
+            REPORTDIR=${i#*=}
+            ;;
+        --summaryfile=*)
+            SUMMARYFILE=${i#*=}
+            ;;
+        --verbose)
+            STDOUT="/dev/stdout"
+            ;;
+        -D*)
+            MVNPASSTHRU="${MVNPASSTHRU} $i"
+            ;;
+        -P*)
+            MVNPASSTHRU="${MVNPASSTHRU} $i"
+            ;;
+        esac
+    done
+    if [[ "${TASKNAME}" == "" || "${OP}" == "" || "${TEMPDIR}" == "" || "${REPORTDIR}" == "" || "${SUMMARYFILE}" == "" ]] ; then
+        echo "Missing options"
+        echo
+        printUsage
+        cleanupAndExit 1
+    fi
+    if [[ "${OP}" != "pre" && "${OP}" != "post" && "${OP}" != "report" ]] ; then
+        echo "Invalid operation"
+        echo
+        printUsage
+        cleanupAndExit 1
+    fi
+}
+###############################################################################
+checkForWarnings() {
+    cleanBugs=0
+    patchBugs=0
+    for m in $(getModules); do
+        MODNAME=$(echo $m | sed 's/\///')
+
+        m_cleanBugs=$(cat ${REPORTDIR}/${TASKNAME}-${MODNAME}-clean.xml \
+            | sed 's/<\/BugInstance>/<\/BugInstance>\n/g' | grep BugInstance | wc -l)
+        m_patchBugs=$(cat ${REPORTDIR}/${TASKNAME}-${MODNAME}-patch.xml \
+            | sed 's/<\/BugInstance>/<\/BugInstance>\n/g' | grep BugInstance | wc -l)
+        m_newBugs=`expr $m_patchBugs - $m_cleanBugs`
+        if [[ $m_newBugs != 0 ]] ; then
+            BUGMODULES="$MODNAME $BUGMODULES"
+        fi
+
+        cleanBugs=$(($cleanBugs+$m_cleanBugs))
+        patchBugs=$(($patchBugs+$m_patchBugs))
+    done
+
+    BUGMODULES=$(echo $BUGMODULES | sed 's/^ *//' | sed 's/ *$//')
+    newBugs=`expr $patchBugs - $cleanBugs`
+    if [[ $newBugs -le 0 ]] ; then
+        REPORT+=("{color:green}+1{color} the patch does not seem to introduce new Findbugs warnings")
+        newBugs=0
+    else
+        REPORT+=("{color:red}-1{color} the patch seems to introduce $patchBugs new Findbugs warning(s) in module(s) [$BUGMODULES]")
+        newBugs=1
+    fi
+    if [[ $cleanBugs != 0 ]] ; then
+        REPORT+=("{color:red}WARNING: the current HEAD has $cleanWarns Findbugs warning(s), they should be addressed ASAP{color}")
+    fi
+}
+
+###############################################################################
+
+getModules() {
+    find . -name pom.xml | sed 's/^.\///' | sed 's/pom.xml$//' | grep -v compat
+}
+###############################################################################
+
+copyFindbugsXml() {
+    TAG=$1
+    for m in $(getModules); do
+        MODNAME=$(echo $m | sed 's/\///')
+        cp ${m}target/findbugsXml.xml ${REPORTDIR}/${TASKNAME}-${MODNAME}-$TAG.xml
+    done
+}
+
+parseArgs "$@"
+
+
+case $OP in
+pre)
+    mvn findbugs:findbugs ${MVNPASSTHRU} > $STDOUT
+    copyFindbugsXml clean
+    ;;
+post)
+    mvn findbugs:findbugs ${MVNPASSTHRU} > $STDOUT
+    copyFindbugsXml patch
+    ;;
+report)
+    checkForWarnings
+    if [[ $newBugs == 0 ]] ; then
+        echo "{color:green}+1 ${TASKNAME}{color}" >> $SUMMARYFILE
+    else
+        echo "{color:red}-1 ${TASKNAME}{color}" >> $SUMMARYFILE
+    fi
+    for line in "${REPORT[@]}" ; do
+        echo ".    ${line}" >> $SUMMARYFILE
+    done
+    ;;
+esac
+
+exit 0

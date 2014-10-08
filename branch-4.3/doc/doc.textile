@@ -1,0 +1,21 @@
+Notice: Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License. You may
+        obtain a copy of the License at "http://www.apache.org/licenses/LICENSE-2.0":http://www.apache.org/licenses/LICENSE-2.0.
+        .        
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+        implied. See the License for the specific language governing permissions
+        and limitations under the License.
+        .
+
+In the documentation directory, you'll find:
+
+* @build.txt@: Building Hedwig, or how to set up Hedwig
+* @user.txt@: User's Guide, or how to program against the Hedwig API and how to run it
+* @dev.txt@: Developer's Guide, or Hedwig internals and hacking details
+
+These documents are all written in the "Pandoc":http://johnmacfarlane.net/pandoc/ dialect of "Markdown":http://daringfireball.net/projects/markdown/. This makes them readable as plain text files, but also capable of generating HTML or LaTeX documentation.
+
+Documents are wrapped at 80 chars and use 2-space indentation.
+

@@ -1,0 +1,63 @@
+Notice: Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License. You may
+        obtain a copy of the License at "http://www.apache.org/licenses/LICENSE-2.0":http://www.apache.org/licenses/LICENSE-2.0.
+        .        
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+        implied. See the License for the specific language governing permissions
+        and limitations under the License.
+        .
+
+h1. Design
+
+In Hedwig, clients publish messages associated with a topic, and they subscribe to a topic to receive all messages published with that topic. Clients are associated with (publish to and subscribe from) a Hedwig _instance_ (also referred to as a _region_), which consists of a number of servers called _hubs_. The hubs partition up topic ownership among themselves, and all publishes and subscribes to a topic must be done to its owning hub. When a client doesn't know the owning hub, it tries a default hub, which may redirect the client.
+
+Running a Hedwig instance requires a Zookeeper server and at least three Bookkeeper servers.
+
+An instance is designed to run within a datacenter. For wide-area messaging across datacenters, specify in the server configuration the set of default servers for each of the other instances. Dissemination among instances currently takes place over an all-to-all topology. Local subscriptions cause the hub to subscribe to all other regions on this topic, so that the local region receives all updates to it. Future work includes allowing the user to overlay alternative topologies.
+
+Because all messages on a topic go through a single hub per region, all messages within a region are ordered. This means that, for a given topic, messages are delivered in the same order to all subscribers within a region, and messages from any particular region are delivered in the same order to all subscribers globally, but messages from different regions may be delivered in different orders to different regions. Providing global ordering is prohibitively expensive in the wide area. However, in Hedwig clients such as PNUTS, the lack of global ordering is not a problem, as PNUTS serializes all updates to a table row at a single designated master for that row.
+
+Topics are independent; Hedwig provides no ordering across different topics.
+
+Version vectors are associated with each topic and serve as the identifiers for each message. Vectors consist of one component per region. A component value is the region's local sequence number on the topic, and is incremented each time a hub persists a message (published either locally or remotely) to BK.
+
+TODO: More on how version vectors are to be used, and on maintaining vector-maxes.
+
+h1. Entry Points
+
+The main class for running the server is @org.apache.hedwig.server.netty.PubSubServer@. It takes a single argument, which is a "Commons Configuration":http://commons.apache.org/configuration/ file. Currently, for configuration, the source is the documentation. See @org.apache.hedwig.server.conf.ServerConfiguration@ for server configuration parameters.
+
+The client is a library intended to be consumed by user applications. It takes a Commons Configuration object, for which the source/documentation is in @org.apache.hedwig.client.conf.ClientConfiguration@.
+
+h1. Deployment
+
+h2. Limits
+
+Because the current implementation uses a single socket per subscription, the Hedwig requires a high @ulimit@ on the number of open file descriptors. Non-root users can only use up to the limit specified in @/etc/security/limits.conf@; to raise this to 1024^2, as root, modify the &quot;nofile&quot; line in /etc/security/limits.conf on all hubs.
+
+h2. Running Servers
+
+Hedwig requires BookKeeper to run. For BookKeeper setup instructions see "BookKeeper Getting Started":./bookkeeperStarted.html.
+
+To start a Hedwig hub server:
+
+@hedwig-server/bin/hedwig server@
+
+Hedwig takes its configuration from hedwig-server/conf/hw_server.conf by default. To change location of the conf file, modify the HEDWIG_SERVER_CONF environment variable.
+
+h1. Debugging
+
+You can attach an Eclipse debugger (or any debugger) to a Java process running on a remote host, as long as it has been started with the appropriate JVM flags. (See the Building Hedwig document to set up your Eclipse environment.) To launch something using @bin/hedwig@ with debugger attachment enabled, prefix the command with @HEDWIG_EXTRA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,address=5000@, e.g.:
+
+@HEDWIG_EXTRA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,address=5000 hedwig-server/bin/hedwig server@
+
+h1. Logging
+
+Hedwig uses "slf4j":http://www.slf4j.org for logging, with the log4j bindings enabled by default. To enable logging from hedwig, create a log4j.properties file and point the environment variable HEDWIG_LOG_CONF to the file. The path to the log4j.properties file must be absolute.
+
+@export HEDWIG_LOG_CONF=/tmp/log4j.properties@
+@hedwig-server/bin/hedwig server@
+
+

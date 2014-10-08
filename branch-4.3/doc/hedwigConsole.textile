@@ -1,0 +1,187 @@
+Title:        Hedwig Console
+Notice: Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License. You may
+        obtain a copy of the License at "http://www.apache.org/licenses/LICENSE-2.0":http://www.apache.org/licenses/LICENSE-2.0.
+        .
+        .        
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+        implied. See the License for the specific language governing permissions
+        and limitations under the License.
+        .
+        .
+
+h1. Hedwig Console
+
+Apache Hedwig provides a console client, which allows users and administrators to interact with a hedwig cluster. 
+
+h2. Connecting to hedwig cluster
+
+Hedwig console client is shipped with hedwig server package.
+
+p. To start the console client:
+
+ @hedwig-server/bin/hedwig console@
+
+p. By default, the console client connects to hub server on localhost. If you want the console client to connect to a different hub server, you can override following environment variables.
+
+| @HEDWIG_CONSOLE_SERVER_CONF@ | Path of a hub server configuration file. Override to make hedwig console client connect to correct zookeeper cluster. |
+| @HEDWIG_CONSOLE_CLIENT_CONF@ | Path of a hedwig client configuration file. Override to make hedwig console client communicate with correct hub servers. |
+
+p. Once connected, you should see something like:
+
+<pre>
+Connecting to zookeeper/bookkeeper using HedwigAdmin
+
+Connecting to default hub server localhost/127.0.0.1:4080
+Welcome to Hedwig!
+JLine support is enabled
+JLine history support is enabled
+[hedwig: (standalone) 16] 
+</pre>
+
+p. From the shell, type __help__ to get a list of commands that can be executed from the client:
+
+<pre>
+[hedwig: (standalone) 16] help
+HedwigConsole [options] [command] [args]
+
+Available commands:
+        pub
+        sub
+        closesub
+        unsub
+        rmsub
+        consume
+        consumeto
+        pubsub
+        show
+        describe
+        readtopic
+        set
+        history
+        redo
+        help
+        quit
+        exit
+
+Finished 0.0020 s.
+</pre>
+
+p. If you want to know detail usage for each command, type __help {command}__ in the shell. For example:
+
+<pre>
+[hedwig: (standalone) 17] help pub
+pub: Publish a message to a topic in Hedwig
+usage: pub {topic} {message}
+
+  {topic}   : topic name.
+              any printable string without spaces.
+  {message} : message body.
+              remaining arguments are used as message body to publish.
+
+Finished 0.0 s.
+</pre>
+
+h2. Commands
+
+All the available commands provided in hedwig console could be categorized into three groups. They are __interactive commands__, __admin commands__, __utility commands__.
+
+h3. Interactive Commands
+
+p. Interactive commands are used by users to communicate with a hedwig cluster. They are __pub__, __sub__, __closesub__, __unsub__, __consume__ and __consumeto__.
+
+p. These commands are quite simple and have same semantics as the API provided in hedwig client.
+
+h3.  Admin Commands
+
+p. Admin commands are used by administrators to operate or debug a hedwig cluster. They are __show__, __describe__, __pubsub__ and __readtopic__.
+
+p. __show__ is used to list all available hub servers or topics in the cluster.
+
+p. You could use __show__ to list hub servers to know how many hub servers are alive in the cluster.
+
+<pre>
+[hedwig: (standalone) 27] show hubs
+Available Hub Servers:
+        192.168.1.102:4080:9876 :       0
+Finished 0.0040 s.
+</pre>
+
+p. Also, you could use __show__ to list all topics. If you have a lot of topics on the clusters, this command will take a long time to run.
+
+<pre>
+[hedwig: (standalone) 28] show topics
+Topic List:
+[mytopic]
+Finished 0.0020 s.
+</pre>
+
+p. To see the details of a topic, run __describe__. This shows the metadata of a topic, including topic owner, persistence info, subscriptions info.
+
+<pre>
+[hedwig: (standalone) 43] describe topic mytopic
+===== Topic Information : mytopic =====
+
+Owner : 192.168.1.102:4080:9876
+
+>>> Persistence Info <<<
+Ledger 3 [ 1 ~ 9 ]
+
+>>> Subscription Info <<<
+Subscriber mysub : consumeSeqId: local:0
+
+Finished 0.011 s.
+</pre>
+
+p. When you are run the __describe__ command, you should keep in mind that __describe__ command reads the metadata from __ZooKeeper__ directly, so the subscription info might not be completely up to date due to the fact that hub servers update the subscription metadata lazily.
+
+p. The __readtopic__ command is useful to see which messages have not been consumed by the client.
+
+<pre>
+[hedwig: (standalone) 46] readtopic mytopic
+
+>>>>> Ledger 3 [ 1 ~ 9] <<<<<
+
+---------- MSGID=LOCAL(1) ----------
+MsgId:     LOCAL(1)
+SrcRegion: standalone
+Message:
+
+hello
+
+---------- MSGID=LOCAL(2) ----------
+MsgId:     LOCAL(2)
+SrcRegion: standalone
+Message:
+
+hello 2
+
+---------- MSGID=LOCAL(3) ----------
+MsgId:     LOCAL(3)
+SrcRegion: standalone
+Message:
+
+hello 3
+
+...
+</pre>
+
+p. __pubsub__ is another useful command for administrators. It can be used to test availability and functionality of a cluster. It generates a temporary subscriber id with the current timestamp, subscribes to the given topic using generated subscriber id, publishes a message to given topic and testes whether the subscriber received the message.
+
+<pre>
+[hedwig: (standalone) 48] pubsub testtopic testsub- 10 test message for availability
+Starting PUBSUB test ...
+Sub topic testtopic, subscriber id testsub--1338126964504
+Pub topic testtopic : test message for availability-1338126964504
+Received message : test message for availability-1338126964504
+PUBSUB SUCCESS. TIME: 377 MS
+Finished 0.388 s.
+</pre>
+
+h3. Utility Commands
+
+p. Utility Commands are __help__, __history__, __redo__, __quit__ and __exit__.
+
+p. __quit__ and __exit__ are used to exit console, while __history__ and __redo__ are used to manage the history of commands executed in the shell.

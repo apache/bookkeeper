@@ -1,0 +1,165 @@
+#!/bin/bash
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+source $(dirname "$0")/raw-check-patch
+
+if [ "${TESTPATCHDEBUG}" == "true" ] ; then
+    set -x
+fi
+
+BASEDIR=$(pwd)
+TASKNAME="RAW_PATCH_ANALYSIS"
+OP=""
+TEMPDIR=""
+REPORTDIR=""
+SUMMARYFILE=""
+PATCHFILE=""
+
+###############################################################################
+cleanupAndExit() {
+    exit $1
+}
+###############################################################################
+printUsage() {
+    echo "Usage: $0 --taskname | (--op=pre|post|report --tempdir=<TEMP DIR> --reportdir=<REPORT DIR> --summaryfile=<SUMMARY FILE>)"
+    echo
+}
+###############################################################################
+parseArgs() {
+    for i in $*
+    do
+        case $i in
+        --taskname)
+            echo ${TASKNAME}
+            exit 0
+            ;;
+        --op=*)
+            OP=${i#*=}
+            ;;
+        --tempdir=*)
+            TEMPDIR=${i#*=}
+            ;;
+        --reportdir=*)
+            REPORTDIR=${i#*=}
+            ;;
+        --summaryfile=*)
+            SUMMARYFILE=${i#*=}
+            ;;
+        --patchfile=*)
+            PATCHFILE=${i#*=}
+            ;;
+        esac
+    done
+    if [[ "${TASKNAME}" == "" || "${OP}" == "" || "${TEMPDIR}" == "" || "${REPORTDIR}" == "" || "${SUMMARYFILE}" == "" || "${PATCHFILE}" == "" ]] ; then
+        echo "Missing options"
+        echo
+        printUsage
+        cleanupAndExit 1
+    fi
+    if [[ "${OP}" != "pre" && "${OP}" != "post" && "${OP}" != "report" ]] ; then
+        echo "Invalid operation"
+        echo
+        printUsage
+        cleanupAndExit 1
+    fi
+}
+###############################################################################
+checkNoAuthors() {
+    TMPFILE=$TEMPDIR/$TASKNAME-authors.txt
+    printAuthors $PATCHFILE > $TMPFILE
+    authorTags=$(wc -l $TMPFILE | awk '{print $1}')
+    if [[ ${authorTags} != 0 ]] ; then
+        REPORT+=("{color:red}-1{color} the patch seems to contain ${authorTags} line(s) with @author tags")
+        REPORT+=("$(cat $TMPFILE)")
+    else
+        REPORT+=("{color:green}+1{color} the patch does not introduce any @author tags")
+    fi
+}
+###############################################################################
+checkNoTabs() {
+    TMPFILE=$TEMPDIR/$TASKNAME-tabs.txt
+    printTabs $PATCHFILE > $TMPFILE
+    tabs=$(wc -l $TMPFILE | awk '{print $1}')
+    if [[ ${tabs} != 0 ]] ; then
+        REPORT+=("{color:red}-1{color} the patch contains ${tabs} line(s) with tabs")
+        REPORT+=("$(cat $TMPFILE)")
+    else
+        REPORT+=("{color:green}+1{color} the patch does not introduce any tabs")
+    fi
+}
+###############################################################################
+checkNoTrailingSpaces() {
+    TMPFILE=$TEMPDIR/$TASKNAME-trailingspaces.txt
+    printTrailingSpaces $PATCHFILE > $TMPFILE
+    trailingSpaces=$(wc -l $TMPFILE | awk '{print $1}')
+    if [[ ${trailingSpaces} != 0 ]] ; then
+        REPORT+=("{color:red}-1{color} the patch contains ${trailingSpaces} line(s) with trailing spaces")
+        REPORT+=("$(cat $TMPFILE)")
+    else
+        REPORT+=("{color:green}+1{color} the patch does not introduce any trailing spaces")
+    fi
+}
+###############################################################################
+checkLinesLength() {
+    TMPFILE=$TEMPDIR/$TASKNAME-trailingspaces.txt
+    printLongLines $PATCHFILE > $TMPFILE
+    longLines=$(wc -l $TMPFILE | awk '{print $1}')
+    if [[ ${longLines} != 0 ]] ; then
+        REPORT+=("{color:red}-1{color} the patch contains ${longLines} line(s) longer than 120 characters")
+        REPORT+=("$(cat $TMPFILE)")
+    else
+        REPORT+=("{color:green}+1{color} the patch does not introduce any line longer than 120")
+    fi
+}
+###############################################################################
+checkForTestcases() {
+    testcases=`grep -c -i -e '^+++.*/test' ${PATCHFILE}`
+    if [[ ${testcases} == 0 ]] ; then
+        REPORT+=("{color:red}-1{color} the patch does not add/modify any testcase")
+    #reverting for summary +1 calculation
+        testcases=1
+    else
+        REPORT+=("{color:green}+1{color} the patch does adds/modifies ${testcases} testcase(s)")
+    #reverting for summary +1 calculation
+        testcases=0
+    fi
+}
+###############################################################################
+
+parseArgs "$@"
+
+case $OP in
+pre)
+    ;;
+post)
+    ;;
+report)
+    REPORT=()
+    checkNoAuthors
+    checkNoTabs
+    checkNoTrailingSpaces
+    checkLinesLength
+    checkForTestcases
+    total=`expr $authorTags + $tabs + $trailingSpaces + $longLines + $testcases`
+    if [[ $total == 0 ]] ; then
+        echo "{color:green}+1 ${TASKNAME}{color}" >> $SUMMARYFILE
+    else
+        echo "{color:red}-1 ${TASKNAME}{color}" >> $SUMMARYFILE
+    fi
+    for line in "${REPORT[@]}" ; do
+        echo ".    ${line}" >> $SUMMARYFILE
+    done
+    ;;
+esac
+
+exit 0

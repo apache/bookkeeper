@@ -1,0 +1,416 @@
+#!/bin/bash
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+if [ "${TESTPATCHDEBUG}" == "true" ] ; then
+    set -x
+fi
+
+BASEDIR=$(pwd)
+TESTPATCHDIRNAME=test-patch
+TESTPATCHDIR=${BASEDIR}/${TESTPATCHDIRNAME}
+TOOLSDIR=${TESTPATCHDIR}/tools
+TEMPDIR=${TESTPATCHDIR}/tmp
+REPORTDIR=${TESTPATCHDIR}/reports
+SUMMARYFILE=${REPORTDIR}/TEST-SUMMARY.jira
+SUMMARYFILETXT=${REPORTDIR}/TEST-SUMMARY.txt
+
+JIRAHOST="https://issues.apache.org"
+JIRAURL="${JIRAHOST}/jira"
+JIRAURLISSUEPREFIX="${JIRAURL}/browse/"
+
+JIRAUPDATE="false"
+JIRAUSER=""
+JIRAPASSWORD=""
+
+
+VERBOSEOPTION=""
+JIRAISSUE=""
+PATCHFILE=""
+TASKSTORUN=""
+TASKSTOSKIP=""
+RESETSCM="false"
+DIRTYSCM="false"
+STDOUT="/dev/null"
+MVNPASSTHRU=""
+
+###############################################################################
+gitOrSvn() {
+    SCM="NONE"
+    which git &> /dev/null
+    if [[ $? == 0 ]] ; then
+        git status &> /dev/null
+        if [[ $? == 0 ]] ; then
+            SCM="git"
+        fi
+    fi
+    if [ "${SCM}" == "NONE" ] ; then
+        which svn &> /dev/null
+        if [[ $? == 0 ]] ; then
+            svnOutput=`svn status 2>&1`
+            if [[  "$svnOutput" != *"is not a working copy" ]] ; then
+                SCM="svn"
+            fi
+        fi
+    fi
+    if [ "${SCM}" == "NONE" ] ; then
+        echo "The current workspace is not under Source Control (GIT or SVN)"
+        exit 1
+    fi
+}
+###############################################################################
+prepareSCM() {
+    gitOrSvn
+    if [ "${DIRTYSCM}" != "true" ] ; then
+        if [ "${RESETSCM}" == "true" ] ; then
+            if [ "${SCM}" == "git" ] ; then
+                git reset --hard HEAD > /dev/null
+                git clean -f -d -e $TESTPATCHDIRNAME > /dev/null
+            fi
+            if [ "${SCM}" == "svn" ] ; then
+                svn revert -R . > /dev/null
+                svn status | grep "\?" | awk '{print $2}' | xargs rm -rf
+            fi
+        else
+            echo "It should not happen DIRTYSCM=false & RESETSCM=false"
+            exit 1
+        fi
+        echo "Cleaning local ${SCM} workspace" >> ${SUMMARYFILE}
+    else
+        echo "WARNING: Running test-patch on a dirty local ${SCM} workspace" >> ${SUMMARYFILE}
+    fi
+}
+###############################################################################
+prepareTestPatchDirs() {
+    mkdir -p ${TESTPATCHDIR} 2> /dev/null
+    rm -rf ${REPORTDIR} 2> /dev/null
+    rm -rf ${TEMPDIR} 2> /dev/null
+    mkdir -p ${TOOLSDIR} 2> /dev/null
+    mkdir -p ${TEMPDIR} 2> /dev/null
+    mkdir -p ${REPORTDIR} 2> /dev/null
+    if [ ! -e "${TESTPATCHDIR}" ] ; then
+        echo "Could not create test-patch/ dir"
+        exit 1
+    fi
+}
+###############################################################################
+updateJira() {
+    if [[ "${JIRAUPDATE}" != "" && "${JIRAISSUE}" != "" ]] ; then
+        if [[ "$JIRAPASSWORD" != "" ]] ; then
+            JIRACLI=${TOOLSDIR}/jira-cli/jira.sh
+            if [ ! -e "${JIRACLI}" ] ; then
+                curl https://bobswift.atlassian.net/wiki/download/attachments/16285777/jira-cli-2.6.0-distribution.zip > ${TEMPDIR}/jira-cli.zip
+                if [ $? != 0 ] ; then
+                    echo
+                    echo "Could not download jira-cli tool, thus no JIRA updating"
+                    echo
+                    exit 1
+                fi
+                mkdir ${TEMPDIR}/jira-cli-tmp
+                (cd ${TEMPDIR}/jira-cli-tmp;jar xf ${TEMPDIR}/jira-cli.zip; mv jira-cli-2.6.0 ${TOOLSDIR}/jira-cli)
+                chmod u+x ${JIRACLI}
+            fi
+            echo "Adding comment to JIRA"
+            comment=`cat ${SUMMARYFILE}`
+            $JIRACLI -s $JIRAURL -a addcomment -u $JIRAUSER -p "$JIRAPASSWORD" --comment "$comment" --issue $JIRAISSUE
+            echo
+        else
+            echo "Skipping JIRA update"
+            echo
+        fi
+    fi
+}
+###############################################################################
+cleanupAndExit() {
+    updateJira
+    exit $1
+}
+###############################################################################
+printUsage() {
+    echo "Usage: $0 <OPTIONS>"
+    echo "          (--jira=<JIRA ISSUE> | --patch=<PATCH PATH>)"
+    echo "          (--reset-scm | --dirty-scm)"
+    echo "          [--tasks=<TASK,...>]"
+    echo "          [--skip-tasks=<TASK,...>]"
+    echo "          [--jira-cli=<JIRA CLIENT>]"
+    echo "          [--jira-user=<JIRA USER>]"
+    echo "          [--jira-password=<JIRA PASSWORD>]"
+    echo "          [-D<MVN PROPERTY>...]"
+    echo "          [-P<MVN PROFILE>...]"
+    echo "          [--list-tasks]"
+    echo "          [--verbose]"
+    echo
+}
+###############################################################################
+parseArgs() {
+    for i in $*
+    do
+        case $i in
+        --jira=*)
+            JIRAISSUE=${i#*=}
+            ;;
+        --patch=*)
+            PATCHFILE=${i#*=}
+            ;;
+        --tasks=*)
+            TASKSTORUN=${i#*=}
+            ;;
+        --skip-tasks=*)
+            TASKSTOSKIP=${i#*=}
+            ;;
+        --list-tasks)
+            listTasks
+            cleanupAndExit 0
+            ;;
+        --jira-cli=*)
+            JIRACLI=${i#*=}
+            ;;
+        --jira-user=*)
+            JIRAUSER=${i#*=}
+            ;;
+        --jira-password=*)
+            JIRAPASSWORD=${i#*=}
+            JIRAUPDATE="true"
+            ;;
+        -D*)
+            MVNPASSTHRU="${MVNPASSTHRU} $i"
+            ;;
+        -P*)
+            MVNPASSTHRU="${MVNPASSTHRU} $i"
+            ;;
+        --reset-scm)
+            RESETSCM="true"
+            ;;
+        --dirty-scm)
+            DIRTYSCM="true"
+            ;;
+        --verbose)
+            VERBOSEOPTION="--verbose"
+            STDOUT="/dev/stdout"
+            ;;
+        *)
+            echo "Invalid option"
+            echo
+            printUsage
+            exit 1
+            ;;
+        esac
+    done
+
+    if [[ "${JIRAISSUE}" == "" && "${PATCHFILE}" == "" ]] ; then
+        echo "Either --jira or --patch option must be specified"
+        echo
+        printUsage
+        exit 1
+    fi
+    if [[ "${JIRAISSUE}" != "" && "${PATCHFILE}" != "" ]] ; then
+        echo "Cannot specify --jira or --patch options together"
+        echo
+        printUsage
+        exit 1
+    fi
+    if [[ "${RESETSCM}" == "false" && "${DIRTYSCM}" == "false" ]] ; then
+        echo "Either --reset-scm or --dirty-scm option must be specified"
+        echo
+        printUsage
+        exit 1
+    fi
+    if [[ "${RESETSCM}" == "true" && "${DIRTYSCM}" == "true" ]] ; then
+        echo "Cannot specify --reset-scm and --dirty-scm options together"
+        echo
+        printUsage
+        exit 1
+    fi
+}
+
+###############################################################################
+listTasks() {
+    echo "Available Tasks:"
+    echo ""
+    getAllTasks
+    for taskFile in ${TASKFILES} ; do
+        taskName=`bash $taskFile --taskname`
+        echo "  $taskName"
+    done
+    echo
+}
+###############################################################################
+downloadPatch () {
+    PATCHFILE=${TEMPDIR}/test.patch
+    jiraPage=${TEMPDIR}/jira.txt
+    curl "${JIRAURLISSUEPREFIX}${JIRAISSUE}" > ${jiraPage}
+    if [[ `grep -c 'Patch Available' ${jiraPage}` == 0 ]] ; then
+        echo "$JIRAISSUE is not \"Patch Available\".  Exiting."
+        echo
+        exit 1
+    fi
+    relativePatchURL=`grep -o '"/jira/secure/attachment/[0-9]*/[^"]*' ${jiraPage} \
+        | grep -v -e 'htm[l]*$' | sort | tail -1 \
+        | grep -o '/jira/secure/attachment/[0-9]*/[^"]*'`
+    patchURL="${JIRAHOST}${relativePatchURL}"
+    patchNum=`echo $patchURL | grep -o '[0-9]*/' | grep -o '[0-9]*'`
+    curl ${patchURL} > ${PATCHFILE}
+    if [[ $? != 0 ]] ; then
+        echo "Could not download patch for ${JIRAISSUE} from ${patchURL}"
+        echo
+        cleanupAndExit 1
+    fi
+    PATCHNAME=$(echo $patchURL | sed 's/.*\///g')
+    echo "JIRA ${JIRAISSUE}, patch downloaded at `date` from ${patchURL}" 
+    echo
+    echo "Patch [$PATCHNAME|$patchURL] downloaded at $(date)" >> ${SUMMARYFILE}
+    echo "" >> ${SUMMARYFILE}
+}
+###############################################################################
+applyPatch() {
+    echo "Applying patch" >> $STDOUT
+    echo "" >> $STDOUT
+    patch -f -E --dry-run -p0 < ${PATCHFILE} | tee ${REPORTDIR}/APPLY-PATCH.txt \
+        >> $STDOUT
+    if [[  ${PIPESTATUS[0]} != 0 ]] ; then
+        echo "Patch failed to apply to head of branch"
+        echo "{color:red}-1{color} Patch failed to apply to head of branch" >> ${SUMMARYFILE}
+        echo "" >> ${SUMMARYFILE}
+        echo "----------------------------" >> ${SUMMARYFILE}
+        echo
+        cleanupAndExit 1
+    fi
+    patch -f -E -p0 < ${PATCHFILE} > ${REPORTDIR}/APPLY-PATCH.txt
+    if [[ $? != 0 ]] ; then
+        echo "ODD!, dry run passed, but patch failed to apply to head of branch"
+        echo
+        cleanupAndExit 1
+    fi
+    echo "" >> $STDOUT
+    echo "Patch applied"
+    echo "{color:green}+1 PATCH_APPLIES{color}" >> $SUMMARYFILE
+    echo
+}
+###############################################################################
+run() {
+    task=`bash $1 --taskname`
+    if [[ "${TASKSTORUN}" == "" || "${TASKSTORUN}" =~ "${task}" ]] ; then
+        if [[ ! "${TASKSTOSKIP}" =~ "${task}" ]] ; then
+            echo "  Running test-patch task ${task}"
+            outputFile="`basename $1`-$2.out"
+            $1 --op=$2 --tempdir=${TEMPDIR} --reportdir=${REPORTDIR} \
+                --summaryfile=${SUMMARYFILE} --patchfile=${PATCHFILE} ${MVNPASSTHRU} \
+                ${VERBOSEOPTION} | tee ${TEMPDIR}/${outputFile} >> $STDOUT
+            if [[ $? != 0 ]] ; then
+                echo "  Failure, check for details ${TEMPDIR}/${outputFile}"
+                echo
+                cleanupAndExit 1
+            fi
+        fi
+    fi
+}
+###############################################################################
+getAllTasks() {
+    TASKFILES=`ls -a bin/test\-patch\-[0-9][0-9]\-*`
+}
+###############################################################################
+prePatchRun() {
+    echo "Pre patch"
+    for taskFile in ${TASKFILES} ; do
+        run $taskFile pre
+    done
+    echo
+}
+###############################################################################
+postPatchRun() {
+    echo "Post patch"
+    for taskFile in ${TASKFILES} ; do
+        run $taskFile post
+    done
+    echo
+}
+###############################################################################
+createReports() {
+    echo "Reports"
+    for taskFile in ${TASKFILES} ; do
+        run $taskFile report
+    done
+    echo
+}
+###############################################################################
+
+echo
+
+parseArgs "$@"
+
+prepareSCM
+
+prepareTestPatchDirs
+
+echo "" > ${SUMMARYFILE}
+
+if [ "${PATCHFILE}" == "" ] ; then
+    echo "Testing JIRA ${JIRAISSUE}"
+    echo
+    echo "Testing JIRA ${JIRAISSUE}" >> ${SUMMARYFILE}
+    echo "" >> ${SUMMARYFILE}
+else
+    if [ ! -e ${PATCHFILE} ] ; then
+        echo "Patch file does not exist"
+        cleanupAndExit 1
+    fi
+    echo "Testing patch ${PATCHFILE}"
+    echo
+    echo "Testing patch ${PATCHFILE}" >> ${SUMMARYFILE}
+    echo "" >> ${SUMMARYFILE}
+fi
+
+echo "" >> ${SUMMARYFILE}
+
+if [ "${PATCHFILE}" == "" ] ; then
+    downloadPatch ${JIRAISSUE}
+fi
+
+echo "----------------------------" >> ${SUMMARYFILE}
+echo "" >> ${SUMMARYFILE}
+getAllTasks
+prePatchRun
+applyPatch
+postPatchRun
+createReports
+echo "" >> ${SUMMARYFILE}
+echo "----------------------------" >> ${SUMMARYFILE}
+MINUSONES=`grep -c "\}\-1" ${SUMMARYFILE}`
+if [[ $MINUSONES == 0 ]]; then
+    echo "{color:green}*+1 Overall result, good!, no -1s*{color}" >> ${SUMMARYFILE}
+else
+    echo "{color:red}*-1 Overall result, please check the reported -1(s)*{color}" >> ${SUMMARYFILE}
+fi
+echo "" >> ${SUMMARYFILE}
+WARNINGS=`grep -c "\}WARNING" ${SUMMARYFILE}`
+if [[ $WARNINGS != 0 ]]; then
+    echo "{color:red}.   There is at least one warning, please check{color}" >> ${SUMMARYFILE}
+fi
+echo "" >> ${SUMMARYFILE}
+
+if [ ! -z "${JIRAISSUE}" ]; then
+    echo "The full output of the test-patch run is available at"  >> ${SUMMARYFILE}
+    echo ""  >> ${SUMMARYFILE}
+    echo ".   ${BUILD_URL}"  >> ${SUMMARYFILE}
+    echo ""  >> ${SUMMARYFILE}
+else
+    echo
+    echo "Refer to ${REPORTDIR} for detailed test-patch reports"
+    echo
+fi
+
+cat ${SUMMARYFILE} | sed -e 's/{color}//' -e 's/{color:green}//' -e 's/{color:red}//' -e 's/^\.//' -e 's/^\*//' -e 's/\*$//' > ${SUMMARYFILETXT}
+
+cat ${SUMMARYFILETXT}
+
+cleanupAndExit `expr $MINUSONES != 0`

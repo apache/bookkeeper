@@ -1,0 +1,124 @@
+Title:        Streaming with BookKeeper
+Notice: Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License. You may
+        obtain a copy of the License at "http://www.apache.org/licenses/LICENSE-2.0":http://www.apache.org/licenses/LICENSE-2.0.
+        .        
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+        implied. See the License for the specific language governing permissions
+        and limitations under the License.
+        .
+
+h1. Abstract
+
+This guide contains detailed information about using how to stream bytes on top of BookKeeper. It essentially motivates and discusses the basic stream operations currently supported.
+
+h1. Summary
+
+p. When using the BookKeeper API, an application has to split the data to write into entries, each entry being a byte array. This is natural for many applications. For example, when using BookKeeper for write-ahead logging, an application typically wants to write the modifications corresponding to a command or a transaction. Some other applications, however, might not have a natural boundary for entries, and may prefer to write and read streams of bytes. This is exactly the purpose of the stream API we have implemented on top of BookKeeper. 
+
+p. The stream API is implemented in the package @Streaming@ , and it contains two main classes: @LedgerOutputStream@ and  @LedgerInputStream@ . The class names are indicative of what they do. 
+
+h1. Writing a stream of bytes
+
+p. Class @LedgerOutputStream@ implements two constructors and five public methods: 
+
+ @public LedgerOutputStream(LedgerHandle lh) @ 
+
+p. where: 
+
+*  @lh@ is a ledger handle for a previously created and open ledger. 
+
+
+ @public LedgerOutputStream(LedgerHandle lh, int size) @ 
+
+p. where: 
+
+*  @lh@ is a ledger handle for a previously created and open ledger. 
+*  @size@ is the size of the byte buffer to store written bytes before flushing. 
+
+
+ _Closing a stream._ This call closes the stream by flushing the write buffer. 
+
+ @public void close() @ 
+
+p. which has no parameters. 
+
+ _Flushing a stream._ This call essentially flushes the write buffer. 
+
+ @public synchronized void flush() @ 
+
+p. which has no parameters. 
+
+ _Writing bytes._ There are three calls for writing bytes to a stream. 
+
+ @public synchronized void write(byte[] b) @ 
+
+p. where: 
+
+*  @b@ is an array of bytes to write. 
+
+
+ @public synchronized void write(byte[] b, int off, int len) @ 
+
+p. where: 
+
+*  @b@ is an array of bytes to write. 
+*  @off@ is a buffer offset. 
+*  @len@ is the length to write. 
+
+
+ @public synchronized void write(int b) @ 
+
+p. where: 
+
+*  @b@ contains a byte to write. The method writes the least significant byte of the integer four bytes. 
+
+
+h1. Reading a stream of bytes
+
+p. Class @LedgerOutputStream@ implements two constructors and four public methods: 
+
+ @public LedgerInputStream(LedgerHandle lh) throws BKException, InterruptedException @ 
+
+p. where: 
+
+*  @lh@ is a ledger handle for a previously created and open ledger. 
+
+
+ @public LedgerInputStream(LedgerHandle lh, int size) throws BKException, InterruptedException @ 
+
+p. where: 
+
+*  @lh@ is a ledger handle for a previously created and open ledger. 
+*  @size@ is the size of the byte buffer to store bytes that the application will eventually read. 
+
+
+ _Closing._ There is one call to close an input stream, but the call is currently empty and the application is responsible for closing the ledger handle. 
+
+ @public void close() @ 
+
+p. which has no parameters. 
+
+ _Reading._ There are three calls to read from the stream. 
+
+ @public synchronized int read() throws IOException @ 
+
+p. which has no parameters. 
+
+ @public synchronized int read(byte[] b) throws IOException @ 
+
+p. where: 
+
+*  @b@ is a byte array to write to. 
+
+
+ @public synchronized int read(byte[] b, int off, int len) throws IOException @ 
+
+p. where: 
+
+*  @b@ is a byte array to write to. 
+*  @off@ is an offset for byte array @b@ . 
+*  @len@ is the length in bytes to write to @b@ . 
+

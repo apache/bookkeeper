@@ -1,0 +1,32 @@
+Title:        Hedwig JMX
+Notice: Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License. You may
+        obtain a copy of the License at "http://www.apache.org/licenses/LICENSE-2.0":http://www.apache.org/licenses/LICENSE-2.0.
+        .
+        .        
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+        implied. See the License for the specific language governing permissions
+        and limitations under the License.
+        .
+        .
+
+h1. JMX
+
+Apache Hedwig has extensive support for JMX, which allows viewing and managing a hedwig cluster.
+
+This document assumes that you have basic knowledge of JMX. See "Sun JMX Technology":http://java.sun.com/javase/technologies/core/mntr-mgmt/javamanagement/ page to get started with JMX.
+
+See the "JMX Management Guide":http://java.sun.com/javase/6/docs/technotes/guides/management/agent.html for details on setting up local and remote management of VM instances. By default the included __hedwig__ script supports only local management - review the linked document to enable support for remote management (beyond the scope of this document).
+
+__Hub Server__ is a JMX manageable server, which registers the proper MBeans during initialization to support JMX monitoring and management of the instance.
+
+h1. Hub Server MBean Reference
+
+This table details JMX for a hub server.
+
+| _.MBean | _.MBean Object Name | _.Description |
+| PubSubServer | PubSubServer | Represents a hub server. It is the root MBean for hub server, which includes statistics for a hub server. E.g. number packets sent/received/redirected, and statistics for pub/sub/unsub/consume operations. |
+| NettyHandlers | NettyHandler | Provide statistics for netty handlers. Currently it just returns number of subscription channels established to a hub server. |
+| ReadAheadCache | ReadAheadCache | Provide read ahead cache statistics. |

@@ -1,0 +1,102 @@
+Title:        BookKeeper Getting Started Guide
+Notice: Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License. You may
+        obtain a copy of the License at "http://www.apache.org/licenses/LICENSE-2.0":http://www.apache.org/licenses/LICENSE-2.0.
+        .        
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+        implied. See the License for the specific language governing permissions
+        and limitations under the License.
+        .
+
+h1. Abstract
+
+This guide contains detailed information about using BookKeeper for logging. It discusses the basic operations BookKeeper supports, and how to create logs and perform basic read and write operations on these logs.
+
+h1. Getting Started: Setting up BookKeeper to write logs.
+
+p. This document contains information to get you started quickly with BookKeeper. It is aimed primarily at developers willing to try it out, and contains simple installation instructions for a simple BookKeeper installation and a simple programming example. For further programming detail, please refer to  "BookKeeper Programmer's Guide":bookkeeperProgrammer.html. 
+
+h1. Pre-requisites
+
+p. See "System Requirements":./bookkeeperConfig.html#bk_sysReqin the Admin guide.
+
+h1. Download
+
+p. BookKeeper trunk can be downloaded from subversion. See "Version Control:http://zookeeper.apache.org/bookkeeper/svn.html. 
+
+h1. LocalBookKeeper
+
+p. BookKeeper provides a utility program to start a standalone ZooKeeper ensemble and a number of bookies on a local machine. As this all runs on a local machine, throughput will be very low. It should only be used for testing.
+
+p. To start a local bookkeeper ensemble with 5 bookies:
+
+ @bookkeeper-server/bin/bookkeeper localbookie 5@
+
+h1. Setting up bookies
+
+p. If you're bold and you want more than just running things locally, then you'll need to run bookies in different servers. You'll need at least three bookies to start with. 
+
+p. For each bookie, we need to execute a command like the following: 
+
+ @bookkeeper-server/bin/bookkeeper bookie@
+
+p. This command will use the default directories for storing ledgers and the write ahead log, and will look for a zookeeper server on localhost:2181. See the "Admin Guide":./bookkeeperConfig.html for more details.
+
+p. To see the default values of these configuration variables, run:
+
+ @bookkeeper-server/bin/bookkeeper help@
+
+h1. Setting up ZooKeeper
+
+p. ZooKeeper stores metadata on behalf of BookKeeper clients and bookies. To get a minimal ZooKeeper installation to work with BookKeeper, we can set up one server running in standalone mode. Once we have the server running, we need to create a few znodes: 
+
+#  @/ledgers @ 
+#  @/ledgers/available @ 
+
+p. We provide a way of bootstrapping it automatically. See the "Admin Guide":./bookkeeperConfig.html for a description of how to bootstrap automatically, and in particular the shell metaformat command.
+ 
+
+h1. Example
+
+p. In the following excerpt of code, we: 
+
+# Open a bookkeeper client;
+# Create a ledger; 
+# Write to the ledger; 
+# Close the ledger; 
+# Open the same ledger for reading; 
+# Read from the ledger; 
+# Close the ledger again; 
+# Close the bookkeeper client.
+
+<pre><code>
+BookKeeper bkc = new BookKeeper("localhost:2181");
+LedgerHandle lh = bkc.createLedger(ledgerPassword);
+ledgerId = lh.getId();
+ByteBuffer entry = ByteBuffer.allocate(4);
+
+for(int i = 0; i < 10; i++){
+	entry.putInt(i);
+	entry.position(0);
+	entries.add(entry.array());				
+	lh.addEntry(entry.array());
+}
+lh.close();
+lh = bkc.openLedger(ledgerId, ledgerPassword);		
+			
+Enumeration<LedgerEntry> ls = lh.readEntries(0, 9);
+int i = 0;
+while(ls.hasMoreElements()){
+	ByteBuffer origbb = ByteBuffer.wrap(
+				entries.get(i++));
+	Integer origEntry = origbb.getInt();
+	ByteBuffer result = ByteBuffer.wrap(
+				ls.nextElement().getEntry());
+
+	Integer retrEntry = result.getInt();
+}
+lh.close();
+bkc.close();
+</code></pre>
