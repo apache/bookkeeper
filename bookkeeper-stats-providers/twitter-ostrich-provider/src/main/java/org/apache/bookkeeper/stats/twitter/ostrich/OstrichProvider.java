@@ -38,10 +38,10 @@ public class OstrichProvider implements StatsProvider {
 
     private com.twitter.ostrich.admin.AdminHttpService statsExporter = null;
 
-    private static <T> List<T> list(T ... ts) {
-        List<T> result = List$.MODULE$.empty();
+    private static List<Duration> list(Duration... ts) {
+        List<Duration> result = List$.MODULE$.empty();
         for (int i = ts.length; i > 0; i--) {
-            result = new $colon$colon<T>(ts[i-1], result);
+            result = new $colon$colon<Duration>(ts[i-1], result);
         }
         return result;
     }

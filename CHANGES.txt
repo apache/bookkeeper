@@ -10,6 +10,8 @@ Trunk (unreleased changes)
 
     BUGFIXES:
 
+      BOOKKEEPER-793: Move to java 7
+
     IMPROVEMENTS:
 
 Release 4.3.0 - 2014-10-03
