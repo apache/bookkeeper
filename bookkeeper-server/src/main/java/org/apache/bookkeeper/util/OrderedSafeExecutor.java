@@ -246,6 +246,7 @@ public class OrderedSafeExecutor {
     }
 
     public ListeningScheduledExecutorService chooseThread(Object orderingKey) {
+        // skip hashcode generation in this special case
         if (threads.length == 1) {
             return threads[0];
         }
