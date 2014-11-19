@@ -61,7 +61,7 @@ class CodahaleOpStatsLogger implements OpStatsLogger {
         long[] latenciesMillis = new long[default_percentiles.length];
         Arrays.fill(latenciesMillis, Long.MAX_VALUE);
         for (int i = 0; i < default_percentiles.length; i++) {
-            latenciesMillis[i] = (long)s.getValue(default_percentiles[i]);
+            latenciesMillis[i] = (long)s.getValue(default_percentiles[i]/100);
         }
         return new OpStatsData(numSuccess, numFailed, avgLatencyMillis, latenciesMillis);
     }

@@ -12,6 +12,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-793: Move to java 7
 
+      BOOKKEEPER-797: IllegalArgumentException when calling CodahaleOpStatsLogger#toOpStatsData()
+
     IMPROVEMENTS:
 
 Release 4.3.0 - 2014-10-03
