@@ -14,6 +14,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-797: IllegalArgumentException when calling CodahaleOpStatsLogger#toOpStatsData()
 
+      BOOKKEEPER-815: Ledger fence state is lost when the ledger file is evicted (Charles Xie via ivank)
+
     IMPROVEMENTS:
 
 Release 4.3.0 - 2014-10-03
