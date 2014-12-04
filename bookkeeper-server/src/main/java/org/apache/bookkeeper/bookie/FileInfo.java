@@ -136,7 +136,7 @@ class FileInfo {
         }
     }
 
-    synchronized private void checkOpen(boolean create) throws IOException {
+    synchronized void checkOpen(boolean create) throws IOException {
         if (fc != null) {
             return;
         }
@@ -259,6 +259,10 @@ class FileInfo {
     synchronized public void close(boolean force) throws IOException {
         isClosed = true;
         checkOpen(force);
+        // Any time when we force close a file, we should try to flush header. otherwise, we might lose fence bit.
+        if (force) {
+            flushHeader();
+        }
         if (useCount.get() == 0 && fc != null) {
             fc.close();
         }

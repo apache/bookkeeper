@@ -4,6 +4,8 @@ Release 4.3.1 - unreleased
 
     BUGFIXES:
 
+      BOOKKEEPER-815: Ledger fence state is lost when the ledger file is evicted (Charles Xie via ivank)
+
 Release 4.3.0 - 2014-10-03
 
   Non-backward compatible changes:
