@@ -18,6 +18,8 @@ Trunk (unreleased changes)
 
     IMPROVEMENTS:
 
+      BOOKKEEPER-800: Expose whether a ledger is closed or not (ivank)
+
 Release 4.3.0 - 2014-10-03
 
   Non-backward compatible changes:
