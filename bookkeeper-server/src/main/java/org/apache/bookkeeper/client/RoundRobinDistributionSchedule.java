@@ -67,33 +67,31 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
     }
 
     private class RRQuorumCoverageSet implements QuorumCoverageSet {
-        // covered[i] is true if the quorum starting at bookie index i has been
-        // covered by a recovery reply
-        private boolean[] covered = null;
-        private int numQuorumsUncovered;
+        private final boolean[] covered = new boolean[ensembleSize];
 
         private RRQuorumCoverageSet() {
-            covered = new boolean[ensembleSize];
-            numQuorumsUncovered = ensembleSize;
+            for (int i = 0; i < covered.length; i++) {
+                covered[i] = false;
+            }
         }
 
         public synchronized boolean addBookieAndCheckCovered(int bookieIndexHeardFrom) {
-            if (numQuorumsUncovered == 0) {
-                return true;
-            }
+            covered[bookieIndexHeardFrom] = true;
 
-            for (int i = 0; i < ackQuorumSize; i++) {
-                int quorumStartIndex = MathUtils.signSafeMod(bookieIndexHeardFrom - i, ensembleSize);
-                if (!covered[quorumStartIndex]) {
-                    covered[quorumStartIndex] = true;
-                    numQuorumsUncovered--;
-
-                    if (numQuorumsUncovered == 0) {
-                        return true;
+            // now check if there are any write quorums, with |ackQuorum| nodes available
+            for (int i = 0; i < ensembleSize; i++) {
+                int nodesNotCovered = 0;
+                for (int j = 0; j < writeQuorumSize; j++) {
+                    int nodeIndex = (i + j) % ensembleSize;
+                    if (!covered[nodeIndex]) {
+                        nodesNotCovered++;
                     }
                 }
+                if (nodesNotCovered >= ackQuorumSize) {
+                    return false;
+                }
             }
-            return false;
+            return true;
         }
     }
 
