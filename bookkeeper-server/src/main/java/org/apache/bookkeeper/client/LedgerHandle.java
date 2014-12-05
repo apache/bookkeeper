@@ -251,6 +251,13 @@ public class LedgerHandle {
         asyncCloseInternal(cb, ctx, BKException.Code.LedgerClosedException);
     }
 
+    /**
+     * Has the ledger been closed?
+     */
+    public boolean isClosed() {
+        return metadata.isClosed();
+    }
+
     void asyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
         try {
             doAsyncCloseInternal(cb, ctx, rc);
