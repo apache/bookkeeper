@@ -236,6 +236,13 @@ public class LedgerHandle {
     }
 
     /**
+     * Has the ledger been closed?
+     */
+    public boolean isClosed() {
+        return metadata.isClosed();
+    }
+
+    /**
      * Same as public version of asyncClose except that this one takes an
      * additional parameter which is the return code to hand to all the pending
      * add ops
