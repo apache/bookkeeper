@@ -134,7 +134,6 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
         this.conf = conf;
         this.zk = zk;
         this.ledgerRootPath = conf.getZkLedgersRootPath();
-        this.scheduler = Executors.newSingleThreadScheduledExecutor();
         ThreadFactoryBuilder tfb = new ThreadFactoryBuilder().setNameFormat(
                 "ZkLedgerManagerScheduler-%d");
         this.scheduler = Executors

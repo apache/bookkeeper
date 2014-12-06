@@ -37,6 +37,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.util.concurrent.SettableFuture;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Enumeration;
@@ -520,6 +522,62 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
         } catch (BKException.BKClientClosedException cce) {
             // correct behaviour
         }
+    }
+
+    /**
+     * Test that the bookkeeper client doesn't leave any threads hanging around.
+     * See {@link https://issues.apache.org/jira/browse/BOOKKEEPER-804}
+     */
+    @Test(timeout = 60000)
+    public void testBookKeeperCloseThreads() throws Exception {
+        ThreadGroup group = new ThreadGroup("test-group");
+        final SettableFuture<Void> future = SettableFuture.<Void>create();
+
+        Thread t = new Thread(group, "TestThread") {
+                @Override
+                public void run() {
+                    try {
+                        BookKeeper bk = new BookKeeper(baseClientConf);
+                        // 9 is a ledger id of an existing ledger
+                        LedgerHandle lh = bk.createLedger(BookKeeper.DigestType.CRC32, "passwd".getBytes());
+                        lh.addEntry("foobar".getBytes());
+                        lh.close();
+                        long id = lh.getId();
+                        // 9 is a ledger id of an existing ledger
+                        lh = bk.openLedgerNoRecovery(id, BookKeeper.DigestType.CRC32, "passwd".getBytes());
+                        Enumeration<LedgerEntry> entries = lh.readEntries(0, 0);
+
+                        lh.close();
+                        bk.close();
+                        future.set(null);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        future.setException(ie);
+                    } catch (Exception e) {
+                        future.setException(e);
+                    }
+                }
+            };
+        t.start();
+
+        future.get();
+        t.join();
+
+        // check in a loop for 10 seconds
+        // because sometimes it takes a while to threads to go away
+        for (int i = 0; i < 10; i++) {
+            if (group.activeCount() > 0) {
+                Thread[] threads = new Thread[group.activeCount()];
+                group.enumerate(threads);
+                for (Thread leftover : threads) {
+                    LOG.error("Leftover thread after {} secs: {}", i, leftover);
+                }
+                Thread.sleep(1000);
+            } else {
+                break;
+            }
+        }
+        assertEquals("Should be no threads left in group", 0, group.activeCount());
     }
 
     private LedgerHandle createLedgerWithEntries(BookKeeper bk, int numOfEntries)
