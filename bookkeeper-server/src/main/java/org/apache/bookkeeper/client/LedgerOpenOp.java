@@ -196,9 +196,9 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
 
     void openComplete(int rc, LedgerHandle lh) {
         if (BKException.Code.OK != rc) {
-            openOpLogger.registerFailedEvent(startTime);
+            openOpLogger.registerFailedEvent(MathUtils.elapsedMSec(startTime));
         } else {
-            openOpLogger.registerSuccessfulEvent(startTime);
+            openOpLogger.registerSuccessfulEvent(MathUtils.elapsedMSec(startTime));
         }
         cb.openComplete(rc, lh, ctx);
     }

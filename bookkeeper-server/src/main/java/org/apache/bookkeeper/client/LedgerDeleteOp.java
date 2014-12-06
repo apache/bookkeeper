@@ -81,9 +81,9 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
     @Override
     public void safeOperationComplete(int rc, Void result) {
         if (BKException.Code.OK != rc) {
-            deleteOpLogger.registerFailedEvent(startTime);
+            deleteOpLogger.registerFailedEvent(MathUtils.elapsedMSec(startTime));
         } else {
-            deleteOpLogger.registerSuccessfulEvent(startTime);
+            deleteOpLogger.registerSuccessfulEvent(MathUtils.elapsedMSec(startTime));
         }
         cb.deleteComplete(rc, this.ctx);
     }
