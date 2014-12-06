@@ -103,6 +103,7 @@ public class BookieShell implements Tool {
     static final String CMD_HELP = "help";
 
     final ServerConfiguration bkConf = new ServerConfiguration();
+    File[] indexDirectories;
     File[] ledgerDirectories;
     File journalDirectory;
 
@@ -1086,6 +1087,11 @@ public class BookieShell implements Tool {
                 for (File dir : ledgerDirectories) {
                     hasCookieUpdatedInDirs &= verifyCookie(newCookie, dir);
                 }
+                if (indexDirectories != ledgerDirectories) {
+                    for (File dir : indexDirectories) {
+                        hasCookieUpdatedInDirs &= verifyCookie(newCookie, dir);
+                    }
+                }
 
                 if (hasCookieUpdatedInDirs) {
                     try {
@@ -1106,6 +1112,12 @@ public class BookieShell implements Tool {
                         newCookie.writeToDirectory(dir);
                     }
                     LOG.info("Updated cookie file present in ledgerDirectories {}", ledgerDirectories);
+                    if (ledgerDirectories != indexDirectories) {
+                        for (File dir : indexDirectories) {
+                            newCookie.writeToDirectory(dir);
+                        }
+                        LOG.info("Updated cookie file present in indexDirectories {}", indexDirectories);
+                    }
                 }
                 // writes newcookie to zookeeper
                 conf.setUseHostNameAsBookieID(useHostname);
@@ -1171,6 +1183,11 @@ public class BookieShell implements Tool {
         bkConf.loadConf(conf);
         journalDirectory = Bookie.getCurrentDirectory(bkConf.getJournalDir());
         ledgerDirectories = Bookie.getCurrentDirectories(bkConf.getLedgerDirs());
+        if (null == bkConf.getIndexDirs()) {
+            indexDirectories = ledgerDirectories;
+        } else {
+            indexDirectories = Bookie.getCurrentDirectories(bkConf.getIndexDirs());
+        }
         formatter = EntryFormatter.newEntryFormatter(bkConf, ENTRY_FORMATTER_CLASS);
         LOG.debug("Using entry formatter {}", formatter.getClass().getName());
         pageSize = bkConf.getPageSize();
@@ -1252,7 +1269,7 @@ public class BookieShell implements Tool {
     private File getLedgerFile(long ledgerId) {
         String ledgerName = IndexPersistenceMgr.getLedgerName(ledgerId);
         File lf = null;
-        for (File d : ledgerDirectories) {
+        for (File d : indexDirectories) {
             lf = new File(d, ledgerName);
             if (lf.exists()) {
                 break;
