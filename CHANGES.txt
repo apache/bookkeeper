@@ -32,6 +32,10 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-813: BookieShell doesn't find index directory (Charles Xie via sijie)
 
+      bookkeeper-client:
+
+        BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
+
 Release 4.3.0 - 2014-10-03
 
   Non-backward compatible changes:
