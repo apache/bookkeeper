@@ -8,6 +8,8 @@ Release 4.3.1 - unreleased
 
       BOOKKEEPER-799: Distribution schedule coverage sets don't take gaps in response lists into account when writequorum > ackquorum (ivank)
 
+      BOOKKEEPER-809: Wrong metric on LedgerDeleteOp and LedgerOpenOp (Charles Xie via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-800: Expose whether a ledger is closed or not (ivank)
