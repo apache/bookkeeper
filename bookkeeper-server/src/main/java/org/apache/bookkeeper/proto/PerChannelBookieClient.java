@@ -171,6 +171,11 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         bootstrap.setPipelineFactory(this);
         bootstrap.setOption("tcpNoDelay", conf.getClientTcpNoDelay());
         bootstrap.setOption("keepAlive", true);
+        bootstrap.setOption("connectTimeoutMillis", conf.getClientConnectTimeoutMillis());
+        bootstrap.setOption("child.sendBufferSize", conf.getClientSendBufferSize());
+        bootstrap.setOption("child.receiveBufferSize", conf.getClientReceiveBufferSize());
+        bootstrap.setOption("writeBufferLowWaterMark", conf.getClientWriteBufferLowWaterMark());
+        bootstrap.setOption("writeBufferHighWaterMark", conf.getClientWriteBufferHighWaterMark());
 
         ChannelFuture future = bootstrap.connect(addr.getSocketAddress());
         future.addListener(new ChannelFutureListener() {
