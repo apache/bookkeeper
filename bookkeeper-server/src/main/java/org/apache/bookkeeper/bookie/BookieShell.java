@@ -1344,6 +1344,7 @@ public class BookieShell implements Tool {
             System.out.println("size : " + size + " (not aligned with 8, may be corrupted or under flushing now)");
         }
         System.out.println("entries     : " + (size / 8));
+        System.out.println("isFenced    : " + fi.isFenced());
     }
 
     /**

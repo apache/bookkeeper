@@ -26,6 +26,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-800: Expose whether a ledger is closed or not (ivank)
 
+      BOOKKEEPER-820: print out fi.isFenced() in BookieShell (zhaijia via sijie)
+
 Release 4.3.0 - 2014-10-03
 
   Non-backward compatible changes:
