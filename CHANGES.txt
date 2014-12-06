@@ -30,6 +30,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-820: print out fi.isFenced() in BookieShell (zhaijia via sijie)
 
+      BOOKKEEPER-813: BookieShell doesn't find index directory (Charles Xie via sijie)
+
 Release 4.3.0 - 2014-10-03
 
   Non-backward compatible changes:
