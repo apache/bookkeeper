@@ -32,6 +32,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-813: BookieShell doesn't find index directory (Charles Xie via sijie)
 
+      BOOKKEEPER-811: Recovery tool doesn't remove cookie after recovering one bookie (Charles Xie via sijie)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)

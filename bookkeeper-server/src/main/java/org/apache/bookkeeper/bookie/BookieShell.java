@@ -54,6 +54,7 @@ import org.apache.bookkeeper.util.Tool;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -207,6 +208,7 @@ public class BookieShell implements Tool {
             opts.addOption("f", "force", false,
                     "If [nonInteractive] is specified, then whether"
                             + " to force delete the old data without prompt..?");
+            opts.addOption("d", "deleteCookie", false, "Delete its cookie on zookeeper");
         }
 
         @Override
@@ -221,7 +223,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "bookieformat [-nonInteractive] [-force]";
+            return "bookieformat [-nonInteractive] [-force] [-deleteCookie]";
         }
 
         @Override
@@ -231,6 +233,19 @@ public class BookieShell implements Tool {
 
             ServerConfiguration conf = new ServerConfiguration(bkConf);
             boolean result = Bookie.format(conf, interactive, force);
+            // delete cookie
+            if (cmdLine.hasOption("d")) {
+                ZooKeeperClient zkc =
+                        ZooKeeperClient.createConnectedZooKeeperClient(conf.getZkServers(), conf.getZkTimeout());
+                try {
+                    Versioned<Cookie> cookie = Cookie.readFromZooKeeper(zkc, conf);
+                    cookie.getValue().deleteFromZooKeeper(zkc, conf, cookie.getVersion());
+                } catch (KeeperException.NoNodeException nne) {
+                    LOG.warn("No cookie to remove : ", nne);
+                } finally {
+                    zkc.close();
+                }
+            }
             return (result) ? 0 : 1;
         }
     }
@@ -243,6 +258,7 @@ public class BookieShell implements Tool {
 
         public RecoverCmd() {
             super(CMD_RECOVER);
+            opts.addOption("d", "deleteCookie", false, "Delete cookie node for the bookie.");
         }
 
         @Override
@@ -257,7 +273,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "recover      <bookieSrc> [bookieDest]";
+            return "recover [-deleteCookie] <bookieSrc> [bookieDest]";
         }
 
         @Override
@@ -271,16 +287,15 @@ public class BookieShell implements Tool {
             ClientConfiguration adminConf = new ClientConfiguration(bkConf);
             BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
             try {
-                return bkRecovery(admin, args);
+                return bkRecovery(adminConf, admin, args, cmdLine.hasOption("d"));
             } finally {
-                if (null != admin) {
-                    admin.close();
-                }
+                admin.close();
             }
         }
 
-        private int bkRecovery(BookKeeperAdmin bkAdmin, String[] args)
-                throws InterruptedException, BKException {
+        private int bkRecovery(ClientConfiguration conf, BookKeeperAdmin bkAdmin,
+                               String[] args, boolean deleteCookie)
+                throws InterruptedException, BKException, KeeperException, IOException {
             final String bookieSrcString[] = args[0].split(":");
             if (bookieSrcString.length != 2) {
                 System.err.println("BookieSrc inputted has invalid format"
@@ -302,6 +317,14 @@ public class BookieShell implements Tool {
             }
 
             bkAdmin.recoverBookieData(bookieSrc, bookieDest);
+            if (deleteCookie) {
+                try {
+                    Versioned<Cookie> cookie = Cookie.readFromZooKeeper(bkAdmin.getZooKeeper(), conf, bookieSrc);
+                    cookie.getValue().deleteFromZooKeeper(bkAdmin.getZooKeeper(), conf, bookieSrc, cookie.getVersion());
+                } catch (KeeperException.NoNodeException nne) {
+                    LOG.warn("No cookie to remove for {} : ", bookieSrc, nne);
+                }
+            }
             return 0;
         }
     }

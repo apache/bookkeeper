@@ -172,6 +172,15 @@ public class BookKeeperAdmin {
     }
 
     /**
+     * Get {@link org.apache.zookeeper.ZooKeeper} used by bookkeeper admin client.
+     *
+     * @return zookeeper client used by bookkeeper admin client
+     */
+    public ZooKeeper getZooKeeper() {
+        return zk;
+    }
+
+    /**
      * Get a list of the available bookies.
      *
      * @return a collection of bookie addresses
