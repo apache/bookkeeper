@@ -22,6 +22,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-809: Wrong metric on LedgerDeleteOp and LedgerOpenOp (Charles Xie via sijie)
 
+      BOOKKEEPER-804: Client program is not terminated when using openLedgerNoRecovery (ivank via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-800: Expose whether a ledger is closed or not (ivank)
