@@ -18,6 +18,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-799: Distribution schedule coverage sets don't take gaps in response lists into account when writequorum > ackquorum (ivank)
 
+      BOOKKEEPER-805: NullPointException in bookie server when using twitter-ostrich-provider (Youngjoon Kim via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-800: Expose whether a ledger is closed or not (ivank)
