@@ -35,8 +35,10 @@ import java.io.StringReader;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
+import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.ZkVersion;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.CookieFormat;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.versioning.Version;
@@ -232,13 +234,33 @@ class Cookie {
      * @throws InterruptedException
      * @throws UnknownHostException
      */
-    void deleteFromZooKeeper(ZooKeeper zk, ServerConfiguration conf, Version version) throws KeeperException,
+    public void deleteFromZooKeeper(ZooKeeper zk, ServerConfiguration conf, Version version) throws KeeperException,
             InterruptedException, UnknownHostException {
+        BookieSocketAddress address = Bookie.getBookieAddress(conf);
+        deleteFromZooKeeper(zk, conf, address, version);
+    }
+
+    /**
+     * Delete cookie from zookeeper
+     *
+     * @param zk zookeeper client
+     * @param conf configuration instance
+     * @param address bookie address
+     * @param version cookie version
+     * @throws KeeperException
+     * @throws InterruptedException
+     * @throws UnknownHostException
+     */
+    public void deleteFromZooKeeper(ZooKeeper zk, AbstractConfiguration conf,
+                                    BookieSocketAddress address, Version version)
+            throws KeeperException, InterruptedException, UnknownHostException {
         if (!(version instanceof ZkVersion)) {
             throw new IllegalArgumentException("Invalid version type, expected ZkVersion type");
         }
-        String zkPath = getZkPath(conf);
+
+        String zkPath = getZkPath(conf, address);
         zk.delete(zkPath, ((ZkVersion)version).getZnodeVersion());
+        LOG.info("Removed cookie from {} for bookie {}.", conf.getZkLedgersRootPath(), address);
     }
 
     /**
@@ -284,7 +306,24 @@ class Cookie {
      */
     static Versioned<Cookie> readFromZooKeeper(ZooKeeper zk, ServerConfiguration conf)
             throws KeeperException, InterruptedException, IOException, UnknownHostException {
-        String zkPath = getZkPath(conf);
+        return readFromZooKeeper(zk, conf, Bookie.getBookieAddress(conf));
+    }
+
+    /**
+     * Read cookie from zookeeper for a given bookie <i>address</i>
+     *
+     * @param zk zookeeper client
+     * @param conf configuration instance
+     * @param address bookie address
+     * @return versioned cookie object
+     * @throws KeeperException
+     * @throws InterruptedException
+     * @throws IOException
+     * @throws UnknownHostException
+     */
+    static Versioned<Cookie> readFromZooKeeper(ZooKeeper zk, AbstractConfiguration conf, BookieSocketAddress address)
+            throws KeeperException, InterruptedException, IOException, UnknownHostException {
+        String zkPath = getZkPath(conf, address);
 
         Stat stat = zk.exists(zkPath, false);
         byte[] data = zk.getData(zkPath, false, stat);
@@ -334,9 +373,20 @@ class Cookie {
      */
     static String getZkPath(ServerConfiguration conf)
             throws UnknownHostException {
+        return getZkPath(conf, Bookie.getBookieAddress(conf));
+    }
+
+    /**
+     * Return cookie path for a given bookie <i>address</i>
+     *
+     * @param conf configuration
+     * @param address bookie address
+     * @return cookie path for bookie
+     */
+    static String getZkPath(AbstractConfiguration conf, BookieSocketAddress address) {
         String bookieCookiePath = conf.getZkLedgersRootPath() + "/"
                 + BookKeeperConstants.COOKIE_NODE;
-        return bookieCookiePath + "/" + Bookie.getBookieAddress(conf);
+        return bookieCookiePath + "/" + address;
     }
 
     /**
