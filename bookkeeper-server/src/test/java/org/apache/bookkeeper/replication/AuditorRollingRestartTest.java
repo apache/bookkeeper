@@ -55,7 +55,7 @@ public class AuditorRollingRestartTest extends BookKeeperClusterTestCase {
 
         LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
         for (int i = 0; i < 10; i++) {
-            lh.asyncAddEntry("foobar".getBytes(), new TestCallbacks.AddCallbackFuture(), null);
+            lh.asyncAddEntry("foobar".getBytes(), new TestCallbacks.AddCallbackFuture(i), null);
         }
         lh.addEntry("foobar".getBytes());
         lh.close();

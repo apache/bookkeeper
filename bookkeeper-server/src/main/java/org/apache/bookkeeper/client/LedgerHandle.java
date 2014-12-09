@@ -254,7 +254,7 @@ public class LedgerHandle {
     /**
      * Has the ledger been closed?
      */
-    public boolean isClosed() {
+    public synchronized boolean isClosed() {
         return metadata.isClosed();
     }
 
@@ -286,13 +286,32 @@ public class LedgerHandle {
                 final State prevState;
                 List<PendingAddOp> pendingAdds;
 
-                synchronized(LedgerHandle.this) {
-                    // if the metadata is already closed, we don't need to proceed the process
-                    // otherwise, it might end up encountering bad version error log messages when updating metadata
-                    if (metadata.isClosed()) {
-                        cb.closeComplete(BKException.Code.OK, LedgerHandle.this, ctx);
-                        return;
+                if (isClosed()) {
+                    // TODO: make ledger metadata immutable
+                    // Although the metadata is already closed, we don't need to proceed zookeeper metadata update, but
+                    // we still need to error out the pending add ops.
+                    //
+                    // There is a race condition a pending add op is enqueued, after a close op reset ledger metadata state
+                    // to unclosed to resolve metadata conflicts. If we don't error out these pending add ops, they would be
+                    // leak and never callback.
+                    //
+                    // The race condition happen in following sequence:
+                    // a) ledger L is fenced
+                    // b) write entry E encountered LedgerFencedException, trigger ledger close procedure
+                    // c) ledger close encountered metadata version exception and set ledger metadata back to open
+                    // d) writer tries to write entry E+1, since ledger metadata is still open (reset by c))
+                    // e) the close procedure in c) resolved the metadata conflicts and set ledger metadata to closed
+                    // f) writing entry E+1 encountered LedgerFencedException which will enter ledger close procedure
+                    // g) it would find that ledger metadata is closed, then it callbacks immediately without erroring out any pendings
+                    synchronized (LedgerHandle.this) {
+                        pendingAdds = drainPendingAddsToErrorOut();
                     }
+                    errorOutPendingAdds(rc, pendingAdds);
+                    cb.closeComplete(BKException.Code.OK, LedgerHandle.this, ctx);
+                    return;
+                }
+
+                synchronized(LedgerHandle.this) {
                     prevState = metadata.getState();
                     prevLastEntryId = metadata.getLastEntryId();
                     prevLength = metadata.getLength();
@@ -549,9 +568,24 @@ public class LedgerHandle {
         }
 
         if (wasClosed) {
-            LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
-            cb.addComplete(BKException.Code.LedgerClosedException,
-                           LedgerHandle.this, INVALID_ENTRY_ID, ctx);
+            // make sure the callback is triggered in main worker pool
+            try {
+                bk.mainWorkerPool.submit(new SafeRunnable() {
+                    @Override
+                    public void safeRun() {
+                        LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
+                        cb.addComplete(BKException.Code.LedgerClosedException,
+                                LedgerHandle.this, INVALID_ENTRY_ID, ctx);
+                    }
+                    @Override
+                    public String toString() {
+                        return String.format("AsyncAddEntryToClosedLedger(lid=%d)", ledgerId);
+                    }
+                });
+            } catch (RejectedExecutionException e) {
+                cb.addComplete(bk.getReturnRc(BKException.Code.InterruptedException),
+                        LedgerHandle.this, INVALID_ENTRY_ID, ctx);
+            }
             return;
         }
 

@@ -24,6 +24,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-804: Client program is not terminated when using openLedgerNoRecovery (ivank via sijie)
 
+      BOOKKEEPER-795: Race condition causes writes to hang if ledger is fenced (sijie via ivank)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-800: Expose whether a ledger is closed or not (ivank)
