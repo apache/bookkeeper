@@ -8,6 +8,8 @@ Release 4.2.4 - unreleased
 
       BOOKKEEPER-799: Distribution schedule coverage sets don't take gaps in response lists into account when writequorum > ackquorum (ivank)
 
+      BOOKKEEPER-795: Race condition causes writes to hang if ledger is fenced (sijie via ivank)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-800: Expose whether a ledger is closed or not (ivank)
