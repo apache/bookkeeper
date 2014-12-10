@@ -39,31 +39,19 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.test.PortManager;
-import org.apache.bookkeeper.test.ZooKeeperUtil;
-import org.apache.zookeeper.ZooKeeper;
-import org.junit.After;
-import org.junit.Before;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.IOUtils;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UpgradeTest {
+public class UpgradeTest extends BookKeeperClusterTestCase {
     private final static Logger LOG = LoggerFactory.getLogger(FileInfo.class);
 
-    ZooKeeperUtil zkutil;
-    ZooKeeper zkc = null;
     final static int bookiePort = PortManager.nextFreePort();
 
-    @Before
-    public void setupZooKeeper() throws Exception {
-        zkutil = new ZooKeeperUtil();
-        zkutil.startServer();
-        zkc = zkutil.getZooKeeperClient();
-    }
-
-    @After
-    public void tearDownZooKeeper() throws Exception {
-        zkutil.killServer();
+    public UpgradeTest() {
+        super(0);
     }
 
     static void writeLedgerDir(File dir,
@@ -115,23 +103,19 @@ public class UpgradeTest {
         return jc;
     }
 
-    static String newV1JournalDirectory() throws Exception {
-        File d = File.createTempFile("bookie", "tmpdir");
-        d.delete();
-        d.mkdirs();
+    static File newV1JournalDirectory() throws Exception {
+        File d = IOUtils.createTempDir("bookie", "tmpdir");
         writeJournal(d, 100, "foobar".getBytes()).close();
-        return d.getPath();
+        return d;
     }
-
-    static String newV1LedgerDirectory() throws Exception {
-        File d = File.createTempFile("bookie", "tmpdir");
-        d.delete();
-        d.mkdirs();
+              
+    static File newV1LedgerDirectory() throws Exception {
+        File d = IOUtils.createTempDir("bookie", "tmpdir");
         writeLedgerDir(d, "foobar".getBytes());
-        return d.getPath();
+        return d;
     }
 
-    static void createVersion2File(String dir) throws Exception {
+    static void createVersion2File(File dir) throws Exception {
         File versionFile = new File(dir, "VERSION");
 
         FileOutputStream fos = new FileOutputStream(versionFile);
@@ -147,14 +131,14 @@ public class UpgradeTest {
         }
     }
 
-    static String newV2JournalDirectory() throws Exception {
-        String d = newV1JournalDirectory();
+    static File newV2JournalDirectory() throws Exception {
+        File d = newV1JournalDirectory();
         createVersion2File(d);
         return d;
     }
 
-    static String newV2LedgerDirectory() throws Exception {
-        String d = newV1LedgerDirectory();
+    static File newV2LedgerDirectory() throws Exception {
+        File d = newV1LedgerDirectory();
         createVersion2File(d);
         return d;
     }
@@ -199,28 +183,35 @@ public class UpgradeTest {
 
     @Test(timeout=60000)
     public void testUpgradeV1toCurrent() throws Exception {
-        String journalDir = newV1JournalDirectory();
-        String ledgerDir = newV1LedgerDirectory();
-        testUpgradeProceedure(zkutil.getZooKeeperConnectString(), journalDir, ledgerDir);
+        File journalDir = newV1JournalDirectory();
+        tmpDirs.add(journalDir);
+        File ledgerDir = newV1LedgerDirectory();
+        tmpDirs.add(ledgerDir);
+        testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(), ledgerDir.getPath());
     }
 
     @Test(timeout=60000)
     public void testUpgradeV2toCurrent() throws Exception {
-        String journalDir = newV2JournalDirectory();
-        String ledgerDir = newV2LedgerDirectory();
-        testUpgradeProceedure(zkutil.getZooKeeperConnectString(), journalDir, ledgerDir);
+        File journalDir = newV2JournalDirectory();
+        tmpDirs.add(journalDir);
+        File ledgerDir = newV2LedgerDirectory();
+        tmpDirs.add(ledgerDir);
+        testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(), ledgerDir.getPath());
     }
 
     @Test(timeout=60000)
     public void testUpgradeCurrent() throws Exception {
-        String journalDir = newV2JournalDirectory();
-        String ledgerDir = newV2LedgerDirectory();
-        testUpgradeProceedure(zkutil.getZooKeeperConnectString(), journalDir, ledgerDir);
+        File journalDir = newV2JournalDirectory();
+        tmpDirs.add(journalDir);
+        File ledgerDir = newV2LedgerDirectory();
+        tmpDirs.add(ledgerDir);
+        testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(), ledgerDir.getPath());
+
         // Upgrade again
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkutil.getZooKeeperConnectString())
-            .setJournalDirName(journalDir)
-            .setLedgerDirNames(new String[] { ledgerDir })
+            .setZkServers(zkUtil.getZooKeeperConnectString())
+            .setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setBookiePort(bookiePort);
         FileSystemUpgrade.upgrade(conf); // should work fine with current directory
         Bookie b = new Bookie(conf);
@@ -233,8 +224,8 @@ public class UpgradeTest {
         PrintStream origerr = System.err;
         PrintStream origout = System.out;
 
-        File output = File.createTempFile("bookie", "stdout");
-        File erroutput = File.createTempFile("bookie", "stderr");
+        File output = IOUtils.createTempFileAndDeleteOnExit("bookie", "stdout");
+        File erroutput = IOUtils.createTempFileAndDeleteOnExit("bookie", "stderr");
         System.setOut(new PrintStream(output));
         System.setErr(new PrintStream(erroutput));
         try {
@@ -247,7 +238,7 @@ public class UpgradeTest {
                 assertTrue("Wrong exception " + iae.getMessage(),
                            iae.getMessage().contains("without configuration"));
             }
-            File f = File.createTempFile("bookie", "tmpconf");
+            File f = IOUtils.createTempFileAndDeleteOnExit("bookie", "tmpconf");
             try {
                 // test without upgrade op
                 FileSystemUpgrade.main(new String[] { "--conf", f.getPath() });

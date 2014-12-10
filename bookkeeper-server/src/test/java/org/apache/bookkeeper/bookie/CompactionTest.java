@@ -369,9 +369,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         final Set<Long> ledgers = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
         LedgerManager manager = getLedgerManager(ledgers);
 
-        File tmpDir = File.createTempFile("bkTest", ".dir");
-        tmpDir.delete();
-        tmpDir.mkdir();
+        File tmpDir = createTempDir("bkTest", ".dir");
         File curDir = Bookie.getCurrentDirectory(tmpDir);
         Bookie.checkDirectoryStructure(curDir);
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
@@ -520,9 +518,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
     public void testWhenNoLogsToCompact() throws Exception {
         tearDown(); // I dont want the test infrastructure
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        File tmpDir = File.createTempFile("bkTest", ".dir");
-        tmpDir.delete();
-        tmpDir.mkdir();
+        File tmpDir = createTempDir("bkTest", ".dir");
         File curDir = Bookie.getCurrentDirectory(tmpDir);
         Bookie.checkDirectoryStructure(curDir);
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });

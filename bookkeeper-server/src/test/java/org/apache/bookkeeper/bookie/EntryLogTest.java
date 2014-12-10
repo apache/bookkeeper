@@ -25,14 +25,17 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.bookkeeper.bookie.GarbageCollectorThread.EntryLogMetadata;
 import org.apache.bookkeeper.bookie.GarbageCollectorThread.ExtractionScanner;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.util.IOUtils;
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,15 +45,25 @@ import static org.junit.Assert.*;
 public class EntryLogTest {
     private final static Logger LOG = LoggerFactory.getLogger(EntryLogTest.class);
 
-    @Before
-    public void setUp() throws Exception {
+    final List<File> tempDirs = new ArrayList<File>();
+
+    File createTempDir(String prefix, String suffix) throws IOException {
+        File dir = IOUtils.createTempDir(prefix, suffix);
+        tempDirs.add(dir);
+        return dir;
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        for (File dir : tempDirs) {
+            FileUtils.deleteDirectory(dir);
+        }
+        tempDirs.clear();
     }
 
     @Test(timeout=60000)
     public void testCorruptEntryLog() throws Exception {
-        File tmpDir = File.createTempFile("bkTest", ".dir");
-        tmpDir.delete();
-        tmpDir.mkdir();
+        File tmpDir = createTempDir("bkTest", ".dir");
         File curDir = Bookie.getCurrentDirectory(tmpDir);
         Bookie.checkDirectoryStructure(curDir);
 
@@ -100,9 +113,7 @@ public class EntryLogTest {
 
     @Test(timeout=60000)
     public void testMissingLogId() throws Exception {
-        File tmpDir = File.createTempFile("entryLogTest", ".dir");
-        tmpDir.delete();
-        tmpDir.mkdir();
+        File tmpDir = createTempDir("entryLogTest", ".dir");
         File curDir = Bookie.getCurrentDirectory(tmpDir);
         Bookie.checkDirectoryStructure(curDir);
 
@@ -165,8 +176,7 @@ public class EntryLogTest {
     /** Test that EntryLogger Should fail with FNFE, if entry logger directories does not exist*/
     public void testEntryLoggerShouldThrowFNFEIfDirectoriesDoesNotExist()
             throws Exception {
-        File tmpDir = File.createTempFile("bkTest", ".dir");
-        tmpDir.delete();
+        File tmpDir = createTempDir("bkTest", ".dir");
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
         EntryLogger entryLogger = null;
@@ -188,10 +198,8 @@ public class EntryLogTest {
      */
     @Test(timeout=60000)
     public void testAddEntryFailureOnDiskFull() throws Exception {
-        File ledgerDir1 = File.createTempFile("bkTest", ".dir");
-        ledgerDir1.delete();
-        File ledgerDir2 = File.createTempFile("bkTest", ".dir");
-        ledgerDir2.delete();
+        File ledgerDir1 = createTempDir("bkTest", ".dir");
+        File ledgerDir2 = createTempDir("bkTest", ".dir");
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(),
                 ledgerDir2.getAbsolutePath() });
@@ -214,10 +222,6 @@ public class EntryLogTest {
         Assert.assertTrue(0 == generateEntry(1, 1).compareTo(ledgerStorage.getEntry(1, 1)));
         Assert.assertTrue(0 == generateEntry(2, 1).compareTo(ledgerStorage.getEntry(2, 1)));
         Assert.assertTrue(0 == generateEntry(3, 1).compareTo(ledgerStorage.getEntry(3, 1)));
-    }
-
-    @After
-    public void tearDown() throws Exception {
     }
 
 }

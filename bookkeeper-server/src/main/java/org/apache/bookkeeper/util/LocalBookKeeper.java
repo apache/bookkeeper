@@ -27,7 +27,10 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
@@ -86,10 +89,7 @@ public class LocalBookKeeper {
         LOG.info("Starting ZK server");
         //ServerStats.registerAsConcrete();
         //ClientBase.setupTestEnv();
-        ZkTmpDir = File.createTempFile("zookeeper", "test");
-        if (!ZkTmpDir.delete() || !ZkTmpDir.mkdir()) {
-            throw new IOException("Couldn't create zk directory " + ZkTmpDir);
-        }
+        ZkTmpDir = IOUtils.createTempDir("zookeeper", "localbookkeeper");
 
         try {
             zks = new ZooKeeperServer(ZkTmpDir, ZkTmpDir, ZooKeeperDefaultPort);
@@ -126,8 +126,42 @@ public class LocalBookKeeper {
         }
     }
 
-    private void runBookies(ServerConfiguration baseConf) throws IOException,
-            KeeperException, InterruptedException, BookieException,
+    private static void cleanupDirectories(List<File> dirs) throws IOException {
+        for (File dir : dirs) {
+            FileUtils.deleteDirectory(dir);
+        }
+    }
+
+    private List<File> runBookies(ServerConfiguration baseConf, String dirSuffix)
+            throws IOException, KeeperException, InterruptedException, BookieException,
+            UnavailableException, CompatibilityException {
+        List<File> tempDirs = new ArrayList<File>();
+        try {
+            runBookies(baseConf, tempDirs, dirSuffix);
+            return tempDirs;
+        } catch (IOException ioe) {
+            cleanupDirectories(tempDirs);
+            throw ioe;
+        } catch (KeeperException ke) {
+            cleanupDirectories(tempDirs);
+            throw ke;
+        } catch (InterruptedException ie) {
+            cleanupDirectories(tempDirs);
+            throw ie;
+        } catch (BookieException be) {
+            cleanupDirectories(tempDirs);
+            throw be;
+        } catch (UnavailableException ue) {
+            cleanupDirectories(tempDirs);
+            throw ue;
+        } catch (CompatibilityException ce) {
+            cleanupDirectories(tempDirs);
+            throw ce;
+        }
+    }
+
+    private void runBookies(ServerConfiguration baseConf, List<File> tempDirs, String dirSuffix)
+            throws IOException, KeeperException, InterruptedException, BookieException,
             UnavailableException, CompatibilityException {
         LOG.info("Starting Bookie(s)");
         // Create Bookie Servers (B1, B2, B3)
@@ -179,9 +213,14 @@ public class LocalBookKeeper {
 
         lb.runZookeeper(1000);
         lb.initializeZookeper();
-        lb.runBookies(conf);
-        while (true) {
-            Thread.sleep(5000);
+        List<File> tmpDirs = lb.runBookies(conf, "test");
+        try {
+            while (true) {
+                Thread.sleep(5000);
+            }
+        } catch (InterruptedException ie) {
+            cleanupDirectories(tmpDirs);
+            throw ie;
         }
     }
 

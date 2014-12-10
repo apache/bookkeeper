@@ -31,6 +31,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import java.util.HashSet;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.util.IOUtils;
 
 public class BookieZKExpireTest extends BookKeeperClusterTestCase {
 
@@ -46,9 +47,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
     public void testBookieServerZKExpireBehaviour() throws Exception {
         BookieServer server = null;
         try {
-            File f = File.createTempFile("bookieserver", "test");
-            f.delete();
-            f.mkdir();
+            File f = createTempDir("bookieserver", "test");
 
             HashSet<Thread> threadset = new HashSet<Thread>();
             int threadCount = Thread.activeCount();

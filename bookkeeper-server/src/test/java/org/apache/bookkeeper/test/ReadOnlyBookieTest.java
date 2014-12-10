@@ -30,6 +30,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.util.IOUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -227,10 +228,8 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
 
         File[] ledgerDirs = new File[numOfLedgerDirs];
         for (int i = 0; i < numOfLedgerDirs; i++) {
-            File dir = File.createTempFile("bookie", "test");
+            File dir = createTempDir("bookie", "test");
             tmpDirs.add(dir);
-            dir.delete();
-            dir.mkdir();
             ledgerDirs[i] = dir;
         }
 

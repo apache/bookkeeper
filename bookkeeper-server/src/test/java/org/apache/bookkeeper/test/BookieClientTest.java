@@ -37,6 +37,7 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
+import org.apache.bookkeeper.util.IOUtils;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -60,10 +61,7 @@ public class BookieClientTest {
 
     @Before
     public void setUp() throws Exception {
-        tmpDir = File.createTempFile("bookie", "test");
-        tmpDir.delete();
-        tmpDir.mkdir();
-
+        tmpDir = IOUtils.createTempDir("bookieClient", "test");
         // Since this test does not rely on the BookKeeper client needing to
         // know via ZooKeeper which Bookies are available, okay, so pass in null
         // for the zkServers input parameter when constructing the BookieServer.
