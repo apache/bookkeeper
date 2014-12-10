@@ -20,10 +20,12 @@
  */
 package org.apache.bookkeeper.util;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 
 /**
@@ -100,5 +102,45 @@ public class IOUtils {
         do {
             bc.write(buf);
         } while (buf.remaining() > 0);
+    }
+
+
+    /**
+     * Create a temp directory with given <i>prefix</i> and <i>suffix</i>.
+     *
+     * @param prefix
+     *          prefix of the directory name
+     * @param suffix
+     *          suffix of the directory name
+     * @return directory created
+     * @throws IOException
+     */
+    public static File createTempDir(String prefix, String suffix)
+            throws IOException {
+        File tmpDir = File.createTempFile(prefix, suffix);
+        if (!tmpDir.delete()) {
+            throw new IOException("Couldn't delete directory " + tmpDir);
+        }
+        if (!tmpDir.mkdir()) {
+            throw new IOException("Couldn't create directory " + tmpDir);
+        }
+        return tmpDir;
+    }
+
+    /**
+     * Create a temp directory with given <i>prefix</i> and <i>suffix</i>.
+     *
+     * @param prefix
+     *          prefix of the directory name
+     * @param suffix
+     *          suffix of the directory name
+     * @return directory created
+     * @throws IOException
+     */
+    public static File createTempFileAndDeleteOnExit(String prefix, String suffix)
+            throws IOException {
+        File tmpDir = File.createTempFile(prefix, suffix);
+        tmpDir.deleteOnExit();
+        return tmpDir;
     }
 }

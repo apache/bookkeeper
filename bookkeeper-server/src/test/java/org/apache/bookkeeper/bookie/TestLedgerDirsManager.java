@@ -21,11 +21,17 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.commons.io.FileUtils;
 
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.util.IOUtils;
 import org.junit.Before;
+import org.junit.After;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,11 +45,17 @@ public class TestLedgerDirsManager {
     File curDir;
     LedgerDirsManager dirsManager;
 
+    final List<File> tempDirs = new ArrayList<File>();
+
+    File createTempDir(String prefix, String suffix) throws IOException {
+        File dir = IOUtils.createTempDir(prefix, suffix);
+        tempDirs.add(dir);
+        return dir;
+    }
+
     @Before
     public void setUp() throws Exception {
-        File tmpDir = File.createTempFile("bkTest", ".dir");
-        tmpDir.delete();
-        tmpDir.mkdir();
+        File tmpDir = createTempDir("bkTest", ".dir");
         curDir = Bookie.getCurrentDirectory(tmpDir);
         Bookie.checkDirectoryStructure(curDir);
 
@@ -51,6 +63,14 @@ public class TestLedgerDirsManager {
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
 
         dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs());
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        for (File dir : tempDirs) {
+            FileUtils.deleteDirectory(dir);
+        }
+        tempDirs.clear();
     }
 
     @Test(timeout=60000)

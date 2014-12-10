@@ -26,6 +26,7 @@ import java.io.IOException;
 
 import java.net.InetSocketAddress;
 
+import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.io.FileUtils;
@@ -76,9 +77,7 @@ public class ZooKeeperUtil {
         LOG.debug("Running ZK server");
         // ServerStats.registerAsConcrete();
         ClientBase.setupTestEnv();
-        ZkTmpDir = File.createTempFile("zookeeper", "test");
-        ZkTmpDir.delete();
-        ZkTmpDir.mkdir();
+        ZkTmpDir = IOUtils.createTempDir("zookeeper", "test");
 
         // start the server and client.
         restartServer();

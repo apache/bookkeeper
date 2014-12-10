@@ -160,7 +160,6 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
         int indexOfDownBookie = bs.indexOf(auditor);
         bs.remove(indexOfDownBookie);
         bsConfs.remove(indexOfDownBookie);
-        tmpDirs.remove(indexOfDownBookie);
         List<String> children = zkc.getChildren(electionPath, false);
         for (String child : children) {
             byte[] data = zkc.getData(electionPath + '/' + child, false, null);
@@ -188,7 +187,6 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
                 .get(indexOfDownBookie);
         bs.remove(indexOfDownBookie);
         bsConfs.remove(indexOfDownBookie);
-        tmpDirs.remove(indexOfDownBookie);
         auditorElectors.remove(addr);
         startBookie(serverConfiguration);
         // starting corresponding auditor elector

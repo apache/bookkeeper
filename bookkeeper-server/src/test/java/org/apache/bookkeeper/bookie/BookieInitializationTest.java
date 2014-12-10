@@ -39,15 +39,15 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.DiskChecker.DiskErrorException;
+import org.apache.bookkeeper.util.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.KeeperException;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,26 +55,22 @@ import org.slf4j.LoggerFactory;
 /**
  * Testing bookie initialization cases
  */
-public class BookieInitializationTest {
+public class BookieInitializationTest extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory
             .getLogger(BookieInitializationTest.class);
-    ZooKeeperUtil zkutil;
-    ZooKeeper zkc = null;
-    ZooKeeper newzk = null;
 
-    @Before
-    public void setupZooKeeper() throws Exception {
-        zkutil = new ZooKeeperUtil();
-        zkutil.startServer();
-        zkc = zkutil.getZooKeeperClient();
+    ZooKeeper newzk = null;
+    
+    public BookieInitializationTest() {
+        super(0);
     }
 
-    @After
-    public void tearDownZooKeeper() throws Exception {
-        if (newzk != null) {
+    @Override
+    public void tearDown() throws Exception {
+        if (null != newzk) {
             newzk.close();
         }
-        zkutil.killServer();
+        super.tearDown();
     }
 
     private static class MockBookie extends Bookie {
@@ -94,9 +90,7 @@ public class BookieInitializationTest {
      */
     @Test(timeout = 20000)
     public void testExitCodeZK_REG_FAIL() throws Exception {
-        File tmpDir = File.createTempFile("bookie", "test");
-        tmpDir.delete();
-        tmpDir.mkdir();
+        File tmpDir = createTempDir("bookie", "test");
 
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
                 .setZkServers(null).setJournalDirName(tmpDir.getPath())
@@ -122,9 +116,7 @@ public class BookieInitializationTest {
 
     @Test(timeout = 20000)
     public void testBookieRegistrationWithSameZooKeeperClient() throws Exception {
-        File tmpDir = File.createTempFile("bookie", "test");
-        tmpDir.delete();
-        tmpDir.mkdir();
+        File tmpDir = createTempDir("bookie", "test");
 
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
                 .setZkServers(null).setJournalDirName(tmpDir.getPath())
@@ -153,9 +145,7 @@ public class BookieInitializationTest {
      */
     @Test(timeout = 20000)
     public void testBookieRegistration() throws Exception {
-        File tmpDir = File.createTempFile("bookie", "test");
-        tmpDir.delete();
-        tmpDir.mkdir();
+        File tmpDir = createTempDir("bookie", "test");
 
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
                 .setZkServers(null).setJournalDirName(tmpDir.getPath())
@@ -219,9 +209,7 @@ public class BookieInitializationTest {
      */
     @Test(timeout = 30000)
     public void testRegNodeExistsAfterSessionTimeOut() throws Exception {
-        File tmpDir = File.createTempFile("bookie", "test");
-        tmpDir.delete();
-        tmpDir.mkdir();
+        File tmpDir = createTempDir("bookie", "test");
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration().setZkServers(null)
                 .setJournalDirName(tmpDir.getPath()).setLedgerDirNames(
@@ -274,9 +262,7 @@ public class BookieInitializationTest {
      */
     @Test(timeout = 20000)
     public void testDuplicateBookieServerStartup() throws Exception {
-        File tmpDir = File.createTempFile("bookie", "test");
-        tmpDir.delete();
-        tmpDir.mkdir();
+        File tmpDir = createTempDir("bookie", "test");
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         int port = 12555;
@@ -304,14 +290,12 @@ public class BookieInitializationTest {
      */
     @Test(timeout = 20000)
     public void testStartBookieWithoutZKServer() throws Exception {
-        zkutil.killServer();
+        zkUtil.killServer();
 
-        File tmpDir = File.createTempFile("bookie", "test");
-        tmpDir.delete();
-        tmpDir.mkdir();
+        File tmpDir = createTempDir("bookie", "test");
 
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-                .setZkServers(zkutil.getZooKeeperConnectString())
+                .setZkServers(zkUtil.getZooKeeperConnectString())
                 .setZkTimeout(5000).setJournalDirName(tmpDir.getPath())
                 .setLedgerDirNames(new String[] { tmpDir.getPath() });
         try {
@@ -319,9 +303,7 @@ public class BookieInitializationTest {
             fail("Should throw ConnectionLossException as ZKServer is not running!");
         } catch (KeeperException.ConnectionLossException e) {
             // expected behaviour
-        } finally {
-            FileUtils.deleteDirectory(tmpDir);
-        }
+        } 
     }
 
     /**
@@ -330,70 +312,60 @@ public class BookieInitializationTest {
      */
     @Test(timeout = 20000)
     public void testStartBookieWithoutZKInitialized() throws Exception {
-        File tmpDir = File.createTempFile("bookie", "test");
-        tmpDir.delete();
-        tmpDir.mkdir();
+        File tmpDir = createTempDir("bookie", "test");
         final String ZK_ROOT = "/ledgers2";
 
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkutil.getZooKeeperConnectString())
+            .setZkServers(zkUtil.getZooKeeperConnectString())
             .setZkTimeout(5000).setJournalDirName(tmpDir.getPath())
             .setLedgerDirNames(new String[] { tmpDir.getPath() });
         conf.setZkLedgersRootPath(ZK_ROOT);
         try {
-            try {
-                new Bookie(conf);
-                fail("Should throw NoNodeException");
-            } catch (Exception e) {
-                // shouldn't be able to start
-            }
-            ClientConfiguration clientConf = new ClientConfiguration();
-            clientConf.setZkServers(zkutil.getZooKeeperConnectString());
-            clientConf.setZkLedgersRootPath(ZK_ROOT);
-            BookKeeperAdmin.format(clientConf, false, false);
-
-            Bookie b = new Bookie(conf);
-            b.shutdown();
-        } finally {
-            FileUtils.deleteDirectory(tmpDir);
+            new Bookie(conf);
+            fail("Should throw NoNodeException");
+        } catch (Exception e) {
+            // shouldn't be able to start
         }
+        ClientConfiguration clientConf = new ClientConfiguration();
+        clientConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        clientConf.setZkLedgersRootPath(ZK_ROOT);
+        BookKeeperAdmin.format(clientConf, false, false);
+
+        Bookie b = new Bookie(conf);
+        b.shutdown();
     }
 
     /**
      * Check disk full. Expected to throw NoWritableLedgerDirException
      * during bookie initialisation.
      */
-    @Test(timeout = 30000, expected = NoWritableLedgerDirException.class)
+    @Test(timeout = 30000)
     public void testWithDiskFull() throws Exception {
-        File tempDir = File.createTempFile("DiskCheck", "test");
-        tempDir.delete();
-        tempDir.mkdir();
-        long usableSpace = tempDir.getUsableSpace();
-        long totalSpace = tempDir.getTotalSpace();
+        File tmpDir = createTempDir("DiskCheck", "test");
+        long usableSpace = tmpDir.getUsableSpace();
+        long totalSpace = tmpDir.getTotalSpace();
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-                .setZkServers(zkutil.getZooKeeperConnectString())
-                .setZkTimeout(5000).setJournalDirName(tempDir.getPath())
-                .setLedgerDirNames(new String[] { tempDir.getPath() });
+                .setZkServers(zkUtil.getZooKeeperConnectString())
+                .setZkTimeout(5000).setJournalDirName(tmpDir.getPath())
+                .setLedgerDirNames(new String[] { tmpDir.getPath() });
         conf.setDiskUsageThreshold((1f - ((float) usableSpace / (float) totalSpace)) - 0.05f);
         conf.setDiskUsageWarnThreshold((1f - ((float) usableSpace / (float) totalSpace)) - 0.25f);
         try {
             new Bookie(conf);
-        } finally {
-            FileUtils.deleteDirectory(tempDir);
+        } catch (Exception e) {
+            // expected
         }
     }
 
     /**
      * Check disk error for file. Expected to throw DiskErrorException.
      */
-    @Test(timeout = 30000, expected = DiskErrorException.class)
+    @Test(timeout = 30000)
     public void testWithDiskError() throws Exception {
-        File parent = File.createTempFile("DiskCheck", "test");
-        parent.delete();
-        parent.mkdir();
+        File parent = createTempDir("DiskCheck", "test");
         File child = File.createTempFile("DiskCheck", "test", parent);
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-                .setZkServers(zkutil.getZooKeeperConnectString())
+                .setZkServers(zkUtil.getZooKeeperConnectString())
                 .setZkTimeout(5000).setJournalDirName(child.getPath())
                 .setLedgerDirNames(new String[] { child.getPath() });
         try {
@@ -401,8 +373,8 @@ public class BookieInitializationTest {
             // Simulating disk errors by directly calling #init
             LedgerDirsManager ldm = new LedgerDirsManager(conf, conf.getLedgerDirs());
             ldm.init();
-        } finally {
-            FileUtils.deleteDirectory(parent);
+        } catch (Exception e) {
+            // expected
         }
     }
 
@@ -410,7 +382,7 @@ public class BookieInitializationTest {
         // create a zookeeper client
         LOG.debug("Instantiate ZK Client");
         final CountDownLatch latch = new CountDownLatch(1);
-        newzk = new ZooKeeper(zkutil.getZooKeeperConnectString(), 10000,
+        newzk = new ZooKeeper(zkUtil.getZooKeeperConnectString(), 10000,
                 new Watcher() {
                     @Override
                     public void process(WatchedEvent event) {

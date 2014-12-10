@@ -46,6 +46,7 @@ import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.util.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
@@ -108,7 +109,15 @@ public abstract class BookKeeperClusterTestCase {
         stopBKCluster();
         // stop zookeeper service
         stopZKCluster();
+        // cleanup temp dirs
+        cleanupTempDirs();
         LOG.info("Tearing down test {}", getClass());
+    }
+
+    protected File createTempDir(String prefix, String suffix) throws IOException {
+        File dir = IOUtils.createTempDir(prefix, suffix);
+        tmpDirs.add(dir);
+        return dir;
     }
 
     /**
@@ -169,16 +178,16 @@ public abstract class BookKeeperClusterTestCase {
             }
         }
         bs.clear();
+    }
+
+    protected void cleanupTempDirs() throws Exception {
         for (File f : tmpDirs) {
             FileUtils.deleteDirectory(f);
         }
     }
 
     protected ServerConfiguration newServerConfiguration() throws Exception {
-        File f = File.createTempFile("bookie", "test");
-        tmpDirs.add(f);
-        f.delete();
-        f.mkdir();
+        File f = createTempDir("bookie", "test");
 
         int port = PortManager.nextFreePort();
         return newServerConfiguration(port, zkUtil.getZooKeeperConnectString(),
