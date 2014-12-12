@@ -38,6 +38,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-811: Recovery tool doesn't remove cookie after recovering one bookie (Charles Xie via sijie)
 
+      BOOKKEEPER-801: Bookkeeper client tutorial (ivank)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
