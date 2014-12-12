@@ -1,0 +1,56 @@
+Title:     From Ledgers to Logs
+Notice:    Licensed to the Apache Software Foundation (ASF) under one
+           or more contributor license agreements.  See the NOTICE file
+           distributed with this work for additional information
+           regarding copyright ownership.  The ASF licenses this file
+           to you under the Apache License, Version 2.0 (the
+           "License"); you may not use this file except in compliance
+           with the License.  You may obtain a copy of the License at
+           .
+             http://www.apache.org/licenses/LICENSE-2.0
+           .
+           Unless required by applicable law or agreed to in writing,
+           software distributed under the License is distributed on an
+           "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+           KIND, either express or implied.  See the License for the
+           specific language governing permissions and limitations
+           under the License.
+
+This documents describes the bookkeeper replication protocol, and the guarantees it gives. It assumes you have a general idea about leader election and log replication and how you can use these in your system. If not, have a look at the bookkeeper "tutorial":https://github.com/ivankelly/bookkeeper-tutorial first.
+
+h1. Ledgers to Logs
+
+Bookkeeper provides a primitive, ledgers, which can be used to build a replicated log for your system. All guarantees provided by bookkeeper are on ledgers. You can learn about the guarantees of ledgers "here":./bookkeeperProtocol.html. Guarantees on the whole log can be built using the ledger guarantees and any consistent datastore with a compare-and-swap(CAS) primitive. In this case, we describe a log using zookeeper as the datastore, but others could theoretically be used. 
+
+A log in bookkeeper is built from a number of ledgers, with a fixed order. A ledger represents a single segment of the log. A ledger could be the whole period that one node was the leader, or there could be multiple ledgers for a single period of leadership. However, there can only ever been one leader that adds entries to a single ledger. Ledgers cannot be reopened for writing once they have been closed/recovered.
+
+It's important to note that bookkeeper doesn't provide leader election. You must use a system like Zookeeper for this.
+
+In many cases, leader election is really leader suggestion. Multiple nodes could think that they are leader at any one time. It is the job of the log to guarantee that only one can write changes to the system.
+
+h3. Opening a log
+
+Once a node thinks it is leader for a particular log, it must take the following steps.
+
+# read the list of ledgers for the log
+# fence the last 2 ledgers[1] in the list
+# create a new ledger
+# add the new ledger to the ledger list
+# write the new ledger list back to the datastore using a CAS operation.
+
+The fencing in step 2 and the compare-and-swap operation in step 5 prevents two nodes thinking they have leadership at any one time. Ledger fencing is described in "Bookkeeper Protocol":./bookkeeperProtocol.html. The compare-and-swap operation will fail if the list of ledgers has changed between reading it and writing back the new list. When the CAS operation fails, the leader must start at step 1 again. Even better, they should check that they are in fact still the leader with the system that is providing leader election. The protocol will work correctly without this step, though it will be able to make very little progress if two nodes think they are leader and are duelling for the log. 
+
+The node must not serve any writes until step 5 completes successfully.
+
+h3. Rolling ledgers
+
+The leader may wish to close the current ledger and open a new one every so often. Ledgers can only be deleted as a whole. If you don't roll the log, you won't be able to clean up old entries in the log without a leader change. By closing the current ledger and adding a new one, the leader allows the log to be truncated whenever that data is no longer needed. The steps for rolling the log is similar to those for creating a new ledger.  
+
+# create a new ledger
+# add the new ledger to the ledger list
+# write the new ledger list to the datastore using CAS
+# close the previous ledger
+
+By deferring the closing of the previous ledger until step 4, we can continue writing to the log while we perform metadata update operations to add the new ledger. This is safe as long as you fence the last _2_ ledgers when acquiring leadership.
+
+fn1. We fence 2 ledgers, as the write may be writing to the penultimate, while adding the last ledger to the ledger list.

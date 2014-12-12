@@ -40,6 +40,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-801: Bookkeeper client tutorial (ivank)
 
+      BOOKKEEPER-803: Guide for making a replicated log out of ledgers (ivank)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
