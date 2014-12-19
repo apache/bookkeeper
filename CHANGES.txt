@@ -1,4 +1,4 @@
-Release 4.2.4 - unreleased
+Release 4.2.4 - 2015-01-12
 
   Backward compatible changes:
 
