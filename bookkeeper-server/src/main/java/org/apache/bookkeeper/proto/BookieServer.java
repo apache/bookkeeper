@@ -26,6 +26,7 @@ import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.ExitCode;
@@ -104,7 +105,9 @@ public class BookieServer {
 
     protected Bookie newBookie(ServerConfiguration conf)
         throws IOException, KeeperException, InterruptedException, BookieException {
-        return new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE));
+        return conf.isForceReadOnlyBookie() ? 
+                new ReadOnlyBookie(conf, statsLogger.scope(BOOKIE_SCOPE)) :
+                new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE));
     }
 
     public void start() throws IOException, UnavailableException {
@@ -265,6 +268,8 @@ public class BookieServer {
         bkOpts.addOption("c", "conf", true, "Configuration for Bookie Server");
         bkOpts.addOption("withAutoRecovery", false,
                 "Start Autorecovery service Bookie server");
+        bkOpts.addOption("readOnly", false,
+                "Force Start a ReadOnly Bookie server");
         bkOpts.addOption("h", "help", false, "Print help message");
     }
 
@@ -316,6 +321,10 @@ public class BookieServer {
 
             if (cmdLine.hasOption("withAutoRecovery")) {
                 conf.setAutoRecoveryDaemonEnabled(true);
+            }
+
+            if (cmdLine.hasOption("readOnly")) {
+                conf.setForceReadOnlyBookie(true);
             }
 
             if (leftArgs.length < 4) {

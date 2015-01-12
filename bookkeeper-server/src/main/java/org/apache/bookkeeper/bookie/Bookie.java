@@ -106,7 +106,7 @@ public class Bookie extends BookieCriticalThread {
     static final long METAENTRY_ID_FENCE_KEY  = -0x2000;
 
     // ZK registration path for this bookie
-    private final String bookieRegistrationPath;
+    protected final String bookieRegistrationPath;
 
     private final LedgerDirsManager ledgerDirsManager;
     private LedgerDirsManager indexDirsManager;
@@ -127,10 +127,10 @@ public class Bookie extends BookieCriticalThread {
 
     final ConcurrentMap<Long, byte[]> masterKeyCache = new ConcurrentHashMap<Long, byte[]>();
 
-    final private String zkBookieRegPath;
-    final private String zkBookieReadOnlyPath;
+    final protected String zkBookieRegPath;
+    final protected String zkBookieReadOnlyPath;
 
-    final private AtomicBoolean readOnly = new AtomicBoolean(false);
+    final protected AtomicBoolean readOnly = new AtomicBoolean(false);
 
     // Expose Stats
     private final Counter writeBytes;
@@ -795,7 +795,7 @@ public class Bookie extends BookieCriticalThread {
             // exit here as this is a fatal error.
             throw new IOException(ke);
         } catch (InterruptedException ie) {
-            LOG.error("ZK exception registering ephemeral Znode for Bookie!",
+            LOG.error("Interrupted exception registering ephemeral Znode for Bookie!",
                     ie);
             // Throw an IOException back up. This will cause the Bookie
             // constructor to error out. Alternatively, we could do a System

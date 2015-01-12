@@ -42,6 +42,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-803: Guide for making a replicated log out of ledgers (ivank)
 
+      BOOKKEEPER-832: Allow starting bookie in ReadOnly mode (zhaijia via ivank)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)

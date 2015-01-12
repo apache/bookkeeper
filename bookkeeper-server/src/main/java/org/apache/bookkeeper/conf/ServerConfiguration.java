@@ -82,6 +82,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String OPEN_LEDGER_REREPLICATION_GRACE_PERIOD = "openLedgerRereplicationGracePeriod";
     //ReadOnly mode support on all disk full
     protected final static String READ_ONLY_MODE_ENABLED = "readOnlyModeEnabled";
+    //Whether the bookie is force started in ReadOnly mode
+    protected final static String FORCE_READ_ONLY_BOOKIE = "forceReadOnlyBookie";
     //Disk utilization
     protected final static String DISK_USAGE_THRESHOLD = "diskUsageThreshold";
     protected final static String DISK_USAGE_WARN_THRESHOLD = "diskUsageWarnThreshold";
@@ -1215,6 +1217,29 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public boolean isAutoRecoveryDaemonEnabled() {
         return getBoolean(AUTO_RECOVERY_DAEMON_ENABLED, false);
+    }
+
+    /**
+     * Sets that whether force start a bookie in readonly mode
+     *
+     * @param enabled
+     *            - true if need to start a bookie in read only mode. Otherwise
+     *            false.
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setForceReadOnlyBookie(boolean enabled) {
+        setProperty(FORCE_READ_ONLY_BOOKIE, enabled);
+        return this;
+    }
+
+    /**
+     * Get whether the Bookie is force started in read only mode or not
+     *
+     * @return true - if need to start a bookie in read only mode. Otherwise
+     *         false.
+     */
+    public boolean isForceReadOnlyBookie() {
+        return getBoolean(FORCE_READ_ONLY_BOOKIE, false);
     }
 
     /**
