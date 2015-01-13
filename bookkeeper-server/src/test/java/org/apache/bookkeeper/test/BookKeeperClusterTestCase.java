@@ -82,6 +82,7 @@ public abstract class BookKeeperClusterTestCase {
 
     public BookKeeperClusterTestCase(int numBookies) {
         this.numBookies = numBookies;
+        baseConf.setAllowLoopback(true);
     }
 
     @Before
@@ -199,7 +200,6 @@ public abstract class BookKeeperClusterTestCase {
         conf.setBookiePort(port);
         conf.setZkServers(zkServers);
         conf.setJournalDirName(journalDir.getPath());
-        conf.setAllowLoopback(true);
         String[] ledgerDirNames = new String[ledgerDirs.length];
         for (int i=0; i<ledgerDirs.length; i++) {
             ledgerDirNames[i] = ledgerDirs[i].getPath();

@@ -44,6 +44,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-832: Allow starting bookie in ReadOnly mode (zhaijia via ivank)
 
+      BOOKKEEPER-634: Provide admin tool to rename bookie identifier in ledger metadata (rakeshr via ivank)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
