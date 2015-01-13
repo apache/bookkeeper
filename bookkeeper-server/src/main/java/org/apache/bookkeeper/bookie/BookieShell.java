@@ -41,6 +41,7 @@ import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.UpdateLedgerOp;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -50,6 +51,7 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.util.EntryFormatter;
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.Tool;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
@@ -101,6 +103,7 @@ public class BookieShell implements Tool {
     static final String CMD_AUTORECOVERY = "autorecovery";
     static final String CMD_LISTBOOKIES = "listbookies";
     static final String CMD_UPDATECOOKIE = "updatecookie";
+    static final String CMD_UPDATELEDGER = "updateledgers";
     static final String CMD_HELP = "help";
 
     final ServerConfiguration bkConf = new ServerConfiguration();
@@ -1163,13 +1166,6 @@ public class BookieShell implements Tool {
             return 0;
         }
 
-        private boolean getOptionalValue(String optValue, String optName) {
-            if (StringUtils.equals(optValue, optName)) {
-                return true;
-            }
-            return false;
-        }
-
         private boolean verifyCookie(Cookie oldCookie, File dir) throws IOException {
             try {
                 Cookie cookie = Cookie.readFromDirectory(dir);
@@ -1179,6 +1175,124 @@ public class BookieShell implements Tool {
             }
             return true;
         }
+    }
+
+    /**
+     * Update ledger command
+     */
+    class UpdateLedgerCmd extends MyCommand {
+        private final Options opts = new Options();
+
+        UpdateLedgerCmd() {
+            super(CMD_UPDATELEDGER);
+            opts.addOption("b", "bookieId", true, "Bookie Id");
+            opts.addOption("s", "updatespersec", true, "Number of ledgers updating per second (default: 5 per sec)");
+            opts.addOption("l", "limit", true, "Maximum number of ledgers to update (default: no limit)");
+            opts.addOption("v", "verbose", true, "Print status of the ledger updation (default: false)");
+            opts.addOption("p", "printprogress", true,
+                    "Print messages on every configured seconds if verbose turned on (default: 10 secs)");
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Update bookie id in ledgers (this may take a long time)";
+        }
+
+        @Override
+        String getUsage() {
+            return "updateledger -bookieId <hostname|ip> [-updatespersec N] [-limit N] [-verbose true/false] [-printprogress N]";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            final String bookieId = cmdLine.getOptionValue("bookieId");
+            if (StringUtils.isBlank(bookieId)) {
+                LOG.error("Invalid argument list!");
+                this.printUsage();
+                return -1;
+            }
+            if (!StringUtils.equals(bookieId, "hostname") && !StringUtils.equals(bookieId, "ip")) {
+                LOG.error("Invalid option value {} for bookieId, expected hostname/ip", bookieId);
+                this.printUsage();
+                return -1;
+            }
+            boolean useHostName = getOptionalValue(bookieId, "hostname");
+            if (!bkConf.getUseHostNameAsBookieID() && useHostName) {
+                LOG.error("Expects configuration useHostNameAsBookieID=true as the option value passed is 'hostname'");
+                return -1;
+            } else if (bkConf.getUseHostNameAsBookieID() && !useHostName) {
+                LOG.error("Expects configuration useHostNameAsBookieID=false as the option value passed is 'ip'");
+                return -1;
+            }
+            final int rate = getOptionIntValue(cmdLine, "updatespersec", 5);
+            if (rate <= 0) {
+                LOG.error("Invalid updatespersec {}, should be > 0", rate);
+                return -1;
+            }
+            final int limit = getOptionIntValue(cmdLine, "limit", Integer.MIN_VALUE);
+            if (limit <= 0 && limit != Integer.MIN_VALUE) {
+                LOG.error("Invalid limit {}, should be > 0", limit);
+                return -1;
+            }
+            final boolean verbose = getOptionBooleanValue(cmdLine, "verbose", false);
+            final long printprogress;
+            if (!verbose) {
+                if (cmdLine.hasOption("printprogress")) {
+                    LOG.warn("Ignoring option 'printprogress', this is applicable when 'verbose' is true");
+                }
+                printprogress = Integer.MIN_VALUE;
+            } else {
+                // defaulting to 10 seconds
+                printprogress = getOptionLongValue(cmdLine, "printprogress", 10);
+            }
+            final ClientConfiguration conf = new ClientConfiguration();
+            conf.addConfiguration(bkConf);
+            final BookKeeper bk = new BookKeeper(conf);
+            final BookKeeperAdmin admin = new BookKeeperAdmin(conf);
+            final UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, admin);
+            final ServerConfiguration serverConf = new ServerConfiguration(bkConf);
+            final BookieSocketAddress newBookieId = Bookie.getBookieAddress(serverConf);
+            serverConf.setUseHostNameAsBookieID(!useHostName);
+            final BookieSocketAddress oldBookieId = Bookie.getBookieAddress(serverConf);
+
+            UpdateLedgerNotifier progressable = new UpdateLedgerNotifier() {
+                long lastReport = System.nanoTime();
+
+                @Override
+                public void progress(long updated, long issued) {
+                    if (printprogress <= 0) {
+                        return; // disabled
+                    }
+                    if (TimeUnit.MILLISECONDS.toSeconds(MathUtils.elapsedMSec(lastReport)) >= printprogress) {
+                        LOG.info("Number of ledgers issued={}, updated={}", issued, updated);
+                        lastReport = MathUtils.nowInNano();
+                    }
+                }
+            };
+            try {
+                updateLedgerOp.updateBookieIdInLedgers(oldBookieId, newBookieId, rate, limit, progressable);
+            } catch (BKException e) {
+                LOG.error("Failed to update ledger metadata", e);
+                return -1;
+            } catch (IOException e) {
+                LOG.error("Failed to update ledger metadata", e);
+                return -1;
+            }
+            return 0;
+        }
+
+    }
+
+    /**
+     * A facility for reporting update ledger progress.
+     */
+    public interface UpdateLedgerNotifier {
+        void progress(long updated, long issued);
     }
 
     final Map<String, MyCommand> commands = new HashMap<String, MyCommand>();
@@ -1198,6 +1312,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_AUTORECOVERY, new AutoRecoveryCmd());
         commands.put(CMD_LISTBOOKIES, new ListBookiesCmd());
         commands.put(CMD_UPDATECOOKIE, new UpdateCookieCmd());
+        commands.put(CMD_UPDATELEDGER, new UpdateLedgerCmd());
         commands.put(CMD_HELP, new HelpCmd());
     }
 
@@ -1577,5 +1692,20 @@ public class BookieShell implements Tool {
             }
         }
         return defaultVal;
+    }
+
+    private static boolean getOptionBooleanValue(CommandLine cmdLine, String option, boolean defaultVal) {
+        if (cmdLine.hasOption(option)) {
+            String val = cmdLine.getOptionValue(option);
+            return Boolean.parseBoolean(val);
+        }
+        return defaultVal;
+    }
+
+    private static boolean getOptionalValue(String optValue, String optName) {
+        if (StringUtils.equals(optValue, optName)) {
+            return true;
+        }
+        return false;
     }
 }

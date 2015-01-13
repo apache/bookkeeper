@@ -28,6 +28,8 @@ Release 4.3.1 - unreleased
 
       BOOKKEEPER-811: Recovery tool doesn't remove cookie after recovering one bookie (Charles Xie via sijie)
 
+      BOOKKEEPER-634: Provide admin tool to rename bookie identifier in ledger metadata (rakeshr via ivank)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
