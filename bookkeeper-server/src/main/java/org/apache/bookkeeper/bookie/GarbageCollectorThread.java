@@ -69,8 +69,10 @@ public class GarbageCollectorThread extends BookieThread {
     long lastMinorCompactionTime;
     long lastMajorCompactionTime;
 
+    final boolean isThrottleByBytes;
     final int maxOutstandingRequests;
-    final int compactionRate;
+    final int compactionRateByEntries;
+    final int compactionRateByBytes;
     final CompactionScannerFactory scannerFactory;
 
     // Entry Logger Handle
@@ -106,6 +108,29 @@ public class GarbageCollectorThread extends BookieThread {
             this.offset = offset;
         }
     }
+ 
+    private static class Throttler {
+        final RateLimiter rateLimiter;
+        final boolean isThrottleByBytes;
+        final int compactionRateByBytes;
+        final int compactionRateByEntries;
+
+        Throttler(boolean isThrottleByBytes, 
+                  int compactionRateByBytes, 
+                  int compactionRateByEntries) {
+            this.isThrottleByBytes  = isThrottleByBytes;
+            this.compactionRateByBytes = compactionRateByBytes;
+            this.compactionRateByEntries = compactionRateByEntries;
+            this.rateLimiter = RateLimiter.create(this.isThrottleByBytes ? 
+                                                  this.compactionRateByBytes : 
+                                                  this.compactionRateByEntries);
+        }
+        
+        // acquire. if bybytes: bytes of this entry; if byentries: 1.
+        void acquire(int permits) {
+            rateLimiter.acquire(this.isThrottleByBytes ? permits : 1);
+        }
+    }
 
     /**
      * A scanner wrapper to check whether a ledger is alive in an entry log file
@@ -114,7 +139,10 @@ public class GarbageCollectorThread extends BookieThread {
         List<Offset> offsets = new ArrayList<Offset>();
 
         EntryLogScanner newScanner(final EntryLogMetadata meta) {
-            final RateLimiter rateLimiter = RateLimiter.create(compactionRate);
+            final Throttler throttler = new Throttler (isThrottleByBytes,
+                                                       compactionRateByBytes, 
+                                                       compactionRateByEntries);
+
             return new EntryLogScanner() {
                 @Override
                 public boolean accept(long ledgerId) {
@@ -124,7 +152,7 @@ public class GarbageCollectorThread extends BookieThread {
                 @Override
                 public void process(final long ledgerId, long offset, ByteBuffer entry)
                         throws IOException {
-                    rateLimiter.acquire();
+                    throttler.acquire(entry.remaining());
                     synchronized (CompactionScannerFactory.this) {
                         if (offsets.size() > maxOutstandingRequests) {
                             waitEntrylogFlushed();
@@ -207,8 +235,10 @@ public class GarbageCollectorThread extends BookieThread {
         this.activeLedgers = activeLedgers;
 
         this.gcWaitTime = conf.getGcWaitTime();
+        this.isThrottleByBytes = conf.getIsThrottleByBytes();
         this.maxOutstandingRequests = conf.getCompactionMaxOutstandingRequests();
-        this.compactionRate = conf.getCompactionRate();
+        this.compactionRateByEntries  = conf.getCompactionRateByEntries();
+        this.compactionRateByBytes = conf.getCompactionRateByBytes();
         this.scannerFactory = new CompactionScannerFactory();
         entryLogger.addListener(this.scannerFactory);
 

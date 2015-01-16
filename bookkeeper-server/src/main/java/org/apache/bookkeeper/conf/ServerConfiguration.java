@@ -38,9 +38,12 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
     protected final static String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
     protected final static String MAJOR_COMPACTION_THRESHOLD = "majorCompactionThreshold";
+    protected final static String IS_THROTTLE_BY_BYTES = "isThrottleByBytes";
     protected final static String COMPACTION_MAX_OUTSTANDING_REQUESTS
         = "compactionMaxOutstandingRequests";
     protected final static String COMPACTION_RATE = "compactionRate";
+    protected final static String COMPACTION_RATE_BY_ENTRIES = "compactionRateByEntries";
+    protected final static String COMPACTION_RATE_BY_BYTES = "compactionRateByBytes";
 
     // Gc Parameters
     protected final static String GC_WAIT_TIME = "gcWaitTime";
@@ -1243,6 +1246,28 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Get whether use bytes to throttle garbage collector compaction or not
+     *
+     * @return true  - use Bytes, 
+     *         false - use Entries.
+     */
+    public boolean getIsThrottleByBytes() {
+        return getBoolean(IS_THROTTLE_BY_BYTES, false);
+    }
+
+    /**
+     * Set whether use bytes to throttle garbage collector compaction or not
+     *
+     * @param byBytes true to use by bytes; false to use by entries
+     *
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setIsThrottleByBytes(boolean byBytes) {
+        setProperty(IS_THROTTLE_BY_BYTES, byBytes);
+        return this;
+    }
+
+    /**
      * Get the maximum number of entries which can be compacted without flushing.
      * Default is 100,000.
      *
@@ -1272,12 +1297,14 @@ public class ServerConfiguration extends AbstractConfiguration {
         setProperty(COMPACTION_MAX_OUTSTANDING_REQUESTS, maxOutstandingRequests);
         return this;
     }
-
+    
     /**
      * Get the rate of compaction adds. Default is 1,000.
      *
      * @return rate of compaction (adds per second)
+     * @deprecated  replaced by {@link #getCompactionRateByEntries()}
      */
+    @Deprecated
     public int getCompactionRate() {
         return getInt(COMPACTION_RATE, 1000);
     }
@@ -1285,12 +1312,54 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Set the rate of compaction adds.
      *
-     * @param rate rate of compaction adds (adds per second)
+     * @param rate rate of compaction adds (adds entries per second)
      *
      * @return ServerConfiguration
      */
     public ServerConfiguration setCompactionRate(int rate) {
         setProperty(COMPACTION_RATE, rate);
+        return this;
+    }
+
+    /**
+     * Get the rate of compaction adds. Default is 1,000.
+     *
+     * @return rate of compaction (adds entries per second)
+     */
+    public int getCompactionRateByEntries() {
+        return getInt(COMPACTION_RATE_BY_ENTRIES, getCompactionRate());
+    }
+
+    /**
+     * Set the rate of compaction adds.
+     *
+     * @param rate rate of compaction adds (adds entries per second)
+     *
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setCompactionRateByEntries(int rate) {
+        setProperty(COMPACTION_RATE_BY_ENTRIES, rate);
+        return this;
+    }
+
+    /**
+     * Get the rate of compaction adds. Default is 1,000,000.
+     *
+     * @return rate of compaction (adds bytes per second)
+     */
+    public int getCompactionRateByBytes() {
+        return getInt(COMPACTION_RATE_BY_BYTES, 1000000);
+    }
+
+    /**
+     * Set the rate of compaction adds.
+     *
+     * @param rate rate of compaction adds (adds bytes per second)
+     *
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setCompactionRateByBytes(int rate) {
+        setProperty(COMPACTION_RATE_BY_BYTES, rate);
         return this;
     }
 

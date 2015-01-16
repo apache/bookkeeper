@@ -29,6 +29,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Arrays;
+import java.util.Collection;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
@@ -49,15 +51,25 @@ import org.apache.zookeeper.AsyncCallback;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.*;
-
 /**
  * This class tests the entry log compaction functionality.
  */
+@RunWith(Parameterized.class)
 public class CompactionTest extends BookKeeperClusterTestCase {
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][] {{true}, {false}});
+    }
+
+    private boolean isThrottleByBytes; 
+   
     private final static Logger LOG = LoggerFactory.getLogger(CompactionTest.class);
     DigestType digestType;
 
@@ -73,9 +85,10 @@ public class CompactionTest extends BookKeeperClusterTestCase {
 
     String msg;
 
-    public CompactionTest() {
+    public CompactionTest(boolean isByBytes) {
         super(NUM_BOOKIES);
 
+        this.isThrottleByBytes = isByBytes;
         this.digestType = DigestType.CRC32;
 
         numEntries = 100;
@@ -106,6 +119,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         baseConf.setMajorCompactionInterval(majorCompactionInterval);
         baseConf.setEntryLogFilePreAllocationEnabled(false);
         baseConf.setSortedLedgerStorageEnabled(false);
+        baseConf.setIsThrottleByBytes(this.isThrottleByBytes);
 
         super.setUp();
     }
