@@ -16,37 +16,39 @@ Notice:    Licensed to the Apache Software Foundation (ASF) under one
            specific language governing permissions and limitations
            under the License.
 
-h1. Apache BookKeeper documentation
+How to start with BookKeeper depends on who you are...
 
-* "Overview":./bookkeeperOverview.html
-* "Getting started":./bookkeeperStarted.html
-* "Programmer's Guide":./bookkeeperProgrammer.html
-* "Bookie Server Configuration Parameters":./bookieConfigParams.html
-* "BookKeeper Configuration Parameters":./bookkeeperConfigParams.html
-* "BookKeeper Internals":./bookkeeperInternals.html
-* "Bookie Recovery":./bookieRecovery.html
-* "Using BookKeeper stream library":./bookkeeperStream.html
-* "BookKeeper Metadata Management":./bookkeeperMetadata.html
+*Developers* who are new to BookKeeper should start with the "BookKeeper Tutorial":./bookkeeperTutorial.html. The tutorial shows you how to build a basic distributed system using BookKeeper. "Turning ledgers into logs":./bookkeeperLedgers2Logs.html gives a briefer description of the principles behind the logs used in the tutorial.
 
-h2. BookKeeper Admin & Ops
+Once familiar with the basic concepts, developers can consult the "BookKeeper Java API documentation":./apidocs.
 
-* "Admin Guide":./bookkeeperConfig.html
-* "BookKeeper JMX":./bookkeeperJMX.html
+*Administrators* will be more interested in the "BookKeeper Admin guide":./bookkeeperConfig.html. It describes the steps involved in setting up and maintaining a cluster. The available configuration parameters can be found "here":./bookieConfigParams.html. An important aspect of BookKeeper is how it deals with the failure of storage nodes. This is covered in "Bookie Recovery":./bookieRecovery.html.
 
-h1. Apache Hedwig documentation
+*Contributor* documentation is less organized, "BookKeeper Internals":./bookkeeperInternals.html is a good place to start. From there you can check out our "wiki":https://cwiki.apache.org/confluence/display/BOOKKEEPER/Index and ask questions on our "mailing lists":/lists.html or "IRC":/irc.html.
 
-* "Building Hedwig, or how to set up Hedwig":./hedwigBuild.html
-* "User's Guide, or how to program against the Hedwig API and how to run it":./hedwigUser.html
-* "Developer's Guide, or Hedwig internals and hacking details":./hedwigDesign.html
-* "Configuration parameters":./hedwigParams.html
-* "Message Filtering":./hedwigMessageFilter.html
-* "Hedwig Metadata Management":./hedwigMetadata.html
+Hedwig documentation can be found "here":./hedwigDocs.html.
 
-h2. Hedwig Admin & Ops
+h3. All documents
 
-* "Hedwig Console":./hedwigConsole.html
-* "Hedwig JMX":./hedwigJMX.html
+* Overview
+** "Getting started":./bookkeeperStarted.html
+** "Overview":./bookkeeperOverview.html
 
-h1. Metastore documentation
+* Developers
+** "BookKeeper Tutorial":./bookkeeperTutorial.html
+** "Turning ledgers into logs":./bookkeeperLedgers2Logs.html
+** "BookKeeper Java API documentation":./apidocs
+** "Programmer's Guide (old)":./bookkeeperProgrammer.html
+** "BookKeeper Configuration Parameters (old)":./bookkeeperConfigParams.html
 
-* "Metastore Interface":./metastore.textile
+
+* Administrators
+** "Admin Guide":./bookkeeperConfig.html
+** "BookKeeper JMX":./bookkeeperJMX.html
+** "Bookie Server Configuration Parameters (old)":./bookieConfigParams.html
+** "Bookie Recovery":./bookieRecovery.html
+
+* Contributors
+** "BookKeeper Internals":./bookkeeperInternals.html
+** "BookKeeper Metadata Management":./bookkeeperMetadata.html
+** "Metastore Interface":./metastore.textile

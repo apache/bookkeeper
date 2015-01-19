@@ -48,6 +48,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-827: change throttle in GarbageCollector to use 
       either "by entry" or "by byte" (Jia Zhai via fpj)
+ 
+      BOOKKEEPER-830: Documentation has no structure (ivank via fpj)
 
       bookkeeper-client:
 
