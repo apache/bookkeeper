@@ -343,7 +343,9 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     }
 
     void sendReadTo(BookieSocketAddress to, LedgerEntryRequest entry) throws InterruptedException {
-        lh.throttler.acquire();
+        if (lh.throttler != null) {
+            lh.throttler.acquire();
+        }
 
         lh.bk.bookieClient.readEntry(to, lh.ledgerId, entry.entryId,
                                      this, new ReadContext(to, entry));
