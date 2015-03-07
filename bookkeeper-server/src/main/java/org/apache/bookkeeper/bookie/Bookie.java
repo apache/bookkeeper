@@ -32,8 +32,6 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -56,7 +54,6 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -65,6 +62,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
@@ -141,7 +139,7 @@ public class Bookie extends BookieCriticalThread {
     BookieBean jmxBookieBean;
     BKMBeanInfo jmxLedgerStorageBean;
 
-    final ConcurrentMap<Long, byte[]> masterKeyCache = new ConcurrentHashMap<Long, byte[]>();
+    private final ConcurrentLongHashMap<byte[]> masterKeyCache = new ConcurrentLongHashMap<>();
 
     final protected String zkBookieRegPath;
     final protected String zkBookieReadOnlyPath;
@@ -1337,23 +1335,26 @@ public class Bookie extends BookieCriticalThread {
      *
      * @throws BookieException if masterKey does not match the master key of the ledger
      */
-    private LedgerDescriptor getLedgerForEntry(ByteBuffer entry, byte[] masterKey)
+    private LedgerDescriptor getLedgerForEntry(ByteBuffer entry, final byte[] masterKey)
             throws IOException, BookieException {
-        long ledgerId = entry.getLong();
+        final long ledgerId = entry.getLong();
         LedgerDescriptor l = handles.getHandle(ledgerId, masterKey);
-        if (!masterKeyCache.containsKey(ledgerId)) {
-            // new handle, we should add the key to journal ensure we can rebuild
-            ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
-            bb.putLong(ledgerId);
-            bb.putLong(METAENTRY_ID_LEDGER_KEY);
-            bb.putInt(masterKey.length);
-            bb.put(masterKey);
-            bb.flip();
+        if (masterKeyCache.get(ledgerId) == null) {
+            // Force the load into masterKey cache
+            byte[] oldValue = masterKeyCache.putIfAbsent(ledgerId, masterKey);
+            if (oldValue == null) {
+                // new handle, we should add the key to journal ensure we can rebuild
+                ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
+                bb.putLong(ledgerId);
+                bb.putLong(METAENTRY_ID_LEDGER_KEY);
+                bb.putInt(masterKey.length);
+                bb.put(masterKey);
+                bb.flip();
 
-            if (null == masterKeyCache.putIfAbsent(ledgerId, masterKey)) {
                 getJournal(ledgerId).logAddEntry(bb, new NopWriteCallback(), null);
             }
         }
+
         return l;
     }
 
