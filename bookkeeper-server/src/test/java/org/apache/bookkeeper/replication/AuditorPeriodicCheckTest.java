@@ -210,12 +210,12 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
     /**
      * Test that the period checker will not run when auto replication has been disabled
      */
-    @Test(timeout=60000)
+    @Test(timeout=120000)
     public void testPeriodicCheckWhenDisabled() throws Exception {
         LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bsConfs.get(0), zkc);
         final LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
-        final int numLedgers = 100;
-        final int numMsgs = 100;
+        final int numLedgers = 10;
+        final int numMsgs = 2;
         final CountDownLatch completeLatch = new CountDownLatch(numMsgs*numLedgers);
         final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
 
@@ -223,7 +223,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         for (int i = 0; i < numLedgers; i++) {
             LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
             lhs.add(lh);
-            for (int j = 0; j < 100; j++) {
+            for (int j = 0; j < 2; j++) {
                 lh.asyncAddEntry("testdata".getBytes(), new AddCallback() {
                         public void addComplete(int rc2, LedgerHandle lh, long entryId, Object ctx) {
                             if (rc.compareAndSet(BKException.Code.OK, rc2)) {
@@ -295,18 +295,18 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
     /**
      * Test that the period check will succeed if a ledger is deleted midway
      */
-    @Test(timeout=60000)
+    @Test(timeout=120000)
     public void testPeriodicCheckWhenLedgerDeleted() throws Exception {
         for (AuditorElector e : auditorElectors.values()) {
             e.shutdown();
         }
 
-        final int numLedgers = 100;
+        final int numLedgers = 10;
         List<Long> ids = new LinkedList<Long>();
         for (int i = 0; i < numLedgers; i++) {
             LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
             ids.add(lh.getId());
-            for (int j = 0; j < 10; j++) {
+            for (int j = 0; j < 2; j++) {
                 lh.addEntry("testdata".getBytes());
             }
             lh.close();

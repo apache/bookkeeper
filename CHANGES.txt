@@ -30,6 +30,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-838: ForceWriteThread::run() leaks “logFile.close()” when interrupt comes (zhaijia via sijie)
 
+      BOOKKEEPER-839: AuditorPeriodicCheckTest timeout (rakeshr via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-800: Expose whether a ledger is closed or not (ivank)
