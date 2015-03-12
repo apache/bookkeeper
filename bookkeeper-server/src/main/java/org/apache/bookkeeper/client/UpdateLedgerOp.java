@@ -38,10 +38,11 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.RateLimiter;
+import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
@@ -112,7 +113,7 @@ public class UpdateLedgerOp {
 
                         FutureCallback<Void> updateLedgerCb = new UpdateLedgerCb(lId, stop, issuedLedgerCnt,
                                 updatedLedgerCnt, outstandings, syncObj, progressable);
-                        Futures.addCallback(readCb, updateLedgerCb);
+                        Futures.addCallback(readCb.getFutureListener(), updateLedgerCb);
 
                         issuedLedgerCnt.incrementAndGet();
                         if (limit != Integer.MIN_VALUE && issuedLedgerCnt.get() >= limit || !ledgerItr.hasNext()) {
@@ -190,13 +191,12 @@ public class UpdateLedgerOp {
         }
     }
 
-    private final static class ReadLedgerMetadataCb extends AbstractFuture<Void> implements
-            GenericCallback<LedgerMetadata> {
+    private final static class ReadLedgerMetadataCb implements GenericCallback<LedgerMetadata> {
         final BookKeeper bkc;
         final Long ledgerId;
         final BookieSocketAddress curBookieAddr;
         final BookieSocketAddress toBookieAddr;
-
+        SettableFuture<Void> future = SettableFuture.create();
         public ReadLedgerMetadataCb(BookKeeper bkc, Long ledgerId, BookieSocketAddress curBookieAddr,
                 BookieSocketAddress toBookieAddr) {
             this.bkc = bkc;
@@ -205,15 +205,19 @@ public class UpdateLedgerOp {
             this.toBookieAddr = toBookieAddr;
         }
 
+        ListenableFuture<Void> getFutureListener() {
+            return future;
+        }
+
         @Override
         public void operationComplete(int rc, LedgerMetadata metadata) {
             if (BKException.Code.NoSuchLedgerExistsException == rc) {
-                set(null);
+                future.set(null);
                 return; // this is OK
             } else if (BKException.Code.OK != rc) {
                 // open ledger failed.
                 LOG.error("Get ledger metadata {} failed. Error code {}", ledgerId, rc);
-                setException(BKException.create(rc));
+                future.setException(BKException.create(rc));
                 return;
             }
             boolean updateEnsemble = false;
@@ -225,7 +229,7 @@ public class UpdateLedgerOp {
                 }
             }
             if (!updateEnsemble) {
-                set(null);
+                future.set(null);
                 return; // ledger doesn't contains the given curBookieId
             }
             final GenericCallback<Void> writeCb = new GenericCallback<Void>() {
@@ -234,10 +238,10 @@ public class UpdateLedgerOp {
                     if (rc != BKException.Code.OK) {
                         // metadata update failed
                         LOG.error("Ledger {} metadata update failed. Error code {}", ledgerId, rc);
-                        setException(BKException.create(rc));
+                        future.setException(BKException.create(rc));
                         return;
                     }
-                    set(null);
+                    future.set(null);
                 }
             };
             bkc.getLedgerManager().writeLedgerMetadata(ledgerId, metadata, writeCb);
