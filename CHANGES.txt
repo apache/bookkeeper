@@ -57,6 +57,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-837: UpdateLedgerOp - Replace AbstractFuture with SettableFuture (rakeshr via sijie)
 
+      BOOKKEEPER-831: Outdated links in tutorial (ivank via sijie)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)

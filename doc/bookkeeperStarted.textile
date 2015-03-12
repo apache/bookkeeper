@@ -16,7 +16,7 @@ This guide contains detailed information about using BookKeeper for logging. It 
 
 h1. Getting Started: Setting up BookKeeper to write logs.
 
-p. This document contains information to get you started quickly with BookKeeper. It is aimed primarily at developers willing to try it out, and contains simple installation instructions for a simple BookKeeper installation and a simple programming example. For further programming detail, please refer to  "BookKeeper Programmer's Guide":bookkeeperProgrammer.html. 
+p. This document contains information to get you started quickly with BookKeeper. It is aimed primarily at developers willing to try it out, and contains simple installation instructions for a simple BookKeeper installation and a simple programming example. For further programming detail, please refer to the "BookKeeper Tutorial":./bookkeeperTutorial.html.
 
 h1. Pre-requisites
 
@@ -24,7 +24,7 @@ p. See "System Requirements":./bookkeeperConfig.html#bk_sysReqin the Admin guide
 
 h1. Download
 
-p. BookKeeper trunk can be downloaded from subversion. See "Version Control:http://zookeeper.apache.org/bookkeeper/svn.html. 
+p. BookKeeper trunk can be downloaded from subversion. See "Version Control:http://bookkeeper.apache.org/svn.html.
 
 h1. LocalBookKeeper
 
