@@ -39,6 +39,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.SettableFuture;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Enumeration;
@@ -72,7 +75,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
         Bookie delayBookie = new Bookie(conf) {
                 @Override
-                public void recoveryAddEntry(ByteBuffer entry, WriteCallback cb,
+                public void recoveryAddEntry(ByteBuf entry, WriteCallback cb,
                                              Object ctx, byte[] masterKey)
                         throws IOException, BookieException {
                     try {
@@ -86,7 +89,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                 }
 
                 @Override
-                public void addEntry(ByteBuffer entry, WriteCallback cb,
+                public void addEntry(ByteBuf entry, WriteCallback cb,
                                      Object ctx, byte[] masterKey)
                         throws IOException, BookieException {
                     try {
@@ -100,7 +103,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                 }
 
                 @Override
-                public ByteBuffer readEntry(long ledgerId, long entryId)
+                public ByteBuf readEntry(long ledgerId, long entryId)
                         throws IOException, NoLedgerException {
                     try {
                         Thread.sleep(5000);

@@ -40,6 +40,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
@@ -251,7 +253,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
         Bookie deadBookie = new Bookie(conf) {
             @Override
-            public ByteBuffer readEntry(long ledgerId, long entryId)
+            public ByteBuf readEntry(long ledgerId, long entryId)
                     throws IOException, NoLedgerException {
                 // we want to disable during checking
                 numReads.incrementAndGet();

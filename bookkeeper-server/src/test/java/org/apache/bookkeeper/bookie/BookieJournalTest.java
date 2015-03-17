@@ -47,6 +47,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.junit.Test;
 import org.junit.After;
+
 import static org.junit.Assert.*;
 
 public class BookieJournalTest {
@@ -620,15 +621,15 @@ public class BookieJournalTest {
         b.readEntry(1, 99);
 
         // still able to read last entry, but it's junk
-        ByteBuffer buf = b.readEntry(1, 100);
-        assertEquals("Ledger Id is wrong", buf.getLong(), 1);
-        assertEquals("Entry Id is wrong", buf.getLong(), 100);
-        assertEquals("Last confirmed is wrong", buf.getLong(), 99);
-        assertEquals("Length is wrong", buf.getLong(), 100*1024);
-        buf.getLong(); // skip checksum
+        ByteBuf buf = b.readEntry(1, 100);
+        assertEquals("Ledger Id is wrong", buf.readLong(), 1);
+        assertEquals("Entry Id is wrong", buf.readLong(), 100);
+        assertEquals("Last confirmed is wrong", buf.readLong(), 99);
+        assertEquals("Length is wrong", buf.readLong(), 100*1024);
+        buf.readLong(); // skip checksum
         boolean allX = true;
         for (int i = 0; i < 1024; i++) {
-            byte x = buf.get();
+            byte x = buf.readByte();
             allX = allX && x == (byte)'X';
         }
         assertFalse("Some of buffer should have been zeroed", allX);

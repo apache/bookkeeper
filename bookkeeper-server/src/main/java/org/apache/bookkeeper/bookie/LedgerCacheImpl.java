@@ -31,6 +31,8 @@ import org.apache.bookkeeper.util.SnapshotMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.netty.buffer.ByteBuf;
+
 /**
  * Implementation of LedgerCache interface.
  * This class serves two purposes.
@@ -137,11 +139,11 @@ public class LedgerCacheImpl implements LedgerCache {
         return indexPersistenceManager.isFenced(ledgerId);
     }
 
-    public void setExplicitLac(long ledgerId, ByteBuffer lac) throws IOException {
+    public void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException {
         indexPersistenceManager.setExplicitLac(ledgerId, lac);
     }
 
-    public ByteBuffer getExplicitLac(long ledgerId) {
+    public ByteBuf getExplicitLac(long ledgerId) {
         return indexPersistenceManager.getExplicitLac(ledgerId);
     }
 

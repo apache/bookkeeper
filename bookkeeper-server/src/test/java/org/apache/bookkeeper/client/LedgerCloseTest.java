@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -194,7 +196,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
             throws Exception {
         Bookie sBookie = new Bookie(conf) {
             @Override
-            public void addEntry(ByteBuffer entry, WriteCallback cb, Object ctx, byte[] masterKey)
+            public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {
                 try {
                     latch.await();
@@ -204,7 +206,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
             }
 
             @Override
-            public void recoveryAddEntry(ByteBuffer entry, WriteCallback cb, Object ctx, byte[] masterKey)
+            public void recoveryAddEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {
                 throw new IOException("Dead bookie for recovery adds.");
             }
@@ -218,7 +220,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
     private void startDeadBookie(ServerConfiguration conf, final CountDownLatch latch) throws Exception {
         Bookie dBookie = new Bookie(conf) {
             @Override
-            public void addEntry(ByteBuffer entry, WriteCallback cb, Object ctx, byte[] masterKey)
+            public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {
                 try {
                     latch.await();
