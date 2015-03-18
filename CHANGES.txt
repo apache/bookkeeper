@@ -24,6 +24,8 @@ Release 4.3.1 - unreleased
 
       BOOKKEEPER-840: Deadlock on flushLock on compaction (sijie)
 
+      BOOKKEEPER-834: test case error in test class TestDiskChecker (zhaijia via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-800: Expose whether a ledger is closed or not (ivank)
