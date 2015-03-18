@@ -70,7 +70,7 @@ public class TestDiskChecker {
         long usableSpace = file.getUsableSpace();
         long totalSpace = file.getTotalSpace();
         float threshold =
-                (1f - ((float) usableSpace / (float) totalSpace)) - 0.05f;
+                (1f - ((float) usableSpace / (float) totalSpace)) * 0.5f;
         diskChecker.setDiskSpaceThreshold(threshold, threshold);
         diskChecker.checkDiskFull(file);
     }
@@ -80,10 +80,10 @@ public class TestDiskChecker {
         File file = createTempDir("DiskCheck", "test");
         long usableSpace = file.getUsableSpace();
         long totalSpace = file.getTotalSpace();
-        float diskSpaceThreshold =
-                (1f - ((float) usableSpace / (float) totalSpace)) + 0.01f;
+        float diskSpaceThreshold = 
+                (1f - ((float) usableSpace / (float) totalSpace));
         float diskWarnThreshold =
-                (1f - ((float) usableSpace / (float) totalSpace)) - 0.05f;
+                (1f - ((float) usableSpace / (float) totalSpace)) * 0.5f;
         diskChecker.setDiskSpaceThreshold(diskSpaceThreshold, diskWarnThreshold);
         diskChecker.checkDiskFull(file);
     }
@@ -97,7 +97,7 @@ public class TestDiskChecker {
         File file = createTempDir("DiskCheck", "test");
         long usableSpace = file.getUsableSpace();
         long totalSpace = file.getTotalSpace();
-        float threshold = (1f - ((float) usableSpace / (float) totalSpace)) - 0.05f;
+        float threshold = (1f - ((float) usableSpace / (float) totalSpace)) * 0.5f;
         diskChecker.setDiskSpaceThreshold(threshold, threshold);
         assertTrue(file.delete());
         diskChecker.checkDiskFull(file);

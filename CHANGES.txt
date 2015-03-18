@@ -63,6 +63,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-828: Script for updating docs on website from master branch (ivank via sijie)
 
+      BOOKKEEPER-834: test case error in test class TestDiskChecker (zhaijia via sijie)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
