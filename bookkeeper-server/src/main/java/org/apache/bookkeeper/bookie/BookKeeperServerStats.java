@@ -36,6 +36,13 @@ public interface BookKeeperServerStats {
     public final static String READ_ENTRY_FENCE_WAIT = "READ_ENTRY_FENCE_WAIT";
     public final static String READ_ENTRY_FENCE_READ = "READ_ENTRY_FENCE_READ";
 
+    // Bookie Operations
+    public final static String BOOKIE_ADD_ENTRY_BYTES = "BOOKIE_ADD_ENTRY_BYTES";
+    public final static String BOOKIE_READ_ENTRY_BYTES = "BOOKIE_READ_ENTRY_BYTES";
+    public final static String BOOKIE_ADD_ENTRY = "BOOKIE_ADD_ENTRY";
+    public final static String BOOKIE_RECOVERY_ADD_ENTRY = "BOOKIE_RECOVERY_ADD_ENTRY";
+    public final static String BOOKIE_READ_ENTRY = "BOOKIE_READ_ENTRY";
+
     // Journal Stats
     public final static String JOURNAL_ADD_ENTRY = "JOURNAL_ADD_ENTRY";
     public final static String JOURNAL_MEM_ADD_ENTRY = "JOURNAL_MEM_ADD_ENTRY";

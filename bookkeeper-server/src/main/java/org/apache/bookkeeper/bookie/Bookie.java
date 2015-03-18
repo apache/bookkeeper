@@ -54,6 +54,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.IOUtils;
@@ -77,6 +78,11 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_ADD_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_ADD_ENTRY_BYTES;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY_BYTES;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_RECOVERY_ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_BYTES;
@@ -135,6 +141,13 @@ public class Bookie extends BookieCriticalThread {
     // Expose Stats
     private final Counter writeBytes;
     private final Counter readBytes;
+    // Bookie Operation Latency Stats
+    private final OpStatsLogger addEntryStats;
+    private final OpStatsLogger recoveryAddEntryStats;
+    private final OpStatsLogger readEntryStats;
+    // Bookie Operation Bytes Stats
+    private final OpStatsLogger addBytesStats;
+    private final OpStatsLogger readBytesStats;
 
     public static class NoLedgerException extends IOException {
         private static final long serialVersionUID = 1L;
@@ -497,6 +510,11 @@ public class Bookie extends BookieCriticalThread {
         // Expose Stats
         writeBytes = statsLogger.getCounter(WRITE_BYTES);
         readBytes = statsLogger.getCounter(READ_BYTES);
+        addEntryStats = statsLogger.getOpStatsLogger(BOOKIE_ADD_ENTRY);
+        recoveryAddEntryStats = statsLogger.getOpStatsLogger(BOOKIE_RECOVERY_ADD_ENTRY);
+        readEntryStats = statsLogger.getOpStatsLogger(BOOKIE_READ_ENTRY);
+        addBytesStats = statsLogger.getOpStatsLogger(BOOKIE_ADD_ENTRY_BYTES);
+        readBytesStats = statsLogger.getOpStatsLogger(BOOKIE_READ_ENTRY_BYTES);
         // 1 : up, 0 : readonly
         statsLogger.registerGauge(SERVER_STATUS, new Gauge<Number>() {
             @Override
@@ -1091,14 +1109,28 @@ public class Bookie extends BookieCriticalThread {
      */
     public void recoveryAddEntry(ByteBuffer entry, WriteCallback cb, Object ctx, byte[] masterKey)
             throws IOException, BookieException {
+        long requestNanos = MathUtils.nowInNano();
+        boolean success = false;
+        int entrySize = 0;
         try {
             LedgerDescriptor handle = getLedgerForEntry(entry, masterKey);
             synchronized (handle) {
+                entrySize = entry.remaining();
                 addEntryInternal(handle, entry, cb, ctx);
             }
+            success = true;
         } catch (NoWritableLedgerDirException e) {
             transitionToReadOnlyMode();
             throw new IOException(e);
+        } finally {
+            long elapsedMSec = MathUtils.elapsedMSec(requestNanos);
+            if (success) {
+                recoveryAddEntryStats.registerSuccessfulEvent(elapsedMSec);
+                addBytesStats.registerSuccessfulEvent(entrySize);
+            } else {
+                recoveryAddEntryStats.registerFailedEvent(elapsedMSec);
+                addBytesStats.registerFailedEvent(entrySize);
+            }
         }
     }
 
@@ -1108,6 +1140,9 @@ public class Bookie extends BookieCriticalThread {
      */
     public void addEntry(ByteBuffer entry, WriteCallback cb, Object ctx, byte[] masterKey)
             throws IOException, BookieException {
+        long requestNanos = MathUtils.nowInNano();
+        boolean success = false;
+        int entrySize = 0;
         try {
             LedgerDescriptor handle = getLedgerForEntry(entry, masterKey);
             synchronized (handle) {
@@ -1115,11 +1150,22 @@ public class Bookie extends BookieCriticalThread {
                     throw BookieException
                             .create(BookieException.Code.LedgerFencedException);
                 }
+                entrySize = entry.remaining();
                 addEntryInternal(handle, entry, cb, ctx);
             }
+            success = true;
         } catch (NoWritableLedgerDirException e) {
             transitionToReadOnlyMode();
             throw new IOException(e);
+        } finally {
+            long elapsedMSec = MathUtils.elapsedMSec(requestNanos);
+            if (success) {
+                addEntryStats.registerSuccessfulEvent(elapsedMSec);
+                addBytesStats.registerSuccessfulEvent(entrySize);
+            } else {
+                addEntryStats.registerFailedEvent(elapsedMSec);
+                addBytesStats.registerFailedEvent(entrySize);
+            }
         }
     }
 
@@ -1155,11 +1201,27 @@ public class Bookie extends BookieCriticalThread {
 
     public ByteBuffer readEntry(long ledgerId, long entryId)
             throws IOException, NoLedgerException {
-        LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
-        LOG.trace("Reading {}@{}", entryId, ledgerId);
-        ByteBuffer entry = handle.readEntry(entryId);
-        readBytes.add(entry.remaining());
-        return entry;
+        long requestNanos = MathUtils.nowInNano();
+        boolean success = false;
+        int entrySize = 0;
+        try {
+            LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
+            LOG.trace("Reading {}@{}", entryId, ledgerId);
+            ByteBuffer entry = handle.readEntry(entryId);
+            entrySize = entry.remaining();
+            readBytes.add(entrySize);
+            success = true;
+            return entry;
+        } finally {
+            long elapsedMSec = MathUtils.elapsedMSec(requestNanos);
+            if (success) {
+                readEntryStats.registerSuccessfulEvent(elapsedMSec);
+                readBytesStats.registerSuccessfulEvent(entrySize);
+            } else {
+                readEntryStats.registerFailedEvent(elapsedMSec);
+                readBytesStats.registerFailedEvent(entrySize);
+            }
+        }
     }
 
     // The rest of the code is test stuff
