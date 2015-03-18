@@ -65,6 +65,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-834: test case error in test class TestDiskChecker (zhaijia via sijie)
 
+      BOOKKEEPER-844: Add more metrics about latency and bytes characteristics on bookie operations (Tong Yu via sijie)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
