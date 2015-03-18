@@ -140,7 +140,7 @@ public class GarbageCollectorThread extends BookieThread {
             };
         }
 
-        Object flushLock = new Object();
+        final Object flushLock = new Object();
 
         @Override
         public void onRotateEntryLog() {
@@ -155,18 +155,19 @@ public class GarbageCollectorThread extends BookieThread {
                     LOG.debug("Skipping entry log flushing, as there is no offset!");
                     return;
                 }
-                synchronized (flushLock) {
-                    Offset lastOffset = offsets.get(offsets.size()-1);
-                    long lastOffsetLogId = EntryLogger.logIdForOffset(lastOffset.offset);
-                    while (lastOffsetLogId < entryLogger.getLeastUnflushedLogId() && running) {
-                        flushLock.wait(1000);
 
-                        lastOffset = offsets.get(offsets.size()-1);
-                        lastOffsetLogId = EntryLogger.logIdForOffset(lastOffset.offset);
+                Offset lastOffset = offsets.get(offsets.size()-1);
+                long lastOffsetLogId = EntryLogger.logIdForOffset(lastOffset.offset);
+                while (lastOffsetLogId < entryLogger.getLeastUnflushedLogId() && running) {
+                    synchronized (flushLock) {
+                        flushLock.wait(1000);
                     }
-                    if (lastOffsetLogId >= entryLogger.getLeastUnflushedLogId() && !running) {
-                        throw new IOException("Shutdown before flushed");
-                    }
+
+                    lastOffset = offsets.get(offsets.size()-1);
+                    lastOffsetLogId = EntryLogger.logIdForOffset(lastOffset.offset);
+                }
+                if (lastOffsetLogId >= entryLogger.getLeastUnflushedLogId() && !running) {
+                    throw new IOException("Shutdown before flushed");
                 }
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();

@@ -22,6 +22,8 @@ Release 4.3.1 - unreleased
 
       BOOKKEEPER-839: AuditorPeriodicCheckTest timeout (rakeshr via sijie)
 
+      BOOKKEEPER-840: Deadlock on flushLock on compaction (sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-800: Expose whether a ledger is closed or not (ivank)
