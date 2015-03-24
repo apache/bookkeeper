@@ -24,6 +24,9 @@ package org.apache.bookkeeper.bookie;
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 
+import io.netty.util.Recycler;
+import io.netty.util.Recycler.Handle;
+
 import com.google.common.collect.MapMaker;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -771,6 +774,31 @@ public class EntryLogger {
         return addEntry(ledger, entry, true);
     }
 
+    private static final class RecyclableByteBuffer {
+        private static final Recycler<RecyclableByteBuffer> RECYCLER = new  Recycler<RecyclableByteBuffer>() {
+            @Override
+            protected RecyclableByteBuffer newObject(Handle<RecyclableByteBuffer> handle) {
+                return new RecyclableByteBuffer(handle);
+            }
+        };
+
+        private final ByteBuffer buffer;
+        private final Handle<RecyclableByteBuffer> handle;
+        public RecyclableByteBuffer(Handle<RecyclableByteBuffer> handle) {
+            this.buffer = ByteBuffer.allocate(4);
+            this.handle = handle;
+        }
+
+        public static RecyclableByteBuffer get() {
+            return RECYCLER.get();
+        }
+
+        public void recycle() {
+            buffer.rewind();
+            handle.recycle(this);
+        }
+    }
+
     synchronized long addEntry(long ledger, ByteBuffer entry, boolean rollLog) throws IOException {
         int entrySize = entry.remaining() + 4;
         boolean reachEntryLogLimit =
@@ -788,10 +816,13 @@ public class EntryLogger {
             }
         }
 
-        ByteBuffer buff = ByteBuffer.allocate(4);
-        buff.putInt(entry.remaining());
-        buff.flip();
-        logChannel.write(buff);
+        // Get a buffer from recyclable pool to store the size
+        RecyclableByteBuffer recyclableBuffer = RecyclableByteBuffer.get();
+        recyclableBuffer.buffer.putInt(entry.remaining());
+        recyclableBuffer.buffer.flip();
+        logChannel.write(recyclableBuffer.buffer);
+        recyclableBuffer.recycle();
+
         long pos = logChannel.position();
         logChannel.write(entry);
         logChannel.registerWrittenEntry(ledger, entrySize);
