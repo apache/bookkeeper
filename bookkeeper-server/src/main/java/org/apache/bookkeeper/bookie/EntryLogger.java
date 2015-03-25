@@ -24,6 +24,8 @@ package org.apache.bookkeeper.bookie;
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 
@@ -854,10 +856,10 @@ public class EntryLogger {
         return logChannel.position() + size > Integer.MAX_VALUE;
     }
 
-    byte[] readEntry(long ledgerId, long entryId, long location) throws IOException, Bookie.NoEntryException {
+    ByteBuf readEntry(long ledgerId, long entryId, long location) throws IOException, Bookie.NoEntryException {
         long entryLogId = logIdForOffset(location);
         long pos = location & 0xffffffffL;
-        ByteBuffer sizeBuff = ByteBuffer.allocate(4);
+        RecyclableByteBuffer sizeBuff = RecyclableByteBuffer.get();
         pos -= 4; // we want to get the ledgerId and length to check
         BufferedReadChannel fc;
         try {
@@ -868,26 +870,29 @@ public class EntryLogger {
             newe.setStackTrace(e.getStackTrace());
             throw newe;
         }
-        if (readFromLogChannel(entryLogId, fc, sizeBuff, pos) != sizeBuff.capacity()) {
-            throw new Bookie.NoEntryException("Short read from entrylog " + entryLogId, ledgerId, entryId);
+
+        if (readFromLogChannel(entryLogId, fc, sizeBuff.buffer, pos) != sizeBuff.buffer.capacity()) {
+            throw new Bookie.NoEntryException("Short read from entrylog " + entryLogId,
+                                              ledgerId, entryId);
         }
         pos += 4;
-        sizeBuff.flip();
-        int entrySize = sizeBuff.getInt();
+        sizeBuff.buffer.flip();
+        int entrySize = sizeBuff.buffer.getInt();
+        sizeBuff.recycle();
+
         // entrySize does not include the ledgerId
         if (entrySize > maxSaneEntrySize) {
             LOG.warn("Sanity check failed for entry size of " + entrySize + " at location " + pos + " in "
                     + entryLogId);
-
         }
         if (entrySize < MIN_SANE_ENTRY_SIZE) {
             LOG.error("Read invalid entry length {}", entrySize);
             throw new IOException("Invalid entry length " + entrySize);
         }
-        byte data[] = new byte[entrySize];
-        ByteBuffer buff = ByteBuffer.wrap(data);
-        int rc = readFromLogChannel(entryLogId, fc, buff, pos);
-        if (rc != data.length) {
+
+        ByteBuf data = PooledByteBufAllocator.DEFAULT.directBuffer(entrySize, entrySize);
+        int rc = readFromLogChannel(entryLogId, fc, data.nioBuffer(0, entrySize), pos);
+        if (rc != entrySize) {
             // Note that throwing NoEntryException here instead of IOException is not
             // without risk. If all bookies in a quorum throw this same exception
             // the client will assume that it has reached the end of the ledger.
@@ -897,15 +902,15 @@ public class EntryLogger {
             // returning NoEntryException is mostly safe.
             throw new Bookie.NoEntryException("Short read for " + ledgerId + "@"
                                               + entryId + " in " + entryLogId + "@"
-                                              + pos + "(" + rc + "!=" + data.length + ")", ledgerId, entryId);
+                                              + pos + "(" + rc + "!=" + entrySize + ")", ledgerId, entryId);
         }
-        buff.flip();
-        long thisLedgerId = buff.getLong();
+        data.writerIndex(entrySize);
+        long thisLedgerId = data.getLong(0);
         if (thisLedgerId != ledgerId) {
             throw new IOException("problem found in " + entryLogId + "@" + entryId + " at position + " + pos
                     + " entry belongs to " + thisLedgerId + " not " + ledgerId);
         }
-        long thisEntryId = buff.getLong();
+        long thisEntryId = data.getLong(8);
         if (thisEntryId != entryId) {
             throw new IOException("problem found in " + entryLogId + "@" + entryId + " at position + " + pos
                     + " entry is " + thisEntryId + " not " + entryId);
