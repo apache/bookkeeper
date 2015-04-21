@@ -26,6 +26,8 @@ Release 4.3.1 - unreleased
 
       BOOKKEEPER-834: test case error in test class TestDiskChecker (zhaijia via sijie)
 
+      BOOKKEEPER-846: TestLedgerChecker times out (rakeshr via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-800: Expose whether a ledger is closed or not (ivank)
