@@ -165,13 +165,22 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         // so we roll entry log files in SortedLedgerStorage itself.
         // After that, we could make the process writing data to entry logger file not bound with checkpoint.
         // otherwise, it hurts add performance.
+        //
+        // The only exception for the size limitation is if a file grows to be more than hard limit 2GB,
+        // we have to force rolling log, which it might cause slight performance effects
         scheduler.submit(new Runnable() {
             @Override
             public void run() {
                 try {
                     LOG.info("Started flushing mem table.");
+                    long logIdBeforeFlush = entryLogger.getCurrentLogId();
                     memTable.flush(SortedLedgerStorage.this);
-                    if (entryLogger.reachEntryLogLimit(0)) {
+                    long logIdAfterFlush = entryLogger.getCurrentLogId();
+                    // in any case that an entry log reaches the limit, we roll the log and start checkpointing.
+                    // if a memory table is flushed spanning over two entry log files, we also roll log. this is
+                    // for performance consideration: since we don't wanna checkpoint a new log file that ledger
+                    // storage is writing to.
+                    if (entryLogger.reachEntryLogLimit(0) || logIdAfterFlush != logIdBeforeFlush) {
                         entryLogger.rollLog();
                         LOG.info("Rolling entry logger since it reached size limitation");
                     }

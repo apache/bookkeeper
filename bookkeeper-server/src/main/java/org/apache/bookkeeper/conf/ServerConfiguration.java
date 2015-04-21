@@ -23,6 +23,7 @@ import java.util.List;
 import com.google.common.annotations.Beta;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
@@ -1476,6 +1477,10 @@ public class ServerConfiguration extends AbstractConfiguration {
         }
         if (getJournalAlignmentSize() > getJournalPreAllocSizeMB() * 1024 * 1024) {
             throw new ConfigurationException("Invalid preallocation size : " + getJournalPreAllocSizeMB() + " MB");
+        }
+        if (getEntryLogSizeLimit() > BookKeeperConstants.MAX_LOG_SIZE_LIMIT) {
+            throw new ConfigurationException("Entry log file size should not be larger than "
+                    + BookKeeperConstants.MAX_LOG_SIZE_LIMIT);
         }
     }
 

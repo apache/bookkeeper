@@ -85,6 +85,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-836: disable compaction when disk becomes full, otherwise compaction will fill up disk quickly (zhaijia via sijie)
 
+        BOOKKEEPER-833: EntryLogId and EntryLogLimit should not be larger than Integer.MAX_VALUE (sijie)
+
 Release 4.3.0 - 2014-10-03
 
   Non-backward compatible changes:
