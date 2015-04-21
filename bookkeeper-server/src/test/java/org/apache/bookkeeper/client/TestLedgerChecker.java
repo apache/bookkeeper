@@ -120,7 +120,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
     // /we don't have any missed entries. Quorum satisfied//
     // /So, there should not be any missing replicas.///////
     // /////////////////////////////////////////////////////
-    @Test(timeout = 3000)
+    @Test(timeout = 60000)
     public void testShouldNotGetTheFragmentIfThereIsNoMissedEntry()
             throws Exception {
 
@@ -164,7 +164,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
      * Tests that LedgerChecker should give two fragments when 2 bookies failed
      * in same ensemble when ensemble = 3, quorum = 2
      */
-    @Test(timeout = 3000)
+    @Test(timeout = 60000)
     public void testShouldGetTwoFrgamentsIfTwoBookiesFailedInSameEnsemble()
             throws Exception {
 
@@ -198,7 +198,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
      * Tests that LedgerChecker should not get any underReplicated fragments, if
      * corresponding ledger does not exists.
      */
-    @Test(timeout = 3000)
+    @Test(timeout = 60000)
     public void testShouldNotGetAnyFragmentIfNoLedgerPresent()
             throws Exception {
 
@@ -212,7 +212,20 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
         startNewBookie();
         lh.addEntry(TEST_LEDGER_ENTRY_DATA);
         bkc.deleteLedger(lh.getId());
-
+        LOG.info("Waiting to see ledger id {} deletion", lh.getId());
+        int retries = 40;
+        boolean noSuchLedger = false;
+        while (retries > 0) {
+            try {
+                lh.readEntries(0, 0);
+            } catch (BKException.BKNoSuchLedgerExistsException bkn) {
+                noSuchLedger = true;
+                break;
+            }
+            retries--;
+            Thread.sleep(500);
+        }
+        assertEquals("Ledger exists", true, noSuchLedger);
         Set<LedgerFragment> result = getUnderReplicatedFragments(lh);
         assertNotNull("Result shouldn't be null", result);
 
@@ -224,7 +237,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
      * Tests that LedgerChecker should get failed ensemble number of fragments
      * if ensemble bookie failures on next entry
      */
-    @Test(timeout = 3000)
+    @Test(timeout = 60000)
     public void testShouldGetFailedEnsembleNumberOfFgmntsIfEnsembleBookiesFailedOnNextWrite()
             throws Exception {
 
@@ -258,7 +271,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
      * Tests that LedgerChecker should not get any fragments as underReplicated
      * if Ledger itself is empty
      */
-    @Test(timeout = 3000)
+    @Test(timeout = 60000)
     public void testShouldNotGetAnyFragmentWithEmptyLedger() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 2, BookKeeper.DigestType.CRC32,
                 TEST_LEDGER_PASSWORD);
@@ -275,7 +288,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
      * In this case, there'll only be two fragments, as quorum is 2 and we only
      * suspect that the first entry of the ledger could exist.
      */
-    @Test(timeout = 3000)
+    @Test(timeout = 60000)
     public void testShouldGet2FragmentsWithEmptyLedgerButBookiesDead() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 2, BookKeeper.DigestType.CRC32,
                 TEST_LEDGER_PASSWORD);
@@ -291,7 +304,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
      * Tests that LedgerChecker should one fragment as underReplicated
      * if there is an open ledger with single entry written.
      */
-    @Test(timeout = 3000)
+    @Test(timeout = 60000)
     public void testShouldGetOneFragmentWithSingleEntryOpenedLedger() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,
                 TEST_LEDGER_PASSWORD);
@@ -321,7 +334,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
      * This is important, as the last add confirmed may be less than the
      * first entry id of the final segment.
      */
-    @Test(timeout = 3000)
+    @Test(timeout = 60000)
     public void testSingleEntryAfterEnsembleChange() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,
                 TEST_LEDGER_PASSWORD);
@@ -359,7 +372,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
      * Tests that LedgerChecker does not return any fragments
      * from a closed ledger with 0 entries.
      */
-    @Test(timeout = 3000)
+    @Test(timeout = 60000)
     public void testClosedEmptyLedger() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,
                 TEST_LEDGER_PASSWORD);
@@ -386,7 +399,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
      * Tests that LedgerChecker does not return any fragments
      * from a closed ledger with 0 entries.
      */
-    @Test(timeout = 3000)
+    @Test(timeout = 60000)
     public void testClosedSingleEntryLedger() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 2, BookKeeper.DigestType.CRC32,
                 TEST_LEDGER_PASSWORD);

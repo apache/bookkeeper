@@ -36,6 +36,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-847: ArrayIndexOutOfBoundsException in LedgerFragmentReplicator::updateEnsembleInfo (zhaijia via sijie)
 
+      BOOKKEEPER-846: TestLedgerChecker times out (rakeshr via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-800: Expose whether a ledger is closed or not (ivank)
