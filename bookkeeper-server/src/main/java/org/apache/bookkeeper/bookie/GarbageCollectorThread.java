@@ -66,6 +66,8 @@ public class GarbageCollectorThread extends BookieThread {
     final double majorCompactionThreshold;
     final long majorCompactionInterval;
 
+    final boolean isForceGCAllowWhenNoSpace;
+
     long lastMinorCompactionTime;
     long lastMajorCompactionTime;
 
@@ -93,6 +95,10 @@ public class GarbageCollectorThread extends BookieThread {
 
     // Boolean to trigger a forced GC.
     final AtomicBoolean forceGarbageCollection = new AtomicBoolean(false);
+    // Boolean to disable major compaction, when disk is almost full
+    final AtomicBoolean suspendMajorCompaction = new AtomicBoolean(false);
+    // Boolean to disable minor compaction, when disk is full
+    final AtomicBoolean suspendMinorCompaction = new AtomicBoolean(false);
 
     final GarbageCollector garbageCollector;
     final GarbageCleaner garbageCleaner;
@@ -264,6 +270,7 @@ public class GarbageCollectorThread extends BookieThread {
         minorCompactionInterval = conf.getMinorCompactionInterval() * SECOND;
         majorCompactionThreshold = conf.getMajorCompactionThreshold();
         majorCompactionInterval = conf.getMajorCompactionInterval() * SECOND;
+        isForceGCAllowWhenNoSpace = conf.getIsForceGCAllowWhenNoSpace();
 
         if (minorCompactionInterval > 0 && minorCompactionThreshold > 0) {
             if (minorCompactionThreshold > 1.0f) {
@@ -321,6 +328,30 @@ public class GarbageCollectorThread extends BookieThread {
         }
     }
 
+    public void suspendMajorGC() {
+        if (suspendMajorCompaction.compareAndSet(false, true)) {
+            LOG.info("Suspend Major Compaction triggered by thread: {}", Thread.currentThread().getName());
+        }
+    }
+    
+    public void resumeMajorGC() {
+        if (suspendMajorCompaction.compareAndSet(true, false)) {
+            LOG.info("{} Major Compaction back to normal since bookie has enough space now.", Thread.currentThread().getName());
+        }
+    }
+
+    public void suspendMinorGC() {
+        if (suspendMinorCompaction.compareAndSet(false, true)) {
+            LOG.info("Suspend Minor Compaction triggered by thread: {}", Thread.currentThread().getName());
+        }
+    }
+    
+    public void resumeMinorGC() {
+        if (suspendMinorCompaction.compareAndSet(true, false)) {
+            LOG.info("{} Minor Compaction back to normal since bookie has enough space now.", Thread.currentThread().getName());
+        }
+    }
+
     @Override
     public void run() {
         while (running) {
@@ -332,6 +363,7 @@ public class GarbageCollectorThread extends BookieThread {
                     continue;
                 }
             }
+
             boolean force = forceGarbageCollection.get();
             if (force) {
                 LOG.info("Garbage collector thread forced to perform GC before expiry of wait time.");
@@ -347,11 +379,20 @@ public class GarbageCollectorThread extends BookieThread {
             // gc entry logs
             doGcEntryLogs();
 
+            boolean suspendMajor = suspendMajorCompaction.get();
+            boolean suspendMinor = suspendMinorCompaction.get();
+            if (suspendMajor) {
+                LOG.info("Disk almost full, suspend major compaction to slow down filling disk.");
+            }
+            if (suspendMinor) {
+                LOG.info("Disk full, suspend minor compaction to slow down filling disk.");
+            }
+
             long curTime = MathUtils.now();
-            if (force || (enableMajorCompaction &&
-                curTime - lastMajorCompactionTime > majorCompactionInterval)) {
+            if (enableMajorCompaction && (!suspendMajor) && 
+                (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
                 // enter major compaction
-                LOG.info("Enter major compaction");
+                LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
                 doCompactEntryLogs(majorCompactionThreshold);
                 lastMajorCompactionTime = MathUtils.now();
                 // also move minor compaction time
@@ -359,10 +400,10 @@ public class GarbageCollectorThread extends BookieThread {
                 continue;
             }
 
-            if (force || (enableMinorCompaction &&
-                curTime - lastMinorCompactionTime > minorCompactionInterval)) {
+            if (enableMinorCompaction && (!suspendMinor) && 
+                (force || curTime - lastMinorCompactionTime > minorCompactionInterval)) {
                 // enter minor compaction
-                LOG.info("Enter minor compaction");
+                LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
                 doCompactEntryLogs(minorCompactionThreshold);
                 lastMinorCompactionTime = MathUtils.now();
             }

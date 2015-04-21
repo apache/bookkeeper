@@ -47,6 +47,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     // Gc Parameters
     protected final static String GC_WAIT_TIME = "gcWaitTime";
+    protected final static String IS_FORCE_GC_ALLOW_WHEN_NO_SPACE = "isForceGCAllowWhenNoSpace";
     // Sync Parameters
     protected final static String FLUSH_INTERVAL = "flushInterval";
     // Bookie death watch interval
@@ -779,6 +780,32 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setMajorCompactionInterval(long interval) {
         setProperty(MAJOR_COMPACTION_INTERVAL, interval);
+        return this;
+    }
+
+    /**
+     * Get whether force compaction is allowed when disk full or almost full.
+     *
+     * Force GC may get some space back, but may also fill up disk space more
+     * quickly. This is because new log files are created before GC, while old
+     * garbage log files deleted after GC. 
+     *
+     * @return true  - do force GC when disk full, 
+     *         false - suspend GC when disk full.
+     */
+    public boolean getIsForceGCAllowWhenNoSpace() {
+        return getBoolean(IS_FORCE_GC_ALLOW_WHEN_NO_SPACE, false);
+    }
+
+    /**
+     * Set whether force GC is allowed when disk full or almost full.
+     * 
+     * @param force true to allow force GC; false to suspend GC
+     *
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setIsForceGCAllowWhenNoSpace(boolean force) {
+        setProperty(IS_FORCE_GC_ALLOW_WHEN_NO_SPACE, force);
         return this;
     }
 

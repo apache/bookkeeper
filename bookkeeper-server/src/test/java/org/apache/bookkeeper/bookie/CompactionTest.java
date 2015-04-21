@@ -571,4 +571,59 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         bb.flip();
         return bb;
     }
+
+    /**
+     * Suspend garbage collection when suspendMajor/suspendMinor is set.
+     */
+    @Test(timeout=60000)
+    public void testSuspendGarbageCollection() throws Exception {
+        ServerConfiguration conf = newServerConfiguration();
+        conf.setGcWaitTime(500);
+        conf.setMinorCompactionInterval(1);
+        conf.setMajorCompactionInterval(2);
+        LedgerDirsManager dirManager = new LedgerDirsManager(conf, conf.getLedgerDirs());
+        CheckpointSource cp = new CheckpointSource() {
+            @Override
+            public Checkpoint newCheckpoint() {
+                // Do nothing.
+                return null;
+            }
+
+            @Override
+            public void checkpointComplete(Checkpoint checkPoint, boolean compact)
+                throws IOException {
+                // Do nothing.
+            }
+        };
+        Bookie.checkDirectoryStructure(conf.getJournalDir());
+        for (File dir : dirManager.getAllLedgerDirs()) {
+            Bookie.checkDirectoryStructure(dir);
+        }
+        InterleavedLedgerStorage storage = new InterleavedLedgerStorage(conf,
+                        LedgerManagerFactory.newLedgerManagerFactory(conf, zkc).newLedgerManager(),
+                        dirManager, cp);
+        storage.start();
+        
+        // test suspend Major GC.
+        Thread.sleep(conf.getMajorCompactionInterval() * 1000
+                   + conf.getGcWaitTime());
+        storage.gcThread.suspendMajorGC();
+        Thread.sleep(1000);
+        long startTime = MathUtils.now();
+        Thread.sleep(conf.getMajorCompactionInterval() * 1000
+                   + conf.getGcWaitTime());
+        assertTrue("major compaction triggered while set suspend",
+                storage.gcThread.lastMajorCompactionTime < startTime); 
+
+        // test suspend Minor GC.
+        storage.gcThread.suspendMinorGC();
+        Thread.sleep(1000);
+        startTime = MathUtils.now();
+        Thread.sleep(conf.getMajorCompactionInterval() * 1000
+                   + conf.getGcWaitTime());
+        assertTrue("minor compaction triggered while set suspend",
+                storage.gcThread.lastMinorCompactionTime < startTime);
+        storage.gcThread.resumeMinorGC();
+        storage.gcThread.resumeMajorGC();
+    }
 }

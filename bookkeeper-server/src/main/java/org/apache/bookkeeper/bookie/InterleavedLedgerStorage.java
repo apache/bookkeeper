@@ -127,17 +127,31 @@ class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
 
             @Override
             public void diskAlmostFull(File disk) {
-                gcThread.enableForceGC();
+                if (gcThread.isForceGCAllowWhenNoSpace) {
+                    gcThread.enableForceGC();
+                } else {
+                    gcThread.suspendMajorGC();
+                }
             }
 
             @Override
             public void diskFull(File disk) {
-                gcThread.enableForceGC();
+                if (gcThread.isForceGCAllowWhenNoSpace) {
+                    gcThread.enableForceGC();
+                } else {
+                    gcThread.suspendMajorGC();
+                    gcThread.suspendMinorGC();
+                }
             }
 
             @Override
             public void allDisksFull() {
-                gcThread.enableForceGC();
+                if (gcThread.isForceGCAllowWhenNoSpace) {
+                    gcThread.enableForceGC();
+                } else {
+                    gcThread.suspendMajorGC();
+                    gcThread.suspendMinorGC();
+                }
             }
 
             @Override
@@ -147,14 +161,26 @@ class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
 
             @Override
             public void diskWritable(File disk) {
-                // we have enough space now, disable force gc.
-                gcThread.disableForceGC();
+                // we have enough space now
+                if (gcThread.isForceGCAllowWhenNoSpace) {
+                    // disable force gc.
+                    gcThread.disableForceGC();
+                } else {
+                    // resume compaction to normal.
+                    gcThread.resumeMajorGC();
+                    gcThread.resumeMinorGC();
+                }
             }
 
             @Override
             public void diskJustWritable(File disk) {
-                // if a disk is just writable, we still need force gc.
-                gcThread.enableForceGC();
+                if (gcThread.isForceGCAllowWhenNoSpace) {
+                    // if a disk is just writable, we still need force gc.
+                    gcThread.enableForceGC();
+                } else {
+                    // still under warn threshold, only resume minor compaction.
+                    gcThread.resumeMinorGC();
+                }
             }
         };
     }

@@ -83,6 +83,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-695: Some entry logs are not removed from the bookie storage (Matteo Merli via sijie)
 
+        BOOKKEEPER-836: disable compaction when disk becomes full, otherwise compaction will fill up disk quickly (zhaijia via sijie)
+
 Release 4.3.0 - 2014-10-03
 
   Non-backward compatible changes:
