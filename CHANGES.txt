@@ -44,6 +44,10 @@ Release 4.3.1 - unreleased
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
 
+      bookkeeper-server:
+
+        BOOKKEEPER-833: EntryLogId and EntryLogLimit should not be larger than Integer.MAX_VALUE (sijie)
+
 Release 4.3.0 - 2014-10-03
 
   Non-backward compatible changes:

@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.bookie;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -167,7 +168,7 @@ public class EntryLogger {
             addListener(listener);
         }
         // log size limit
-        this.logSizeLimit = conf.getEntryLogSizeLimit();
+        this.logSizeLimit = Math.min(conf.getEntryLogSizeLimit(), MAX_LOG_SIZE_LIMIT);
         this.entryLogPreAllocationEnabled = conf.isEntryLogFilePreAllocationEnabled();
 
         // Initialize the entry log header buffer. This cannot be a static object
@@ -439,7 +440,12 @@ public class EntryLogger {
             // It would better not to overwrite existing entry log files
             File newLogFile = null;
             do {
-                String logFileName = Long.toHexString(++preallocatedLogId) + ".log";
+                if (preallocatedLogId >= Integer.MAX_VALUE) {
+                    preallocatedLogId = 0;
+                } else {
+                    ++preallocatedLogId;
+                }
+                String logFileName = Long.toHexString(preallocatedLogId) + ".log";
                 for (File dir : list) {
                     newLogFile = new File(dir, logFileName);
                     currentDir = dir;
@@ -622,15 +628,16 @@ public class EntryLogger {
     }
 
     synchronized long addEntry(long ledger, ByteBuffer entry, boolean rollLog) throws IOException {
-        if (rollLog) {
-            // Create new log if logSizeLimit reached or current disk is full
-            boolean createNewLog = shouldCreateNewEntryLog.get();
-            if (createNewLog || reachEntryLogLimit(entry.remaining() + 4)) {
-                createNewLog();
-                // Reset the flag
-                if (createNewLog) {
-                    shouldCreateNewEntryLog.set(false);
-                }
+        int entrySize = entry.remaining() + 4;
+        boolean reachEntryLogLimit =
+                rollLog ? reachEntryLogLimit(entrySize) : readEntryLogHardLimit(entrySize);
+        // Create new log if logSizeLimit reached or current disk is full
+        boolean createNewLog = shouldCreateNewEntryLog.get();
+        if (createNewLog || reachEntryLogLimit) {
+            createNewLog();
+            // Reset the flag
+            if (createNewLog) {
+                shouldCreateNewEntryLog.set(false);
             }
         }
         ByteBuffer buff = ByteBuffer.allocate(4);
@@ -649,6 +656,10 @@ public class EntryLogger {
 
     synchronized boolean reachEntryLogLimit(long size) {
         return logChannel.position() + size > logSizeLimit;
+    }
+
+    synchronized boolean readEntryLogHardLimit(long size) {
+        return logChannel.position() + size > Integer.MAX_VALUE;
     }
 
     byte[] readEntry(long ledgerId, long entryId, long location) throws IOException, Bookie.NoEntryException {
@@ -836,7 +847,6 @@ public class EntryLogger {
             logid2FileChannel.clear();
             // close current writing log file
             closeFileChannel(logChannel);
-            logChannel = null;
         } catch (IOException ie) {
             // we have no idea how to avoid io exception during shutting down, so just ignore it
             LOG.error("Error flush entry log during shutting down, which may cause entry log corrupted.", ie);
