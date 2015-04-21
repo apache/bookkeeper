@@ -3,6 +3,9 @@ Release 4.3.2 - unreleased
   Backward compatible changes:
 
     BUGFIXES:
+      bookkeeper-server:
+
+        BOOKKEEPER-695: Some entry logs are not removed from the bookie storage (Matteo Merli via sijie)
 
     IMPROVEMENTS:
 
@@ -61,6 +64,7 @@ Release 4.3.1 - 2015-05-19
       bookkeeper-server:
 
         BOOKKEEPER-833: EntryLogId and EntryLogLimit should not be larger than Integer.MAX_VALUE (sijie)
+
 
 Release 4.3.0 - 2014-10-03
 

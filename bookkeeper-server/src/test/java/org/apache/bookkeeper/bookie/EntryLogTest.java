@@ -89,11 +89,7 @@ public class EntryLogTest {
         EntryLogMetadata meta = new EntryLogMetadata(0L);
         ExtractionScanner scanner = new ExtractionScanner(meta);
 
-        try {
-            logger.scanEntryLog(0L, scanner);
-            fail("Should not reach here!");
-        } catch (IOException ie) {
-        }
+        logger.scanEntryLog(0L, scanner);
 
         LOG.info("Extracted Meta From Entry Log {}", meta);
         assertNotNull(meta.ledgersMap.get(1L));
