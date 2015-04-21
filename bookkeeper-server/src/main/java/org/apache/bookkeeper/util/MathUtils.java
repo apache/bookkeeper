@@ -73,4 +73,15 @@ public class MathUtils {
     public static long elapsedMSec (long startNanoTime) {
        return (System.nanoTime() - startNanoTime)/ NANOSECONDS_PER_MILLISECOND;
     }
+
+    /**
+     * Nanoseconds elapsed since the time specified, the input is nanoTime
+     * the only conversion happens when computing the elapsed time
+     *
+     * @param startNanoTime the start of the interval that we are measuring
+     * @return elapsed time in milliseconds.
+     */
+    public static long elapsedNanos(long startNanoTime) {
+       return System.nanoTime() - startNanoTime;
+    }
 }

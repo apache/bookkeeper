@@ -21,6 +21,8 @@
 
 package org.apache.bookkeeper.client;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
@@ -81,9 +83,9 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
     @Override
     public void safeOperationComplete(int rc, Void result) {
         if (BKException.Code.OK != rc) {
-            deleteOpLogger.registerFailedEvent(MathUtils.elapsedMSec(startTime));
+            deleteOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
         } else {
-            deleteOpLogger.registerSuccessfulEvent(MathUtils.elapsedMSec(startTime));
+            deleteOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
         }
         cb.deleteComplete(rc, this.ctx);
     }

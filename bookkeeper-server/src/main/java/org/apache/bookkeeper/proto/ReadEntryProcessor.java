@@ -120,12 +120,14 @@ class ReadEntryProcessor extends PacketProcessorBase {
         LOG.trace("Read entry rc = {} for {}",
                 new Object[] { errorCode, read });
         if (errorCode == BookieProtocol.EOK) {
-            requestProcessor.readEntryStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
+            requestProcessor.readEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
+                    TimeUnit.NANOSECONDS);
             sendResponse(errorCode, ResponseBuilder.buildReadResponse(data, read),
                          requestProcessor.readRequestStats);
 
         } else {
-            requestProcessor.readEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
+            requestProcessor.readEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
+                    TimeUnit.NANOSECONDS);
             sendResponse(errorCode, ResponseBuilder.buildErrorResponse(errorCode, read),
                          requestProcessor.readRequestStats);
         }

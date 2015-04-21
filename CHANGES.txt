@@ -67,6 +67,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-844: Add more metrics about latency and bytes characteristics on bookie operations (Tong Yu via sijie)
 
+      BOOKKEEPER-849: Collect stats with sub-milliseconds precision (Matteo Merli via sijie)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)

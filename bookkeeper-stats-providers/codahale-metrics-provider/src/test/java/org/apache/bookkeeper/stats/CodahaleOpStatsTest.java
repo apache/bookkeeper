@@ -23,7 +23,7 @@ public class CodahaleOpStatsTest {
     @org.junit.Test
     public void testToOpStatsData() {
         OpStatsLogger logger = new CodahaleMetricsProvider().getStatsLogger("test").getOpStatsLogger("testLogger");
-        logger.registerSuccessfulEvent(1);
+        logger.registerSuccessfulValue(1);
         // the following should not throw any exception
         OpStatsData statsData = logger.toOpStatsData();
         assertEquals(1, statsData.getNumSuccessfulEvents());

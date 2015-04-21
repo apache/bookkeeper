@@ -26,6 +26,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -33,7 +34,6 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 
@@ -187,9 +187,9 @@ public class EntryMemTable {
             }
 
             if (null != cp) {
-                snapshotStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
+                snapshotStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             } else {
-                snapshotStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
+                snapshotStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             }
         }
         return cp;
@@ -309,9 +309,9 @@ public class EntryMemTable {
             return size;
         } finally {
             if (success) {
-                putEntryStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
+                putEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             } else {
-                putEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
+                putEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             }
         }
     }
@@ -382,9 +382,9 @@ public class EntryMemTable {
         } finally {
             this.lock.readLock().unlock();
             if (success) {
-                getEntryStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
+                getEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             } else {
-                getEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
+                getEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             }
         }
 
@@ -411,9 +411,9 @@ public class EntryMemTable {
         } finally {
             this.lock.readLock().unlock();
             if (success) {
-                getEntryStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
+                getEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             } else {
-                getEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
+                getEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             }
         }
 

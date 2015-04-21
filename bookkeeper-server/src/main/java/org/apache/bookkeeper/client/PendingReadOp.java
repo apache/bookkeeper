@@ -67,7 +67,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     long numPendingEntries;
     long startEntryId;
     long endEntryId;
-    long requestTimeMillis;
+    long requestTimeNanos;
     OpStatsLogger readOpLogger;
 
     final int maxMissedReadsAllowed;
@@ -285,7 +285,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
     public void initiate() throws InterruptedException {
         long nextEnsembleChange = startEntryId, i = startEntryId;
-        this.requestTimeMillis = MathUtils.now();
+        this.requestTimeNanos = MathUtils.nowInNano();
         ArrayList<BookieSocketAddress> ensemble = null;
 
         if (speculativeReadTimeout > 0) {
@@ -373,7 +373,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     }
 
     private void submitCallback(int code) {
-        long latencyMillis = MathUtils.now() - requestTimeMillis;
+        long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
         if (code != BKException.Code.OK) {
             long firstUnread = LedgerHandle.INVALID_ENTRY_ID;
             for (LedgerEntryRequest req : seq) {
@@ -384,9 +384,9 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             }
             LOG.error("Read of ledger entry failed: L{} E{}-E{}, Heard from {}. First unread entry is {}",
                     new Object[] { lh.getId(), startEntryId, endEntryId, heardFromHosts, firstUnread });
-            readOpLogger.registerFailedEvent(latencyMillis);
+            readOpLogger.registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
         } else {
-            readOpLogger.registerSuccessfulEvent(latencyMillis);
+            readOpLogger.registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
         }
         cancelSpeculativeTask(true);
         cb.readComplete(code, lh, PendingReadOp.this, PendingReadOp.this.ctx);

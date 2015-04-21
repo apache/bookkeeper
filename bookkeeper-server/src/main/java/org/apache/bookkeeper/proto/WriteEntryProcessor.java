@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.proto;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -77,7 +78,8 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
             rc = BookieProtocol.EUA;
         }
         if (rc != BookieProtocol.EOK) {
-            requestProcessor.addEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
+            requestProcessor.addEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
+                    TimeUnit.NANOSECONDS);
             sendResponse(rc,
                          ResponseBuilder.buildErrorResponse(rc, add),
                          requestProcessor.addRequestStats);
@@ -88,9 +90,11 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
     public void writeComplete(int rc, long ledgerId, long entryId,
                               BookieSocketAddress addr, Object ctx) {
         if (BookieProtocol.EOK == rc) {
-            requestProcessor.addEntryStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
+            requestProcessor.addEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
+                    TimeUnit.NANOSECONDS);
         } else {
-            requestProcessor.addEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
+            requestProcessor.addEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
+                    TimeUnit.NANOSECONDS);
         }
         sendResponse(rc,
                      ResponseBuilder.buildAddResponse(request),

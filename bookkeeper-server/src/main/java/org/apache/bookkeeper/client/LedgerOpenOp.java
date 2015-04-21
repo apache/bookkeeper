@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.client;
 
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 import java.security.GeneralSecurityException;
 
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
@@ -31,7 +32,6 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -196,9 +196,9 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
 
     void openComplete(int rc, LedgerHandle lh) {
         if (BKException.Code.OK != rc) {
-            openOpLogger.registerFailedEvent(MathUtils.elapsedMSec(startTime));
+            openOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
         } else {
-            openOpLogger.registerSuccessfulEvent(MathUtils.elapsedMSec(startTime));
+            openOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
         }
         cb.openComplete(rc, lh, ctx);
     }

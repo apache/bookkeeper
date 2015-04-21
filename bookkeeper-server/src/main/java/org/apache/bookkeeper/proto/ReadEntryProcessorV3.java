@@ -134,9 +134,11 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         }
 
         if (status == StatusCode.EOK) {
-            requestProcessor.readEntryStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
+            requestProcessor.readEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
+                    TimeUnit.NANOSECONDS);
         } else {
-            requestProcessor.readEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
+            requestProcessor.readEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
+                    TimeUnit.NANOSECONDS);
         }
 
         // Finally set status and return. The body would have been updated if

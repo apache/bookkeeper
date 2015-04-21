@@ -16,6 +16,8 @@
  */
 package org.apache.bookkeeper.stats;
 
+import java.util.concurrent.TimeUnit;
+
 public class NullStatsLogger implements StatsLogger {
 
     public static final NullStatsLogger INSTANCE = new NullStatsLogger();
@@ -24,12 +26,22 @@ public class NullStatsLogger implements StatsLogger {
         final OpStatsData nullOpStats = new OpStatsData(0, 0, 0, new long[6]);
 
         @Override
-        public void registerFailedEvent(long eventLatencyMillis) {
+        public void registerFailedEvent(long eventLatency, TimeUnit unit) {
             // nop
         }
 
         @Override
-        public void registerSuccessfulEvent(long eventLatencyMillis) {
+        public void registerSuccessfulEvent(long eventLatency, TimeUnit unit) {
+            // nop
+        }
+
+        @Override
+        public void registerSuccessfulValue(long value) {
+            // nop
+        }
+
+        @Override
+        public void registerFailedValue(long value) {
             // nop
         }
 

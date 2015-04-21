@@ -28,6 +28,9 @@ import java.nio.ByteBuffer;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
+
+import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -232,9 +235,9 @@ class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
             success = true;
         } finally {
             if (success) {
-                getOffsetStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
+                getOffsetStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             } else {
-                getOffsetStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
+                getOffsetStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             }
         }
         // Get Entry
@@ -246,9 +249,9 @@ class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
             return ByteBuffer.wrap(retBytes);
         } finally {
             if (success) {
-                getEntryStats.registerSuccessfulEvent(MathUtils.elapsedMSec(startTimeNanos));
+                getEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             } else {
-                getEntryStats.registerFailedEvent(MathUtils.elapsedMSec(startTimeNanos));
+                getEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             }
         }
     }

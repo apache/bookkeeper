@@ -88,6 +88,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_STATUS;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_BYTES;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
 
 /**
  * Implements a bookie.
@@ -486,7 +487,8 @@ public class Bookie extends BookieCriticalThread {
         // directories are full, would throws exception and fail bookie startup.
         this.ledgerDirsManager.init();
         // instantiate the journal
-        journal = new Journal(conf, ledgerDirsManager);
+        journal = new Journal(conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE));
+
         // Check the type of storage.
         if (conf.getSortedLedgerStorageEnabled()) {
             ledgerStorage = new SortedLedgerStorage(conf, ledgerManager,
@@ -1123,13 +1125,13 @@ public class Bookie extends BookieCriticalThread {
             transitionToReadOnlyMode();
             throw new IOException(e);
         } finally {
-            long elapsedMSec = MathUtils.elapsedMSec(requestNanos);
+            long elapsedNanos = MathUtils.elapsedNanos(requestNanos);
             if (success) {
-                recoveryAddEntryStats.registerSuccessfulEvent(elapsedMSec);
-                addBytesStats.registerSuccessfulEvent(entrySize);
+                recoveryAddEntryStats.registerSuccessfulEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+                addBytesStats.registerSuccessfulValue(entrySize);
             } else {
-                recoveryAddEntryStats.registerFailedEvent(elapsedMSec);
-                addBytesStats.registerFailedEvent(entrySize);
+                recoveryAddEntryStats.registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+                addBytesStats.registerFailedValue(entrySize);
             }
         }
     }
@@ -1158,13 +1160,13 @@ public class Bookie extends BookieCriticalThread {
             transitionToReadOnlyMode();
             throw new IOException(e);
         } finally {
-            long elapsedMSec = MathUtils.elapsedMSec(requestNanos);
+            long elapsedNanos = MathUtils.elapsedNanos(requestNanos);
             if (success) {
-                addEntryStats.registerSuccessfulEvent(elapsedMSec);
-                addBytesStats.registerSuccessfulEvent(entrySize);
+                addEntryStats.registerSuccessfulEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+                addBytesStats.registerSuccessfulValue(entrySize);
             } else {
-                addEntryStats.registerFailedEvent(elapsedMSec);
-                addBytesStats.registerFailedEvent(entrySize);
+                addEntryStats.registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+                addBytesStats.registerFailedValue(entrySize);
             }
         }
     }
@@ -1213,13 +1215,13 @@ public class Bookie extends BookieCriticalThread {
             success = true;
             return entry;
         } finally {
-            long elapsedMSec = MathUtils.elapsedMSec(requestNanos);
+            long elapsedNanos = MathUtils.elapsedNanos(requestNanos);
             if (success) {
-                readEntryStats.registerSuccessfulEvent(elapsedMSec);
-                readBytesStats.registerSuccessfulEvent(entrySize);
+                readEntryStats.registerSuccessfulEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+                readBytesStats.registerSuccessfulValue(entrySize);
             } else {
-                readEntryStats.registerFailedEvent(elapsedMSec);
-                readBytesStats.registerFailedEvent(entrySize);
+                readEntryStats.registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+                readBytesStats.registerFailedValue(entrySize);
             }
         }
     }

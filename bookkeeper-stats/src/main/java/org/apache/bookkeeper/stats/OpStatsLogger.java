@@ -16,6 +16,8 @@
  */
 package org.apache.bookkeeper.stats;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * This interface handles logging of statistics related to each operation (PUBLISH,
  * CONSUME etc.)
@@ -23,17 +25,30 @@ package org.apache.bookkeeper.stats;
 public interface OpStatsLogger {
 
     /**
-     * Increment the failed op counter with the given eventLatencyMillis.
-     * @param eventLatencyMillis The event latency in milliseconds.
+     * Increment the failed op counter with the given eventLatency.
+     * @param eventLatencyMillis The event latency
+     * @param unit
      */
-    public void registerFailedEvent(long eventLatencyMillis);
+    public void registerFailedEvent(long eventLatency, TimeUnit unit);
 
     /**
-     * An operation succeeded with the given eventLatencyMillis. Update
+     * An operation succeeded with the given eventLatency. Update
      * stats to reflect the same
-     * @param eventLatencyMillis The event latency in milliseconds.
+     * @param eventLatencyMillis The event latency
+     * @param unit
      */
-    public void registerSuccessfulEvent(long eventLatencyMillis);
+    public void registerSuccessfulEvent(long eventLatency, TimeUnit unit);
+
+    /**
+     * An operation with the given value succeeded
+     * @param value
+     */
+    public void registerSuccessfulValue(long value);
+
+    /**
+     * An operation with the given value failed
+     */
+    public void registerFailedValue(long value);
 
     /**
      * @return Returns an OpStatsData object with necessary values. We need this function

@@ -28,8 +28,10 @@ import java.util.SortedMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Stopwatch;
+
 import org.apache.bookkeeper.bookie.BookieThread;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKBookieHandleNotAvailableException;
@@ -189,9 +191,9 @@ public class ReplicationWorker implements Runnable {
         } finally {
             long latencyMillis = stopwatch.stop().elapsedMillis();
             if (success) {
-                rereplicateOpStats.registerSuccessfulEvent(latencyMillis);
+                rereplicateOpStats.registerSuccessfulEvent(latencyMillis, TimeUnit.MILLISECONDS);
             } else {
-                rereplicateOpStats.registerFailedEvent(latencyMillis);
+                rereplicateOpStats.registerFailedEvent(latencyMillis, TimeUnit.MILLISECONDS);
             }
         }
     }

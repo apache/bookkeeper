@@ -825,16 +825,16 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                               final Object originalCtx, final long ledgerId, final long entryId,
                               final Timeout timeout) {
             super(originalCtx, ledgerId, entryId, timeout);
-            final long requestTimeMillis = MathUtils.now();
+            final long startTime = MathUtils.nowInNano();
             this.cb = null == readEntryOpLogger ? originalCallback : new ReadEntryCallback() {
                 @Override
                 public void readEntryComplete(int rc, long ledgerId, long entryId, ChannelBuffer buffer, Object ctx) {
                     cancelTimeout();
-                    long latencyMillis = MathUtils.now() - requestTimeMillis;
+                    long latency = MathUtils.elapsedNanos(startTime);
                     if (rc != BKException.Code.OK) {
-                        readEntryOpLogger.registerFailedEvent(latencyMillis);
+                        readEntryOpLogger.registerFailedEvent(latency, TimeUnit.NANOSECONDS);
                     } else {
-                        readEntryOpLogger.registerSuccessfulEvent(latencyMillis);
+                        readEntryOpLogger.registerSuccessfulEvent(latency, TimeUnit.NANOSECONDS);
                     }
                     originalCallback.readEntryComplete(rc, ledgerId, entryId, buffer, originalCtx);
                 }
@@ -856,16 +856,16 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                              final Object originalCtx, final long ledgerId, final long entryId,
                              final Timeout timeout) {
             super(originalCtx, ledgerId, entryId, timeout);
-            final long requestTimeMillis = MathUtils.now();
+            final long startTime = MathUtils.nowInNano();
             this.cb = null == addEntryOpLogger ? originalCallback : new WriteCallback() {
                 @Override
                 public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
                     cancelTimeout();
-                    long latencyMillis = MathUtils.now() - requestTimeMillis;
+                    long latency = MathUtils.elapsedNanos(startTime);
                     if (rc != BKException.Code.OK) {
-                        addEntryOpLogger.registerFailedEvent(latencyMillis);
+                        addEntryOpLogger.registerFailedEvent(latency, TimeUnit.NANOSECONDS);
                     } else {
-                        addEntryOpLogger.registerSuccessfulEvent(latencyMillis);
+                        addEntryOpLogger.registerSuccessfulEvent(latency, TimeUnit.NANOSECONDS);
                     }
                     originalCallback.writeComplete(rc, ledgerId, entryId, addr, originalCtx);
                 }
@@ -917,7 +917,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         }
 
         private long elapsedTime() {
-            return MathUtils.elapsedMSec(requestAt);
+            return MathUtils.elapsedNanos(requestAt);
         }
 
         @Override
@@ -927,13 +927,14 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             }
             if (OperationType.ADD_ENTRY == operationType) {
                 errorOutAddKey(this);
-                addTimeoutOpLogger.registerSuccessfulEvent(elapsedTime());
+                addTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
             } else {
                 errorOutReadKey(this);
-                readTimeoutOpLogger.registerSuccessfulEvent(elapsedTime());
+                readTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
             }
         }
     }
+
 
     /**
      * Note : Helper functions follow

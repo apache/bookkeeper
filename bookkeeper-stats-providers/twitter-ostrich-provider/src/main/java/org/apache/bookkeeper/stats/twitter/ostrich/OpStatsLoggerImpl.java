@@ -16,6 +16,8 @@
  */
 package org.apache.bookkeeper.stats.twitter.ostrich;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.stats.OpStatsData;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 
@@ -44,15 +46,27 @@ class OpStatsLoggerImpl implements OpStatsLogger {
     }
 
     @Override
-    public void registerFailedEvent(long eventLatencyMillis) {
-        failureMetric.add((int)eventLatencyMillis);
+    public void registerFailedEvent(long eventLatency, TimeUnit unit) {
+        failureMetric.add((int) unit.toMillis(eventLatency));
         failureCounter.incr();
     }
 
     @Override
-    public void registerSuccessfulEvent(long eventLatencyMillis) {
-        successMetric.add((int)eventLatencyMillis);
+    public void registerSuccessfulEvent(long eventLatency, TimeUnit unit) {
+        successMetric.add((int) unit.toMillis(eventLatency));
         successCounter.incr();
+    }
+
+    @Override
+    public void registerSuccessfulValue(long value) {
+        successMetric.add((int) value);
+        successCounter.incr();
+    }
+
+    @Override
+    public void registerFailedValue(long value) {
+        failureMetric.add((int) value);
+        failureCounter.incr();
     }
 
     @Override

@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.proto;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookieProtocol.Request;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -55,9 +57,9 @@ abstract class PacketProcessorBase implements Runnable {
     protected void sendResponse(int rc, Object response, OpStatsLogger statsLogger) {
         channel.write(response);
         if (BookieProtocol.EOK == rc) {
-            statsLogger.registerSuccessfulEvent(MathUtils.elapsedMSec(enqueueNanos));
+            statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
         } else {
-            statsLogger.registerFailedEvent(MathUtils.elapsedMSec(enqueueNanos));
+            statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
         }
     }
 

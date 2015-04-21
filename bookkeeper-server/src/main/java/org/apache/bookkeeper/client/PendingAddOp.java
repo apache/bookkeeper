@@ -19,6 +19,7 @@ package org.apache.bookkeeper.client;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -54,7 +55,7 @@ class PendingAddOp implements WriteCallback {
 
     LedgerHandle lh;
     boolean isRecoveryAdd = false;
-    long requestTimeMillis;
+    long requestTimeNanos;
     OpStatsLogger addOpLogger;
 
     PendingAddOp(LedgerHandle lh, AddCallback cb, Object ctx) {
@@ -130,7 +131,7 @@ class PendingAddOp implements WriteCallback {
     }
 
     void initiate(ChannelBuffer toSend, int entryLength) {
-        requestTimeMillis = MathUtils.now();
+        requestTimeNanos = MathUtils.nowInNano();
         this.toSend = toSend;
         this.entryLength = entryLength;
         for (int bookieIndex : writeSet) {
@@ -189,13 +190,13 @@ class PendingAddOp implements WriteCallback {
     }
 
     void submitCallback(final int rc) {
-        long latencyMillis = MathUtils.now() - requestTimeMillis;
+        long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
         if (rc != BKException.Code.OK) {
-            addOpLogger.registerFailedEvent(latencyMillis);
+            addOpLogger.registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
             LOG.error("Write of ledger entry to quorum failed: L{} E{}",
                       lh.getId(), entryId);
         } else {
-            addOpLogger.registerSuccessfulEvent(latencyMillis);
+            addOpLogger.registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
         }
         cb.addComplete(rc, lh, entryId, ctx);
     }

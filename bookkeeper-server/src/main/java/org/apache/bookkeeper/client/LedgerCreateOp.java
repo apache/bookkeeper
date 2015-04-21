@@ -23,6 +23,7 @@ package org.apache.bookkeeper.client;
 
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
@@ -142,9 +143,9 @@ class LedgerCreateOp implements GenericCallback<Long> {
     private void createComplete(int rc, LedgerHandle lh) {
         // Opened a new ledger
         if (BKException.Code.OK != rc) {
-            createOpLogger.registerFailedEvent(MathUtils.elapsedMSec(startTime));
+            createOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
         } else {
-            createOpLogger.registerSuccessfulEvent(MathUtils.elapsedMSec(startTime));
+            createOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
         }
         cb.createComplete(rc, lh, ctx);
     }

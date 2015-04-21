@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.proto;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
@@ -46,9 +48,9 @@ public abstract class PacketProcessorBaseV3 {
     protected void sendResponse(StatusCode code, Object response, OpStatsLogger statsLogger) {
         channel.write(response);
         if (StatusCode.EOK == code) {
-            statsLogger.registerSuccessfulEvent(MathUtils.elapsedMSec(enqueueNanos));
+            statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
         } else {
-            statsLogger.registerFailedEvent(MathUtils.elapsedMSec(enqueueNanos));
+            statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
         }
     }
 
