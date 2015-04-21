@@ -494,7 +494,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
     final ServerConfiguration conf;
     final ForceWriteThread forceWriteThread;
     // Time after which we will stop grouping and issue the flush
-    private final long maxGroupWaitInMSec;
+    private final long maxGroupWaitInNanos;
     // Threshold after which we flush any buffered journal entries
     private final long bufferedEntriesThreshold;
     // Threshold after which we flush any buffered journal writes
@@ -546,7 +546,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
         this.journalWriteBufferSize = conf.getJournalWriteBufferSizeKB() * KB;
         this.maxBackupJournals = conf.getMaxBackupJournals();
         this.forceWriteThread = new ForceWriteThread(this, conf.getJournalAdaptiveGroupWrites());
-        this.maxGroupWaitInMSec = conf.getJournalMaxGroupWaitMSec();
+        this.maxGroupWaitInNanos = TimeUnit.MILLISECONDS.toNanos(conf.getJournalMaxGroupWaitMSec());
         this.bufferedWritesThreshold = conf.getJournalBufferedWritesThreshold();
         this.bufferedEntriesThreshold = conf.getJournalBufferedEntriesThreshold();
         this.cbThreadPool = Executors.newFixedThreadPool(conf.getNumJournalCallbackThreads(),
@@ -554,7 +554,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
 
         // Unless there is a cap on the max wait (which requires group force writes)
         // we cannot skip flushing for queue empty
-        this.flushWhenQueueEmpty = maxGroupWaitInMSec <= 0 || conf.getJournalFlushWhenQueueEmpty();
+        this.flushWhenQueueEmpty = maxGroupWaitInNanos <= 0 || conf.getJournalFlushWhenQueueEmpty();
 
         this.removePagesFromCache = conf.getJournalRemovePagesFromCache();
         // read last log mark
@@ -822,17 +822,19 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                     if (toFlush.isEmpty()) {
                         qe = queue.take();
                     } else {
-                        long pollWaitTime = maxGroupWaitInMSec - MathUtils.elapsedMSec(toFlush.getFirst().enqueueTime);
-                        if (flushWhenQueueEmpty || pollWaitTime < 0) {
-                            pollWaitTime = 0;
+                        long pollWaitTimeNanos = maxGroupWaitInNanos - MathUtils.elapsedNanos(toFlush.get(0).enqueueTime);
+                        if (flushWhenQueueEmpty || pollWaitTimeNanos < 0) {
+                            pollWaitTimeNanos = 0;
                         }
-                        qe = queue.poll(pollWaitTime, TimeUnit.MILLISECONDS);
+                        qe = queue.poll(pollWaitTimeNanos, TimeUnit.NANOSECONDS);
                         boolean shouldFlush = false;
                         // We should issue a forceWrite if any of the three conditions below holds good
                         // 1. If the oldest pending entry has been pending for longer than the max wait time
-                        if (maxGroupWaitInMSec > 0 && !groupWhenTimeout && (MathUtils.elapsedMSec(toFlush.getFirst().enqueueTime) > maxGroupWaitInMSec)) {
+                        if (maxGroupWaitInNanos > 0 && !groupWhenTimeout
+                                && (MathUtils.elapsedNanos(toFlush.get(0).enqueueTime) > maxGroupWaitInNanos)) {
                             groupWhenTimeout = true;
-                        } else if (maxGroupWaitInMSec > 0 && groupWhenTimeout && qe != null && MathUtils.elapsedMSec(qe.enqueueTime) < maxGroupWaitInMSec) {
+                        } else if (maxGroupWaitInNanos > 0 && groupWhenTimeout && qe != null
+                                && MathUtils.elapsedNanos(qe.enqueueTime) < maxGroupWaitInNanos) {
                             // when group timeout, it would be better to look forward, as there might be lots of entries already timeout
                             // due to a previous slow write (writing to filesystem which impacted by force write).
                             // Group those entries in the queue

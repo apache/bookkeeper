@@ -69,6 +69,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-849: Collect stats with sub-milliseconds precision (Matteo Merli via sijie)
 
+      BOOKKEEPER-850: Use nanoseconds to calculate poll timeout when doing group commit (Matteo Merli via sijie)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
