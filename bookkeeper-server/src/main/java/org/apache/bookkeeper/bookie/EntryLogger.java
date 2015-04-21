@@ -782,20 +782,19 @@ public class EntryLogger {
                 break;
             }
             if (readFromLogChannel(entryLogId, bc, sizeBuff, pos) != sizeBuff.capacity()) {
-                throw new IOException("Short read for entry size from entrylog " + entryLogId);
+                LOG.warn("Short read for entry size from entrylog {}", entryLogId);
+                return;
             }
             long offset = pos;
             pos += 4;
             sizeBuff.flip();
             int entrySize = sizeBuff.getInt();
-            if (entrySize > MB) {
-                LOG.warn("Found large size entry of " + entrySize + " at location " + pos + " in "
-                        + entryLogId);
-            }
+
             sizeBuff.clear();
             // try to read ledger id first
             if (readFromLogChannel(entryLogId, bc, lidBuff, pos) != lidBuff.capacity()) {
-                throw new IOException("Short read for ledger id from entrylog " + entryLogId);
+                LOG.warn("Short read for ledger id from entrylog {}", entryLogId);
+                return;
             }
             lidBuff.flip();
             long lid = lidBuff.getLong();
@@ -810,8 +809,9 @@ public class EntryLogger {
             ByteBuffer buff = ByteBuffer.wrap(data);
             int rc = readFromLogChannel(entryLogId, bc, buff, pos);
             if (rc != data.length) {
-                throw new IOException("Short read for ledger entry from entryLog " + entryLogId
-                                    + "@" + pos + "(" + rc + "!=" + data.length + ")");
+                LOG.warn("Short read for ledger entry from entryLog {}@{} ({} != {})", new Object[] { entryLogId, pos,
+                        rc, data.length });
+                return;
             }
             buff.flip();
             // process the entry
