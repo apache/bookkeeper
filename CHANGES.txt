@@ -34,6 +34,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-840: Deadlock on flushLock on compaction (sijie)
 
+      BOOKKEEPER-847: ArrayIndexOutOfBoundsException in LedgerFragmentReplicator::updateEnsembleInfo (zhaijia via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-800: Expose whether a ledger is closed or not (ivank)

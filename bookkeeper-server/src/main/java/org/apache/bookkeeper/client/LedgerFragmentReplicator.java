@@ -345,10 +345,22 @@ public class LedgerFragmentReplicator {
         ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata()
                 .getEnsembles().get(fragmentStartId);
         int deadBookieIndex = ensemble.indexOf(oldBookie);
-        ensemble.remove(deadBookieIndex);
-        ensemble.add(deadBookieIndex, newBookie);
-        lh.writeLedgerConfig(new UpdateEnsembleCb(ensembleUpdatedCb,
-                fragmentStartId, lh, oldBookie, newBookie));
+
+        /*
+         * An update to the ensemble info might happen after re-reading ledger metadata.
+         * Such an update might reflect a change to the ensemble membership such that 
+         * it might not be necessary to replace the bookie.
+         */
+        if (deadBookieIndex >= 0) {
+            ensemble.remove(deadBookieIndex);
+            ensemble.add(deadBookieIndex, newBookie);
+            lh.writeLedgerConfig(new UpdateEnsembleCb(ensembleUpdatedCb,
+                        fragmentStartId, lh, oldBookie, newBookie));
+        }
+        else {
+            LOG.warn("Bookie {} doesn't exist in ensemble {} anymore.", oldBookie, ensemble);
+            ensembleUpdatedCb.processResult(BKException.Code.UnexpectedConditionException, null, null);
+        }
     }
 
     /**
