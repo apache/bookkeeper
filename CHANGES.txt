@@ -77,6 +77,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
 
+        BOOKKEEPER-848: Use volatile for lastAddConfirmed (Matteo Merli via sijie)
+
 Release 4.3.0 - 2014-10-03
 
   Non-backward compatible changes:

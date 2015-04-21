@@ -64,7 +64,7 @@ public class LedgerHandle {
     final BookKeeper bk;
     final long ledgerId;
     long lastAddPushed;
-    long lastAddConfirmed;
+    volatile long lastAddConfirmed;
     long length;
     final DigestManager macManager;
     final DistributionSchedule distributionSchedule;
