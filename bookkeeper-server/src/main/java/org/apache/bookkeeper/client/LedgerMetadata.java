@@ -172,11 +172,11 @@ public class LedgerMetadata {
 
     /**
      * Get the creation timestamp of the ledger
-     * @return 
+     * @return
      */
     public long getCtime() {
         return ctime;
-    }        
+    }
 
     public int getAckQuorumSize() {
         return ackQuorumSize;
@@ -259,7 +259,7 @@ public class LedgerMetadata {
      * place
      *
      * @param entryId
-     * @return the entry id of the next ensemble change (-1 if no further ensemble changes) 
+     * @return the entry id of the next ensemble change (-1 if no further ensemble changes)
      */
     long getNextEnsembleChange(long entryId) {
         SortedMap<Long, ArrayList<BookieSocketAddress>> tailMap = ensembles.tailMap(entryId + 1);
@@ -317,7 +317,9 @@ public class LedgerMetadata {
         StringBuilder s = new StringBuilder();
         s.append(VERSION_KEY).append(tSplitter).append(CURRENT_METADATA_FORMAT_VERSION).append(lSplitter);
         s.append(TextFormat.printToString(builder.build()));
-        LOG.debug("Serialized config: {}", s);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Serialized config: {}", s);
+        }
         return s.toString().getBytes(UTF_8);
     }
 
@@ -340,7 +342,9 @@ public class LedgerMetadata {
             s.append(lSplitter).append(getLastEntryId()).append(tSplitter).append(closed);
         }
 
-        LOG.debug("Serialized config: {}", s);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Serialized config: {}", s);
+        }
 
         return s.toString().getBytes(UTF_8);
     }
@@ -364,7 +368,9 @@ public class LedgerMetadata {
 
         String config = new String(bytes, UTF_8);
 
-        LOG.debug("Parsing Config: {}", config);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Parsing Config: {}", config);
+        }
         BufferedReader reader = new BufferedReader(new StringReader(config));
         String versionLine = reader.readLine();
         if (versionLine == null) {
@@ -404,12 +410,12 @@ public class LedgerMetadata {
 
         TextFormat.merge((CharSequence) CharBuffer.wrap(configBuffer), builder);
         LedgerMetadataFormat data = builder.build();
-        lc.writeQuorumSize = data.getQuorumSize();        
+        lc.writeQuorumSize = data.getQuorumSize();
         if (data.hasCtime()) {
             lc.ctime = data.getCtime();
         } else if (msCtime.isPresent()) {
             lc.ctime = msCtime.get();
-        }        
+        }
         if (data.hasAckQuorumSize()) {
             lc.ackQuorumSize = data.getAckQuorumSize();
         } else {

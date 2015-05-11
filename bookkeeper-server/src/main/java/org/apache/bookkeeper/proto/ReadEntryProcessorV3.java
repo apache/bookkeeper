@@ -64,7 +64,9 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             return readResponse.build();
         }
 
-        LOG.debug("Received new read request: {}", request);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Received new read request: {}", request);
+        }
         StatusCode status;
         ByteBuf entryBody = null;
         try {

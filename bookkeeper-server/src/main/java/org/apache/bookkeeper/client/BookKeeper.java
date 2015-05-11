@@ -72,7 +72,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 /**
  * BookKeeper client. We assume there is one single writer to a ledger at any
@@ -385,7 +384,9 @@ public class BookKeeper implements AutoCloseable {
         this.ledgerManager = new CleanupLedgerManager(ledgerManagerFactory.newLedgerManager());
         this.ledgerIdGenerator = ledgerManagerFactory.newLedgerIdGenerator();
         this.explicitLacInterval = conf.getExplictLacInterval();
-        LOG.debug("Explicit LAC Interval : {}", this.explicitLacInterval);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Explicit LAC Interval : {}", this.explicitLacInterval);
+        }
 
         scheduleBookieHealthCheckIfEnabled();
     }

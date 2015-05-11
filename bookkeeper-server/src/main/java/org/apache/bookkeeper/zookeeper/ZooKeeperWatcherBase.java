@@ -112,15 +112,18 @@ public class ZooKeeperWatcherBase implements Watcher {
     public void process(WatchedEvent event) {
         // If event type is NONE, this is a connection status change
         if (event.getType() != EventType.None) {
-            LOG.debug("Received event: {}, path: {} from ZooKeeper server",
-                    event.getType(), event.getPath());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Received event: {}, path: {} from ZooKeeper server", event.getType(), event.getPath());
+            }
             getEventCounter(event.getType()).inc();
             // notify the child watchers
             notifyEvent(event);
             return;
         }
         getStateCounter(event.getState()).inc();
-        LOG.debug("Received {} from ZooKeeper server", event.getState());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Received {} from ZooKeeper server", event.getState());
+        }
         // TODO: Needs to handle AuthFailed, SaslAuthenticated events
         switch (event.getState()) {
         case SyncConnected:

@@ -124,8 +124,10 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
             try {
                 if (!metadata.currentEnsemble.get(bookieIndex).equals(addr)) {
                     // ensemble has already changed, failure of this addr is immaterial
-                    LOG.debug("Write did not succeed to {}, bookieIndex {},"
-                              +" but we have already fixed it.", addr, bookieIndex);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Write did not succeed to {}, bookieIndex {},"
+                                +" but we have already fixed it.", addr, bookieIndex);
+                    }
                     blockAddCompletions.decrementAndGet();
                     return;
                 }

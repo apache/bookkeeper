@@ -362,15 +362,18 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
                                 // Subsequent speculative read will not materialize anyway
                                 cancelSpeculativeTask(false);
                             } else {
-                                LOG.debug("Send speculative read for {}. Hosts heard are {}.",
-                                          r, heardFromHosts);
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("Send speculative read for {}. Hosts heard are {}.", r, heardFromHosts);
+                                }
                                 ++x;
                             }
                         }
                     }
                     if (x > 0) {
-                        LOG.debug("Send {} speculative reads for ledger {} ({}, {}). Hosts heard are {}.",
-                                  new Object[] { x, lh.getId(), startEntryId, endEntryId, heardFromHosts });
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Send {} speculative reads for ledger {} ({}, {}). Hosts heard are {}.",
+                                    new Object[] { x, lh.getId(), startEntryId, endEntryId, heardFromHosts });
+                        }
                     }
                 }
             };
@@ -378,8 +381,10 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
                 speculativeTask = scheduler.scheduleWithFixedDelay(readTask,
                         speculativeReadTimeout, speculativeReadTimeout, TimeUnit.MILLISECONDS);
             } catch (RejectedExecutionException re) {
-                LOG.debug("Failed to schedule speculative reads for ledger {} ({}, {}) : ",
-                    new Object[] { lh.getId(), startEntryId, endEntryId, re });
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Failed to schedule speculative reads for ledger {} ({}, {}) : ", lh.getId(),
+                            startEntryId, endEntryId, re);
+                }
             }
         }
 
