@@ -21,8 +21,10 @@
 package org.apache.bookkeeper.proto;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
+import org.apache.bookkeeper.client.MacDigestManager;
 import org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
 import org.apache.bookkeeper.util.DoubleByteBuf;
 import org.slf4j.Logger;
@@ -37,7 +39,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -73,6 +74,16 @@ public class BookieProtoEncoding {
 
     static class RequestEnDeCoderPreV3 implements EnDecoder {
         final ExtensionRegistry extensionRegistry;
+
+        //This empty master key is used when an empty password is provided which is the hash of an empty string
+        private final static byte[] emptyPasswordMasterKey;
+        static {
+            try {
+                emptyPasswordMasterKey = MacDigestManager.genDigest("ledger", new byte[0]);
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
         RequestEnDeCoderPreV3(ExtensionRegistry extensionRegistry) {
             this.extensionRegistry = extensionRegistry;
@@ -134,29 +145,27 @@ public class BookieProtoEncoding {
             // packet format is different between ADDENTRY and READENTRY
             long ledgerId = -1;
             long entryId = BookieProtocol.INVALID_ENTRY_ID;
-            byte[] masterKey = null;
+
             short flags = h.getFlags();
 
             ServerStats.getInstance().incrementPacketsReceived();
 
             switch (h.getOpCode()) {
-            case BookieProtocol.ADDENTRY:
-                // first read master key
-                masterKey = new byte[BookieProtocol.MASTER_KEY_LENGTH];
-                packet.readBytes(masterKey, 0, BookieProtocol.MASTER_KEY_LENGTH);
+            case BookieProtocol.ADDENTRY: {
+                byte[] masterKey = readMasterKey(packet);
 
                 // Read ledger and entry id without advancing the reader index
                 ledgerId = packet.getLong(packet.readerIndex());
                 entryId = packet.getLong(packet.readerIndex() + 8);
                 return new BookieProtocol.AddRequest(h.getVersion(), ledgerId, entryId, flags, masterKey, packet.retain());
+            }
             case BookieProtocol.READENTRY:
                 ledgerId = packet.readLong();
                 entryId = packet.readLong();
 
                 if ((flags & BookieProtocol.FLAG_DO_FENCING) == BookieProtocol.FLAG_DO_FENCING
                     && h.getVersion() >= 2) {
-                    masterKey = new byte[BookieProtocol.MASTER_KEY_LENGTH];
-                    packet.readBytes(masterKey, 0, BookieProtocol.MASTER_KEY_LENGTH);
+                    byte[] masterKey = readMasterKey(packet);
                     return new BookieProtocol.ReadRequest(h.getVersion(), ledgerId, entryId, flags, masterKey);
                 } else {
                     return new BookieProtocol.ReadRequest(h.getVersion(), ledgerId, entryId, flags);
@@ -169,6 +178,31 @@ public class BookieProtoEncoding {
             }
 
             return packet;
+        }
+
+        private static byte[] readMasterKey(ByteBuf packet) {
+            byte[] masterKey = null;
+
+            // check if the master key is an empty master key
+            boolean isEmptyKey = true;
+            for (int i = 0; i < BookieProtocol.MASTER_KEY_LENGTH; i++) {
+                if (packet.getByte(packet.readerIndex() + i) != emptyPasswordMasterKey[i]) {
+                    isEmptyKey = false;
+                    break;
+                }
+            }
+
+            if (isEmptyKey) {
+                // avoid new allocations if incoming master key is empty and use the static master key
+                masterKey = emptyPasswordMasterKey;
+                packet.readerIndex(packet.readerIndex() + BookieProtocol.MASTER_KEY_LENGTH);
+            } else {
+                // Master key is set, we need to copy and check it
+                masterKey = new byte[BookieProtocol.MASTER_KEY_LENGTH];
+                packet.readBytes(masterKey, 0, BookieProtocol.MASTER_KEY_LENGTH);
+            }
+
+            return masterKey;
         }
     }
 
