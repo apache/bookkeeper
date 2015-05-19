@@ -1,4 +1,4 @@
-Release 4.3.1 - unreleased
+Release 4.3.1 - 2015-05-19
 
   Backward compatible changes:
 
