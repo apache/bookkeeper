@@ -42,6 +42,8 @@ Release 4.3.1 - unreleased
 
       BOOKKEEPER-837: UpdateLedgerOp - Replace AbstractFuture with SettableFuture (rakeshr via sijie)
 
+      BOOKKEEPER-835: Update copyright for 2015 on all active branches (sijie)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
