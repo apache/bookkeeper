@@ -75,6 +75,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-850: Use nanoseconds to calculate poll timeout when doing group commit (Matteo Merli via sijie)
 
+      BOOKKEEPER-835: Update copyright for 2015 on all active branches (sijie)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
