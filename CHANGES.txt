@@ -28,6 +28,8 @@ Release 4.3.1 - unreleased
 
       BOOKKEEPER-846: TestLedgerChecker times out (rakeshr via sijie)
 
+      BOOKKEEPER-854: NPE on InterleavedLedgerStorage.onRotateEntryLog (sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-800: Expose whether a ledger is closed or not (ivank)
