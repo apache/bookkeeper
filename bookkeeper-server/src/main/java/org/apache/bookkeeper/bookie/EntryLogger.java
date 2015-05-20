@@ -512,6 +512,8 @@ public class EntryLogger {
         try {
             bw.write(Long.toHexString(logId) + "\n");
             bw.flush();
+        } catch (IOException e) {
+            LOG.warn("Failed write lastId file");
         } finally {
             try {
                 bw.close();
