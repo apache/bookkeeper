@@ -26,28 +26,19 @@ import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetAddress;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import org.jboss.netty.channel.ChannelException;
 import junit.framework.Assert;
 
-import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.util.DiskChecker.DiskErrorException;
-import org.apache.bookkeeper.util.IOUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.KeeperException;
+import org.jboss.netty.channel.ChannelException;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -381,21 +372,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     private void createNewZKClient() throws Exception {
         // create a zookeeper client
         LOG.debug("Instantiate ZK Client");
-        final CountDownLatch latch = new CountDownLatch(1);
-        newzk = new ZooKeeper(zkUtil.getZooKeeperConnectString(), 10000,
-                new Watcher() {
-                    @Override
-                    public void process(WatchedEvent event) {
-                        // handle session disconnects and expires
-                        if (event.getState().equals(
-                                Watcher.Event.KeeperState.SyncConnected)) {
-                            latch.countDown();
-                        }
-                    }
-                });
-        if (!latch.await(10000, TimeUnit.MILLISECONDS)) {
-            newzk.close();
-            fail("Could not connect to zookeeper server");
-        }
+        newzk = ZooKeeperClient.newBuilder()
+                .connectString(zkUtil.getZooKeeperConnectString())
+                .build();
     }
 }

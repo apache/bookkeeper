@@ -31,8 +31,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.util.ZkUtils;
-import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
 import org.junit.Before;
@@ -84,9 +83,10 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
             String addr = bs.get(i).getLocalAddress().toString();
 
-            ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(10000);
-            ZooKeeper zk = ZkUtils.createConnectedZookeeperClient(
-                    zkUtil.getZooKeeperConnectString(), w);
+            ZooKeeper zk = ZooKeeperClient.newBuilder()
+                    .connectString(zkUtil.getZooKeeperConnectString())
+                    .sessionTimeoutMs(10000)
+                    .build();
             zkClients.add(zk);
 
             AuditorElector auditorElector = new AuditorElector(addr,

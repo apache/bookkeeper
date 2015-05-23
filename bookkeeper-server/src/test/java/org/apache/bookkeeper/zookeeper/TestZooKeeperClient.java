@@ -28,6 +28,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.zookeeper.AsyncCallback.Children2Callback;
 import org.apache.zookeeper.AsyncCallback.DataCallback;
@@ -106,7 +107,7 @@ public class TestZooKeeperClient extends TestCase {
 
         ShutdownZkServerClient(String connectString, int sessionTimeoutMs,
                 ZooKeeperWatcherBase watcher, RetryPolicy operationRetryPolicy)throws IOException {
-            super(connectString, sessionTimeoutMs, watcher, operationRetryPolicy);
+            super(connectString, sessionTimeoutMs, watcher, operationRetryPolicy, null, NullStatsLogger.INSTANCE, 1, 0);
         }
 
         @Override

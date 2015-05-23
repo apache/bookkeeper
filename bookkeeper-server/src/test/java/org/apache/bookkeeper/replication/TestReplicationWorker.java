@@ -33,6 +33,7 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.MultiLedgerManagerTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Test;
@@ -229,9 +230,10 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
         BookieSocketAddress newBkAddr2 = new BookieSocketAddress(InetAddress
                 .getLocalHost().getHostAddress(), startNewBookie2);
         LOG.info("New Bookie addr :" + newBkAddr2);
-        ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(10000);
-        ZooKeeper zkc1 = ZkUtils.createConnectedZookeeperClient(
-                zkUtil.getZooKeeperConnectString(), w);
+        ZooKeeper zkc1 = ZooKeeperClient.newBuilder()
+                .connectString(zkUtil.getZooKeeperConnectString())
+                .sessionTimeoutMs(10000)
+                .build();
         ReplicationWorker rw2 = new ReplicationWorker(zkc1, baseConf,
                 newBkAddr2);
         rw1.start();
@@ -544,9 +546,10 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
      */
     @Test(timeout=30000)
     public void testRWZKSessionLost() throws Exception {
-        ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(10000);
-        ZooKeeper zk = ZkUtils.createConnectedZookeeperClient(
-                zkUtil.getZooKeeperConnectString(), w);
+        ZooKeeper zk = ZooKeeperClient.newBuilder()
+                .connectString(zkUtil.getZooKeeperConnectString())
+                .sessionTimeoutMs(10000)
+                .build();
 
         try {
             ReplicationWorker rw = new ReplicationWorker(zk, baseConf, getBookie(0));

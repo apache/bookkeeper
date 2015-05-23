@@ -28,6 +28,7 @@ import java.net.InetSocketAddress;
 
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.io.FileUtils;
 
@@ -100,9 +101,10 @@ public class ZooKeeperUtil {
 
         // create a zookeeper client
         LOG.debug("Instantiate ZK Client");
-        ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(10000);
-        zkc = ZkUtils.createConnectedZookeeperClient(
-                getZooKeeperConnectString(), w);
+        zkc = ZooKeeperClient.newBuilder()
+                .connectString(getZooKeeperConnectString())
+                .sessionTimeoutMs(10000)
+                .build();
     }
 
     public void sleepServer(final int seconds, final CountDownLatch l)

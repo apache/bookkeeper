@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.util;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Provides misc math functions that don't come standard
  */
@@ -72,6 +74,17 @@ public class MathUtils {
      */
     public static long elapsedMSec (long startNanoTime) {
        return (System.nanoTime() - startNanoTime)/ NANOSECONDS_PER_MILLISECOND;
+    }
+
+    /**
+     * Microseconds elapsed since the time specified, the input is nanoTime
+     * the only conversion happens when computing the elapsed time
+     *
+     * @param startNanoTime the start of the interval that we are measuring
+     * @return elapsed time in milliseconds.
+     */
+    public static long elapsedMicroSec(long startNanoTime) {
+        return TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - startNanoTime);
     }
 
     /**

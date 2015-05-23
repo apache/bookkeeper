@@ -239,7 +239,10 @@ public class BookieShell implements Tool {
             // delete cookie
             if (cmdLine.hasOption("d")) {
                 ZooKeeperClient zkc =
-                        ZooKeeperClient.createConnectedZooKeeperClient(conf.getZkServers(), conf.getZkTimeout());
+                        ZooKeeperClient.newBuilder()
+                                .connectString(conf.getZkServers())
+                                .sessionTimeoutMs(conf.getZkTimeout())
+                                .build();
                 try {
                     Versioned<Cookie> cookie = Cookie.readFromZooKeeper(zkc, conf);
                     cookie.getValue().deleteFromZooKeeper(zkc, conf, cookie.getVersion());
@@ -418,8 +421,10 @@ public class BookieShell implements Tool {
         int runCmd(CommandLine cmdLine) throws Exception {
             ZooKeeper zk = null;
             try {
-                ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(bkConf.getZkTimeout());
-                zk = ZkUtils.createConnectedZookeeperClient(bkConf.getZkServers(), w);
+                zk = ZooKeeperClient.newBuilder()
+                        .connectString(bkConf.getZkServers())
+                        .sessionTimeoutMs(bkConf.getZkTimeout())
+                        .build();
                 LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, zk);
                 LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
                 Iterator<Long> iter = underreplicationManager.listLedgersToRereplicate();
@@ -453,8 +458,10 @@ public class BookieShell implements Tool {
         public int runCmd(CommandLine cmdLine) throws Exception {
             ZooKeeper zk = null;
             try {
-                ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(bkConf.getZkTimeout());
-                zk = ZkUtils.createConnectedZookeeperClient(bkConf.getZkServers(), w);
+                zk = ZooKeeperClient.newBuilder()
+                        .connectString(bkConf.getZkServers())
+                        .sessionTimeoutMs(bkConf.getZkTimeout())
+                        .build();
                 LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, zk);
                 LedgerManager m = mFactory.newLedgerManager();
                 LedgerRangeIterator iter = m.getLedgerRanges();
@@ -560,8 +567,10 @@ public class BookieShell implements Tool {
 
             ZooKeeper zk = null;
             try {
-                ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(bkConf.getZkTimeout());
-                zk = ZkUtils.createConnectedZookeeperClient(bkConf.getZkServers(), w);
+                zk = ZooKeeperClient.newBuilder()
+                        .connectString(bkConf.getZkServers())
+                        .sessionTimeoutMs(bkConf.getZkTimeout())
+                        .build();
                 LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, zk);
                 LedgerManager m = mFactory.newLedgerManager();
                 ReadMetadataCallback cb = new ReadMetadataCallback(lid);
@@ -960,8 +969,10 @@ public class BookieShell implements Tool {
             }
             ZooKeeper zk = null;
             try {
-                ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(bkConf.getZkTimeout());
-                zk = ZkUtils.createConnectedZookeeperClient(bkConf.getZkServers(), w);
+                zk = ZooKeeperClient.newBuilder()
+                        .connectString(bkConf.getZkServers())
+                        .sessionTimeoutMs(bkConf.getZkTimeout())
+                        .build();
                 LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, zk);
                 LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
                 if (enable) {
@@ -1018,8 +1029,10 @@ public class BookieShell implements Tool {
         int runCmd(CommandLine cmdLine) throws Exception {
             ZooKeeper zk = null;
             try {
-                ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(bkConf.getZkTimeout());
-                zk = ZkUtils.createConnectedZookeeperClient(bkConf.getZkServers(), w);
+                zk = ZooKeeperClient.newBuilder()
+                        .connectString(bkConf.getZkServers())
+                        .sessionTimeoutMs(bkConf.getZkTimeout())
+                        .build();
                 BookieSocketAddress bookieId = AuditorElector.getCurrentAuditor(bkConf, zk);
                 if (bookieId == null) {
                     LOG.info("No auditor elected");
@@ -1093,9 +1106,11 @@ public class BookieShell implements Tool {
         private int updateBookieIdInCookie(final String bookieId, final boolean useHostname) throws IOException,
                 InterruptedException {
             ZooKeeper zk = null;
-            ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(bkConf.getZkTimeout());
             try {
-                zk = ZkUtils.createConnectedZookeeperClient(bkConf.getZkServers(), w);
+                zk = ZooKeeperClient.newBuilder()
+                        .connectString(bkConf.getZkServers())
+                        .sessionTimeoutMs(bkConf.getZkTimeout())
+                        .build();
                 ServerConfiguration conf = new ServerConfiguration(bkConf);
                 String newBookieId = Bookie.getBookieAddress(conf).toString();
                 // read oldcookie

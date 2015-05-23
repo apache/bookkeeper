@@ -41,7 +41,7 @@ public class ExponentialBackoffRetryPolicy implements RetryPolicy {
 
     @Override
     public long nextRetryWaitTime(int retryCount, long elapsedRetryTime) {
-        return baseBackoffTime * Math.max(1, random.nextInt(1 << (retryCount + 1)));
+        return baseBackoffTime * Math.max(1, random.nextInt(Math.max(1, 1 << (retryCount + 1))));
     }
 
 }
