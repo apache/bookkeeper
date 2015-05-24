@@ -99,7 +99,8 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
         }
     }
 
-    private void runBookieWatcherWhenSessionExpired(ZooKeeper zk, int timeout, boolean reconnectable) throws Exception {
+    private void runBookieWatcherWhenSessionExpired(ZooKeeper zk, int timeout, boolean reconnectable)
+            throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         BookKeeper bkc = new BookKeeper(conf, zk);
 
