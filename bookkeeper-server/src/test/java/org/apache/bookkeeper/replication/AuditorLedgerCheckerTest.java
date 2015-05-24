@@ -272,7 +272,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         ServerConfiguration bookieConf = bsConfs.get(2);
         BookieServer bk = bs.get(2);
         bookieConf.setReadOnlyModeEnabled(true);
-        bk.getBookie().transitionToReadOnlyMode();
+        bk.getBookie().doTransitionToReadOnlyMode();
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for Auditor to finish ledger check.");

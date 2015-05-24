@@ -530,7 +530,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
         try {
             BookieServer newBk = bs.get(bs.size() - 1);
             bsConfs.get(bsConfs.size() - 1).setReadOnlyModeEnabled(true);
-            newBk.getBookie().transitionToReadOnlyMode();
+            newBk.getBookie().doTransitionToReadOnlyMode();
             underReplicationManager.markLedgerUnderreplicated(lh.getId(), replicaToKill.toString());
             while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath) && rw.isRunning()) {
                 Thread.sleep(100);

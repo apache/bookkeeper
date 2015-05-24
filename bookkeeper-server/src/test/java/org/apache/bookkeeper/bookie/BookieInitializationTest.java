@@ -51,7 +51,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             .getLogger(BookieInitializationTest.class);
 
     ZooKeeper newzk = null;
-    
+
     public BookieInitializationTest() {
         super(0);
     }
@@ -71,7 +71,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         }
 
         void testRegisterBookie(ServerConfiguration conf) throws IOException {
-            super.registerBookie(conf);
+            super.doRegisterBookie();
         }
     }
 

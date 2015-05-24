@@ -28,6 +28,8 @@ import org.junit.After;
 import static org.junit.Assert.*;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
+
+import java.net.InetAddress;
 import java.util.HashSet;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.bookie.Bookie;
@@ -89,16 +91,9 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             sendthread.resume();
 
             // allow watcher thread to run
-            secondsToWait = 20;
-            while (server.isBookieRunning()
-                   || server.isRunning()) {
-                Thread.sleep(1000);
-                if (secondsToWait-- <= 0) {
-                    break;
-                }
-            }
-            assertFalse("Bookie should have shutdown on losing zk session", server.isBookieRunning());
-            assertFalse("Bookie Server should have shutdown on losing zk session", server.isRunning());
+            Thread.sleep(3000);
+            assertTrue("Bookie should not shutdown on losing zk session", server.isBookieRunning());
+            assertTrue("Bookie Server should not shutdown on losing zk session", server.isRunning());
         } finally {
             server.shutdown();
         }
