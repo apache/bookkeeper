@@ -81,6 +81,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-835: Update copyright for 2015 on all active branches (sijie)
 
+      BOOKKEEPER-858: Fix broken links and typos in bookkeeper documents (Youngjoon Kim via sijie)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)

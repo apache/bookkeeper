@@ -47,7 +47,7 @@ p. BookKeeper uses four basic elements:
 
 h1. Bookkeeper initial design
 
-p. A set of bookies implements BookKeeper, and we use a quorum-based protocol to replicate data across the bookies. There are basically two operations to an existing ledger: read and append. Here is the complete API list (mode detail "here":bookkeeperProgrammer.html): 
+p. A set of bookies implements BookKeeper, and we use a quorum-based protocol to replicate data across the bookies. There are basically two operations to an existing ledger: read and append. Here is the complete API list (more detail "here":./bookkeeperProgrammer.html):
 
 * Create ledger: creates a new empty ledger; 
 * Open ledger: opens an existing ledger for reading; 
@@ -58,7 +58,7 @@ p. A set of bookies implements BookKeeper, and we use a quorum-based protocol to
 p. There is only a single client that can write to a ledger. Once that ledger is closed or the client fails, no more entries can be added. (We take advantage of this behavior to provide our strong guarantees.) There will not be gaps in the ledger. Fingers get broken, people get roughed up or end up in prison when books are manipulated, so there is no deleting or changing of entries. 
 
 !images/bk-overview.jpg!
-p. A simple use of BooKeeper is to implement a write-ahead transaction log. A server maintains an in-memory data structure (with periodic snapshots for example) and logs changes to that structure before it applies the change. The application server creates a ledger at startup and store the ledger id and password in a well known place (ZooKeeper maybe). When it needs to make a change, the server adds an entry with the change information to a ledger and apply the change when BookKeeper adds the entry successfully. The server can even use asyncAddEntry to queue up many changes for high change throughput. BooKeeper meticulously logs the changes in order and call the completion functions in order. 
+p. A simple use of BookKeeper is to implement a write-ahead transaction log. A server maintains an in-memory data structure (with periodic snapshots for example) and logs changes to that structure before it applies the change. The application server creates a ledger at startup and store the ledger id and password in a well known place (ZooKeeper maybe). When it needs to make a change, the server adds an entry with the change information to a ledger and apply the change when BookKeeper adds the entry successfully. The server can even use asyncAddEntry to queue up many changes for high change throughput. BookKeeper meticulously logs the changes in order and call the completion functions in order.
 
 p. When the application server dies, a backup server will come online, get the last snapshot and then it will open the ledger of the old server and read all the entries from the time the snapshot was taken. (Since it doesn't know the last entry number it will use MAX_INTEGER). Once all the entries have been processed, it will close the ledger and start a new one for its use. 
 
