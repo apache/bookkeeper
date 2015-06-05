@@ -23,7 +23,6 @@ package org.apache.bookkeeper.bookie;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import io.netty.buffer.ByteBuf;
 
@@ -52,7 +51,6 @@ interface LedgerCache extends Closeable {
 
     void deleteLedger(long ledgerId) throws IOException;
 
-    LedgerCacheBean getJMXBean();
     void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException;
     ByteBuf getExplicitLac(long ledgerId);
 }
