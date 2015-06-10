@@ -97,6 +97,8 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
             }
         }
 
+        buffer.release();
+
         if (rc == BKException.Code.NoSuchLedgerExistsException || rc == BKException.Code.NoSuchEntryException) {
             // this still counts as a valid response, e.g., if the client crashed without writing any entry
             heardValidResponse = true;
