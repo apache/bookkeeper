@@ -560,6 +560,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         final Channel c = channel;
         if (c == null) {
             errorOutAddKey(completionKey);
+            toSend.release();
             return;
         }
         try {
