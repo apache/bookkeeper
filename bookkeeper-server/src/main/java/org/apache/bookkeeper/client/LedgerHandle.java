@@ -110,7 +110,7 @@ public class LedgerHandle implements AutoCloseable {
 
         this.ledgerId = ledgerId;
 
-        if (bk.getConf().getThrottleValue() > 0) { 
+        if (bk.getConf().getThrottleValue() > 0) {
             this.throttler = RateLimiter.create(bk.getConf().getThrottleValue());
         } else {
             this.throttler = null;
@@ -285,7 +285,7 @@ public class LedgerHandle implements AutoCloseable {
         asyncClose(new SyncCloseCallback(), counter);
 
         explicitLacFlushPolicy.stopExplicitLacFlush();
-        
+
         SynchCallbackUtils.waitForResult(counter);
     }
 
@@ -816,8 +816,11 @@ public class LedgerHandle implements AutoCloseable {
                 public void safeRun() {
                     ByteBuf toSend = macManager.computeDigestAndPackageForSending(entryId, lastAddConfirmed,
                             currentLength, data, offset, length);
-                    op.initiate(toSend, length);
-                    toSend.release();
+                    try {
+                        op.initiate(toSend, length);
+                    } finally {
+                        toSend.release();
+                    }
                 }
                 @Override
                 public String toString() {
@@ -1025,7 +1028,7 @@ public class LedgerHandle implements AutoCloseable {
      * returns the value of the last add confirmed from the metadata.
      *
      * @see #getLastAddConfirmed()
-     * 
+     *
      * @param cb
      *          callback to return read explicit last confirmed
      * @param ctx
@@ -1050,7 +1053,7 @@ public class LedgerHandle implements AutoCloseable {
             @Override
             public void getLacComplete(int rc, long lac) {
                 if (rc == BKException.Code.OK) {
-                    // here we are trying to update lac only but not length 
+                    // here we are trying to update lac only but not length
                     updateLastConfirmed(lac, 0);
                     cb.readLastConfirmedComplete(rc, lac, ctx);
                 } else {
@@ -1185,9 +1188,9 @@ public class LedgerHandle implements AutoCloseable {
 
     void handleBookieFailure(final BookieSocketAddress addr, final int bookieIndex) {
         // If this is the first failure,
-        // try to submit completed pendingAddOps before this failure. 
+        // try to submit completed pendingAddOps before this failure.
         if (0 == blockAddCompletions.get()) {
-            sendAddSuccessCallbacks(); 
+            sendAddSuccessCallbacks();
         }
 
         blockAddCompletions.incrementAndGet();
@@ -1199,9 +1202,9 @@ public class LedgerHandle implements AutoCloseable {
                          addr, bookieIndex);
                 blockAddCompletions.decrementAndGet();
 
-                // Try to submit completed pendingAddOps, pending by this fix. 
+                // Try to submit completed pendingAddOps, pending by this fix.
                 if (0 == blockAddCompletions.get()) {
-                    sendAddSuccessCallbacks(); 
+                    sendAddSuccessCallbacks();
                 }
 
                 return;
