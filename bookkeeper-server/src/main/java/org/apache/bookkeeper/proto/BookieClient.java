@@ -147,7 +147,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 authProviderFactory, registry, pcbcPool, shFactory);
     }
 
-    private PerChannelBookieClientPool lookupClient(BookieSocketAddress addr, Object key) {
+    private PerChannelBookieClientPool lookupClient(BookieSocketAddress addr) {
         PerChannelBookieClientPool clientPool = channels.get(addr);
         if (null == clientPool) {
             closeLock.readLock().lock();
@@ -180,7 +180,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
             final long lac, final ByteBuf toSend, final WriteLacCallback cb, final Object ctx) {
         closeLock.readLock().lock();
         try {
-            final PerChannelBookieClientPool client = lookupClient(addr, lac);
+            final PerChannelBookieClientPool client = lookupClient(addr);
             if (client == null) {
                 cb.writeLacComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
                                   ledgerId, addr, ctx);
@@ -246,7 +246,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                          final int options) {
         closeLock.readLock().lock();
         try {
-            final PerChannelBookieClientPool client = lookupClient(addr, entryId);
+            final PerChannelBookieClientPool client = lookupClient(addr);
             if (client == null) {
                 completeAdd(getRc(BKException.Code.BookieHandleNotAvailableException),
                             ledgerId, entryId, addr, cb, ctx);
@@ -300,7 +300,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                                         final Object ctx) {
         closeLock.readLock().lock();
         try {
-            final PerChannelBookieClientPool client = lookupClient(addr, entryId);
+            final PerChannelBookieClientPool client = lookupClient(addr);
             if (client == null) {
                 completeRead(getRc(BKException.Code.BookieHandleNotAvailableException),
                              ledgerId, entryId, null, cb, ctx);
@@ -325,7 +325,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
     public void readLac(final BookieSocketAddress addr, final long ledgerId, final ReadLacCallback cb, final Object ctx) {
         closeLock.readLock().lock();
         try {
-            final PerChannelBookieClientPool client = lookupClient(addr, BookieProtocol.LAST_ADD_CONFIRMED);
+            final PerChannelBookieClientPool client = lookupClient(addr);
             if (client == null) {
                 cb.readLacComplete(getRc(BKException.Code.BookieHandleNotAvailableException), ledgerId, null, null, ctx);
                 return;
@@ -359,7 +359,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                           final ReadEntryCallback cb, final Object ctx) {
         closeLock.readLock().lock();
         try {
-            final PerChannelBookieClientPool client = lookupClient(addr, entryId);
+            final PerChannelBookieClientPool client = lookupClient(addr);
             if (client == null) {
                 cb.readEntryComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
                                      ledgerId, entryId, null, ctx);
@@ -392,7 +392,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                                           final Object ctx) {
         closeLock.readLock().lock();
         try {
-            final PerChannelBookieClientPool client = lookupClient(addr, entryId);
+            final PerChannelBookieClientPool client = lookupClient(addr);
             if (client == null) {
                 completeRead(BKException.Code.BookieHandleNotAvailableException,
                         ledgerId, entryId, null, cb, ctx);
@@ -418,7 +418,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
     public void getBookieInfo(final BookieSocketAddress addr, final long requested, final GetBookieInfoCallback cb, final Object ctx) {
         closeLock.readLock().lock();
         try {
-            final PerChannelBookieClientPool client = lookupClient(addr, BookkeeperProtocol.OperationType.GET_BOOKIE_INFO);
+            final PerChannelBookieClientPool client = lookupClient(addr);
             if (client == null) {
                 cb.getBookieInfoComplete(getRc(BKException.Code.BookieHandleNotAvailableException), new BookieInfo(), ctx);
                 return;
