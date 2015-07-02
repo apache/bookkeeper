@@ -175,7 +175,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         //
         // The only exception for the size limitation is if a file grows to be more than hard limit 2GB,
         // we have to force rolling log, which it might cause slight performance effects
-        scheduler.submit(new Runnable() {
+        scheduler.execute(new Runnable() {
             @Override
             public void run() {
                 try {
