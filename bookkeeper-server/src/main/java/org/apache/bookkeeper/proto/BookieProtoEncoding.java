@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
+import org.apache.bookkeeper.util.DoubleByteBuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,7 +92,7 @@ public class BookieProtoEncoding {
                 ByteBuf buf = allocator.buffer(totalHeaderSize);
                 buf.writeInt(new PacketHeader(r.getProtocolVersion(), r.getOpCode(), r.getFlags()).toInt());
                 buf.writeBytes(r.getMasterKey(), 0, BookieProtocol.MASTER_KEY_LENGTH);
-                return new CompositeByteBuf(allocator, false, 2, buf, ar.getData());
+                return DoubleByteBuf.get(buf, ar.getData());
             } else if (r instanceof BookieProtocol.ReadRequest) {
                 int totalHeaderSize = 4 // for request type
                     + 8 // for ledgerId
@@ -198,7 +199,7 @@ public class BookieProtoEncoding {
 
                 BookieProtocol.ReadResponse rr = (BookieProtocol.ReadResponse)r;
                 if (rr.hasData()) {
-                    return new CompositeByteBuf(allocator, false, 2, buf, rr.getData());
+                    return DoubleByteBuf.get(buf, rr.getData());
                 } else {
                     return buf;
                 }
@@ -210,7 +211,7 @@ public class BookieProtoEncoding {
                 return buf;
             } else if (msg instanceof BookieProtocol.AuthResponse) {
                 BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthResponse)r).getAuthMessage();
-                return new CompositeByteBuf(allocator, false, 2, buf, Unpooled.wrappedBuffer(am.toByteArray()));
+                return DoubleByteBuf.get(buf, Unpooled.wrappedBuffer(am.toByteArray()));
             } else {
                 LOG.error("Cannot encode unknown response type {}", msg.getClass().getName());
                 return msg;

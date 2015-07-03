@@ -533,11 +533,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .setOperation(OperationType.ADD_ENTRY)
                     .setTxnId(txnId);
 
+            byte[] toSendArray = new byte[toSend.readableBytes()];
+            toSend.getBytes(toSend.readerIndex(), toSendArray);
             AddRequest.Builder addBuilder = AddRequest.newBuilder()
                     .setLedgerId(ledgerId)
                     .setEntryId(entryId)
                     .setMasterKey(ByteString.copyFrom(masterKey))
-                    .setBody(ByteString.copyFrom(toSend.nioBuffer()));
+                    .setBody(ByteString.copyFrom(toSendArray));
 
             if (((short) options & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD) {
                 addBuilder.setFlag(AddRequest.Flag.RECOVERY_ADD);

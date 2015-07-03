@@ -20,7 +20,6 @@ package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
@@ -28,6 +27,7 @@ import java.security.GeneralSecurityException;
 
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.util.DoubleByteBuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,7 +98,7 @@ abstract class DigestManager {
         update(dataBuffer);
         populateValueAndReset(headersBuffer);
 
-        return new CompositeByteBuf(PooledByteBufAllocator.DEFAULT, false, 2, headersBuffer, dataBuffer);
+        return DoubleByteBuf.get(headersBuffer, dataBuffer);
     }
 
     /**
