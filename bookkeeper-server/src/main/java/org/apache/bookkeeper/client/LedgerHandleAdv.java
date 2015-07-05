@@ -175,7 +175,6 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
             throttler.acquire();
         }
 
-        final long currentLength;
         boolean wasClosed = false;
         synchronized (this) {
             // synchronized on this to ensure that
@@ -183,12 +182,11 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
             // updating lastAddPushed
             if (metadata.isClosed()) {
                 wasClosed = true;
-                currentLength = 0;
             } else {
-                currentLength = addToLength(op.payload.readableBytes());
+                long currentLength = addToLength(op.payload.readableBytes());
+                op.setLedgerLength(currentLength);
                 pendingAddOps.add(op);
             }
-            op.setLedgerLength(currentLength);
         }
 
         if (wasClosed) {
