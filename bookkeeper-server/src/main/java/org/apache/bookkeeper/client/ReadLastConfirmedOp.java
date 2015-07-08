@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.util.ReferenceCountUtil;
 
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.DigestManager.RecoveryData;
@@ -97,7 +98,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
             }
         }
 
-        buffer.release();
+        ReferenceCountUtil.release(buffer);
 
         if (rc == BKException.Code.NoSuchLedgerExistsException || rc == BKException.Code.NoSuchEntryException) {
             // this still counts as a valid response, e.g., if the client crashed without writing any entry
