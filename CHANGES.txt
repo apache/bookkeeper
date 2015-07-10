@@ -83,6 +83,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-858: Fix broken links and typos in bookkeeper documents (Youngjoon Kim via sijie)
 
+      BOOKKEEPER-796: Make bookkeeper client use reconnectable zookeeper wrapper (sijie via fpj)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)

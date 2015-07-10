@@ -23,6 +23,8 @@ package org.apache.bookkeeper.replication;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -35,6 +37,7 @@ import org.apache.bookkeeper.replication.ReplicationException.UnavailableExcepti
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -78,20 +81,27 @@ public class AutoRecoveryMain {
             throws IOException, InterruptedException, KeeperException, UnavailableException,
             CompatibilityException {
         this.conf = conf;
-        ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(conf.getZkTimeout()) {
+        Set<Watcher> watchers = new HashSet<Watcher>();
+        // TODO: better session handling for auto recovery daemon  https://issues.apache.org/jira/browse/BOOKKEEPER-594
+        //       since {@link org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager}
+        //       use Watcher, need to ensure the logic works correctly after recreating
+        //       a new zookeeper client when session expired.
+        //       for now just shutdown it.
+        watchers.add(new Watcher() {
             @Override
             public void process(WatchedEvent event) {
                 // Check for expired connection.
                 if (event.getState().equals(Watcher.Event.KeeperState.Expired)) {
-                    LOG.error("ZK client connection to the"
-                            + " ZK server has expired!");
+                    LOG.error("ZK client connection to the ZK server has expired!");
                     shutdown(ExitCode.ZK_EXPIRED);
-                } else {
-                    super.process(event);
                 }
             }
-        };
-        zk = ZkUtils.createConnectedZookeeperClient(conf.getZkServers(), w);
+        });
+        zk = ZooKeeperClient.newBuilder()
+                .connectString(conf.getZkServers())
+                .sessionTimeoutMs(conf.getZkTimeout())
+                .watchers(watchers)
+                .build();
         auditorElector = new AuditorElector(Bookie.getBookieAddress(conf).toString(), conf,
                 zk, statsLogger.scope(AUDITOR_SCOPE));
         replicationWorker = new ReplicationWorker(zk, conf,

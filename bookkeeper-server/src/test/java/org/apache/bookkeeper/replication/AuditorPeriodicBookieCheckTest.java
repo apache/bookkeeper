@@ -25,7 +25,7 @@ import org.apache.bookkeeper.test.TestCallbacks;
 
 import java.util.List;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
@@ -35,9 +35,6 @@ import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-
-import org.apache.bookkeeper.util.ZkUtils;
-
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Before;
 import org.junit.After;
@@ -74,9 +71,10 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
         conf.setAuditorPeriodicBookieCheckInterval(CHECK_INTERVAL);
         String addr = bs.get(0).getLocalAddress().toString();
 
-        ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(10000);
-        auditorZookeeper = ZkUtils.createConnectedZookeeperClient(
-                zkUtil.getZooKeeperConnectString(), w);
+        auditorZookeeper = ZooKeeperClient.newBuilder()
+                .connectString(zkUtil.getZooKeeperConnectString())
+                .sessionTimeoutMs(10000)
+                .build();
 
         auditorElector = new AuditorElector(addr, conf,
                 auditorZookeeper);

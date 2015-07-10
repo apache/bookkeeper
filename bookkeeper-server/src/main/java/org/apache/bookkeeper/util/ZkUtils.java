@@ -24,11 +24,12 @@ package org.apache.bookkeeper.util;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.AsyncCallback;
@@ -230,28 +231,4 @@ public class ZkUtils {
         }, null);
     }
 
-    /**
-     * Get new ZooKeeper client. Waits till the connection is complete. If
-     * connection is not successful within timeout, then throws back exception.
-     *
-     * @param servers
-     *            ZK servers connection string.
-     * @param timeout
-     *            Session timeout.
-     */
-    public static ZooKeeper createConnectedZookeeperClient(String servers,
-            ZooKeeperWatcherBase w) throws IOException, InterruptedException,
-            KeeperException {
-        if (servers == null || servers.isEmpty()) {
-            throw new IllegalArgumentException("servers cannot be empty");
-        }
-        final ZooKeeper newZk = new ZooKeeper(servers, w.getZkSessionTimeOut(),
-                w);
-        w.waitForConnection();
-        // Re-checking zookeeper connection status
-        if (!newZk.getState().isConnected()) {
-            throw KeeperException.create(KeeperException.Code.CONNECTIONLOSS);
-        }
-        return newZk;
-    }
 }

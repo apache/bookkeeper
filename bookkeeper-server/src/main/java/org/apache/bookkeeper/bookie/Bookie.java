@@ -31,7 +31,9 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -62,6 +64,8 @@ import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.CreateMode;
@@ -70,6 +74,7 @@ import org.apache.zookeeper.KeeperException.NodeExistsException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
+import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
@@ -739,7 +744,7 @@ public class Bookie extends BookieCriticalThread {
             return null;
         }
         // Create the ZooKeeper client instance
-        return newZookeeper(conf.getZkServers(), conf.getZkTimeout());
+        return newZookeeper(conf);
     }
 
     /**
@@ -939,27 +944,30 @@ public class Bookie extends BookieCriticalThread {
      * are processed and quit. It is done by calling <b>shutdown</b>.
      * </p>
      *
-     * @param zkServers the quorum list of zk servers
-     * @param sessionTimeout session timeout of zk connection
+     * @param conf server configuration
      *
      * @return zk client instance
      */
-    private ZooKeeper newZookeeper(final String zkServers,
-            final int sessionTimeout) throws IOException, InterruptedException,
+    private ZooKeeper newZookeeper(ServerConfiguration conf) throws IOException, InterruptedException,
             KeeperException {
-        ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(conf.getZkTimeout()) {
+        Set<Watcher> watchers = new HashSet<Watcher>();
+        watchers.add(new Watcher() {
             @Override
             public void process(WatchedEvent event) {
                 // Check for expired connection.
                 if (event.getState().equals(Watcher.Event.KeeperState.Expired)) {
                     LOG.error("ZK client connection to the ZK server has expired!");
                     shutdown(ExitCode.ZK_EXPIRED);
-                } else {
-                    super.process(event);
                 }
             }
-        };
-        return ZkUtils.createConnectedZookeeperClient(zkServers, w);
+        });
+        return ZooKeeperClient.newBuilder()
+                .connectString(conf.getZkServers())
+                .sessionTimeoutMs(conf.getZkTimeout())
+                .watchers(watchers)
+                .operationRetryPolicy(new BoundExponentialBackoffRetryPolicy(conf.getZkTimeout(),
+                        conf.getZkTimeout(), Integer.MAX_VALUE))
+                .build();
     }
 
     public boolean isRunning() {

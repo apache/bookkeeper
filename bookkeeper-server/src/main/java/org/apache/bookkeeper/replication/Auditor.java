@@ -40,6 +40,7 @@ import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.zookeeper.AsyncCallback;
@@ -407,8 +408,10 @@ public class Auditor implements BookiesListener {
      */
     void checkAllLedgers() throws BKAuditException, BKException,
             IOException, InterruptedException, KeeperException {
-        ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(conf.getZkTimeout());
-        ZooKeeper newzk = ZkUtils.createConnectedZookeeperClient(conf.getZkServers(), w);
+        ZooKeeper newzk = ZooKeeperClient.newBuilder()
+                .connectString(conf.getZkServers())
+                .sessionTimeoutMs(conf.getZkTimeout())
+                .build();
 
         final BookKeeper client = new BookKeeper(new ClientConfiguration(conf),
                                                  newzk);

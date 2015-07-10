@@ -21,42 +21,34 @@
 
 package org.apache.bookkeeper.bookie;
 
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.HardLink;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
-
+import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooKeeper;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import java.net.MalformedURLException;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.NoSuchElementException;
-
-import java.net.MalformedURLException;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.KeeperException;
 
 import static com.google.common.base.Charsets.UTF_8;
 
@@ -139,26 +131,19 @@ public class FileSystemUpgrade {
     private static ZooKeeper newZookeeper(final ServerConfiguration conf)
             throws BookieException.UpgradeException {
         try {
-            final CountDownLatch latch = new CountDownLatch(1);
-            ZooKeeper zk = new ZooKeeper(conf.getZkServers(), conf.getZkTimeout(),
-                    new Watcher() {
-                        @Override
-                        public void process(WatchedEvent event) {
-                            // handle session disconnects and expires
-                            if (event.getState().equals(Watcher.Event.KeeperState.SyncConnected)) {
-                                latch.countDown();
-                            }
-                        }
-                    });
-            if (!latch.await(conf.getZkTimeout()*2, TimeUnit.MILLISECONDS)) {
-                zk.close();
-                throw new BookieException.UpgradeException("Couldn't connect to zookeeper");
-            }
-            return zk;
+            int zkTimeout = conf.getZkTimeout();
+            return ZooKeeperClient.newBuilder()
+                    .connectString(conf.getZkServers())
+                    .sessionTimeoutMs(zkTimeout)
+                    .operationRetryPolicy(
+                            new BoundExponentialBackoffRetryPolicy(zkTimeout, zkTimeout, Integer.MAX_VALUE))
+                    .build();
         } catch (InterruptedException ie) {
             throw new BookieException.UpgradeException(ie);
         } catch (IOException ioe) {
             throw new BookieException.UpgradeException(ioe);
+        } catch (KeeperException ke) {
+            throw new BookieException.UpgradeException(ke);
         }
     }
 

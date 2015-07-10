@@ -20,11 +20,16 @@
  */
 package org.apache.bookkeeper.zookeeper;
 
+import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -40,17 +45,29 @@ public class ZooKeeperWatcherBase implements Watcher {
             .getLogger(ZooKeeperWatcherBase.class);
 
     private final int zkSessionTimeOut;
-    private CountDownLatch clientConnectLatch = new CountDownLatch(1);
+    private volatile CountDownLatch clientConnectLatch = new CountDownLatch(1);
     private final CopyOnWriteArraySet<Watcher> childWatchers =
             new CopyOnWriteArraySet<Watcher>();
+    private final StatsLogger statsLogger;
+    private final ConcurrentHashMap<Event.KeeperState, Counter> stateCounters =
+            new ConcurrentHashMap<Event.KeeperState, Counter>();
+    private final ConcurrentHashMap<EventType, Counter> eventCounters =
+            new ConcurrentHashMap<EventType, Counter>();
 
     public ZooKeeperWatcherBase(int zkSessionTimeOut) {
-        this.zkSessionTimeOut = zkSessionTimeOut;
+        this(zkSessionTimeOut, NullStatsLogger.INSTANCE);
     }
 
-    public ZooKeeperWatcherBase(int zkSessionTimeOut, Set<Watcher> childWatchers) {
+    public ZooKeeperWatcherBase(int zkSessionTimeOut, StatsLogger statsLogger) {
+        this(zkSessionTimeOut, new HashSet<Watcher>(), statsLogger);
+    }
+
+    public ZooKeeperWatcherBase(int zkSessionTimeOut,
+                                Set<Watcher> childWatchers,
+                                StatsLogger statsLogger) {
         this.zkSessionTimeOut = zkSessionTimeOut;
         this.childWatchers.addAll(childWatchers);
+        this.statsLogger = statsLogger;
     }
 
     public ZooKeeperWatcherBase addChildWatcher(Watcher watcher) {
@@ -63,26 +80,55 @@ public class ZooKeeperWatcherBase implements Watcher {
         return this;
     }
 
+    private Counter getEventCounter(EventType type) {
+        Counter c = eventCounters.get(type);
+        if (null == c) {
+            Counter newCounter = statsLogger.scope("events").getCounter(type.name());
+            Counter oldCounter = eventCounters.putIfAbsent(type, newCounter);
+            if (null != oldCounter) {
+                c = oldCounter;
+            } else {
+                c = newCounter;
+            }
+        }
+        return c;
+    }
+
+    public Counter getStateCounter(Event.KeeperState state) {
+        Counter c = stateCounters.get(state);
+        if (null == c) {
+            Counter newCounter = statsLogger.scope("state").getCounter(state.name());
+            Counter oldCounter = stateCounters.putIfAbsent(state, newCounter);
+            if (null != oldCounter) {
+                c = oldCounter;
+            } else {
+                c = newCounter;
+            }
+        }
+        return c;
+    }
+
     @Override
     public void process(WatchedEvent event) {
         // If event type is NONE, this is a connection status change
         if (event.getType() != EventType.None) {
-            LOG.debug("Recieved event: {}, path: {} from ZooKeeper server",
+            LOG.debug("Received event: {}, path: {} from ZooKeeper server",
                     event.getType(), event.getPath());
+            getEventCounter(event.getType()).inc();
             // notify the child watchers
             notifyEvent(event);
             return;
         }
-
-        LOG.debug("Recieved {} from ZooKeeper server", event.getState());
+        getStateCounter(event.getState()).inc();
+        LOG.debug("Received {} from ZooKeeper server", event.getState());
         // TODO: Needs to handle AuthFailed, SaslAuthenticated events
         switch (event.getState()) {
         case SyncConnected:
+            LOG.info("ZooKeeper client is connected now.");
             clientConnectLatch.countDown();
             break;
         case Disconnected:
-            clientConnectLatch = new CountDownLatch(1);
-            LOG.debug("Ignoring Disconnected event from ZooKeeper server");
+            LOG.info("ZooKeeper client is disconnected from zookeeper now, but it is OK unless we received EXPIRED event.");
             break;
         case Expired:
             clientConnectLatch = new CountDownLatch(1);
@@ -98,7 +144,7 @@ public class ZooKeeperWatcherBase implements Watcher {
 
     /**
      * Waiting for the SyncConnected event from the ZooKeeper server
-     * 
+     *
      * @throws KeeperException
      *             when there is no connection
      * @throws InterruptedException
@@ -119,14 +165,18 @@ public class ZooKeeperWatcherBase implements Watcher {
 
     /**
      * Notify Event to child watchers.
-     * 
+     *
      * @param event
      *          Watched event received from ZooKeeper.
      */
     private void notifyEvent(WatchedEvent event) {
         // notify child watchers
         for (Watcher w : childWatchers) {
-            w.process(event);
+            try {
+                w.process(event);
+            } catch (Exception t) {
+                LOG.warn("Encountered unexpected exception from watcher {} : ", w, t);
+            }
         }
     }
 

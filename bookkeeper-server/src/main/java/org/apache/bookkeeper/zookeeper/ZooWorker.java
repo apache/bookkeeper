@@ -23,6 +23,8 @@ package org.apache.bookkeeper.zookeeper;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.util.concurrent.RateLimiter;
+import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
@@ -37,21 +39,28 @@ class ZooWorker {
     static final Logger logger = LoggerFactory.getLogger(ZooWorker.class);
 
     int attempts = 0;
-    long startTimeMs;
+    long startTimeNanos;
     long elapsedTimeMs = 0L;
     final RetryPolicy retryPolicy;
+    final OpStatsLogger statsLogger;
 
-    ZooWorker(RetryPolicy retryPolicy) {
+    ZooWorker(RetryPolicy retryPolicy, OpStatsLogger statsLogger) {
         this.retryPolicy = retryPolicy;
-        this.startTimeMs = MathUtils.now();
+        this.statsLogger = statsLogger;
+        this.startTimeNanos = MathUtils.nowInNano();
     }
 
     public boolean allowRetry(int rc) {
+        elapsedTimeMs = MathUtils.elapsedMSec(startTimeNanos);
         if (!ZooWorker.isRecoverableException(rc)) {
+            if (KeeperException.Code.OK.intValue() == rc) {
+                statsLogger.registerSuccessfulEvent(MathUtils.elapsedMicroSec(startTimeNanos), TimeUnit.MICROSECONDS);
+            } else {
+                statsLogger.registerFailedEvent(MathUtils.elapsedMicroSec(startTimeNanos), TimeUnit.MICROSECONDS);
+            }
             return false;
         }
         ++attempts;
-        elapsedTimeMs = MathUtils.now() - startTimeMs;
         return retryPolicy.allowRetry(attempts, elapsedTimeMs);
     }
 
@@ -61,7 +70,7 @@ class ZooWorker {
 
     /**
      * Check whether the given result code is recoverable by retry.
-     * 
+     *
      * @param rc result code
      * @return true if given result code is recoverable.
      */
@@ -74,14 +83,14 @@ class ZooWorker {
 
     /**
      * Check whether the given exception is recoverable by retry.
-     * 
+     *
      * @param exception given exception
      * @return true if given exception is recoverable.
      */
     public static boolean isRecoverableException(KeeperException exception) {
         return isRecoverableException(exception.code().intValue());
     }
-    
+
     static interface ZooCallable<T> {
         /**
          * Be compatible with ZooKeeper interface.
@@ -95,41 +104,53 @@ class ZooWorker {
 
     /**
      * Execute a sync zookeeper operation with a given retry policy.
-     * 
+     *
      * @param client
      *          ZooKeeper client.
      * @param proc
      *          Synchronous zookeeper operation wrapped in a {@link Callable}.
      * @param retryPolicy
      *          Retry policy to execute the synchronous operation.
+     * @param rateLimiter
+     *          Rate limiter for zookeeper calls
+     * @param statsLogger
+     *          Stats Logger for zookeeper client.
      * @return result of the zookeeper operation
      * @throws KeeperException any non-recoverable exception or recoverable exception exhausted all retires.
      * @throws InterruptedException the operation is interrupted.
      */
-    public static<T> T syncCallWithRetries(
-            ZooKeeperClient client, ZooCallable<T> proc, RetryPolicy retryPolicy)
+    public static<T> T syncCallWithRetries(ZooKeeperClient client,
+                                           ZooCallable<T> proc,
+                                           RetryPolicy retryPolicy,
+                                           RateLimiter rateLimiter,
+                                           OpStatsLogger statsLogger)
     throws KeeperException, InterruptedException {
         T result = null;
         boolean isDone = false;
         int attempts = 0;
-        long startTimeMs = MathUtils.now();
+        long startTimeNanos = MathUtils.nowInNano();
         while (!isDone) {
             try {
                 if (null != client) {
                     client.waitForConnection();
                 }
                 logger.debug("Execute {} at {} retry attempt.", proc, attempts);
+                if (null != rateLimiter) {
+                    rateLimiter.acquire();
+                }
                 result = proc.call();
                 isDone = true;
+                statsLogger.registerSuccessfulEvent(MathUtils.elapsedMicroSec(startTimeNanos), TimeUnit.MICROSECONDS);
             } catch (KeeperException e) {
                 ++attempts;
                 boolean rethrow = true;
-                long elapsedTime = MathUtils.now() - startTimeMs;
+                long elapsedTime = MathUtils.elapsedMSec(startTimeNanos);
                 if (((null != client && isRecoverableException(e)) || null == client) &&
                         retryPolicy.allowRetry(attempts, elapsedTime)) {
                     rethrow = false;
                 }
                 if (rethrow) {
+                    statsLogger.registerFailedEvent(MathUtils.elapsedMicroSec(startTimeNanos), TimeUnit.MICROSECONDS);
                     logger.debug("Stopped executing {} after {} attempts.", proc, attempts);
                     throw e;
                 }
@@ -137,11 +158,6 @@ class ZooWorker {
             }
         }
         return result;
-    }
-
-    static<T> T syncCallWithRetries(
-            ZooCallable<T> proc, RetryPolicy retryPolicy) throws KeeperException, InterruptedException {
-        return syncCallWithRetries(null, proc, retryPolicy);
     }
 
 }
