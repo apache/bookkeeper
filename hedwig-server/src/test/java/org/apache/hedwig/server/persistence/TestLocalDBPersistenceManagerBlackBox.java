@@ -17,9 +17,6 @@
  */
 package org.apache.hedwig.server.persistence;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 import org.junit.After;
 import org.junit.Before;
 

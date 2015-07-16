@@ -35,7 +35,7 @@ import org.apache.hedwig.util.Callback;
 
 public class ProxySubscribeHandler implements Handler, ChannelDisconnectListener {
 
-    static final Logger logger = LoggerFactory.getLogger(ProxySubscribeHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(ProxySubscribeHandler.class);
 
     Subscriber subscriber;
     ChannelTracker tracker;

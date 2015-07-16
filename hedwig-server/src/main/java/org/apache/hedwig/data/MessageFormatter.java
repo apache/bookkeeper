@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * Format a pub sub message into a readable format.
  */
 public class MessageFormatter extends EntryFormatter {
-    static Logger logger = LoggerFactory.getLogger(MessageFormatter.class);
+    private static final Logger logger = LoggerFactory.getLogger(MessageFormatter.class);
 
     static final String MESSAGE_PAYLOAD_FORMATTER_CLASS = "message_payload_formatter_class";
 

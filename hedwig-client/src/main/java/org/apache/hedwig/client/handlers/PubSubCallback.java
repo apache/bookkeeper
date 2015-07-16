@@ -33,7 +33,7 @@ import org.apache.hedwig.util.Callback;
  */
 public class PubSubCallback implements Callback<PubSubProtocol.ResponseBody> {
 
-    private static Logger logger = LoggerFactory.getLogger(PubSubCallback.class);
+    private static final Logger logger = LoggerFactory.getLogger(PubSubCallback.class);
 
     // Private member variables
     private final PubSubData pubSubData;

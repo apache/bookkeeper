@@ -27,7 +27,6 @@ import org.apache.hedwig.protocol.PubSubProtocol.ManagerMeta;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.zookeeper.ZooKeeperTestBase;
 import org.apache.hedwig.zookeeper.ZkUtils;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
 

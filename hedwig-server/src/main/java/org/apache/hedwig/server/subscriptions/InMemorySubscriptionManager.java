@@ -30,9 +30,12 @@ import org.apache.hedwig.server.delivery.DeliveryManager;
 import org.apache.hedwig.server.persistence.PersistenceManager;
 import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.util.Callback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class InMemorySubscriptionManager extends AbstractSubscriptionManager {
-    // Backup for top2sub2seq
+	 private static final Logger logger = LoggerFactory.getLogger(InMemorySubscriptionManager.class);
+	// Backup for top2sub2seq
     final ConcurrentHashMap<ByteString, Map<ByteString, InMemorySubscriptionState>> top2sub2seqBackup =
         new ConcurrentHashMap<ByteString, Map<ByteString, InMemorySubscriptionState>>();
 

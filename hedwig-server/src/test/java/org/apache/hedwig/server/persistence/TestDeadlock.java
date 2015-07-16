@@ -44,7 +44,7 @@ import org.apache.hedwig.util.ConcurrencyUtils;
 
 public class TestDeadlock extends HedwigHubTestBase {
 
-    protected static Logger logger = LoggerFactory.getLogger(TestDeadlock.class);
+    protected static final Logger logger = LoggerFactory.getLogger(TestDeadlock.class);
 
     // Client side variables
     protected HedwigClient client;

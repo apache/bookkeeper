@@ -36,7 +36,7 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
 public class BookieBenchmark extends AbstractBenchmark {
 
-    static final Logger logger = LoggerFactory.getLogger(BookkeeperBenchmark.class);
+    private static final Logger logger = LoggerFactory.getLogger(BookkeeperBenchmark.class);
 
     BookieClient bkc;
     BookieSocketAddress addr;

@@ -36,14 +36,12 @@ import org.jboss.netty.channel.ChannelFutureListener;
 
 import com.google.protobuf.ByteString;
 
-import org.apache.hedwig.client.api.MessageHandler;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.data.PubSubData;
 import org.apache.hedwig.client.data.TopicSubscriber;
 import org.apache.hedwig.client.exceptions.AlreadyStartDeliveryException;
 import org.apache.hedwig.client.exceptions.NoResponseHandlerException;
 import org.apache.hedwig.client.handlers.MessageConsumeCallback;
-import org.apache.hedwig.client.handlers.SubscribeResponseHandler;
 import org.apache.hedwig.client.netty.CleanupChannelMap;
 import org.apache.hedwig.client.netty.HChannel;
 import org.apache.hedwig.client.netty.HChannelManager;
@@ -69,7 +67,7 @@ import static org.apache.hedwig.util.VarArgs.va;
  */
 public abstract class AbstractHChannelManager implements HChannelManager {
 
-    private static Logger logger = LoggerFactory.getLogger(AbstractHChannelManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractHChannelManager.class);
 
     // Empty Topic List
     private final static Set<ByteString> EMPTY_TOPIC_SET =

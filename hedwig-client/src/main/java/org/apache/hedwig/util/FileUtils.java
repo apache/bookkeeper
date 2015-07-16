@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 public class FileUtils {
 
     static DirDeleterThred dirDeleterThread;
-    static Logger log = LoggerFactory.getLogger(FileUtils.class);
+    static final Logger log = LoggerFactory.getLogger(FileUtils.class);
 
     static {
         dirDeleterThread = new DirDeleterThred();

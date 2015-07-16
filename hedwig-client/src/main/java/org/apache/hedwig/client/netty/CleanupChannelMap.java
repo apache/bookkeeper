@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 
 public class CleanupChannelMap<T> {
 
-    private static Logger logger = LoggerFactory.getLogger(CleanupChannelMap.class);
+    private static final Logger logger = LoggerFactory.getLogger(CleanupChannelMap.class);
     
     private final ConcurrentHashMap<T, HChannel> channels;
 

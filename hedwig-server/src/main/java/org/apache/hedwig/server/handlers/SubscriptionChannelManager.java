@@ -33,12 +33,11 @@ import org.apache.hedwig.client.data.TopicSubscriber;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionEvent;
 import org.apache.hedwig.protoextensions.PubSubResponseUtils;
-import org.apache.hedwig.util.Callback;
 import static org.apache.hedwig.util.VarArgs.va;
 
 public class SubscriptionChannelManager implements ChannelDisconnectListener {
 
-    static Logger logger = LoggerFactory.getLogger(SubscriptionChannelManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(SubscriptionChannelManager.class);
 
     static class CloseSubscriptionListener implements ChannelFutureListener {
 

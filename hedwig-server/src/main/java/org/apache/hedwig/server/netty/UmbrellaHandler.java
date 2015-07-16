@@ -46,7 +46,7 @@ import org.apache.hedwig.server.handlers.Handler;
 
 @Sharable
 public class UmbrellaHandler extends SimpleChannelHandler {
-    static Logger logger = LoggerFactory.getLogger(UmbrellaHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(UmbrellaHandler.class);
 
     private final Map<OperationType, Handler> handlers;
     private final ChannelGroup allChannels;

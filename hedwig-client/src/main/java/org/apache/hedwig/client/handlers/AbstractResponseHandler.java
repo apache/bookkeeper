@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
 
 public abstract class AbstractResponseHandler {
 
-    private static Logger logger = LoggerFactory.getLogger(AbstractResponseHandler.class);
+    private final static Logger logger = LoggerFactory.getLogger(AbstractResponseHandler.class);
 
     protected final ClientConfiguration cfg;
     protected final HChannelManager channelManager;

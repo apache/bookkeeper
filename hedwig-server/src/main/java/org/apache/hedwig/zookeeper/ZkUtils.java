@@ -33,7 +33,7 @@ import org.apache.hedwig.util.PathUtils;
 
 public class ZkUtils {
 
-    static Logger logger = LoggerFactory.getLogger(ZkUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(ZkUtils.class);
 
     static class SyncObject {
         int rc;

@@ -36,8 +36,6 @@ import org.junit.Test;
 
 import com.google.protobuf.ByteString;
 
-import static org.junit.Assert.*;
-
 public class TestUpdateSubscriptionState extends HedwigHubTestBase {
 
     private static final int RETENTION_SECS_VALUE = 100;

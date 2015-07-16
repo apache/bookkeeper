@@ -53,7 +53,7 @@ import com.google.protobuf.ByteString;
 
 public class ReadAheadCache implements PersistenceManager, HedwigJMXService {
 
-    static Logger logger = LoggerFactory.getLogger(ReadAheadCache.class);
+    private static final Logger logger = LoggerFactory.getLogger(ReadAheadCache.class);
 
     protected interface CacheRequest {
         public void performRequest();

@@ -33,7 +33,7 @@ import org.apache.hedwig.server.common.UnexpectedError;
  */
 public class CacheValue {
 
-    static Logger logger = LoggerFactory.getLogger(ReadAheadCache.class);
+    private static final Logger logger = LoggerFactory.getLogger(ReadAheadCache.class);
 
     // Actually we don't care the order of callbacks
     // when a scan callback, it should be delivered to both callbacks

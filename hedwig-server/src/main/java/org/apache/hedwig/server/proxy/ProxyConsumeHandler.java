@@ -30,7 +30,7 @@ import org.apache.hedwig.server.netty.UmbrellaHandler;
 
 public class ProxyConsumeHandler implements Handler {
 
-    static final Logger logger = LoggerFactory.getLogger(ProxyConsumeHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(ProxyConsumeHandler.class);
 
     Subscriber subscriber;
 

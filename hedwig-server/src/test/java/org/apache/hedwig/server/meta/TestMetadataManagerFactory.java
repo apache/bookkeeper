@@ -23,23 +23,16 @@ package org.apache.hedwig.server.meta;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.ZooDefs.Ids;
 import java.io.IOException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.CountDownLatch;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-
 import com.google.protobuf.ByteString;
-
 import org.apache.hedwig.protocol.PubSubProtocol.ManagerMeta;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.zookeeper.ZooKeeperTestBase;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.Assert;
 
@@ -47,7 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TestMetadataManagerFactory extends ZooKeeperTestBase {
-    static Logger LOG = LoggerFactory.getLogger(TestMetadataManagerFactory.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestMetadataManagerFactory.class);
 
     static class TestServerConfiguration extends ServerConfiguration {
         String hedwigPrefix = "/hedwig";

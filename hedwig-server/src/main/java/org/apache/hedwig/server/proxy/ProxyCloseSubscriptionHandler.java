@@ -32,7 +32,7 @@ import org.apache.hedwig.util.Callback;
 
 public class ProxyCloseSubscriptionHandler implements Handler {
 
-    static final Logger logger = LoggerFactory.getLogger(ProxyCloseSubscriptionHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(ProxyCloseSubscriptionHandler.class);
 
     Subscriber subscriber;
     ChannelTracker tracker;

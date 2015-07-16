@@ -85,6 +85,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-796: Make bookkeeper client use reconnectable zookeeper wrapper (sijie via fpj)
 
+      BOOKKEEPER-687: Use static final Logger for hedwig related modules (Ankur Garg via sijie)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)

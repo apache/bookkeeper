@@ -41,8 +41,6 @@ import org.apache.hedwig.util.Either;
 import org.apache.hedwig.util.HedwigSocketAddress;
 import org.apache.hedwig.zookeeper.SafeAsyncZKCallback;
 import org.apache.hedwig.zookeeper.ZkUtils;
-import org.apache.hedwig.zookeeper.SafeAsyncZKCallback.DataCallback;
-import org.apache.hedwig.zookeeper.SafeAsyncZKCallback.StatCallback;
 
 /**
  * Topics are operated on in parallel as they are independent.
@@ -50,7 +48,7 @@ import org.apache.hedwig.zookeeper.SafeAsyncZKCallback.StatCallback;
  */
 public class ZkTopicManager extends AbstractTopicManager implements TopicManager {
 
-    static Logger logger = LoggerFactory.getLogger(ZkTopicManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(ZkTopicManager.class);
 
     /**
      * Persistent storage for topic metadata.

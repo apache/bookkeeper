@@ -55,7 +55,7 @@ import org.apache.hedwig.util.SubscriptionListener;
 @SuppressWarnings("deprecation") // so that we can implemented the Deprecated subscribe methods without a warning
 public class HedwigSubscriber implements Subscriber {
 
-    private static Logger logger = LoggerFactory.getLogger(HedwigSubscriber.class);
+    private static final Logger logger = LoggerFactory.getLogger(HedwigSubscriber.class);
 
     protected final ClientConfiguration cfg;
     protected final HChannelManager channelManager;

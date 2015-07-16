@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
  * does nothing more. To be used in tests instead of TerminateJVMExceptionHandler
  */
 public class LoggingExceptionHandler implements Thread.UncaughtExceptionHandler {
-    static Logger logger = LoggerFactory.getLogger(LoggingExceptionHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(LoggingExceptionHandler.class);
 
     @Override
     public void uncaughtException(Thread t, Throwable e) {

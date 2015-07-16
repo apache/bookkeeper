@@ -20,7 +20,6 @@ package org.apache.hedwig.server.handlers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 
 import com.google.protobuf.ByteString;
@@ -52,10 +51,9 @@ import org.apache.hedwig.server.subscriptions.SubscriptionManager;
 import org.apache.hedwig.server.subscriptions.AllToAllTopologyFilter;
 import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.util.Callback;
-import static org.apache.hedwig.util.VarArgs.va;
 
 public class SubscribeHandler extends BaseHandler {
-    static Logger logger = LoggerFactory.getLogger(SubscribeHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(SubscribeHandler.class);
 
     private final DeliveryManager deliveryMgr;
     private final PersistenceManager persistenceMgr;

@@ -77,7 +77,7 @@ import static com.google.common.base.Charsets.UTF_8;
  */
 
 public class BookkeeperPersistenceManager implements PersistenceManagerWithRangeScan, TopicOwnershipChangeListener {
-    static Logger logger = LoggerFactory.getLogger(BookkeeperPersistenceManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(BookkeeperPersistenceManager.class);
     static byte[] passwd = "sillysecret".getBytes(UTF_8);
     private BookKeeper bk;
     private TopicPersistenceManager tpManager;

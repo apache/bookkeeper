@@ -44,7 +44,7 @@ import org.apache.hedwig.util.FileUtils;
 
 public class TestPubSubServerStartup {
 
-    private static Logger logger = LoggerFactory.getLogger(TestPubSubServerStartup.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestPubSubServerStartup.class);
 
     /**
      * Start-up zookeeper + pubsubserver reading from a config URL. Then stop

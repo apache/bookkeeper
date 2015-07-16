@@ -36,7 +36,7 @@ import com.google.protobuf.ByteString;
  */
 public abstract class MetadataManagerFactory {
 
-    static final Logger LOG = LoggerFactory.getLogger(MetadataManagerFactory.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MetadataManagerFactory.class);
 
     /**
      * Return current factory version.

@@ -50,7 +50,7 @@ import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.FileUtils;
 
 public class LocalDBPersistenceManager implements PersistenceManagerWithRangeScan {
-    static Logger logger = LoggerFactory.getLogger(LocalDBPersistenceManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(LocalDBPersistenceManager.class);
 
     static String connectionURL;
 

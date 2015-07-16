@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  */
 class DefaultServerChannel extends HChannelImpl {
 
-    private static Logger logger = LoggerFactory.getLogger(DefaultServerChannel.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultServerChannel.class);
 
     DefaultServerChannel(InetSocketAddress host, AbstractHChannelManager channelManager) {
         super(host, channelManager);

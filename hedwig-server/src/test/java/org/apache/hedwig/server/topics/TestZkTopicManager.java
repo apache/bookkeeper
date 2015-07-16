@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 
 public class TestZkTopicManager extends ZooKeeperTestBase {
 
-    static Logger LOG = LoggerFactory.getLogger(TestZkTopicManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestZkTopicManager.class);
 
     protected ZkTopicManager tm;
 

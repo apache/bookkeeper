@@ -40,7 +40,7 @@ import org.apache.hedwig.util.Callback;
  */
 public class HedwigPublisher implements Publisher {
 
-    private static Logger logger = LoggerFactory.getLogger(HedwigPublisher.class);
+    private static final Logger logger = LoggerFactory.getLogger(HedwigPublisher.class);
 
     private final HChannelManager channelManager;
 
