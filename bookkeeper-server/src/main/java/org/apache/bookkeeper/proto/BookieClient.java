@@ -131,29 +131,6 @@ public class BookieClient implements PerChannelBookieClientFactory {
         return clientPool;
     }
 
-    public void closeClients(Set<BookieSocketAddress> addrs) {
-        final HashSet<PerChannelBookieClientPool> clients =
-                new HashSet<PerChannelBookieClientPool>();
-        closeLock.readLock().lock();
-        try {
-            for (BookieSocketAddress a : addrs) {
-                PerChannelBookieClientPool c = channels.get(a);
-                if (c != null) {
-                    clients.add(c);
-                }
-            }
-
-            if (clients.size() == 0) {
-                return;
-            }
-        } finally {
-            closeLock.readLock().unlock();
-        }
-        for (PerChannelBookieClientPool c : clients) {
-            c.disconnect(false);
-        }
-    }
-
     public void addEntry(final BookieSocketAddress addr, final long ledgerId, final byte[] masterKey,
             final long entryId,
             final ChannelBuffer toSend, final WriteCallback cb, final Object ctx, final int options) {

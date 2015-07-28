@@ -93,6 +93,9 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-848: Use volatile for lastAddConfirmed (Matteo Merli via sijie)
 
+        BOOKKEEPER-760: Don't close PCBC proactively if bookies
+                        disappeared from zookeeper znodes (sijie via fpj)
+
       bookkeeper-server:
 
         BOOKKEEPER-695: Some entry logs are not removed from the bookie storage (Matteo Merli via sijie)

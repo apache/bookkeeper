@@ -158,15 +158,25 @@ class BookieWatcher implements Watcher, ChildrenCallback {
 
         HashSet<BookieSocketAddress> newBookieAddrs = convertToBookieAddresses(children);
 
-        final Set<BookieSocketAddress> deadBookies;
         synchronized (this) {
             Set<BookieSocketAddress> readonlyBookies = readOnlyBookieWatcher.getReadOnlyBookies();
-            deadBookies = placementPolicy.onClusterChanged(newBookieAddrs, readonlyBookies);
+            placementPolicy.onClusterChanged(newBookieAddrs, readonlyBookies);
         }
 
-        if (bk.getBookieClient() != null) {
-            bk.getBookieClient().closeClients(deadBookies);
-        }
+        // we don't need to close clients here, because:
+        // a. the dead bookies will be removed from topology, which will not be used in new ensemble.
+        // b. the read sequence will be reordered based on znode availability, so most of the reads
+        //    will not be sent to them.
+        // c. the close here is just to disconnect the channel, which doesn't remove the channel from
+        //    from pcbc map. we don't really need to disconnect the channel here, since if a bookie is
+        //    really down, PCBC will disconnect itself based on netty callback. if we try to disconnect
+        //    here, it actually introduces side-effects on case d.
+        // d. closing the client here will affect latency if the bookie is alive but just being flaky
+        //    on its znode registration due zookeeper session expire.
+        // e. if we want to permanently remove a bookkeeper client, we should watch on the cookies' list.
+        // if (bk.getBookieClient() != null) {
+        //     bk.getBookieClient().closeClients(deadBookies);
+        // }
     }
 
     private static HashSet<BookieSocketAddress> convertToBookieAddresses(List<String> children) {
