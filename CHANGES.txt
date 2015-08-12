@@ -87,6 +87,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-687: Use static final Logger for hedwig related modules (Ankur Garg via sijie)
 
+      BOOKKEEPER-863: Potential resource leak with unclosed LedgerManager in BookieShell (Ted Yu via sijie)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)

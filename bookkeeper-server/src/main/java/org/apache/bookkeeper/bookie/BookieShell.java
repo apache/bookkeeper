@@ -457,13 +457,15 @@ public class BookieShell implements Tool {
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
             ZooKeeper zk = null;
+            LedgerManagerFactory mFactory = null;
+            LedgerManager m = null;
             try {
                 zk = ZooKeeperClient.newBuilder()
                         .connectString(bkConf.getZkServers())
                         .sessionTimeoutMs(bkConf.getZkTimeout())
                         .build();
-                LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, zk);
-                LedgerManager m = mFactory.newLedgerManager();
+                mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, zk);
+                m = mFactory.newLedgerManager();
                 LedgerRangeIterator iter = m.getLedgerRanges();
                 if (cmdLine.hasOption("m")) {
                     List<ReadMetadataCallback> futures
@@ -495,6 +497,14 @@ public class BookieShell implements Tool {
                     }
                 }
             } finally {
+                if (m != null) {
+                    try {
+                      m.close();
+                      mFactory.uninitialize();
+                    } catch (IOException ioe) {
+                      LOG.error("Failed to close ledger manager : ", ioe);
+                    }
+                }
                 if (zk != null) {
                     zk.close();
                 }
@@ -566,17 +576,27 @@ public class BookieShell implements Tool {
             }
 
             ZooKeeper zk = null;
+            LedgerManagerFactory mFactory = null;
+            LedgerManager m = null;
             try {
                 zk = ZooKeeperClient.newBuilder()
                         .connectString(bkConf.getZkServers())
                         .sessionTimeoutMs(bkConf.getZkTimeout())
                         .build();
-                LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, zk);
-                LedgerManager m = mFactory.newLedgerManager();
+                mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, zk);
+                m = mFactory.newLedgerManager();
                 ReadMetadataCallback cb = new ReadMetadataCallback(lid);
                 m.readLedgerMetadata(lid, cb);
                 printLedgerMetadata(cb);
             } finally {
+                if (m != null) {
+                    try {
+                        m.close();
+                        mFactory.uninitialize();
+                    } catch (IOException ioe) {
+                        LOG.error("Failed to close ledger manager : ", ioe);
+                    }
+                }
                 if (zk != null) {
                     zk.close();
                 }
