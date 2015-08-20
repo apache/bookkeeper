@@ -204,7 +204,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
 
                     toSend.release();
                 }
-            });
+            }, ledgerId);
         } finally {
             closeLock.readLock().unlock();
         }
@@ -245,7 +245,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                     }
                     toSend.release();
                 }
-            });
+            }, ledgerId);
         } finally {
             closeLock.readLock().unlock();
         }
@@ -285,7 +285,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                     }
                     pcbc.readEntryAndFenceLedger(ledgerId, masterKey, entryId, cb, ctx);
                 }
-            });
+            }, ledgerId);
         } finally {
             closeLock.readLock().unlock();
         }
@@ -318,7 +318,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                     }
                     pcbc.readLac(ledgerId, cb, ctx);
                 }
-            });
+            }, ledgerId);
         } finally {
             closeLock.readLock().unlock();
         }
@@ -354,7 +354,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                     }
                     pcbc.readEntry(ledgerId, entryId, cb, ctx);
                 }
-            });
+            }, ledgerId);
         } finally {
             closeLock.readLock().unlock();
         }
@@ -387,7 +387,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                     }
                     pcbc.getBookieInfo(requested, cb, ctx);
                 }
-            });
+            }, requested);
         } finally {
             closeLock.readLock().unlock();
         }
