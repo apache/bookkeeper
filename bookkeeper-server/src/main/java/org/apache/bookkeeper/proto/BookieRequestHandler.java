@@ -67,7 +67,8 @@ class BookieRequestHandler extends ChannelInboundHandlerAdapter {
             LOG.info("Client died before request could be completed", cause);
             return;
         }
-        LOG.error("Unhandled exception occurred in I/O thread or handler:", cause);
+        LOG.error("Unhandled exception occurred in I/O thread or handler", cause);
+        ctx.close();
     }
 
     @Override

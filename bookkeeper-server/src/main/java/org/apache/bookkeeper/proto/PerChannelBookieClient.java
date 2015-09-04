@@ -542,7 +542,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             if (((short) options & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD) {
                 addBuilder.setFlag(AddRequest.Flag.RECOVERY_ADD);
             }
-            
+
             request = Request.newBuilder()
                     .setHeader(headerBuilder)
                     .setAddRequest(addBuilder)
@@ -664,8 +664,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         CompletionKey completion = null;
         if (useV2WireProtocol) {
             request = new BookieProtocol.ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION,
-                    ledgerId, (long) 0, (short) 0);
-            completion = new V2CompletionKey(ledgerId, (long) 0, OperationType.READ_LAC);
+                    ledgerId, 0, (short) 0);
+            completion = new V2CompletionKey(ledgerId, 0, OperationType.READ_LAC);
         } else {
             final long txnId = getTxnId();
             completion = new V3CompletionKey(txnId, OperationType.READ_LAC);
@@ -1093,8 +1093,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         if (cause instanceof CorruptedFrameException || cause instanceof TooLongFrameException) {
-            LOG.error("Corrupted frame received from bookie: {}",
-                    ctx.channel().remoteAddress());
+            LOG.error("Corrupted frame received from bookie: {}", ctx.channel().remoteAddress());
+            ctx.close();
             return;
         }
 
@@ -1112,18 +1112,23 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             // these are thrown when a bookie fails, logging them just pollutes
             // the logs (the failure is logged from the listeners on the write
             // operation), so I'll just ignore it here.
+            ctx.close();
             return;
         }
 
         synchronized (this) {
             if (state == ConnectionState.CLOSED) {
-                LOG.debug("Unexpected exception caught by bookie client channel handler, "
-                          + "but the client is closed, so it isn't important", cause);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Unexpected exception caught by bookie client channel handler, "
+                            + "but the client is closed, so it isn't important", cause);
+                }
             } else {
                 LOG.error("Unexpected exception caught by bookie client channel handler", cause);
             }
         }
+
         // Since we are a library, cant terminate App here, can we?
+        ctx.close();
     }
 
     /**
