@@ -89,6 +89,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-863: Potential resource leak with unclosed LedgerManager in BookieShell (Ted Yu via sijie)
 
+      BOOKKEEPER-802: Bookkeeper protocol documentation (ivank via sijie)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
