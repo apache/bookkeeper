@@ -68,6 +68,14 @@ public abstract class LedgerManagerFactory {
     public abstract void uninitialize() throws IOException;
 
     /**
+     * Return the ledger id generator, which is used for global unique ledger id
+     * generation.
+     *
+     * @return ledger id generator.
+     */
+    public abstract LedgerIdGenerator newLedgerIdGenerator();
+
+    /**
      * return ledger manager for client-side to manage ledger metadata.
      *
      * @return ledger manager

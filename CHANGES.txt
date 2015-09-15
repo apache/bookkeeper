@@ -100,6 +100,8 @@ Trunk (unreleased changes)
         BOOKKEEPER-760: Don't close PCBC proactively if bookies
                         disappeared from zookeeper znodes (sijie via fpj)
 
+        BOOKKEEPER-438: Move ledger id generation out of LedgerManager (Tong Yu via sijie)
+
       bookkeeper-server:
 
         BOOKKEEPER-695: Some entry logs are not removed from the bookie storage (Matteo Merli via sijie)

@@ -36,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
-import org.apache.bookkeeper.meta.AbstractZkLedgerManager.ReadLedgerMetadataTask;
 import org.apache.bookkeeper.metastore.MSException;
 import org.apache.bookkeeper.metastore.MSWatchedEvent;
 import org.apache.bookkeeper.metastore.MetaStore;
@@ -46,23 +45,20 @@ import org.apache.bookkeeper.metastore.MetastoreCursor.ReadEntriesCallback;
 import org.apache.bookkeeper.metastore.MetastoreException;
 import org.apache.bookkeeper.metastore.MetastoreFactory;
 import org.apache.bookkeeper.metastore.MetastoreScannableTable;
+import org.apache.bookkeeper.metastore.MetastoreTable;
 import org.apache.bookkeeper.metastore.MetastoreTableItem;
+import org.apache.bookkeeper.metastore.MetastoreUtils;
 import org.apache.bookkeeper.metastore.MetastoreWatcher;
-import org.apache.bookkeeper.metastore.MSWatchedEvent.EventType;
 import org.apache.bookkeeper.metastore.Value;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.util.StringUtils;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
-import org.apache.zookeeper.AsyncCallback.StringCallback;
-import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -180,6 +176,11 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         }
     }
 
+    @Override
+    public LedgerIdGenerator newLedgerIdGenerator() {
+        return new ZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), MsLedgerManager.IDGEN_ZNODE);
+    }
+
     static class MsLedgerManager implements LedgerManager, MetastoreWatcher {
         final ZooKeeper zk;
         final AbstractConfiguration conf;
@@ -189,14 +190,10 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         final int maxEntriesPerScan;
 
         static final String IDGEN_ZNODE = "ms-idgen";
-        static final String IDGENERATION_PREFIX = "/" + IDGEN_ZNODE + "/ID-";
 
         // ledger metadata listeners
         protected final ConcurrentMap<Long, Set<LedgerMetadataListener>> listeners =
                 new ConcurrentHashMap<Long, Set<LedgerMetadataListener>>();
-
-        // Path to generate global id
-        private final String idGenPath;
 
         // we use this to prevent long stack chains from building up in
         // callbacks
@@ -266,7 +263,6 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
             // configuration settings
             maxEntriesPerScan = conf.getMetastoreMaxEntriesPerScan();
 
-            this.idGenPath = conf.getZkLedgersRootPath() + IDGENERATION_PREFIX;
             ThreadFactoryBuilder tfb = new ThreadFactoryBuilder()
                     .setNameFormat("MSLedgerManagerScheduler-%d");
             this.scheduler = Executors.newSingleThreadScheduledExecutor(tfb
@@ -346,76 +342,28 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         }
 
         @Override
-        public void createLedger(final LedgerMetadata metadata, final GenericCallback<Long> ledgerCb) {
-            ZkUtils.asyncCreateFullPathOptimistic(zk, idGenPath, new byte[0], Ids.OPEN_ACL_UNSAFE,
-                    CreateMode.EPHEMERAL_SEQUENTIAL, new StringCallback() {
-                        @Override
-                        public void processResult(int rc, String path, Object ctx, final String idPathName) {
-                            if (rc != KeeperException.Code.OK.intValue()) {
-                                LOG.error("Could not generate new ledger id",
-                                        KeeperException.create(KeeperException.Code.get(rc), path));
-                                ledgerCb.operationComplete(BKException.Code.ZKException, null);
-                                return;
-                            }
-                            /*
-                             * Extract ledger id from gen path
-                             */
-                            long ledgerId;
-                            try {
-                                ledgerId = getLedgerIdFromGenPath(idPathName);
-                            } catch (IOException e) {
-                                LOG.error("Could not extract ledger-id from id gen path:" + path, e);
-                                ledgerCb.operationComplete(BKException.Code.ZKException, null);
-                                return;
-                            }
+        public void createLedgerMetadata(final long lid, final LedgerMetadata metadata,
+                                         final GenericCallback<Void> ledgerCb) {
+            MetastoreCallback<Version> msCallback = new MetastoreCallback<Version>() {
+                @Override
+                public void complete(int rc, Version version, Object ctx) {
+                    if (MSException.Code.BadVersion.getCode() == rc) {
+                        ledgerCb.operationComplete(BKException.Code.MetadataVersionException, null);
+                        return;
+                    }
+                    if (MSException.Code.OK.getCode() != rc) {
+                        ledgerCb.operationComplete(BKException.Code.MetaStoreException, null);
+                        return;
+                    }
+                    LOG.debug("Create ledger {} with version {} successfully.", lid, version);
+                    // update version
+                    metadata.setVersion(version);
+                    ledgerCb.operationComplete(BKException.Code.OK, null);
+                }
+            };
 
-                            final long lid = ledgerId;
-                            MetastoreCallback<Version> msCallback = new MetastoreCallback<Version>() {
-                                @Override
-                                public void complete(int rc, Version version, Object ctx) {
-                                    if (MSException.Code.BadVersion.getCode() == rc) {
-                                        ledgerCb.operationComplete(BKException.Code.MetadataVersionException, null);
-                                        return;
-                                    }
-                                    if (MSException.Code.OK.getCode() != rc) {
-                                        ledgerCb.operationComplete(BKException.Code.MetaStoreException, null);
-                                        return;
-                                    }
-                                    LOG.debug("Create ledger {} with version {} successfuly.", new Object[] { lid,
-                                            version });
-                                    // update version
-                                    metadata.setVersion(version);
-                                    ledgerCb.operationComplete(BKException.Code.OK, lid);
-                                }
-                            };
-
-                            ledgerTable.put(ledgerId2Key(lid), new Value().setField(META_FIELD, metadata.serialize()),
-                                    Version.NEW, msCallback, null);
-                            zk.delete(idPathName, -1, new AsyncCallback.VoidCallback() {
-                                @Override
-                                public void processResult(int rc, String path, Object ctx) {
-                                    if (rc != KeeperException.Code.OK.intValue()) {
-                                        LOG.warn("Exception during deleting znode for id generation : ",
-                                                KeeperException.create(KeeperException.Code.get(rc), path));
-                                    } else {
-                                        LOG.debug("Deleting znode for id generation : {}", idPathName);
-                                    }
-                                }
-                            }, null);
-                        }
-                    }, null);
-        }
-
-        // get ledger id from generation path
-        private long getLedgerIdFromGenPath(String nodeName) throws IOException {
-            long ledgerId;
-            try {
-                String parts[] = nodeName.split(IDGENERATION_PREFIX);
-                ledgerId = Long.parseLong(parts[parts.length - 1]);
-            } catch (NumberFormatException e) {
-                throw new IOException(e);
-            }
-            return ledgerId;
+            ledgerTable.put(ledgerId2Key(lid), new Value().setField(META_FIELD, metadata.serialize()),
+                    Version.NEW, msCallback, null);
         }
 
         @Override
@@ -688,7 +636,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
          * @param finalCb
          *            Final callback to be called after all elements in the list
          *            are processed
-         * @param contxt
+         * @param context
          *            Context of final callback
          * @param successRc
          *            RC passed to final callback on success
@@ -728,6 +676,26 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
             T firstElement = iter.next();
             processor.process(firstElement, stubCallback);
         }
+    }
+
+    @Override
+    public void format(AbstractConfiguration conf, ZooKeeper zk) throws InterruptedException,
+            KeeperException, IOException {
+        MetastoreTable ledgerTable;
+        try {
+            ledgerTable = metastore.createScannableTable(TABLE_NAME);
+        } catch (MetastoreException mse) {
+            throw new IOException("Failed to instantiate table " + TABLE_NAME + " in metastore "
+                    + metastore.getName());
+        }
+        try {
+            MetastoreUtils.cleanTable(ledgerTable, conf.getMetastoreMaxEntriesPerScan());
+        } catch (MSException mse) {
+            throw new IOException("Exception when cleanning up table " + TABLE_NAME, mse);
+        }
+        LOG.info("Finished cleaning up table {}.", TABLE_NAME);
+        // Delete and recreate the LAYOUT information.
+        super.format(conf, zk);
     }
 
 }
