@@ -177,6 +177,50 @@ public class BookieWriteLedgerTest extends
     }
 
     /**
+     * Verify the functionality of Advanced Ledger which accepts ledgerId as input and returns
+     * LedgerHandleAdv. LedgerHandleAdv takes entryId for addEntry, and let
+     * user manage entryId allocation.
+     *
+     * @throws Exception
+     */
+    @Test(timeout = 60000)
+    public void testLedgerCreateAdvWithLedgerId() throws Exception {
+        // Create a ledger
+        long ledgerId = 0xABCDEF;
+        lh = bkc.createLedgerAdv(ledgerId, 5, 3, 2, digestType, ledgerPassword, null);
+        for (int i = 0; i < numEntriesToWrite; i++) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+
+            entries1.add(entry.array());
+            lh.addEntry(i, entry.array());
+        }
+        // Start one more bookies
+        startNewBookie();
+
+        // Shutdown one bookie in the last ensemble and continue writing
+        ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next()
+                .getValue();
+        killBookie(ensemble.get(0));
+
+        int i = numEntriesToWrite;
+        numEntriesToWrite = numEntriesToWrite + 50;
+        for (; i < numEntriesToWrite; i++) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+
+            entries1.add(entry.array());
+            lh.addEntry(i, entry.array());
+        }
+
+        readEntries(lh, entries1);
+        lh.close();
+        bkc.deleteLedger(ledgerId);
+    }
+
+    /**
      * Verify the functionality of Ledger create which accepts customMetadata as input.
      * Also verifies that the data written is read back properly.
      *

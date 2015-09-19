@@ -41,6 +41,16 @@ public class StringUtils {
     }
 
     /**
+     * Formats ledger ID according to ZooKeeper rules
+     *
+     * @param id
+     *            znode id
+     */
+    public static String getZKStringIdForFlat(long id) {
+        return String.format("%019d", id);
+    }
+
+    /**
      * Get the hierarchical ledger path according to the ledger id
      *
      * @param ledgerId

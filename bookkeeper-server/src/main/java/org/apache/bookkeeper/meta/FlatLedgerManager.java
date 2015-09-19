@@ -64,7 +64,7 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
     public String getLedgerPath(long ledgerId) {
         StringBuilder sb = new StringBuilder();
         sb.append(ledgerPrefix)
-          .append(StringUtils.getZKStringId(ledgerId));
+          .append(StringUtils.getZKStringIdForFlat(ledgerId));
         return sb.toString();
     }
 
