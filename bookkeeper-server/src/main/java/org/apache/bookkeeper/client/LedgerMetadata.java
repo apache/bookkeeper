@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -393,8 +394,13 @@ public class LedgerMetadata {
             return parseVersion1Config(lc, reader);
         }
 
+        // remaining size is total minus the length of the version line and '\n'
+        char[] configBuffer = new char[config.length() - (versionLine.length() + 1)];
+        reader.read(configBuffer, 0, configBuffer.length);
+
         LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
-        TextFormat.merge(reader, builder);
+
+        TextFormat.merge((CharSequence) CharBuffer.wrap(configBuffer), builder);
         LedgerMetadataFormat data = builder.build();
         lc.writeQuorumSize = data.getQuorumSize();        
         if (data.hasCtime()) {
