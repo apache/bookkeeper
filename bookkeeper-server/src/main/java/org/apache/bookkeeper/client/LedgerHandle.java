@@ -880,6 +880,12 @@ public class LedgerHandle {
     }
 
     void handleBookieFailure(final BookieSocketAddress addr, final int bookieIndex) {
+        // If this is the first failure,
+        // try to submit completed pendingAddOps before this failure. 
+        if (0 == blockAddCompletions.get()) {
+            sendAddSuccessCallbacks(); 
+        }
+
         blockAddCompletions.incrementAndGet();
 
         synchronized (metadata) {
@@ -888,6 +894,12 @@ public class LedgerHandle {
                 LOG.warn("Write did not succeed to {}, bookieIndex {}, but we have already fixed it.",
                          addr, bookieIndex);
                 blockAddCompletions.decrementAndGet();
+
+                // Try to submit completed pendingAddOps, pending by this fix. 
+                if (0 == blockAddCompletions.get()) {
+                    sendAddSuccessCallbacks(); 
+                }
+
                 return;
             }
 

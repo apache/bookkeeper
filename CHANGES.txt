@@ -42,6 +42,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-821: Failing to write lastId to ledger directories should not fail startup of bookies (zhaijia via sijie)
 
+      BOOKKEEPER-826: PendingAddOp is ignoring ack response after meet ack quorum constraint (sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-800: Expose whether a ledger is closed or not (ivank)
