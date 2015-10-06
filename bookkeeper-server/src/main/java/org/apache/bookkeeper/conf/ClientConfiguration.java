@@ -59,6 +59,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String SPECULATIVE_READ_TIMEOUT = "speculativeReadTimeout";
     // Timeout Setting
     protected final static String ADD_ENTRY_TIMEOUT_SEC = "addEntryTimeoutSec";
+    protected final static String ADD_ENTRY_QUORUM_TIMEOUT_SEC = "addEntryQuorumTimeoutSec";
     protected final static String READ_ENTRY_TIMEOUT_SEC = "readEntryTimeoutSec";
     protected final static String TIMEOUT_TASK_INTERVAL_MILLIS = "timeoutTaskIntervalMillis";
     protected final static String PCBC_TIMEOUT_TIMER_TICK_DURATION_MS = "pcbcTimeoutTimerTickDurationMs";
@@ -430,6 +431,29 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setAddEntryTimeout(int timeout) {
         setProperty(ADD_ENTRY_TIMEOUT_SEC, timeout);
+        return this;
+    }
+
+    /**
+     * Get the timeout for top-level add request. That is, the amount of time we should spend
+     * waiting for ack quorum.
+     *
+     * @return add entry ack quorum timeout.
+     */
+    public int getAddEntryQuorumTimeout() {
+        return getInt(ADD_ENTRY_QUORUM_TIMEOUT_SEC, -1);
+    }
+
+    /**
+     * Set timeout for top-level add entry request.
+     * @see #getAddEntryQuorumTimeout()
+     *
+     * @param timeout
+     *          The new add entry ack quorum timeout in seconds.
+     * @return client configuration.
+     */
+    public ClientConfiguration setAddEntryQuorumTimeout(int timeout) {
+        setProperty(ADD_ENTRY_QUORUM_TIMEOUT_SEC, timeout);
         return this;
     }
 
