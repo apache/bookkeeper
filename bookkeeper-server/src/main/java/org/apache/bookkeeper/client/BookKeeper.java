@@ -295,8 +295,13 @@ public class BookKeeper {
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf);
 
         // initialize main worker pool
-        this.mainWorkerPool = new OrderedSafeExecutor(conf.getNumWorkerThreads(),
-                "BookKeeperClientWorker");
+        this.mainWorkerPool = OrderedSafeExecutor.newBuilder()
+                .name("BookKeeperClientWorker")
+                .numThreads(conf.getNumWorkerThreads())
+                .statsLogger(statsLogger)
+                .traceTaskExecution(conf.getEnableTaskExecutionStats())
+                .traceTaskWarnTimeMicroSec(conf.getTaskExecutionWarnTimeMicros())
+                .build();
 
         // initialize bookie client
         this.bookieClient = new BookieClient(conf, this.channelFactory, this.mainWorkerPool, statsLogger);

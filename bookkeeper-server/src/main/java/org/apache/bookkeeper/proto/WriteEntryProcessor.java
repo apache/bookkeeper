@@ -100,4 +100,10 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
                      ResponseBuilder.buildAddResponse(request),
                      requestProcessor.addRequestStats);
     }
+
+    @Override
+    public String toString() {
+        return String.format("WriteEntry(%d, %d)",
+                             request.getLedgerId(), request.getEntryId());
+    }
 }

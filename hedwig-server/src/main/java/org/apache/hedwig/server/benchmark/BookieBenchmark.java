@@ -41,8 +41,10 @@ public class BookieBenchmark extends AbstractBenchmark {
     BookieClient bkc;
     BookieSocketAddress addr;
     ClientSocketChannelFactory channelFactory;
-    OrderedSafeExecutor executor = new OrderedSafeExecutor(1, "BookieBenchmarkScheduler");
-
+    OrderedSafeExecutor executor = OrderedSafeExecutor.newBuilder()
+            .name("BookieBenchmarkScheduler")
+            .numThreads(1)
+            .build();
 
     public BookieBenchmark(String bookieHostPort)  throws Exception {
         channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());

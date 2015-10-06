@@ -91,6 +91,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-802: Bookkeeper protocol documentation (ivank via sijie)
 
+      BOOKKEEPER-862: Add tracing and stats to OrderedSafeExecutor for debugging slow tasks (Leigh Stewart via sijie)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)

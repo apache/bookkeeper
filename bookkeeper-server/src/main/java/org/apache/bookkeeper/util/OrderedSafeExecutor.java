@@ -17,16 +17,25 @@
  */
 package org.apache.bookkeeper.util;
 
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.Random;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.stats.Gauge;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,42 +56,142 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class OrderedSafeExecutor {
-    final ExecutorService threads[];
+    final static long WARN_TIME_MICRO_SEC_DEFAULT = TimeUnit.SECONDS.toMicros(1);
+    final String name;
+    final ThreadPoolExecutor threads[];
     final long threadIds[];
+    final BlockingQueue<Runnable> queues[];
     final Random rand = new Random();
+    final OpStatsLogger taskExecutionStats;
+    final OpStatsLogger taskPendingStats;
+    final boolean traceTaskExecution;
+    final long warnTimeMicroSec;
+
+    public static Builder newBuilder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private String name = "OrderedSafeExecutor";
+        private int numThreads = Runtime.getRuntime().availableProcessors();
+        private ThreadFactory threadFactory = null;
+        private StatsLogger statsLogger = NullStatsLogger.INSTANCE;
+        private boolean traceTaskExecution = false;
+        private long warnTimeMicroSec = WARN_TIME_MICRO_SEC_DEFAULT;
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder numThreads(int num) {
+            this.numThreads = num;
+            return this;
+        }
+
+        public Builder threadFactory(ThreadFactory threadFactory) {
+            this.threadFactory = threadFactory;
+            return this;
+        }
+
+        public Builder statsLogger(StatsLogger statsLogger) {
+            this.statsLogger = statsLogger;
+            return this;
+        }
+
+        public Builder traceTaskExecution(boolean enabled) {
+            this.traceTaskExecution = enabled;
+            return this;
+        }
+
+        public Builder traceTaskWarnTimeMicroSec(long warnTimeMicroSec) {
+            this.warnTimeMicroSec = warnTimeMicroSec;
+            return this;
+        }
+
+        public OrderedSafeExecutor build() {
+            if (null == threadFactory) {
+                threadFactory = Executors.defaultThreadFactory();
+            }
+            return new OrderedSafeExecutor(name, numThreads, threadFactory, statsLogger,
+                                           traceTaskExecution, warnTimeMicroSec);
+        }
+
+    }
+
+    private class TimedRunnable extends SafeRunnable {
+        final SafeRunnable runnable;
+        final long initNanos;
+
+        TimedRunnable(SafeRunnable runnable) {
+            this.runnable = runnable;
+            this.initNanos = MathUtils.nowInNano();
+         }
+
+        @Override
+        public void safeRun() {
+            taskPendingStats.registerSuccessfulEvent(initNanos, TimeUnit.NANOSECONDS);
+            long startNanos = MathUtils.nowInNano();
+            this.runnable.safeRun();
+            long elapsedMicroSec = MathUtils.elapsedMicroSec(startNanos);
+            taskExecutionStats.registerSuccessfulEvent(elapsedMicroSec, TimeUnit.MICROSECONDS);
+            if (elapsedMicroSec >= warnTimeMicroSec) {
+                logger.warn("Runnable {}:{} took too long {} micros to execute.",
+                            new Object[] { runnable, runnable.getClass(), elapsedMicroSec });
+            }
+        }
+     }
+
+    @Deprecated
+    public OrderedSafeExecutor(int numThreads, String threadName) {
+        this(threadName, numThreads, Executors.defaultThreadFactory(), NullStatsLogger.INSTANCE,
+             false, WARN_TIME_MICRO_SEC_DEFAULT);
+    }
 
     /**
      * Constructs Safe executor
      *
      * @param numThreads
      *            - number of threads
-     * @param threadName
-     *            - name of the thread
+     * @param baseName
+     *            - base name of executor threads
+     * @param threadFactory
+     *            - for constructing threads
+     * @param statsLogger
+     *            - for reporting executor stats
+     * @param traceTaskExecution
+     *            - should we stat task execution
+     * @param warnTimeMicroSec
+     *            - log long task exec warning after this interval
      */
-    public OrderedSafeExecutor(int numThreads, String threadName) {
-        if (numThreads <= 0) {
-            throw new IllegalArgumentException();
-        }
-        if (StringUtils.isBlank(threadName)) {
-            // sets default name
-            threadName = "OrderedSafeExecutor";
-        }
-        threads = new ExecutorService[numThreads];
+    @SuppressWarnings("unchecked")
+    private OrderedSafeExecutor(String baseName, int numThreads, ThreadFactory threadFactory,
+                                StatsLogger statsLogger, boolean traceTaskExecution,
+                                long warnTimeMicroSec) {
+        Preconditions.checkArgument(numThreads > 0);
+        Preconditions.checkArgument(!StringUtils.isBlank(baseName));
+
+        this.warnTimeMicroSec = warnTimeMicroSec;
+        name = baseName;
+        threads = new ThreadPoolExecutor[numThreads];
         threadIds = new long[numThreads];
+        queues = new BlockingQueue[numThreads];
         for (int i = 0; i < numThreads; i++) {
-            StringBuilder thName = new StringBuilder(threadName);
-            thName.append("-");
-            thName.append(i);
-            thName.append("-%d");
-            ThreadFactoryBuilder tfb = new ThreadFactoryBuilder()
-                    .setNameFormat(thName.toString());
-            threads[i] = Executors.newSingleThreadExecutor(tfb.build());
-            final int tid = i;
+            queues[i] = new LinkedBlockingQueue<Runnable>();
+            threads[i] =  new ThreadPoolExecutor(1, 1,
+                    0L, TimeUnit.MILLISECONDS, queues[i],
+                    new ThreadFactoryBuilder()
+                        .setNameFormat(name + "-orderedsafeexecutor-" + i + "-%d")
+                        .setThreadFactory(threadFactory)
+                        .build());
+
+            // Save thread ids
+            final int idx = i;
             try {
-                threads[i].submit(new SafeRunnable() {
+                threads[idx].submit(new SafeRunnable() {
                     @Override
                     public void safeRun() {
-                        threadIds[tid] = Thread.currentThread().getId();
+                        threadIds[idx] = Thread.currentThread().getId();
                     }
                 }).get();
             } catch (InterruptedException e) {
@@ -90,7 +199,47 @@ public class OrderedSafeExecutor {
             } catch (ExecutionException e) {
                 throw new RuntimeException("Couldn't start thread " + i, e);
             }
+
+            // Register gauges
+            statsLogger.registerGauge(String.format("%s-queue-%d", name, idx), new Gauge<Number>() {
+                @Override
+                public Number getDefaultValue() {
+                    return 0;
+                }
+
+                @Override
+                public Number getSample() {
+                    return queues[idx].size();
+                }
+            });
+            statsLogger.registerGauge(String.format("%s-completed-tasks-%d", name, idx), new Gauge<Number>() {
+                @Override
+                public Number getDefaultValue() {
+                    return 0;
+                }
+
+                @Override
+                public Number getSample() {
+                    return threads[idx].getCompletedTaskCount();
+                }
+            });
+            statsLogger.registerGauge(String.format("%s-total-tasks-%d", name, idx), new Gauge<Number>() {
+                @Override
+                public Number getDefaultValue() {
+                    return 0;
+                }
+
+                @Override
+                public Number getSample() {
+                    return threads[idx].getTaskCount();
+                }
+            });
         }
+
+        // Stats
+        this.taskExecutionStats = statsLogger.scope(name).getOpStatsLogger("task_execution");
+        this.taskPendingStats = statsLogger.scope(name).getOpStatsLogger("task_queued");
+        this.traceTaskExecution = traceTaskExecution;
     }
 
     ExecutorService chooseThread() {
@@ -113,11 +262,19 @@ public class OrderedSafeExecutor {
 
     }
 
+    private SafeRunnable timedRunnable(SafeRunnable r) {
+        if (traceTaskExecution) {
+            return new TimedRunnable(r);
+        } else {
+            return r;
+        }
+    }
+
     /**
      * schedules a one time action to execute
      */
     public void submit(SafeRunnable r) {
-        chooseThread().submit(r);
+        chooseThread().submit(timedRunnable(r));
     }
 
     /**
@@ -126,7 +283,7 @@ public class OrderedSafeExecutor {
      * @param r
      */
     public void submitOrdered(Object orderingKey, SafeRunnable r) {
-        chooseThread(orderingKey).submit(r);
+        chooseThread(orderingKey).submit(timedRunnable(r));
     }
 
     private long getThreadID(Object orderingKey) {
@@ -184,11 +341,17 @@ public class OrderedSafeExecutor {
             } else {
                 try {
                     executor.submitOrdered(orderingKey, new SafeRunnable() {
-                            @Override
-                            public void safeRun() {
-                                safeOperationComplete(rc, result);
-                            }
-                        });
+                        @Override
+                        public void safeRun() {
+                            safeOperationComplete(rc, result);
+                        }
+                        @Override
+                        public String toString() {
+                            return String.format("Callback(key=%s, name=%s)",
+                                                 orderingKey,
+                                                 OrderedSafeGenericCallback.this);
+                        }
+                    });
                 } catch (RejectedExecutionException re) {
                     LOG.warn("Failed to submit callback for {} : ", orderingKey, re);
                 }

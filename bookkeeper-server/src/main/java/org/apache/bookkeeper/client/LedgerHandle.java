@@ -377,6 +377,11 @@ public class LedgerHandle {
                                         }
                                     }
                                 }
+
+                                @Override
+                                public String toString() {
+                                    return String.format("ReReadMetadataForClose(%d)", ledgerId);
+                                }
                             });
                         } else if (rc != BKException.Code.OK) {
                             LOG.error("Error update ledger metadata for ledger " + ledgerId + " : " + rc);
@@ -385,10 +390,20 @@ public class LedgerHandle {
                             cb.closeComplete(BKException.Code.OK, LedgerHandle.this, ctx);
                         }
                     }
+
+                    @Override
+                    public String toString() {
+                        return String.format("WriteLedgerConfigForClose(%d)", ledgerId);
+                    }
                 };
 
                 writeLedgerConfig(new CloseCb());
 
+            }
+
+            @Override
+            public String toString() {
+                return String.format("CloseLedgerHandle(%d)", ledgerId);
             }
         });
     }
@@ -596,6 +611,10 @@ public class LedgerHandle {
                     ChannelBuffer toSend = macManager.computeDigestAndPackageForSending(
                                                entryId, lastAddConfirmed, currentLength, data, offset, length);
                     op.initiate(toSend, length);
+                }
+                @Override
+                public String toString() {
+                    return String.format("AsyncAddEntry(lid=%d, eid=%d)", ledgerId, entryId);
                 }
             });
         } catch (RejectedExecutionException e) {
@@ -938,6 +957,11 @@ public class LedgerHandle {
             // the failed bookie has been replaced
             unsetSuccessAndSendWriteRequest(ensembleInfo.bookieIndex);
         }
+
+        @Override
+        public String toString() {
+            return String.format("ChangeEnsemble(%d)", ledgerId);
+        }
     };
 
     /**
@@ -1059,6 +1083,10 @@ public class LedgerHandle {
             return true;
         }
 
+        @Override
+        public String toString() {
+            return String.format("ReReadLedgerMetadata(%d)", ledgerId);
+        }
     };
 
     void unsetSuccessAndSendWriteRequest(final int bookieIndex) {
@@ -1119,6 +1147,11 @@ public class LedgerHandle {
                                 recover(cb);
                             }
                         }
+
+                        @Override
+                        public String toString() {
+                            return String.format("ReReadMetadataForRecover(%d)", ledgerId);
+                        }
                     });
                 } else if (rc == BKException.Code.OK) {
                     new LedgerRecoveryOp(LedgerHandle.this, cb).initiate();
@@ -1126,6 +1159,11 @@ public class LedgerHandle {
                     LOG.error("Error writing ledger config " + rc + " of ledger " + ledgerId);
                     cb.operationComplete(rc, null);
                 }
+            }
+
+            @Override
+            public String toString() {
+                return String.format("WriteLedgerConfigForRecover(%d)", ledgerId);
             }
         });
     }

@@ -70,8 +70,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         ClientSocketChannelFactory channelFactory
             = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                                                 Executors.newCachedThreadPool());
-        OrderedSafeExecutor executor = new OrderedSafeExecutor(1,
-                "BKClientOrderedSafeExecutor");
+        OrderedSafeExecutor executor = getOrderedSafeExecutor();
 
         BookieSocketAddress addr = getBookie(0);
         for (int i = 0; i < 1000; i++) {
@@ -87,6 +86,15 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         }
         channelFactory.releaseExternalResources();
         executor.shutdown();
+    }
+
+    public OrderedSafeExecutor getOrderedSafeExecutor() {
+        return OrderedSafeExecutor.newBuilder()
+            .name("PCBC")
+            .numThreads(1)
+            .traceTaskExecution(true)
+            .traceTaskWarnTimeMicroSec(TimeUnit.MILLISECONDS.toMicros(100))
+            .build();
     }
 
     /**
@@ -106,8 +114,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         ClientSocketChannelFactory channelFactory
             = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                                                 Executors.newCachedThreadPool());
-        OrderedSafeExecutor executor = new OrderedSafeExecutor(1,
-                "BKClientOrderedSafeExecutor");
+        OrderedSafeExecutor executor = getOrderedSafeExecutor();
 
         BookieSocketAddress addr = getBookie(0);
         for (int i = 0; i < 100; i++) {
@@ -140,8 +147,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         ClientSocketChannelFactory channelFactory
             = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                                                 Executors.newCachedThreadPool());
-        OrderedSafeExecutor executor = new OrderedSafeExecutor(1,
-                "BKClientOrderedSafeExecutor");
+        OrderedSafeExecutor executor = getOrderedSafeExecutor();
         BookieSocketAddress addr = getBookie(0);
 
         final PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory, addr);
@@ -238,8 +244,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         ClientSocketChannelFactory channelFactory
             = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
                                                 Executors.newCachedThreadPool());
-        final OrderedSafeExecutor executor = new OrderedSafeExecutor(1,
-                "BKClientOrderedSafeExecutor");
+        final OrderedSafeExecutor executor = getOrderedSafeExecutor();
         BookieSocketAddress addr = getBookie(0);
 
         final PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory, addr);

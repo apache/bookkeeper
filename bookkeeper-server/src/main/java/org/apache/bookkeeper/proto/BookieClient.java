@@ -318,8 +318,10 @@ public class BookieClient implements PerChannelBookieClientFactory {
                         "BookKeeper-NIOBoss-%d").build()),
                 Executors.newCachedThreadPool(tfb.setNameFormat(
                         "BookKeeper-NIOWorker-%d").build()));
-        OrderedSafeExecutor executor = new OrderedSafeExecutor(1,
-                "BookieClientWorker");
+        OrderedSafeExecutor executor = OrderedSafeExecutor.newBuilder()
+                .name("BookieClientWorker")
+                .numThreads(1)
+                .build();
         BookieClient bc = new BookieClient(new ClientConfiguration(), channelFactory, executor);
         BookieSocketAddress addr = new BookieSocketAddress(args[0], Integer.parseInt(args[1]));
 

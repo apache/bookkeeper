@@ -57,6 +57,11 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                 ReadOnlyLedgerHandle.this.metadata = this.m;
             }
         }
+
+        @Override
+        public String toString() {
+            return String.format("MetadataUpdater(%d)", ledgerId);
+        }
     }
 
     ReadOnlyLedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,

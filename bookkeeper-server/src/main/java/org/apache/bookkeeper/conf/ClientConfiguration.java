@@ -70,6 +70,10 @@ public class ClientConfiguration extends AbstractConfiguration {
     // Ensemble Placement Policy
     protected final static String ENSEMBLE_PLACEMENT_POLICY = "ensemblePlacementPolicy";
 
+    // Stats
+    protected final static String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
+    protected final static String TASK_EXECUTION_WARN_TIME_MICROS = "taskExecutionWarnTimeMicros";
+
     /**
      * Construct a default client-side configuration
      */
@@ -617,6 +621,48 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setEnsemblePlacementPolicy(Class<? extends EnsemblePlacementPolicy> policyClass) {
         setProperty(ENSEMBLE_PLACEMENT_POLICY, policyClass.getName());
+        return this;
+    }
+
+    /**
+     * Whether to enable recording task execution stats.
+     *
+     * @return flag to enable/disable recording task execution stats.
+     */
+    public boolean getEnableTaskExecutionStats() {
+        return getBoolean(ENABLE_TASK_EXECUTION_STATS, false);
+    }
+
+    /**
+     * Enable/Disable recording task execution stats.
+     *
+     * @param enabled
+     *          flag to enable/disable recording task execution stats.
+     * @return client configuration.
+     */
+    public ClientConfiguration setEnableTaskExecutionStats(boolean enabled) {
+        setProperty(ENABLE_TASK_EXECUTION_STATS, enabled);
+        return this;
+    }
+
+    /**
+     * Get task execution duration which triggers a warning.
+     *
+     * @return time in microseconds which triggers a warning.
+     */
+    public long getTaskExecutionWarnTimeMicros() {
+        return getLong(TASK_EXECUTION_WARN_TIME_MICROS, TimeUnit.SECONDS.toMicros(1));
+    }
+
+    /**
+     * Set task execution duration which triggers a warning.
+     *
+     * @param warnTime
+     *          time in microseconds which triggers a warning.
+     * @return client configuration.
+     */
+    public ClientConfiguration setTaskExecutionWarnTimeMicros(long warnTime) {
+        setProperty(TASK_EXECUTION_WARN_TIME_MICROS, warnTime);
         return this;
     }
 }

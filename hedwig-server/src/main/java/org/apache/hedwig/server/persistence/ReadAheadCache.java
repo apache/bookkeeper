@@ -154,8 +154,10 @@ public class ReadAheadCache implements PersistenceManager, HedwigJMXService {
         this.realPersistenceManager = realPersistenceManager;
         this.cfg = cfg;
         numCacheWorkers = cfg.getNumReadAheadCacheThreads();
-        cacheWorkers = new OrderedSafeExecutor(numCacheWorkers,
-                "ReadAheadCacheScheduler");
+        cacheWorkers = OrderedSafeExecutor.newBuilder()
+                .name("ReadAheadCacheScheduler")
+                .numThreads(numCacheWorkers)
+                .build();
         reloadConf(cfg);
     }
 
