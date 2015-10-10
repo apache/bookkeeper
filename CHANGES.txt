@@ -44,6 +44,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-826: PendingAddOp is ignoring ack response after meet ack quorum constraint (sijie)
 
+      BOOKKEEPER-872: Resource leak with unclosed LedgerManager in HierarchicalLedgerManagerFactory#format() (Ted Yu via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-800: Expose whether a ledger is closed or not (ivank)
