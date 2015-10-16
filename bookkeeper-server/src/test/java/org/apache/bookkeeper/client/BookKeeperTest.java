@@ -56,7 +56,7 @@ public class BookKeeperTest extends BaseTestCase {
         this.digestType = digestType;
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testConstructionZkDelay() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
             .setZkServers(zkUtil.getZooKeeperConnectString())
@@ -71,7 +71,7 @@ public class BookKeeperTest extends BaseTestCase {
         bkc.close();
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testConstructionNotConnectedExplicitZk() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
             .setZkServers(zkUtil.getZooKeeperConnectString())

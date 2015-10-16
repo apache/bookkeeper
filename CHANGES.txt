@@ -97,6 +97,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-862: Add tracing and stats to OrderedSafeExecutor for debugging slow tasks (Leigh Stewart via sijie)
 
+      BOOKKEEPER-866: Fix compile issue when Updating junit to latest release version( 4.12) in the test of  Bookkeeper-server. (Jia Zhai via sijie)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
