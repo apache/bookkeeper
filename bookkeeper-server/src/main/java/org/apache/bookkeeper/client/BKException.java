@@ -96,6 +96,8 @@ public abstract class BKException extends Exception {
             return new BKIllegalOpException();
         case Code.AddEntryQuorumTimeoutException:
             return new BKAddEntryQuorumTimeoutException();
+        case Code.DuplicateEntryIdException:
+            return new BKDuplicateEntryIdException();
         default:
             return new BKUnexpectedConditionException();
         }
@@ -128,6 +130,7 @@ public abstract class BKException extends Exception {
         int ClientClosedException = -19;
         int LedgerExistException = -20;
         int AddEntryQuorumTimeoutException = -21;
+        int DuplicateEntryIdException = -22;
 
         int IllegalOpException = -100;
         int LedgerFencedException = -101;
@@ -192,6 +195,8 @@ public abstract class BKException extends Exception {
             return "Bookie protocol version on server is incompatible with client";
         case Code.MetadataVersionException:
             return "Bad ledger metadata version";
+        case Code.DuplicateEntryIdException:
+            return "Attempted to add Duplicate entryId";
         case Code.LedgerFencedException:
             return "Ledger has been fenced off. Some other client must have opened it to read";
         case Code.UnauthorizedAccessException:
@@ -258,6 +263,12 @@ public abstract class BKException extends Exception {
     public static class BKAddEntryQuorumTimeoutException extends BKException {
         public BKAddEntryQuorumTimeoutException() {
             super(Code.AddEntryQuorumTimeoutException);
+        }
+    }
+
+    public static class BKDuplicateEntryIdException extends BKException {
+        public BKDuplicateEntryIdException() {
+            super(Code.DuplicateEntryIdException);
         }
     }
 

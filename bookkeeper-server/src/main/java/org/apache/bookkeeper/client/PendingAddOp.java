@@ -91,6 +91,10 @@ class PendingAddOp implements WriteCallback, TimerTask {
         writeSet = new HashSet<Integer>(lh.distributionSchedule.getWriteSet(entryId));
     }
 
+    long getEntryId() {
+        return this.entryId;
+    }
+
     void sendWriteRequest(int bookieIndex) {
         int flags = isRecoveryAdd ? BookieProtocol.FLAG_RECOVERY_ADD : BookieProtocol.FLAG_NONE;
 
@@ -247,6 +251,19 @@ class PendingAddOp implements WriteCallback, TimerTask {
           .append(", eid:").append(entryId).append(", completed:")
           .append(completed).append(")");
         return sb.toString();
+    }
+
+    @Override
+    public int hashCode() {
+        return (int) entryId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+       if (o instanceof PendingAddOp) {
+           return (this.entryId == ((PendingAddOp)o).entryId);
+       }
+       return (this == o);
     }
 
 }

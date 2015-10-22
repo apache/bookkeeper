@@ -54,6 +54,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
     DigestType digestType;
     long startTime;
     OpStatsLogger createOpLogger;
+    boolean adv = false;
 
     /**
      * Constructor
@@ -137,6 +138,14 @@ class LedgerCreateOp implements GenericCallback<Void> {
     }
 
     /**
+     * Initiates the operation to return LedgerHandleAdv.
+     */
+    public void initiateAdv() {
+        this.adv = true;
+        initiate();
+    }
+
+    /**
      * Callback when created ledger.
      */
     @Override
@@ -151,7 +160,11 @@ class LedgerCreateOp implements GenericCallback<Void> {
         }
 
         try {
-            lh = new LedgerHandle(bk, ledgerId, metadata, digestType, passwd);
+            if (adv) {
+                lh = new LedgerHandleAdv(bk, ledgerId, metadata, digestType, passwd);
+            } else {
+                lh = new LedgerHandle(bk, ledgerId, metadata, digestType, passwd);
+            }
         } catch (GeneralSecurityException e) {
             LOG.error("Security exception while creating ledger: " + ledgerId, e);
             createComplete(BKException.Code.DigestNotInitializedException, null);

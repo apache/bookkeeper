@@ -537,6 +537,99 @@ public class BookKeeper {
     }
 
     /**
+     * Synchronous call to create ledger.
+     * Creates a new ledger asynchronously and returns {@link LedgerHandleAdv} which can accept entryId.
+     * Parameters must match those of
+     * {@link #asyncCreateLedgerAdv(int, int, int, DigestType, byte[],
+     *                           AsyncCallback.CreateCallback, Object)}
+     *
+     * @param ensSize
+     * @param writeQuorumSize
+     * @param ackQuorumSize
+     * @param digestType
+     * @param passwd
+     * @return a handle to the newly created ledger
+     * @throws InterruptedException
+     * @throws BKException
+     */
+    public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
+                                        DigestType digestType, byte passwd[])
+            throws InterruptedException, BKException {
+        SyncCounter counter = new SyncCounter();
+        counter.inc();
+        /*
+         * Calls asynchronous version
+         */
+        asyncCreateLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
+                             new SyncCreateCallback(), counter);
+
+        /*
+         * Wait
+         */
+        counter.block(0);
+        if (counter.getrc() != BKException.Code.OK) {
+            LOG.error("Error while creating ledger : {}", counter.getrc());
+            throw BKException.create(counter.getrc());
+        } else if (counter.getLh() == null) {
+            LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
+            throw BKException.create(BKException.Code.UnexpectedConditionException);
+        }
+
+        return counter.getLh();
+    }
+
+    /**
+     * Creates a new ledger asynchronously and returns {@link LedgerHandleAdv}
+     * which can accept entryId.  Ledgers created with this call have ability to accept
+     * a separate write quorum and ack quorum size. The write quorum must be larger than
+     * the ack quorum.
+     *
+     * Separating the write and the ack quorum allows the BookKeeper client to continue
+     * writing when a bookie has failed but the failure has not yet been detected. Detecting
+     * a bookie has failed can take a number of seconds, as configured by the read timeout
+     * {@link ClientConfiguration#getReadTimeout()}. Once the bookie failure is detected,
+     * that bookie will be removed from the ensemble.
+     *
+     * The other parameters match those of {@link #asyncCreateLedger(int, int, DigestType, byte[],
+     *                                      AsyncCallback.CreateCallback, Object)}
+     *
+     * @param ensSize
+     *          number of bookies over which to stripe entries
+     * @param writeQuorumSize
+     *          number of bookies each entry will be written to
+     * @param ackQuorumSize
+     *          number of bookies which must acknowledge an entry before the call is completed
+     * @param digestType
+     *          digest type, either MAC or CRC32
+     * @param passwd
+     *          password
+     * @param cb
+     *          createCallback implementation
+     * @param ctx
+     *          optional control object
+     */
+    public void asyncCreateLedgerAdv(final int ensSize,
+                                     final int writeQuorumSize,
+                                     final int ackQuorumSize,
+                                     final DigestType digestType,
+                                     final byte[] passwd, final CreateCallback cb, final Object ctx) {
+        if (writeQuorumSize < ackQuorumSize) {
+            throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
+        }
+        closeLock.readLock().lock();
+        try {
+            if (closed) {
+                cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
+                return;
+            }
+            new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
+                               ackQuorumSize, digestType, passwd, cb, ctx).initiateAdv();
+        } finally {
+            closeLock.readLock().unlock();
+        }
+    }
+
+    /**
      * Open existing ledger asynchronously for reading.
      *
      * Opening a ledger with this method invokes fencing and recovery on the ledger
