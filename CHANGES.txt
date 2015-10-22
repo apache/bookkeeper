@@ -112,6 +112,8 @@ Trunk (unreleased changes)
 
         BOOKKEEPER-868: Add ADD_ENTRY quorum timeout (Leigh Stewart via sijie)
 
+        BOOKKEEPER-867: New Client API to allow applications pass-in EntryId. (Venkateswararao Jujjuri via sijie)
+
       bookkeeper-server:
 
         BOOKKEEPER-695: Some entry logs are not removed from the bookie storage (Matteo Merli via sijie)
