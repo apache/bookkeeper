@@ -65,6 +65,14 @@ public class BookkeeperInternalCallbacks {
         void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx);
     }
 
+    public interface ReadLacCallback {
+        void readLacComplete(int rc, long ledgerId, ChannelBuffer lac, ChannelBuffer buffer, Object ctx);
+    }
+
+    public interface WriteLacCallback {
+        void writeLacComplete(int rc, long ledgerId, BookieSocketAddress addr, Object ctx);
+    }
+
     public interface GenericCallback<T> {
         void operationComplete(int rc, T result);
     }

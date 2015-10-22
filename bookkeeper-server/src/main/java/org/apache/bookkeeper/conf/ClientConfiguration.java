@@ -65,6 +65,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String ADD_ENTRY_QUORUM_TIMEOUT_SEC = "addEntryQuorumTimeoutSec";
     protected final static String READ_ENTRY_TIMEOUT_SEC = "readEntryTimeoutSec";
     protected final static String TIMEOUT_TASK_INTERVAL_MILLIS = "timeoutTaskIntervalMillis";
+    protected final static String EXPLICIT_LAC_INTERVAL = "explicitLacInterval";
     protected final static String PCBC_TIMEOUT_TIMER_TICK_DURATION_MS = "pcbcTimeoutTimerTickDurationMs";
     protected final static String PCBC_TIMEOUT_TIMER_NUM_TICKS = "pcbcTimeoutTimerNumTicks";
     protected final static String TIMEOUT_TIMER_TICK_DURATION_MS = "timeoutTimerTickDurationMs";
@@ -76,7 +77,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String BOOKIE_ERROR_THRESHOLD_PER_INTERVAL = "bookieErrorThresholdPerInterval";
     protected final static String BOOKIE_QUARANTINE_TIME_SECONDS = "bookieQuarantineTimeSeconds";
 
-    // Number Woker Threads
+    // Number Worker Threads
     protected final static String NUM_WORKER_THREADS = "numWorkerThreads";
 
     // Ensemble Placement Policy
@@ -591,6 +592,29 @@ public class ClientConfiguration extends AbstractConfiguration {
     @Deprecated
     public ClientConfiguration setTimeoutTaskIntervalMillis(long timeoutMillis) {
         setProperty(TIMEOUT_TASK_INTERVAL_MILLIS, Long.toString(timeoutMillis));
+        return this;
+    }
+
+    /**
+     * Get the configured interval between  explicit LACs to bookies.
+     * Generally LACs are piggy-backed on writes, and user can configure
+     * the interval between these protocol messages. A value of '0' disables
+     * sending any explicit LACs.
+     *
+     * @return interval between explicit LACs
+     */
+    public int getExplictLacInterval() {
+        return getInt(EXPLICIT_LAC_INTERVAL, 0);
+    }
+
+    /**
+     * Set the interval to check the need for sending an explicit LAC.
+     * @param interval
+     *        Number of seconds between checking the need for sending an explict LAC.
+     * @return Client configuration.
+     */
+    public ClientConfiguration setExplictLacInterval(int interval) {
+        setProperty(EXPLICIT_LAC_INTERVAL, interval);
         return this;
     }
 

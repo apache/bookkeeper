@@ -36,6 +36,20 @@ public interface AsyncCallback {
         void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx);
     }
 
+    public interface AddLacCallback {
+        /**
+         * Callback declaration
+         *
+         * @param rc
+         *          return code
+         * @param lh
+         *          ledger handle
+         * @param ctx
+         *          context object
+         */
+        void addLacComplete(int rc, LedgerHandle lh, Object ctx);
+    }
+
     public interface CloseCallback {
         /**
          * Callback definition

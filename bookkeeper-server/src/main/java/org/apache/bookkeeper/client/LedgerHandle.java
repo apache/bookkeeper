@@ -31,12 +31,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
+import org.apache.bookkeeper.client.AsyncCallback.AddLacCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
@@ -55,8 +57,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Ledger handle contains ledger metadata and is used to access the read and
@@ -71,6 +71,7 @@ public class LedgerHandle implements AutoCloseable {
     final long ledgerId;
     long lastAddPushed;
     volatile long lastAddConfirmed;
+
     long length;
     final DigestManager macManager;
     final DistributionSchedule distributionSchedule;
@@ -85,6 +86,7 @@ public class LedgerHandle implements AutoCloseable {
 
     final AtomicInteger blockAddCompletions = new AtomicInteger(0);
     Queue<PendingAddOp> pendingAddOps;
+    ExplicitLacFlushPolicy explicitLacFlushPolicy;
 
     final Counter ensembleChangeCounter;
     final Counter lacUpdateHitsCounter;
@@ -96,6 +98,7 @@ public class LedgerHandle implements AutoCloseable {
         this.bk = bk;
         this.metadata = metadata;
         this.pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
+
 
         if (metadata.isClosed()) {
             lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
@@ -130,6 +133,15 @@ public class LedgerHandle implements AutoCloseable {
                                                   return pendingAddOps.size();
                                               }
                                           });
+        initializeExplicitLacFlushPolicy();
+    }
+
+    protected void initializeExplicitLacFlushPolicy() {
+        if (!metadata.isClosed() && bk.getExplicitLacInterval() > 0) {
+            explicitLacFlushPolicy = new ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl(this);
+        } else {
+            explicitLacFlushPolicy = ExplicitLacFlushPolicy.VOID_EXPLICITLAC_FLUSH_POLICY;
+        }
     }
 
     /**
@@ -272,6 +284,8 @@ public class LedgerHandle implements AutoCloseable {
 
         asyncClose(new SyncCloseCallback(), counter);
 
+        explicitLacFlushPolicy.stopExplicitLacFlush();
+        
         SynchCallbackUtils.waitForResult(counter);
     }
 
@@ -478,11 +492,18 @@ public class LedgerHandle implements AutoCloseable {
      * @param ctx
      *          control object
      */
-    public void asyncReadEntries(long firstEntry, long lastEntry,
-                                 ReadCallback cb, Object ctx) {
+    public void asyncReadEntries(long firstEntry, long lastEntry, ReadCallback cb, Object ctx) {
         // Little sanity check
-        if (firstEntry < 0 || lastEntry > lastAddConfirmed
-                || firstEntry > lastEntry) {
+        if (firstEntry < 0 || firstEntry > lastEntry) {
+            LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{} lastEntry:{}",
+                    new Object[] { ledgerId, firstEntry, lastEntry });
+            cb.readComplete(BKException.Code.IncorrectParameterException, this, null, ctx);
+            return;
+        }
+
+        if (lastEntry > lastAddConfirmed) {
+            LOG.error("ReadException on ledgerId:{} firstEntry:{} lastEntry:{}",
+                    new Object[] { ledgerId, firstEntry, lastEntry });
             cb.readComplete(BKException.Code.ReadException, this, null, ctx);
             return;
         }
@@ -929,6 +950,86 @@ public class LedgerHandle implements AutoCloseable {
         return ctx.getlastConfirmed();
     }
 
+    /**
+     * Obtains asynchronously the explicit last add confirmed from a quorum of
+     * bookies. This call obtains the the explicit last add confirmed each
+     * bookie has received for this ledger and returns the maximum. If in the
+     * write LedgerHandle, explicitLAC feature is not enabled then this will
+     * return {@link #INVALID_ENTRY_ID INVALID_ENTRY_ID}. If the read explicit
+     * lastaddconfirmed is greater than getLastAddConfirmed, then it updates the
+     * lastAddConfirmed of this ledgerhandle. If the ledger has been closed, it
+     * returns the value of the last add confirmed from the metadata.
+     *
+     * @see #getLastAddConfirmed()
+     * 
+     * @param cb
+     *          callback to return read explicit last confirmed
+     * @param ctx
+     *          callback context
+     */
+    public void asyncReadExplicitLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
+        boolean isClosed;
+        synchronized (this) {
+            isClosed = metadata.isClosed();
+            if (isClosed) {
+                lastAddConfirmed = metadata.getLastEntryId();
+                length = metadata.getLength();
+            }
+        }
+        if (isClosed) {
+            cb.readLastConfirmedComplete(BKException.Code.OK, lastAddConfirmed, ctx);
+            return;
+        }
+
+        PendingReadLacOp.LacCallback innercb = new PendingReadLacOp.LacCallback() {
+
+            @Override
+            public void getLacComplete(int rc, long lac) {
+                if (rc == BKException.Code.OK) {
+                    // here we are trying to update lac only but not length 
+                    updateLastConfirmed(lac, 0);
+                    cb.readLastConfirmedComplete(rc, lac, ctx);
+                } else {
+                    cb.readLastConfirmedComplete(rc, INVALID_ENTRY_ID, ctx);
+                }
+            }
+        };
+        new PendingReadLacOp(this, innercb).initiate();
+    }
+
+    /**
+     * Obtains synchronously the explicit last add confirmed from a quorum of
+     * bookies. This call obtains the the explicit last add confirmed each
+     * bookie has received for this ledger and returns the maximum. If in the
+     * write LedgerHandle, explicitLAC feature is not enabled then this will
+     * return {@link #INVALID_ENTRY_ID INVALID_ENTRY_ID}. If the read explicit
+     * lastaddconfirmed is greater than getLastAddConfirmed, then it updates the
+     * lastAddConfirmed of this ledgerhandle. If the ledger has been closed, it
+     * returns the value of the last add confirmed from the metadata.
+     *
+     * @see #getLastAddConfirmed()
+     *
+     * @return The entry id of the explicit last confirmed write or
+     *         {@link #INVALID_ENTRY_ID INVALID_ENTRY_ID} if no entry has been
+     *         confirmed or if explicitLAC feature is not enabled in write
+     *         LedgerHandle.
+     * @throws InterruptedException
+     * @throws BKException
+     */
+    public long readExplicitLastConfirmed() throws InterruptedException, BKException {
+        LastConfirmedCtx ctx = new LastConfirmedCtx();
+        asyncReadExplicitLastConfirmed(new SyncReadLastConfirmedCallback(), ctx);
+        synchronized (ctx) {
+            while (!ctx.ready()) {
+                ctx.wait();
+            }
+        }
+        if (ctx.getRC() != BKException.Code.OK) {
+            throw BKException.create(ctx.getRC());
+        }
+        return ctx.getlastConfirmed();
+    }
+
     // close the ledger and send fails to all the adds in the pipeline
     void handleUnrecoverableErrorDuringAdd(int rc) {
         if (metadata.isInRecovery()) {
@@ -976,8 +1077,11 @@ public class LedgerHandle implements AutoCloseable {
                 LOG.debug("Head of the queue entryId: {} is not lac: {} + 1", pendingAddOp.entryId, lastAddConfirmed);
                 return;
             }
+
             pendingAddOps.remove();
+            explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
             lastAddConfirmed = pendingAddOp.entryId;
+
             pendingAddOp.submitCallback(BKException.Code.OK);
         }
 
@@ -1324,6 +1428,30 @@ public class LedgerHandle implements AutoCloseable {
                 LOG.warn("Close failed: " + BKException.getMessage(rc));
             }
             // noop
+        }
+    }
+
+    static class LastAddConfirmedCallback implements AddLacCallback {
+        static final LastAddConfirmedCallback INSTANCE = new LastAddConfirmedCallback();
+        /**
+         * Implementation of callback interface for synchronous read method.
+         *
+         * @param rc
+         *          return code
+         * @param leder
+         *          ledger identifier
+         * @param entry
+         *          entry identifier
+         * @param ctx
+         *          control object
+         */
+        @Override
+        public void addLacComplete(int rc, LedgerHandle lh, Object ctx) {
+            if (rc != BKException.Code.OK) {
+                LOG.warn("LastAddConfirmedUpdate failed: {} ", BKException.getMessage(rc));
+            } else {
+                LOG.debug("Callback LAC Updated for: {} ", lh.getId());
+            }
         }
     }
 

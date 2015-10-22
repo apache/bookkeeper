@@ -54,6 +54,10 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                     ReadOnlyLedgerHandle.this.metadata.getVersion().compare(this.m.getVersion());
             if (Version.Occurred.BEFORE == occurred) {
                 LOG.info("Updated ledger metadata for ledger {} to {}.", ledgerId, this.m);
+                if (this.m.isClosed()) {
+                        ReadOnlyLedgerHandle.this.lastAddConfirmed = this.m.getLastEntryId();
+                        ReadOnlyLedgerHandle.this.length = this.m.getLength();
+                }
                 ReadOnlyLedgerHandle.this.metadata = this.m;
             }
         }
@@ -170,4 +174,8 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         return String.format("ReadOnlyLedgerHandle(lid = %d, id = %d)", ledgerId, super.hashCode());
     }
 
+    @Override
+    protected void initializeExplicitLacFlushPolicy() {
+        explicitLacFlushPolicy = ExplicitLacFlushPolicy.VOID_EXPLICITLAC_FLUSH_POLICY;
+    }
 }
