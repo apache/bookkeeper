@@ -44,7 +44,7 @@ import static com.google.common.base.Charsets.UTF_8;
  *
  */
 public class FactoryLayout {
-    static final Logger logger = LoggerFactory.getLogger(FactoryLayout.class);
+    private static final Logger logger = LoggerFactory.getLogger(FactoryLayout.class);
 
     // metadata manager name
     public static final String NAME = "METADATA";

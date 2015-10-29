@@ -19,10 +19,6 @@ package org.apache.hedwig.server.persistence;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 import org.junit.After;
 import org.junit.Before;
 

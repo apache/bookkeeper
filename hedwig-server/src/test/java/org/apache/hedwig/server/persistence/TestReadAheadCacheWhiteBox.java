@@ -22,7 +22,6 @@ import static org.junit.Assert.*;
 import java.util.List;
 
 import org.apache.hedwig.protocol.PubSubProtocol;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 

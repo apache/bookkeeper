@@ -26,7 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetAddress;
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;

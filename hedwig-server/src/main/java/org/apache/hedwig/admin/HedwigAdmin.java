@@ -37,7 +37,6 @@ import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.LedgerRange;
 import org.apache.hedwig.protocol.PubSubProtocol.LedgerRanges;
-import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.server.common.ServerConfiguration;
@@ -46,7 +45,6 @@ import org.apache.hedwig.server.meta.FactoryLayout;
 import org.apache.hedwig.server.meta.SubscriptionDataManager;
 import org.apache.hedwig.server.meta.TopicOwnershipManager;
 import org.apache.hedwig.server.meta.TopicPersistenceManager;
-import org.apache.hedwig.server.subscriptions.InMemorySubscriptionState;
 import org.apache.hedwig.server.topics.HubInfo;
 import org.apache.hedwig.server.topics.HubLoad;
 import org.apache.hedwig.util.Callback;
@@ -60,14 +58,13 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
 import static com.google.common.base.Charsets.UTF_8;
 
 /**
  * Hedwig Admin
  */
 public class HedwigAdmin {
-    static final Logger LOG = LoggerFactory.getLogger(HedwigAdmin.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HedwigAdmin.class);
 
     // NOTE: now it is fixed passwd used in hedwig
     static byte[] passwd = "sillysecret".getBytes(UTF_8);

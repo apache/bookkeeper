@@ -15,21 +15,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hedwig.server;
+package org.apache.bookkeeper.meta;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.Closeable;
+
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 
 /**
- * Exception handler that simply logs the exception and
- * does nothing more. To be used in tests instead of TerminateJVMExceptionHandler
+ * The interface for global unique ledger ID generation
  */
-public class LoggingExceptionHandler implements Thread.UncaughtExceptionHandler {
-    private static final Logger logger = LoggerFactory.getLogger(LoggingExceptionHandler.class);
+public interface LedgerIdGenerator extends Closeable {
 
-    @Override
-    public void uncaughtException(Thread t, Throwable e) {
-        logger.error("Uncaught exception in thread " + t.getName(), e);
-    }
+    /**
+     * generate a global unique ledger id
+     *
+     * @param cb
+     *            Callback when a new ledger id is generated, return code:<ul>
+     *            <li>{@link BKException.Code.OK} if success</li>
+     *            <li>{@link BKException.Code.ZKException} when can't generate new ledger id</li>
+     *            </ul>
+     */
+    public void generateLedgerId(GenericCallback<Long> cb);
 
 }

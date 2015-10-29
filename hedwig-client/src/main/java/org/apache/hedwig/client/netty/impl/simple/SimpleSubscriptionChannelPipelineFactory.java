@@ -23,9 +23,7 @@ import java.util.Map;
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.handlers.AbstractResponseHandler;
 import org.apache.hedwig.client.handlers.CloseSubscriptionResponseHandler;
-import org.apache.hedwig.client.netty.impl.AbstractHChannelManager;
 import org.apache.hedwig.client.netty.impl.ClientChannelPipelineFactory;
-import org.apache.hedwig.client.netty.impl.HChannelHandler;
 import org.apache.hedwig.protocol.PubSubProtocol.OperationType;
 
 public class SimpleSubscriptionChannelPipelineFactory extends ClientChannelPipelineFactory {

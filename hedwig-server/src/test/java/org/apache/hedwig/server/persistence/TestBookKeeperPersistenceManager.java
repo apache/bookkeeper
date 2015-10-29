@@ -72,7 +72,7 @@ import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
 public class TestBookKeeperPersistenceManager {
-    static Logger logger = LoggerFactory.getLogger(TestPersistenceManagerBlackBox.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestPersistenceManagerBlackBox.class);
 
     BookKeeperTestBase bktb;
     private final int numBookies = 3;

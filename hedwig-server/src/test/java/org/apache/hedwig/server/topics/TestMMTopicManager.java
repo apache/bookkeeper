@@ -21,7 +21,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 
-import org.apache.zookeeper.KeeperException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,20 +33,18 @@ import org.apache.hedwig.exceptions.PubSubException.CompositeException;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.meta.MetadataManagerFactoryTestCase;
 import org.apache.hedwig.server.meta.TopicOwnershipManager;
-import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.util.ConcurrencyUtils;
 import org.apache.hedwig.util.Either;
 import org.apache.hedwig.util.HedwigSocketAddress;
 import org.apache.hedwig.util.Pair;
-import org.apache.hedwig.zookeeper.ZooKeeperTestBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TestMMTopicManager extends MetadataManagerFactoryTestCase {
 
-    static Logger LOG = LoggerFactory.getLogger(TestMMTopicManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestMMTopicManager.class);
 
     protected MMTopicManager tm;
     protected TopicOwnershipManager tom;

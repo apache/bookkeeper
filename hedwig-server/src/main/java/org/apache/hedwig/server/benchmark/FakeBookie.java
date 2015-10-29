@@ -41,7 +41,7 @@ import org.jboss.netty.logging.Log4JLoggerFactory;
 @Sharable
 public class FakeBookie extends SimpleChannelHandler implements
     ChannelPipelineFactory {
-    static final Logger logger = LoggerFactory.getLogger(FakeBookie.class);
+    private static final Logger logger = LoggerFactory.getLogger(FakeBookie.class);
     ServerSocketChannelFactory serverChannelFactory = new NioServerSocketChannelFactory(
         Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
 

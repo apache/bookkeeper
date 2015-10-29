@@ -41,7 +41,7 @@ import static org.apache.hedwig.util.VarArgs.va;
  */
 public class MessageConsumeCallback implements Callback<Void> {
 
-    private static Logger logger = LoggerFactory.getLogger(MessageConsumeCallback.class);
+    private static final Logger logger = LoggerFactory.getLogger(MessageConsumeCallback.class);
 
     private final HChannelManager channelManager;
     private final long consumeRetryWaitTime;

@@ -82,7 +82,7 @@ public class AutoRecoveryMain {
             CompatibilityException {
         this.conf = conf;
         Set<Watcher> watchers = new HashSet<Watcher>();
-        // TODO: better session handling for auto recovery daemon in future.
+        // TODO: better session handling for auto recovery daemon  https://issues.apache.org/jira/browse/BOOKKEEPER-594
         //       since {@link org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager}
         //       use Watcher, need to ensure the logic works correctly after recreating
         //       a new zookeeper client when session expired.

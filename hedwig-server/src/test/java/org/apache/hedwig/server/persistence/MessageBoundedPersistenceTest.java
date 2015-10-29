@@ -47,7 +47,7 @@ import org.apache.hedwig.server.HedwigHubTestBase;
 import org.apache.hedwig.server.common.ServerConfiguration;
 
 public class MessageBoundedPersistenceTest extends HedwigHubTestBase {
-    protected static Logger logger = LoggerFactory.getLogger(MessageBoundedPersistenceTest.class);
+    protected static final Logger logger = LoggerFactory.getLogger(MessageBoundedPersistenceTest.class);
 
     protected class SmallReadAheadServerConfiguration
         extends HedwigHubTestBase.HubServerConfiguration {

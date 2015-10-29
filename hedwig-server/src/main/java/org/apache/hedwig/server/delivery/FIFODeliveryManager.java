@@ -64,7 +64,6 @@ import org.apache.hedwig.server.persistence.ScanCallback;
 import org.apache.hedwig.server.persistence.ScanRequest;
 import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.util.Callback;
-import static org.apache.hedwig.util.VarArgs.va;
 
 public class FIFODeliveryManager implements DeliveryManager, SubChannelDisconnectedListener {
 

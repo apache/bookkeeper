@@ -42,16 +42,21 @@ import org.apache.bookkeeper.versioning.Version;
 public interface LedgerManager extends Closeable {
 
     /**
-     * Create a new ledger with provided metadata
+     * Create a new ledger with provided ledger id and metadata
      *
+     * @param ledgerId
+     *            Ledger id provided to be created
      * @param metadata
-     *        Metadata provided when creating a new ledger
+     *            Metadata provided when creating the new ledger
      * @param cb
-     *        Callback when creating a new ledger.
-     *        {@link BKException.Code.ZKException} return code when can't generate
-     *        or extract new ledger id
+     *            Callback when creating a new ledger. Return code:<ul>
+     *            <li>{@link BKException.Code.OK} if success</li>
+     *            <li>{@link BKException.Code.LedgerExistException} if given ledger id exist</li>
+     *            <li>{@link BKException.Code.ZKException}/{@link BKException.Code.MetaStoreException}
+     *                 for other issue</li>
+     *            </ul>
      */
-    public void createLedger(LedgerMetadata metadata, GenericCallback<Long> cb);
+    public void createLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<Void> cb);
 
     /**
      * Remove a specified ledger metadata by ledgerId and version.
@@ -61,10 +66,12 @@ public interface LedgerManager extends Closeable {
      * @param version
      *          Ledger metadata version
      * @param cb
-     *          Callback when removed ledger metadata.
-     *          {@link BKException.Code.MetadataVersionException} return code when version doesn't match,
-     *          {@link BKException.Code.NoSuchLedgerExistsException} return code when ledger doesn't exist,
-     *          {@link BKException.Code.ZKException} return code when other issues happen.
+     *          Callback when remove ledger metadata. Return code:<ul>
+     *          <li>{@link BKException.Code.OK} if success</li>
+     *          <li>{@link BKException.Code.MetadataVersionException} if version doesn't match</li>
+     *          <li>{@link BKException.Code.NoSuchLedgerExistsException} if ledger not exist</li>
+     *          <li>{@link BKException.Code.ZKException} for other issue</li>
+     *          </ul>
      */
     public void removeLedgerMetadata(long ledgerId, Version version, GenericCallback<Void> vb);
 
@@ -74,9 +81,11 @@ public interface LedgerManager extends Closeable {
      * @param ledgerId
      *          Ledger Id
      * @param readCb
-     *          Callback when read ledger metadata.
-     *          {@link BKException.Code.NoSuchLedgerExistsException} return code when ledger doesn't exist,
-     *          {@link BKException.Code.ZKException} return code when other issues happen.
+     *          Callback when read ledger metadata. Return code:<ul>
+     *          <li>{@link BKException.Code.OK} if success</li>
+     *          <li>{@link BKException.Code.NoSuchLedgerExistsException} if ledger not exist</li>
+     *          <li>{@link BKException.Code.ZKException} for other issue</li>
+     *          </ul>
      */
     public void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> readCb);
 
@@ -88,9 +97,11 @@ public interface LedgerManager extends Closeable {
      * @param metadata
      *          Ledger Metadata to write
      * @param cb
-     *          Callback when finished writing ledger metadata.
-     *          {@link BKException.Code.MetadataVersionException} return code when version doesn't match,
-     *          {@link BKException.Code.ZKException} return code when other issues happen.
+     *          Callback when finished writing ledger metadata. Return code:<ul>
+     *          <li>{@link BKException.Code.OK} if success</li>
+     *          <li>{@link BKException.Code.MetadataVersionException} if version in metadata doesn't match</li>
+     *          <li>{@link BKException.Code.ZKException} for other issue</li>
+     *          </ul>
      */
     public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<Void> cb);
 

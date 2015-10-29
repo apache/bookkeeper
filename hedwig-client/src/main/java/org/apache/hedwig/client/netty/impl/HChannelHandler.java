@@ -24,7 +24,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
@@ -34,7 +33,6 @@ import org.jboss.netty.handler.ssl.SslHandler;
 
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.data.PubSubData;
-import org.apache.hedwig.client.exceptions.NoResponseHandlerException;
 import org.apache.hedwig.client.netty.NetUtils;
 import org.apache.hedwig.client.handlers.AbstractResponseHandler;
 import org.apache.hedwig.client.handlers.SubscribeResponseHandler;
@@ -49,7 +47,7 @@ import static org.apache.hedwig.util.VarArgs.va;
 
 public class HChannelHandler extends SimpleChannelHandler {
 
-    private static Logger logger = LoggerFactory.getLogger(HChannelHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(HChannelHandler.class);
 
     // Concurrent Map to store for each async PubSub request, the txn ID
     // and the corresponding PubSub call's data which stores the VoidCallback to

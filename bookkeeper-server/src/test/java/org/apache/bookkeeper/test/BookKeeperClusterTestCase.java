@@ -275,7 +275,7 @@ public abstract class BookKeeperClusterTestCase {
      *          Socket Address
      * @param seconds
      *          Sleep seconds
-     * @return Count Down latch which will be counted down when sleep finishes
+     * @return Count Down latch which will be counted down just after sleep begins
      * @throws InterruptedException
      * @throws IOException
      */

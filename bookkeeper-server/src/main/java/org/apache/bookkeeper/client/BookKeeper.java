@@ -34,6 +34,7 @@ import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.CleanupLedgerManager;
+import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookieClient;
@@ -99,6 +100,7 @@ public class BookKeeper {
     // Ledger manager responsible for how to store ledger meta data
     final LedgerManagerFactory ledgerManagerFactory;
     final LedgerManager ledgerManager;
+    final LedgerIdGenerator ledgerIdGenerator;
 
     // Ensemble Placement Policy
     final EnsemblePlacementPolicy placementPolicy;
@@ -179,6 +181,17 @@ public class BookKeeper {
         this(conf, null, null, NullStatsLogger.INSTANCE);
     }
 
+    private static ZooKeeper validateZooKeeper(ZooKeeper zk) throws NullPointerException {
+        Preconditions.checkNotNull(zk, "No zookeeper instance provided");
+        return zk;
+    }
+
+    private static ClientSocketChannelFactory validateChannelFactory(ClientSocketChannelFactory factory)
+            throws NullPointerException {
+        Preconditions.checkNotNull(factory, "No Channel Factory provided");
+        return factory;
+    }
+
     /**
      * Create a bookkeeper client but use the passed in zookeeper client instead
      * of instantiating one.
@@ -196,7 +209,7 @@ public class BookKeeper {
     public BookKeeper(ClientConfiguration conf, ZooKeeper zk)
             throws IOException, InterruptedException, KeeperException {
 
-        this(conf, zk, new NioClientSocketChannelFactory(
+        this(conf, validateZooKeeper(zk), new NioClientSocketChannelFactory(
                 Executors.newCachedThreadPool(new ThreadFactoryBuilder()
                         .setNameFormat("BookKeeper-NIOBoss-%d").build()),
                 Executors.newCachedThreadPool(new ThreadFactoryBuilder()
@@ -222,7 +235,7 @@ public class BookKeeper {
      */
     public BookKeeper(ClientConfiguration conf, ZooKeeper zk, ClientSocketChannelFactory channelFactory)
             throws IOException, InterruptedException, KeeperException {
-        this(conf, zk, channelFactory, NullStatsLogger.INSTANCE);
+        this(conf, validateZooKeeper(zk), validateChannelFactory(channelFactory), NullStatsLogger.INSTANCE);
     }
 
     /**
@@ -282,8 +295,13 @@ public class BookKeeper {
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf);
 
         // initialize main worker pool
-        this.mainWorkerPool = new OrderedSafeExecutor(conf.getNumWorkerThreads(),
-                "BookKeeperClientWorker");
+        this.mainWorkerPool = OrderedSafeExecutor.newBuilder()
+                .name("BookKeeperClientWorker")
+                .numThreads(conf.getNumWorkerThreads())
+                .statsLogger(statsLogger)
+                .traceTaskExecution(conf.getEnableTaskExecutionStats())
+                .traceTaskWarnTimeMicroSec(conf.getTaskExecutionWarnTimeMicros())
+                .build();
 
         // initialize bookie client
         this.bookieClient = new BookieClient(conf, this.channelFactory, this.mainWorkerPool, statsLogger);
@@ -293,6 +311,7 @@ public class BookKeeper {
         // initialize ledger manager
         this.ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, this.zk);
         this.ledgerManager = new CleanupLedgerManager(ledgerManagerFactory.newLedgerManager());
+        this.ledgerIdGenerator = ledgerManagerFactory.newLedgerIdGenerator();
     }
 
     private EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf)
@@ -319,6 +338,10 @@ public class BookKeeper {
 
     LedgerManager getLedgerManager() {
         return ledgerManager;
+    }
+
+    LedgerIdGenerator getLedgerIdGenerator() {
+        return ledgerIdGenerator;
     }
 
     /**
@@ -511,6 +534,99 @@ public class BookKeeper {
         }
 
         return counter.getLh();
+    }
+
+    /**
+     * Synchronous call to create ledger.
+     * Creates a new ledger asynchronously and returns {@link LedgerHandleAdv} which can accept entryId.
+     * Parameters must match those of
+     * {@link #asyncCreateLedgerAdv(int, int, int, DigestType, byte[],
+     *                           AsyncCallback.CreateCallback, Object)}
+     *
+     * @param ensSize
+     * @param writeQuorumSize
+     * @param ackQuorumSize
+     * @param digestType
+     * @param passwd
+     * @return a handle to the newly created ledger
+     * @throws InterruptedException
+     * @throws BKException
+     */
+    public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
+                                        DigestType digestType, byte passwd[])
+            throws InterruptedException, BKException {
+        SyncCounter counter = new SyncCounter();
+        counter.inc();
+        /*
+         * Calls asynchronous version
+         */
+        asyncCreateLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
+                             new SyncCreateCallback(), counter);
+
+        /*
+         * Wait
+         */
+        counter.block(0);
+        if (counter.getrc() != BKException.Code.OK) {
+            LOG.error("Error while creating ledger : {}", counter.getrc());
+            throw BKException.create(counter.getrc());
+        } else if (counter.getLh() == null) {
+            LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
+            throw BKException.create(BKException.Code.UnexpectedConditionException);
+        }
+
+        return counter.getLh();
+    }
+
+    /**
+     * Creates a new ledger asynchronously and returns {@link LedgerHandleAdv}
+     * which can accept entryId.  Ledgers created with this call have ability to accept
+     * a separate write quorum and ack quorum size. The write quorum must be larger than
+     * the ack quorum.
+     *
+     * Separating the write and the ack quorum allows the BookKeeper client to continue
+     * writing when a bookie has failed but the failure has not yet been detected. Detecting
+     * a bookie has failed can take a number of seconds, as configured by the read timeout
+     * {@link ClientConfiguration#getReadTimeout()}. Once the bookie failure is detected,
+     * that bookie will be removed from the ensemble.
+     *
+     * The other parameters match those of {@link #asyncCreateLedger(int, int, DigestType, byte[],
+     *                                      AsyncCallback.CreateCallback, Object)}
+     *
+     * @param ensSize
+     *          number of bookies over which to stripe entries
+     * @param writeQuorumSize
+     *          number of bookies each entry will be written to
+     * @param ackQuorumSize
+     *          number of bookies which must acknowledge an entry before the call is completed
+     * @param digestType
+     *          digest type, either MAC or CRC32
+     * @param passwd
+     *          password
+     * @param cb
+     *          createCallback implementation
+     * @param ctx
+     *          optional control object
+     */
+    public void asyncCreateLedgerAdv(final int ensSize,
+                                     final int writeQuorumSize,
+                                     final int ackQuorumSize,
+                                     final DigestType digestType,
+                                     final byte[] passwd, final CreateCallback cb, final Object ctx) {
+        if (writeQuorumSize < ackQuorumSize) {
+            throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
+        }
+        closeLock.readLock().lock();
+        try {
+            if (closed) {
+                cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
+                return;
+            }
+            new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
+                               ackQuorumSize, digestType, passwd, cb, ctx).initiateAdv();
+        } finally {
+            closeLock.readLock().unlock();
+        }
     }
 
     /**
@@ -797,6 +913,7 @@ public class BookKeeper {
             // Close ledger manage so all pending metadata requests would be failed
             // which will reject any incoming metadata requests.
             ledgerManager.close();
+            ledgerIdGenerator.close();
             ledgerManagerFactory.uninitialize();
         } catch (IOException ie) {
             LOG.error("Failed to close ledger manager : ", ie);

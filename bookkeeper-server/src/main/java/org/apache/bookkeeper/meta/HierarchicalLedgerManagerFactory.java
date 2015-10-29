@@ -64,6 +64,11 @@ public class HierarchicalLedgerManagerFactory extends LedgerManagerFactory {
     }
 
     @Override
+    public LedgerIdGenerator newLedgerIdGenerator() {
+        return new ZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), HierarchicalLedgerManager.IDGEN_ZNODE);
+    }
+
+    @Override
     public LedgerManager newLedgerManager() {
         return new HierarchicalLedgerManager(conf, zk);
     }
@@ -78,16 +83,20 @@ public class HierarchicalLedgerManagerFactory extends LedgerManagerFactory {
     public void format(AbstractConfiguration conf, ZooKeeper zk)
             throws InterruptedException, KeeperException, IOException {
         HierarchicalLedgerManager ledgerManager = (HierarchicalLedgerManager) newLedgerManager();
-        String ledgersRootPath = conf.getZkLedgersRootPath();
-        List<String> children = zk.getChildren(ledgersRootPath, false);
-        for (String child : children) {
-            if (!HierarchicalLedgerManager.IDGEN_ZNODE.equals(child)
-                    && ledgerManager.isSpecialZnode(child)) {
-                continue;
+        try {
+            String ledgersRootPath = conf.getZkLedgersRootPath();
+            List<String> children = zk.getChildren(ledgersRootPath, false);
+            for (String child : children) {
+                if (ledgerManager.isSpecialZnode(child)) {
+                    continue;
+                }
+                ZKUtil.deleteRecursive(zk, ledgersRootPath + "/" + child);
             }
-            ZKUtil.deleteRecursive(zk, ledgersRootPath + "/" + child);
+        } finally {
+            ledgerManager.close();
         }
         // Delete and recreate the LAYOUT information.
         super.format(conf, zk);
     }
+
 }

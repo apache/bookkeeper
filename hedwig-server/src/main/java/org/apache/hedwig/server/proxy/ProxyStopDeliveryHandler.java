@@ -31,7 +31,7 @@ import org.apache.hedwig.server.netty.UmbrellaHandler;
 
 public class ProxyStopDeliveryHandler implements Handler {
 
-    static final Logger logger = LoggerFactory.getLogger(ProxyStopDeliveryHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(ProxyStopDeliveryHandler.class);
 
     Subscriber subscriber;
     ChannelTracker tracker;

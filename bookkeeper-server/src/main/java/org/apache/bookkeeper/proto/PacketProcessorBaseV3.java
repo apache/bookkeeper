@@ -71,4 +71,8 @@ public abstract class PacketProcessorBaseV3 {
         return header.build();
     }
 
+    @Override
+    public String toString() {
+        return request.toString();
+    }
 }

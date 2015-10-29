@@ -42,6 +42,10 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-821: Failing to write lastId to ledger directories should not fail startup of bookies (zhaijia via sijie)
 
+      BOOKKEEPER-826: PendingAddOp is ignoring ack response after meet ack quorum constraint (sijie)
+
+      BOOKKEEPER-872: Resource leak with unclosed LedgerManager in HierarchicalLedgerManagerFactory#format() (Ted Yu via sijie)
+
     IMPROVEMENTS:
 
       BOOKKEEPER-800: Expose whether a ledger is closed or not (ivank)
@@ -81,11 +85,34 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-835: Update copyright for 2015 on all active branches (sijie)
 
+      BOOKKEEPER-858: Fix broken links and typos in bookkeeper documents (Youngjoon Kim via sijie)
+
+      BOOKKEEPER-796: Make bookkeeper client use reconnectable zookeeper wrapper (sijie via fpj)
+
+      BOOKKEEPER-687: Use static final Logger for hedwig related modules (Ankur Garg via sijie)
+
+      BOOKKEEPER-863: Potential resource leak with unclosed LedgerManager in BookieShell (Ted Yu via sijie)
+
+      BOOKKEEPER-802: Bookkeeper protocol documentation (ivank via sijie)
+
+      BOOKKEEPER-862: Add tracing and stats to OrderedSafeExecutor for debugging slow tasks (Leigh Stewart via sijie)
+
+      BOOKKEEPER-866: Fix compile issue when Updating junit to latest release version( 4.12) in the test of  Bookkeeper-server. (Jia Zhai via sijie)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
 
         BOOKKEEPER-848: Use volatile for lastAddConfirmed (Matteo Merli via sijie)
+
+        BOOKKEEPER-760: Don't close PCBC proactively if bookies
+                        disappeared from zookeeper znodes (sijie via fpj)
+
+        BOOKKEEPER-438: Move ledger id generation out of LedgerManager (Tong Yu via sijie)
+
+        BOOKKEEPER-868: Add ADD_ENTRY quorum timeout (Leigh Stewart via sijie)
+
+        BOOKKEEPER-867: New Client API to allow applications pass-in EntryId. (Venkateswararao Jujjuri via sijie)
 
       bookkeeper-server:
 

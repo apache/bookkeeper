@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
 import com.google.protobuf.ByteString;
 
 public class TestFIFODeliveryManager {
-    static Logger logger = LoggerFactory.getLogger(TestFIFODeliveryManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestFIFODeliveryManager.class);
 
     static class TestCallback implements Callback<MessageSeqId> {
         AtomicBoolean success = new AtomicBoolean(false);

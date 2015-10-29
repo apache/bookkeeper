@@ -26,7 +26,6 @@ import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
-import org.apache.hedwig.server.subscriptions.InMemorySubscriptionState;
 import org.apache.hedwig.util.Callback;
 
 /**

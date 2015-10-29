@@ -54,7 +54,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class BookKeeperTestBase extends ZooKeeperTestBase {
-    private static Logger LOG = LoggerFactory.getLogger(BookKeeperTestBase.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BookKeeperTestBase.class);
 
     class TestBookie extends Bookie {
         final long readDelay;

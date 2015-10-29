@@ -550,6 +550,11 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                 readCompletion.cb.readEntryComplete(rc, readCompletion.ledgerId, readCompletion.entryId,
                                                     null, readCompletion.ctx);
             }
+
+            @Override
+            public String toString() {
+                return String.format("ErrorOutReadKey(%s)", key);
+            }
         });
     }
 
@@ -576,6 +581,11 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                 addCompletion.cb.writeComplete(rc, addCompletion.ledgerId, addCompletion.entryId,
                                                addr, addCompletion.ctx);
                 LOG.debug("Invoked callback method: {}", addCompletion.entryId);
+            }
+
+            @Override
+            public String toString() {
+                return String.format("ErrorOutAddKey(%s)", key);
             }
         });
     }
@@ -723,6 +733,13 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                                       type, addr);
                             break;
                     }
+                }
+
+                @Override
+                public String toString() {
+                    return String.format("HandleResponse(Txn=%d, Type=%s, Entry=(%d, %d))",
+                                         header.getTxnId(), header.getOperation(),
+                                         completionValue.ledgerId, completionValue.entryId);
                 }
             });
         }

@@ -35,5 +35,5 @@ h3. Bookie recovery settings
 
 Currently bookie recovery tool needs a digest type and passwd to open ledgers to do recovery. Currently, bookkeeper assumes that all ledgers were created with the same DigestType and Password. In the future, it needs to know for each ledger, what was the DigestType and Password used to create it before opening it.
 
-| @digestType@ | Digest type used to open ledgers from bookkie recovery tool. |
+| @digestType@ | Digest type used to open ledgers from bookie recovery tool. |
 | @passwd@ | Password used to open ledgers from bookie recovery tool. |

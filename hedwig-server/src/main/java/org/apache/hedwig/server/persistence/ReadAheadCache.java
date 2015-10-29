@@ -53,7 +53,7 @@ import com.google.protobuf.ByteString;
 
 public class ReadAheadCache implements PersistenceManager, HedwigJMXService {
 
-    static Logger logger = LoggerFactory.getLogger(ReadAheadCache.class);
+    private static final Logger logger = LoggerFactory.getLogger(ReadAheadCache.class);
 
     protected interface CacheRequest {
         public void performRequest();
@@ -154,8 +154,10 @@ public class ReadAheadCache implements PersistenceManager, HedwigJMXService {
         this.realPersistenceManager = realPersistenceManager;
         this.cfg = cfg;
         numCacheWorkers = cfg.getNumReadAheadCacheThreads();
-        cacheWorkers = new OrderedSafeExecutor(numCacheWorkers,
-                "ReadAheadCacheScheduler");
+        cacheWorkers = OrderedSafeExecutor.newBuilder()
+                .name("ReadAheadCacheScheduler")
+                .numThreads(numCacheWorkers)
+                .build();
         reloadConf(cfg);
     }
 

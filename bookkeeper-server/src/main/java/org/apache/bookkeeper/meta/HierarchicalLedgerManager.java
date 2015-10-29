@@ -23,23 +23,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.AsyncCallback;
-import org.apache.zookeeper.AsyncCallback.StringCallback;
-import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,10 +41,7 @@ import org.slf4j.LoggerFactory;
  * Hierarchical Ledger Manager which manages ledger meta in zookeeper using 2-level hierarchical znodes.
  *
  * <p>
- * Hierarchical Ledger Manager first obtain a global unique id from zookeeper using a EPHEMERAL_SEQUENTIAL
- * znode <i>(ledgersRootPath)/ledgers/idgen/ID-</i>.
- * Since zookeeper sequential counter has a format of %10d -- that is 10 digits with 0 (zero) padding, i.e.
- * "&lt;path&gt;0000000001", HierarchicalLedgerManager splits the generated id into 3 parts (2-4-4):
+ * HierarchicalLedgerManager splits the generated id into 3 parts (2-4-4):
  * <pre>&lt;level1 (2 digits)&gt;&lt;level2 (4 digits)&gt;&lt;level3 (4 digits)&gt;</pre>
  * These 3 parts are used to form the actual ledger node path used to store ledger metadata:
  * <pre>(ledgersRootPath)/level1/level2/L(level3)</pre>
@@ -64,12 +54,8 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
     static final Logger LOG = LoggerFactory.getLogger(HierarchicalLedgerManager.class);
 
     static final String IDGEN_ZNODE = "idgen";
-    static final String IDGENERATION_PREFIX = "/" + IDGEN_ZNODE + "/ID-";
     private static final String MAX_ID_SUFFIX = "9999";
     private static final String MIN_ID_SUFFIX = "0000";
-
-    // Path to generate global id
-    private final String idGenPath;
 
     /**
      * Constructor
@@ -81,83 +67,6 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
      */
     public HierarchicalLedgerManager(AbstractConfiguration conf, ZooKeeper zk) {
         super(conf, zk);
-
-        this.idGenPath = ledgerRootPath + IDGENERATION_PREFIX;
-    }
-
-    @Override
-    public void createLedger(final LedgerMetadata metadata, final GenericCallback<Long> ledgerCb) {
-        ZkUtils.asyncCreateFullPathOptimistic(zk, idGenPath, new byte[0], Ids.OPEN_ACL_UNSAFE,
-            CreateMode.EPHEMERAL_SEQUENTIAL, new StringCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx, final String idPathName) {
-                if (rc != KeeperException.Code.OK.intValue()) {
-                    LOG.error("Could not generate new ledger id",
-                              KeeperException.create(KeeperException.Code.get(rc), path));
-                    ledgerCb.operationComplete(BKException.Code.ZKException, null);
-                    return;
-                }
-                /*
-                 * Extract ledger id from gen path
-                 */
-                long ledgerId;
-                try {
-                    ledgerId = getLedgerIdFromGenPath(idPathName);
-                } catch (IOException e) {
-                    LOG.error("Could not extract ledger-id from id gen path:" + path, e);
-                    ledgerCb.operationComplete(BKException.Code.ZKException, null);
-                    return;
-                }
-                String ledgerPath = getLedgerPath(ledgerId);
-                final long lid = ledgerId;
-                StringCallback scb = new StringCallback() {
-                    @Override
-                    public void processResult(int rc, String path,
-                            Object ctx, String name) {
-                        if (rc != KeeperException.Code.OK.intValue()) {
-                            LOG.error("Could not create node for ledger",
-                                      KeeperException.create(KeeperException.Code.get(rc), path));
-                            ledgerCb.operationComplete(BKException.Code.ZKException, null);
-                        } else {
-                            // update version
-                            metadata.setVersion(new ZkVersion(0));
-                            ledgerCb.operationComplete(BKException.Code.OK, lid);
-                        }
-                    }
-                };
-                ZkUtils.asyncCreateFullPathOptimistic(zk, ledgerPath, metadata.serialize(),
-                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT, scb, null);
-                // delete the znode for id generation
-                scheduler.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        zk.delete(idPathName, -1, new AsyncCallback.VoidCallback() {
-                            @Override
-                            public void processResult(int rc, String path, Object ctx) {
-                                if (rc != KeeperException.Code.OK.intValue()) {
-                                    LOG.warn("Exception during deleting znode for id generation : ",
-                                             KeeperException.create(KeeperException.Code.get(rc), path));
-                                } else {
-                                    LOG.debug("Deleting znode for id generation : {}", idPathName);
-                                }
-                            }
-                        }, null);
-                    }
-                });
-            }
-        }, null);
-    }
-
-    // get ledger id from generation path
-    private long getLedgerIdFromGenPath(String nodeName) throws IOException {
-        long ledgerId;
-        try {
-            String parts[] = nodeName.split(IDGENERATION_PREFIX);
-            ledgerId = Long.parseLong(parts[parts.length - 1]);
-        } catch (NumberFormatException e) {
-            throw new IOException(e);
-        }
-        return ledgerId;
     }
 
     @Override
@@ -304,7 +213,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
          *          Callback to process element of list when success
          * @param finalCb
          *          Final callback to be called after all elements in the list are processed
-         * @param contxt
+         * @param context
          *          Context of final callback
          * @param successRc
          *          RC passed to final callback on success

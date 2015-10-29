@@ -132,4 +132,9 @@ class ReadEntryProcessor extends PacketProcessorBase {
                          requestProcessor.readRequestStats);
         }
     }
+
+    @Override
+    public String toString() {
+        return String.format("ReadEntry(%d, %d)", request.getLedgerId(), request.getEntryId());
+    }
 }

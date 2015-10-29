@@ -89,4 +89,9 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
         }
         cb.deleteComplete(rc, this.ctx);
     }
+
+    @Override
+    public String toString() {
+        return String.format("LedgerDeleteOp(%d)", ledgerId);
+    }
 }

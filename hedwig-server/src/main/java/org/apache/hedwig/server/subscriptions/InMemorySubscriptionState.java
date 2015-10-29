@@ -17,11 +17,9 @@
  */
 package org.apache.hedwig.server.subscriptions;
 
-import java.util.HashMap;
+
 import java.util.Map;
-
 import com.google.protobuf.ByteString;
-
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.hedwig.protocol.PubSubProtocol.MessageSeqId;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;

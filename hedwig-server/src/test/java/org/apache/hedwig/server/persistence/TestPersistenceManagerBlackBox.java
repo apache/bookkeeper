@@ -41,7 +41,7 @@ public abstract class TestPersistenceManagerBlackBox {
     protected PersistenceManager persistenceManager;
     protected int NUM_MESSAGES_TO_TEST = 5;
     protected int NUM_TOPICS_TO_TEST = 5;
-    static Logger logger = LoggerFactory.getLogger(TestPersistenceManagerBlackBox.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestPersistenceManagerBlackBox.class);
     TestCallback testCallback = new TestCallback();
 
     RuntimeException failureException;

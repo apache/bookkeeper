@@ -24,7 +24,7 @@ p. See "System Requirements":./bookkeeperConfig.html#bk_sysReqin the Admin guide
 
 h1. Download
 
-p. BookKeeper trunk can be downloaded from subversion. See "Version Control:http://bookkeeper.apache.org/svn.html.
+p. BookKeeper trunk can be downloaded from subversion. See "Version Control":http://bookkeeper.apache.org/svn.html.
 
 h1. LocalBookKeeper
 

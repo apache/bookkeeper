@@ -18,20 +18,13 @@
 package org.apache.hedwig.server.meta;
 
 import java.io.Closeable;
-import java.io.IOException;
-import java.util.Map;
 
 import com.google.protobuf.ByteString;
 
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.hedwig.protocol.PubSubProtocol.LedgerRanges;
-import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionState;
-import org.apache.hedwig.server.common.ServerConfiguration;
-import org.apache.hedwig.server.subscriptions.InMemorySubscriptionState;
 import org.apache.hedwig.server.topics.HubInfo;
 import org.apache.hedwig.util.Callback;
-import org.apache.zookeeper.ZooKeeper;
 
 /**
  * Manage topic ownership

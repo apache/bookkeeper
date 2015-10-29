@@ -36,13 +36,15 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
 public class BookieBenchmark extends AbstractBenchmark {
 
-    static final Logger logger = LoggerFactory.getLogger(BookkeeperBenchmark.class);
+    private static final Logger logger = LoggerFactory.getLogger(BookkeeperBenchmark.class);
 
     BookieClient bkc;
     BookieSocketAddress addr;
     ClientSocketChannelFactory channelFactory;
-    OrderedSafeExecutor executor = new OrderedSafeExecutor(1, "BookieBenchmarkScheduler");
-
+    OrderedSafeExecutor executor = OrderedSafeExecutor.newBuilder()
+            .name("BookieBenchmarkScheduler")
+            .numThreads(1)
+            .build();
 
     public BookieBenchmark(String bookieHostPort)  throws Exception {
         channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());

@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
 import com.google.protobuf.ByteString;
+
 import org.apache.hedwig.exceptions.PubSubException;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionData;
 import org.apache.hedwig.server.common.ServerConfiguration;
@@ -34,13 +35,16 @@ import org.apache.hedwig.server.topics.TopicManager;
 import org.apache.hedwig.util.Callback;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * MetaManager-based subscription manager.
  */
 public class MMSubscriptionManager extends AbstractSubscriptionManager {
 
-    SubscriptionDataManager subManager;
+	private static final Logger logger = LoggerFactory.getLogger(MMSubscriptionManager.class);
+	SubscriptionDataManager subManager;
 
     public MMSubscriptionManager(ServerConfiguration cfg,
                                  MetadataManagerFactory metaManagerFactory,

@@ -30,7 +30,7 @@ import org.apache.hedwig.util.ConcurrencyUtils;
 
 public abstract class AbstractBenchmark {
 
-    static final Logger logger = LoggerFactory.getLogger(AbstractBenchmark.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractBenchmark.class);
 
     AtomicLong totalLatency = new AtomicLong();
     LinkedBlockingQueue<Boolean> doneSignalQueue = new LinkedBlockingQueue<Boolean>();

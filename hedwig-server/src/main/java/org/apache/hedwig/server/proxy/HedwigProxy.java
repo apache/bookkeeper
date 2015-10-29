@@ -48,7 +48,7 @@ import org.apache.hedwig.server.netty.UmbrellaHandler;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class HedwigProxy {
-    static final Logger logger = LoggerFactory.getLogger(HedwigProxy.class);
+    private static final Logger logger = LoggerFactory.getLogger(HedwigProxy.class);
 
     HedwigClient client;
     ServerSocketChannelFactory serverSocketChannelFactory;

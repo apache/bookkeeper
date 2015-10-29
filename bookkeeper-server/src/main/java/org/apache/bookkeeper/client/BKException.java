@@ -94,6 +94,10 @@ public abstract class BKException extends Exception {
             return new BKClientClosedException();
         case Code.IllegalOpException:
             return new BKIllegalOpException();
+        case Code.AddEntryQuorumTimeoutException:
+            return new BKAddEntryQuorumTimeoutException();
+        case Code.DuplicateEntryIdException:
+            return new BKDuplicateEntryIdException();
         default:
             return new BKUnexpectedConditionException();
         }
@@ -124,6 +128,9 @@ public abstract class BKException extends Exception {
         int MetadataVersionException = -17;
         int MetaStoreException = -18;
         int ClientClosedException = -19;
+        int LedgerExistException = -20;
+        int AddEntryQuorumTimeoutException = -21;
+        int DuplicateEntryIdException = -22;
 
         int IllegalOpException = -100;
         int LedgerFencedException = -101;
@@ -170,6 +177,8 @@ public abstract class BKException extends Exception {
             return "Error while using ZooKeeper";
         case Code.MetaStoreException:
             return "Error while using MetaStore";
+        case Code.LedgerExistException:
+            return "Ledger existed";
         case Code.LedgerRecoveryException:
             return "Error while recovering ledger";
         case Code.LedgerClosedException:
@@ -186,6 +195,8 @@ public abstract class BKException extends Exception {
             return "Bookie protocol version on server is incompatible with client";
         case Code.MetadataVersionException:
             return "Bad ledger metadata version";
+        case Code.DuplicateEntryIdException:
+            return "Attempted to add Duplicate entryId";
         case Code.LedgerFencedException:
             return "Ledger has been fenced off. Some other client must have opened it to read";
         case Code.UnauthorizedAccessException:
@@ -200,6 +211,8 @@ public abstract class BKException extends Exception {
             return "BookKeeper client is closed";
         case Code.IllegalOpException:
             return "Invalid operation";
+        case Code.AddEntryQuorumTimeoutException:
+            return "Add entry quorum wait timed out";
         default:
             return "Unexpected condition";
         }
@@ -244,6 +257,18 @@ public abstract class BKException extends Exception {
     public static class BKIllegalOpException extends BKException {
         public BKIllegalOpException() {
             super(Code.IllegalOpException);
+        }
+    }
+
+    public static class BKAddEntryQuorumTimeoutException extends BKException {
+        public BKAddEntryQuorumTimeoutException() {
+            super(Code.AddEntryQuorumTimeoutException);
+        }
+    }
+
+    public static class BKDuplicateEntryIdException extends BKException {
+        public BKDuplicateEntryIdException() {
+            super(Code.DuplicateEntryIdException);
         }
     }
 
@@ -298,6 +323,12 @@ public abstract class BKException extends Exception {
     public static class MetaStoreException extends BKException {
         public MetaStoreException() {
             super(Code.MetaStoreException);
+        }
+    }
+
+    public static class BKLedgerExistException extends BKException {
+        public BKLedgerExistException() {
+            super(Code.LedgerExistException);
         }
     }
 

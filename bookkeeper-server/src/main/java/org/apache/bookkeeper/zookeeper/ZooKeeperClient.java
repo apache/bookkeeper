@@ -228,7 +228,6 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
             ZooKeeperWatcherBase watcherManager =
                     null == watchers ? new ZooKeeperWatcherBase(sessionTimeoutMs, watcherStatsLogger) :
                             new ZooKeeperWatcherBase(sessionTimeoutMs, watchers, watcherStatsLogger);
-            // Client the client
             ZooKeeperClient client = new ZooKeeperClient(
                     connectString,
                     sessionTimeoutMs,
@@ -431,7 +430,6 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
     }
 
     @Override
-    @Deprecated
     public Transaction transaction() {
         // since there is no reference about which client that the transaction could use
         // so just use ZooKeeper instance directly.

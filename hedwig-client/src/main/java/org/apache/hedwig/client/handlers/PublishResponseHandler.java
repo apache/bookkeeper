@@ -20,17 +20,15 @@ package org.apache.hedwig.client.handlers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.jboss.netty.channel.Channel;
-
 import org.apache.hedwig.client.conf.ClientConfiguration;
 import org.apache.hedwig.client.data.PubSubData;
 import org.apache.hedwig.client.netty.HChannelManager;
 import org.apache.hedwig.exceptions.PubSubException.ServiceDownException;
-import org.apache.hedwig.protocol.PubSubProtocol;
 import org.apache.hedwig.protocol.PubSubProtocol.PubSubResponse;
 
 public class PublishResponseHandler extends AbstractResponseHandler {
 
-    private static Logger logger = LoggerFactory.getLogger(PublishResponseHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(PublishResponseHandler.class);
 
     public PublishResponseHandler(ClientConfiguration cfg,
                                   HChannelManager channelManager) {

@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
  */
 public class TestBackwardCompat {
 
-    private static Logger logger = LoggerFactory.getLogger(TestBackwardCompat.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestBackwardCompat.class);
 
     static final int CONSUMEINTERVAL = 5;
     static ZooKeeperUtil zkUtil = new ZooKeeperUtil();

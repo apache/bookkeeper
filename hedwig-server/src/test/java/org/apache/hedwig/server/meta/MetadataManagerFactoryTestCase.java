@@ -27,7 +27,6 @@ import org.apache.bookkeeper.metastore.InMemoryMetaStore;
 import org.apache.hedwig.server.common.ServerConfiguration;
 import org.apache.hedwig.server.meta.MetadataManagerFactory;
 import org.apache.hedwig.server.meta.ZkMetadataManagerFactory;
-import org.apache.hedwig.util.Callback;
 import org.apache.hedwig.zookeeper.ZooKeeperTestBase;
 
 import org.junit.After;
@@ -41,7 +40,7 @@ import org.slf4j.LoggerFactory;
 
 @RunWith(Parameterized.class)
 public abstract class MetadataManagerFactoryTestCase extends ZooKeeperTestBase {
-    static Logger LOG = LoggerFactory.getLogger(MetadataManagerFactoryTestCase.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MetadataManagerFactoryTestCase.class);
 
     protected MetadataManagerFactory metadataManagerFactory;
     protected ServerConfiguration conf;

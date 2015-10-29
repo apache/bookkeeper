@@ -48,7 +48,7 @@ import static org.junit.Assert.*;
 
 public class TestBookkeeperPersistenceManagerWhiteBox {
 
-    protected static Logger logger =
+    protected static final Logger logger =
         LoggerFactory.getLogger(TestBookkeeperPersistenceManagerWhiteBox.class);
 
     BookKeeperTestBase bktb;

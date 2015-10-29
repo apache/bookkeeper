@@ -34,7 +34,7 @@ import org.apache.hedwig.util.HedwigSocketAddress;
  */
 public abstract class PubSubServerStandAloneTestBase {
 
-    protected static Logger logger = LoggerFactory.getLogger(PubSubServerStandAloneTestBase.class);
+    protected static final Logger logger = LoggerFactory.getLogger(PubSubServerStandAloneTestBase.class);
 
     protected class StandAloneServerConfiguration extends ServerConfiguration {
         final int port = PortManager.nextFreePort();

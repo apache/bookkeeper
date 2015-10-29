@@ -29,8 +29,11 @@ import org.apache.hedwig.protocol.PubSubProtocol.Message;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest.CreateOrAttach;
 import org.apache.hedwig.util.Callback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BenchmarkPublisher extends BenchmarkWorker {
+    private static final Logger logger = LoggerFactory.getLogger(BenchmarkPublisher.class);
     Publisher publisher;
     Subscriber subscriber;
     int msgSize;

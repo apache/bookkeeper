@@ -412,6 +412,10 @@ public class LedgerFragmentReplicator {
                                             newBookie);
                                 }
                             }
+                            @Override
+                            public String toString() {
+                                return String.format("ReReadMetadataForUpdateEnsemble(%d)", lh.getId());
+                            }
                         });
                 return;
             } else if (rc != BKException.Code.OK) {

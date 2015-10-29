@@ -92,7 +92,7 @@ import org.apache.hedwig.zookeeper.SafeAsyncCallback;
 
 public class PubSubServer {
 
-    static Logger logger = LoggerFactory.getLogger(PubSubServer.class);
+    private static final Logger logger = LoggerFactory.getLogger(PubSubServer.class);
 
     private static final String JMXNAME_PREFIX = "PubSubServer_";
 

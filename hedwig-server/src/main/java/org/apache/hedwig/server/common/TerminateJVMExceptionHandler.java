@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TerminateJVMExceptionHandler implements Thread.UncaughtExceptionHandler {
-    static Logger logger = LoggerFactory.getLogger(TerminateJVMExceptionHandler.class);
+    private static Logger logger = LoggerFactory.getLogger(TerminateJVMExceptionHandler.class);
 
     @Override
     public void uncaughtException(Thread t, Throwable e) {

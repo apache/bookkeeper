@@ -58,7 +58,7 @@ import static org.apache.hedwig.util.VarArgs.va;
  */
 public class SimpleHChannelManager extends AbstractHChannelManager {
 
-    private static Logger logger = LoggerFactory.getLogger(SimpleHChannelManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(SimpleHChannelManager.class);
 
     // Concurrent Map to store the cached Channel connections on the client side
     // to a server host for a given Topic + SubscriberId combination. For each

@@ -41,7 +41,7 @@ import org.apache.hedwig.util.Callback;
 
 public class ProxyStartDeliveryHandler implements Handler {
 
-    static final Logger logger = LoggerFactory.getLogger(ProxyStartDeliveryHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(ProxyStartDeliveryHandler.class);
 
     Subscriber subscriber;
     ChannelTracker tracker;

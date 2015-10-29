@@ -35,7 +35,7 @@ import org.apache.hedwig.util.HedwigSocketAddress;
 
 public class WriteCallback implements ChannelFutureListener {
 
-    private static Logger logger = LoggerFactory.getLogger(WriteCallback.class);
+    private static final Logger logger = LoggerFactory.getLogger(WriteCallback.class);
 
     // Private member variables
     private PubSubData pubSubData;

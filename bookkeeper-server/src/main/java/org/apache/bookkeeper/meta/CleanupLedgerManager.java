@@ -98,15 +98,15 @@ public class CleanupLedgerManager implements LedgerManager {
     }
 
     @Override
-    public void createLedger(LedgerMetadata metadata,
-                             GenericCallback<Long> cb) {
+    public void createLedgerMetadata(long lid, LedgerMetadata metadata,
+                                     GenericCallback<Void> cb) {
         closeLock.readLock().lock();
         try {
             if (closed) {
                 cb.operationComplete(BKException.Code.ClientClosedException, null);
                 return;
             }
-            underlying.createLedger(metadata, new CleanupGenericCallback<Long>(cb));
+            underlying.createLedgerMetadata(lid, metadata, new CleanupGenericCallback<Void>(cb));
         } finally {
             closeLock.readLock().unlock();
         }

@@ -35,7 +35,7 @@ public class BookKeeperClientZKSessionExpiry extends BookKeeperClusterTestCase {
         super(4);
     }
 
-    @Test(timeout=600000)
+    @Test(timeout=60000)
     public void testSessionLossWhileWriting() throws Exception {
 
         Thread expiryThread = new Thread() {

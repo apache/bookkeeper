@@ -39,7 +39,7 @@ import org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions;
 import org.apache.hedwig.util.Callback;
 
 public class BenchmarkSubscriber extends BenchmarkWorker implements Callable<Void> {
-    static final Logger logger = LoggerFactory.getLogger(BenchmarkSubscriber.class);
+    private static final Logger logger = LoggerFactory.getLogger(BenchmarkSubscriber.class);
     Subscriber subscriber;
     ByteString subId;
 

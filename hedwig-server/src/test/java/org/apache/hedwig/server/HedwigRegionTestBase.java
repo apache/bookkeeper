@@ -44,7 +44,7 @@ import org.apache.bookkeeper.test.PortManager;
  */
 public abstract class HedwigRegionTestBase {
 
-    protected static Logger logger = LoggerFactory.getLogger(HedwigRegionTestBase.class);
+    protected static final Logger logger = LoggerFactory.getLogger(HedwigRegionTestBase.class);
 
     // BookKeeper variables
     // Default number of bookie servers to setup. Extending classes

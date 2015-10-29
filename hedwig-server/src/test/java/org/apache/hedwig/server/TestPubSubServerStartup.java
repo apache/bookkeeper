@@ -40,10 +40,11 @@ import org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.apache.zookeeper.server.ZooKeeperServer;
 import org.apache.zookeeper.test.ClientBase;
 import org.junit.Test;
+import org.apache.hedwig.util.FileUtils;
 
 public class TestPubSubServerStartup {
 
-    private static Logger logger = LoggerFactory.getLogger(TestPubSubServerStartup.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestPubSubServerStartup.class);
 
     /**
      * Start-up zookeeper + pubsubserver reading from a config URL. Then stop
@@ -78,9 +79,7 @@ public class TestPubSubServerStartup {
         writeStringToFile(hedwigParams, hedwigConfigFile);
 
         ClientBase.setupTestEnv();
-        File zkTmpDir = File.createTempFile("zookeeper", "test");
-        zkTmpDir.delete();
-        zkTmpDir.mkdir();
+        File zkTmpDir = FileUtils.createTempDirectory("zookeeper", "test");
 
         ZooKeeperServer zks = new ZooKeeperServer(zkTmpDir, zkTmpDir, zkPort);
 

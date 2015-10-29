@@ -46,7 +46,7 @@ import com.google.protobuf.ByteString;
  */
 public class MMTopicManager extends AbstractTopicManager implements TopicManager {
 
-    static Logger logger = LoggerFactory.getLogger(MMTopicManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(MMTopicManager.class);
 
     // topic ownership manager
     private final TopicOwnershipManager mm;

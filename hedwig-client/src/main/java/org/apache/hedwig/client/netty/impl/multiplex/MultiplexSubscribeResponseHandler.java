@@ -43,7 +43,7 @@ import static org.apache.hedwig.util.VarArgs.va;
 
 public class MultiplexSubscribeResponseHandler extends AbstractSubscribeResponseHandler {
 
-    private static Logger logger =
+    private static final Logger logger =
         LoggerFactory.getLogger(MultiplexSubscribeResponseHandler.class);
 
     // the underlying subscription channel
