@@ -129,6 +129,10 @@ class ReadEntryProcessor extends PacketProcessorBase {
         } catch (BookieException e) {
             LOG.error("Unauthorized access to ledger " + read.getLedgerId(), e);
             errorCode = BookieProtocol.EUA;
+        } catch (Throwable t) {
+            LOG.error("Unexpected exception reading at {}:{} : {}",
+                    new Object[] { read.getLedgerId(), read.getEntryId(), t.getMessage(), t });
+            errorCode = BookieProtocol.EBADREQ;
         }
 
         if (LOG.isTraceEnabled()) {
