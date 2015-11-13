@@ -1,4 +1,4 @@
-Release 4.3.2 - 2015-09-25
+Release 4.3.2 - 2015-11-12
 
   Backward compatible changes:
 
@@ -8,6 +8,9 @@ Release 4.3.2 - 2015-09-25
         BOOKKEEPER-695: Some entry logs are not removed from the bookie storage (Matteo Merli via sijie)
 
     IMPROVEMENTS:
+      bookkeeper-client:
+
+        BOOKKEEPER-438: Move ledger id generation out of LedgerManager (sijie via mmerli)
 
 Release 4.3.1 - 2015-05-19
 
@@ -60,8 +63,6 @@ Release 4.3.1 - 2015-05-19
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
-
-        BOOKKEEPER-438: Move ledger id generation out of LedgerManager (Tong Yu via sijie)
 
       bookkeeper-server:
 
