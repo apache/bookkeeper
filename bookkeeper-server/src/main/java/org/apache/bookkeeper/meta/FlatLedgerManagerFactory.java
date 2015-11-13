@@ -64,6 +64,11 @@ public class FlatLedgerManagerFactory extends LedgerManagerFactory {
     }
 
     @Override
+    public LedgerIdGenerator newLedgerIdGenerator() {
+        return new ZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), null);
+    }
+
+    @Override
     public LedgerManager newLedgerManager() {
         return new FlatLedgerManager(conf, zk);
     }

@@ -178,7 +178,7 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     public String getZkAvailableBookiesPath() {
         return getZkLedgersRootPath() + "/" + AVAILABLE_NODE;
     }
-    
+
     /**
      * Set the max entries to keep in fragment for re-replication. If fragment
      * has more entries than this count, then the original fragment will be

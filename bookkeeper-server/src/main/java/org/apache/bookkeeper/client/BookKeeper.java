@@ -33,6 +33,7 @@ import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.CleanupLedgerManager;
+import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookieClient;
@@ -98,6 +99,7 @@ public class BookKeeper {
     // Ledger manager responsible for how to store ledger meta data
     final LedgerManagerFactory ledgerManagerFactory;
     final LedgerManager ledgerManager;
+    final LedgerIdGenerator ledgerIdGenerator;
 
     // Ensemble Placement Policy
     final EnsemblePlacementPolicy placementPolicy;
@@ -221,6 +223,7 @@ public class BookKeeper {
 
         ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, zk);
         ledgerManager = new CleanupLedgerManager(ledgerManagerFactory.newLedgerManager());
+        ledgerIdGenerator = ledgerManagerFactory.newLedgerIdGenerator();
 
         ownChannelFactory = true;
         ownZKHandle = true;
@@ -307,6 +310,7 @@ public class BookKeeper {
 
         ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, zk);
         ledgerManager = new CleanupLedgerManager(ledgerManagerFactory.newLedgerManager());
+        ledgerIdGenerator = ledgerManagerFactory.newLedgerIdGenerator();
     }
 
     private EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf)
@@ -333,6 +337,10 @@ public class BookKeeper {
 
     LedgerManager getLedgerManager() {
         return ledgerManager;
+    }
+
+    LedgerIdGenerator getLedgerIdGenerator() {
+        return ledgerIdGenerator;
     }
 
     /**
@@ -811,6 +819,7 @@ public class BookKeeper {
             // Close ledger manage so all pending metadata requests would be failed
             // which will reject any incoming metadata requests.
             ledgerManager.close();
+            ledgerIdGenerator.close();
             ledgerManagerFactory.uninitialize();
         } catch (IOException ie) {
             LOG.error("Failed to close ledger manager : ", ie);

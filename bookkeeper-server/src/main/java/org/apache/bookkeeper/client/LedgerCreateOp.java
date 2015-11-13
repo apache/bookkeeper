@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -38,13 +39,14 @@ import org.slf4j.LoggerFactory;
  * Encapsulates asynchronous ledger create operation
  *
  */
-class LedgerCreateOp implements GenericCallback<Long> {
+class LedgerCreateOp implements GenericCallback<Void> {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerCreateOp.class);
 
     CreateCallback cb;
     LedgerMetadata metadata;
     LedgerHandle lh;
+    Long ledgerId;
     Object ctx;
     byte[] passwd;
     BookKeeper bk;
@@ -59,12 +61,14 @@ class LedgerCreateOp implements GenericCallback<Long> {
      *       BookKeeper object
      * @param ensembleSize
      *       ensemble size
-     * @param quorumSize
-     *       quorum size
+     * @param writeQuorumSize
+     *       write quorum size
+     * @param ackQuorumSize
+     *       ack quorum size
      * @param digestType
      *       digest type, either MAC or CRC32
      * @param passwd
-     *       passowrd
+     *       password
      * @param cb
      *       callback implementation
      * @param ctx
@@ -110,16 +114,37 @@ class LedgerCreateOp implements GenericCallback<Long> {
          */
         metadata.addEnsemble(0L, ensemble);
 
-        // create a ledger with metadata
-        bk.getLedgerManager().createLedger(metadata, this);
+        createLedger();
+    }
+
+    void createLedger() {
+        // generate a ledger id and then create the ledger with metadata
+        final LedgerIdGenerator ledgerIdGenerator = bk.getLedgerIdGenerator();
+        ledgerIdGenerator.generateLedgerId(new GenericCallback<Long>() {
+            @Override
+            public void operationComplete(int rc, Long ledgerId) {
+                if (BKException.Code.OK != rc) {
+                    createComplete(rc, null);
+                    return;
+                }
+
+                LedgerCreateOp.this.ledgerId = ledgerId;
+                // create a ledger with metadata
+                bk.getLedgerManager().createLedgerMetadata(ledgerId, metadata, LedgerCreateOp.this);
+            }
+        });
     }
 
     /**
      * Callback when created ledger.
      */
     @Override
-    public void operationComplete(int rc, Long ledgerId) {
-        if (BKException.Code.OK != rc) {
+    public void operationComplete(int rc, Void result) {
+        if (BKException.Code.LedgerExistException == rc) {
+            // retry to generate a new ledger id
+            createLedger();
+            return;
+        } else if (BKException.Code.OK != rc) {
             createComplete(rc, null);
             return;
         }

@@ -21,20 +21,19 @@
 
 package org.apache.bookkeeper.meta;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.SnapshotMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test case to run over serveral ledger managers
@@ -45,6 +44,7 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
 
     LedgerManagerFactory ledgerManagerFactory;
     LedgerManager ledgerManager = null;
+    LedgerIdGenerator ledgerIdGenerator = null;
     SnapshotMap<Long, Boolean> activeLedgers = null;
 
     public LedgerManagerTestCase(Class<? extends LedgerManagerFactory> lmFactoryCls) {
@@ -58,6 +58,13 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
             ledgerManager = ledgerManagerFactory.newLedgerManager();
         }
         return ledgerManager;
+    }
+
+    public LedgerIdGenerator getLedgerIdGenerator() throws IOException {
+        if (null == ledgerIdGenerator) {
+            ledgerIdGenerator = ledgerManagerFactory.newLedgerIdGenerator();
+        }
+        return ledgerIdGenerator;
     }
 
     @Parameters

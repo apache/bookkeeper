@@ -61,6 +61,8 @@ Release 4.3.1 - 2015-05-19
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
 
+        BOOKKEEPER-438: Move ledger id generation out of LedgerManager (Tong Yu via sijie)
+
       bookkeeper-server:
 
         BOOKKEEPER-833: EntryLogId and EntryLogLimit should not be larger than Integer.MAX_VALUE (sijie)
