@@ -488,9 +488,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             this.readLACSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
         }
 
-
         // initialize bookie client
-        this.bookieClient = new BookieClient(conf, this.eventLoopGroup, this.mainWorkerPool, statsLogger);
+        this.bookieClient = new BookieClient(conf, this.eventLoopGroup, this.mainWorkerPool,
+                                             scheduler, statsLogger);
         this.bookieWatcher = new BookieWatcher(conf, this.placementPolicy, regClient);
         if (conf.getDiskWeightBasedPlacementEnabled()) {
             LOG.info("Weighted ledger placement enabled");

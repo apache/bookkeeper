@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -103,6 +104,7 @@ public class LedgerHandle implements WriteHandle {
     final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
     final boolean enableParallelRecoveryRead;
     final int recoveryReadBatchSize;
+    ScheduledFuture<?> timeoutFuture = null;
 
     /**
      * Invalid entry id. This value is returned from methods which
@@ -182,6 +184,13 @@ public class LedgerHandle implements WriteHandle {
                                               }
                                           });
         initializeExplicitLacFlushPolicy();
+
+        if (bk.getConf().getAddEntryQuorumTimeout() > 0) {
+            this.timeoutFuture = bk.scheduler.scheduleAtFixedRate(() -> monitorPendingAddOps(),
+                                                                  bk.getConf().getTimeoutMonitorIntervalSec(),
+                                                                  bk.getConf().getTimeoutMonitorIntervalSec(),
+                                                                  TimeUnit.SECONDS);
+        }
     }
 
     protected void initializeExplicitLacFlushPolicy() {
@@ -335,6 +344,9 @@ public class LedgerHandle implements WriteHandle {
         SyncCloseCallback callback = new SyncCloseCallback(result);
         asyncClose(callback, null);
         explicitLacFlushPolicy.stopExplicitLacFlush();
+        if (timeoutFuture != null) {
+            timeoutFuture.cancel(false);
+        }
         return result;
     }
 
@@ -1369,6 +1381,16 @@ public class LedgerHandle implements WriteHandle {
         }
         LOG.error("Closing ledger {} due to error {}", ledgerId, rc);
         asyncCloseInternal(NoopCloseCallback.instance, null, rc);
+    }
+
+    void monitorPendingAddOps() {
+        int timedOut = 0;
+        for (PendingAddOp op : pendingAddOps) {
+            if (op.maybeTimeout()) {
+                timedOut++;
+            }
+        }
+        LOG.info("Timed out {} add ops", timedOut);
     }
 
     void errorOutPendingAdds(int rc) {

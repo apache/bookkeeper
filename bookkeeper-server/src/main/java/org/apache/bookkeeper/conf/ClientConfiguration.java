@@ -88,6 +88,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected static final String ADD_ENTRY_TIMEOUT_SEC = "addEntryTimeoutSec";
     protected static final String ADD_ENTRY_QUORUM_TIMEOUT_SEC = "addEntryQuorumTimeoutSec";
     protected static final String READ_ENTRY_TIMEOUT_SEC = "readEntryTimeoutSec";
+    protected static final String TIMEOUT_MONITOR_INTERVAL_SEC = "timeoutMonitorIntervalSec";
     protected static final String TIMEOUT_TASK_INTERVAL_MILLIS = "timeoutTaskIntervalMillis";
     protected static final String EXPLICIT_LAC_INTERVAL = "explicitLacInterval";
     protected static final String PCBC_TIMEOUT_TIMER_TICK_DURATION_MS = "pcbcTimeoutTimerTickDurationMs";
@@ -678,11 +679,28 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get the interval between successive executions of the PerChannelBookieClient's
-     * TimeoutTask. This value is in milliseconds. Every X milliseconds, the timeout task
-     * will be executed and it will error out entries that have timed out.
+     * Get the interval between successive executions of the operation timeout monitor. This value is in seconds. Every
+     * X seconds, the timeout monitor will be executed and it will error out entries that have timed out.
+     *
+     * @return the interval at which request timeouts will be checked
+     */
+    public long getTimeoutMonitorIntervalSec() {
+        return getLong(TIMEOUT_MONITOR_INTERVAL_SEC,
+                Math.max(Math.min(getAddEntryTimeout(), getReadEntryTimeout()) / 2, 1));
+    }
+
+    public ClientConfiguration setTimeoutMonitorIntervalSec(long timeoutInterval) {
+        setProperty(TIMEOUT_MONITOR_INTERVAL_SEC, Long.toString(timeoutInterval));
+        return this;
+    }
+
+    /**
+     * Get the interval between successive executions of the PerChannelBookieClient's TimeoutTask. This value is in
+     * milliseconds. Every X milliseconds, the timeout task will be executed and it will error out entries that have
+     * timed out.
      *
      * <p>We do it more aggressive to not accumulate pending requests due to slow responses.
+     *
      * @return the interval at which request timeouts will be checked
      */
     @Deprecated
@@ -729,6 +747,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      *
      * @return tick duration in milliseconds
      */
+    @Deprecated
     public long getPCBCTimeoutTimerTickDurationMs() {
         return getLong(PCBC_TIMEOUT_TIMER_TICK_DURATION_MS, 100);
     }
@@ -745,6 +764,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      *          tick duration in milliseconds.
      * @return client configuration.
      */
+    @Deprecated
     public ClientConfiguration setPCBCTimeoutTimerTickDurationMs(long tickDuration) {
         setProperty(PCBC_TIMEOUT_TIMER_TICK_DURATION_MS, tickDuration);
         return this;
@@ -759,6 +779,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      *
      * @return number of ticks that used for timeout timer.
      */
+    @Deprecated
     public int getPCBCTimeoutTimerNumTicks() {
         return getInt(PCBC_TIMEOUT_TIMER_NUM_TICKS, 1024);
     }
@@ -775,6 +796,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      *          number of ticks that used for timeout timer.
      * @return client configuration.
      */
+    @Deprecated
     public ClientConfiguration setPCBCTimeoutTimerNumTicks(int numTicks) {
         setProperty(PCBC_TIMEOUT_TIMER_NUM_TICKS, numTicks);
         return this;
