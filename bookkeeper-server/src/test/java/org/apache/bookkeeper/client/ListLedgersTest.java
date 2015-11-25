@@ -42,11 +42,11 @@ public class ListLedgersTest extends BaseTestCase {
 
     @Test(timeout = 60000)
     public void testListLedgers()
-            throws Exception {
+    throws Exception {
         int numOfLedgers = 10;
 
         ClientConfiguration conf = new ClientConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString());
+        .setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookKeeper bkc = new BookKeeper(conf);
         for (int i = 0; i < numOfLedgers; i++) {
@@ -69,9 +69,9 @@ public class ListLedgersTest extends BaseTestCase {
 
     @Test(timeout = 60000)
     public void testEmptyList()
-            throws Exception {
+    throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString());
+        .setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookKeeperAdmin admin = new BookKeeperAdmin(zkUtil.
                 getZooKeeperConnectString());
@@ -82,11 +82,11 @@ public class ListLedgersTest extends BaseTestCase {
 
     @Test(timeout = 60000)
     public void testRemoveNotSupported()
-            throws Exception {
+    throws Exception {
         int numOfLedgers = 1;
 
         ClientConfiguration conf = new ClientConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString());
+        .setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookKeeper bkc = new BookKeeper(conf);
         for (int i = 0; i < numOfLedgers; i++) {
@@ -108,7 +108,7 @@ public class ListLedgersTest extends BaseTestCase {
         Assert.fail("Remove is not supported, we shouln't have reached this point");
 
     }
-
+    
     @Test(timeout = 60000)
     public void testCtimeRecorded()
             throws Exception {
