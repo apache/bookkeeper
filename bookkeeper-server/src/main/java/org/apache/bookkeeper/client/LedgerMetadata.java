@@ -66,6 +66,7 @@ public class LedgerMetadata {
     private int ackQuorumSize;
     private long length;
     private long lastEntryId;
+    private long ctime;
 
     private LedgerMetadataFormat.State state;
     private SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles =
@@ -82,6 +83,7 @@ public class LedgerMetadata {
         this.ensembleSize = ensembleSize;
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
+        this.ctime = System.currentTimeMillis();
 
         /*
          * It is set in PendingReadOp.readEntryComplete, and
@@ -104,6 +106,7 @@ public class LedgerMetadata {
     LedgerMetadata(LedgerMetadata other) {
         this.ensembleSize = other.ensembleSize;
         this.writeQuorumSize = other.writeQuorumSize;
+        this.ctime = other.ctime;
         this.ackQuorumSize = other.ackQuorumSize;
         this.length = other.length;
         this.lastEntryId = other.lastEntryId;
@@ -111,7 +114,7 @@ public class LedgerMetadata {
         this.state = other.state;
         this.version = other.version;
         this.hasPassword = other.hasPassword;
-        this.digestType = other.digestType;
+        this.digestType = other.digestType;        
         this.password = new byte[other.password.length];
         System.arraycopy(other.password, 0, this.password, 0, other.password.length);
         // copy the ensembles
@@ -149,6 +152,14 @@ public class LedgerMetadata {
     public int getWriteQuorumSize() {
         return writeQuorumSize;
     }
+
+    /**
+     * Get the creation timestamp of the ledger
+     * @return 
+     */
+    public long getCtime() {
+        return ctime;
+    }        
 
     public int getAckQuorumSize() {
         return ackQuorumSize;
@@ -255,7 +266,7 @@ public class LedgerMetadata {
         LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
         builder.setQuorumSize(writeQuorumSize).setAckQuorumSize(ackQuorumSize)
             .setEnsembleSize(ensembleSize).setLength(length)
-            .setState(state).setLastEntryId(lastEntryId);
+            .setState(state).setLastEntryId(lastEntryId).setCtime(ctime);
 
         if (hasPassword) {
             builder.setDigestType(digestType).setPassword(ByteString.copyFrom(password));
@@ -351,7 +362,8 @@ public class LedgerMetadata {
         LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
         TextFormat.merge(reader, builder);
         LedgerMetadataFormat data = builder.build();
-        lc.writeQuorumSize = data.getQuorumSize();
+        lc.writeQuorumSize = data.getQuorumSize();        
+        lc.ctime=data.getCtime();        
         if (data.hasAckQuorumSize()) {
             lc.ackQuorumSize = data.getAckQuorumSize();
         } else {
@@ -463,6 +475,7 @@ public class LedgerMetadata {
         if (metadataFormatVersion != newMeta.metadataFormatVersion ||
             ensembleSize != newMeta.ensembleSize ||
             writeQuorumSize != newMeta.writeQuorumSize ||
+            ctime != newMeta.ctime ||
             ackQuorumSize != newMeta.ackQuorumSize ||
             length != newMeta.length ||
             state != newMeta.state ||

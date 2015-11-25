@@ -48,6 +48,8 @@ message LedgerMetadataFormat {
     optional bytes password = 8;
 
     optional int32 ackQuorumSize = 9;
+    
+    optional int64 ctime = 10;
 }
 
 message LedgerRereplicationLayoutFormat {

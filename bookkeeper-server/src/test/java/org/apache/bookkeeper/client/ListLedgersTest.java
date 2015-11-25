@@ -14,7 +14,6 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package org.apache.bookkeeper.client;
 
 import java.util.Iterator;
@@ -31,25 +30,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ListLedgersTest extends BaseTestCase {
+
     private final static Logger LOG = LoggerFactory.getLogger(ListLedgersTest.class);
 
     DigestType digestType;
 
-    public ListLedgersTest (DigestType digestType) {
+    public ListLedgersTest(DigestType digestType) {
         super(4);
         this.digestType = digestType;
     }
 
-    @Test(timeout=60000)
+    @Test(timeout = 60000)
     public void testListLedgers()
-    throws Exception {
+            throws Exception {
         int numOfLedgers = 10;
 
         ClientConfiguration conf = new ClientConfiguration()
-        .setZkServers(zkUtil.getZooKeeperConnectString());
+                .setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookKeeper bkc = new BookKeeper(conf);
-        for (int i = 0; i < numOfLedgers ; i++) {
+        for (int i = 0; i < numOfLedgers; i++) {
             bkc.createLedger(digestType, "testPasswd".
                     getBytes()).close();
         }
@@ -59,7 +59,7 @@ public class ListLedgersTest extends BaseTestCase {
         Iterable<Long> iterable = admin.listLedgers();
 
         int counter = 0;
-        for (Long lId: iterable) {
+        for (Long lId : iterable) {
             counter++;
         }
 
@@ -67,11 +67,11 @@ public class ListLedgersTest extends BaseTestCase {
                 counter == numOfLedgers);
     }
 
-    @Test(timeout=60000)
+    @Test(timeout = 60000)
     public void testEmptyList()
-    throws Exception {
+            throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
-        .setZkServers(zkUtil.getZooKeeperConnectString());
+                .setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookKeeperAdmin admin = new BookKeeperAdmin(zkUtil.
                 getZooKeeperConnectString());
@@ -80,16 +80,16 @@ public class ListLedgersTest extends BaseTestCase {
         Assert.assertFalse("There should be no ledger", iterable.iterator().hasNext());
     }
 
-    @Test(timeout=60000)
+    @Test(timeout = 60000)
     public void testRemoveNotSupported()
-    throws Exception {
+            throws Exception {
         int numOfLedgers = 1;
 
         ClientConfiguration conf = new ClientConfiguration()
-        .setZkServers(zkUtil.getZooKeeperConnectString());
+                .setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookKeeper bkc = new BookKeeper(conf);
-        for (int i = 0; i < numOfLedgers ; i++) {
+        for (int i = 0; i < numOfLedgers; i++) {
             bkc.createLedger(digestType, "testPasswd".
                     getBytes()).close();
         }
@@ -98,7 +98,7 @@ public class ListLedgersTest extends BaseTestCase {
                 getZooKeeperConnectString());
         Iterator<Long> iterator = admin.listLedgers().iterator();
         iterator.next();
-        try{
+        try {
             iterator.remove();
         } catch (UnsupportedOperationException e) {
             // This exception is expected
@@ -106,6 +106,30 @@ public class ListLedgersTest extends BaseTestCase {
         }
 
         Assert.fail("Remove is not supported, we shouln't have reached this point");
+
+    }
+
+    @Test(timeout = 60000)
+    public void testCtimeRecorded()
+            throws Exception {
+
+        ClientConfiguration conf = new ClientConfiguration()
+                .setZkServers(zkUtil.getZooKeeperConnectString());
+
+        BookKeeper bkc = new BookKeeper(conf);
+
+        bkc.createLedger(digestType, "testPasswd".
+                getBytes()).close();
+
+        BookKeeperAdmin admin = new BookKeeperAdmin(zkUtil.
+                getZooKeeperConnectString());
+        Iterable<Long> iterable = admin.listLedgers();
+
+        for (Long lId : iterable) {
+            LedgerHandle ledger = bkc.openLedger(lId, digestType, "testPasswd".getBytes());
+            LedgerMetadata metaData = ledger.getLedgerMetadata();
+            Assert.assertTrue("ctime was not recorded", metaData.getCtime() > 0);
+        }
 
     }
 }
