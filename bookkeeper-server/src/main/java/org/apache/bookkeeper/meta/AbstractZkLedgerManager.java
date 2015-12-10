@@ -195,16 +195,19 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
             Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
             if (null != listenerSet) {
                 synchronized(listenerSet){
-                    LOG.debug("Removed ledger metadata listeners on ledger {} : {}",
-                            ledgerId, listenerSet);
-                    for(LedgerMetadataListener l : listenerSet) {
-                        unregisterLedgerMetadataListener(ledgerId, l);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Removed ledger metadata listeners on ledger {} : {}",
+                                ledgerId, listenerSet);
+                    }
+                    for (LedgerMetadataListener l : listenerSet) {
                         l.onChanged( ledgerId, null );
                     }
+                    listeners.remove(ledgerId, listenerSet);
                 }
             } else {
-                LOG.debug("No ledger metadata listeners to remove from ledger {} after it's deleted.",
-                        ledgerId);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("No ledger metadata listeners to remove from ledger {} after it's deleted.", ledgerId);
+                }
             }
             break;
         case NodeDataChanged:
