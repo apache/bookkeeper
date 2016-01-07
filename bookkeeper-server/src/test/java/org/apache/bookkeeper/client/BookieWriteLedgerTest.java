@@ -28,6 +28,7 @@ import io.netty.buffer.Unpooled;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -35,9 +36,11 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
+import org.apache.bookkeeper.client.BKException.BKLedgerClosedException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -344,6 +347,88 @@ public class BookieWriteLedgerTest extends
     }
 
     /*
+     * Verify the functionality of Advanced Ledger which accepts ledgerId as
+     * input and returns LedgerHandleAdv. LedgerHandleAdv takes entryId for
+     * addEntry, and let user manage entryId allocation.
+     * This testcase is mainly added for covering missing code coverage branches
+     * in LedgerHandleAdv
+     *
+     * @throws Exception
+     */
+    @Test(timeout = 60000)
+    public void testLedgerHandleAdvFunctionality() throws Exception {
+        // Create a ledger
+        long ledgerId = 0xABCDEF;
+        lh = bkc.createLedgerAdv(ledgerId, 5, 3, 2, digestType, ledgerPassword, null);
+        numEntriesToWrite = 3;
+
+        ByteBuffer entry = ByteBuffer.allocate(4);
+        entry.putInt(rng.nextInt(maxInt));
+        entry.position(0);
+        entries1.add(entry.array());
+        lh.addEntry(0, entry.array());
+
+        // here asyncAddEntry(final long entryId, final byte[] data, final
+        // AddCallback cb, final Object ctx) method is
+        // called which is not covered in any other testcase
+        entry = ByteBuffer.allocate(4);
+        entry.putInt(rng.nextInt(maxInt));
+        entry.position(0);
+        entries1.add(entry.array());
+        CountDownLatch latch = new CountDownLatch(1);
+        final int[] returnedRC = new int[1];
+        lh.asyncAddEntry(1, entry.array(), new AddCallback() {
+            @Override
+            public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+                CountDownLatch latch = (CountDownLatch) ctx;
+                returnedRC[0] = rc;
+                latch.countDown();
+            }
+        }, latch);
+        latch.await();
+        assertTrue("Returned code is expected to be OK", returnedRC[0] == BKException.Code.OK);
+
+        // here addEntry is called with incorrect offset and length
+        entry = ByteBuffer.allocate(4);
+        entry.putInt(rng.nextInt(maxInt));
+        entry.position(0);
+        try {
+            lh.addEntry(2, entry.array(), -3, 9);
+            fail("AddEntry is called with negative offset and incorrect length,"
+                    + "so it is expected to throw IndexOutOfBoundsException");
+        } catch (RuntimeException exception) {
+            // expected IndexOutOfBoundsException
+        }
+
+        // here addEntry is called with corrected offset and length and it is
+        // supposed to succeed
+        entry = ByteBuffer.allocate(4);
+        entry.putInt(rng.nextInt(maxInt));
+        entry.position(0);
+        entries1.add(entry.array());
+        lh.addEntry(2, entry.array());
+
+        // LedgerHandle is closed for write
+        lh.close();
+
+        // here addEntry is called even after the close of the LedgerHandle, so
+        // it is expected to throw exception
+        entry = ByteBuffer.allocate(4);
+        entry.putInt(rng.nextInt(maxInt));
+        entry.position(0);
+        entries1.add(entry.array());
+        try {
+            lh.addEntry(3, entry.array());
+            fail("AddEntry is called after the close of LedgerHandle,"
+                    + "so it is expected to throw BKLedgerClosedException");
+        } catch (BKLedgerClosedException exception) {
+        }
+
+        readEntries(lh, entries1);
+        bkc.deleteLedger(ledgerId);
+    }
+
+    /**
      * In a loop create/write/delete the ledger with same ledgerId through
      * the functionality of Advanced Ledger which accepts ledgerId as input.
      *
@@ -387,6 +472,79 @@ public class BookieWriteLedgerTest extends
             long lid = lhArray[lc].getId();
             LOG.info("readEntries for lc: {} ledgerId: {} ", lc, lhArray[lc].getId());
             readEntries(lhArray[lc], entryList.get(lc));
+            lhArray[lc].close();
+            bkc.deleteLedger(lid);
+        }
+    }
+
+    /**
+     * In a loop create/write/read/delete the ledger with ledgerId through the
+     * functionality of Advanced Ledger which accepts ledgerId as input.
+     * In this testcase (other testcases don't cover these conditions, hence new
+     * testcase is added), we create entries which are greater than
+     * SKIP_LIST_MAX_ALLOC_ENTRY size and tried to addEntries so that the total
+     * length of data written in this testcase is much greater than
+     * SKIP_LIST_SIZE_LIMIT, so that entries will be flushed from EntryMemTable
+     * to persistent storage
+     *
+     * @throws Exception
+     */
+    @Test(timeout = 180000)
+    public void testLedgerCreateAdvWithLedgerIdInLoop2() throws Exception {
+
+        assertTrue("Here we are expecting Bookies are configured to use SortedLedgerStorage",
+                baseConf.getSortedLedgerStorageEnabled());
+
+        long ledgerId;
+        int ledgerCount = 10;
+
+        List<List<byte[]>> entryList = new ArrayList<List<byte[]>>();
+        LedgerHandle[] lhArray = new LedgerHandle[ledgerCount];
+        long skipListSizeLimit = baseConf.getSkipListSizeLimit();
+        int skipListArenaMaxAllocSize = baseConf.getSkipListArenaMaxAllocSize();
+
+        List<byte[]> tmpEntry;
+        for (int lc = 0; lc < ledgerCount; lc++) {
+            tmpEntry = new ArrayList<byte[]>();
+
+            ledgerId = rng.nextLong();
+            ledgerId &= Long.MAX_VALUE;
+            if (!baseConf.getLedgerManagerFactoryClass().equals(LongHierarchicalLedgerManagerFactory.class)) {
+                // since LongHierarchicalLedgerManager supports ledgerIds of
+                // decimal length upto 19 digits but other
+                // LedgerManagers only upto 10 decimals
+                ledgerId %= 9999999999L;
+            }
+
+            LOG.debug("Iteration: {}  LedgerId: {}", lc, ledgerId);
+            lh = bkc.createLedgerAdv(ledgerId, 5, 3, 2, digestType, ledgerPassword, null);
+            lhArray[lc] = lh;
+
+            long ledgerLength = 0;
+            int i = 0;
+            while (ledgerLength < ((4 * skipListSizeLimit) / ledgerCount)) {
+                int length;
+                if (rng.nextBoolean()) {
+                    length = Math.abs(rng.nextInt()) % (skipListArenaMaxAllocSize);
+                } else {
+                    // here we want length to be random no. in the range of skipListArenaMaxAllocSize and
+                    // 4*skipListArenaMaxAllocSize
+                    length = (Math.abs(rng.nextInt()) % (skipListArenaMaxAllocSize * 3)) + skipListArenaMaxAllocSize;
+                }
+                byte[] data = new byte[length];
+                rng.nextBytes(data);
+                tmpEntry.add(data);
+                lh.addEntry(i, data);
+                ledgerLength += length;
+                i++;
+            }
+            entryList.add(tmpEntry);
+        }
+        for (int lc = 0; lc < ledgerCount; lc++) {
+            // Read and verify
+            long lid = lhArray[lc].getId();
+            LOG.debug("readEntries for lc: {} ledgerId: {} ", lc, lhArray[lc].getId());
+            readEntriesAndValidateDataArray(lhArray[lc], entryList.get(lc));
             lhArray[lc].close();
             bkc.deleteLedger(lid);
         }
@@ -798,6 +956,24 @@ public class BookieWriteLedgerTest extends
             LOG.debug("Retrieved entry: " + retrEntry);
             assertTrue("Checking entry " + index + " for equality", origEntry
                     .equals(retrEntry));
+        }
+    }
+
+    private void readEntriesAndValidateDataArray(LedgerHandle lh, List<byte[]> entries)
+            throws InterruptedException, BKException {
+        ls = lh.readEntries(0, entries.size() - 1);
+        int index = 0;
+        while (ls.hasMoreElements()) {
+            byte[] originalData = entries.get(index++);
+            byte[] receivedData = ls.nextElement().getEntry();
+            LOG.debug("Length of originalData: " + originalData.length);
+            LOG.debug("Length of receivedData: " + receivedData.length);
+            assertTrue(
+                    String.format("LedgerID: %d EntryID: %d OriginalDataLength: %d ReceivedDataLength: %d", lh.getId(),
+                            (index - 1), originalData.length, receivedData.length),
+                    originalData.length == receivedData.length);
+            assertTrue(String.format("Checking LedgerID: %d EntryID: %d  for equality", lh.getId(), (index - 1)),
+                    Arrays.equals(originalData, receivedData));
         }
     }
 
