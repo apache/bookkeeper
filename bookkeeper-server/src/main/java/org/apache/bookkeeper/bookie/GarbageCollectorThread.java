@@ -22,7 +22,8 @@
 package org.apache.bookkeeper.bookie;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.netty.util.concurrent.DefaultThreadFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -111,10 +112,9 @@ public class GarbageCollectorThread extends SafeRunnable {
                                   LedgerManager ledgerManager,
                                   final CompactableLedgerStorage ledgerStorage)
         throws IOException {
-        gcExecutor = Executors.newSingleThreadScheduledExecutor(
-                new ThreadFactoryBuilder().setNameFormat("GarbageCollectorThread-%d").build()
-        );
+        gcExecutor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollectorThread"));
         this.conf = conf;
+
         this.entryLogger = ledgerStorage.getEntryLogger();
         this.ledgerStorage = ledgerStorage;
         this.gcWaitTime = conf.getGcWaitTime();

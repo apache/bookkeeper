@@ -23,7 +23,8 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.common.util.concurrent.SettableFuture;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -82,8 +83,8 @@ public class UpdateLedgerOp {
     public void updateBookieIdInLedgers(final BookieSocketAddress oldBookieId, final BookieSocketAddress newBookieId,
             final int rate, final int limit, final UpdateLedgerNotifier progressable) throws IOException {
 
-        final ThreadFactoryBuilder tfb = new ThreadFactoryBuilder().setNameFormat("UpdateLedgerThread").setDaemon(true);
-        final ExecutorService executor = Executors.newSingleThreadExecutor(tfb.build());
+        final ExecutorService executor = Executors
+                .newSingleThreadExecutor(new DefaultThreadFactory("UpdateLedgerThread", true));
         final AtomicInteger issuedLedgerCnt = new AtomicInteger();
         final AtomicInteger updatedLedgerCnt = new AtomicInteger();
         final Future<?> updateBookieCb = executor.submit(new Runnable() {

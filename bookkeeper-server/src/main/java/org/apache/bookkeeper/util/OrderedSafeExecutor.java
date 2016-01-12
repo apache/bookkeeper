@@ -18,12 +18,15 @@
 package org.apache.bookkeeper.util;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import java.util.concurrent.Executors;
+
+import io.netty.util.concurrent.DefaultThreadFactory;
+
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.slf4j.Logger;
@@ -58,12 +61,11 @@ public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.Order
 
         public OrderedSafeExecutor build() {
             if (null == threadFactory) {
-                threadFactory = Executors.defaultThreadFactory();
+                threadFactory = new DefaultThreadFactory("bookkeeper-ordered-safe-executor");
             }
             return new OrderedSafeExecutor(name, numThreads, threadFactory, statsLogger,
                                            traceTaskExecution, warnTimeMicroSec, maxTasksInQueue);
         }
-
     }
 
     /**
