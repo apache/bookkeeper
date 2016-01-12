@@ -389,8 +389,10 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
                     break;
                 }
             }
-            LOG.error("Read of ledger entry failed: L{} E{}-E{}, Heard from {}. First unread entry is {}",
-                    new Object[] { lh.getId(), startEntryId, endEntryId, heardFromHosts, firstUnread });
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Read of ledger entry failed: L{} E{}-E{}, Heard from {}. First unread entry is {}",
+                        new Object[] { lh.getId(), startEntryId, endEntryId, heardFromHosts, firstUnread });
+            }
             readOpLogger.registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
         } else {
             readOpLogger.registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
