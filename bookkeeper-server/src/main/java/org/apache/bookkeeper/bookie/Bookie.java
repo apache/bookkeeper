@@ -1104,6 +1104,9 @@ public class Bookie extends BookieCriticalThread {
                 // mark bookie as in shutting down progress
                 shuttingdown = true;
 
+                // Shutdown the state service
+                stateService.shutdown();
+
                 // Shutdown journal
                 journal.shutdown();
                 this.join();
