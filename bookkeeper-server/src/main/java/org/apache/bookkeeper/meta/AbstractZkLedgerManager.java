@@ -355,7 +355,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
 
                 LedgerMetadata metadata;
                 try {
-                    metadata = LedgerMetadata.parseConfig(data, new ZkVersion(stat.getVersion()));
+                    metadata = LedgerMetadata.parseConfig(data, new ZkVersion(stat.getVersion()),stat.getCtime());
                 } catch (IOException e) {
                     LOG.error("Could not parse ledger metadata for ledger: " + ledgerId, e);
                     readCb.operationComplete(BKException.Code.ZKException, null);

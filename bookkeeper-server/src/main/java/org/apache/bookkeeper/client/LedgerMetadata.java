@@ -114,7 +114,7 @@ public class LedgerMetadata {
         this.state = other.state;
         this.version = other.version;
         this.hasPassword = other.hasPassword;
-        this.digestType = other.digestType;        
+        this.digestType = other.digestType;
         this.password = new byte[other.password.length];
         System.arraycopy(other.password, 0, this.password, 0, other.password.length);
         // copy the ensembles
@@ -319,11 +319,13 @@ public class LedgerMetadata {
      *            byte array to parse
      * @param version
      *            version of the ledger metadata
+     * @param zkCtime
+     *            ctime read from Zookeeper Stat, used for legacy ledgers
      * @return LedgerConfig
      * @throws IOException
      *             if the given byte[] cannot be parsed
      */
-    public static LedgerMetadata parseConfig(byte[] bytes, Version version) throws IOException {
+    public static LedgerMetadata parseConfig(byte[] bytes, Version version, Long zkCtime) throws IOException {
         LedgerMetadata lc = new LedgerMetadata();
         lc.version = version;
 
@@ -363,7 +365,11 @@ public class LedgerMetadata {
         TextFormat.merge(reader, builder);
         LedgerMetadataFormat data = builder.build();
         lc.writeQuorumSize = data.getQuorumSize();        
-        lc.ctime=data.getCtime();        
+        if (data.hasCtime()) {
+            lc.ctime=data.getCtime();
+        } else if (zkCtime != null) {
+            lc.ctime=zkCtime;
+        }        
         if (data.hasAckQuorumSize()) {
             lc.ackQuorumSize = data.getAckQuorumSize();
         } else {

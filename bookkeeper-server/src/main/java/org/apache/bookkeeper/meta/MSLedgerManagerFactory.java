@@ -408,7 +408,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                     LedgerMetadata metadata;
                     try {
                         metadata = LedgerMetadata
-                                .parseConfig(value.getValue().getField(META_FIELD), value.getVersion());
+                                .parseConfig(value.getValue().getField(META_FIELD), value.getVersion(),null);
                     } catch (IOException e) {
                         LOG.error("Could not parse ledger metadata for ledger " + ledgerId + " : ", e);
                         readCb.operationComplete(BKException.Code.MetaStoreException, null);
