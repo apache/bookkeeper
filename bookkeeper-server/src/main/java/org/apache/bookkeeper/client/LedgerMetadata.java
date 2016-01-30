@@ -366,9 +366,9 @@ public class LedgerMetadata {
         LedgerMetadataFormat data = builder.build();
         lc.writeQuorumSize = data.getQuorumSize();        
         if (data.hasCtime()) {
-            lc.ctime=data.getCtime();
+            lc.ctime = data.getCtime();
         } else if (zkCtime != null) {
-            lc.ctime=zkCtime;
+            lc.ctime = zkCtime;
         }        
         if (data.hasAckQuorumSize()) {
             lc.ackQuorumSize = data.getAckQuorumSize();

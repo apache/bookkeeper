@@ -352,10 +352,14 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
                     readCb.operationComplete(BKException.Code.ZKException, null);
                     return;
                 }
-
+                if (stat == null) {
+                    LOG.error("Could not parse ledger metadata for ledger: " + ledgerId+". Stat object is null");
+                    readCb.operationComplete(BKException.Code.ZKException, null);
+                    return;
+                }
                 LedgerMetadata metadata;
                 try {
-                    metadata = LedgerMetadata.parseConfig(data, new ZkVersion(stat.getVersion()),stat.getCtime());
+                    metadata = LedgerMetadata.parseConfig(data, new ZkVersion(stat.getVersion()), stat.getCtime());
                 } catch (IOException e) {
                     LOG.error("Could not parse ledger metadata for ledger: " + ledgerId, e);
                     readCb.operationComplete(BKException.Code.ZKException, null);
