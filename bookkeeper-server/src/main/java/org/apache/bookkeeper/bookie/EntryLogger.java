@@ -115,7 +115,7 @@ public class EntryLogger {
         = new CopyOnWriteArrayList<EntryLogListener>();
 
     private static final int HEADER_V0 = 0; // Old log file format (no ledgers map index)
-    private static final int HEADER_V1 = 1; // Unrecognized header version
+    private static final int HEADER_V1 = 1; // Introduced ledger map index
     private static final int HEADER_CURRENT_VERSION = HEADER_V1;
 
     private static class Header {
