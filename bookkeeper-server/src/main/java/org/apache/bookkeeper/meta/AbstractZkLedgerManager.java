@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.meta;
 
+import com.google.common.base.Optional;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -359,7 +360,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
                 }
                 LedgerMetadata metadata;
                 try {
-                    metadata = LedgerMetadata.parseConfig(data, new ZkVersion(stat.getVersion()), stat.getCtime());
+                    metadata = LedgerMetadata.parseConfig(data, new ZkVersion(stat.getVersion()), Optional.of(stat.getCtime()));
                 } catch (IOException e) {
                     LOG.error("Could not parse ledger metadata for ledger: " + ledgerId, e);
                     readCb.operationComplete(BKException.Code.ZKException, null);

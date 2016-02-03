@@ -37,6 +37,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import static com.google.common.base.Charsets.UTF_8;
+import com.google.common.base.Optional;
 
 /**
  * This class encapsulates all the ledger metadata that is persistently stored
@@ -319,13 +320,13 @@ public class LedgerMetadata {
      *            byte array to parse
      * @param version
      *            version of the ledger metadata
-     * @param zkCtime
-     *            ctime read from Zookeeper Stat, used for legacy ledgers
+     * @param msCtime
+     *            metadata store creation time, used for legacy ledgers
      * @return LedgerConfig
      * @throws IOException
      *             if the given byte[] cannot be parsed
      */
-    public static LedgerMetadata parseConfig(byte[] bytes, Version version, Long zkCtime) throws IOException {
+    public static LedgerMetadata parseConfig(byte[] bytes, Version version, Optional<Long> msCtime) throws IOException {
         LedgerMetadata lc = new LedgerMetadata();
         lc.version = version;
 
@@ -367,8 +368,8 @@ public class LedgerMetadata {
         lc.writeQuorumSize = data.getQuorumSize();        
         if (data.hasCtime()) {
             lc.ctime = data.getCtime();
-        } else if (zkCtime != null) {
-            lc.ctime = zkCtime;
+        } else if (msCtime.isPresent()) {
+            lc.ctime = msCtime.get();
         }        
         if (data.hasAckQuorumSize()) {
             lc.ackQuorumSize = data.getAckQuorumSize();
