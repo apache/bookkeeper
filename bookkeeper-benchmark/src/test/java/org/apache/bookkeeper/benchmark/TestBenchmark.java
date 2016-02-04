@@ -19,29 +19,16 @@
  */
 package org.apache.bookkeeper.benchmark;
 
-import org.junit.BeforeClass;
-import org.junit.AfterClass;
-import org.junit.Test;
-import org.junit.Assert;
-
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.util.LocalBookKeeper;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.Watcher.Event.EventType;
-import org.apache.zookeeper.Watcher.Event.KeeperState;
-import org.apache.zookeeper.ZooKeeper;
+import org.junit.Test;
+import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TestBenchmark extends BookKeeperClusterTestCase {
@@ -114,7 +101,7 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
             if (!t.isAlive()) {
                 break;
             }
-            Thread.sleep(1000); // wait for 10 seconds for reading to finish
+            Thread.sleep(100);
         }
 
         Assert.assertFalse("Thread should be finished", t.isAlive());
@@ -122,40 +109,5 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
         BenchReadThroughputLatency.main(new String[] {
                 "--zookeeper", zkUtil.getZooKeeperConnectString(),
                 "--ledger", String.valueOf(lastLedgerId)});
-
-        final long nextLedgerId = lastLedgerId+1;
-        t = new Thread() {
-                public void run() {
-                    try {
-                        BenchReadThroughputLatency.main(new String[] {
-                                "--zookeeper", zkUtil.getZooKeeperConnectString(),
-                                "--ledger", String.valueOf(nextLedgerId)});
-                    } catch (Throwable t) {
-                        LOG.error("Error reading", t);
-                        threwException.set(true);
-                    }
-                }
-            };
-        t.start();
-
-        Assert.assertTrue("Thread should be running", t.isAlive());
-        BookKeeper bk = new BookKeeper(zkUtil.getZooKeeperConnectString());
-        LedgerHandle lh = bk.createLedger(BookKeeper.DigestType.CRC32, "benchPasswd".getBytes());
-        try {
-            for (int j = 0; j < 100; j++) {
-                lh.addEntry(data);
-            }
-        } finally {
-            lh.close();
-            bk.close();
-        }
-        for (int i = 0; i < 60; i++) {
-            if (!t.isAlive()) {
-                break;
-            }
-            Thread.sleep(1000); // wait for 10 seconds for reading to finish
-        }
-        Assert.assertFalse("Thread should be finished", t.isAlive());
-        Assert.assertFalse("A thread has thrown an exception, check logs", threwException.get());
     }
 }
