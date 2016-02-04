@@ -23,15 +23,13 @@ package org.apache.bookkeeper.proto;
 import static com.google.common.base.Charsets.UTF_8;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -52,6 +50,9 @@ import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 /**
  * Implements the client-side part of the BookKeeper protocol.
  *
@@ -70,6 +71,8 @@ public class BookieClient implements PerChannelBookieClientFactory {
     private final StatsLogger statsLogger;
     private final int numConnectionsPerBookie;
 
+    private final long bookieErrorThresholdPerInterval;
+
     public BookieClient(ClientConfiguration conf, ClientSocketChannelFactory channelFactory, OrderedSafeExecutor executor) {
         this(conf, channelFactory, executor, NullStatsLogger.INSTANCE);
     }
@@ -87,6 +90,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 new ThreadFactoryBuilder().setNameFormat("BookieClientTimer-%d").build(),
                 conf.getPCBCTimeoutTimerTickDurationMs(), TimeUnit.MILLISECONDS,
                 conf.getPCBCTimeoutTimerNumTicks());
+        this.bookieErrorThresholdPerInterval = conf.getBookieErrorThresholdPerInterval();
     }
 
     private int getRc(int rc) {
@@ -101,10 +105,23 @@ public class BookieClient implements PerChannelBookieClientFactory {
         }
     }
 
+    public List<BookieSocketAddress> getFaultyBookies() {
+        List<BookieSocketAddress> faultyBookies = Lists.newArrayList();
+        for (PerChannelBookieClientPool channelPool : channels.values()) {
+            if (channelPool instanceof DefaultPerChannelBookieClientPool) {
+                DefaultPerChannelBookieClientPool pool = (DefaultPerChannelBookieClientPool) channelPool;
+                if (pool.errorCounter.getAndSet(0) >= bookieErrorThresholdPerInterval) {
+                    faultyBookies.add(pool.address);
+                }
+            }
+        }
+        return faultyBookies;
+    }
+
     @Override
-    public PerChannelBookieClient create(BookieSocketAddress address) {
+    public PerChannelBookieClient create(BookieSocketAddress address, PerChannelBookieClientPool pcbcPool) {
         return new PerChannelBookieClient(conf, executor, channelFactory, address,
-                                          requestTimer, statsLogger);
+                                          requestTimer, statsLogger, pcbcPool);
     }
 
     private PerChannelBookieClientPool lookupClient(BookieSocketAddress addr, Object key) {

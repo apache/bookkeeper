@@ -98,6 +98,8 @@ public abstract class BKException extends Exception {
             return new BKAddEntryQuorumTimeoutException();
         case Code.DuplicateEntryIdException:
             return new BKDuplicateEntryIdException();
+        case Code.TimeoutException:
+            return new BKTimeoutException();
         default:
             return new BKUnexpectedConditionException();
         }
@@ -131,6 +133,7 @@ public abstract class BKException extends Exception {
         int LedgerExistException = -20;
         int AddEntryQuorumTimeoutException = -21;
         int DuplicateEntryIdException = -22;
+        int TimeoutException = -23;
 
         int IllegalOpException = -100;
         int LedgerFencedException = -101;
@@ -213,6 +216,8 @@ public abstract class BKException extends Exception {
             return "Invalid operation";
         case Code.AddEntryQuorumTimeoutException:
             return "Add entry quorum wait timed out";
+        case Code.TimeoutException:
+            return "Bookie operation timeout";
         default:
             return "Unexpected condition";
         }
@@ -392,4 +397,9 @@ public abstract class BKException extends Exception {
         }
     }
 
+    public static class BKTimeoutException extends BKException {
+        public BKTimeoutException() {
+            super(Code.TimeoutException);
+        }
+    }
 }

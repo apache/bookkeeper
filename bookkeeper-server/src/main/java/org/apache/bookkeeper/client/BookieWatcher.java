@@ -45,6 +45,11 @@ import org.apache.zookeeper.ZooDefs.Ids;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
+
 /**
  * This class is responsible for maintaining a consistent view of what bookies
  * are available by reading Zookeeper (and setting watches on the bookie nodes).
@@ -57,6 +62,7 @@ class BookieWatcher implements Watcher, ChildrenCallback {
 
     public static int ZK_CONNECT_BACKOFF_SEC = 1;
     private static final Set<BookieSocketAddress> EMPTY_SET = new HashSet<BookieSocketAddress>();
+    private static final Boolean BOOLEAN = new Boolean(true);
 
     // Bookie registration path in ZK
     private final String bookieRegistrationPath;
@@ -64,6 +70,9 @@ class BookieWatcher implements Watcher, ChildrenCallback {
     final BookKeeper bk;
     final ScheduledExecutorService scheduler;
     final EnsemblePlacementPolicy placementPolicy;
+
+    // Bookies that will not be preferred to be chosen in a new ensemble
+    final Cache<BookieSocketAddress, Boolean> quarantinedBookies;
 
     SafeRunnable reReadTask = new SafeRunnable() {
         @Override
@@ -83,6 +92,16 @@ class BookieWatcher implements Watcher, ChildrenCallback {
         this.scheduler = scheduler;
         this.placementPolicy = placementPolicy;
         readOnlyBookieWatcher = new ReadOnlyBookieWatcher(conf, bk);
+        this.quarantinedBookies = CacheBuilder.newBuilder()
+                .expireAfterWrite(conf.getBookieQuarantineTimeSeconds(), TimeUnit.SECONDS)
+                .removalListener(new RemovalListener<BookieSocketAddress, Boolean>() {
+
+                    @Override
+                    public void onRemoval(RemovalNotification<BookieSocketAddress, Boolean> bookie) {
+                        logger.info("Bookie {} is no longer quarantined", bookie.getKey());
+                    }
+
+                }).build();
     }
 
     void notifyBookiesChanged(final BookiesListener listener) throws BKException {
@@ -235,7 +254,16 @@ class BookieWatcher implements Watcher, ChildrenCallback {
      */
     public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize)
             throws BKNotEnoughBookiesException {
-        return placementPolicy.newEnsemble(ensembleSize, writeQuorumSize, EMPTY_SET);
+        try {
+            // we try to only get from the healthy bookies first
+            return placementPolicy.newEnsemble(ensembleSize, writeQuorumSize, new HashSet<BookieSocketAddress>(
+                    quarantinedBookies.asMap().keySet()));
+        } catch (BKNotEnoughBookiesException e) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Not enough healthy bookies available, using quarantined bookies");
+            }
+            return placementPolicy.newEnsemble(ensembleSize, writeQuorumSize, EMPTY_SET);
+        }
     }
 
     /**
@@ -250,7 +278,29 @@ class BookieWatcher implements Watcher, ChildrenCallback {
     public BookieSocketAddress replaceBookie(List<BookieSocketAddress> existingBookies, int bookieIdx)
             throws BKNotEnoughBookiesException {
         BookieSocketAddress addr = existingBookies.get(bookieIdx);
-        return placementPolicy.replaceBookie(addr, new HashSet<BookieSocketAddress>(existingBookies));
+        try {
+            // we exclude the quarantined bookies also first
+            Set<BookieSocketAddress> existingAndQuarantinedBookies = new HashSet<BookieSocketAddress>(existingBookies);
+            existingAndQuarantinedBookies.addAll(quarantinedBookies.asMap().keySet());
+            return placementPolicy.replaceBookie(addr, existingAndQuarantinedBookies);
+        } catch (BKNotEnoughBookiesException e) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Not enough healthy bookies available, using quarantined bookies");
+            }
+            return placementPolicy.replaceBookie(addr, new HashSet<BookieSocketAddress>(existingBookies));
+        }
+    }
+
+    /**
+     * Quarantine <i>bookie</i> so it will not be preferred to be chosen for new ensembles.
+     * @param bookie
+     * @return
+     */
+    public void quarantineBookie(BookieSocketAddress bookie) {
+        if (quarantinedBookies.getIfPresent(bookie) == null) {
+            quarantinedBookies.put(bookie, BOOLEAN);
+            logger.warn("Bookie {} has been quarantined because of read/write errors.", bookie);
+        }
     }
 
     /**
