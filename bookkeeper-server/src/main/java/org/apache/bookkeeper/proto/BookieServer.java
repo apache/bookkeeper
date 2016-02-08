@@ -397,6 +397,7 @@ public class BookieServer {
 
             statsProvider.stop();
             LOG.info("Stop stats provider");
+            bs.shutdown();
             System.exit(bs.getExitCode());
         } catch (Exception e) {
             LOG.error("Exception running bookie server : ", e);
