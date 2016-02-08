@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
@@ -38,7 +39,9 @@ import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.UpdateLedgerOp;
@@ -97,6 +100,7 @@ public class BookieShell implements Tool {
     static final String CMD_LISTUNDERREPLICATED = "listunderreplicated";
     static final String CMD_WHOISAUDITOR = "whoisauditor";
     static final String CMD_SIMPLETEST = "simpletest";
+    static final String CMD_BOOKIESANITYTEST = "bookiesanity";
     static final String CMD_READLOG = "readlog";
     static final String CMD_READJOURNAL = "readjournal";
     static final String CMD_LASTMARK = "lastmark";
@@ -680,6 +684,94 @@ public class BookieShell implements Tool {
         @Override
         Options getOptions() {
             return lOpts;
+        }
+    }
+
+    /**
+     * Command to run a bookie sanity test
+     */
+    class BookieSanityTestCmd extends MyCommand {
+        Options lOpts = new Options();
+
+        BookieSanityTestCmd() {
+            super(CMD_BOOKIESANITYTEST);
+            lOpts.addOption("e", "entries", true, "Total entries to be added for the test (default 10)");
+            lOpts.addOption("t", "timeout", true, "Timeout for write/read operations in seconds (default 1)");
+        }
+
+        @Override
+        Options getOptions() {
+            return lOpts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Sanity test for local bookie. Create ledger and write/reads entries on local bookie.";
+        }
+
+        @Override
+        String getUsage() {
+            return "bookiesanity [-entries N] [-timeout N]";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            int numberOfEntries = getOptionIntValue(cmdLine, "entries", 10);
+            int timeoutSecs= getOptionIntValue(cmdLine, "timeout", 1);
+
+            ClientConfiguration conf = new ClientConfiguration();
+            conf.addConfiguration(bkConf);
+            conf.setEnsemblePlacementPolicy(LocalBookieEnsemblePlacementPolicy.class);
+            conf.setAddEntryTimeout(timeoutSecs);
+            conf.setReadEntryTimeout(timeoutSecs);
+
+            BookKeeper bk = new BookKeeper(conf);
+            LedgerHandle lh = null;
+            try {
+                lh = bk.createLedger(1, 1, DigestType.MAC, new byte[0]);
+                LOG.info("Created ledger {}", lh.getId());
+
+                for (int i = 0; i < numberOfEntries; i++) {
+                    String content = "entry-" + i;
+                    lh.addEntry(content.getBytes());
+                }
+
+                LOG.info("Written {} entries in ledger {}", numberOfEntries, lh.getId());
+
+                // Reopen the ledger and read entries
+                lh = bk.openLedger(lh.getId(), DigestType.MAC, new byte[0]);
+                if (lh.getLastAddConfirmed() != (numberOfEntries - 1)) {
+                    throw new Exception("Invalid last entry found on ledger. expecting: " + (numberOfEntries - 1)
+                            + " -- found: " + lh.getLastAddConfirmed());
+                }
+
+                Enumeration<LedgerEntry> entries = lh.readEntries(0, numberOfEntries - 1);
+                int i = 0;
+                while (entries.hasMoreElements()) {
+                    LedgerEntry entry = entries.nextElement();
+                    String actualMsg = new String(entry.getEntry());
+                    String expectedMsg = "entry-" + (i++);
+                    if (!expectedMsg.equals(actualMsg)) {
+                        throw new Exception("Failed validation of received message - Expected: " + expectedMsg
+                                + ", Actual: " + actualMsg);
+                    }
+                }
+
+                LOG.info("Read {} entries from ledger {}", entries, lh.getId());
+            } catch (Exception e) {
+                LOG.warn("Error in bookie sanity test", e);
+                return -1;
+            } finally {
+                if (lh != null) {
+                    bk.deleteLedger(lh.getId());
+                    LOG.info("Deleted ledger {}", lh.getId());
+                }
+
+                bk.close();
+            }
+
+            LOG.info("Bookie sanity test succeeded");
+            return 0;
         }
     }
 
@@ -1338,6 +1430,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_WHOISAUDITOR, new WhoIsAuditorCmd());
         commands.put(CMD_LEDGERMETADATA, new LedgerMetadataCmd());
         commands.put(CMD_SIMPLETEST, new SimpleTestCmd());
+        commands.put(CMD_BOOKIESANITYTEST, new BookieSanityTestCmd());
         commands.put(CMD_READLOG, new ReadLogCmd());
         commands.put(CMD_READJOURNAL, new ReadJournalCmd());
         commands.put(CMD_LASTMARK, new LastMarkCmd());
