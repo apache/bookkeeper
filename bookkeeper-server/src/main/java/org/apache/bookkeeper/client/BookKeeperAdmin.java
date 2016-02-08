@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static com.google.common.base.Preconditions.checkArgument;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -308,6 +309,123 @@ public class BookKeeperAdmin {
         }
 
         return counter.getLh();
+    }
+
+    /**
+     * Read entries from a ledger synchronously. If the lastEntry is -1, it will read all the entries in the ledger from
+     * the firstEntry.
+     * 
+     * @param ledgerId
+     * @param firstEntry
+     * @param lastEntry
+     * @return
+     * @throws InterruptedException
+     * @throws BKException
+     */
+    public Iterable<LedgerEntry> readEntries(long ledgerId, long firstEntry, long lastEntry)
+            throws InterruptedException, BKException {
+        checkArgument(ledgerId >= 0 && firstEntry >= 0);
+        return new LedgerEntriesIterable(ledgerId, firstEntry, lastEntry);
+    }
+
+    class LedgerEntriesIterable implements Iterable<LedgerEntry> {
+        final long ledgerId;
+        final long firstEntryId;
+        final long lastEntryId;
+
+        public LedgerEntriesIterable(long ledgerId, long firstEntry) {
+            this(ledgerId, firstEntry, -1);
+        }
+
+        public LedgerEntriesIterable(long ledgerId, long firstEntry, long lastEntry) {
+            this.ledgerId = ledgerId;
+            this.firstEntryId = firstEntry;
+            this.lastEntryId = lastEntry;
+        }
+
+        @Override
+        public Iterator<LedgerEntry> iterator() {
+            try {
+                return new LedgerEntriesIterator(ledgerId, firstEntryId, lastEntryId);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    class LedgerEntriesIterator implements Iterator<LedgerEntry> {
+        final LedgerHandle handle;
+        final long ledgerId;
+        final long lastEntryId;
+
+        long nextEntryId;
+        LedgerEntry currentEntry;
+
+        public LedgerEntriesIterator(long ledgerId, long firstEntry, long lastEntry)
+                throws InterruptedException, BKException {
+            this.handle = openLedgerNoRecovery(ledgerId);
+            this.ledgerId = ledgerId;
+            this.nextEntryId = firstEntry;
+            this.lastEntryId = lastEntry;
+            this.currentEntry = null;
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (currentEntry != null) {
+                return true;
+            }
+            if (lastEntryId == -1 || nextEntryId <= lastEntryId) {
+                try {
+                    SyncCounter counter = new SyncCounter();
+                    counter.inc();
+
+                    handle.asyncReadEntriesInternal(nextEntryId, nextEntryId, new LedgerHandle.SyncReadCallback(),
+                            counter);
+                    counter.block(0);
+                    if (counter.getrc() != BKException.Code.OK) {
+                        throw BKException.create(counter.getrc());
+                    }
+                    currentEntry = counter.getSequence().nextElement();
+                    return true;
+                } catch (Exception e) {
+                    if (e instanceof BKException.BKNoSuchEntryException && lastEntryId == -1) {
+                        // there are no more entries in the ledger, so we just return false and ignore this exception
+                        // since the last entry id was undefined
+                        close();
+                        return false;
+                    }
+                    LOG.error("Error reading entry {} from ledger {}", new Object[] { nextEntryId, ledgerId }, e);
+                    close();
+                    throw new RuntimeException(e);
+                }
+            }
+            close();
+            return false;
+        }
+
+        @Override
+        public LedgerEntry next() {
+            ++nextEntryId;
+            LedgerEntry entry = currentEntry;
+            currentEntry = null;
+            return entry;
+        }
+
+        @Override
+        public void remove() {
+            // noop
+        }
+
+        private void close() {
+            if (handle != null) {
+                try {
+                    handle.close();
+                } catch (Exception e) {
+                    LOG.error("Error closing ledger handle {}", handle, e);
+                }
+            }
+        }
     }
 
     // Object used for calling async methods and waiting for them to complete.
