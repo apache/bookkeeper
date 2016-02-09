@@ -42,6 +42,8 @@ import org.slf4j.LoggerFactory;
 public class ZkLedgerIdGenerator implements LedgerIdGenerator {
     static final Logger LOG = LoggerFactory.getLogger(ZkLedgerIdGenerator.class);
 
+    static final String LEDGER_ID_GEN_PREFIX = "ID-";
+
     final ZooKeeper zk;
     final String ledgerIdGenPath;
     final String ledgerPrefix;
@@ -55,7 +57,7 @@ public class ZkLedgerIdGenerator implements LedgerIdGenerator {
         } else {
             this.ledgerIdGenPath = ledgersPath + "/" + idGenZnodeName;
         }
-        this.ledgerPrefix = this.ledgerIdGenPath + "/ID-";
+        this.ledgerPrefix = this.ledgerIdGenPath + "/" + LEDGER_ID_GEN_PREFIX;
     }
 
     @Override
