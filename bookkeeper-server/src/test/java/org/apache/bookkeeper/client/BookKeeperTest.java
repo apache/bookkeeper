@@ -1,5 +1,7 @@
 package org.apache.bookkeeper.client;
 
+import java.util.Enumeration;
+
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -28,6 +30,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
+import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
+import org.apache.bookkeeper.client.BKException.BKBookieHandleNotAvailableException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.test.BaseTestCase;
 import org.apache.zookeeper.ZooKeeper;
@@ -239,5 +243,51 @@ public class BookKeeperTest extends BaseTestCase {
         Assert.assertTrue("Ledger should be flagged as closed!",result);
 
         bkc.close();
+    }
+
+    @Test(timeout = 60000)
+    public void testReadFailureCallback() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
+
+        BookKeeper bkc = new BookKeeper(conf);
+        LedgerHandle lh = bkc.createLedger(digestType, "testPasswd".getBytes());
+
+        final int numEntries = 10;
+        for (int i = 0; i < numEntries; i++) {
+            lh.addEntry(("entry-" + i).getBytes());
+        }
+
+        stopBKCluster();
+
+        try {
+            lh.readEntries(0, numEntries - 1);
+            fail("Read operation should have failed");
+        } catch (BKBookieHandleNotAvailableException e) {
+            // expected
+        }
+
+        final CountDownLatch counter = new CountDownLatch(1);
+        final AtomicInteger receivedResponses = new AtomicInteger(0);
+        final AtomicInteger returnCode = new AtomicInteger();
+        lh.asyncReadEntries(0, numEntries - 1, new ReadCallback() {
+            @Override
+            public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
+                returnCode.set(rc);
+                receivedResponses.incrementAndGet();
+                counter.countDown();
+            }
+        }, null);
+
+        counter.await();
+
+        // Wait extra time to ensure no extra responses received
+        Thread.sleep(1000);
+
+        assertEquals(1, receivedResponses.get());
+        assertEquals(BKException.Code.BookieHandleNotAvailableException, returnCode.get());
+
+        bkc.close();
+
+        startBKCluster();
     }
 }
