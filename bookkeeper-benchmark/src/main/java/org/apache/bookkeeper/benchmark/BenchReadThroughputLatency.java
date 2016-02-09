@@ -19,41 +19,33 @@
  */
 package org.apache.bookkeeper.benchmark;
 
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerEntry;
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher.Event;
-
-import java.util.Enumeration;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.PosixParser;
-import org.apache.commons.cli.ParseException;
-
-import static com.google.common.base.Charsets.UTF_8;
-
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.WatchedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Enumeration;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.google.common.base.Charsets.UTF_8;
 
 public class BenchReadThroughputLatency {
     static final Logger LOG = LoggerFactory.getLogger(BenchReadThroughputLatency.class);
@@ -90,7 +82,7 @@ public class BenchReadThroughputLatency {
         try {
             bk = new BookKeeper(conf);
             while (true) {
-                lh = bk.openLedgerNoRecovery(ledgerId, BookKeeper.DigestType.CRC32, 
+                lh = bk.openLedgerNoRecovery(ledgerId, BookKeeper.DigestType.CRC32,
                                              passwd);
                 long lastConfirmed = Math.min(lh.getLastAddConfirmed(), absoluteLimit);
                 if (lastConfirmed == lastRead) {
@@ -154,7 +146,7 @@ public class BenchReadThroughputLatency {
     @SuppressWarnings("deprecation")
     public static void main(String[] args) throws Exception {
         Options options = new Options();
-        options.addOption("ledger", true, "Ledger to read. If empty, read all ledgers which come available. " 
+        options.addOption("ledger", true, "Ledger to read. If empty, read all ledgers which come available. "
                           + " Cannot be used with -listen");
         options.addOption("listen", true, "Listen for creation of <arg> ledgers, and read each one fully");
         options.addOption("password", true, "Password used to access ledgers (default 'benchPasswd')");
@@ -207,11 +199,12 @@ public class BenchReadThroughputLatency {
                     }
                 }
             });
+        final Set<String> processedLedgers = new HashSet<String>();
         try {
             zk.register(new Watcher() {
                     public void process(WatchedEvent event) {
                         try {
-                            if (event.getState() == Event.KeeperState.SyncConnected 
+                            if (event.getState() == Event.KeeperState.SyncConnected
                                 && event.getType() == Event.EventType.None) {
                                 connectedLatch.countDown();
                             } else if (event.getType() == Event.EventType.NodeCreated
@@ -229,22 +222,29 @@ public class BenchReadThroughputLatency {
                                         ledgers.add(child);
                                     }
                                 }
-                                Collections.sort(ledgers, ZK_LEDGER_COMPARE);
-                                String last = ledgers.get(ledgers.size() - 1);
-                                final Matcher m = LEDGER_PATTERN.matcher(last);
-                                if (m.find()) {
-                                    int ledgersLeft = numLedgers.decrementAndGet();
-                                    Thread t = new Thread() {
-                                            public void run() {
-                                                readLedger(conf, Long.valueOf(m.group(1)), passwd);
+                                for (String ledger : ledgers) {
+                                    synchronized (processedLedgers) {
+                                        if (processedLedgers.contains(ledger)) {
+                                            continue;
+                                        }
+                                        final Matcher m = LEDGER_PATTERN.matcher(ledger);
+                                        if (m.find()) {
+                                            int ledgersLeft = numLedgers.decrementAndGet();
+                                            final Long ledgerId = Long.valueOf(m.group(1));
+                                            processedLedgers.add(ledger);
+                                            Thread t = new Thread() {
+                                                public void run() {
+                                                    readLedger(conf, ledgerId, passwd);
+                                                }
+                                            };
+                                            t.start();
+                                            if (ledgersLeft <= 0) {
+                                                shutdownLatch.countDown();
                                             }
-                                        };
-                                    t.start();
-                                    if (ledgersLeft <= 0) {
-                                        shutdownLatch.countDown();
+                                        } else {
+                                            LOG.error("Cant file ledger id in {}", ledger);
+                                        }
                                     }
-                                } else {
-                                    LOG.error("Cant file ledger id in {}", last);
                                 }
                             } else {
                                 LOG.warn("Unknown event {}", event);
