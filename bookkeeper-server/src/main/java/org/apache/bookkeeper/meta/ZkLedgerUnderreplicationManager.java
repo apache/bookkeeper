@@ -18,51 +18,45 @@
 
 package org.apache.bookkeeper.meta;
 
+import static com.google.common.base.Charsets.UTF_8;
+
+import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.net.DNS;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat;
+import org.apache.bookkeeper.proto.DataFormats.LockDataFormat;
+import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
 import org.apache.bookkeeper.replication.ReplicationEnableCb;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
-
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat;
-import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
-import org.apache.bookkeeper.proto.DataFormats.LockDataFormat;
-import org.apache.bookkeeper.conf.AbstractConfiguration;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs.Ids;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.protobuf.TextFormat;
-import com.google.common.base.Joiner;
-import static com.google.common.base.Charsets.UTF_8;
-
-import java.net.UnknownHostException;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.Map;
-import java.util.List;
-import java.util.Collections;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.ArrayDeque;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.ArrayList;
-
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Joiner;
+import com.google.protobuf.TextFormat;
 
 /**
  * ZooKeeper implementation of underreplication manager.
@@ -84,6 +78,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     static final String LAYOUT="BASIC";
     static final int LAYOUT_VERSION=1;
 
+    public static final byte[] LOCK_DATA = getLockData();
+
     private static class Lock {
         private final String lockZNode;
         private final int ledgerZNodeVersion;
@@ -103,22 +99,32 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     private final String urLedgerPath;
     private final String urLockPath;
     private final String layoutZNode;
-    private final LockDataFormat lockData;
 
     private final ZooKeeper zkc;
 
     public ZkLedgerUnderreplicationManager(AbstractConfiguration conf, ZooKeeper zkc)
             throws KeeperException, InterruptedException, ReplicationException.CompatibilityException {
-        basePath = conf.getZkLedgersRootPath() + '/'
-                + BookKeeperConstants.UNDER_REPLICATION_NODE;
+        basePath = getBasePath(conf.getZkLedgersRootPath());
         layoutZNode = basePath + '/' + BookKeeperConstants.LAYOUT_ZNODE;
         urLedgerPath = basePath
                 + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
-        urLockPath = basePath + "/locks";
+        urLockPath = basePath + '/' + BookKeeperConstants.UNDER_REPLICATION_LOCK;
 
         idExtractionPattern = Pattern.compile("urL(\\d+)$");
         this.zkc = zkc;
 
+        checkLayout();
+    }
+
+    public static String getBasePath(String rootPath) {
+        return String.format("%s/%s", rootPath, BookKeeperConstants.UNDER_REPLICATION_NODE);
+    }
+
+    public static String getUrLockPath(String rootPath) {
+        return String.format("%s/%s", getBasePath(rootPath), BookKeeperConstants.UNDER_REPLICATION_LOCK);
+    }
+
+    public static byte[] getLockData() {
         LockDataFormat.Builder lockDataBuilder = LockDataFormat.newBuilder();
         try {
             lockDataBuilder.setBookieId(DNS.getDefaultHost("default"));
@@ -126,9 +132,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             // if we cant get the address, ignore. it's optional
             // in the data structure in any case
         }
-        lockData = lockDataBuilder.build();
-
-        checkLayout();
+        return TextFormat.printToString(lockDataBuilder.build()).getBytes(UTF_8);
     }
 
     private void checkLayout()
@@ -210,6 +214,10 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     public static String getUrLedgerZnode(String base, long ledgerId) {
         return String.format("%s/urL%010d", getParentZnodePath(base, ledgerId), ledgerId);
+    }
+
+    public static String getUrLedgerLockZnode(String base, long ledgerId) {
+        return String.format("%s/urL%010d", base, ledgerId);
     }
 
     private String getUrLedgerZnode(long ledgerId) {
@@ -399,8 +407,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                     }
 
                     long ledgerId = getLedgerId(tryChild);
-                    zkc.create(lockPath, TextFormat.printToString(lockData).getBytes(UTF_8),
-                               Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+                    zkc.create(lockPath, LOCK_DATA, Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
                     heldLocks.put(ledgerId, new Lock(lockPath, stat.getVersion()));
                     return ledgerId;
                 } catch (KeeperException.NodeExistsException nee) {
@@ -625,6 +632,34 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             Thread.currentThread().interrupt();
             throw new ReplicationException.UnavailableException(
                     "Interrupted while contacting zookeeper", ie);
+        }
+    }
+
+    /**
+     * Check whether the ledger is being replicated by any bookie
+     */
+    public static boolean isLedgerBeingReplicated(ZooKeeper zkc, String zkLedgersRootPath, long ledgerId)
+            throws KeeperException,
+            InterruptedException {
+        return zkc.exists(getUrLedgerLockZnode(getUrLockPath(zkLedgersRootPath), ledgerId), false) != null;
+    }
+
+    /**
+     * Acquire the underreplicated ledger lock
+     */
+    public static void acquireUnderreplicatedLedgerLock(ZooKeeper zkc, String zkLedgersRootPath, long ledgerId)
+            throws KeeperException, InterruptedException {
+        ZkUtils.createFullPathOptimistic(zkc, getUrLedgerLockZnode(getUrLockPath(zkLedgersRootPath), ledgerId),
+                LOCK_DATA, Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+    }
+
+    /**
+     * Release the underreplicated ledger lock if it exists
+     */
+    public static void releaseUnderreplicatedLedgerLock(ZooKeeper zkc, String zkLedgersRootPath, long ledgerId)
+            throws InterruptedException, KeeperException {
+        if (isLedgerBeingReplicated(zkc, zkLedgersRootPath, ledgerId)) {
+            zkc.delete(getUrLedgerLockZnode(getUrLockPath(zkLedgersRootPath), ledgerId), -1);
         }
     }
 }

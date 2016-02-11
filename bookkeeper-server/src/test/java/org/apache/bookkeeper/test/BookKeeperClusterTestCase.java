@@ -224,6 +224,23 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     /**
+     * Get bookie configuration for bookie
+     */
+    public ServerConfiguration getBkConf(BookieSocketAddress addr) throws Exception {
+        int bkIndex = 0;
+        for (BookieServer server : bs) {
+            if (server.getLocalAddress().equals(addr)) {
+                break;
+            }
+            ++bkIndex;
+        }
+        if (bkIndex < bs.size()) {
+            return bsConfs.get(bkIndex);
+        }
+        return null;
+    }
+
+    /**
      * Kill a bookie by its socket address. Also, stops the autorecovery process
      * for the corresponding bookie server, if isAutoRecoveryEnabled is true.
      *
