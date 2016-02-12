@@ -123,7 +123,13 @@ public class BookieClient implements PerChannelBookieClientFactory {
 
         this.scheduler = scheduler;
         if (conf.getAddEntryTimeout() > 0 || conf.getReadEntryTimeout() > 0) {
-            this.timeoutFuture = this.scheduler.scheduleAtFixedRate(() -> monitorPendingOperations(),
+            SafeRunnable monitor = new SafeRunnable() {
+                    @Override
+                    public void safeRun() {
+                        monitorPendingOperations();
+                    }
+                };
+            this.timeoutFuture = this.scheduler.scheduleAtFixedRate(monitor,
                                                                     conf.getTimeoutMonitorIntervalSec(),
                                                                     conf.getTimeoutMonitorIntervalSec(),
                                                                     TimeUnit.SECONDS);

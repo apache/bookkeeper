@@ -186,7 +186,13 @@ public class LedgerHandle implements WriteHandle {
         initializeExplicitLacFlushPolicy();
 
         if (bk.getConf().getAddEntryQuorumTimeout() > 0) {
-            this.timeoutFuture = bk.scheduler.scheduleAtFixedRate(() -> monitorPendingAddOps(),
+            SafeRunnable monitor = new SafeRunnable() {
+                    @Override
+                    public void safeRun() {
+                        monitorPendingAddOps();
+                    }
+                };
+            this.timeoutFuture = bk.scheduler.scheduleAtFixedRate(monitor,
                                                                   bk.getConf().getTimeoutMonitorIntervalSec(),
                                                                   bk.getConf().getTimeoutMonitorIntervalSec(),
                                                                   TimeUnit.SECONDS);
