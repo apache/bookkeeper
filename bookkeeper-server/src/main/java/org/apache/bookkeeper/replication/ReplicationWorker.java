@@ -252,6 +252,7 @@ public class ReplicationWorker implements Runnable {
                 LOG.warn("BKLedgerRecoveryException "
                         + "while replicating the fragment", e);
                 if (admin.getReadOnlyBookies().contains(targetBookie)) {
+                    underreplicationManager.releaseUnderreplicatedLedger(ledgerIdToReplicate);
                     throw new BKException.BKWriteOnReadOnlyBookieException();
                 }
             }
