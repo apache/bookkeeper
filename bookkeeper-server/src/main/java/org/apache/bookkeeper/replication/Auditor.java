@@ -237,6 +237,7 @@ public class Auditor implements BookiesListener {
                 LOG.info("Periodic checking disabled");
             }
             try {
+                notifyBookieChanges();
                 knownBookies = getAvailableBookies();
             } catch (BKException bke) {
                 LOG.error("Couldn't get bookie list, exiting", bke);
@@ -265,10 +266,7 @@ public class Auditor implements BookiesListener {
     }
 
     private List<String> getAvailableBookies() throws BKException {
-        // Get the available bookies, also watch for further changes
-        // Watching on only available bookies is sufficient, as changes in readonly bookies also changes in available
-        // bookies
-        admin.notifyBookiesChanged(this);
+        // Get the available bookies
         Collection<BookieSocketAddress> availableBkAddresses = admin.getAvailableBookies();
         Collection<BookieSocketAddress> readOnlyBkAddresses = admin.getReadOnlyBookies();
         availableBkAddresses.addAll(readOnlyBkAddresses);
@@ -278,6 +276,11 @@ public class Auditor implements BookiesListener {
             availableBookies.add(addr.toString());
         }
         return availableBookies;
+    }
+
+    private void notifyBookieChanges() throws BKException {
+        admin.notifyBookiesChanged(this);
+        admin.notifyReadOnlyBookiesChanged(this);
     }
 
     @SuppressWarnings("unchecked")
@@ -501,6 +504,12 @@ public class Auditor implements BookiesListener {
 
     @Override
     public void availableBookiesChanged() {
+        // since a watch is triggered, we need to watch again on the bookies
+        try {
+            notifyBookieChanges();
+        } catch (BKException bke) {
+            LOG.error("Exception while registering for a bookie change notification", bke);
+        }
         submitAuditTask();
     }
 

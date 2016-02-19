@@ -280,6 +280,48 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
     }
 
     /**
+     * Test Auditor should consider Readonly bookie fail and publish ur ledgers for readonly bookies.
+     */
+    @Test(timeout = 20000)
+    public void testReadOnlyBookieShutdown() throws Exception {
+        LedgerHandle lh = createAndAddEntriesToLedger();
+        long ledgerId = lh.getId();
+        ledgerList.add(ledgerId);
+        LOG.debug("Created following ledgers : " + ledgerList);
+
+        int count = ledgerList.size();
+        final CountDownLatch underReplicaLatch = registerUrLedgerWatcher(count);
+
+        int bkIndex = bs.size() - 1;
+        ServerConfiguration bookieConf = bsConfs.get(bkIndex);
+        BookieServer bk = bs.get(bkIndex);
+        bookieConf.setReadOnlyModeEnabled(true);
+        bk.getBookie().doTransitionToReadOnlyMode();
+
+        // grace period for publishing the bk-ledger
+        LOG.debug("Waiting for Auditor to finish ledger check.");
+        assertFalse("latch should not have completed", underReplicaLatch.await(5, TimeUnit.SECONDS));
+
+        String shutdownBookie = shutdownBookie(bkIndex);
+
+        // grace period for publishing the bk-ledger
+        LOG.debug("Waiting for ledgers to be marked as under replicated");
+        underReplicaLatch.await(5, TimeUnit.SECONDS);
+        Map<Long, String> urLedgerData = getUrLedgerData(urLedgerList);
+        assertEquals("Missed identifying under replicated ledgers", 1, urLedgerList.size());
+
+        /*
+         * Sample data format present in the under replicated ledger path
+         * 
+         * {4=replica: "10.18.89.153:5002"}
+         */
+        assertTrue("Ledger is not marked as underreplicated:" + ledgerId, urLedgerList.contains(ledgerId));
+        String data = urLedgerData.get(ledgerId);
+        assertTrue("Bookie " + shutdownBookie + "is not listed in the ledger as missing replica :" + data,
+                data.contains(shutdownBookie));
+    }
+
+    /**
      * Wait for ledger to be underreplicated, and to be missing all replicas specified
      */
     private boolean waitForLedgerMissingReplicas(Long ledgerId, long secondsToWait, String... replicas)
