@@ -770,11 +770,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 ++timedoutOperations;
             }
         }
-        for (CompletionKey key : completionObjectsV2Conflicts.keys()) {
-            for (CompletionValue value : completionObjectsV2Conflicts.get(key)) {
-                if (value != null && value.maybeTimeout()) {
-                    completionObjectsV2Conflicts.remove(key, value);
-                    ++timedoutOperations;
+        synchronized (this) {
+            for (CompletionKey key : completionObjectsV2Conflicts.keys()) {
+                for (CompletionValue value : completionObjectsV2Conflicts.get(key)) {
+                    if (value != null && value.maybeTimeout()) {
+                        completionObjectsV2Conflicts.remove(key, value);
+                        ++timedoutOperations;
+                    }
                 }
             }
         }
