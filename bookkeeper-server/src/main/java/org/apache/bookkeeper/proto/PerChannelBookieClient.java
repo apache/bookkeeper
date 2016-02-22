@@ -67,12 +67,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiPredicate;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 
@@ -144,8 +146,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     final BookieSocketAddress addr;
     final EventLoopGroup eventLoopGroup;
     final OrderedSafeExecutor executor;
-    final long addEntryTimeoutNano;
-    final long readEntryTimeoutNano;
+    final long addEntryTimeoutNanos;
+    final long readEntryTimeoutNanos;
     final int maxFrameSize;
     final int getBookieInfoTimeout;
     final int startTLSTimeout;
@@ -236,8 +238,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             this.eventLoopGroup = eventLoopGroup;
         }
         this.state = ConnectionState.DISCONNECTED;
-        this.addEntryTimeoutNano = TimeUnit.SECONDS.toNanos(conf.getAddEntryTimeout());
-        this.readEntryTimeoutNano = TimeUnit.SECONDS.toNanos(conf.getReadEntryTimeout());
+        this.addEntryTimeoutNanos = TimeUnit.SECONDS.toNanos(conf.getAddEntryTimeout());
+        this.readEntryTimeoutNanos = TimeUnit.SECONDS.toNanos(conf.getReadEntryTimeout());
         this.getBookieInfoTimeout = conf.getBookieInfoTimeout();
         this.startTLSTimeout = conf.getStartTLSTimeout();
         this.useV2WireProtocol = conf.getUseV2WireProtocol();
@@ -761,28 +763,27 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         writeAndFlush(channel, completionKey, getBookieInfoRequest);
     }
 
-    public void monitorPendingOperations() {
-        int timedoutOperations = 0;
-        for (CompletionKey key : completionObjects.keys()) {
-            CompletionValue value = completionObjects.get(key);
-            if (value != null && value.maybeTimeout()) {
-                completionObjects.remove(key, value);
-                ++timedoutOperations;
-            }
-        }
+    private static BiPredicate<CompletionKey, CompletionValue> timeoutCheck = (key, value) -> {
+        return value.maybeTimeout();
+    };
+
+    public void checkTimeoutOnPendingOperations() {
+        int timedOutOperations = completionObjects.removeIf(timeoutCheck);
+
         synchronized (this) {
-            for (CompletionKey key : completionObjectsV2Conflicts.keys()) {
-                for (CompletionValue value : completionObjectsV2Conflicts.get(key)) {
-                    if (value != null && value.maybeTimeout()) {
-                        completionObjectsV2Conflicts.remove(key, value);
-                        ++timedoutOperations;
-                    }
+            Iterator<CompletionValue> iterator = completionObjectsV2Conflicts.values().iterator();
+            while (iterator.hasNext()) {
+                CompletionValue value = iterator.next();
+                if (value.maybeTimeout()) {
+                    ++timedOutOperations;
+                    iterator.remove();
                 }
             }
         }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Successfully timed-out {} operations to channel {} for {}", new Object[] { timedoutOperations,
-                    channel, addr });
+
+        if (timedOutOperations > 0) {
+            LOG.info("Timed-out {} operations to channel {} for {}",
+                    new Object[] { timedOutOperations, channel, addr });
         }
     }
 
@@ -1245,7 +1246,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         boolean maybeTimeout() {
-            if (MathUtils.elapsedNanos(startTime) >= readEntryTimeoutNano) {
+            if (MathUtils.elapsedNanos(startTime) >= readEntryTimeoutNanos) {
                 timeout();
                 return true;
             } else {
@@ -1669,7 +1670,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         @Override
         boolean maybeTimeout() {
-            if (MathUtils.elapsedNanos(startTime) >= addEntryTimeoutNano) {
+            LOG.info("maybeTimeout");
+            if (MathUtils.elapsedNanos(startTime) >= addEntryTimeoutNanos) {
                 timeout();
                 return true;
             } else {
