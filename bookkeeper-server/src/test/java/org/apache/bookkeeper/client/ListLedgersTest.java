@@ -108,4 +108,29 @@ public class ListLedgersTest extends BaseTestCase {
         Assert.fail("Remove is not supported, we shouln't have reached this point");
 
     }
+    
+    @Test(timeout = 60000)
+    public void testCtimeRecorded()
+            throws Exception {
+
+        ClientConfiguration conf = new ClientConfiguration()
+                .setZkServers(zkUtil.getZooKeeperConnectString());
+
+        BookKeeper bkc = new BookKeeper(conf);
+
+        bkc.createLedger(digestType, "testPasswd".
+                getBytes()).close();
+
+        BookKeeperAdmin admin = new BookKeeperAdmin(zkUtil.
+                getZooKeeperConnectString());
+        Iterable<Long> iterable = admin.listLedgers();
+
+        for (Long lId : iterable) {
+            LedgerHandle ledger = bkc.openLedger(lId, digestType, "testPasswd".getBytes());
+            LedgerMetadata metaData = ledger.getLedgerMetadata();
+            Assert.assertTrue("ctime was not recorded", metaData.getCtime() > 0);
+        }
+
+    }
+    
 }

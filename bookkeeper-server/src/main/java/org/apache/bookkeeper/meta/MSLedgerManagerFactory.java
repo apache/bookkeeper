@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.meta;
 
+import com.google.common.base.Optional;
 import static org.apache.bookkeeper.metastore.MetastoreTable.ALL_FIELDS;
 import static org.apache.bookkeeper.metastore.MetastoreTable.NON_FIELDS;
 
@@ -408,7 +409,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                     LedgerMetadata metadata;
                     try {
                         metadata = LedgerMetadata
-                                .parseConfig(value.getValue().getField(META_FIELD), value.getVersion());
+                                .parseConfig(value.getValue().getField(META_FIELD), value.getVersion(), Optional.<Long>absent());
                     } catch (IOException e) {
                         LOG.error("Could not parse ledger metadata for ledger " + ledgerId + " : ", e);
                         readCb.operationComplete(BKException.Code.MetaStoreException, null);

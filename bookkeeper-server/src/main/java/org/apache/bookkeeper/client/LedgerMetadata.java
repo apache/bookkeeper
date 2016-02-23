@@ -37,6 +37,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import static com.google.common.base.Charsets.UTF_8;
+import com.google.common.base.Optional;
 
 /**
  * This class encapsulates all the ledger metadata that is persistently stored
@@ -66,6 +67,7 @@ public class LedgerMetadata {
     private int ackQuorumSize;
     private long length;
     private long lastEntryId;
+    private long ctime;
 
     private LedgerMetadataFormat.State state;
     private SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles =
@@ -82,6 +84,7 @@ public class LedgerMetadata {
         this.ensembleSize = ensembleSize;
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
+        this.ctime = System.currentTimeMillis();
 
         /*
          * It is set in PendingReadOp.readEntryComplete, and
@@ -104,6 +107,7 @@ public class LedgerMetadata {
     LedgerMetadata(LedgerMetadata other) {
         this.ensembleSize = other.ensembleSize;
         this.writeQuorumSize = other.writeQuorumSize;
+        this.ctime = other.ctime;
         this.ackQuorumSize = other.ackQuorumSize;
         this.length = other.length;
         this.lastEntryId = other.lastEntryId;
@@ -149,6 +153,14 @@ public class LedgerMetadata {
     public int getWriteQuorumSize() {
         return writeQuorumSize;
     }
+
+    /**
+     * Get the creation timestamp of the ledger
+     * @return 
+     */
+    public long getCtime() {
+        return ctime;
+    }        
 
     public int getAckQuorumSize() {
         return ackQuorumSize;
@@ -255,7 +267,7 @@ public class LedgerMetadata {
         LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
         builder.setQuorumSize(writeQuorumSize).setAckQuorumSize(ackQuorumSize)
             .setEnsembleSize(ensembleSize).setLength(length)
-            .setState(state).setLastEntryId(lastEntryId);
+            .setState(state).setLastEntryId(lastEntryId).setCtime(ctime);
 
         if (hasPassword) {
             builder.setDigestType(digestType).setPassword(ByteString.copyFrom(password));
@@ -308,11 +320,13 @@ public class LedgerMetadata {
      *            byte array to parse
      * @param version
      *            version of the ledger metadata
+     * @param msCtime
+     *            metadata store creation time, used for legacy ledgers
      * @return LedgerConfig
      * @throws IOException
      *             if the given byte[] cannot be parsed
      */
-    public static LedgerMetadata parseConfig(byte[] bytes, Version version) throws IOException {
+    public static LedgerMetadata parseConfig(byte[] bytes, Version version, Optional<Long> msCtime) throws IOException {
         LedgerMetadata lc = new LedgerMetadata();
         lc.version = version;
 
@@ -351,7 +365,12 @@ public class LedgerMetadata {
         LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
         TextFormat.merge(reader, builder);
         LedgerMetadataFormat data = builder.build();
-        lc.writeQuorumSize = data.getQuorumSize();
+        lc.writeQuorumSize = data.getQuorumSize();        
+        if (data.hasCtime()) {
+            lc.ctime = data.getCtime();
+        } else if (msCtime.isPresent()) {
+            lc.ctime = msCtime.get();
+        }        
         if (data.hasAckQuorumSize()) {
             lc.ackQuorumSize = data.getAckQuorumSize();
         } else {
@@ -463,6 +482,7 @@ public class LedgerMetadata {
         if (metadataFormatVersion != newMeta.metadataFormatVersion ||
             ensembleSize != newMeta.ensembleSize ||
             writeQuorumSize != newMeta.writeQuorumSize ||
+            ctime != newMeta.ctime ||
             ackQuorumSize != newMeta.ackQuorumSize ||
             length != newMeta.length ||
             state != newMeta.state ||
