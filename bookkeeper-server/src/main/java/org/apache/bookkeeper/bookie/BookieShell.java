@@ -733,7 +733,7 @@ public class BookieShell implements Tool {
 
                 for (int i = 0; i < numberOfEntries; i++) {
                     String content = "entry-" + i;
-                    lh.addEntry(content.getBytes());
+                    lh.addEntry(content.getBytes(UTF_8));
                 }
 
                 LOG.info("Written {} entries in ledger {}", numberOfEntries, lh.getId());
@@ -749,7 +749,7 @@ public class BookieShell implements Tool {
                 int i = 0;
                 while (entries.hasMoreElements()) {
                     LedgerEntry entry = entries.nextElement();
-                    String actualMsg = new String(entry.getEntry());
+                    String actualMsg = new String(entry.getEntry(), UTF_8);
                     String expectedMsg = "entry-" + (i++);
                     if (!expectedMsg.equals(actualMsg)) {
                         throw new Exception("Failed validation of received message - Expected: " + expectedMsg
