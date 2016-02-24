@@ -69,8 +69,8 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         return Arrays.asList(new Object[][] {{true}, {false}});
     }
 
-    private boolean isThrottleByBytes; 
-   
+    private boolean isThrottleByBytes;
+
     private final static Logger LOG = LoggerFactory.getLogger(CompactionTest.class);
     DigestType digestType;
 
@@ -119,7 +119,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         baseConf.setMinorCompactionInterval(minorCompactionInterval);
         baseConf.setMajorCompactionInterval(majorCompactionInterval);
         baseConf.setEntryLogFilePreAllocationEnabled(false);
-        baseConf.setSortedLedgerStorageEnabled(false);
+        baseConf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
         baseConf.setIsThrottleByBytes(this.isThrottleByBytes);
 
         super.setUp();
@@ -608,7 +608,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
                 LedgerManagerFactory.newLedgerManagerFactory(conf, zkc).newLedgerManager(),
                 dirManager, dirManager, cp, NullStatsLogger.INSTANCE);
         storage.start();
-        
+
         // test suspend Major GC.
         Thread.sleep(conf.getMajorCompactionInterval() * 1000
                    + conf.getGcWaitTime());
@@ -618,7 +618,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         Thread.sleep(conf.getMajorCompactionInterval() * 1000
                    + conf.getGcWaitTime());
         assertTrue("major compaction triggered while set suspend",
-                storage.gcThread.lastMajorCompactionTime < startTime); 
+                storage.gcThread.lastMajorCompactionTime < startTime);
 
         // test suspend Minor GC.
         storage.gcThread.suspendMinorGC();

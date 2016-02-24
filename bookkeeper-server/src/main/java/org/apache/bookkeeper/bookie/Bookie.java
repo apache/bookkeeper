@@ -503,19 +503,11 @@ public class Bookie extends BookieCriticalThread {
         // instantiate the journal
         journal = new Journal(conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE));
 
-        // Check the type of storage.
-        if (conf.getSortedLedgerStorageEnabled()) {
-            ledgerStorage = new SortedLedgerStorage();
-            ledgerStorage.initialize(conf, ledgerManager,
-                                     ledgerDirsManager, indexDirsManager,
-                                     journal, statsLogger);
-        } else {
-            String ledgerStorageClass = conf.getLedgerStorageClass();
-            LOG.info("using ledger storage: {}", ledgerStorageClass);
-            ledgerStorage = LedgerStorageFactory.createLedgerStorage(ledgerStorageClass);
-            ledgerStorage.initialize(conf, ledgerManager, ledgerDirsManager,
-                                     indexDirsManager, journal, statsLogger);
-        }
+        // Instantiate the ledger storage implementation
+        String ledgerStorageClass = conf.getLedgerStorageClass();
+        LOG.info("Using ledger storage: {}", ledgerStorageClass);
+        ledgerStorage = LedgerStorageFactory.createLedgerStorage(ledgerStorageClass);
+        ledgerStorage.initialize(conf, ledgerManager, ledgerDirsManager, indexDirsManager, journal, statsLogger);
         syncThread = new SyncThread(conf, getLedgerDirsListener(),
                                     ledgerStorage, journal);
 

@@ -321,7 +321,7 @@ public class LedgerCacheTest {
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setFlushInterval(1000)
             .setPageLimit(1)
-            .setSortedLedgerStorageEnabled(false);
+            .setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
 
         Bookie b = new Bookie(conf);
         b.start();

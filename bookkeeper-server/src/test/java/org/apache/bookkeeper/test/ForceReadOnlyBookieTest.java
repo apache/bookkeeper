@@ -24,6 +24,7 @@ import java.io.File;
 import java.util.Enumeration;
 
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
@@ -42,7 +43,7 @@ public class ForceReadOnlyBookieTest extends BookKeeperClusterTestCase {
     private final static Logger LOG = LoggerFactory.getLogger(ForceReadOnlyBookieTest.class);
     public ForceReadOnlyBookieTest() {
         super(2);
-        baseConf.setSortedLedgerStorageEnabled(false);
+        baseConf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
         baseConf.setEntryLogFilePreAllocationEnabled(false);
     }
 
@@ -65,11 +66,11 @@ public class ForceReadOnlyBookieTest extends BookKeeperClusterTestCase {
         bsConfs.get(1).setForceReadOnlyBookie(true);
         restartBookies();
         Bookie bookie = bs.get(1).getBookie();
-        
+
         assertTrue("Bookie should be running and in readonly mode",
                 bookie.isRunning() && bookie.isReadOnly());
         LOG.info("successed force start ReadOnlyBookie");
- 
+
         // Check new bookie with readonly mode enabled.
         File[] ledgerDirs = bsConfs.get(1).getLedgerDirs();
         assertEquals("Only one ledger dir should be present", 1, ledgerDirs.length);

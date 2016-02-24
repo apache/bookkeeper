@@ -24,13 +24,13 @@ import java.io.File;
 import java.util.Enumeration;
 
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.util.IOUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -42,7 +42,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
 
     public ReadOnlyBookieTest() {
         super(2);
-        baseConf.setSortedLedgerStorageEnabled(false);
+        baseConf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
         baseConf.setEntryLogFilePreAllocationEnabled(false);
     }
 
