@@ -651,10 +651,11 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
 
-        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx);
+        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx, false);
     }
 
     /**
+<<<<<<< HEAD
      * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
      * <br>This is the same of
      * {@link #asyncReadEntries(long, long, ReadCallback, Object) }
@@ -784,6 +785,30 @@ public class LedgerHandle implements WriteHandle {
                 }, bk.getMainWorkerPool().chooseThread(ledgerId));
         } else {
             cb.readComplete(Code.ClientClosedException, LedgerHandle.this, null, ctx);
+=======
+     * Read the last entry in the ledger
+     *
+     * @param cb
+     *            object implementing read callback interface
+     * @param ctx
+     *            control object
+     */
+    public void asyncReadLastEntry(ReadCallback cb, Object ctx) {
+        long lastEntryId = getLastAddConfirmed();
+        asyncReadEntriesInternal(lastEntryId, lastEntryId, cb, ctx, true);
+    }
+
+    void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb, Object ctx,
+            boolean isRecoveryRead) {
+        try {
+            PendingReadOp pendingReadOp = new PendingReadOp(this, bk.scheduler, firstEntry, lastEntry, cb, ctx);
+            if (isRecoveryRead) {
+                pendingReadOp.enableRecoveryFlag();
+            }
+            pendingReadOp.initiate();
+        } catch (InterruptedException e) {
+            cb.readComplete(BKException.Code.InterruptedException, this, null, ctx);
+>>>>>>> 372a99db... CMS-1255: Bookies should prioritize recovery reads/writes
         }
     }
 
