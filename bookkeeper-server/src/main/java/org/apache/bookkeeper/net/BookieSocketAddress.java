@@ -83,7 +83,7 @@ public class BookieSocketAddress {
         return sb.toString();
     }
 
-    // Implement an equals method comparing two HedwigSocketAddress objects.
+    // Implement an equals method comparing two BookieSocketAddress objects.
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof BookieSocketAddress))
