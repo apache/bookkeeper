@@ -379,7 +379,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         final CompletionKey completionKey = new CompletionKey(txnId, OperationType.READ_ENTRY);
         completionObjects.put(completionKey,
                 new ReadCompletion(readEntryOpLogger, cb, ctx, ledgerId, entryId,
-                        scheduleTimeout(completionKey, readEntryTimeout)));
+                                   scheduleTimeout(completionKey, readEntryTimeout)));
 
         // Build the request and calculate the total size to be included in the packet.
         BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
@@ -417,9 +417,9 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                         } else {
                             if (!(future.getCause() instanceof ClosedChannelException)) {
                                 LOG.warn("Writing readEntryAndFenceLedger(lid={}, eid={}) to channel {} failed : ",
-                                            new Object[] { ledgerId, entryId, c, future.getCause() });
-                                }
-                                errorOutReadKey(completionKey);
+                                        new Object[] { ledgerId, entryId, c, future.getCause() });
+                            }
+                            errorOutReadKey(completionKey);
                         }
                     }
             });
@@ -465,18 +465,18 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                     if (future.isSuccess()) {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Successfully wrote request {} to {}",
-                                    readRequest, c.getRemoteAddress());
+                                      readRequest, c.getRemoteAddress());
                         }
                     } else {
                         if (!(future.getCause() instanceof ClosedChannelException)) {
                             LOG.warn("Writing readEntry(lid={}, eid={}) to channel {} failed : ",
-                                    new Object[]{ledgerId, entryId, c, future.getCause()});
+                                    new Object[] { ledgerId, entryId, c, future.getCause()});
                         }
                         errorOutReadKey(completionKey);
                     }
                 }
             });
-        } catch (Throwable e) {
+        } catch(Throwable e) {
             LOG.warn("Read entry operation {} failed", readRequest, e);
             errorOutReadKey(completionKey);
         }
@@ -687,7 +687,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         Throwable t = e.getCause();
         if (t instanceof CorruptedFrameException || t instanceof TooLongFrameException) {
             LOG.error("Corrupted frame received from bookie: {}",
-                     e.getChannel().getRemoteAddress());
+                      e.getChannel().getRemoteAddress());
             return;
         }
 
@@ -701,7 +701,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         synchronized (this) {
             if (state == ConnectionState.CLOSED) {
                 LOG.debug("Unexpected exception caught by bookie client channel handler, "
-                         + "but the client is closed, so it isn't important", t);
+                          + "but the client is closed, so it isn't important", t);
             } else {
                 LOG.error("Unexpected exception caught by bookie client channel handler", t);
             }
@@ -747,7 +747,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                             break;
                         default:
                             LOG.error("Unexpected response, type:{} received from bookie:{}, ignoring",
-                                     type, addr);
+                                      type, addr);
                             break;
                     }
                 }
@@ -850,7 +850,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         final ReadEntryCallback cb;
 
         public ReadCompletion(ReadEntryCallback cb, Object ctx,
-                long ledgerId, long entryId) {
+                              long ledgerId, long entryId) {
             this(null, cb, ctx, ledgerId, entryId, null);
         }
 

@@ -148,7 +148,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
             final PerChannelBookieClientPool client = lookupClient(addr, entryId);
             if (client == null) {
                 cb.writeComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
-                        ledgerId, entryId, addr, ctx);
+                                 ledgerId, entryId, addr, ctx);
                 return;
             }
 
@@ -188,7 +188,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
             final PerChannelBookieClientPool client = lookupClient(addr, entryId);
             if (client == null) {
                 cb.readEntryComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
-                                           ledgerId, entryId, null, ctx);
+                                     ledgerId, entryId, null, ctx);
                 return;
             }
 
@@ -205,7 +205,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                             });
                         } catch (RejectedExecutionException re) {
                             cb.readEntryComplete(getRc(BKException.Code.InterruptedException),
-                                                 ledgerId, entryId, null, ctx);
+                                   ledgerId, entryId, null, ctx);
                         }
                         return;
                     }
@@ -218,7 +218,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
     }
 
     public void readEntry(final BookieSocketAddress addr, final long ledgerId, final long entryId,
-            final ReadEntryCallback cb, final Object ctx) {
+                          final ReadEntryCallback cb, final Object ctx) {
         closeLock.readLock().lock();
         try {
             final PerChannelBookieClientPool client = lookupClient(addr, entryId);
@@ -241,7 +241,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                             });
                         } catch (RejectedExecutionException re) {
                             cb.readEntryComplete(getRc(BKException.Code.InterruptedException),
-                                    ledgerId, entryId, null, ctx);
+                                                 ledgerId, entryId, null, ctx);
                         }
                         return;
                     }

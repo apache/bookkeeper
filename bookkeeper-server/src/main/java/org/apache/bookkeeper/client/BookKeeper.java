@@ -878,9 +878,9 @@ public class BookKeeper {
 
         final IsClosedCallback cb = new IsClosedCallback(){
             public void isClosedComplete(int rc, boolean isClosed, Object ctx){
-                   result.isClosed = isClosed;
-                   result.rc = rc;
-                   result.notifier.countDown();
+                    result.isClosed = isClosed;
+                    result.rc = rc;
+                    result.notifier.countDown();
             }
         };
 
