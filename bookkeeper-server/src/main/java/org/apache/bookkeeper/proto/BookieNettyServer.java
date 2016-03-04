@@ -129,9 +129,7 @@ class BookieNettyServer {
 
         if (conf.isEnableLocalTransport()) {
             ServerBootstrap jvmbootstrap = new ServerBootstrap(jvmServerChannelFactory);
-            jvmbootstrap.setPipelineFactory(new BookiePipelineFactory());
-            jvmbootstrap.setOption("child.tcpNoDelay", conf.getServerTcpNoDelay());
-            jvmbootstrap.setOption("child.soLinger", 2);
+            jvmbootstrap.setPipelineFactory(new BookiePipelineFactory());            
 
             // use the same address 'name', so clients can find local Bookie still discovering them using ZK
             Channel jvmlisten = jvmbootstrap.bind(new LocalAddress(bookieAddress.getSocketAddress().toString()));
