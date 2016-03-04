@@ -44,6 +44,7 @@ import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;
@@ -57,10 +58,11 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class BookieClient implements PerChannelBookieClientFactory {
+
     static final Logger LOG = LoggerFactory.getLogger(BookieClient.class);
 
     final OrderedSafeExecutor executor;
-    final ClientSocketChannelFactory channelFactory;
+    final ChannelFactory channelFactory;
     final ConcurrentHashMap<BookieSocketAddress, PerChannelBookieClientPool> channels =
             new ConcurrentHashMap<BookieSocketAddress, PerChannelBookieClientPool>();
     final HashedWheelTimer requestTimer;
@@ -75,6 +77,11 @@ public class BookieClient implements PerChannelBookieClientFactory {
     }
 
     public BookieClient(ClientConfiguration conf, ClientSocketChannelFactory channelFactory, OrderedSafeExecutor executor,
+                        StatsLogger statsLogger) {
+        this(conf, (ChannelFactory) channelFactory, executor, statsLogger);
+    }
+
+    public BookieClient(ClientConfiguration conf, ChannelFactory channelFactory, OrderedSafeExecutor executor,
                         StatsLogger statsLogger) {
         this.conf = conf;
         this.channelFactory = channelFactory;

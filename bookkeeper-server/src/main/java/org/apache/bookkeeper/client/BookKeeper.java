@@ -55,6 +55,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.jboss.netty.channel.ChannelFactory;
 
 /**
  * BookKeeper client. We assume there is one single writer to a ledger at any
@@ -68,13 +69,12 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  *
  *
  */
-
 public class BookKeeper {
 
     static final Logger LOG = LoggerFactory.getLogger(BookKeeper.class);
 
     final ZooKeeper zk;
-    final ClientSocketChannelFactory channelFactory;
+    final ChannelFactory channelFactory;
 
     // The stats logger for this client.
     private final StatsLogger statsLogger;
@@ -115,7 +115,7 @@ public class BookKeeper {
         final ClientConfiguration conf;
 
         ZooKeeper zk = null;
-        ClientSocketChannelFactory channelFactory = null;
+        ChannelFactory channelFactory = null;
         StatsLogger statsLogger = NullStatsLogger.INSTANCE;
 
         Builder(ClientConfiguration conf) {
@@ -123,6 +123,11 @@ public class BookKeeper {
         }
 
         public Builder setChannelFactory(ClientSocketChannelFactory f) {
+            channelFactory = f;
+            return this;
+        }
+
+        public Builder setChannelFactory(ChannelFactory f) {
             channelFactory = f;
             return this;
         }
@@ -186,7 +191,7 @@ public class BookKeeper {
         return zk;
     }
 
-    private static ClientSocketChannelFactory validateChannelFactory(ClientSocketChannelFactory factory)
+    private static ChannelFactory validateChannelFactory(ChannelFactory factory)
             throws NullPointerException {
         Preconditions.checkNotNull(factory, "No Channel Factory provided");
         return factory;
@@ -233,9 +238,14 @@ public class BookKeeper {
      * @throws InterruptedException
      * @throws KeeperException if the passed zk handle is not connected
      */
+    public BookKeeper(ClientConfiguration conf, ZooKeeper zk, ChannelFactory channelFactory)
+            throws IOException, InterruptedException, KeeperException {
+        this(conf, zk, validateChannelFactory(channelFactory), NullStatsLogger.INSTANCE);
+    }
+
     public BookKeeper(ClientConfiguration conf, ZooKeeper zk, ClientSocketChannelFactory channelFactory)
             throws IOException, InterruptedException, KeeperException {
-        this(conf, validateZooKeeper(zk), validateChannelFactory(channelFactory), NullStatsLogger.INSTANCE);
+        this(conf, zk, channelFactory, NullStatsLogger.INSTANCE);
     }
 
     /**
@@ -243,7 +253,7 @@ public class BookKeeper {
      */
     private BookKeeper(ClientConfiguration conf,
                        ZooKeeper zkc,
-                       ClientSocketChannelFactory channelFactory,
+                       ChannelFactory channelFactory,
                        StatsLogger statsLogger)
             throws IOException, InterruptedException, KeeperException {
         this.conf = conf;

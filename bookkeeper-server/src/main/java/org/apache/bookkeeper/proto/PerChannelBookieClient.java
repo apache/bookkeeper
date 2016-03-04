@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.google.protobuf.ByteString;
+import java.net.SocketAddress;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperClientStats;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -54,6 +55,7 @@ import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -64,6 +66,9 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
+import org.jboss.netty.channel.local.DefaultLocalClientChannelFactory;
+import org.jboss.netty.channel.local.LocalAddress;
+import org.jboss.netty.channel.local.LocalClientChannelFactory;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.CorruptedFrameException;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
@@ -89,7 +94,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     public static final AtomicLong txnIdGenerator = new AtomicLong(0);
 
     final BookieSocketAddress addr;
-    final ClientSocketChannelFactory channelFactory;
+    final ChannelFactory channelFactory;
     final OrderedSafeExecutor executor;
     final HashedWheelTimer requestTimer;
     final int addEntryTimeout;
@@ -127,10 +132,20 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     public PerChannelBookieClient(ClientConfiguration conf, OrderedSafeExecutor executor,
                                   ClientSocketChannelFactory channelFactory, BookieSocketAddress addr,
                                   HashedWheelTimer requestTimer, StatsLogger parentStatsLogger) {
+        this(conf, executor, (ChannelFactory) channelFactory, addr, requestTimer, parentStatsLogger);
+    }
+
+    public PerChannelBookieClient(ClientConfiguration conf, OrderedSafeExecutor executor,
+                                  ChannelFactory channelFactory, BookieSocketAddress addr,
+                                  HashedWheelTimer requestTimer, StatsLogger parentStatsLogger) {
         this.conf = conf;
         this.addr = addr;
-        this.executor = executor;
-        this.channelFactory = channelFactory;
+        this.executor = executor;                
+        if (LocalBookiesRegistry.isLocalBookie(addr)){            
+            this.channelFactory = new DefaultLocalClientChannelFactory();
+        } else {            
+            this.channelFactory = channelFactory;
+        }            
         this.state = ConnectionState.DISCONNECTED;
         this.requestTimer = requestTimer;
         this.addEntryTimeout = conf.getAddEntryTimeout();
@@ -176,8 +191,11 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         bootstrap.setOption("child.receiveBufferSize", conf.getClientReceiveBufferSize());
         bootstrap.setOption("writeBufferLowWaterMark", conf.getClientWriteBufferLowWaterMark());
         bootstrap.setOption("writeBufferHighWaterMark", conf.getClientWriteBufferHighWaterMark());
-
-        ChannelFuture future = bootstrap.connect(addr.getSocketAddress());
+        SocketAddress bookieAddr = addr.getSocketAddress();        
+        if (channelFactory instanceof LocalClientChannelFactory) {
+            bookieAddr = new LocalAddress(addr.getSocketAddress().toString());
+        }
+        ChannelFuture future = bootstrap.connect(bookieAddr);
         future.addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
@@ -596,7 +614,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
      * simpler to call it from BookieHandle instead of calling directly from
      * here.
      */
-
+    
     void errorOutOutstandingEntries(int rc) {
 
         // DO NOT rewrite these using Map.Entry iterations. We want to iterate
