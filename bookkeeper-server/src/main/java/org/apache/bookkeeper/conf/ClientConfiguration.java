@@ -106,10 +106,12 @@ public class ClientConfiguration extends AbstractConfiguration {
     /**
      * Set throttle value.
      *
-     * Since BookKeeper process requests in asynchrous way, it will holds
+     * Since BookKeeper process requests in asynchronous way, it will holds
      * those pending request in queue. You may easily run it out of memory
      * if producing too many requests than the capability of bookie servers can handle.
-     * To prevent that from happeding, you can set a throttle value here.
+     * To prevent that from happening, you can set a throttle value here.
+     *
+     * Setting the throttle value to 0, will disable any throttling.
      *
      * @param throttle
      *          Throttle Value

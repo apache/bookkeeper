@@ -343,7 +343,9 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     }
 
     void sendReadTo(BookieSocketAddress to, LedgerEntryRequest entry) throws InterruptedException {
-        lh.throttler.acquire();
+        if (lh.throttler != null) {
+            lh.throttler.acquire();
+        }
 
         lh.bk.bookieClient.readEntry(to, lh.ledgerId, entry.entryId,
                                      this, new ReadContext(to, entry));
@@ -373,6 +375,11 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     }
 
     private void submitCallback(int code) {
+        if (cb == null) {
+            // Callback had already been triggered before
+            return;
+        }
+
         long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
         if (code != BKException.Code.OK) {
             long firstUnread = LedgerHandle.INVALID_ENTRY_ID;
@@ -390,6 +397,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         }
         cancelSpeculativeTask(true);
         cb.readComplete(code, lh, PendingReadOp.this, PendingReadOp.this.ctx);
+        cb = null;
     }
 
     @Override

@@ -106,8 +106,12 @@ public class TestZooKeeperClient extends TestCase {
     class ShutdownZkServerClient extends ZooKeeperClient {
 
         ShutdownZkServerClient(String connectString, int sessionTimeoutMs,
-                ZooKeeperWatcherBase watcher, RetryPolicy operationRetryPolicy)throws IOException {
-            super(connectString, sessionTimeoutMs, watcher, operationRetryPolicy, null, NullStatsLogger.INSTANCE, 1, 0);
+                ZooKeeperWatcherBase watcher, RetryPolicy operationRetryPolicy)
+                throws IOException {
+            super(connectString, sessionTimeoutMs, watcher,
+                    new BoundExponentialBackoffRetryPolicy(sessionTimeoutMs, sessionTimeoutMs, Integer.MAX_VALUE),
+                    operationRetryPolicy,
+                    NullStatsLogger.INSTANCE, 1, 0);
         }
 
         @Override

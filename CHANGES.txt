@@ -99,6 +99,8 @@ Trunk (unreleased changes)
 
       BOOKKEEPER-866: Fix compile issue when Updating junit to latest release version( 4.12) in the test of  Bookkeeper-server. (Jia Zhai via sijie)
 
+      BOOKKEEPER-877: Script for generating patch for reviews (sijie)
+
       bookkeeper-client:
 
         BOOKKEEPER-810: Allow to configure TCP connect timeout (Charles Xie via sijie)
