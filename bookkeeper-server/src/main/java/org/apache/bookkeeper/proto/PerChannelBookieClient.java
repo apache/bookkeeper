@@ -66,6 +66,7 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
+import org.jboss.netty.channel.local.DefaultLocalClientChannelFactory;
 import org.jboss.netty.channel.local.LocalAddress;
 import org.jboss.netty.channel.local.LocalClientChannelFactory;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -139,8 +140,12 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             HashedWheelTimer requestTimer, StatsLogger parentStatsLogger) {
         this.conf = conf;
         this.addr = addr;
-        this.executor = executor;
-        this.channelFactory = channelFactory;
+        this.executor = executor;                
+        if (LocalBookiesRegistry.isLocalBookie(addr)){            
+            this.channelFactory = new DefaultLocalClientChannelFactory();
+        } else {            
+            this.channelFactory = channelFactory;
+        }            
         this.state = ConnectionState.DISCONNECTED;
         this.requestTimer = requestTimer;
         this.addEntryTimeout = conf.getAddEntryTimeout();
@@ -186,7 +191,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         bootstrap.setOption("child.receiveBufferSize", conf.getClientReceiveBufferSize());
         bootstrap.setOption("writeBufferLowWaterMark", conf.getClientWriteBufferLowWaterMark());
         bootstrap.setOption("writeBufferHighWaterMark", conf.getClientWriteBufferHighWaterMark());
-        SocketAddress bookieAddr = addr.getSocketAddress();
+        SocketAddress bookieAddr = addr.getSocketAddress();        
         if (channelFactory instanceof LocalClientChannelFactory) {
             bookieAddr = new LocalAddress(addr.getSocketAddress().toString());
         }
