@@ -252,9 +252,9 @@ public class BookKeeper {
      * Contructor for use with the builder. Other constructors also use it.
      */
     private BookKeeper(ClientConfiguration conf,
-            ZooKeeper zkc,
-            ChannelFactory channelFactory,
-            StatsLogger statsLogger)
+                       ZooKeeper zkc,
+                       ChannelFactory channelFactory,
+                       StatsLogger statsLogger)
             throws IOException, InterruptedException, KeeperException {
         this.conf = conf;
 
