@@ -77,12 +77,12 @@ public class BookieClient implements PerChannelBookieClientFactory {
     }
 
     public BookieClient(ClientConfiguration conf, ClientSocketChannelFactory channelFactory, OrderedSafeExecutor executor,
-            StatsLogger statsLogger) {
+                        StatsLogger statsLogger) {
         this(conf, (ChannelFactory) channelFactory, executor, statsLogger);
     }
 
     public BookieClient(ClientConfiguration conf, ChannelFactory channelFactory, OrderedSafeExecutor executor,
-            StatsLogger statsLogger) {
+                        StatsLogger statsLogger) {
         this.conf = conf;
         this.channelFactory = channelFactory;
         this.executor = executor;
@@ -101,17 +101,17 @@ public class BookieClient implements PerChannelBookieClientFactory {
             return rc;
         } else {
             if (closed) {
-            return BKException.Code.ClientClosedException;
-        } else {
-            return rc;
+                return BKException.Code.ClientClosedException;
+            } else {
+                return rc;
+            }
         }
-    }
     }
 
     @Override
     public PerChannelBookieClient create(BookieSocketAddress address) {
         return new PerChannelBookieClient(conf, executor, channelFactory, address,
-                requestTimer, statsLogger);
+                                          requestTimer, statsLogger);
     }
 
     private PerChannelBookieClientPool lookupClient(BookieSocketAddress addr, Object key) {
@@ -178,17 +178,17 @@ public class BookieClient implements PerChannelBookieClientFactory {
     }
 
     public void readEntryAndFenceLedger(final BookieSocketAddress addr,
-            final long ledgerId,
-            final byte[] masterKey,
-            final long entryId,
-            final ReadEntryCallback cb,
-            final Object ctx) {
+                                        final long ledgerId,
+                                        final byte[] masterKey,
+                                        final long entryId,
+                                        final ReadEntryCallback cb,
+                                        final Object ctx) {
         closeLock.readLock().lock();
         try {
             final PerChannelBookieClientPool client = lookupClient(addr, entryId);
             if (client == null) {
                 cb.readEntryComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
-                        ledgerId, entryId, null, ctx);
+                                           ledgerId, entryId, null, ctx);
                 return;
             }
 
@@ -205,7 +205,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                             });
                         } catch (RejectedExecutionException re) {
                             cb.readEntryComplete(getRc(BKException.Code.InterruptedException),
-                                    ledgerId, entryId, null, ctx);
+                                                 ledgerId, entryId, null, ctx);
                         }
                         return;
                     }

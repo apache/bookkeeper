@@ -339,11 +339,11 @@ public class BookKeeper {
             return rc;
         } else {
             if (bookieClient.isClosed()) {
-            return BKException.Code.ClientClosedException;
-        } else {
-            return rc;
-        }
-    }
+                return BKException.Code.ClientClosedException;
+            } else {
+                return rc;
+            }
+        }    
     }
 
     LedgerManager getLedgerManager() {
@@ -413,7 +413,8 @@ public class BookKeeper {
     public void asyncCreateLedger(final int ensSize,
                                   final int writeQuorumSize,
                                   final DigestType digestType,
-                                  final byte[] passwd, final CreateCallback cb, final Object ctx) {
+                                  final byte[] passwd, final CreateCallback cb, final Object ctx)
+    {
         asyncCreateLedger(ensSize, writeQuorumSize, writeQuorumSize, digestType, passwd, cb, ctx);
     }
 
@@ -528,7 +529,7 @@ public class BookKeeper {
          * Calls asynchronous version
          */
         asyncCreateLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                new SyncCreateCallback(), counter);
+                          new SyncCreateCallback(), counter);
 
         /*
          * Wait
@@ -618,10 +619,10 @@ public class BookKeeper {
      *          optional control object
      */
     public void asyncCreateLedgerAdv(final int ensSize,
-            final int writeQuorumSize,
-            final int ackQuorumSize,
-            final DigestType digestType,
-            final byte[] passwd, final CreateCallback cb, final Object ctx) {
+                                     final int writeQuorumSize,
+                                     final int ackQuorumSize,
+                                     final DigestType digestType,
+                                     final byte[] passwd, final CreateCallback cb, final Object ctx) {
         if (writeQuorumSize < ackQuorumSize) {
             throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
         }
@@ -706,7 +707,7 @@ public class BookKeeper {
      *          optional control object
      */
     public void asyncOpenLedgerNoRecovery(final long lId, final DigestType digestType, final byte passwd[],
-            final OpenCallback cb, final Object ctx) {
+                                          final OpenCallback cb, final Object ctx) {
         closeLock.readLock().lock();
         try {
             if (closed) {
@@ -877,9 +878,9 @@ public class BookKeeper {
 
         final IsClosedCallback cb = new IsClosedCallback(){
             public void isClosedComplete(int rc, boolean isClosed, Object ctx){
-                result.isClosed = isClosed;
-                result.rc = rc;
-                result.notifier.countDown();
+                   result.isClosed = isClosed;
+                   result.rc = rc;
+                   result.notifier.countDown();
             }
         };
 
@@ -1019,4 +1020,4 @@ public class BookKeeper {
     OpStatsLogger getDeleteOpLogger() { return deleteOpLogger; }
     OpStatsLogger getReadOpLogger() { return readOpLogger; }
     OpStatsLogger getAddOpLogger() { return addOpLogger; }
-    }
+}

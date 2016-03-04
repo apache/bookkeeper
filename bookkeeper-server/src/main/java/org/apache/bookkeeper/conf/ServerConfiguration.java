@@ -1469,7 +1469,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     public boolean getUseHostNameAsBookieID() {
         return getBoolean(USE_HOST_NAME_AS_BOOKIE_ID, false);
     }
-    
+
     /**
      * Configure the bookie to use its hostname to register with the
      * co-ordination service(eg: zookeeper) and in ledger metadata

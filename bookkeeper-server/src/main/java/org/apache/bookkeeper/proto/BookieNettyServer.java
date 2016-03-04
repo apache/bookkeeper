@@ -144,7 +144,7 @@ class BookieNettyServer {
         isRunning.set(true);
     }
 
-    void shutdown() {                
+    void shutdown() {
         LOG.info("Shutting down BookieNettyServer");
         if (conf.isEnableLocalTransport()) {
             LocalBookiesRegistry.unregisterLocalBookieAddress(bookieAddress);
