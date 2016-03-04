@@ -343,7 +343,7 @@ public class BookKeeper {
             } else {
                 return rc;
             }
-        }    
+        }
     }
 
     LedgerManager getLedgerManager() {

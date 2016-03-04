@@ -614,6 +614,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
      * simpler to call it from BookieHandle instead of calling directly from
      * here.
      */
+    
     void errorOutOutstandingEntries(int rc) {
 
         // DO NOT rewrite these using Map.Entry iterations. We want to iterate
