@@ -1,6 +1,5 @@
 package org.apache.bookkeeper.client;
 
-import java.util.Enumeration;
 
 /*
 *
@@ -23,46 +22,29 @@ import java.util.Enumeration;
 *
  */
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
-import org.apache.bookkeeper.client.BKException.BKBookieHandleNotAvailableException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.test.BaseTestCase;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.KeeperException;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.local.DefaultLocalClientChannelFactory;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.SocketChannel;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-
-import org.junit.Assert;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static org.junit.Assert.*;
 
 /**
  * Tests of the main BookKeeper client using networkless comunication
  */
 public class LocalBookKeeperTest extends BaseTestCase {
-
-    private final static Logger LOG = LoggerFactory.getLogger(LocalBookKeeperTest.class);
-
+    
+    protected ServerConfiguration newServerConfiguration() throws Exception {       
+        return super
+                .newServerConfiguration()
+                .setEnableLocalTransport(true);
+    }
+        
     DigestType digestType;
-
+    
     public LocalBookKeeperTest(DigestType digestType) {
-        super(1);
-
-        this.digestType = digestType;
+        super(4);            
+        this.digestType=digestType;
     }
 
     @Test
@@ -74,10 +56,11 @@ public class LocalBookKeeperTest extends BaseTestCase {
         CountDownLatch l = new CountDownLatch(1);
         zkUtil.sleepServer(5, l);
         l.await();
-        
-        
-        BookKeeper bkc = new BookKeeper(conf, null,new DefaultLocalClientChannelFactory());
-        bkc.createLedger(1,1,digestType, "testPasswd".getBytes()).close();
+                
+        BookKeeper bkc = new BookKeeper(conf);
+        LedgerHandle h = bkc.createLedger(1,1,digestType, "testPasswd".getBytes());
+        h.addEntry("test".getBytes());
+        h.close();
         bkc.close();
     }
 
