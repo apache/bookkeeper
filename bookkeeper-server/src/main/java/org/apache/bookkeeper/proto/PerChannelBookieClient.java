@@ -212,7 +212,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                     } else if (future.isSuccess() && (state == ConnectionState.CLOSED
                                                       || state == ConnectionState.DISCONNECTED)) {
                         LOG.warn("Closed before connection completed, clean up: {}, current state {}",
-                                future.getChannel(), state);
+                                 future.getChannel(), state);
                         closeChannel(future.getChannel());
                         rc = BKException.Code.BookieHandleNotAvailableException;
                         channel = null;
@@ -422,7 +422,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                             errorOutReadKey(completionKey);
                         }
                     }
-            });
+                });
         } catch(Throwable e) {
             LOG.warn("Read entry operation {} failed", completionKey, e);
             errorOutReadKey(completionKey);
@@ -470,7 +470,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                     } else {
                         if (!(future.getCause() instanceof ClosedChannelException)) {
                             LOG.warn("Writing readEntry(lid={}, eid={}) to channel {} failed : ",
-                                    new Object[] { ledgerId, entryId, c, future.getCause()});
+                                    new Object[] { ledgerId, entryId, c, future.getCause() });
                         }
                         errorOutReadKey(completionKey);
                     }

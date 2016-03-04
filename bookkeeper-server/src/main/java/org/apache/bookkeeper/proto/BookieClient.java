@@ -205,7 +205,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                             });
                         } catch (RejectedExecutionException re) {
                             cb.readEntryComplete(getRc(BKException.Code.InterruptedException),
-                                   ledgerId, entryId, null, ctx);
+                                    ledgerId, entryId, null, ctx);
                         }
                         return;
                     }
@@ -224,7 +224,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
             final PerChannelBookieClientPool client = lookupClient(addr, entryId);
             if (client == null) {
                 cb.readEntryComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
-                        ledgerId, entryId, null, ctx);
+                                     ledgerId, entryId, null, ctx);
                 return;
             }
 
@@ -241,7 +241,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                             });
                         } catch (RejectedExecutionException re) {
                             cb.readEntryComplete(getRc(BKException.Code.InterruptedException),
-                                                 ledgerId, entryId, null, ctx);
+                                    ledgerId, entryId, null, ctx);
                         }
                         return;
                     }
