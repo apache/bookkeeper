@@ -166,7 +166,7 @@ public class BookKeeper {
      * @throws KeeperException
      */
     public BookKeeper(String servers) throws IOException, InterruptedException,
-            KeeperException {
+        KeeperException {
         this(new ClientConfiguration().setZkServers(servers));
     }
 
@@ -325,7 +325,7 @@ public class BookKeeper {
     }
 
     private EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf)
-            throws IOException {
+        throws IOException {
         try {
             Class<? extends EnsemblePlacementPolicy> policyCls = conf.getEnsemblePlacementPolicy();
             return ReflectionUtils.newInstance(policyCls).initialize(conf);
@@ -411,9 +411,9 @@ public class BookKeeper {
      *          optional control object
      */
     public void asyncCreateLedger(final int ensSize,
-            final int writeQuorumSize,
-            final DigestType digestType,
-            final byte[] passwd, final CreateCallback cb, final Object ctx) {
+                                  final int writeQuorumSize,
+                                  final DigestType digestType,
+                                  final byte[] passwd, final CreateCallback cb, final Object ctx) {
         asyncCreateLedger(ensSize, writeQuorumSize, writeQuorumSize, digestType, passwd, cb, ctx);
     }
 
@@ -448,10 +448,10 @@ public class BookKeeper {
      */
 
     public void asyncCreateLedger(final int ensSize,
-            final int writeQuorumSize,
-            final int ackQuorumSize,
-            final DigestType digestType,
-            final byte[] passwd, final CreateCallback cb, final Object ctx) {
+                                  final int writeQuorumSize,
+                                  final int ackQuorumSize,
+                                  final DigestType digestType,
+                                  final byte[] passwd, final CreateCallback cb, final Object ctx) {
         if (writeQuorumSize < ackQuorumSize) {
             throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
         }
@@ -462,8 +462,8 @@ public class BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                    ackQuorumSize, digestType, passwd, cb, ctx)
-                    .initiate();
+                               ackQuorumSize, digestType, passwd, cb, ctx)
+                .initiate();
         } finally {
             closeLock.readLock().unlock();
         }
@@ -500,7 +500,7 @@ public class BookKeeper {
      * @throws BKException
      */
     public LedgerHandle createLedger(int ensSize, int qSize,
-            DigestType digestType, byte passwd[])
+                                     DigestType digestType, byte passwd[])
             throws InterruptedException, BKException {
         return createLedger(ensSize, qSize, qSize, digestType, passwd);
     }
@@ -520,7 +520,7 @@ public class BookKeeper {
      * @throws BKException
      */
     public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
-            DigestType digestType, byte passwd[])
+                                     DigestType digestType, byte passwd[])
             throws InterruptedException, BKException {
         SyncCounter counter = new SyncCounter();
         counter.inc();
@@ -562,7 +562,7 @@ public class BookKeeper {
      * @throws BKException
      */
     public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
-            DigestType digestType, byte passwd[])
+                                        DigestType digestType, byte passwd[])
             throws InterruptedException, BKException {
         SyncCounter counter = new SyncCounter();
         counter.inc();
@@ -570,7 +570,7 @@ public class BookKeeper {
          * Calls asynchronous version
          */
         asyncCreateLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                new SyncCreateCallback(), counter);
+                             new SyncCreateCallback(), counter);
 
         /*
          * Wait
@@ -632,7 +632,7 @@ public class BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                    ackQuorumSize, digestType, passwd, cb, ctx).initiateAdv();
+                               ackQuorumSize, digestType, passwd, cb, ctx).initiateAdv();
         } finally {
             closeLock.readLock().unlock();
         }
@@ -665,7 +665,7 @@ public class BookKeeper {
      *          optional control object
      */
     public void asyncOpenLedger(final long lId, final DigestType digestType, final byte passwd[],
-            final OpenCallback cb, final Object ctx) {
+                                final OpenCallback cb, final Object ctx) {
         closeLock.readLock().lock();
         try {
             if (closed) {
@@ -779,7 +779,7 @@ public class BookKeeper {
          * Calls async open ledger
          */
         asyncOpenLedgerNoRecovery(lId, digestType, passwd,
-                new SyncOpenCallback(), counter);
+                                  new SyncOpenCallback(), counter);
 
         /*
          * Wait
@@ -866,7 +866,7 @@ public class BookKeeper {
      * @throws BKException
      */
     public boolean isClosed(long lId)
-            throws BKException, InterruptedException {
+    throws BKException, InterruptedException {
         final class Result {
             int rc;
             boolean isClosed;
