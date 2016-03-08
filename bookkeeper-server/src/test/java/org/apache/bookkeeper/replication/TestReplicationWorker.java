@@ -19,6 +19,17 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
+
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.ClientUtil;
@@ -32,21 +43,11 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.MultiLedgerManagerTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import static org.junit.Assert.*;
 
 /**
  * Test the ReplicationWroker, where it has to replicate the fragments from
@@ -58,6 +59,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
     private static final Logger LOG = LoggerFactory
             .getLogger(TestReplicationWorker.class);
     private String basePath = "";
+    private String baseLockPath = "";
     private LedgerManagerFactory mFactory;
     private LedgerUnderreplicationManager underReplicationManager;
     private static byte[] data = "TestReplicationWorker".getBytes();
@@ -72,6 +74,9 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
         basePath = baseClientConf.getZkLedgersRootPath() + '/'
                 + BookKeeperConstants.UNDER_REPLICATION_NODE
                 + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
+        baseLockPath = baseClientConf.getZkLedgersRootPath() + '/'
+                + BookKeeperConstants.UNDER_REPLICATION_NODE
+                + "/locks";
         baseConf.setRereplicationEntryBatchSize(3);
     }
 
@@ -535,6 +540,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
             while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath) && rw.isRunning()) {
                 Thread.sleep(100);
             }
+            assertNull(zkc.exists(String.format("%s/urL%010d", baseLockPath, lh.getId()), false));
             assertFalse("RW should shutdown if the bookie is readonly", rw.isRunning());
         } finally {
             rw.shutdown();
