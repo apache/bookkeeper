@@ -205,4 +205,12 @@ public class DiskChecker {
                     + " are not valid. Should be > 0 and < 1 and diskSpaceThreshold >= diskSpaceWarnThreshold");
         }
     }
+
+    public float getDiskUsageThreshold() {
+        return diskUsageThreshold;
+    }
+
+    public float getDiskUsageWarnThreshold() {
+        return diskUsageWarnThreshold;
+    }
 }

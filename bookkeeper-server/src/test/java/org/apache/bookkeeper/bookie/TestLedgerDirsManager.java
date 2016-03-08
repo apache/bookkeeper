@@ -20,23 +20,29 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.io.FileUtils;
 
+import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.IOUtils;
-import org.junit.Before;
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.Assert.*;
 
 public class TestLedgerDirsManager {
     private final static Logger LOG = LoggerFactory.getLogger(TestLedgerDirsManager.class);
@@ -44,6 +50,10 @@ public class TestLedgerDirsManager {
     ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
     File curDir;
     LedgerDirsManager dirsManager;
+    MockDiskChecker mockDiskChecker;
+    int diskCheckInterval = 1000;
+    float threshold = 0.5f;
+    float warnThreshold = 0.5f;
 
     final List<File> tempDirs = new ArrayList<File>();
 
@@ -60,13 +70,17 @@ public class TestLedgerDirsManager {
         Bookie.checkDirectoryStructure(curDir);
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        conf.setLedgerDirNames(new String[] {tmpDir.toString()});
+        conf.setLedgerDirNames(new String[] { tmpDir.toString() });
+        conf.setDiskCheckInterval(diskCheckInterval);
 
-        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs());
+        mockDiskChecker = new MockDiskChecker(threshold, warnThreshold);
+        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(), NullStatsLogger.INSTANCE, mockDiskChecker);
+        dirsManager.init();
     }
 
     @After
     public void tearDown() throws Exception {
+        dirsManager.shutdown();
         for (File dir : tempDirs) {
             FileUtils.deleteDirectory(dir);
         }
@@ -97,4 +111,93 @@ public class TestLedgerDirsManager {
         }
     }
 
+    @Test(timeout=60000)
+    public void testLedgerDirsMonitorDuringTransition() throws Exception {
+
+        MockLedgerDirsListener mockLedgerDirsListener = new MockLedgerDirsListener();
+        dirsManager.addLedgerDirsListener(mockLedgerDirsListener);
+        dirsManager.start();
+
+        assertFalse(mockLedgerDirsListener.readOnly);
+        mockDiskChecker.setUsage(threshold + 0.05f);
+
+        Thread.sleep((diskCheckInterval * 2) + 100);
+
+        assertTrue(mockLedgerDirsListener.readOnly);
+        mockDiskChecker.setUsage(threshold - 0.05f);
+
+        Thread.sleep(diskCheckInterval + 100);
+
+        assertFalse(mockLedgerDirsListener.readOnly);
+    }
+
+    private class MockDiskChecker extends DiskChecker {
+
+        private float used;
+
+        public MockDiskChecker(float threshold, float warnThreshold) {
+            super(threshold, warnThreshold);
+            used = 0f;
+        }
+
+        @Override
+        public float checkDir(File dir) throws DiskErrorException, DiskOutOfSpaceException, DiskWarnThresholdException {
+            if (used > getDiskUsageThreshold()) {
+                throw new DiskOutOfSpaceException("", used);
+            }
+            if (used > getDiskUsageWarnThreshold()) {
+                throw new DiskWarnThresholdException("", used);
+            }
+            return used;
+        }
+
+        public void setUsage(float usage) {
+            this.used = usage;
+        }
+    }
+
+    private class MockLedgerDirsListener implements LedgerDirsListener {
+
+        public boolean readOnly;
+
+        public MockLedgerDirsListener() {
+            reset();
+        }
+
+        @Override
+        public void diskFailed(File disk) {
+        }
+
+        @Override
+        public void diskAlmostFull(File disk) {
+        }
+
+        @Override
+        public void diskFull(File disk) {
+        }
+
+        @Override
+        public void diskWritable(File disk) {
+            readOnly = false;
+        }
+
+        @Override
+        public void diskJustWritable(File disk) {
+            readOnly = false;
+        }
+
+        @Override
+        public void allDisksFull() {
+            readOnly = true;
+        }
+
+        @Override
+        public void fatalError() {
+        }
+
+        public void reset() {
+            readOnly = false;
+        }
+
+    }
 }
