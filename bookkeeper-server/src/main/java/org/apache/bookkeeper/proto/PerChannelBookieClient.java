@@ -66,6 +66,9 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
+import org.jboss.netty.channel.local.DefaultLocalClientChannelFactory;
+import org.jboss.netty.channel.local.LocalAddress;
+import org.jboss.netty.channel.local.LocalClientChannelFactory;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.CorruptedFrameException;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
@@ -81,6 +84,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.ExtensionRegistry;
+import java.net.SocketAddress;
+import org.jboss.netty.channel.ChannelFactory;
 
 /**
  * This class manages all details of connection to a particular bookie. It also
@@ -105,7 +110,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     public static final AtomicLong txnIdGenerator = new AtomicLong(0);
 
     final BookieSocketAddress addr;
-    final ClientSocketChannelFactory channelFactory;
+    final ChannelFactory channelFactory;
     final OrderedSafeExecutor executor;
     final HashedWheelTimer requestTimer;
     final int addEntryTimeout;
@@ -161,7 +166,11 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         this.conf = conf;
         this.addr = addr;
         this.executor = executor;
-        this.channelFactory = channelFactory;
+        if (LocalBookiesRegistry.isLocalBookie(addr)){
+            this.channelFactory = new DefaultLocalClientChannelFactory();
+        } else {
+            this.channelFactory = channelFactory;
+        }
         this.state = ConnectionState.DISCONNECTED;
         this.requestTimer = requestTimer;
         this.addEntryTimeout = conf.getAddEntryTimeout();
@@ -212,8 +221,11 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         bootstrap.setOption("child.receiveBufferSize", conf.getClientReceiveBufferSize());
         bootstrap.setOption("writeBufferLowWaterMark", conf.getClientWriteBufferLowWaterMark());
         bootstrap.setOption("writeBufferHighWaterMark", conf.getClientWriteBufferHighWaterMark());
-
-        ChannelFuture future = bootstrap.connect(addr.getSocketAddress());
+        SocketAddress bookieAddr = addr.getSocketAddress();        
+        if (channelFactory instanceof LocalClientChannelFactory) {
+            bookieAddr = new LocalAddress(addr.getSocketAddress().toString());
+        }
+        ChannelFuture future = bootstrap.connect(bookieAddr);
         future.addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
