@@ -125,6 +125,10 @@ class BookieWatcher implements Watcher, ChildrenCallback {
         }
     }
 
+    void notifyReadOnlyBookiesChanged(final BookiesListener listener) throws BKException {
+        readOnlyBookieWatcher.notifyBookiesChanged(listener);
+    }
+
     public Collection<BookieSocketAddress> getBookies() throws BKException {
         try {
             List<String> children = bk.getZkHandle().getChildren(this.bookieRegistrationPath, false);
@@ -354,6 +358,26 @@ class BookieWatcher implements Watcher, ChildrenCallback {
 
             if (rc != KeeperException.Code.OK.intValue()) {
                 throw KeeperException.create(Code.get(rc));
+            }
+        }
+
+        void notifyBookiesChanged(final BookiesListener listener) throws BKException {
+            try {
+                bk.getZkHandle().getChildren(this.readOnlyBookieRegPath, new Watcher() {
+                    public void process(WatchedEvent event) {
+                        // listen children changed event from ZooKeeper
+                        if (event.getType() == EventType.NodeChildrenChanged) {
+                            listener.availableBookiesChanged();
+                        }
+                    }
+                });
+            } catch (KeeperException ke) {
+                logger.error("Error registering watcher with zookeeper", ke);
+                throw new BKException.ZKException();
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                logger.error("Interrupted registering watcher with zookeeper", ie);
+                throw new BKException.BKInterruptedException();
             }
         }
 
