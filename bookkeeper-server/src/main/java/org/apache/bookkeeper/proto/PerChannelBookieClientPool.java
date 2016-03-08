@@ -41,6 +41,11 @@ interface PerChannelBookieClientPool {
     void obtain(GenericCallback<PerChannelBookieClient> callback);
 
     /**
+     * record any read/write error on {@link PerChannelBookieClientPool}
+     */
+    void recordError();
+
+    /**
      * Disconnect the connections in the pool.
      *
      * @param wait

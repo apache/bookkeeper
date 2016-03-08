@@ -20,17 +20,21 @@ package org.apache.bookkeeper.proto;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import com.google.protobuf.ByteString;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperClientStats;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AddResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
@@ -41,12 +45,9 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
@@ -76,6 +77,9 @@ import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Sets;
+import com.google.protobuf.ByteString;
+
 /**
  * This class manages all details of connection to a particular bookie. It also
  * has reconnect logic if a connection to a bookie fails.
@@ -84,6 +88,16 @@ import org.slf4j.LoggerFactory;
 public class PerChannelBookieClient extends SimpleChannelHandler implements ChannelPipelineFactory {
 
     static final Logger LOG = LoggerFactory.getLogger(PerChannelBookieClient.class);
+
+    // this set contains the bookie error return codes that we do not consider for a bookie to be "faulty"
+    private static final Set<Integer> expectedBkOperationErrors = Collections.unmodifiableSet(Sets
+            .newHashSet(BKException.Code.BookieHandleNotAvailableException,
+                        BKException.Code.NoSuchEntryException,
+                        BKException.Code.NoSuchLedgerExistsException,
+                        BKException.Code.LedgerFencedException,
+                        BKException.Code.LedgerExistException,
+                        BKException.Code.DuplicateEntryIdException,
+                        BKException.Code.WriteOnReadOnlyBookieException));
 
     public static final int MAX_FRAME_LENGTH = 2 * 1024 * 1024; // 2M
     public static final AtomicLong txnIdGenerator = new AtomicLong(0);
@@ -119,14 +133,17 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     final ReentrantReadWriteLock closeLock = new ReentrantReadWriteLock();
     private final ClientConfiguration conf;
 
+    private final PerChannelBookieClientPool pcbcPool;
+
     public PerChannelBookieClient(OrderedSafeExecutor executor, ClientSocketChannelFactory channelFactory,
                                   BookieSocketAddress addr) {
-        this(new ClientConfiguration(), executor, channelFactory, addr, null, NullStatsLogger.INSTANCE);
+        this(new ClientConfiguration(), executor, channelFactory, addr, null, NullStatsLogger.INSTANCE, null);
     }
 
     public PerChannelBookieClient(ClientConfiguration conf, OrderedSafeExecutor executor,
                                   ClientSocketChannelFactory channelFactory, BookieSocketAddress addr,
-                                  HashedWheelTimer requestTimer, StatsLogger parentStatsLogger) {
+                                  HashedWheelTimer requestTimer, StatsLogger parentStatsLogger,
+                                  PerChannelBookieClientPool pcbcPool) {
         this.conf = conf;
         this.addr = addr;
         this.executor = executor;
@@ -147,6 +164,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         addEntryOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_ADD_OP);
         readTimeoutOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_TIMEOUT_READ);
         addTimeoutOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_TIMEOUT_ADD);
+
+        this.pcbcPool = pcbcPool;
     }
 
     private void completeOperation(GenericCallback<PerChannelBookieClient> op, int rc) {
@@ -299,7 +318,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         final int entrySize = toSend.readableBytes();
         final CompletionKey completionKey = new CompletionKey(txnId, OperationType.ADD_ENTRY);
         completionObjects.put(completionKey,
-                new AddCompletion(addEntryOpLogger, cb, ctx, ledgerId, entryId,
+                new AddCompletion(this, addEntryOpLogger, cb, ctx, ledgerId, entryId,
                                   scheduleTimeout(completionKey, addEntryTimeout)));
 
         // Build the request and calculate the total size to be included in the packet.
@@ -360,7 +379,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         final long txnId = getTxnId();
         final CompletionKey completionKey = new CompletionKey(txnId, OperationType.READ_ENTRY);
         completionObjects.put(completionKey,
-                new ReadCompletion(readEntryOpLogger, cb, ctx, ledgerId, entryId,
+                new ReadCompletion(this, readEntryOpLogger, cb, ctx, ledgerId, entryId,
                                    scheduleTimeout(completionKey, readEntryTimeout)));
 
         // Build the request and calculate the total size to be included in the packet.
@@ -415,7 +434,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         final long txnId = getTxnId();
         final CompletionKey completionKey = new CompletionKey(txnId, OperationType.READ_ENTRY);
         completionObjects.put(completionKey,
-                new ReadCompletion(readEntryOpLogger, cb, ctx, ledgerId, entryId,
+                new ReadCompletion(this, readEntryOpLogger, cb, ctx, ledgerId, entryId,
                                    scheduleTimeout(completionKey, readEntryTimeout)));
 
         // Build the request and calculate the total size to be included in the packet.
@@ -616,6 +635,12 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                 default:
                     break;
             }
+        }
+    }
+
+    void recordError() {
+        if (pcbcPool != null) {
+            pcbcPool.recordError();
         }
     }
 
@@ -832,27 +857,34 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     static class ReadCompletion extends CompletionValue {
         final ReadEntryCallback cb;
 
-        public ReadCompletion(ReadEntryCallback cb, Object ctx,
+        public ReadCompletion(final PerChannelBookieClient pcbc, ReadEntryCallback cb, Object ctx,
                               long ledgerId, long entryId) {
-            this(null, cb, ctx, ledgerId, entryId, null);
+            this(pcbc, null, cb, ctx, ledgerId, entryId, null);
         }
 
-        public ReadCompletion(final OpStatsLogger readEntryOpLogger,
+        public ReadCompletion(final PerChannelBookieClient pcbc, final OpStatsLogger readEntryOpLogger,
                               final ReadEntryCallback originalCallback,
                               final Object originalCtx, final long ledgerId, final long entryId,
                               final Timeout timeout) {
             super(originalCtx, ledgerId, entryId, timeout);
             final long startTime = MathUtils.nowInNano();
-            this.cb = null == readEntryOpLogger ? originalCallback : new ReadEntryCallback() {
+            this.cb = new ReadEntryCallback() {
                 @Override
                 public void readEntryComplete(int rc, long ledgerId, long entryId, ChannelBuffer buffer, Object ctx) {
                     cancelTimeout();
-                    long latency = MathUtils.elapsedNanos(startTime);
-                    if (rc != BKException.Code.OK) {
-                        readEntryOpLogger.registerFailedEvent(latency, TimeUnit.NANOSECONDS);
-                    } else {
-                        readEntryOpLogger.registerSuccessfulEvent(latency, TimeUnit.NANOSECONDS);
+                    if (readEntryOpLogger != null) {
+                        long latency = MathUtils.elapsedNanos(startTime);
+                        if (rc != BKException.Code.OK) {
+                            readEntryOpLogger.registerFailedEvent(latency, TimeUnit.NANOSECONDS);
+                        } else {
+                            readEntryOpLogger.registerSuccessfulEvent(latency, TimeUnit.NANOSECONDS);
+                        }
                     }
+
+                    if (rc != BKException.Code.OK && !expectedBkOperationErrors.contains(rc)) {
+                        pcbc.recordError();
+                    }
+
                     originalCallback.readEntryComplete(rc, ledgerId, entryId, buffer, originalCtx);
                 }
             };
@@ -863,12 +895,12 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     static class AddCompletion extends CompletionValue {
         final WriteCallback cb;
 
-        public AddCompletion(WriteCallback cb, Object ctx,
+        public AddCompletion(final PerChannelBookieClient pcbc, WriteCallback cb, Object ctx,
                              long ledgerId, long entryId) {
-            this(null, cb, ctx, ledgerId, entryId, null);
+            this(pcbc, null, cb, ctx, ledgerId, entryId, null);
         }
 
-        public AddCompletion(final OpStatsLogger addEntryOpLogger,
+        public AddCompletion(final PerChannelBookieClient pcbc, final OpStatsLogger addEntryOpLogger,
                              final WriteCallback originalCallback,
                              final Object originalCtx, final long ledgerId, final long entryId,
                              final Timeout timeout) {
@@ -878,12 +910,19 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                 @Override
                 public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
                     cancelTimeout();
-                    long latency = MathUtils.elapsedNanos(startTime);
-                    if (rc != BKException.Code.OK) {
-                        addEntryOpLogger.registerFailedEvent(latency, TimeUnit.NANOSECONDS);
-                    } else {
-                        addEntryOpLogger.registerSuccessfulEvent(latency, TimeUnit.NANOSECONDS);
+                    if (pcbc.addEntryOpLogger != null) {
+                        long latency = MathUtils.elapsedNanos(startTime);
+                        if (rc != BKException.Code.OK) {
+                            pcbc.addEntryOpLogger.registerFailedEvent(latency, TimeUnit.NANOSECONDS);
+                        } else {
+                            pcbc.addEntryOpLogger.registerSuccessfulEvent(latency, TimeUnit.NANOSECONDS);
+                        }
                     }
+
+                    if (rc != BKException.Code.OK && !expectedBkOperationErrors.contains(rc)) {
+                        pcbc.recordError();
+                    }
+
                     originalCallback.writeComplete(rc, ledgerId, entryId, addr, originalCtx);
                 }
             };
@@ -943,10 +982,10 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                 return;
             }
             if (OperationType.ADD_ENTRY == operationType) {
-                errorOutAddKey(this);
+                errorOutAddKey(this, BKException.Code.TimeoutException);
                 addTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
             } else {
-                errorOutReadKey(this);
+                errorOutReadKey(this, BKException.Code.TimeoutException);
                 readTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
             }
         }

@@ -20,6 +20,11 @@
  */
 package org.apache.bookkeeper.test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.util.Enumeration;
 
@@ -32,8 +37,6 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 /**
  * Test to verify the readonly feature of bookies
@@ -138,6 +141,13 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
 
         // Now add the current ledger dir back to writable dirs list
         ledgerDirsManager.addToWritableDirs(testDir, true);
+
+        // since the bookie transitions to write mode asynchronously, we need to wait for the bookie to be registered on
+        // zk
+        while (zkc.exists(baseConf.getZkAvailableBookiesPath() + "/"
+                + Bookie.getBookieAddress(bsConfs.get(1)).toString(), false) == null) {
+            Thread.sleep(100);
+        }
 
         LOG.info("bookie is running {}, readonly {}.", bookie.isRunning(), bookie.isReadOnly());
         assertTrue("Bookie should be running and converted back to writable mode", bookie.isRunning()

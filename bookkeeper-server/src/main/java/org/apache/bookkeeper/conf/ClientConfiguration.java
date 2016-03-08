@@ -65,6 +65,12 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String PCBC_TIMEOUT_TIMER_TICK_DURATION_MS = "pcbcTimeoutTimerTickDurationMs";
     protected final static String PCBC_TIMEOUT_TIMER_NUM_TICKS = "pcbcTimeoutTimerNumTicks";
 
+    // Bookie health check settings
+    protected final static String BOOKIE_HEALTH_CHECK_ENABLED = "bookieHealthCheckEnabled";
+    protected final static String BOOKIE_HEALTH_CHECK_INTERVAL_SECONDS = "bookieHealthCheckIntervalSeconds";
+    protected final static String BOOKIE_ERROR_THRESHOLD_PER_INTERVAL = "bookieErrorThresholdPerInterval";
+    protected final static String BOOKIE_QUARANTINE_TIME_SECONDS = "bookieQuarantineTimeSeconds";
+
     // Number Woker Threads
     protected final static String NUM_WORKER_THREADS = "numWorkerThreads";
 
@@ -689,6 +695,109 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setTaskExecutionWarnTimeMicros(long warnTime) {
         setProperty(TASK_EXECUTION_WARN_TIME_MICROS, warnTime);
+        return this;
+    }
+
+    /**
+     * Check if bookie health check is enabled.
+     * 
+     * @return
+     */
+    public boolean isBookieHealthCheckEnabled() {
+        return getBoolean(BOOKIE_HEALTH_CHECK_ENABLED, false);
+    }
+
+    /**
+     * Enables the bookie health check.
+     * 
+     * <p>
+     * If the number of read/write errors for a bookie exceeds {@link #getBookieErrorThresholdPerInterval()} per
+     * interval, that bookie is quarantined for {@link #getBookieQuarantineTimeSeconds()} seconds. During this
+     * quarantined period, the client will try not to use this bookie when creating new ensembles.
+     * </p>
+     * 
+     * By default, the bookie health check is <b>disabled</b>.
+     * 
+     * @return client configuration
+     */
+    public ClientConfiguration enableBookieHealthCheck() {
+        setProperty(BOOKIE_HEALTH_CHECK_ENABLED, true);
+        return this;
+    }
+
+    /**
+     * Get the bookie health check interval in seconds.
+     * 
+     * @return
+     */
+    public int getBookieHealthCheckIntervalSeconds() {
+        return getInt(BOOKIE_HEALTH_CHECK_INTERVAL_SECONDS, 60);
+    }
+
+    /**
+     * Set the bookie health check interval. Default is 60 seconds.
+     * 
+     * <p>
+     * Note: Please {@link #enableBookieHealthCheck()} to use this configuration.
+     * </p>
+     * 
+     * @param interval
+     * @param unit
+     * @return client configuration
+     */
+    public ClientConfiguration setBookieHealthCheckInterval(int interval, TimeUnit unit) {
+        setProperty(BOOKIE_HEALTH_CHECK_INTERVAL_SECONDS, unit.toSeconds(interval));
+        return this;
+    }
+
+    /**
+     * Get the error threshold for a bookie to be quarantined.
+     * 
+     * @return
+     */
+    public long getBookieErrorThresholdPerInterval() {
+        return getLong(BOOKIE_ERROR_THRESHOLD_PER_INTERVAL, 100);
+    }
+
+    /**
+     * Set the error threshold per interval ({@link #getBookieHealthCheckIntervalSeconds()}) for a bookie before it is
+     * quarantined. Default is 100 errors per minute.
+     * 
+     * <p>
+     * Note: Please {@link #enableBookieHealthCheck()} to use this configuration.
+     * </p>
+     * 
+     * @param threshold
+     * @param unit
+     * @return client configuration
+     */
+    public ClientConfiguration setBookieErrorThresholdPerInterval(long thresholdPerInterval) {
+        setProperty(BOOKIE_ERROR_THRESHOLD_PER_INTERVAL, thresholdPerInterval);
+        return this;
+    }
+
+    /**
+     * Get the time for which a bookie will be quarantined.
+     * 
+     * @return
+     */
+    public int getBookieQuarantineTimeSeconds() {
+        return getInt(BOOKIE_QUARANTINE_TIME_SECONDS, 1800);
+    }
+
+    /**
+     * Set the time for which a bookie will be quarantined. Default is 30 minutes.
+     * 
+     * <p>
+     * Note: Please {@link #enableBookieHealthCheck()} to use this configuration.
+     * </p>
+     * 
+     * @param quarantineTime
+     * @param unit
+     * @return client configuration
+     */
+    public ClientConfiguration setBookieQuarantineTime(int quarantineTime, TimeUnit unit) {
+        setProperty(BOOKIE_QUARANTINE_TIME_SECONDS, unit.toSeconds(quarantineTime));
         return this;
     }
 }

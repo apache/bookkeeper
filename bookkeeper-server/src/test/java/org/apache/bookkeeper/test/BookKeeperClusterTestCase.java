@@ -351,6 +351,39 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     /**
+     * Restart a bookie. Also restart the respective auto recovery process,
+     * if isAutoRecoveryEnabled is true.
+     * 
+     * @param addr
+     * @throws InterruptedException
+     * @throws IOException
+     * @throws KeeperException
+     * @throws BookieException
+     */
+    public void restartBookie(BookieSocketAddress addr) throws Exception {
+        BookieServer toRemove = null;
+        int toRemoveIndex = 0;
+        for (BookieServer server : bs) {
+            if (server.getLocalAddress().equals(addr)) {
+                server.shutdown();
+                toRemove = server;
+                break;
+            }
+            ++toRemoveIndex;
+        }
+        if (toRemove != null) {
+            stopAutoRecoveryService(toRemove);
+            bs.remove(toRemove);
+            ServerConfiguration newConfig = bsConfs.remove(toRemoveIndex);
+            Thread.sleep(1000);
+            bs.add(startBookie(newConfig));
+            bsConfs.add(newConfig);
+            return;
+        }
+        throw new IOException("Bookie not found");
+    }
+
+    /**
      * Restart bookie servers using new configuration settings. Also restart the
      * respective auto recovery process, if isAutoRecoveryEnabled is true.
      *

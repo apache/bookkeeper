@@ -33,5 +33,5 @@ interface PerChannelBookieClientFactory {
      *
      * @return the client connected to address.
      */
-    PerChannelBookieClient create(BookieSocketAddress address);
+    PerChannelBookieClient create(BookieSocketAddress address, PerChannelBookieClientPool pcbcPool);
 }
