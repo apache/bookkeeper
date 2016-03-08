@@ -110,6 +110,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     // Whether the bookie should use its hostname or ipaddress for the
     // registration.
     protected final static String USE_HOST_NAME_AS_BOOKIE_ID = "useHostNameAsBookieID";
+    protected final static String ENABLE_LOCAL_TRANSPORT = "enableLocalTransport";
 
     protected final static String SORTED_LEDGER_STORAGE_ENABLED = "sortedLedgerStorageEnabled";
     protected final static String SKIP_LIST_SIZE_LIMIT = "skipListSizeLimit";
@@ -1520,6 +1521,29 @@ public class ServerConfiguration extends AbstractConfiguration {
         setProperty(USE_HOST_NAME_AS_BOOKIE_ID, useHostName);
         return this;
     }
+
+    /**
+     * Get hwhether to use listen for local JVM clients. Defaults to false.
+     *
+     * @return true, then bookie will be listen for local JVM clients
+     */
+    public boolean isEnableLocalTransport() {
+        return getBoolean(ENABLE_LOCAL_TRANSPORT, false);
+    }
+
+    /**
+     * Configure the bookie to listen for BookKeeper clients executed on the local JVM
+     *
+     * @see #getEnableLocalTransport
+     * @param enableLocalTransport
+     *            whether to use listen for local JVM clients
+     * @return server configuration
+     */
+    public ServerConfiguration setEnableLocalTransport(boolean enableLocalTransport) {
+        setProperty(ENABLE_LOCAL_TRANSPORT, enableLocalTransport);
+        return this;
+    }
+
 
     /**
      * Get the stats provider used by bookie.
