@@ -39,7 +39,6 @@ import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.SnapshotMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,9 +79,7 @@ public class GarbageCollectorThread extends BookieThread {
     // Entry Logger Handle
     final EntryLogger entryLogger;
 
-    // Ledger Cache Handle
-    final LedgerCache ledgerCache;
-    final SnapshotMap<Long, Boolean> activeLedgers;
+    final CompactableLedgerStorage ledgerStorage;
 
     // flag to ensure gc thread will not be interrupted during compaction
     // to reduce the risk getting entry log corrupted
@@ -103,35 +100,23 @@ public class GarbageCollectorThread extends BookieThread {
     final GarbageCollector garbageCollector;
     final GarbageCleaner garbageCleaner;
 
-    private static class Offset {
-        final long ledger;
-        final long entry;
-        final long offset;
-
-        Offset(long ledger, long entry, long offset) {
-            this.ledger = ledger;
-            this.entry = entry;
-            this.offset = offset;
-        }
-    }
- 
     private static class Throttler {
         final RateLimiter rateLimiter;
         final boolean isThrottleByBytes;
         final int compactionRateByBytes;
         final int compactionRateByEntries;
 
-        Throttler(boolean isThrottleByBytes, 
-                  int compactionRateByBytes, 
+        Throttler(boolean isThrottleByBytes,
+                  int compactionRateByBytes,
                   int compactionRateByEntries) {
             this.isThrottleByBytes  = isThrottleByBytes;
             this.compactionRateByBytes = compactionRateByBytes;
             this.compactionRateByEntries = compactionRateByEntries;
-            this.rateLimiter = RateLimiter.create(this.isThrottleByBytes ? 
-                                                  this.compactionRateByBytes : 
+            this.rateLimiter = RateLimiter.create(this.isThrottleByBytes ?
+                                                  this.compactionRateByBytes :
                                                   this.compactionRateByEntries);
         }
-        
+
         // acquire. if bybytes: bytes of this entry; if byentries: 1.
         void acquire(int permits) {
             rateLimiter.acquire(this.isThrottleByBytes ? permits : 1);
@@ -142,11 +127,11 @@ public class GarbageCollectorThread extends BookieThread {
      * A scanner wrapper to check whether a ledger is alive in an entry log file
      */
     class CompactionScannerFactory implements EntryLogger.EntryLogListener {
-        List<Offset> offsets = new ArrayList<Offset>();
+        List<EntryLocation> offsets = new ArrayList<EntryLocation>();
 
         EntryLogScanner newScanner(final EntryLogMetadata meta) {
             final Throttler throttler = new Throttler (isThrottleByBytes,
-                                                       compactionRateByBytes, 
+                                                       compactionRateByBytes,
                                                        compactionRateByEntries);
 
             return new EntryLogScanner() {
@@ -168,7 +153,7 @@ public class GarbageCollectorThread extends BookieThread {
                         entry.rewind();
 
                         long newoffset = entryLogger.addEntry(ledgerId, entry);
-                        offsets.add(new Offset(ledgerId, entryId, newoffset));
+                        offsets.add(new EntryLocation(ledgerId, entryId, newoffset));
                     }
                 }
             };
@@ -190,15 +175,15 @@ public class GarbageCollectorThread extends BookieThread {
                     return;
                 }
 
-                Offset lastOffset = offsets.get(offsets.size()-1);
-                long lastOffsetLogId = EntryLogger.logIdForOffset(lastOffset.offset);
+                EntryLocation lastOffset = offsets.get(offsets.size()-1);
+                long lastOffsetLogId = EntryLogger.logIdForOffset(lastOffset.location);
                 while (lastOffsetLogId < entryLogger.getLeastUnflushedLogId() && running) {
                     synchronized (flushLock) {
                         flushLock.wait(1000);
                     }
 
                     lastOffset = offsets.get(offsets.size()-1);
-                    lastOffsetLogId = EntryLogger.logIdForOffset(lastOffset.offset);
+                    lastOffsetLogId = EntryLogger.logIdForOffset(lastOffset.location);
                 }
                 if (lastOffsetLogId >= entryLogger.getLeastUnflushedLogId() && !running) {
                     throw new IOException("Shutdown before flushed");
@@ -208,16 +193,14 @@ public class GarbageCollectorThread extends BookieThread {
                 throw new IOException("Interrupted waiting for flush", ie);
             }
 
-            for (Offset o : offsets) {
-                ledgerCache.putEntryOffset(o.ledger, o.entry, o.offset);
-            }
+            ledgerStorage.updateEntriesLocations(offsets);
             offsets.clear();
         }
 
         synchronized void flush() throws IOException {
             waitEntrylogFlushed();
 
-            ledgerCache.flushLedger(true);
+            ledgerStorage.flushEntriesLocationsIndex();
         }
     }
 
@@ -230,16 +213,13 @@ public class GarbageCollectorThread extends BookieThread {
      * @throws IOException
      */
     public GarbageCollectorThread(ServerConfiguration conf,
-                                  final LedgerCache ledgerCache,
-                                  EntryLogger entryLogger,
-                                  SnapshotMap<Long, Boolean> activeLedgers,
-                                  LedgerManager ledgerManager)
+                                  LedgerManager ledgerManager,
+                                  final CompactableLedgerStorage ledgerStorage)
         throws IOException {
         super("GarbageCollectorThread");
 
-        this.ledgerCache = ledgerCache;
-        this.entryLogger = entryLogger;
-        this.activeLedgers = activeLedgers;
+        this.entryLogger = ledgerStorage.getEntryLogger();
+        this.ledgerStorage = ledgerStorage;
 
         this.gcWaitTime = conf.getGcWaitTime();
         this.isThrottleByBytes = conf.getIsThrottleByBytes();
@@ -256,14 +236,15 @@ public class GarbageCollectorThread extends BookieThread {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("delete ledger : " + ledgerId);
                     }
-                    ledgerCache.deleteLedger(ledgerId);
+
+                    ledgerStorage.deleteLedger(ledgerId);
                 } catch (IOException e) {
                     LOG.error("Exception when deleting the ledger index file on the Bookie: ", e);
                 }
             }
         };
 
-        this.garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, activeLedgers);
+        this.garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, ledgerStorage);
 
         // compaction parameters
         minorCompactionThreshold = conf.getMinorCompactionThreshold();
@@ -333,7 +314,7 @@ public class GarbageCollectorThread extends BookieThread {
             LOG.info("Suspend Major Compaction triggered by thread: {}", Thread.currentThread().getName());
         }
     }
-    
+
     public void resumeMajorGC() {
         if (suspendMajorCompaction.compareAndSet(true, false)) {
             LOG.info("{} Major Compaction back to normal since bookie has enough space now.", Thread.currentThread().getName());
@@ -345,7 +326,7 @@ public class GarbageCollectorThread extends BookieThread {
             LOG.info("Suspend Minor Compaction triggered by thread: {}", Thread.currentThread().getName());
         }
     }
-    
+
     public void resumeMinorGC() {
         if (suspendMinorCompaction.compareAndSet(true, false)) {
             LOG.info("{} Minor Compaction back to normal since bookie has enough space now.", Thread.currentThread().getName());
@@ -389,7 +370,7 @@ public class GarbageCollectorThread extends BookieThread {
             }
 
             long curTime = MathUtils.now();
-            if (enableMajorCompaction && (!suspendMajor) && 
+            if (enableMajorCompaction && (!suspendMajor) &&
                 (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
                 // enter major compaction
                 LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
@@ -400,7 +381,7 @@ public class GarbageCollectorThread extends BookieThread {
                 continue;
             }
 
-            if (enableMinorCompaction && (!suspendMinor) && 
+            if (enableMinorCompaction && (!suspendMinor) &&
                 (force || curTime - lastMinorCompactionTime > minorCompactionInterval)) {
                 // enter minor compaction
                 LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
@@ -428,8 +409,12 @@ public class GarbageCollectorThread extends BookieThread {
             EntryLogMetadata meta = entryLogMetaMap.get(entryLogId);
             for (Long entryLogLedger : meta.getLedgersMap().keySet()) {
                 // Remove the entry log ledger from the set if it isn't active.
-                if (!activeLedgers.containsKey(entryLogLedger)) {
-                    meta.removeLedger(entryLogLedger);
+                try {
+                    if (!ledgerStorage.ledgerExists(entryLogLedger)) {
+                        meta.removeLedger(entryLogLedger);
+                    }
+                } catch (IOException e) {
+                    LOG.error("Error reading from ledger storage", e);
                 }
             }
             if (meta.isEmpty()) {

@@ -26,6 +26,8 @@ import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
+import org.apache.bookkeeper.bookie.SortedLedgerStorage;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -117,6 +119,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     // Statistics Parameters
     protected final static String ENABLE_STATISTICS = "enableStatistics";
     protected final static String STATS_PROVIDER_CLASS = "statsProviderClass";
+
+    protected final static String LEDGER_STORAGE_CLASS = "ledgerStorageClass";
 
     /**
      * Construct a default configuration object
@@ -833,9 +837,9 @@ public class ServerConfiguration extends AbstractConfiguration {
      *
      * Force GC may get some space back, but may also fill up disk space more
      * quickly. This is because new log files are created before GC, while old
-     * garbage log files deleted after GC. 
+     * garbage log files deleted after GC.
      *
-     * @return true  - do force GC when disk full, 
+     * @return true  - do force GC when disk full,
      *         false - suspend GC when disk full.
      */
     public boolean getIsForceGCAllowWhenNoSpace() {
@@ -844,7 +848,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Set whether force GC is allowed when disk full or almost full.
-     * 
+     *
      * @param force true to allow force GC; false to suspend GC
      *
      * @return ServerConfiguration
@@ -993,6 +997,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Set sorted-ledger storage enabled or not
      *
+     * @deprecated Use {@link #setLedgerStorageClass(String)} to configure the implementation class
      * @param enabled
      */
     public ServerConfiguration setSortedLedgerStorageEnabled(boolean enabled) {
@@ -1320,7 +1325,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Get whether use bytes to throttle garbage collector compaction or not
      *
-     * @return true  - use Bytes, 
+     * @return true  - use Bytes,
      *         false - use Entries.
      */
     public boolean getIsThrottleByBytes() {
@@ -1369,7 +1374,7 @@ public class ServerConfiguration extends AbstractConfiguration {
         setProperty(COMPACTION_MAX_OUTSTANDING_REQUESTS, maxOutstandingRequests);
         return this;
     }
-    
+
     /**
      * Get the rate of compaction adds. Default is 1,000.
      *
@@ -1454,6 +1459,39 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setJournalRemovePagesFromCache(boolean enabled) {
         setProperty(JOURNAL_REMOVE_FROM_PAGE_CACHE, enabled);
+        return this;
+    }
+
+    /*
+     * Get the {@link LedgerStorage} implementation class name
+     *
+     * @return the class name
+     */
+    public String getLedgerStorageClass() {
+        String ledgerStorageClass = getString(LEDGER_STORAGE_CLASS, SortedLedgerStorage.class.getName());
+        if (ledgerStorageClass.equals(SortedLedgerStorage.class.getName())
+                && getSortedLedgerStorageEnabled() == false) {
+            // This is to retain compatibility with BK-4.3 configuration
+            // In BK-4.3, the ledger storage is configured through the "sortedLedgerStorageEnabled" flag :
+            // sortedLedgerStorageEnabled == true (default) ---> use SortedLedgerStorage
+            // sortedLedgerStorageEnabled == false ---> use InterleavedLedgerStorage
+            //
+            // Since BK-4.4, one can specify the implementation class, but if it was using InterleavedLedgerStorage it
+            // should continue to use that with the same configuration
+            ledgerStorageClass = InterleavedLedgerStorage.class.getName();
+        }
+
+        return ledgerStorageClass;
+    }
+
+    /**
+     * Set the {@link LedgerStorage} implementation class name
+     *
+     * @param ledgerStorageClass the class name
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setLedgerStorageClass(String ledgerStorageClass) {
+        setProperty(LEDGER_STORAGE_CLASS, ledgerStorageClass);
         return this;
     }
 

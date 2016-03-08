@@ -503,16 +503,11 @@ public class Bookie extends BookieCriticalThread {
         // instantiate the journal
         journal = new Journal(conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE));
 
-        // Check the type of storage.
-        if (conf.getSortedLedgerStorageEnabled()) {
-            ledgerStorage = new SortedLedgerStorage(conf, ledgerManager,
-                                                    ledgerDirsManager, indexDirsManager,
-                                                    journal, statsLogger);
-        } else {
-            ledgerStorage = new InterleavedLedgerStorage(conf, ledgerManager,
-                                                         ledgerDirsManager, indexDirsManager,
-                                                         journal, statsLogger);
-        }
+        // Instantiate the ledger storage implementation
+        String ledgerStorageClass = conf.getLedgerStorageClass();
+        LOG.info("Using ledger storage: {}", ledgerStorageClass);
+        ledgerStorage = LedgerStorageFactory.createLedgerStorage(ledgerStorageClass);
+        ledgerStorage.initialize(conf, ledgerManager, ledgerDirsManager, indexDirsManager, journal, statsLogger);
         syncThread = new SyncThread(conf, getLedgerDirsListener(),
                                     ledgerStorage, journal);
 
@@ -712,7 +707,9 @@ public class Bookie extends BookieCriticalThread {
 
             try {
                 jmxLedgerStorageBean = this.ledgerStorage.getJMXBean();
-                BKMBeanRegistry.getInstance().register(jmxLedgerStorageBean, jmxBookieBean);
+                if (jmxLedgerStorageBean != null) {
+                    BKMBeanRegistry.getInstance().register(jmxLedgerStorageBean, jmxBookieBean);
+                }
             } catch (Exception e) {
                 LOG.warn("Failed to register with JMX for ledger cache", e);
                 jmxLedgerStorageBean = null;

@@ -25,17 +25,20 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 
 import java.util.concurrent.TimeUnit;
 
+import java.util.Map;
+import java.util.NavigableMap;
+
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
@@ -51,7 +54,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFF
  * This ledger storage implementation stores all entries in a single
  * file and maintains an index file for each ledger.
  */
-class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
+public class InterleavedLedgerStorage implements CompactableLedgerStorage, EntryLogListener {
     private final static Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
 
     // Hold the last checkpoint
@@ -77,7 +80,7 @@ class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
 
     EntryLogger entryLogger;
     LedgerCache ledgerCache;
-    private final CheckpointSource checkpointSource;
+    private CheckpointSource checkpointSource;
     protected final CheckpointHolder checkpointHolder = new CheckpointHolder();
 
     // A sorted map to stored all active ledger ids
@@ -86,32 +89,30 @@ class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
     // This is the thread that garbage collects the entry logs that do not
     // contain any active ledgers in them; and compacts the entry logs that
     // has lower remaining percentage to reclaim disk space.
-    final GarbageCollectorThread gcThread;
+    GarbageCollectorThread gcThread;
 
     // this indicates that a write has happened since the last flush
     private volatile boolean somethingWritten = false;
 
     // Expose Stats
-    private final OpStatsLogger getOffsetStats;
-    private final OpStatsLogger getEntryStats;
+    private OpStatsLogger getOffsetStats;
+    private OpStatsLogger getEntryStats;
 
-    InterleavedLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
-                             LedgerDirsManager ledgerDirsManager, CheckpointSource checkpointSource)
-            throws IOException {
-        this(conf, ledgerManager, ledgerDirsManager, ledgerDirsManager, checkpointSource, NullStatsLogger.INSTANCE);
+    InterleavedLedgerStorage() {
+        activeLedgers = new SnapshotMap<Long, Boolean>();
     }
 
-    InterleavedLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
-                             LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                             CheckpointSource checkpointSource, StatsLogger statsLogger)
+    @Override
+    public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
+                           LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
+                           CheckpointSource checkpointSource, StatsLogger statsLogger)
             throws IOException {
-        activeLedgers = new SnapshotMap<Long, Boolean>();
+
         this.checkpointSource = checkpointSource;
         entryLogger = new EntryLogger(conf, ledgerDirsManager, this);
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
-        gcThread = new GarbageCollectorThread(conf, ledgerCache, entryLogger,
-                activeLedgers, ledgerManager);
+        gcThread = new GarbageCollectorThread(conf, ledgerManager, this);
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         // Expose Stats
         getOffsetStats = statsLogger.getOpStatsLogger(STORAGE_GET_OFFSET);
@@ -339,6 +340,45 @@ class InterleavedLedgerStorage implements LedgerStorage, EntryLogListener {
         }
         somethingWritten = false;
         flushOrCheckpoint(false);
+    }
+
+    @Override
+    public void deleteLedger(long ledgerId) throws IOException {
+        activeLedgers.remove(ledgerId);
+        ledgerCache.deleteLedger(ledgerId);
+    }
+
+    @Override
+    public Iterable<Long> getActiveLedgersInRange(long firstLedgerId, long lastLedgerId) {
+        NavigableMap<Long, Boolean> bkActiveLedgersSnapshot = activeLedgers.snapshot();
+        Map<Long, Boolean> subBkActiveLedgers = bkActiveLedgersSnapshot
+                .subMap(firstLedgerId, true, lastLedgerId, false);
+
+        return subBkActiveLedgers.keySet();
+    }
+
+    @Override
+    public void updateEntriesLocations(Iterable<EntryLocation> locations) throws IOException {
+        for (EntryLocation l : locations) {
+            try {
+                ledgerCache.putEntryOffset(l.ledger, l.entry, l.location);
+            } catch (NoLedgerException e) {
+                // Ledger was already deleted, we can skip it in the compaction
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Compaction failed for deleted ledger ledger: {} entry: {}", l.ledger, l.entry);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void flushEntriesLocationsIndex() throws IOException {
+        ledgerCache.flushLedger(true);
+    }
+
+    @Override
+    public EntryLogger getEntryLogger() {
+        return entryLogger;
     }
 
     @Override

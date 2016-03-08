@@ -267,14 +267,7 @@ public class IndexPersistenceMgr {
     }
 
     boolean ledgerExists(long ledgerId) throws IOException {
-        FileInfo fi = fileInfoCache.get(ledgerId);
-        if (fi == null) {
-            File lf = findIndexFile(ledgerId);
-            if (lf == null) {
-                return false;
-            }
-        }
-        return true;
+        return activeLedgers.containsKey(ledgerId);
     }
 
     int getNumOpenLedgers() {

@@ -35,6 +35,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
@@ -260,7 +262,19 @@ public class TestSyncThread {
                 throws IOException {
         }
     }
+
     private static class DummyLedgerStorage implements LedgerStorage {
+        @Override
+        public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
+                LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
+                CheckpointSource checkpointSource, StatsLogger statsLogger)
+                throws IOException {
+        }
+
+        @Override
+        public void deleteLedger(long ledgerId) throws IOException {
+        }
+
         @Override
         public void start() {
         }

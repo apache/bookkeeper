@@ -24,6 +24,8 @@ package org.apache.bookkeeper.test;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.CountDownLatch;
+
+import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -60,7 +62,7 @@ public class LedgerDeleteTest extends MultiLedgerManagerTestCase {
         baseConf.setEntryLogSizeLimit(2 * 1024 * 1024L);
         baseConf.setGcWaitTime(1000);
         baseConf.setEntryLogFilePreAllocationEnabled(false);
-        baseConf.setSortedLedgerStorageEnabled(false);
+        baseConf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
         super.setUp();
     }
 
