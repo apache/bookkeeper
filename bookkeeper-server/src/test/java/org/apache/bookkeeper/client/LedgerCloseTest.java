@@ -174,8 +174,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
         addDoneLatch.countDown();
         // wait until entries failed due to UnauthorizedAccessException
         failedLatch.await();
-        // simulate the ownership of this ledger is transfer to another host (which is actually
-        // what we did in Hedwig).
+        // simulate the ownership of this ledger is transfer to another host
         LOG.info("Recover ledger {}.", lh.getId());
         ClientConfiguration newConf = new ClientConfiguration();
         newConf.addConfiguration(baseClientConf);
