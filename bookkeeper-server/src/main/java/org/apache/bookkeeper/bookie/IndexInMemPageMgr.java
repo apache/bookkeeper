@@ -23,6 +23,7 @@ package org.apache.bookkeeper.bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.DirectMemoryUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -332,14 +333,16 @@ class IndexInMemPageMgr {
         this.indexPersistenceManager = indexPersistenceManager;
         this.pageMapAndList = new InMemPageCollection();
 
+        long maxDirectMemory = DirectMemoryUtils.maxDirectMemory();
+
         if (conf.getPageLimit() <= 0) {
-            // allocate half of the memory to the page cache
-            this.pageLimit = (int) ((Runtime.getRuntime().maxMemory() / 3) / this.pageSize);
+            // By default, allocate a third of the direct memory to the page cache
+            this.pageLimit = (int) ((maxDirectMemory / 3) / this.pageSize);
         } else {
             this.pageLimit = conf.getPageLimit();
         }
-        LOG.info("maxMemory = {}, pageSize = {}, pageLimit = {}", new Object[] { Runtime.getRuntime().maxMemory(),
-                        pageSize, pageLimit });
+        LOG.info("maxDirectMemory = {}, pageSize = {}, pageLimit = {}",
+                new Object[] { maxDirectMemory, pageSize, pageLimit });
         // Expose Stats
         statsLogger.registerGauge(NUM_INDEX_PAGES, new Gauge<Number>() {
             @Override
