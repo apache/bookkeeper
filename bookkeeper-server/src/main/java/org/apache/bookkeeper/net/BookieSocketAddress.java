@@ -24,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
 import static org.apache.bookkeeper.util.BookKeeperConstants.COLON;
+import org.jboss.netty.channel.local.LocalAddress;
 
 /**
  * This is a data wrapper class that is an InetSocketAddress, it would use the hostname
@@ -73,6 +74,13 @@ public class BookieSocketAddress {
     // Method to return an InetSocketAddress for the regular port.
     public InetSocketAddress getSocketAddress() {
         return socketAddress;
+    }
+
+    /**
+     * Maps the socketAddress to a "local" address
+     */
+    public LocalAddress getLocalAddress() {
+        return new LocalAddress(socketAddress.toString());
     }
 
     // Return the String "serialized" version of this object.

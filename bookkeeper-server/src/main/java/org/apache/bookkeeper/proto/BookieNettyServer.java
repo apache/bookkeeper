@@ -94,7 +94,7 @@ class BookieNettyServer {
         } else {
             bindAddress = bookieAddress.getSocketAddress();
         }
-        listenOn(bindAddress,bookieAddress);
+        listenOn(bindAddress, bookieAddress);
     }
 
     boolean isRunning() {
@@ -132,7 +132,7 @@ class BookieNettyServer {
             jvmbootstrap.setPipelineFactory(new BookiePipelineFactory());
 
             // use the same address 'name', so clients can find local Bookie still discovering them using ZK
-            Channel jvmlisten = jvmbootstrap.bind(new LocalAddress(bookieAddress.getSocketAddress().toString()));
+            Channel jvmlisten = jvmbootstrap.bind(bookieAddress.getLocalAddress());
             allChannels.add(jvmlisten);
             LocalBookiesRegistry.registerLocalBookieAddress(bookieAddress);
         }
