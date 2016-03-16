@@ -109,6 +109,15 @@ public class AutoRecoveryMain {
         deathWatcher = new AutoRecoveryDeathWatcher(this);
     }
 
+    public AutoRecoveryMain(ServerConfiguration conf, ZooKeeper zk) throws IOException, InterruptedException, KeeperException,
+            UnavailableException, CompatibilityException {
+        this.conf = conf;
+        this.zk = zk;
+        auditorElector = new AuditorElector(Bookie.getBookieAddress(conf).toString(), conf, zk);
+        replicationWorker = new ReplicationWorker(zk, conf, Bookie.getBookieAddress(conf));
+        deathWatcher = new AutoRecoveryDeathWatcher(this);
+    }
+
     /*
      * Start daemons
      */
@@ -134,6 +143,7 @@ public class AutoRecoveryMain {
     }
 
     private void shutdown(int exitCode) {
+        LOG.info("Shutting down auto recovery: {}", exitCode);
         if (shuttingDown) {
             return;
         }
