@@ -14,11 +14,11 @@ Notice: Licensed under the Apache License, Version 2.0 (the "License");
 
 h1. Metastore Interface
 
-Although Apache BookKeeper provides "LedgerManager":./bookkeeperMetadata.html and "Hedwig Metadata Managers":./hedwigMetadata.html for users to plugin different metadata storages for both BookKeeper and Hedwig, it is quite difficult to implement a correct and efficient manager version based on the knowledge for both projects. The __MetaStore__ interface extracts the commonality of the metadata storage interfaces and is provided for users to focus on adapting the underlying storage itself w/o having to worry about the detailed logic for BookKeeper and Hedwig.
+Although Apache BookKeeper provides "LedgerManager":./bookkeeperMetadata.html for users to plugin different metadata storages for BookKeeper, it is quite difficult to implement a correct and efficient manager version based on the knowledge. The __MetaStore__ interface extracts the commonality of the metadata storage interfaces and is provided for users to focus on adapting the underlying storage itself w/o having to worry about the detailed logic for BookKeeper.
 
 h2. MetaStore
 
-The __MetaStore__ interface provide users with access to __MetastoreTable__s used for BookKeeper and Hedwig metadata management. There are two kinds of table defined in a __MetaStore__, __MetastoreTable__ which provides basic __PUT__,__GET__,__REMOVE__,__SCAN__ operations and which does not assume any ordering requirements from the underlying storage; and __MetastoreScannableTable__ which is derived from __MetastoreTable__, but *does* assume that data is stored in key order in the underlying storage.
+The __MetaStore__ interface provide users with access to __MetastoreTable__s used for BookKeeper metadata management. There are two kinds of table defined in a __MetaStore__, __MetastoreTable__ which provides basic __PUT__,__GET__,__REMOVE__,__SCAN__ operations and which does not assume any ordering requirements from the underlying storage; and __MetastoreScannableTable__ which is derived from __MetastoreTable__, but *does* assume that data is stored in key order in the underlying storage.
 
 * @getName@: Return the name of the __MetaStore__.
 * @getVersion@: Return current __MetaStore__ plugin version.
@@ -44,4 +44,4 @@ __MetastoreScannableTable__ is identical to a __MetastoreTable__ except that it 
 
 h2. How to organize your metadata.
 
-Some metadata in Hedwig and BookKeeper does not need to be stored in the order of the ledger id or the topic. You could use kind of hash table to store metadata for them. These metadata are topic ownership and topic persistence info. Besides that, subscription state and ledger metadata must be stored in key order due to the current logic in Hedwig/BookKeeper.
+Some metadata in BookKeeper does not need to be stored in the order of the ledger id or the topic. You could use kind of hash table to store metadata for them. These metadata are topic ownership and topic persistence info. Besides that, subscription state and ledger metadata must be stored in key order due to the current logic in BookKeeper.

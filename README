@@ -6,7 +6,6 @@ Requirements:
 * Unix System
 * JDK 1.6
 * Maven 3.0
-* Autotools (if compiling native hedwig client)
 * Internet connection for first build (to fetch all dependencies)
 
 -------------------------------------------------------------------------------
@@ -16,18 +15,10 @@ The BookKeeper project contains:
  - bookkeeper-benchmark         (Benchmark suite for testing BookKeeper performance)
  - bookkeeper-stats             (BookKeeper stats library)
  - bookkeeper-stats-providers   (BookKeeper stats providers)
- - hedwig-protocol              (Hedwig network protocol)
- - hedwig-server                (Hedwig server)
- - hedwig-client                (Hedwig client library)
- - hedwig-client-jms            (Hedwig client jms library)
 
 BookKeeper is a system to reliably log streams of records. It is designed to 
 store  write ahead logs, such as those found in database or database like 
 applications.
-
-Hedwig is a publish-subscribe system designed to carry large amounts of data 
-across the internet in a guaranteed-delivery fashion from those who produce 
-it (publishers) to those who are interested in it (subscribers).
 
 --------------------------------------------------------------------------------
 How do I build?
@@ -59,9 +50,10 @@ How do I build?
 --------------------------------------------------------------------------------
 How do I run the services?
 
- Running a Hedwig service requires a running BookKeeper service, which in turn
- requires a running ZooKeeper service (see http://zookeeper.apache.org). To 
- start a bookkeeper service quickly for testing, run:
+ Running BookKeeper service, requires a running ZooKeeper service 
+ (see http://zookeeper.apache.org). 
+
+ To start a bookkeeper service quickly for testing, run:
    
    $ bookkeeper-server/bin/bookkeeper localbookie 10
 
@@ -74,15 +66,6 @@ How do I run the services?
 
    $ bookkeeper-server/bin/bookkeeper bookie
 
- Once you have at least 3 bookies runnings, you can start some Hedwig hubs. A 
- hub is a machines which is responsible for a set of topics in the pubsub 
- system. The service automatically distributes the topics among the hubs. 
- To start a hedwig hub:
-
-   $ hedwig-server/bin/hedwig server
-
  You can get more help on using these commands by running:
 
    $ bookkeeper-server/bin/bookkeeper help
-       and
-   $ hedwig-server/bin/hedwig help

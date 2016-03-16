@@ -26,8 +26,6 @@ Once familiar with the basic concepts, developers can consult the "BookKeeper Ja
 
 *Contributor* documentation is less organized, "BookKeeper Internals":./bookkeeperInternals.html is a good place to start. From there you can check out our "wiki":https://cwiki.apache.org/confluence/display/BOOKKEEPER/Index and ask questions on our "mailing lists":/lists.html or "IRC":/irc.html.
 
-Hedwig documentation can be found "here":./hedwigDocs.html.
-
 h3. All documents
 
 * Overview
