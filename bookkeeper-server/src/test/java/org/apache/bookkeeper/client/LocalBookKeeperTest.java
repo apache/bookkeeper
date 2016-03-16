@@ -1,6 +1,3 @@
-package org.apache.bookkeeper.client;
-
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,7 +17,10 @@ package org.apache.bookkeeper.client;
 * specific language governing permissions and limitations
 * under the License.
 *
- */
+*/
+
+package org.apache.bookkeeper.client;
+
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;

@@ -223,7 +223,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         bootstrap.setOption("writeBufferHighWaterMark", conf.getClientWriteBufferHighWaterMark());
         SocketAddress bookieAddr = addr.getSocketAddress();        
         if (channelFactory instanceof LocalClientChannelFactory) {
-            bookieAddr = new LocalAddress(addr.getSocketAddress().toString());
+            bookieAddr = addr.getLocalAddress();
         }
         ChannelFuture future = bootstrap.connect(bookieAddr);
         future.addListener(new ChannelFutureListener() {

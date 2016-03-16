@@ -28,7 +28,8 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
  */
 class LocalBookiesRegistry {
     
-    private final static ConcurrentHashMap<BookieSocketAddress,Boolean> localBookiesRegistry = new ConcurrentHashMap<>();
+    private final static ConcurrentHashMap<BookieSocketAddress,Boolean> localBookiesRegistry
+            = new ConcurrentHashMap<>();
     
     static void registerLocalBookieAddress(BookieSocketAddress address) {        
         localBookiesRegistry.put(address,Boolean.TRUE);
