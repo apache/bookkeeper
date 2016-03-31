@@ -88,7 +88,7 @@ public class LocalBookKeeper {
         ZkTmpDir = IOUtils.createTempDir("zookeeper", "localbookkeeper");
 
         try {
-            zks = new ZooKeeperServer(ZkTmpDir, ZkTmpDir, ZooKeeperDefaultPort);
+            zks = new ZooKeeperServer(ZkTmpDir, ZkTmpDir, ZooKeeperServer.DEFAULT_TICK_TIME);
             serverFactory =  new NIOServerCnxnFactory();
             serverFactory.configure(new InetSocketAddress(ZooKeeperDefaultPort), maxCC);
             serverFactory.startup(zks);
