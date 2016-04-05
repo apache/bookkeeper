@@ -195,6 +195,10 @@ public abstract class BookKeeperClusterTestCase {
                                       f, new File[] { f });
     }
 
+    protected ClientConfiguration newClientConfiguration() {
+        return new ClientConfiguration(baseConf);
+    }
+
     protected ServerConfiguration newServerConfiguration(int port, String zkServers, File journalDir, File[] ledgerDirs) {
         ServerConfiguration conf = new ServerConfiguration(baseConf);
         conf.setBookiePort(port);
@@ -289,9 +293,11 @@ public abstract class BookKeeperClusterTestCase {
                         public void run() {
                             try {
                                 bookie.suspendProcessing();
+                                LOG.info("bookie {} is asleep", bookie.getLocalAddress());
                                 l.countDown();
                                 Thread.sleep(seconds*1000);
                                 bookie.resumeProcessing();
+                                LOG.info("bookie {} is awake", bookie.getLocalAddress());
                             } catch (Exception e) {
                                 LOG.error("Error suspending bookie", e);
                             }
@@ -440,6 +446,10 @@ public abstract class BookKeeperClusterTestCase {
             throws Exception {
         BookieServer server = new BookieServer(conf);
         server.start();
+
+        if (bkc == null) {
+            bkc = new BookKeeperTestClient(baseClientConf);
+        }
 
         int port = conf.getBookiePort();
         String host = InetAddress.getLocalHost().getHostAddress();

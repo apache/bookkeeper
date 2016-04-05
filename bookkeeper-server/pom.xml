@@ -262,6 +262,7 @@
             <!-- exclude generated file //-->
             <exclude>**/DataFormats.java</exclude>
             <exclude>**/BookkeeperProtocol.java</exclude>
+            <exclude>**/TestDataFormats.java</exclude>
           </excludes>
         </configuration>
       </plugin>
@@ -323,6 +324,14 @@
                     <exec executable="protoc" failonerror="true">
                       <arg value="--java_out=src/main/java" />
                       <arg value="src/main/proto/DataFormats.proto" />
+                    </exec>
+                    <exec executable="protoc" failonerror="true">
+                      <arg value="--java_out=src/main/java" />
+                      <arg value="src/main/proto/BookkeeperProtocol.proto" />
+                    </exec>
+                    <exec executable="protoc" failonerror="true">
+                      <arg value="--java_out=src/test/java" />
+                      <arg value="src/test/proto/TestDataFormats.proto" />
                     </exec>
                   </target>
                 </configuration>

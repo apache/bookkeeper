@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperClientStats;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -79,6 +80,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.ExtensionRegistry;
 
 /**
  * This class manages all details of connection to a particular bookie. It also
@@ -134,15 +136,27 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     private final ClientConfiguration conf;
 
     private final PerChannelBookieClientPool pcbcPool;
+    private final ClientAuthProvider.Factory authProviderFactory;
+    private final ExtensionRegistry extRegistry;
 
     public PerChannelBookieClient(OrderedSafeExecutor executor, ClientSocketChannelFactory channelFactory,
                                   BookieSocketAddress addr) {
-        this(new ClientConfiguration(), executor, channelFactory, addr, null, NullStatsLogger.INSTANCE, null);
+        this(new ClientConfiguration(), executor, channelFactory, addr, null, NullStatsLogger.INSTANCE, null, null, null);
+    }
+
+    public PerChannelBookieClient(OrderedSafeExecutor executor, ClientSocketChannelFactory channelFactory,
+                                  BookieSocketAddress addr,
+                                  ClientAuthProvider.Factory authProviderFactory,
+                                  ExtensionRegistry extRegistry) {
+        this(new ClientConfiguration(), executor, channelFactory, addr, null, NullStatsLogger.INSTANCE,
+                authProviderFactory, extRegistry, null);
     }
 
     public PerChannelBookieClient(ClientConfiguration conf, OrderedSafeExecutor executor,
                                   ClientSocketChannelFactory channelFactory, BookieSocketAddress addr,
                                   HashedWheelTimer requestTimer, StatsLogger parentStatsLogger,
+                                  ClientAuthProvider.Factory authProviderFactory,
+                                  ExtensionRegistry extRegistry,
                                   PerChannelBookieClientPool pcbcPool) {
         this.conf = conf;
         this.addr = addr;
@@ -152,6 +166,9 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         this.requestTimer = requestTimer;
         this.addEntryTimeout = conf.getAddEntryTimeout();
         this.readEntryTimeout = conf.getReadEntryTimeout();
+
+        this.authProviderFactory = authProviderFactory;
+        this.extRegistry = extRegistry;
 
         StringBuilder nameBuilder = new StringBuilder();
         nameBuilder.append(addr.getHostname().replace('.', '_').replace('-', '_'))
@@ -563,8 +580,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                     bAddress = c.getRemoteAddress().toString();
                 }
 
-                LOG.debug("Could not write request for reading entry: {} ledger-id: {} bookie: {}",
-                          new Object[]{ readCompletion.entryId, readCompletion.ledgerId, bAddress });
+                LOG.debug("Could not write request for reading entry: {} ledger-id: {} bookie: {} rc: {}",
+                        new Object[]{ readCompletion.entryId, readCompletion.ledgerId, bAddress, rc });
 
                 readCompletion.cb.readEntryComplete(rc, readCompletion.ledgerId, readCompletion.entryId,
                                                     null, readCompletion.ctx);
@@ -594,8 +611,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                 if(c != null) {
                     bAddress = c.getRemoteAddress().toString();
                 }
-                LOG.debug("Could not write request for adding entry: {} ledger-id: {} bookie: {}",
-                          new Object[] { addCompletion.entryId, addCompletion.ledgerId, bAddress });
+                LOG.debug("Could not write request for adding entry: {} ledger-id: {} bookie: {} rc: {}",
+                          new Object[] { addCompletion.entryId, addCompletion.ledgerId, bAddress, rc });
 
                 addCompletion.cb.writeComplete(rc, addCompletion.ledgerId, addCompletion.entryId,
                                                addr, addCompletion.ctx);
@@ -656,8 +673,9 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
         pipeline.addLast("lengthbasedframedecoder", new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 0, 4, 0, 4));
         pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
-        pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.RequestEncoder());
-        pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.ResponseDecoder());
+        pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.RequestEncoder(extRegistry));
+        pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.ResponseDecoder(extRegistry));
+        pipeline.addLast("authHandler", new AuthHandler.ClientSideHandler(authProviderFactory, txnIdGenerator));
         pipeline.addLast("mainhandler", this);
         return pipeline;
     }
@@ -696,6 +714,16 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         if (t instanceof CorruptedFrameException || t instanceof TooLongFrameException) {
             LOG.error("Corrupted frame received from bookie: {}",
                       e.getChannel().getRemoteAddress());
+            return;
+        }
+
+        if (t instanceof AuthHandler.AuthenticationException) {
+            LOG.error("Error authenticating connection", t);
+            errorOutOutstandingEntries(BKException.Code.UnauthorizedAccessException);
+            Channel c = ctx.getChannel();
+            if (c != null) {
+                closeChannel(c);
+            }
             return;
         }
 
@@ -739,7 +767,6 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                 LOG.debug("Unexpected response received from bookie : " + addr + " for type : " + header.             getOperation() +
                         " and txnId : " + header.getTxnId());
             }
-
         } else {
             long orderingKey = completionValue.ledgerId;
             executor.submitOrdered(orderingKey, new SafeRunnable() {
@@ -748,10 +775,10 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                     OperationType type = header.getOperation();
                     switch (type) {
                         case ADD_ENTRY:
-                            handleAddResponse(response.getAddResponse(), completionValue);
+                            handleAddResponse(response, completionValue);
                             break;
                         case READ_ENTRY:
-                            handleReadResponse(response.getReadResponse(), completionValue);
+                            handleReadResponse(response, completionValue);
                             break;
                         default:
                             LOG.error("Unexpected response, type:{} received from bookie:{}, ignoring",
@@ -770,13 +797,14 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         }
     }
 
-    void handleAddResponse(AddResponse response, CompletionValue completionValue) {
+    void handleAddResponse(Response response, CompletionValue completionValue) {
         // The completion value should always be an instance of an AddCompletion object when we reach here.
         AddCompletion ac = (AddCompletion)completionValue;
+        AddResponse addResponse = response.getAddResponse();
 
-        long ledgerId = response.getLedgerId();
-        long entryId = response.getEntryId();
-        StatusCode status = response.getStatus();
+        long ledgerId = addResponse.getLedgerId();
+        long entryId = addResponse.getEntryId();
+        StatusCode status = response.getStatus() == StatusCode.EOK ? addResponse.getStatus() : response.getStatus();
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Got response for add request from bookie: " + addr + " for ledger: " + ledgerId + " entry: "
@@ -796,17 +824,19 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         ac.cb.writeComplete(rcToRet, ledgerId, entryId, addr, ac.ctx);
     }
 
-    void handleReadResponse(ReadResponse response, CompletionValue completionValue) {
+    void handleReadResponse(Response response, CompletionValue completionValue) {
         // The completion value should always be an instance of a ReadCompletion object when we reach here.
         ReadCompletion rc = (ReadCompletion)completionValue;
+        ReadResponse readResponse = response.getReadResponse();
 
-        long ledgerId = response.getLedgerId();
-        long entryId = response.getEntryId();
-        StatusCode status = response.getStatus();
+        long ledgerId = readResponse.getLedgerId();
+        long entryId = readResponse.getEntryId();
+        StatusCode status = response.getStatus() == StatusCode.EOK ? readResponse.getStatus() : response.getStatus();
+
         ChannelBuffer buffer = ChannelBuffers.buffer(0);
 
-        if (response.hasBody()) {
-            buffer = ChannelBuffers.copiedBuffer(response.getBody().asReadOnlyByteBuffer());
+        if (readResponse.hasBody()) {
+            buffer = ChannelBuffers.copiedBuffer(readResponse.getBody().asReadOnlyByteBuffer());
         }
 
         if (LOG.isDebugEnabled()) {

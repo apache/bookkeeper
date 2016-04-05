@@ -20,28 +20,25 @@
  */
 package org.apache.bookkeeper.proto;
 
+import com.google.protobuf.ByteString;
+import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.InvalidProtocolBufferException;
+
 import org.jboss.netty.buffer.ChannelBufferFactory;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
+import org.jboss.netty.buffer.ChannelBufferOutputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
-
 import org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
 import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
 import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BookieProtoEncoding {
     private final static Logger LOG = LoggerFactory.getLogger(BookieProtoEncoding.class);
-
-    static final EnDecoder REQ_PREV3 = new RequestEnDeCoderPreV3();
-    static final EnDecoder REP_PREV3 = new ResponseEnDeCoderPreV3();
-    static final EnDecoder REQ_V3 = new RequestEnDecoderV3();
-    static final EnDecoder REP_V3 = new ResponseEnDecoderV3();
 
     static interface EnDecoder {
 
@@ -68,6 +65,12 @@ public class BookieProtoEncoding {
     }
 
     static class RequestEnDeCoderPreV3 implements EnDecoder {
+        final ExtensionRegistry extensionRegistry;
+
+        RequestEnDeCoderPreV3(ExtensionRegistry extensionRegistry) {
+            this.extensionRegistry = extensionRegistry;
+        }
+
         @Override
         public Object encode(Object msg, ChannelBufferFactory bufferFactory)
                 throws Exception {
@@ -83,8 +86,7 @@ public class BookieProtoEncoding {
                 buf.writeInt(new PacketHeader(r.getProtocolVersion(), r.getOpCode(), r.getFlags()).toInt());
                 buf.writeBytes(r.getMasterKey(), 0, BookieProtocol.MASTER_KEY_LENGTH);
                 return ChannelBuffers.wrappedBuffer(buf, ar.getData());
-            } else {
-                assert(r instanceof BookieProtocol.ReadRequest);
+            } else if (r instanceof BookieProtocol.ReadRequest) {
                 int totalHeaderSize = 4 // for request type
                     + 8 // for ledgerId
                     + 8; // for entryId
@@ -101,6 +103,19 @@ public class BookieProtoEncoding {
                 }
 
                 return buf;
+            } else if (r instanceof BookieProtocol.AuthRequest) {
+                BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthRequest)r).getAuthMessage();
+                int totalHeaderSize = 4; // for request type
+                int totalSize = totalHeaderSize + am.getSerializedSize();
+                ChannelBuffer buf = bufferFactory.getBuffer(totalSize);
+                buf.writeInt(new PacketHeader(r.getProtocolVersion(),
+                                              r.getOpCode(),
+                                              r.getFlags()).toInt());
+                ChannelBufferOutputStream bufStream = new ChannelBufferOutputStream(buf);
+                am.writeTo(bufStream);
+                return buf;
+            } else {
+                return msg;
             }
         }
 
@@ -141,12 +156,23 @@ public class BookieProtoEncoding {
                 } else {
                     return new BookieProtocol.ReadRequest(h.getVersion(), ledgerId, entryId, flags);
                 }
+            case BookieProtocol.AUTH:
+                BookkeeperProtocol.AuthMessage.Builder builder
+                    = BookkeeperProtocol.AuthMessage.newBuilder();
+                builder.mergeFrom(new ChannelBufferInputStream(packet), extensionRegistry);
+                return new BookieProtocol.AuthRequest(h.getVersion(), builder.build());
             }
             return packet;
         }
     }
 
     static class ResponseEnDeCoderPreV3 implements EnDecoder {
+        final ExtensionRegistry extensionRegistry;
+
+        ResponseEnDeCoderPreV3(ExtensionRegistry extensionRegistry) {
+            this.extensionRegistry = extensionRegistry;
+        }
+
         @Override
         public Object encode(Object msg, ChannelBufferFactory bufferFactory)
                 throws Exception {
@@ -157,12 +183,13 @@ public class BookieProtoEncoding {
             ChannelBuffer buf = bufferFactory.getBuffer(24);
             buf.writeInt(new PacketHeader(r.getProtocolVersion(),
                                           r.getOpCode(), (short)0).toInt());
-            buf.writeInt(r.getErrorCode());
-            buf.writeLong(r.getLedgerId());
-            buf.writeLong(r.getEntryId());
 
             ServerStats.getInstance().incrementPacketsSent();
             if (msg instanceof BookieProtocol.ReadResponse) {
+                buf.writeInt(r.getErrorCode());
+                buf.writeLong(r.getLedgerId());
+                buf.writeLong(r.getEntryId());
+
                 BookieProtocol.ReadResponse rr = (BookieProtocol.ReadResponse)r;
                 if (rr.hasData()) {
                     return ChannelBuffers.wrappedBuffer(buf,
@@ -171,7 +198,15 @@ public class BookieProtoEncoding {
                     return buf;
                 }
             } else if (msg instanceof BookieProtocol.AddResponse) {
+                buf.writeInt(r.getErrorCode());
+                buf.writeLong(r.getLedgerId());
+                buf.writeLong(r.getEntryId());
+
                 return buf;
+            } else if (msg instanceof BookieProtocol.AuthResponse) {
+                BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthResponse)r).getAuthMessage();
+                return ChannelBuffers.wrappedBuffer(buf,
+                        ChannelBuffers.wrappedBuffer(am.toByteArray()));
             } else {
                 LOG.error("Cannot encode unknown response type {}", msg.getClass().getName());
                 return msg;
@@ -180,19 +215,23 @@ public class BookieProtoEncoding {
         @Override
         public Object decode(ChannelBuffer buffer)
                 throws Exception {
-            final int rc;
-            final long ledgerId, entryId;
+            int rc;
+            long ledgerId, entryId;
             final PacketHeader header;
 
             header = PacketHeader.fromInt(buffer.readInt());
-            rc = buffer.readInt();
-            ledgerId = buffer.readLong();
-            entryId = buffer.readLong();
 
             switch (header.getOpCode()) {
             case BookieProtocol.ADDENTRY:
+                rc = buffer.readInt();
+                ledgerId = buffer.readLong();
+                entryId = buffer.readLong();
                 return new BookieProtocol.AddResponse(header.getVersion(), rc, ledgerId, entryId);
             case BookieProtocol.READENTRY:
+                rc = buffer.readInt();
+                ledgerId = buffer.readLong();
+                entryId = buffer.readLong();
+
                 if (rc == BookieProtocol.EOK) {
                     return new BookieProtocol.ReadResponse(header.getVersion(), rc,
                                                            ledgerId, entryId, buffer.slice());
@@ -200,6 +239,13 @@ public class BookieProtoEncoding {
                     return new BookieProtocol.ReadResponse(header.getVersion(), rc,
                                                            ledgerId, entryId);
                 }
+            case BookieProtocol.AUTH:
+                ChannelBufferInputStream bufStream = new ChannelBufferInputStream(buffer);
+                BookkeeperProtocol.AuthMessage.Builder builder
+                    = BookkeeperProtocol.AuthMessage.newBuilder();
+                builder.mergeFrom(bufStream, extensionRegistry);
+                BookkeeperProtocol.AuthMessage am = builder.build();
+                return new BookieProtocol.AuthResponse(header.getVersion(), am);
             default:
                 return buffer;
             }
@@ -207,10 +253,16 @@ public class BookieProtoEncoding {
     }
 
     static class RequestEnDecoderV3 implements EnDecoder {
+        final ExtensionRegistry extensionRegistry;
+
+        RequestEnDecoderV3(ExtensionRegistry extensionRegistry) {
+            this.extensionRegistry = extensionRegistry;
+        }
 
         @Override
         public Object decode(ChannelBuffer packet) throws Exception {
-            return BookkeeperProtocol.Request.parseFrom(new ChannelBufferInputStream(packet));
+            return BookkeeperProtocol.Request.parseFrom(new ChannelBufferInputStream(packet),
+                                                        extensionRegistry);
         }
 
         @Override
@@ -222,10 +274,16 @@ public class BookieProtoEncoding {
     }
 
     static class ResponseEnDecoderV3 implements EnDecoder {
+        final ExtensionRegistry extensionRegistry;
+
+        ResponseEnDecoderV3(ExtensionRegistry extensionRegistry) {
+            this.extensionRegistry = extensionRegistry;
+        }
 
         @Override
         public Object decode(ChannelBuffer packet) throws Exception {
-            return BookkeeperProtocol.Response.parseFrom(new ChannelBufferInputStream(packet));
+            return BookkeeperProtocol.Response.parseFrom(new ChannelBufferInputStream(packet),
+                                                         extensionRegistry);
         }
 
         @Override
@@ -237,6 +295,14 @@ public class BookieProtoEncoding {
     }
 
     public static class RequestEncoder extends OneToOneEncoder {
+
+        final EnDecoder REQ_PREV3;
+        final EnDecoder REQ_V3;
+
+        RequestEncoder(ExtensionRegistry extensionRegistry) {
+            REQ_PREV3 = new RequestEnDeCoderPreV3(extensionRegistry);
+            REQ_V3 = new RequestEnDecoderV3(extensionRegistry);
+        }
 
         @Override
         protected Object encode(ChannelHandlerContext ctx, Channel channel, Object msg)
@@ -256,6 +322,13 @@ public class BookieProtoEncoding {
     }
 
     public static class RequestDecoder extends OneToOneDecoder {
+        final EnDecoder REQ_PREV3;
+        final EnDecoder REQ_V3;
+
+        RequestDecoder(ExtensionRegistry extensionRegistry) {
+            REQ_PREV3 = new RequestEnDeCoderPreV3(extensionRegistry);
+            REQ_V3 = new RequestEnDecoderV3(extensionRegistry);
+        }
 
         @Override
         protected Object decode(ChannelHandlerContext ctx, Channel channel, Object msg)
@@ -283,6 +356,13 @@ public class BookieProtoEncoding {
     }
 
     public static class ResponseEncoder extends OneToOneEncoder {
+        final EnDecoder REP_PREV3;
+        final EnDecoder REP_V3;
+
+        ResponseEncoder(ExtensionRegistry extensionRegistry) {
+            REP_PREV3 = new ResponseEnDeCoderPreV3(extensionRegistry);
+            REP_V3 = new ResponseEnDecoderV3(extensionRegistry);
+        }
 
         @Override
         protected Object encode(ChannelHandlerContext ctx, Channel channel, Object msg)
@@ -302,6 +382,13 @@ public class BookieProtoEncoding {
     }
 
     public static class ResponseDecoder extends OneToOneDecoder {
+        final EnDecoder REP_PREV3;
+        final EnDecoder REP_V3;
+
+        ResponseDecoder(ExtensionRegistry extensionRegistry) {
+            REP_PREV3 = new ResponseEnDeCoderPreV3(extensionRegistry);
+            REP_V3 = new ResponseEnDecoderV3(extensionRegistry);
+        }
 
         @Override
         protected Object decode(ChannelHandlerContext ctx, Channel channel, Object msg)

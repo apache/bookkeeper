@@ -28,6 +28,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.auth.BookieAuthProvider;
+import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.zookeeper.KeeperException;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -48,6 +50,7 @@ import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.protobuf.ExtensionRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
@@ -66,10 +69,20 @@ class BookieNettyServer {
     Object suspensionLock = new Object();
     boolean suspended = false;
 
+    final BookieAuthProvider.Factory authProviderFactory;
+    final BookieProtoEncoding.ResponseEncoder responseEncoder;
+    final BookieProtoEncoding.RequestDecoder requestDecoder;
+
     BookieNettyServer(ServerConfiguration conf, RequestProcessor processor)
             throws IOException, KeeperException, InterruptedException, BookieException  {
         this.conf = conf;
         this.requestProcessor = processor;
+
+        ExtensionRegistry registry = ExtensionRegistry.newInstance();
+        authProviderFactory = AuthProviderFactoryFactory.newBookieAuthProviderFactory(conf, registry);
+
+        responseEncoder = new BookieProtoEncoding.ResponseEncoder(registry);
+        requestDecoder = new BookieProtoEncoding.RequestDecoder(registry);
 
         ThreadFactoryBuilder tfb = new ThreadFactoryBuilder();
         String base = "bookie-" + conf.getBookiePort() + "-netty";
@@ -140,11 +153,15 @@ class BookieNettyServer {
                              new LengthFieldBasedFrameDecoder(maxMessageSize, 0, 4, 0, 4));
             pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
 
-            pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.RequestDecoder());
-            pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.ResponseEncoder());
+            pipeline.addLast("bookieProtoDecoder", requestDecoder);
+            pipeline.addLast("bookieProtoEncoder", responseEncoder);
+            pipeline.addLast("bookieAuthHandler",
+                             new AuthHandler.ServerSideHandler(authProviderFactory));
+
             SimpleChannelHandler requestHandler = isRunning.get() ?
                     new BookieRequestHandler(conf, requestProcessor, allChannels)
                     : new RejectRequestHandler();
+
             pipeline.addLast("bookieRequestHandler", requestHandler);
             return pipeline;
         }
