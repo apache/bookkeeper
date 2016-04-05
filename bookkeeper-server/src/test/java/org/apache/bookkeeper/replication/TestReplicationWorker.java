@@ -506,10 +506,10 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
     }
 
     /**
-     * Test that if the local bookie turns out to be readonly, then no point in running RW. So RW should shutdown.
+     * Test that if the local bookie turns out to be read-only, then the replicator will pause but not shutdown.
      */
     @Test(timeout = 20000)
-    public void testRWShutdownOnLocalBookieReadonlyTransition() throws Exception {
+    public void testRWOnLocalBookieReadonlyTransition() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32, TESTPASSWD);
 
         for (int i = 0; i < 10; i++) {
@@ -537,21 +537,22 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
             bsConfs.get(bsConfs.size() - 1).setReadOnlyModeEnabled(true);
             newBk.getBookie().doTransitionToReadOnlyMode();
             underReplicationManager.markLedgerUnderreplicated(lh.getId(), replicaToKill.toString());
-            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath) && rw.isRunning()) {
+            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath) && rw.isRunning()
+                    && !rw.isInReadOnlyMode()) {
                 Thread.sleep(100);
             }
             assertNull(zkc.exists(String.format("%s/urL%010d", baseLockPath, lh.getId()), false));
-            assertFalse("RW should shutdown if the bookie is readonly", rw.isRunning());
+            assertTrue("RW should continue even if the bookie is readonly", rw.isRunning());
         } finally {
             rw.shutdown();
         }
     }
 
     /**
-     * Test that the replication worker will shutdown if it lose its zookeeper session
+     * Test that the replication worker will not shutdown on a simple ZK disconnection
      */
     @Test(timeout=30000)
-    public void testRWZKSessionLost() throws Exception {
+    public void testRWZKConnectionLost() throws Exception {
         ZooKeeper zk = ZooKeeperClient.newBuilder()
                 .connectString(zkUtil.getZooKeeperConnectString())
                 .sessionTimeoutMs(10000)
@@ -567,15 +568,19 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
                 Thread.sleep(1000);
             }
             assertTrue("Replication worker should be running", rw.isRunning());
-            stopZKCluster();
 
+            stopZKCluster();
+            // Wait for disconnection to be picked up
             for (int i = 0; i < 10; i++) {
-                if (!rw.isRunning()) {
+                if (!zk.getState().isConnected()) {
                     break;
                 }
                 Thread.sleep(1000);
             }
-            assertFalse("Replication worker should have shut down", rw.isRunning());
+            assertFalse(zk.getState().isConnected());
+            startZKCluster();
+
+            assertTrue("Replication worker should still be running", rw.isRunning());
         } finally {
             zk.close();
         }
