@@ -23,7 +23,7 @@ package org.apache.bookkeeper.test;
 
 import java.io.File;
 import java.io.IOException;
-
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 import org.apache.bookkeeper.util.IOUtils;
@@ -61,8 +61,9 @@ public class ZooKeeperUtil {
     private final String connectString;
 
     public ZooKeeperUtil() {
-        zkaddr = new InetSocketAddress(zooKeeperPort);
-        connectString= "localhost:" + zooKeeperPort;
+        String loopbackIPAddr = InetAddress.getLoopbackAddress().getHostAddress();
+        zkaddr = new InetSocketAddress(loopbackIPAddr, zooKeeperPort);
+        connectString = loopbackIPAddr + ":" + zooKeeperPort;
     }
 
     public ZooKeeper getZooKeeperClient() {
