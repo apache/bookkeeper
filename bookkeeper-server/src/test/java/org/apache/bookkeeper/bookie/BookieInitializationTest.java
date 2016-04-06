@@ -270,9 +270,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             fail("Should throw BindException, as the bk server is already running!");
         } catch (ChannelException ce) {
             Assert.assertTrue("Should be caused by a bind exception",
-                              ce.getCause() instanceof BindException);
-            Assert.assertTrue("BKServer allowed duplicate startups!",
-                    ce.getCause().getMessage().contains("Address already in use"));
+                              ce.getCause() instanceof BindException);            
         }
     }
 
