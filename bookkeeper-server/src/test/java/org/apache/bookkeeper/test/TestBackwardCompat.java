@@ -825,5 +825,6 @@ public class TestBackwardCompat {
         oldledger = LedgerCurrent.openLedger(lid420);
         assertEquals("Failed to read entries!", 100, oldledger.readAll());
         oldledger.close();
+        scur.stop();
     }
 }
