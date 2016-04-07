@@ -36,6 +36,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.junit.Test;
 
 /**
@@ -125,6 +126,13 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         } catch (BKException.BKNotEnoughBookiesException e) {
             // Expected
         }
+
+        // wait for zk to get updated (async) as bookie transitions to read-only
+        while (zkc.exists(baseConf.getZkAvailableBookiesPath() + "/" + BookKeeperConstants.READONLY + "/"
+                + Bookie.getBookieAddress(bsConfs.get(1)).toString(), false) == null) {
+            Thread.sleep(100);
+        }
+        
         LOG.info("bookie is running {}, readonly {}.", bookie.isRunning(), bookie.isReadOnly());
         assertTrue("Bookie should be running and converted to readonly mode",
                 bookie.isRunning() && bookie.isReadOnly());
