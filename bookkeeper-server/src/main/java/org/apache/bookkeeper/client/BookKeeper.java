@@ -73,7 +73,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  *
  */
 
-public class BookKeeper {
+public class BookKeeper implements AutoCloseable {
 
     static final Logger LOG = LoggerFactory.getLogger(BookKeeper.class);
 

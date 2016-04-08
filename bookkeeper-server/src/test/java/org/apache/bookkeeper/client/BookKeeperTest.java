@@ -290,4 +290,16 @@ public class BookKeeperTest extends BaseTestCase {
 
         startBKCluster();
     }
+
+    @Test
+    public void testAutoclosableBooKeeper() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString());
+        try (BookKeeper bkc = new BookKeeper(conf);
+                LedgerHandle lh = bkc.createLedger(digestType, "testPasswd".getBytes());){
+            for (int i = 0; i < 100; i++) {
+                lh.addEntry("foobar".getBytes());
+            }
+        }
+    }
 }
