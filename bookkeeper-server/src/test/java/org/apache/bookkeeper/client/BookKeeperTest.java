@@ -308,6 +308,5 @@ public class BookKeeperTest extends BaseTestCase {
             Assert.assertTrue("Ledger should be closed!", bkc.isClosed(ledgerId));
         }
         Assert.assertTrue("BookKeeper should be closed!", _bkc.closed);
-        
     }
 }
