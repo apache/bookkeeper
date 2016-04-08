@@ -56,7 +56,7 @@ import com.google.common.util.concurrent.RateLimiter;
  * Ledger handle contains ledger metadata and is used to access the read and
  * write operations to a ledger.
  */
-public class LedgerHandle {
+public class LedgerHandle implements AutoCloseable {
     final static Logger LOG = LoggerFactory.getLogger(LedgerHandle.class);
 
     final byte[] ledgerKey;
