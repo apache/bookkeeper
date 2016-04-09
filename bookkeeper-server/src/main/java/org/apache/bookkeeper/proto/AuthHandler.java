@@ -21,29 +21,25 @@
 package org.apache.bookkeeper.proto;
 
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.jboss.netty.channel.SimpleChannelHandler;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.DefaultExceptionEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-
 import org.apache.bookkeeper.auth.BookieAuthProvider;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AddResponse;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
+import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.DefaultExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelHandler;
+import org.jboss.netty.channel.local.LocalChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,8 +64,12 @@ class AuthHandler {
             if (remote instanceof InetSocketAddress) {
                 authProvider = authProviderFactory.newProvider((InetSocketAddress)remote,
                         new AuthHandshakeCompleteCallback());
+            } else if (ctx.getChannel() instanceof LocalChannel) {
+                authProvider = authProviderFactory.newProvider(new InetSocketAddress(Inet4Address.getLocalHost(), 0),
+                        new AuthHandshakeCompleteCallback());
             } else {
-                LOG.error("Unknown socket type {} for {}", remote.getClass(), remote);
+                LOG.error("Unknown channel ({}) or socket type {} for {}",
+                        new Object[] { ctx.getChannel(), remote != null ? remote.getClass() : null, remote });
             }
             super.channelOpen(ctx, e);
         }
@@ -229,9 +229,16 @@ class AuthHandler {
             if (remote instanceof InetSocketAddress) {
                 authProvider = authProviderFactory.newProvider((InetSocketAddress)remote,
                         new AuthHandshakeCompleteCallback(ctx));
-                authProvider.init(new AuthRequestCallback(ctx));
+            } else if (ctx.getChannel() instanceof LocalChannel) {
+                authProvider = authProviderFactory.newProvider(new InetSocketAddress(Inet4Address.getLocalHost(), 0),
+                        new AuthHandshakeCompleteCallback(ctx));
             } else {
-                LOG.error("Unknown socket type {} for {}", remote.getClass(), remote);
+                LOG.error("Unknown channel ({}) or socket type {} for {}",
+                        new Object[] { ctx.getChannel(), remote != null ? remote.getClass() : null, remote });
+            }
+
+            if (authProvider != null) {
+                authProvider.init(new AuthRequestCallback(ctx));
             }
             super.channelConnected(ctx, e);
         }
