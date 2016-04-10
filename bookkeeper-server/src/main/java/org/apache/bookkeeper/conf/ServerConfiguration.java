@@ -150,7 +150,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * @return entry logger size limitation
      */
     public long getEntryLogSizeLimit() {
-        return this.getLong(ENTRY_LOG_SIZE_LIMIT, 2 * 1024 * 1024 * 1024L);
+        return this.getLong(ENTRY_LOG_SIZE_LIMIT, 1 * 1024 * 1024 * 1024L);
     }
 
     /**
@@ -186,12 +186,15 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get Garbage collection wait time
+     * Get Garbage collection wait time. Default value is 10 minutes.
+     * The guideline is not to set a too low value for this, if using zookeeper based
+     * ledger manager. And it would be nice to align with the average lifecyle time of
+     * ledgers in the system.
      *
      * @return gc wait time
      */
     public long getGcWaitTime() {
-        return this.getLong(GC_WAIT_TIME, 1000);
+        return this.getLong(GC_WAIT_TIME, 600000);
     }
 
     /**
@@ -207,12 +210,14 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get flush interval
+     * Get flush interval. Default value is 10 second. It isn't useful to decrease
+     * this value, since ledger storage only checkpoints when an entry logger file
+     * is rolled.
      *
      * @return flush interval
      */
     public int getFlushInterval() {
-        return this.getInt(FLUSH_INTERVAL, 100);
+        return this.getInt(FLUSH_INTERVAL, 10000);
     }
 
     /**
@@ -237,12 +242,12 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get open file limit
+     * Get open file limit. Default value is 20000.
      *
      * @return max number of files to open
      */
     public int getOpenFileLimit() {
-        return this.getInt(OPEN_FILE_LIMIT, 900);
+        return this.getInt(OPEN_FILE_LIMIT, 20000);
     }
 
     /**
@@ -1090,12 +1095,12 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Maximum latency to impose on a journal write to achieve grouping
+     * Maximum latency to impose on a journal write to achieve grouping. Default is 2ms.
      *
      * @return max wait for grouping
      */
     public long getJournalMaxGroupWaitMSec() {
-        return getLong(JOURNAL_MAX_GROUP_WAIT_MSEC, 200);
+        return getLong(JOURNAL_MAX_GROUP_WAIT_MSEC, 2);
     }
 
     /**
@@ -1164,12 +1169,12 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get whether read-only mode is enabled. The default is false.
+     * Get whether read-only mode is enabled. The default is true.
      *
      * @return boolean
      */
     public boolean isReadOnlyModeEnabled() {
-        return getBoolean(READ_ONLY_MODE_ENABLED, false);
+        return getBoolean(READ_ONLY_MODE_ENABLED, true);
     }
 
     /**
