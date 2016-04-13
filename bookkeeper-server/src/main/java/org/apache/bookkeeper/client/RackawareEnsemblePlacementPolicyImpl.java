@@ -27,7 +27,6 @@ import io.netty.util.HashedWheelTimer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -419,6 +418,14 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         return nodes;
     }
 
+    private Set<String> getNetworkLocations(Set<Node> bookieNodes) {
+        Set<String> networkLocs = new HashSet<String>();
+        for (Node bookieNode : bookieNodes) {
+            networkLocs.add(bookieNode.getNetworkLocation());
+        }
+        return networkLocs;
+    }
+
     @Override
     public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
             Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
@@ -516,7 +523,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
 
     @Override
     public BookieSocketAddress replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-            Map<String, byte[]> customMetadata, Collection<BookieSocketAddress> currentEnsemble,
+            Map<String, byte[]> customMetadata, Set<BookieSocketAddress> currentEnsemble,
             BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies)
             throws BKNotEnoughBookiesException {
         rwLock.readLock().lock();
@@ -527,16 +534,23 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                 bn = createBookieNode(bookieToReplace);
             }
 
+            Set<Node> ensembleNodes = convertBookiesToNodes(currentEnsemble);
             Set<Node> excludeNodes = convertBookiesToNodes(excludeBookies);
-            // add the bookie to replace in exclude set
+
+            excludeNodes.addAll(ensembleNodes);
             excludeNodes.add(bn);
+            ensembleNodes.remove(bn);
+
+            Set<String> networkLocationsToBeExcluded = getNetworkLocations(ensembleNodes);
+
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Try to choose a new bookie to replace {}, excluding {}.", bookieToReplace,
-                        excludeNodes);
+                LOG.debug("Try to choose a new bookie to replace {} from ensemble {}, excluding {}.",
+                    bookieToReplace, ensembleNodes, excludeNodes);
             }
             // pick a candidate from same rack to replace
             BookieNode candidate = selectFromNetworkLocation(
                     bn.getNetworkLocation(),
+                    networkLocationsToBeExcluded,
                     excludeNodes,
                     TruePredicate.INSTANCE,
                     EnsembleForReplacementWithNoConstraints.INSTANCE);
@@ -594,8 +608,57 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         }
     }
 
-    protected String getRemoteRack(BookieNode node) {
-        return "~" + node.getNetworkLocation();
+    protected BookieNode selectFromNetworkLocation(String networkLoc,
+                                                   Set<String> excludeRacks,
+                                                   Set<Node> excludeBookies,
+                                                   Predicate<BookieNode> predicate,
+                                                   Ensemble<BookieNode> ensemble)
+            throws BKNotEnoughBookiesException {
+        // first attempt to select one from local rack
+        try {
+            return selectRandomFromRack(networkLoc, excludeBookies, predicate, ensemble);
+        } catch (BKNotEnoughBookiesException e) {
+            if (isWeighted) {
+                // if weight based selection is enabled, randomly select one from the whole cluster
+                // based on weights and ignore the provided predicate.
+                // randomly choose one from whole cluster, ignore the provided predicate.
+                return selectRandom(1, excludeBookies, predicate, ensemble).get(0);
+            } else {
+                // if weight based selection is enabled, and there is no enough bookie from local rack,
+                // select bookies from the whole cluster and exclude the racks specified at <tt>excludeRacks</tt>.
+                return selectFromNetworkLocation(excludeRacks, excludeBookies, predicate, ensemble);
+            }
+        }
+
+    }
+
+
+    /**
+     * It randomly selects a {@link BookieNode} that is not on the <i>excludeRacks</i> set, excluding the nodes in
+     * <i>excludeBookies</i> set. If it fails to find one, it selects a random {@link BookieNode} from the whole
+     * cluster.
+     */
+    protected BookieNode selectFromNetworkLocation(Set<String> excludeRacks,
+                                                   Set<Node> excludeBookies,
+                                                   Predicate<BookieNode> predicate,
+                                                   Ensemble<BookieNode> ensemble)
+            throws BKNotEnoughBookiesException {
+        List<BookieNode> knownNodes = new ArrayList<>(knownBookies.values());
+        Collections.shuffle(knownNodes);
+
+        for (BookieNode knownNode : knownNodes) {
+            if (excludeBookies.contains(knownNode)) {
+                continue;
+            }
+            if (excludeRacks.contains(knownNode.getNetworkLocation())) {
+                continue;
+            }
+            return knownNode;
+        }
+        LOG.warn("Failed to choose a bookie: excluded {}, fallback to choose bookie randomly from the cluster.",
+                excludeBookies);
+        // randomly choose one from whole cluster
+        return selectRandom(1, excludeBookies, predicate, ensemble).get(0);
     }
 
     private WeightedRandomSelection<BookieNode> prepareForWeightedSelection(List<Node> leaves) {

@@ -816,8 +816,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             Set<BookieSocketAddress> excludedAddrs = new HashSet<BookieSocketAddress>();
             for (BookieSocketAddress addr: region2Bookies) {
                 if (ensemble.contains(addr)) {
-                    BookieSocketAddress replacedBookie = repp.replaceBookie(6, 6, ackQuorum, null, ensemble,
-                            addr, excludedAddrs);
+                    BookieSocketAddress replacedBookie = repp.replaceBookie(
+                        6, 6, ackQuorum, null,
+                        new HashSet<>(ensemble), addr, excludedAddrs);
                     ensemble.remove(addr);
                     ensemble.add(replacedBookie);
                 }
@@ -841,8 +842,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             Set<BookieSocketAddress> excludedAddrs = new HashSet<BookieSocketAddress>();
 
             try {
-                BookieSocketAddress replacedBookie = repp.replaceBookie(6, 6, ackQuorum, null, ensemble,
-                        bookieToReplace, excludedAddrs);
+                BookieSocketAddress replacedBookie = repp.replaceBookie(
+                    6, 6, ackQuorum, null,
+                    new HashSet<>(ensemble), bookieToReplace, excludedAddrs);
                 assert (replacedBookie.equals(replacedBookieExpected));
                 assertEquals(3, getNumRegionsInEnsemble(ensemble));
             } catch (BKNotEnoughBookiesException bnebe) {
@@ -851,8 +853,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
             excludedAddrs.add(replacedBookieExpected);
             try {
-                BookieSocketAddress replacedBookie = repp.replaceBookie(6, 6, ackQuorum, null, ensemble,
-                        bookieToReplace, excludedAddrs);
+                BookieSocketAddress replacedBookie = repp.replaceBookie(
+                    6, 6, ackQuorum, null,
+                    new HashSet<>(ensemble), bookieToReplace, excludedAddrs);
                 if (minDurability > 1 && !disableDurabilityFeature.isAvailable()) {
                     fail("Should throw BKNotEnoughBookiesException when there is not enough bookies");
                 }
@@ -939,7 +942,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         Set<BookieSocketAddress> excludedAddrs = new HashSet<BookieSocketAddress>();
 
         try {
-            repp.replaceBookie(6, 6, 4, null, ensemble, addr4, excludedAddrs);
+            repp.replaceBookie(
+                6, 6, 4, null,
+                new HashSet<>(ensemble), addr4, excludedAddrs);
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }

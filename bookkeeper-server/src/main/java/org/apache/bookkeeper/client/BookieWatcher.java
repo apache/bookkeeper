@@ -201,7 +201,7 @@ class BookieWatcher {
                 log.debug("Not enough healthy bookies available, using quarantined bookies");
             }
             return placementPolicy.newEnsemble(
-                ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, Collections.emptySet());
+                ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, new HashSet<>());
         }
     }
 

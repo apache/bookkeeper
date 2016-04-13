@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -992,7 +993,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                             lh.getLedgerMetadata().getWriteQuorumSize(),
                             lh.getLedgerMetadata().getAckQuorumSize(),
                             lh.getLedgerMetadata().getCustomMetadata(),
-                            ensemble,
+                            new HashSet<>(ensemble),
                             oldBookie,
                             bookiesToExclude);
             targetBookieAddresses.put(bookieIndex, newBookie);
