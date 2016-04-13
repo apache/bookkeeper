@@ -70,14 +70,13 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     HashedWheelTimer timer;
 
     static void updateMyRack(String rack) throws Exception {
-        StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostAddress(), rack);
-        StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostName(), rack);
         BookieSocketAddress bookieAddress = new BookieSocketAddress(
             InetAddress.getLocalHost().getHostAddress(), 0);
-        StaticDNSResolver.addNodeToRack(bookieAddress.getSocketAddress().getHostName(), rack);
-        StaticDNSResolver.addNodeToRack(bookieAddress.getSocketAddress().getAddress().getHostAddress(), rack);
-        StaticDNSResolver.addNodeToRack("127.0.0.1", rack);
-        StaticDNSResolver.addNodeToRack("localhost", rack);
+        StaticDNSResolver.addNodeToRack(bookieAddress, rack);
+        StaticDNSResolver.addNodeToRack(new BookieSocketAddress("127.0.0.1", 0),
+            rack);
+        StaticDNSResolver.addNodeToRack(new BookieSocketAddress("localhost", 0),
+            rack);
     }
 
     @Override
@@ -93,10 +92,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addr3 = new BookieSocketAddress("127.0.0.4", 3181);
         addr4 = new BookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/r1/rack1");
-        StaticDNSResolver.addNodeToRack(addr2.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
-        StaticDNSResolver.addNodeToRack(addr3.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
-        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/r1/rack2");
+        StaticDNSResolver.addNodeToRack(addr1, "/r1/rack1");
+        StaticDNSResolver.addNodeToRack(addr2, NetworkTopology.DEFAULT_REGION_AND_RACK);
+        StaticDNSResolver.addNodeToRack(addr3, NetworkTopology.DEFAULT_REGION_AND_RACK);
+        StaticDNSResolver.addNodeToRack(addr4, "/r1/rack2");
         ensemble.add(addr1);
         ensemble.add(addr2);
         ensemble.add(addr3);
@@ -411,10 +410,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
         BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
-        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r1");
-        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region1/r2");
-        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r3");
+        StaticDNSResolver.addNodeToRack(addr1, NetworkTopology.DEFAULT_REGION_AND_RACK);
+        StaticDNSResolver.addNodeToRack(addr2, "/region1/r1");
+        StaticDNSResolver.addNodeToRack(addr3, "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr4, "/default-region/r3");
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -435,10 +434,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
         BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
-        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
-        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region2/r3");
-        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region3/r4");
+        StaticDNSResolver.addNodeToRack(addr1, NetworkTopology.DEFAULT_REGION_AND_RACK);
+        StaticDNSResolver.addNodeToRack(addr2, "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr3, "/region2/r3");
+        StaticDNSResolver.addNodeToRack(addr4, "/region3/r4");
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -463,10 +462,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
         BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
-        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region2/r2");
-        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region3/r3");
-        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region4/r4");
+        StaticDNSResolver.addNodeToRack(addr1, NetworkTopology.DEFAULT_REGION_AND_RACK);
+        StaticDNSResolver.addNodeToRack(addr2, "/region2/r2");
+        StaticDNSResolver.addNodeToRack(addr3, "/region3/r3");
+        StaticDNSResolver.addNodeToRack(addr4, "/region4/r4");
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -490,10 +489,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
         BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
-        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region2/r2");
-        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region3/r3");
-        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region4/r4");
+        StaticDNSResolver.addNodeToRack(addr1, NetworkTopology.DEFAULT_REGION_AND_RACK);
+        StaticDNSResolver.addNodeToRack(addr2, "/region2/r2");
+        StaticDNSResolver.addNodeToRack(addr3, "/region3/r3");
+        StaticDNSResolver.addNodeToRack(addr4, "/region4/r4");
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -524,10 +523,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
         BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r2");
-        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
-        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region1/r2");
-        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr1, "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr2, "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr3, "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr4, "/region1/r2");
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -557,10 +556,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
         BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
-        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
-        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region1/r2");
-        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr1, NetworkTopology.DEFAULT_REGION_AND_RACK);
+        StaticDNSResolver.addNodeToRack(addr2, "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr3, "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr4, "/region1/r2");
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -598,14 +597,14 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.8", 3181);
         BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.9", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/default-region/default-rack1");
-        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
-        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region2/r3");
-        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region3/r4");
-        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/default-region/default-rack2");
-        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/region1/r12");
-        StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/region2/r13");
-        StaticDNSResolver.addNodeToRack(addr8.getHostName(), "/region3/r14");
+        StaticDNSResolver.addNodeToRack(addr1, "/default-region/default-rack1");
+        StaticDNSResolver.addNodeToRack(addr2, "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr3, "/region2/r3");
+        StaticDNSResolver.addNodeToRack(addr4, "/region3/r4");
+        StaticDNSResolver.addNodeToRack(addr5, "/default-region/default-rack2");
+        StaticDNSResolver.addNodeToRack(addr6, "/region1/r12");
+        StaticDNSResolver.addNodeToRack(addr7, "/region2/r13");
+        StaticDNSResolver.addNodeToRack(addr8, "/region3/r14");
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -645,16 +644,16 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.10", 3181);
         BookieSocketAddress addr10 = new BookieSocketAddress("127.0.0.11", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region2/r1");
-        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
-        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region2/r3");
-        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region3/r4");
-        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/region1/r11");
-        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/region1/r12");
-        StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/region2/r13");
-        StaticDNSResolver.addNodeToRack(addr8.getHostName(), "/region3/r14");
-        StaticDNSResolver.addNodeToRack(addr9.getHostName(), "/region2/r23");
-        StaticDNSResolver.addNodeToRack(addr10.getHostName(), "/region1/r24");
+        StaticDNSResolver.addNodeToRack(addr1, "/region2/r1");
+        StaticDNSResolver.addNodeToRack(addr2, "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr3, "/region2/r3");
+        StaticDNSResolver.addNodeToRack(addr4, "/region3/r4");
+        StaticDNSResolver.addNodeToRack(addr5, "/region1/r11");
+        StaticDNSResolver.addNodeToRack(addr6, "/region1/r12");
+        StaticDNSResolver.addNodeToRack(addr7, "/region2/r13");
+        StaticDNSResolver.addNodeToRack(addr8, "/region3/r14");
+        StaticDNSResolver.addNodeToRack(addr9, "/region2/r23");
+        StaticDNSResolver.addNodeToRack(addr10, "/region1/r24");
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -713,16 +712,16 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.10", 3181);
         BookieSocketAddress addr10 = new BookieSocketAddress("127.0.0.11", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region2/r1");
-        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
-        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region2/r3");
-        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region3/r4");
-        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/region1/r11");
-        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/region1/r12");
-        StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/region2/r13");
-        StaticDNSResolver.addNodeToRack(addr8.getHostName(), "/region3/r14");
-        StaticDNSResolver.addNodeToRack(addr9.getHostName(), "/region2/r23");
-        StaticDNSResolver.addNodeToRack(addr10.getHostName(), "/region1/r24");
+        StaticDNSResolver.addNodeToRack(addr1, "/region2/r1");
+        StaticDNSResolver.addNodeToRack(addr2, "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr3, "/region2/r3");
+        StaticDNSResolver.addNodeToRack(addr4, "/region3/r4");
+        StaticDNSResolver.addNodeToRack(addr5, "/region1/r11");
+        StaticDNSResolver.addNodeToRack(addr6, "/region1/r12");
+        StaticDNSResolver.addNodeToRack(addr7, "/region2/r13");
+        StaticDNSResolver.addNodeToRack(addr8, "/region3/r14");
+        StaticDNSResolver.addNodeToRack(addr9, "/region2/r23");
+        StaticDNSResolver.addNodeToRack(addr10, "/region1/r24");
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -800,21 +799,21 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr14 = new BookieSocketAddress("127.1.0.15", 3181);
         BookieSocketAddress addr15 = new BookieSocketAddress("127.1.0.16", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r1");
-        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
-        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region1/r3");
-        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region2/r4");
-        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/region2/r11");
-        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/region2/r12");
-        StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/region3/r13");
-        StaticDNSResolver.addNodeToRack(addr8.getHostName(), "/region3/r14");
-        StaticDNSResolver.addNodeToRack(addr9.getHostName(), "/region3/r23");
-        StaticDNSResolver.addNodeToRack(addr10.getHostName(), "/region4/r24");
-        StaticDNSResolver.addNodeToRack(addr11.getHostName(), "/region4/r31");
-        StaticDNSResolver.addNodeToRack(addr12.getHostName(), "/region4/r32");
-        StaticDNSResolver.addNodeToRack(addr13.getHostName(), "/region5/r33");
-        StaticDNSResolver.addNodeToRack(addr14.getHostName(), "/region5/r34");
-        StaticDNSResolver.addNodeToRack(addr15.getHostName(), "/region5/r35");
+        StaticDNSResolver.addNodeToRack(addr1, "/region1/r1");
+        StaticDNSResolver.addNodeToRack(addr2, "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr3, "/region1/r3");
+        StaticDNSResolver.addNodeToRack(addr4, "/region2/r4");
+        StaticDNSResolver.addNodeToRack(addr5, "/region2/r11");
+        StaticDNSResolver.addNodeToRack(addr6, "/region2/r12");
+        StaticDNSResolver.addNodeToRack(addr7, "/region3/r13");
+        StaticDNSResolver.addNodeToRack(addr8, "/region3/r14");
+        StaticDNSResolver.addNodeToRack(addr9, "/region3/r23");
+        StaticDNSResolver.addNodeToRack(addr10, "/region4/r24");
+        StaticDNSResolver.addNodeToRack(addr11, "/region4/r31");
+        StaticDNSResolver.addNodeToRack(addr12, "/region4/r32");
+        StaticDNSResolver.addNodeToRack(addr13, "/region5/r33");
+        StaticDNSResolver.addNodeToRack(addr14, "/region5/r34");
+        StaticDNSResolver.addNodeToRack(addr15, "/region5/r35");
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -901,15 +900,15 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr8 = new BookieSocketAddress("127.1.0.9", 3181);
         BookieSocketAddress addr9 = new BookieSocketAddress("127.1.0.10", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r1");
-        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
-        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region1/r3");
-        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region2/r4");
-        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/region2/r11");
-        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/region2/r12");
-        StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/region3/r13");
-        StaticDNSResolver.addNodeToRack(addr8.getHostName(), "/region3/r14");
-        StaticDNSResolver.addNodeToRack(addr9.getHostName(), "/region3/r23");
+        StaticDNSResolver.addNodeToRack(addr1, "/region1/r1");
+        StaticDNSResolver.addNodeToRack(addr2, "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr3, "/region1/r3");
+        StaticDNSResolver.addNodeToRack(addr4, "/region2/r4");
+        StaticDNSResolver.addNodeToRack(addr5, "/region2/r11");
+        StaticDNSResolver.addNodeToRack(addr6, "/region2/r12");
+        StaticDNSResolver.addNodeToRack(addr7, "/region3/r13");
+        StaticDNSResolver.addNodeToRack(addr8, "/region3/r14");
+        StaticDNSResolver.addNodeToRack(addr9, "/region3/r23");
 
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
@@ -1044,15 +1043,15 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr8 = new BookieSocketAddress("127.1.0.9", 3181);
         BookieSocketAddress addr9 = new BookieSocketAddress("127.1.0.10", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r1");
-        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
-        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region1/r3");
-        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region1/r4");
-        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/region1/r11");
-        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/region1/r12");
-        StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/region1/r13");
-        StaticDNSResolver.addNodeToRack(addr8.getHostName(), "/region1/r14");
-        StaticDNSResolver.addNodeToRack(addr9.getHostName(), "/region1/r23");
+        StaticDNSResolver.addNodeToRack(addr1, "/region1/r1");
+        StaticDNSResolver.addNodeToRack(addr2, "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr3, "/region1/r3");
+        StaticDNSResolver.addNodeToRack(addr4, "/region1/r4");
+        StaticDNSResolver.addNodeToRack(addr5, "/region1/r11");
+        StaticDNSResolver.addNodeToRack(addr6, "/region1/r12");
+        StaticDNSResolver.addNodeToRack(addr7, "/region1/r13");
+        StaticDNSResolver.addNodeToRack(addr8, "/region1/r14");
+        StaticDNSResolver.addNodeToRack(addr9, "/region1/r23");
 
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
@@ -1113,16 +1112,16 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.10", 3181);
         BookieSocketAddress addr10 = new BookieSocketAddress("127.0.0.11", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r1");
-        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
-        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region2/r3");
-        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region2/r4");
-        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/region3/r11");
-        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/region3/r12");
-        StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/region4/r13");
-        StaticDNSResolver.addNodeToRack(addr8.getHostName(), "/region4/r14");
-        StaticDNSResolver.addNodeToRack(addr9.getHostName(), "/region5/r23");
-        StaticDNSResolver.addNodeToRack(addr10.getHostName(), "/region5/r24");
+        StaticDNSResolver.addNodeToRack(addr1, "/region1/r1");
+        StaticDNSResolver.addNodeToRack(addr2, "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr3, "/region2/r3");
+        StaticDNSResolver.addNodeToRack(addr4, "/region2/r4");
+        StaticDNSResolver.addNodeToRack(addr5, "/region3/r11");
+        StaticDNSResolver.addNodeToRack(addr6, "/region3/r12");
+        StaticDNSResolver.addNodeToRack(addr7, "/region4/r13");
+        StaticDNSResolver.addNodeToRack(addr8, "/region4/r14");
+        StaticDNSResolver.addNodeToRack(addr9, "/region5/r23");
+        StaticDNSResolver.addNodeToRack(addr10, "/region5/r24");
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -1166,15 +1165,15 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.9", 3181);
         BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.10", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/region1/r1");
-        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/region1/r2");
-        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/region1/r3");
-        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/region2/r1");
-        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/region2/r2");
-        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/region2/r3");
-        StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/region3/r1");
-        StaticDNSResolver.addNodeToRack(addr8.getHostName(), "/region3/r2");
-        StaticDNSResolver.addNodeToRack(addr9.getHostName(), "/region3/r3");
+        StaticDNSResolver.addNodeToRack(addr1, "/region1/r1");
+        StaticDNSResolver.addNodeToRack(addr2, "/region1/r2");
+        StaticDNSResolver.addNodeToRack(addr3, "/region1/r3");
+        StaticDNSResolver.addNodeToRack(addr4, "/region2/r1");
+        StaticDNSResolver.addNodeToRack(addr5, "/region2/r2");
+        StaticDNSResolver.addNodeToRack(addr6, "/region2/r3");
+        StaticDNSResolver.addNodeToRack(addr7, "/region3/r1");
+        StaticDNSResolver.addNodeToRack(addr8, "/region3/r2");
+        StaticDNSResolver.addNodeToRack(addr9, "/region3/r3");
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -1230,17 +1229,17 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             int k = 0;
             for (; k < RegionAwareEnsemblePlacementPolicy.REMOTE_NODE_IN_REORDER_SEQUENCE; k++) {
                 BookieSocketAddress address = ensemble.get(readSet.get(k));
-                assertEquals(myRegion, StaticDNSResolver.getRegion(address.getHostName()));
+                assertEquals(myRegion, StaticDNSResolver.getRegion(address));
             }
             BookieSocketAddress remoteAddress = ensemble.get(readSet.get(k));
-            assertFalse(myRegion.equals(StaticDNSResolver.getRegion(remoteAddress.getHostName())));
+            assertFalse(myRegion.equals(StaticDNSResolver.getRegion(remoteAddress)));
             k++;
             BookieSocketAddress localAddress = ensemble.get(readSet.get(k));
-            assertEquals(myRegion, StaticDNSResolver.getRegion(localAddress.getHostName()));
+            assertEquals(myRegion, StaticDNSResolver.getRegion(localAddress));
             k++;
             for (; k < ensembleSize; k++) {
                 BookieSocketAddress address = ensemble.get(readSet.get(k));
-                assertFalse(myRegion.equals(StaticDNSResolver.getRegion(address.getHostName())));
+                assertFalse(myRegion.equals(StaticDNSResolver.getRegion(address)));
             }
         }
     }
@@ -1299,7 +1298,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     static Set<BookieSocketAddress> getBookiesForRegion(ArrayList<BookieSocketAddress> ensemble, String region) {
         Set<BookieSocketAddress> regionBookies = new HashSet<BookieSocketAddress>();
         for (BookieSocketAddress address : ensemble) {
-            String r = StaticDNSResolver.getRegion(address.getHostName());
+            String r = StaticDNSResolver.getRegion(address);
             if (r.equals(region)) {
                 regionBookies.add(address);
             }
@@ -1313,7 +1312,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
                                           List<Integer> finalSet) {
         for (int i = 0; i < writeSet.size(); i++) {
             int bi = writeSet.get(i);
-            String r = StaticDNSResolver.getRegion(ensemble.get(bi).getHostName());
+            String r = StaticDNSResolver.getRegion(ensemble.get(bi));
             if (r.equals(region)) {
                 finalSet.add(bi);
             }
@@ -1375,7 +1374,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     private int getNumRegionsInEnsemble(ArrayList<BookieSocketAddress> ensemble) {
         Set<String> regions = new HashSet<String>();
         for (BookieSocketAddress addr: ensemble) {
-            regions.add(StaticDNSResolver.getRegion(addr.getHostName()));
+            regions.add(StaticDNSResolver.getRegion(addr));
         }
         return regions.size();
     }
@@ -1389,7 +1388,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             for (int j = 0; j < writeQuorumSize; j++) {
                 int bookieIdx = (i + j) % ensembleSize;
                 BookieSocketAddress addr = ensemble.get(bookieIdx);
-                regions.add(StaticDNSResolver.getRegion(addr.getHostName()));
+                regions.add(StaticDNSResolver.getRegion(addr));
             }
             numCoveredWriteQuorums += (regions.size() > 1 ? 1 : 0);
         }
@@ -1409,12 +1408,12 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.8", 3181);
         BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.9", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/r2/rack1");
-        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/r2/rack2");
-        StaticDNSResolver.addNodeToRack(addr5.getHostName(), "/r1/rack3");
-        StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/r2/rack3");
-        StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/r2/rack4");
-        StaticDNSResolver.addNodeToRack(addr8.getHostName(), "/r1/rack4");
+        StaticDNSResolver.addNodeToRack(addr2, "/r2/rack1");
+        StaticDNSResolver.addNodeToRack(addr3, "/r2/rack2");
+        StaticDNSResolver.addNodeToRack(addr5, "/r1/rack3");
+        StaticDNSResolver.addNodeToRack(addr6, "/r2/rack3");
+        StaticDNSResolver.addNodeToRack(addr7, "/r2/rack4");
+        StaticDNSResolver.addNodeToRack(addr8, "/r1/rack4");
         ensemble.add(addr5);
         ensemble.add(addr6);
         ensemble.add(addr7);

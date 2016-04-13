@@ -110,9 +110,9 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         }
 
         @Override
-        public List<String> resolve(List<String> names) {
-            List<String> rNames = new ArrayList<String>(names.size());
-            for (@SuppressWarnings("unused") String name : names) {
+        public List<String> resolve(List<BookieSocketAddress> bookieSocketAddresses) {
+            List<String> rNames = new ArrayList<String>(bookieSocketAddresses.size());
+            for (@SuppressWarnings("unused") BookieSocketAddress name : bookieSocketAddresses) {
                 final String defaultRack = defaultRackSupplier.get();
                 checkNotNull(defaultRack, "defaultRack cannot be null");
                 rNames.add(defaultRack);
@@ -143,30 +143,30 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
             this.resolver = resolver;
         }
 
-        public List<String> resolve(List<String> names) {
-            if (names == null) {
+        public List<String> resolve(List<BookieSocketAddress> bookieSocketAddresses) {
+            if (bookieSocketAddresses == null) {
                 return Collections.emptyList();
             }
             final String defaultRack = defaultRackSupplier.get();
             checkNotNull(defaultRack, "Default rack cannot be null");
 
-            List<String> rNames = resolver.resolve(names);
-            if (rNames != null && rNames.size() == names.size()) {
+            List<String> rNames = resolver.resolve(bookieSocketAddresses);
+            if (rNames != null && rNames.size() == bookieSocketAddresses.size()) {
                 for (int i = 0; i < rNames.size(); ++i) {
                     if (rNames.get(i) == null) {
                         LOG.warn("Failed to resolve network location for {}, using default rack for it : {}.",
-                                names.get(i), defaultRack);
+                                bookieSocketAddresses.get(i), defaultRack);
                         rNames.set(i, defaultRack);
                     }
                 }
                 return rNames;
             }
 
-            LOG.warn("Failed to resolve network location for {}, using default rack for them : {}.", names,
-                    defaultRack);
-            rNames = new ArrayList<>(names.size());
+            LOG.warn("Failed to resolve network location for {}, using default rack for them : {}.",
+                bookieSocketAddresses, defaultRack);
+            rNames = new ArrayList<>(bookieSocketAddresses.size());
 
-            for (int i = 0; i < names.size(); ++i) {
+            for (int i = 0; i < bookieSocketAddresses.size(); ++i) {
                 rNames.add(defaultRack);
             }
             return rNames;
@@ -333,7 +333,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
     }
 
     protected String resolveNetworkLocation(BookieSocketAddress addr) {
-        return NetUtils.resolveNetworkLocation(dnsResolver, addr.getSocketAddress());
+        return NetUtils.resolveNetworkLocation(dnsResolver, addr);
     }
 
     @Override

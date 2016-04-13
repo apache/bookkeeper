@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  */
 public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
-  private Map<String, String> cache = new ConcurrentHashMap<String, String>();
+  private Map<BookieSocketAddress, String> cache = new ConcurrentHashMap<BookieSocketAddress, String>();
 
   /**
    * The uncached mapping.
@@ -53,15 +53,15 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
   }
 
   /**
-   * @param names a list of hostnames to probe for being cached
-   * @return the hosts from 'names' that have not been cached previously
+   * @param bookieAddressList a list of {@link BookieSocketAddress} to probe for being cached
+   * @return the bookie addresses from 'bookieAddressList' that have not been cached previously
    */
-  private List<String> getUncachedHosts(List<String> names) {
+  private List<BookieSocketAddress> getUncachedHosts(List<BookieSocketAddress> bookieAddressList) {
     // find out all names without cached resolved location
-    List<String> unCachedHosts = new ArrayList<String>(names.size());
-    for (String name : names) {
-      if (cache.get(name) == null) {
-        unCachedHosts.add(name);
+    List<BookieSocketAddress> unCachedHosts = new ArrayList<BookieSocketAddress>(bookieAddressList.size());
+    for (BookieSocketAddress bookieAddress : bookieAddressList) {
+      if (cache.get(bookieAddress) == null) {
+        unCachedHosts.add(bookieAddress);
       }
     }
     return unCachedHosts;
@@ -75,7 +75,7 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
    * @param resolvedHosts a list of resolved host entries where the element
    * at index(i) is the resolved value for the entry in uncachedHosts[i]
    */
-  private void cacheResolvedHosts(List<String> uncachedHosts,
+  private void cacheResolvedHosts(List<BookieSocketAddress> uncachedHosts,
       List<String> resolvedHosts) {
     // Cache the result
     if (resolvedHosts != null) {
@@ -86,15 +86,15 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
   }
 
   /**
-   * @param names a list of hostnames to look up (can be be empty)
+   * @param bookieAddressList a list of {@link BookieSocketAddress} to look up (can be be empty)
    * @return the cached resolution of the list of hostnames/addresses.
    *  or null if any of the names are not currently in the cache
    */
-  private List<String> getCachedHosts(List<String> names) {
-    List<String> result = new ArrayList<String>(names.size());
+  private List<String> getCachedHosts(List<BookieSocketAddress> bookieAddressList) {
+    List<String> result = new ArrayList<String>(bookieAddressList.size());
     // Construct the result
-    for (String name : names) {
-      String networkLocation = cache.get(name);
+    for (BookieSocketAddress bookieAddress : bookieAddressList) {
+      String networkLocation = cache.get(bookieAddress);
       if (networkLocation != null) {
         result.add(networkLocation);
       } else {
@@ -105,23 +105,20 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
   }
 
   @Override
-  public List<String> resolve(List<String> names) {
-    // normalize all input names to be in the form of IP addresses
-    names = NetUtils.normalizeHostNames(names);
-
-    List <String> result = new ArrayList<String>(names.size());
-    if (names.isEmpty()) {
+  public List<String> resolve(List<BookieSocketAddress> bookieAddressList) {
+    List <String> result = new ArrayList<String>(bookieAddressList.size());
+    if (bookieAddressList.isEmpty()) {
       return result;
     }
 
-    List<String> uncachedHosts = getUncachedHosts(names);
+    List<BookieSocketAddress> uncachedHosts = getUncachedHosts(bookieAddressList);
 
     // Resolve the uncached hosts
     List<String> resolvedHosts = rawMapping.resolve(uncachedHosts);
     //cache them
     cacheResolvedHosts(uncachedHosts, resolvedHosts);
     //now look up the entire list in the cache
-    return getCachedHosts(names);
+    return getCachedHosts(bookieAddressList);
 
   }
 
@@ -130,8 +127,8 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
    * @return a copy of the cached map of hosts to rack
    */
   @Override
-  public Map<String, String> getSwitchMap() {
-    Map<String, String> switchMap = new HashMap<String, String>(cache);
+  public Map<BookieSocketAddress, String> getSwitchMap() {
+    Map<BookieSocketAddress, String > switchMap = new HashMap<BookieSocketAddress, String>(cache);
     return switchMap;
   }
 
