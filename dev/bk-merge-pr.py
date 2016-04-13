@@ -62,7 +62,8 @@ GITHUB_OAUTH_KEY = os.environ.get("GITHUB_OAUTH_KEY")
 
 GITHUB_USER = os.environ.get("GITHUB_USER", "apache")
 GITHUB_BASE = "https://github.com/%s/%s/pull" % (GITHUB_USER, PROJECT_NAME)
-GITHUB_API_BASE = "https://api.github.com/repos/%s/%s" % (GITHUB_USER, PROJECT_NAME)
+GITHUB_API_URL  = "https://api.github.com"
+GITHUB_API_BASE = "%s/repos/%s/%s" % (GITHUB_API_URL, GITHUB_USER, PROJECT_NAME)
 JIRA_BASE = "https://issues.apache.org/jira/browse"
 JIRA_API_BASE = "https://issues.apache.org/jira"
 # Prefix added to temporary branches
@@ -123,7 +124,7 @@ def get_current_branch():
     return run_cmd("git rev-parse --abbrev-ref HEAD").replace("\n", "")
 
 # merge the requested PR and return the merge hash
-def merge_pr(pr_num, target_ref, title, body, pr_repo_desc):
+def merge_pr(pr_num, target_ref, title, body, default_pr_reviewers, pr_repo_desc):
     pr_branch_name = "%s_MERGE_PR_%s" % (TEMP_BRANCH_PREFIX, pr_num)
     target_branch_name = "%s_MERGE_PR_%s_%s" % (TEMP_BRANCH_PREFIX, pr_num, target_ref.upper())
     run_cmd("git fetch %s pull/%s/head:%s" % (PR_REMOTE_NAME, pr_num, pr_branch_name))
@@ -140,6 +141,15 @@ def merge_pr(pr_num, target_ref, title, body, pr_repo_desc):
         continue_maybe(msg)
         had_conflicts = True
 
+    # Offer to run unit tests before committing
+    result = raw_input('Do you want to validate unit tests after the merge? (y/n): ')
+    if result.lower() == 'y':
+        test_res = subprocess.call('mvn clean install'.split())
+        if test_res == 0:
+            print('Unit tests execution succeeded')
+        else:
+            continue_maybe("Unit tests execution FAILED. Do you want to continue with the merge anyway?")
+
     commit_authors = run_cmd(['git', 'log', 'HEAD..%s' % pr_branch_name,
                              '--pretty=format:%an <%ae>']).split("\n")
     distinct_authors = sorted(set(commit_authors),
@@ -150,8 +160,9 @@ def merge_pr(pr_num, target_ref, title, body, pr_repo_desc):
     if primary_author == "":
         primary_author = distinct_authors[0]
 
-    reviewers = raw_input(
-        "Enter reviewers in the format of \"name1 <email1>, name2 <email2>\": ").strip()
+    reviewers = raw_input("Enter reviewers [%s]: " % default_pr_reviewers).strip()
+    if reviewers == '':
+        reviewers = default_pr_reviewers
 
     commits = run_cmd(['git', 'log', 'HEAD..%s' % pr_branch_name,
                       '--pretty=format:%h [%an] %s']).split("\n")
@@ -208,10 +219,11 @@ def merge_pr(pr_num, target_ref, title, body, pr_repo_desc):
         fail("Exception while pushing: %s" % e)
 
     merge_hash = run_cmd("git rev-parse %s" % target_branch_name)[:8]
+    merge_log = run_cmd("git show --format=fuller -q %s" % target_branch_name)
     clean_up()
     print("Pull request #%s merged!" % pr_num)
     print("Merge hash: %s" % merge_hash)
-    return merge_hash
+    return merge_hash, merge_log
 
 
 def cherry_pick(pr_num, merge_hash, default_branch):
@@ -265,13 +277,13 @@ def fix_version_from_branch(branch, versions):
             return None
 
 
-def resolve_jira_issue(merge_branches, comment, default_jira_id=""):
+def resolve_jira_issue(merge_branches, comment, jira_id):
     asf_jira = jira.client.JIRA({'server': JIRA_API_BASE},
                                 basic_auth=(JIRA_USERNAME, JIRA_PASSWORD))
 
-    jira_id = raw_input("Enter a JIRA id [%s]: " % default_jira_id)
-    if jira_id == "":
-        jira_id = default_jira_id
+    result = raw_input("Resolve JIRA %s ? (y/n): " % jira_id)
+    if result.lower() != "y":
+        return
 
     try:
         issue = asf_jira.issue(jira_id)
@@ -321,10 +333,10 @@ def resolve_jira_issue(merge_branches, comment, default_jira_id=""):
 
 
 def resolve_jira_issues(title, merge_branches, comment):
-    jira_ids = re.findall("%s-[0-9]{4,5}" % CAPITALIZED_PROJECT_NAME, title)
+    jira_ids = re.findall("%s-[0-9]{3,6}" % CAPITALIZED_PROJECT_NAME, title)
 
     if len(jira_ids) == 0:
-        resolve_jira_issue(merge_branches, comment)
+        pritnf ("No JIRA issue found to update")
     for jira_id in jira_ids:
         resolve_jira_issue(merge_branches, comment, jira_id)
 
@@ -369,6 +381,26 @@ def standardize_jira_ref(text):
 
     return clean_text
 
+def get_reviewers(pr_num):
+    """
+    Get a candidate list of reviewers that have commented on the PR with '+1' or 'LGTM'
+    """
+    approval_msgs = ['+1', 'lgtm']
+
+    pr_comments = get_json("%s/issues/%s/comments" % (GITHUB_API_BASE, pr_num))
+
+    reviewers_ids = set()
+    for comment in pr_comments:
+        for approval_msg in approval_msgs:
+            if approval_msg in comment['body'].lower():
+                reviewers_ids.add(comment['user']['login'])
+
+    reviewers_emails = []
+    for reviewer_id in reviewers_ids:
+        user = get_json("%s/users/%s" % (GITHUB_API_URL, reviewer_id))
+        reviewers_emails += ['%s <%s>' % (user['name'].strip(), user['email'].strip())]
+    return ', '.join(reviewers_emails)
+
 def main():
     global original_head
 
@@ -382,6 +414,7 @@ def main():
     pr_num = raw_input("Which pull request would you like to merge? (e.g. 34): ")
     pr = get_json("%s/pulls/%s" % (GITHUB_API_BASE, pr_num))
     pr_events = get_json("%s/issues/%s/events" % (GITHUB_API_BASE, pr_num))
+    pr_reviewers = get_reviewers(pr_num)
 
     url = pr["url"]
 
@@ -441,7 +474,7 @@ def main():
 
     merged_refs = [target_ref]
 
-    merge_hash = merge_pr(pr_num, target_ref, commit_title, body, pr_repo_desc)
+    merge_hash, merge_commit_log = merge_pr(pr_num, target_ref, commit_title, body, pr_reviewers, pr_repo_desc)
 
     pick_prompt = "Would you like to pick %s into another branch?" % merge_hash
     while raw_input("\n%s (y/n): " % pick_prompt).lower() == "y":
@@ -449,8 +482,13 @@ def main():
 
     if JIRA_IMPORTED:
         if JIRA_USERNAME and JIRA_PASSWORD:
-            continue_maybe("Would you like to update an associated JIRA?")
-            jira_comment = "Issue resolved by pull request %s\n[%s/%s]" % (pr_num, GITHUB_BASE, pr_num)
+            jira_comment = '''Issue resolved by merging pull request %s
+            [%s/%s]
+
+            {noformat}
+            %s
+            {noformat}
+            ''' % (pr_num, GITHUB_BASE, pr_num, merge_commit_log)
             resolve_jira_issues(commit_title, merged_refs, jira_comment)
         else:
             print "JIRA_USERNAME and JIRA_PASSWORD not set"
