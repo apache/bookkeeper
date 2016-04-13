@@ -567,6 +567,7 @@ public class BookieShell implements Tool {
             lOpts.addOption("l", "ledgerid", true, "Ledger ID");
             lOpts.addOption("fe", "firstentryid", true, "First EntryID");
             lOpts.addOption("le", "lastentryid", true, "Last EntryID");
+            lOpts.addOption("r", "force-recovery", false, "Ensure the ledger is properly closed before reading");
         }
 
         @Override
@@ -582,7 +583,8 @@ public class BookieShell implements Tool {
         @Override
         String getUsage() {
             return "readledger   [-msg] -ledgerid <ledgerid> "
-                    + "[-firstentryid <firstentryid> [-lastentryid <lastentryid>]]";
+                    + "[-firstentryid <firstentryid> [-lastentryid <lastentryid>]] "
+                    + "[-force-recovery]";
         }
 
         @Override
@@ -594,9 +596,10 @@ public class BookieShell implements Tool {
             }
 
             final long firstEntry = getOptionLongValue(cmdLine, "firstentryid", 0);
-            final long lastEntry = getOptionLongValue(cmdLine, "lastentryid", -1);
+            long lastEntry = getOptionLongValue(cmdLine, "lastentryid", -1);
 
             boolean printMsg = cmdLine.hasOption("m");
+            boolean forceRecovery = cmdLine.hasOption("r");
 
             ClientConfiguration conf = new ClientConfiguration();
             conf.addConfiguration(bkConf);
@@ -604,13 +607,26 @@ public class BookieShell implements Tool {
             BookKeeperAdmin bk = null;
             try {
                 bk = new BookKeeperAdmin(conf);
+                if (forceRecovery) {
+                    // Force the opening of the ledger to trigger recovery
+                    LedgerHandle lh = bk.openLedger(ledgerId);
+                    if (lastEntry == -1 || lastEntry > lh.getLastAddConfirmed()) {
+                        lastEntry = lh.getLastAddConfirmed();
+                    }
+                    lh.close();
+                }
+
                 Iterator<LedgerEntry> entries = bk.readEntries(ledgerId, firstEntry, lastEntry).iterator();
                 while (entries.hasNext()) {
                     LedgerEntry entry = entries.next();
                     formatEntry(entry, printMsg);
                 }
+            } catch (NumberFormatException nfe) {
+                System.err.println("ERROR: invalid number " + nfe.getMessage());
+                printUsage();
+                return -1;
             } catch (Exception e) {
-                LOG.error("Error reading entries from ledger {}", ledgerId, e.getCause());
+                LOG.error("Error reading entries from ledger", e);
                 return -1;
             } finally {
                 if (bk != null) {
