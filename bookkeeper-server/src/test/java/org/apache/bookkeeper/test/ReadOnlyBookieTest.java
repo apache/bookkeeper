@@ -178,6 +178,10 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
      */
     @Test(timeout = 60000)
     public void testBookieShutdownIfReadOnlyModeNotEnabled() throws Exception {
+        killBookie(1);
+        baseConf.setReadOnlyModeEnabled(false);
+        startNewBookie();
+
         File[] ledgerDirs = bsConfs.get(1).getLedgerDirs();
         assertEquals("Only one ledger dir should be present", 1,
                 ledgerDirs.length);
