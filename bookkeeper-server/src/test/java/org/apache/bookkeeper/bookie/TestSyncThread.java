@@ -79,6 +79,7 @@ public class TestSyncThread {
     public void testSyncThreadLongShutdown() throws Exception {
         int flushInterval = 100;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setFlushInterval(flushInterval);
         CheckpointSource checkpointSource = new DummyCheckpointSource();
         LedgerDirsListener listener = new DummyLedgerDirsListener();
 
@@ -154,6 +155,7 @@ public class TestSyncThread {
     public void testSyncThreadSuspension() throws Exception {
         int flushInterval = 100;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setFlushInterval(flushInterval);
         CheckpointSource checkpointSource = new DummyCheckpointSource();
         LedgerDirsListener listener = new DummyLedgerDirsListener();
 
@@ -198,6 +200,7 @@ public class TestSyncThread {
     public void testSyncThreadShutdownOnError() throws Exception {
         int flushInterval = 100;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setFlushInterval(flushInterval);
         CheckpointSource checkpointSource = new DummyCheckpointSource();
         final CountDownLatch fatalLatch = new CountDownLatch(1);
         LedgerDirsListener listener = new DummyLedgerDirsListener() {
@@ -229,6 +232,7 @@ public class TestSyncThread {
     public void testSyncThreadDisksFull() throws Exception {
         int flushInterval = 100;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setFlushInterval(flushInterval);
         CheckpointSource checkpointSource = new DummyCheckpointSource();
         final CountDownLatch diskFullLatch = new CountDownLatch(1);
         LedgerDirsListener listener = new DummyLedgerDirsListener() {
