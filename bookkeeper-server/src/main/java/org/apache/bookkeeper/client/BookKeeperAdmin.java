@@ -254,12 +254,11 @@ public class BookKeeperAdmin {
     public LedgerHandle openLedger(final long lId) throws InterruptedException,
             BKException {
         SyncCounter counter = new SyncCounter();
-        counter.inc();
         new LedgerOpenOp(bkc, lId, new SyncOpenCallback(), counter).initiate();
         /*
          * Wait
          */
-        counter.block(0);
+        counter.block();
         if (counter.getrc() != BKException.Code.OK) {
             throw BKException.create(counter.getrc());
         }
@@ -297,13 +296,12 @@ public class BookKeeperAdmin {
     public LedgerHandle openLedgerNoRecovery(final long lId)
             throws InterruptedException, BKException {
         SyncCounter counter = new SyncCounter();
-        counter.inc();
         new LedgerOpenOp(bkc, lId, new SyncOpenCallback(), counter)
                 .initiateWithoutRecovery();
         /*
          * Wait
          */
-        counter.block(0);
+        counter.block();
         if (counter.getrc() != BKException.Code.OK) {
             throw BKException.create(counter.getrc());
         }
@@ -378,11 +376,10 @@ public class BookKeeperAdmin {
             if (lastEntryId == -1 || nextEntryId <= lastEntryId) {
                 try {
                     SyncCounter counter = new SyncCounter();
-                    counter.inc();
 
                     handle.asyncReadEntriesInternal(nextEntryId, nextEntryId, new LedgerHandle.SyncReadCallback(),
                             counter);
-                    counter.block(0);
+                    counter.block();
                     if (counter.getrc() != BKException.Code.OK) {
                         throw BKException.create(counter.getrc());
                     }
@@ -857,9 +854,8 @@ public class BookKeeperAdmin {
         SingleFragmentCallback cb = new SingleFragmentCallback(resultCallBack,
                 lh, ledgerFragment.getFirstEntryId(), ledgerFragment
                         .getAddress(), targetBookieAddress);
-        syncCounter.inc();
         asyncRecoverLedgerFragment(lh, ledgerFragment, cb, targetBookieAddress);
-        syncCounter.block(0);
+        syncCounter.block();
         if (syncCounter.getrc() != BKException.Code.OK) {
             throw BKException.create(bkc.getReturnRc(syncCounter.getrc()));
         }
