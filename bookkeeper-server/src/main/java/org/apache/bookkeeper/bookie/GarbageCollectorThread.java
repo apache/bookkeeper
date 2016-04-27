@@ -244,7 +244,7 @@ public class GarbageCollectorThread extends BookieThread {
             }
         };
 
-        this.garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, ledgerStorage);
+        this.garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, ledgerStorage, conf);
 
         // compaction parameters
         minorCompactionThreshold = conf.getMinorCompactionThreshold();
