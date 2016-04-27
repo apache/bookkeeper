@@ -274,7 +274,7 @@ class AuthHandler {
         public void writeRequested(ChannelHandlerContext ctx,
                                    MessageEvent e)
                 throws Exception {
-            synchronized (waitingForAuth) {
+            synchronized (this) {
                 if (authenticated) {
                     super.writeRequested(ctx, e);
                 } else if (e.getMessage() instanceof BookkeeperProtocol.Request) {
@@ -339,7 +339,7 @@ class AuthHandler {
             @Override
             public void operationComplete(int rc, Void v) {
                 if (rc == BKException.Code.OK) {
-                    synchronized (waitingForAuth) {
+                    synchronized (this) {
                         authenticated = true;
                         MessageEvent e = waitingForAuth.poll();
                         while (e != null) {

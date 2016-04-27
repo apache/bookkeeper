@@ -78,7 +78,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     static final String LAYOUT="BASIC";
     static final int LAYOUT_VERSION=1;
 
-    public static final byte[] LOCK_DATA = getLockData();
+    private static final byte[] LOCK_DATA = getLockData();
 
     private static class Lock {
         private final String lockZNode;

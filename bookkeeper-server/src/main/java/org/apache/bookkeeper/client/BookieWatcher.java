@@ -62,7 +62,6 @@ class BookieWatcher implements Watcher, ChildrenCallback {
 
     public static int ZK_CONNECT_BACKOFF_SEC = 1;
     private static final Set<BookieSocketAddress> EMPTY_SET = new HashSet<BookieSocketAddress>();
-    private static final Boolean BOOLEAN = new Boolean(true);
 
     // Bookie registration path in ZK
     private final String bookieRegistrationPath;
@@ -302,7 +301,7 @@ class BookieWatcher implements Watcher, ChildrenCallback {
      */
     public void quarantineBookie(BookieSocketAddress bookie) {
         if (quarantinedBookies.getIfPresent(bookie) == null) {
-            quarantinedBookies.put(bookie, BOOLEAN);
+            quarantinedBookies.put(bookie, Boolean.TRUE);
             logger.warn("Bookie {} has been quarantined because of read/write errors.", bookie);
         }
     }

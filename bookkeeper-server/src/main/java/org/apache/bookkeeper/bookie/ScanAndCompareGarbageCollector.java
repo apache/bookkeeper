@@ -212,13 +212,13 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
                         try {
                             ZkLedgerUnderreplicationManager.releaseUnderreplicatedLedgerLock(zk, zkLedgersRootPath,
                                     ledgerId);
-                        } catch (Exception e) {
-                            LOG.error("Error removing underreplicated lock for ledger {}", ledgerId, e);
+                        } catch (Throwable t) {
+                            LOG.error("Exception when removing underreplicated lock for ledger {}", ledgerId, t);
                         }
                     }
                 });
-            } catch (Exception e) {
-                LOG.error("Exception when iterating through the ledgers to check for over-replication", e);
+            } catch (Throwable t) {
+                LOG.error("Exception when iterating through the ledgers to check for over-replication", t);
                 latch.countDown();
             }
         }
