@@ -458,7 +458,8 @@ public class BookieShell implements Tool {
                 while (entries.hasNext()) {
                     LedgerEntry entry = entries.next();
                     HexDump.dump(entry.getEntry(), 0, out, 0);
-                    System.out.println("Entry Id: " + entry.getEntryId() + ", Data: " + new String(out.toByteArray()));
+                    System.out.println(
+                            "Entry Id: " + entry.getEntryId() + ", Data: " + new String(out.toByteArray(), UTF_8));
                     out.reset();
                 }
             } catch (Exception e) {
