@@ -107,7 +107,7 @@ public class LocalBookKeeper {
         //initialize the zk client with values
         try {
             zkc = ZooKeeperClient.newBuilder()
-                    .connectString(InetAddress.getLoopbackAddress() + ":" + ZooKeeperDefaultPort)
+                    .connectString(InetAddress.getLoopbackAddress().getHostAddress() + ":" + ZooKeeperDefaultPort)
                     .sessionTimeoutMs(zkSessionTimeOut)
                     .build();
             zkc.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
