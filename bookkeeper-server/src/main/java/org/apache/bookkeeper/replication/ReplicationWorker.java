@@ -73,6 +73,7 @@ public class ReplicationWorker implements Runnable {
     private final ServerConfiguration conf;
     private final ZooKeeper zkc;
     private volatile boolean workerRunning = false;
+    private volatile boolean isInReadOnlyMode = false;
     final private BookKeeperAdmin admin;
     private final LedgerChecker ledgerChecker;
     private final BookieSocketAddress targetBookie;
@@ -186,9 +187,12 @@ public class ReplicationWorker implements Runnable {
 
     private void waitTillTargetBookieIsWritable() {
         LOG.info("Waiting for target bookie {} to be back in read/write mode", targetBookie);
-        while (admin.getReadOnlyBookies().contains(targetBookie)) {
+        while (workerRunning && admin.getReadOnlyBookies().contains(targetBookie)) {
+            isInReadOnlyMode = true;
             waitBackOffTime();
         }
+
+        isInReadOnlyMode = false;
         LOG.info("Target bookie {} is back in read/write mode", targetBookie);
     }
 
@@ -449,6 +453,10 @@ public class ReplicationWorker implements Runnable {
      */
     boolean isRunning() {
         return workerRunning && workerThread.isAlive();
+    }
+
+    boolean isInReadOnlyMode() {
+        return isInReadOnlyMode;
     }
 
     private boolean isTargetBookieExistsInFragmentEnsemble(LedgerHandle lh,
