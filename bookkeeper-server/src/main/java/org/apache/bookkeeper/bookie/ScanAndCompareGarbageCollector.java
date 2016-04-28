@@ -148,9 +148,9 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
                 }
                 lastEnd = end;
             }
-        } catch (Exception e) {
+        } catch (Throwable t) {
             // ignore exception, collecting garbage next time
-            LOG.warn("Exception when iterating over the metadata {}", e);
+            LOG.warn("Exception when iterating over the metadata {}", t);
         } finally {
             if (zk != null) {
                 try {
