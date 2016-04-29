@@ -126,7 +126,7 @@ public class GarbageCollectorThread extends BookieThread {
     /**
      * A scanner wrapper to check whether a ledger is alive in an entry log file
      */
-    class CompactionScannerFactory implements EntryLogger.EntryLogListener {
+    class CompactionScannerFactory {
         List<EntryLocation> offsets = new ArrayList<EntryLocation>();
 
         EntryLogScanner newScanner(final EntryLogMetadata meta) {
@@ -141,66 +141,38 @@ public class GarbageCollectorThread extends BookieThread {
                 }
 
                 @Override
-                public void process(final long ledgerId, long offset, ByteBuffer entry)
-                        throws IOException {
+                public void process(final long ledgerId, long offset, ByteBuffer entry) throws IOException {
                     throttler.acquire(entry.remaining());
-                    synchronized (CompactionScannerFactory.this) {
-                        if (offsets.size() > maxOutstandingRequests) {
-                            waitEntrylogFlushed();
-                        }
-                        entry.getLong(); // discard ledger id, we already have it
-                        long entryId = entry.getLong();
-                        entry.rewind();
 
-                        long newoffset = entryLogger.addEntry(ledgerId, entry);
-                        offsets.add(new EntryLocation(ledgerId, entryId, newoffset));
+                    if (offsets.size() > maxOutstandingRequests) {
+                        flush();
                     }
+                    entry.getLong(); // discard ledger id, we already have it
+                    long entryId = entry.getLong();
+                    entry.rewind();
+
+                    long newoffset = entryLogger.addEntry(ledgerId, entry);
+                    offsets.add(new EntryLocation(ledgerId, entryId, newoffset));
+
                 }
             };
         }
 
-        final Object flushLock = new Object();
-
-        @Override
-        public void onRotateEntryLog() {
-            synchronized (flushLock) {
-                flushLock.notifyAll();
+        void flush() throws IOException {
+            if (offsets.isEmpty()) {
+                LOG.debug("Skipping entry log flushing, as there are no offset!");
+                return;
             }
-        }
 
-        synchronized private void waitEntrylogFlushed() throws IOException {
+            // Before updating the index, we want to wait until all the compacted entries are flushed into the
+            // entryLog
             try {
-                if (offsets.size() <= 0) {
-                    LOG.debug("Skipping entry log flushing, as there is no offset!");
-                    return;
-                }
+                entryLogger.flush();
 
-                EntryLocation lastOffset = offsets.get(offsets.size()-1);
-                long lastOffsetLogId = EntryLogger.logIdForOffset(lastOffset.location);
-                while (lastOffsetLogId < entryLogger.getLeastUnflushedLogId() && running) {
-                    synchronized (flushLock) {
-                        flushLock.wait(1000);
-                    }
-
-                    lastOffset = offsets.get(offsets.size()-1);
-                    lastOffsetLogId = EntryLogger.logIdForOffset(lastOffset.location);
-                }
-                if (lastOffsetLogId >= entryLogger.getLeastUnflushedLogId() && !running) {
-                    throw new IOException("Shutdown before flushed");
-                }
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-                throw new IOException("Interrupted waiting for flush", ie);
+                ledgerStorage.updateEntriesLocations(offsets);
+            } finally {
+                offsets.clear();
             }
-
-            ledgerStorage.updateEntriesLocations(offsets);
-            offsets.clear();
-        }
-
-        synchronized void flush() throws IOException {
-            waitEntrylogFlushed();
-
-            ledgerStorage.flushEntriesLocationsIndex();
         }
     }
 
@@ -227,7 +199,6 @@ public class GarbageCollectorThread extends BookieThread {
         this.compactionRateByEntries  = conf.getCompactionRateByEntries();
         this.compactionRateByBytes = conf.getCompactionRateByBytes();
         this.scannerFactory = new CompactionScannerFactory();
-        entryLogger.addListener(this.scannerFactory);
 
         this.garbageCleaner = new GarbageCollector.GarbageCleaner() {
             @Override
@@ -456,7 +427,6 @@ public class GarbageCollectorThread extends BookieThread {
         List<EntryLogMetadata> logsToCompact = new ArrayList<EntryLogMetadata>();
         logsToCompact.addAll(entryLogMetaMap.values());
         Collections.sort(logsToCompact, sizeComparator);
-        List<Long> toRemove = new ArrayList<Long>();
 
         for (EntryLogMetadata meta : logsToCompact) {
             if (meta.getUsage() >= threshold) {
@@ -464,11 +434,15 @@ public class GarbageCollectorThread extends BookieThread {
             }
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Compacting entry log {} below threshold {}.", meta.getEntryLogId(), threshold);
+                LOG.debug("Compacting entry log {} below threshold {}", meta.getEntryLogId(), threshold);
             }
             try {
                 compactEntryLog(scannerFactory, meta);
-                toRemove.add(meta.getEntryLogId());
+                scannerFactory.flush();
+
+                LOG.info("Removing entry log {} after compaction", meta.getEntryLogId());
+                removeEntryLog(meta.getEntryLogId());
+
             } catch (LedgerDirsManager.NoWritableLedgerDirException nwlde) {
                 LOG.warn("No writable ledger directory available, aborting compaction", nwlde);
                 break;
@@ -482,18 +456,6 @@ public class GarbageCollectorThread extends BookieThread {
             if (!running) { // if gc thread is not running, stop compaction
                 return;
             }
-        }
-        try {
-            // compaction finished, flush any outstanding offsets
-            scannerFactory.flush();
-        } catch (IOException ioe) {
-            LOG.error("Cannot flush compacted entries, skip removal", ioe);
-            return;
-        }
-
-        // offsets have been flushed, its now safe to remove the old entrylogs
-        for (Long l : toRemove) {
-            removeEntryLog(l);
         }
     }
 
@@ -545,7 +507,7 @@ public class GarbageCollectorThread extends BookieThread {
             return;
         }
 
-        LOG.info("Compacting entry log : {}", entryLogMeta.getEntryLogId());
+        LOG.info("Compacting entry log : {} - Usage: {} %", entryLogMeta.getEntryLogId(), entryLogMeta.getUsage());
 
         try {
             entryLogger.scanEntryLog(entryLogMeta.getEntryLogId(),
