@@ -33,6 +33,8 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
+import org.apache.bookkeeper.bookie.GarbageCollectorThread.CompactionScannerFactory;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
@@ -49,7 +51,7 @@ import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.TestUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.zookeeper.AsyncCallback;
-
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -114,6 +116,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         baseConf.setEntryLogSizeLimit(numEntries * ENTRY_SIZE);
         // Disable skip list for compaction
         baseConf.setGcWaitTime(gcWaitTime);
+        baseConf.setFlushInterval(100);
         baseConf.setMinorCompactionThreshold(minorCompactionThreshold);
         baseConf.setMajorCompactionThreshold(majorCompactionThreshold);
         baseConf.setMinorCompactionInterval(minorCompactionInterval);
@@ -630,5 +633,63 @@ public class CompactionTest extends BookKeeperClusterTestCase {
                 storage.gcThread.lastMinorCompactionTime < startTime);
         storage.gcThread.resumeMinorGC();
         storage.gcThread.resumeMajorGC();
+    }
+
+    @Test(timeout = 60000)
+    public void testCompactionWithEntryLogRollover() throws Exception {
+        // Disable bookie gc during this test
+        baseConf.setGcWaitTime(60000);
+        baseConf.setMinorCompactionInterval(0);
+        baseConf.setMajorCompactionInterval(0);
+        restartBookies();
+
+        // prepare data
+        LedgerHandle[] lhs = prepareData(3, false);
+
+        for (LedgerHandle lh : lhs) {
+            lh.close();
+        }
+
+        // remove ledger2 and ledger3
+        bkc.deleteLedger(lhs[1].getId());
+        bkc.deleteLedger(lhs[2].getId());
+        LOG.info("Finished deleting the ledgers contains most entries.");
+
+        InterleavedLedgerStorage ledgerStorage = (InterleavedLedgerStorage) bs.get(0).getBookie().ledgerStorage;
+        GarbageCollectorThread garbageCollectorThread = ledgerStorage.gcThread;
+        CompactionScannerFactory compactionScannerFactory = garbageCollectorThread.scannerFactory;
+        long entryLogId = 0;
+        EntryLogger entryLogger = ledgerStorage.entryLogger;
+
+        LOG.info("Before compaction -- Least unflushed log id: {}", entryLogger.getLeastUnflushedLogId());
+
+        // Compact entryLog 0
+        EntryLogScanner scanner = compactionScannerFactory.newScanner(entryLogger.getEntryLogMetadata(entryLogId));
+
+        entryLogger.scanEntryLog(entryLogId, scanner);
+
+        long entryLogIdAfterCompaction = entryLogger.getLeastUnflushedLogId();
+        LOG.info("After compaction -- Least unflushed log id: {}", entryLogIdAfterCompaction);
+
+        // Add more entries to trigger entrylog roll over
+        LedgerHandle[] lhs2 = prepareData(3, false);
+
+        for (LedgerHandle lh : lhs2) {
+            lh.close();
+        }
+
+        // Wait for entry logger to move forward
+        while (entryLogger.getLeastUnflushedLogId() <= entryLogIdAfterCompaction) {
+            Thread.sleep(100);
+        }
+
+        long entryLogIdBeforeFlushing = entryLogger.getLeastUnflushedLogId();
+        LOG.info("Added more data -- Least unflushed log id: {}", entryLogIdBeforeFlushing);
+
+        Assert.assertTrue(entryLogIdAfterCompaction < entryLogIdBeforeFlushing);
+
+        // Wait for entries to be flushed on entry logs and update index
+        // This operation should succeed even if the entry log rolls over after the last entry was compacted
+        compactionScannerFactory.flush();
     }
 }
