@@ -21,7 +21,7 @@
   <parent>
     <artifactId>compat-deps</artifactId>
     <groupId>org.apache.bookkeeper</groupId>
-    <version>4.4.0-SNAPSHOT</version>
+    <version>4.5.0-SNAPSHOT</version>
   </parent>
   <groupId>org.apache.bookkeeper</groupId>
   <artifactId>bookkeeper-server-compat410</artifactId>

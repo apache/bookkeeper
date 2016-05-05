@@ -22,11 +22,11 @@
   <parent>
     <artifactId>bookkeeper</artifactId>
     <groupId>org.apache.bookkeeper</groupId>
-    <version>4.4.0-SNAPSHOT</version>
+    <version>4.5.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper</groupId>
-  <version>4.4.0-SNAPSHOT</version>
+  <version>4.5.0-SNAPSHOT</version>
   <artifactId>bookkeeper-stats-providers</artifactId>
   <packaging>pom</packaging>
   <name>bookkeeper-stats-providers</name>
