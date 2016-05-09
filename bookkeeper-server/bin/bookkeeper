@@ -35,18 +35,18 @@ fi
 # by default we allow local JMX connections
 if [ "x$JMXLOCALONLY" = "x" ]
 then
-    JMXLOCALONLY=false
+  JMXLOCALONLY=false
 fi
 
 if [ "x$JMXDISABLE" = "x" ]
 then
-    echo "JMX enabled by default" >&2
-    # for some reason these two options are necessary on jdk6 on Ubuntu
-    #   accord to the docs they are not necessary, but otw jconsole cannot
-    #   do a local attach
-    JMX_ARGS="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.local.only=$JMXLOCALONLY"
+  echo "JMX enabled by default" >&2
+  # for some reason these two options are necessary on jdk6 on Ubuntu
+  #   accord to the docs they are not necessary, but otw jconsole cannot
+  #   do a local attach
+  JMX_ARGS="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.local.only=$JMXLOCALONLY"
 else
-    echo "JMX disabled by user request" >&2
+  echo "JMX disabled by user request" >&2
 fi
 
 BINDIR=`dirname "$0"`
@@ -59,51 +59,51 @@ source $BK_HOME/conf/bkenv.sh
 
 # Check for the java to use
 if [[ -z $JAVA_HOME ]]; then
-    JAVA=$(which java)
-    if [ $? = 0 ]; then
-        echo "JAVA_HOME not set, using java from PATH. ($JAVA)"
-    else
-        echo "Error: JAVA_HOME not set, and no java executable found in $PATH." 1>&2
-        exit 1
-    fi
+  JAVA=$(which java)
+  if [ $? = 0 ]; then
+    echo "JAVA_HOME not set, using java from PATH. ($JAVA)"
+  else
+    echo "Error: JAVA_HOME not set, and no java executable found in $PATH." 1>&2
+    exit 1
+  fi
 else
-    JAVA=$JAVA_HOME/bin/java
+  JAVA=$JAVA_HOME/bin/java
 fi
 
 # exclude tests jar
 RELEASE_JAR=$(ls ${BK_HOME}/bookkeeper-server-*.jar 2> /dev/null | grep -v tests | tail -1)
 if [ -n "${RELEASE_JAR}" ]; then
-    BOOKIE_JAR=$RELEASE_JAR
+  BOOKIE_JAR=$RELEASE_JAR
 fi
 
 # exclude tests jar
 BUILT_JAR=$(ls ${BK_HOME}/target/bookkeeper-server-*.jar 2> /dev/null | grep -v tests | tail -1)
 
 if [ -z "${BUILT_JAR}" ] && [ -z "${BOOKIE_JAR}" ]; then
-    echo "Couldn't find bookkeeper jar."
-    read -p "Do you want me to run \`mvn package -DskiptTests\` for you ? " answer
-    case "${answer:0:1}" in
-        y|Y )
-            mvn package -DskipTests
-            ;;
-        * )
-            exit 1
-            ;;
-    esac
+  echo "Couldn't find bookkeeper jar."
+  read -p "Do you want me to run \`mvn package -DskiptTests\` for you ? " answer
+  case "${answer:0:1}" in
+    y|Y )
+      mvn package -DskipTests
+      ;;
+    * )
+      exit 1
+      ;;
+  esac
 
-    BUILT_JAR=$(ls ${BK_HOME}/target/bookkeeper-server-*.jar 2> /dev/null | grep -v tests | tail -1)
-    if [ -n "${BUILT_JAR}" ]; then
-        BOOKIE_JAR=$BUILT_JAR
-    fi
+  BUILT_JAR=$(ls ${BK_HOME}/target/bookkeeper-server-*.jar 2> /dev/null | grep -v tests | tail -1)
+  if [ -n "${BUILT_JAR}" ]; then
+    BOOKIE_JAR=$BUILT_JAR
+  fi
 fi
 
 if [ -e "${BUILT_JAR}" ]; then
-    BOOKIE_JAR="${BUILT_JAR}"
+  BOOKIE_JAR="${BUILT_JAR}"
 fi
 
 if [ ! -e "${BOOKIE_JAR}" ]; then
-    echo "Could not find bookkeeper jar."
-    exit 1
+  echo "Could not find bookkeeper jar."
+  exit 1
 fi
 
 bookkeeper_help() {
@@ -133,34 +133,34 @@ EOF
 }
 
 add_maven_deps_to_classpath() {
-    MVN="mvn"
-    if [ "$MAVEN_HOME" != "" ]; then
-	MVN=${MAVEN_HOME}/bin/mvn
-    fi
-    
-    # Need to generate classpath from maven pom. This is costly so generate it
-    # and cache it. Save the file into our target dir so a mvn clean will get
-    # clean it up and force us create a new one.
-    f="${BK_HOME}/target/cached_classpath.txt"
-    if [ ! -f "${f}" ]
-    then
-	${MVN} -f "${BK_HOME}/pom.xml" dependency:build-classpath -Dmdep.outputFile="${f}" &> /dev/null
-    fi
-    BOOKIE_CLASSPATH=${CLASSPATH}:`cat "${f}"`
+  MVN="mvn"
+  if [ "$MAVEN_HOME" != "" ]; then
+    MVN=${MAVEN_HOME}/bin/mvn
+  fi
+
+  # Need to generate classpath from maven pom. This is costly so generate it
+  # and cache it. Save the file into our target dir so a mvn clean will get
+  # clean it up and force us create a new one.
+  f="${BK_HOME}/target/cached_classpath.txt"
+  if [ ! -f "${f}" ]
+  then
+    ${MVN} -f "${BK_HOME}/pom.xml" dependency:build-classpath -Dmdep.outputFile="${f}" &> /dev/null
+  fi
+  BOOKIE_CLASSPATH=${CLASSPATH}:`cat "${f}"`
 }
 
 if [ -d "$BK_HOME/lib" ]; then
-    for i in $BK_HOME/lib/*.jar; do
-	BOOKIE_CLASSPATH=$BOOKIE_CLASSPATH:$i
-    done
+  for i in $BK_HOME/lib/*.jar; do
+    BOOKIE_CLASSPATH=$BOOKIE_CLASSPATH:$i
+  done
 else
-    add_maven_deps_to_classpath
+  add_maven_deps_to_classpath
 fi
 
 # if no args specified, show usage
 if [ $# = 0 ]; then
-    bookkeeper_help;
-    exit 1;
+  bookkeeper_help;
+  exit 1;
 fi
 
 # get arguments
@@ -168,15 +168,15 @@ COMMAND=$1
 shift
 
 if [ $COMMAND == "shell" ]; then
-    DEFAULT_LOG_CONF=$BK_HOME/conf/log4j.shell.properties
+  DEFAULT_LOG_CONF=$BK_HOME/conf/log4j.shell.properties
 fi
 
 if [ -z "$BOOKIE_CONF" ]; then
-    BOOKIE_CONF=$DEFAULT_CONF
+  BOOKIE_CONF=$DEFAULT_CONF
 fi
 
 if [ -z "$BOOKIE_LOG_CONF" ]; then
-    BOOKIE_LOG_CONF=$DEFAULT_LOG_CONF
+  BOOKIE_LOG_CONF=$DEFAULT_LOG_CONF
 fi
 
 BOOKIE_CLASSPATH="$BOOKIE_JAR:$BOOKIE_CLASSPATH:$BOOKIE_EXTRA_CLASSPATH"
@@ -203,21 +203,21 @@ OPTS="$OPTS -Dbookkeeper.log.file=$BOOKIE_LOG_FILE"
 #Change to BK_HOME to support relative paths
 cd "$BK_HOME"
 if [ $COMMAND == "bookie" ]; then
-    exec $JAVA $OPTS $JMX_ARGS org.apache.bookkeeper.proto.BookieServer --conf $BOOKIE_CONF $@
+  exec $JAVA $OPTS $JMX_ARGS org.apache.bookkeeper.proto.BookieServer --conf $BOOKIE_CONF $@
 elif [ $COMMAND == "autorecovery" ]; then
-    exec $JAVA $OPTS $JMX_ARGS org.apache.bookkeeper.replication.AutoRecoveryMain --conf $BOOKIE_CONF $@
+  exec $JAVA $OPTS $JMX_ARGS org.apache.bookkeeper.replication.AutoRecoveryMain --conf $BOOKIE_CONF $@
 elif [ $COMMAND == "localbookie" ]; then
-    NUMBER=$1
-    shift
-    exec $JAVA $OPTS $JMX_ARGS org.apache.bookkeeper.util.LocalBookKeeper $NUMBER $BOOKIE_CONF $@
+  NUMBER=$1
+  shift
+  exec $JAVA $OPTS $JMX_ARGS org.apache.bookkeeper.util.LocalBookKeeper $NUMBER $BOOKIE_CONF $@
 elif [ $COMMAND == "upgrade" ]; then
-    exec $JAVA $OPTS org.apache.bookkeeper.bookie.FileSystemUpgrade --conf $BOOKIE_CONF $@
+  exec $JAVA $OPTS org.apache.bookkeeper.bookie.FileSystemUpgrade --conf $BOOKIE_CONF $@
 elif [ $COMMAND == "shell" ]; then
-    ENTRY_FORMATTER_ARG="-DentryFormatterClass=${ENTRY_FORMATTER_CLASS:-org.apache.bookkeeper.util.StringEntryFormatter}"
-    exec $JAVA $OPTS $ENTRY_FORMATTER_ARG org.apache.bookkeeper.bookie.BookieShell -conf $BOOKIE_CONF $@
+  ENTRY_FORMATTER_ARG="-DentryFormatterClass=${ENTRY_FORMATTER_CLASS:-org.apache.bookkeeper.util.StringEntryFormatter}"
+  exec $JAVA $OPTS $ENTRY_FORMATTER_ARG org.apache.bookkeeper.bookie.BookieShell -conf $BOOKIE_CONF $@
 elif [ $COMMAND == "help" ]; then
-    bookkeeper_help;
+  bookkeeper_help;
 else
-    exec $JAVA $OPTS $COMMAND $@
+  exec $JAVA $OPTS $COMMAND $@
 fi
 

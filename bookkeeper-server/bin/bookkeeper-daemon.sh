@@ -47,9 +47,9 @@ BOOKIE_PID_DIR=${BOOKIE_PID_DIR:-$BK_HOME/bin}
 
 if [ $# -lt 2 ]
 then
-    echo "Error: no enough arguments provided."
-    usage
-    exit 1
+  echo "Error: no enough arguments provided."
+  usage
+  exit 1
 fi
 
 startStop=$1
@@ -58,17 +58,17 @@ command=$1
 shift
 
 case $command in
-    (bookie)
-        echo "doing $startStop $command ..."
-        ;;
-    (autorecovery)
-        echo "doing $startStop $command ..."
-        ;;
-    (*)
-        echo "Error: unknown service name $command"
-        usage
-        exit 1
-        ;;
+  (bookie)
+    echo "doing $startStop $command ..."
+    ;;
+  (autorecovery)
+    echo "doing $startStop $command ..."
+    ;;
+  (*)
+    echo "Error: unknown service name $command"
+    usage
+    exit 1
+    ;;
 esac
 
 export BOOKIE_LOG_DIR=$BOOKIE_LOG_DIR
@@ -81,19 +81,19 @@ logfile=$BOOKIE_LOG_DIR/$BOOKIE_LOG_FILE
 
 rotate_out_log ()
 {
-    log=$1;
-    num=5;
-    if [ -n "$2" ]; then
-       num=$2
-    fi
-    if [ -f "$log" ]; then # rotate logs
-        while [ $num -gt 1 ]; do
-            prev=$(expr $num - 1)
-            [ -f "$log.$prev" ] && mv "$log.$prev" "$log.$num"
-            num=$prev
-        done
-        mv "$log" "$log.$num";
-    fi
+  log=$1;
+  num=5;
+  if [ -n "$2" ]; then
+    num=$2
+  fi
+  if [ -f "$log" ]; then # rotate logs
+    while [ $num -gt 1 ]; do
+      prev=$(expr $num - 1)
+      [ -f "$log.$prev" ] && mv "$log.$prev" "$log.$num"
+      num=$prev
+    done
+    mv "$log" "$log.$num";
+  fi
 }
 
 mkdir -p "$BOOKIE_LOG_DIR"
@@ -134,29 +134,29 @@ case $startStop in
           echo "Shutdown is in progress... Please wait..."
           sleep 1
           count=$(expr $count + 1)
-         
+
           if [ "$count" = "$BOOKIE_STOP_TIMEOUT" ]; then
-                break
+            break
           fi
          done
-        
+
         if [ "$count" != "$BOOKIE_STOP_TIMEOUT" ]; then
-            echo "Shutdown completed."
+          echo "Shutdown completed."
         fi
-                 
+
         if kill -0 $TARGET_PID > /dev/null 2>&1; then
-              fileName=$location/$command.out
-              $JAVA_HOME/bin/jstack $TARGET_PID > $fileName
-              echo Thread dumps are taken for analysis at $fileName
-              if [ "$1" == "-force" ]
-              then
-                 echo forcefully stopping $command
-                 kill -9 $TARGET_PID >/dev/null 2>&1
-                 echo Successfully stopped the process
-              else
-                 echo "WARNNING :  Bookie Server is not stopped completely."
-                 exit 1
-              fi
+          fileName=$location/$command.out
+          $JAVA_HOME/bin/jstack $TARGET_PID > $fileName
+          echo Thread dumps are taken for analysis at $fileName
+          if [ "$1" == "-force" ]
+          then
+            echo forcefully stopping $command
+            kill -9 $TARGET_PID >/dev/null 2>&1
+            echo Successfully stopped the process
+          else
+            echo "WARNNING :  Bookie Server is not stopped completely."
+            exit 1
+          fi
         fi
       else
         echo no $command to stop
