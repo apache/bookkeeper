@@ -29,8 +29,8 @@ where argument is one of:
 EOF
 }
 
-BINDIR=`dirname "$0"`
-BK_HOME=`cd $BINDIR/..;pwd`
+BINDIR=$(dirname "$0")
+BK_HOME=$(cd $BINDIR/..;pwd)
 
 if [ -f $BK_HOME/conf/bkenv.sh ]
 then
@@ -75,7 +75,7 @@ export BOOKIE_LOG_DIR=$BOOKIE_LOG_DIR
 export BOOKIE_ROOT_LOGGER=$BOOKIE_ROOT_LOGGER
 export BOOKIE_LOG_FILE=bookkeeper-$command-$HOSTNAME.log
 
-pid=$BOOKIE_PID_DIR/bookkeeper-$command.pid
+pid_file="${BOOKIE_PID_DIR}/bookkeeper-${command}.pid"
 out=$BOOKIE_LOG_DIR/bookkeeper-$command-$HOSTNAME.out
 logfile=$BOOKIE_LOG_DIR/$BOOKIE_LOG_FILE
 
@@ -88,7 +88,7 @@ rotate_out_log ()
     fi
     if [ -f "$log" ]; then # rotate logs
         while [ $num -gt 1 ]; do
-            prev=`expr $num - 1`
+            prev=$(expr $num - 1)
             [ -f "$log.$prev" ] && mv "$log.$prev" "$log.$num"
             num=$prev
         done
@@ -100,9 +100,10 @@ mkdir -p "$BOOKIE_LOG_DIR"
 
 case $startStop in
   (start)
-    if [ -f $pid ]; then
-      if kill -0 `cat $pid` > /dev/null 2>&1; then
-        echo $command running as process `cat $pid`.  Stop it first.
+    if [ -f $pid_file ]; then
+      PREVIOUS_PID=$(cat $pid_file)
+      if kill -0 $PREVIOUS_PID > /dev/null 2>&1; then
+        echo $command running as process $PREVIOUS_PID.  Stop it first.
         exit 1
       fi
     fi
@@ -111,28 +112,28 @@ case $startStop in
     echo starting $command, logging to $logfile
     bookkeeper=$BK_HOME/bin/bookkeeper
     nohup $bookkeeper $command "$@" > "$out" 2>&1 < /dev/null &
-    echo $! > $pid
+    echo $! > $pid_file
     sleep 1; head $out
     sleep 2;
-    if ! ps -p $! > /dev/null ; then
+    if ! kill -0 $! > /dev/null ; then
       exit 1
     fi
     ;;
 
   (stop)
-    if [ -f $pid ]; then
-      TARGET_PID=`cat $pid`
+    if [ -f $pid_file ]; then
+      TARGET_PID=$(cat $pid_file)
       if kill -0 $TARGET_PID > /dev/null 2>&1; then
         echo stopping $command
         kill $TARGET_PID
 
         count=0
         location=$BOOKIE_LOG_DIR
-        while ps -p $TARGET_PID > /dev/null;
-         do
+        while kill -0 $TARGET_PID > /dev/null;
+        do
           echo "Shutdown is in progress... Please wait..."
           sleep 1
-          count=`expr $count + 1`
+          count=$(expr $count + 1)
          
           if [ "$count" = "$BOOKIE_STOP_TIMEOUT" ]; then
                 break
@@ -160,7 +161,7 @@ case $startStop in
       else
         echo no $command to stop
       fi
-      rm $pid
+      rm $pid_file
     else
       echo no $command to stop
     fi
