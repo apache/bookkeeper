@@ -71,19 +71,39 @@ else
 fi
 
 # exclude tests jar
-RELEASE_JAR=`ls $BK_HOME/bookkeeper-server-*.jar 2> /dev/null | grep -v tests | tail -1` 
-if [ $? == 0 ]; then
+RELEASE_JAR=$(ls ${BK_HOME}/bookkeeper-server-*.jar 2> /dev/null | grep -v tests | tail -1)
+if [ -n "${RELEASE_JAR}" ]; then
     BOOKIE_JAR=$RELEASE_JAR
 fi
 
 # exclude tests jar
-BUILT_JAR=`ls $BK_HOME/target/bookkeeper-server-*.jar 2> /dev/null | grep -v tests | tail -1`
-if [ $? != 0 ] && [ ! -e "$BOOKIE_JAR" ]; then 
-    echo "\nCouldn't find bookkeeper jar.";
-    echo "Make sure you've run 'mvn package'\n";
-    exit 1;
-elif [ -e "$BUILT_JAR" ]; then
-    BOOKIE_JAR=$BUILT_JAR
+BUILT_JAR=$(ls ${BK_HOME}/target/bookkeeper-server-*.jar 2> /dev/null | grep -v tests | tail -1)
+
+if [ -z "${BUILT_JAR}" ] && [ -z "${BOOKIE_JAR}" ]; then
+    echo "Couldn't find bookkeeper jar."
+    read -p "Do you want me to run \`mvn package -DskiptTests\` for you ? " answer
+    case "${answer:0:1}" in
+        y|Y )
+            mvn package -DskipTests
+            ;;
+        * )
+            exit 1
+            ;;
+    esac
+
+    BUILT_JAR=$(ls ${BK_HOME}/target/bookkeeper-server-*.jar 2> /dev/null | grep -v tests | tail -1)
+    if [ -n "${BUILT_JAR}" ]; then
+        BOOKIE_JAR=$BUILT_JAR
+    fi
+fi
+
+if [ -e "${BUILT_JAR}" ]; then
+    BOOKIE_JAR="${BUILT_JAR}"
+fi
+
+if [ ! -e "${BOOKIE_JAR}" ]; then
+    echo "Could not find bookkeeper jar."
+    exit 1
 fi
 
 bookkeeper_help() {
