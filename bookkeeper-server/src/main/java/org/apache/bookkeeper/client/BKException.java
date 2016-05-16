@@ -92,6 +92,8 @@ public abstract class BKException extends Exception {
             return new BKReplicationException();
         case Code.ClientClosedException:
             return new BKClientClosedException();
+        case Code.LedgerExistException:
+            return new BKLedgerExistException();
         case Code.IllegalOpException:
             return new BKIllegalOpException();
         case Code.AddEntryQuorumTimeoutException:
