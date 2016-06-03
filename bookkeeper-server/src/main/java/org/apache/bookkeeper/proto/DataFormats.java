@@ -56,6 +56,16 @@ public final class DataFormats {
     // optional int64 ctime = 10;
     boolean hasCtime();
     long getCtime();
+    
+    // repeated .LedgerMetadataFormat.cMetadataMapEntry customMetadata = 11;
+    java.util.List<org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry> 
+        getCustomMetadataList();
+    org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry getCustomMetadata(int index);
+    int getCustomMetadataCount();
+    java.util.List<? extends org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntryOrBuilder> 
+        getCustomMetadataOrBuilderList();
+    org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntryOrBuilder getCustomMetadataOrBuilder(
+        int index);
   }
   public static final class LedgerMetadataFormat extends
       com.google.protobuf.GeneratedMessage
@@ -683,6 +693,441 @@ public final class DataFormats {
       // @@protoc_insertion_point(class_scope:LedgerMetadataFormat.Segment)
     }
     
+    public interface cMetadataMapEntryOrBuilder
+        extends com.google.protobuf.MessageOrBuilder {
+      
+      // optional string key = 1;
+      boolean hasKey();
+      String getKey();
+      
+      // optional bytes value = 2;
+      boolean hasValue();
+      com.google.protobuf.ByteString getValue();
+    }
+    public static final class cMetadataMapEntry extends
+        com.google.protobuf.GeneratedMessage
+        implements cMetadataMapEntryOrBuilder {
+      // Use cMetadataMapEntry.newBuilder() to construct.
+      private cMetadataMapEntry(Builder builder) {
+        super(builder);
+      }
+      private cMetadataMapEntry(boolean noInit) {}
+      
+      private static final cMetadataMapEntry defaultInstance;
+      public static cMetadataMapEntry getDefaultInstance() {
+        return defaultInstance;
+      }
+      
+      public cMetadataMapEntry getDefaultInstanceForType() {
+        return defaultInstance;
+      }
+      
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.bookkeeper.proto.DataFormats.internal_static_LedgerMetadataFormat_cMetadataMapEntry_descriptor;
+      }
+      
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.bookkeeper.proto.DataFormats.internal_static_LedgerMetadataFormat_cMetadataMapEntry_fieldAccessorTable;
+      }
+      
+      private int bitField0_;
+      // optional string key = 1;
+      public static final int KEY_FIELD_NUMBER = 1;
+      private java.lang.Object key_;
+      public boolean hasKey() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      public String getKey() {
+        java.lang.Object ref = key_;
+        if (ref instanceof String) {
+          return (String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          String s = bs.toStringUtf8();
+          if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+            key_ = s;
+          }
+          return s;
+        }
+      }
+      private com.google.protobuf.ByteString getKeyBytes() {
+        java.lang.Object ref = key_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+          key_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      
+      // optional bytes value = 2;
+      public static final int VALUE_FIELD_NUMBER = 2;
+      private com.google.protobuf.ByteString value_;
+      public boolean hasValue() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      public com.google.protobuf.ByteString getValue() {
+        return value_;
+      }
+      
+      private void initFields() {
+        key_ = "";
+        value_ = com.google.protobuf.ByteString.EMPTY;
+      }
+      private byte memoizedIsInitialized = -1;
+      public final boolean isInitialized() {
+        byte isInitialized = memoizedIsInitialized;
+        if (isInitialized != -1) return isInitialized == 1;
+        
+        memoizedIsInitialized = 1;
+        return true;
+      }
+      
+      public void writeTo(com.google.protobuf.CodedOutputStream output)
+                          throws java.io.IOException {
+        getSerializedSize();
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          output.writeBytes(1, getKeyBytes());
+        }
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          output.writeBytes(2, value_);
+        }
+        getUnknownFields().writeTo(output);
+      }
+      
+      private int memoizedSerializedSize = -1;
+      public int getSerializedSize() {
+        int size = memoizedSerializedSize;
+        if (size != -1) return size;
+      
+        size = 0;
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeBytesSize(1, getKeyBytes());
+        }
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeBytesSize(2, value_);
+        }
+        size += getUnknownFields().getSerializedSize();
+        memoizedSerializedSize = size;
+        return size;
+      }
+      
+      private static final long serialVersionUID = 0L;
+      @java.lang.Override
+      protected java.lang.Object writeReplace()
+          throws java.io.ObjectStreamException {
+        return super.writeReplace();
+      }
+      
+      public static org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry parseFrom(
+          com.google.protobuf.ByteString data)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return newBuilder().mergeFrom(data).buildParsed();
+      }
+      public static org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry parseFrom(
+          com.google.protobuf.ByteString data,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return newBuilder().mergeFrom(data, extensionRegistry)
+                 .buildParsed();
+      }
+      public static org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry parseFrom(byte[] data)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return newBuilder().mergeFrom(data).buildParsed();
+      }
+      public static org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry parseFrom(
+          byte[] data,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return newBuilder().mergeFrom(data, extensionRegistry)
+                 .buildParsed();
+      }
+      public static org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry parseFrom(java.io.InputStream input)
+          throws java.io.IOException {
+        return newBuilder().mergeFrom(input).buildParsed();
+      }
+      public static org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry parseFrom(
+          java.io.InputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        return newBuilder().mergeFrom(input, extensionRegistry)
+                 .buildParsed();
+      }
+      public static org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry parseDelimitedFrom(java.io.InputStream input)
+          throws java.io.IOException {
+        Builder builder = newBuilder();
+        if (builder.mergeDelimitedFrom(input)) {
+          return builder.buildParsed();
+        } else {
+          return null;
+        }
+      }
+      public static org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry parseDelimitedFrom(
+          java.io.InputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        Builder builder = newBuilder();
+        if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+          return builder.buildParsed();
+        } else {
+          return null;
+        }
+      }
+      public static org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry parseFrom(
+          com.google.protobuf.CodedInputStream input)
+          throws java.io.IOException {
+        return newBuilder().mergeFrom(input).buildParsed();
+      }
+      public static org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry parseFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        return newBuilder().mergeFrom(input, extensionRegistry)
+                 .buildParsed();
+      }
+      
+      public static Builder newBuilder() { return Builder.create(); }
+      public Builder newBuilderForType() { return newBuilder(); }
+      public static Builder newBuilder(org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry prototype) {
+        return newBuilder().mergeFrom(prototype);
+      }
+      public Builder toBuilder() { return newBuilder(this); }
+      
+      @java.lang.Override
+      protected Builder newBuilderForType(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        Builder builder = new Builder(parent);
+        return builder;
+      }
+      public static final class Builder extends
+          com.google.protobuf.GeneratedMessage.Builder<Builder>
+         implements org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntryOrBuilder {
+        public static final com.google.protobuf.Descriptors.Descriptor
+            getDescriptor() {
+          return org.apache.bookkeeper.proto.DataFormats.internal_static_LedgerMetadataFormat_cMetadataMapEntry_descriptor;
+        }
+        
+        protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+            internalGetFieldAccessorTable() {
+          return org.apache.bookkeeper.proto.DataFormats.internal_static_LedgerMetadataFormat_cMetadataMapEntry_fieldAccessorTable;
+        }
+        
+        // Construct using org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.newBuilder()
+        private Builder() {
+          maybeForceBuilderInitialization();
+        }
+        
+        private Builder(BuilderParent parent) {
+          super(parent);
+          maybeForceBuilderInitialization();
+        }
+        private void maybeForceBuilderInitialization() {
+          if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          }
+        }
+        private static Builder create() {
+          return new Builder();
+        }
+        
+        public Builder clear() {
+          super.clear();
+          key_ = "";
+          bitField0_ = (bitField0_ & ~0x00000001);
+          value_ = com.google.protobuf.ByteString.EMPTY;
+          bitField0_ = (bitField0_ & ~0x00000002);
+          return this;
+        }
+        
+        public Builder clone() {
+          return create().mergeFrom(buildPartial());
+        }
+        
+        public com.google.protobuf.Descriptors.Descriptor
+            getDescriptorForType() {
+          return org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.getDescriptor();
+        }
+        
+        public org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry getDefaultInstanceForType() {
+          return org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.getDefaultInstance();
+        }
+        
+        public org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry build() {
+          org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry result = buildPartial();
+          if (!result.isInitialized()) {
+            throw newUninitializedMessageException(result);
+          }
+          return result;
+        }
+        
+        private org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry buildParsed()
+            throws com.google.protobuf.InvalidProtocolBufferException {
+          org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry result = buildPartial();
+          if (!result.isInitialized()) {
+            throw newUninitializedMessageException(
+              result).asInvalidProtocolBufferException();
+          }
+          return result;
+        }
+        
+        public org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry buildPartial() {
+          org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry result = new org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry(this);
+          int from_bitField0_ = bitField0_;
+          int to_bitField0_ = 0;
+          if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+            to_bitField0_ |= 0x00000001;
+          }
+          result.key_ = key_;
+          if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+            to_bitField0_ |= 0x00000002;
+          }
+          result.value_ = value_;
+          result.bitField0_ = to_bitField0_;
+          onBuilt();
+          return result;
+        }
+        
+        public Builder mergeFrom(com.google.protobuf.Message other) {
+          if (other instanceof org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry) {
+            return mergeFrom((org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry)other);
+          } else {
+            super.mergeFrom(other);
+            return this;
+          }
+        }
+        
+        public Builder mergeFrom(org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry other) {
+          if (other == org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.getDefaultInstance()) return this;
+          if (other.hasKey()) {
+            setKey(other.getKey());
+          }
+          if (other.hasValue()) {
+            setValue(other.getValue());
+          }
+          this.mergeUnknownFields(other.getUnknownFields());
+          return this;
+        }
+        
+        public final boolean isInitialized() {
+          return true;
+        }
+        
+        public Builder mergeFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws java.io.IOException {
+          com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+            com.google.protobuf.UnknownFieldSet.newBuilder(
+              this.getUnknownFields());
+          while (true) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                this.setUnknownFields(unknownFields.build());
+                onChanged();
+                return this;
+              default: {
+                if (!parseUnknownField(input, unknownFields,
+                                       extensionRegistry, tag)) {
+                  this.setUnknownFields(unknownFields.build());
+                  onChanged();
+                  return this;
+                }
+                break;
+              }
+              case 10: {
+                bitField0_ |= 0x00000001;
+                key_ = input.readBytes();
+                break;
+              }
+              case 18: {
+                bitField0_ |= 0x00000002;
+                value_ = input.readBytes();
+                break;
+              }
+            }
+          }
+        }
+        
+        private int bitField0_;
+        
+        // optional string key = 1;
+        private java.lang.Object key_ = "";
+        public boolean hasKey() {
+          return ((bitField0_ & 0x00000001) == 0x00000001);
+        }
+        public String getKey() {
+          java.lang.Object ref = key_;
+          if (!(ref instanceof String)) {
+            String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+            key_ = s;
+            return s;
+          } else {
+            return (String) ref;
+          }
+        }
+        public Builder setKey(String value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+          key_ = value;
+          onChanged();
+          return this;
+        }
+        public Builder clearKey() {
+          bitField0_ = (bitField0_ & ~0x00000001);
+          key_ = getDefaultInstance().getKey();
+          onChanged();
+          return this;
+        }
+        void setKey(com.google.protobuf.ByteString value) {
+          bitField0_ |= 0x00000001;
+          key_ = value;
+          onChanged();
+        }
+        
+        // optional bytes value = 2;
+        private com.google.protobuf.ByteString value_ = com.google.protobuf.ByteString.EMPTY;
+        public boolean hasValue() {
+          return ((bitField0_ & 0x00000002) == 0x00000002);
+        }
+        public com.google.protobuf.ByteString getValue() {
+          return value_;
+        }
+        public Builder setValue(com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+          value_ = value;
+          onChanged();
+          return this;
+        }
+        public Builder clearValue() {
+          bitField0_ = (bitField0_ & ~0x00000002);
+          value_ = getDefaultInstance().getValue();
+          onChanged();
+          return this;
+        }
+        
+        // @@protoc_insertion_point(builder_scope:LedgerMetadataFormat.cMetadataMapEntry)
+      }
+      
+      static {
+        defaultInstance = new cMetadataMapEntry(true);
+        defaultInstance.initFields();
+      }
+      
+      // @@protoc_insertion_point(class_scope:LedgerMetadataFormat.cMetadataMapEntry)
+    }
+    
     private int bitField0_;
     // required int32 quorumSize = 1;
     public static final int QUORUMSIZE_FIELD_NUMBER = 1;
@@ -795,6 +1240,27 @@ public final class DataFormats {
       return ctime_;
     }
     
+    // repeated .LedgerMetadataFormat.cMetadataMapEntry customMetadata = 11;
+    public static final int CUSTOMMETADATA_FIELD_NUMBER = 11;
+    private java.util.List<org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry> customMetadata_;
+    public java.util.List<org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry> getCustomMetadataList() {
+      return customMetadata_;
+    }
+    public java.util.List<? extends org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntryOrBuilder> 
+        getCustomMetadataOrBuilderList() {
+      return customMetadata_;
+    }
+    public int getCustomMetadataCount() {
+      return customMetadata_.size();
+    }
+    public org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry getCustomMetadata(int index) {
+      return customMetadata_.get(index);
+    }
+    public org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntryOrBuilder getCustomMetadataOrBuilder(
+        int index) {
+      return customMetadata_.get(index);
+    }
+    
     private void initFields() {
       quorumSize_ = 0;
       ensembleSize_ = 0;
@@ -806,6 +1272,7 @@ public final class DataFormats {
       password_ = com.google.protobuf.ByteString.EMPTY;
       ackQuorumSize_ = 0;
       ctime_ = 0L;
+      customMetadata_ = java.util.Collections.emptyList();
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -871,6 +1338,9 @@ public final class DataFormats {
       if (((bitField0_ & 0x00000100) == 0x00000100)) {
         output.writeInt64(10, ctime_);
       }
+      for (int i = 0; i < customMetadata_.size(); i++) {
+        output.writeMessage(11, customMetadata_.get(i));
+      }
       getUnknownFields().writeTo(output);
     }
     
@@ -919,6 +1389,10 @@ public final class DataFormats {
       if (((bitField0_ & 0x00000100) == 0x00000100)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt64Size(10, ctime_);
+      }
+      for (int i = 0; i < customMetadata_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(11, customMetadata_.get(i));
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -1037,6 +1511,7 @@ public final class DataFormats {
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
           getSegmentFieldBuilder();
+          getCustomMetadataFieldBuilder();
         }
       }
       private static Builder create() {
@@ -1069,6 +1544,12 @@ public final class DataFormats {
         bitField0_ = (bitField0_ & ~0x00000100);
         ctime_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000200);
+        if (customMetadataBuilder_ == null) {
+          customMetadata_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000400);
+        } else {
+          customMetadataBuilder_.clear();
+        }
         return this;
       }
       
@@ -1152,6 +1633,15 @@ public final class DataFormats {
           to_bitField0_ |= 0x00000100;
         }
         result.ctime_ = ctime_;
+        if (customMetadataBuilder_ == null) {
+          if (((bitField0_ & 0x00000400) == 0x00000400)) {
+            customMetadata_ = java.util.Collections.unmodifiableList(customMetadata_);
+            bitField0_ = (bitField0_ & ~0x00000400);
+          }
+          result.customMetadata_ = customMetadata_;
+        } else {
+          result.customMetadata_ = customMetadataBuilder_.build();
+        }
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1220,6 +1710,32 @@ public final class DataFormats {
         }
         if (other.hasCtime()) {
           setCtime(other.getCtime());
+        }
+        if (customMetadataBuilder_ == null) {
+          if (!other.customMetadata_.isEmpty()) {
+            if (customMetadata_.isEmpty()) {
+              customMetadata_ = other.customMetadata_;
+              bitField0_ = (bitField0_ & ~0x00000400);
+            } else {
+              ensureCustomMetadataIsMutable();
+              customMetadata_.addAll(other.customMetadata_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.customMetadata_.isEmpty()) {
+            if (customMetadataBuilder_.isEmpty()) {
+              customMetadataBuilder_.dispose();
+              customMetadataBuilder_ = null;
+              customMetadata_ = other.customMetadata_;
+              bitField0_ = (bitField0_ & ~0x00000400);
+              customMetadataBuilder_ = 
+                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
+                   getCustomMetadataFieldBuilder() : null;
+            } else {
+              customMetadataBuilder_.addAllMessages(other.customMetadata_);
+            }
+          }
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -1335,6 +1851,12 @@ public final class DataFormats {
             case 80: {
               bitField0_ |= 0x00000200;
               ctime_ = input.readInt64();
+              break;
+            }
+            case 90: {
+              org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.Builder subBuilder = org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.newBuilder();
+              input.readMessage(subBuilder, extensionRegistry);
+              addCustomMetadata(subBuilder.buildPartial());
               break;
             }
           }
@@ -1725,6 +2247,192 @@ public final class DataFormats {
         ctime_ = 0L;
         onChanged();
         return this;
+      }
+      
+      // repeated .LedgerMetadataFormat.cMetadataMapEntry customMetadata = 11;
+      private java.util.List<org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry> customMetadata_ =
+        java.util.Collections.emptyList();
+      private void ensureCustomMetadataIsMutable() {
+        if (!((bitField0_ & 0x00000400) == 0x00000400)) {
+          customMetadata_ = new java.util.ArrayList<org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry>(customMetadata_);
+          bitField0_ |= 0x00000400;
+         }
+      }
+      
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry, org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.Builder, org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntryOrBuilder> customMetadataBuilder_;
+      
+      public java.util.List<org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry> getCustomMetadataList() {
+        if (customMetadataBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(customMetadata_);
+        } else {
+          return customMetadataBuilder_.getMessageList();
+        }
+      }
+      public int getCustomMetadataCount() {
+        if (customMetadataBuilder_ == null) {
+          return customMetadata_.size();
+        } else {
+          return customMetadataBuilder_.getCount();
+        }
+      }
+      public org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry getCustomMetadata(int index) {
+        if (customMetadataBuilder_ == null) {
+          return customMetadata_.get(index);
+        } else {
+          return customMetadataBuilder_.getMessage(index);
+        }
+      }
+      public Builder setCustomMetadata(
+          int index, org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry value) {
+        if (customMetadataBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureCustomMetadataIsMutable();
+          customMetadata_.set(index, value);
+          onChanged();
+        } else {
+          customMetadataBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      public Builder setCustomMetadata(
+          int index, org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.Builder builderForValue) {
+        if (customMetadataBuilder_ == null) {
+          ensureCustomMetadataIsMutable();
+          customMetadata_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          customMetadataBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      public Builder addCustomMetadata(org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry value) {
+        if (customMetadataBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureCustomMetadataIsMutable();
+          customMetadata_.add(value);
+          onChanged();
+        } else {
+          customMetadataBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      public Builder addCustomMetadata(
+          int index, org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry value) {
+        if (customMetadataBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureCustomMetadataIsMutable();
+          customMetadata_.add(index, value);
+          onChanged();
+        } else {
+          customMetadataBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      public Builder addCustomMetadata(
+          org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.Builder builderForValue) {
+        if (customMetadataBuilder_ == null) {
+          ensureCustomMetadataIsMutable();
+          customMetadata_.add(builderForValue.build());
+          onChanged();
+        } else {
+          customMetadataBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      public Builder addCustomMetadata(
+          int index, org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.Builder builderForValue) {
+        if (customMetadataBuilder_ == null) {
+          ensureCustomMetadataIsMutable();
+          customMetadata_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          customMetadataBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      public Builder addAllCustomMetadata(
+          java.lang.Iterable<? extends org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry> values) {
+        if (customMetadataBuilder_ == null) {
+          ensureCustomMetadataIsMutable();
+          super.addAll(values, customMetadata_);
+          onChanged();
+        } else {
+          customMetadataBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      public Builder clearCustomMetadata() {
+        if (customMetadataBuilder_ == null) {
+          customMetadata_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000400);
+          onChanged();
+        } else {
+          customMetadataBuilder_.clear();
+        }
+        return this;
+      }
+      public Builder removeCustomMetadata(int index) {
+        if (customMetadataBuilder_ == null) {
+          ensureCustomMetadataIsMutable();
+          customMetadata_.remove(index);
+          onChanged();
+        } else {
+          customMetadataBuilder_.remove(index);
+        }
+        return this;
+      }
+      public org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.Builder getCustomMetadataBuilder(
+          int index) {
+        return getCustomMetadataFieldBuilder().getBuilder(index);
+      }
+      public org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntryOrBuilder getCustomMetadataOrBuilder(
+          int index) {
+        if (customMetadataBuilder_ == null) {
+          return customMetadata_.get(index);  } else {
+          return customMetadataBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      public java.util.List<? extends org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntryOrBuilder> 
+           getCustomMetadataOrBuilderList() {
+        if (customMetadataBuilder_ != null) {
+          return customMetadataBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(customMetadata_);
+        }
+      }
+      public org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.Builder addCustomMetadataBuilder() {
+        return getCustomMetadataFieldBuilder().addBuilder(
+            org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.getDefaultInstance());
+      }
+      public org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.Builder addCustomMetadataBuilder(
+          int index) {
+        return getCustomMetadataFieldBuilder().addBuilder(
+            index, org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.getDefaultInstance());
+      }
+      public java.util.List<org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.Builder> 
+           getCustomMetadataBuilderList() {
+        return getCustomMetadataFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry, org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.Builder, org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntryOrBuilder> 
+          getCustomMetadataFieldBuilder() {
+        if (customMetadataBuilder_ == null) {
+          customMetadataBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
+              org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry, org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.Builder, org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntryOrBuilder>(
+                  customMetadata_,
+                  ((bitField0_ & 0x00000400) == 0x00000400),
+                  getParentForChildren(),
+                  isClean());
+          customMetadata_ = null;
+        }
+        return customMetadataBuilder_;
       }
       
       // @@protoc_insertion_point(builder_scope:LedgerMetadataFormat)
@@ -4017,6 +4725,11 @@ public final class DataFormats {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_LedgerMetadataFormat_Segment_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_LedgerMetadataFormat_cMetadataMapEntry_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_LedgerMetadataFormat_cMetadataMapEntry_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_LedgerRereplicationLayoutFormat_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -4050,7 +4763,7 @@ public final class DataFormats {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n src/main/proto/DataFormats.proto\"\301\003\n\024L" +
+      "\n src/main/proto/DataFormats.proto\"\263\004\n\024L" +
       "edgerMetadataFormat\022\022\n\nquorumSize\030\001 \002(\005\022" +
       "\024\n\014ensembleSize\030\002 \002(\005\022\016\n\006length\030\003 \002(\003\022\023\n" +
       "\013lastEntryId\030\004 \001(\003\0220\n\005state\030\005 \002(\0162\033.Ledg" +
@@ -4058,19 +4771,21 @@ public final class DataFormats {
       "\006 \003(\0132\035.LedgerMetadataFormat.Segment\0224\n\n" +
       "digestType\030\007 \001(\0162 .LedgerMetadataFormat." +
       "DigestType\022\020\n\010password\030\010 \001(\014\022\025\n\rackQuoru" +
-      "mSize\030\t \001(\005\022\r\n\005ctime\030\n \001(\003\0327\n\007Segment\022\026\n" +
-      "\016ensembleMember\030\001 \003(\t\022\024\n\014firstEntryId\030\002 ",
-      "\002(\003\".\n\005State\022\010\n\004OPEN\020\001\022\017\n\013IN_RECOVERY\020\002\022" +
-      "\n\n\006CLOSED\020\003\"!\n\nDigestType\022\t\n\005CRC32\020\001\022\010\n\004" +
-      "HMAC\020\002\"@\n\037LedgerRereplicationLayoutForma" +
-      "t\022\014\n\004type\030\001 \002(\t\022\017\n\007version\030\002 \002(\005\".\n\033Unde" +
-      "rreplicatedLedgerFormat\022\017\n\007replica\030\001 \003(\t" +
-      "\"^\n\014CookieFormat\022\022\n\nbookieHost\030\001 \002(\t\022\022\n\n" +
-      "journalDir\030\002 \002(\t\022\022\n\nledgerDirs\030\003 \002(\t\022\022\n\n" +
-      "instanceId\030\004 \001(\t\"\"\n\016LockDataFormat\022\020\n\010bo" +
-      "okieId\030\001 \001(\t\"%\n\021AuditorVoteFormat\022\020\n\010boo" +
-      "kieId\030\001 \001(\tB\037\n\033org.apache.bookkeeper.pro",
-      "toH\001"
+      "mSize\030\t \001(\005\022\r\n\005ctime\030\n \001(\003\022?\n\016customMeta" +
+      "data\030\013 \003(\0132\'.LedgerMetadataFormat.cMetad",
+      "ataMapEntry\0327\n\007Segment\022\026\n\016ensembleMember" +
+      "\030\001 \003(\t\022\024\n\014firstEntryId\030\002 \002(\003\032/\n\021cMetadat" +
+      "aMapEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\014\".\n" +
+      "\005State\022\010\n\004OPEN\020\001\022\017\n\013IN_RECOVERY\020\002\022\n\n\006CLO" +
+      "SED\020\003\"!\n\nDigestType\022\t\n\005CRC32\020\001\022\010\n\004HMAC\020\002" +
+      "\"@\n\037LedgerRereplicationLayoutFormat\022\014\n\004t" +
+      "ype\030\001 \002(\t\022\017\n\007version\030\002 \002(\005\".\n\033Underrepli" +
+      "catedLedgerFormat\022\017\n\007replica\030\001 \003(\t\"^\n\014Co" +
+      "okieFormat\022\022\n\nbookieHost\030\001 \002(\t\022\022\n\njourna" +
+      "lDir\030\002 \002(\t\022\022\n\nledgerDirs\030\003 \002(\t\022\022\n\ninstan",
+      "ceId\030\004 \001(\t\"\"\n\016LockDataFormat\022\020\n\010bookieId" +
+      "\030\001 \001(\t\"%\n\021AuditorVoteFormat\022\020\n\010bookieId\030" +
+      "\001 \001(\tB\037\n\033org.apache.bookkeeper.protoH\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -4082,7 +4797,7 @@ public final class DataFormats {
           internal_static_LedgerMetadataFormat_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_LedgerMetadataFormat_descriptor,
-              new java.lang.String[] { "QuorumSize", "EnsembleSize", "Length", "LastEntryId", "State", "Segment", "DigestType", "Password", "AckQuorumSize", "Ctime", },
+              new java.lang.String[] { "QuorumSize", "EnsembleSize", "Length", "LastEntryId", "State", "Segment", "DigestType", "Password", "AckQuorumSize", "Ctime", "CustomMetadata", },
               org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.class,
               org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.Builder.class);
           internal_static_LedgerMetadataFormat_Segment_descriptor =
@@ -4093,6 +4808,14 @@ public final class DataFormats {
               new java.lang.String[] { "EnsembleMember", "FirstEntryId", },
               org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.Segment.class,
               org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.Segment.Builder.class);
+          internal_static_LedgerMetadataFormat_cMetadataMapEntry_descriptor =
+            internal_static_LedgerMetadataFormat_descriptor.getNestedTypes().get(1);
+          internal_static_LedgerMetadataFormat_cMetadataMapEntry_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_LedgerMetadataFormat_cMetadataMapEntry_descriptor,
+              new java.lang.String[] { "Key", "Value", },
+              org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.class,
+              org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.cMetadataMapEntry.Builder.class);
           internal_static_LedgerRereplicationLayoutFormat_descriptor =
             getDescriptor().getMessageTypes().get(1);
           internal_static_LedgerRereplicationLayoutFormat_fieldAccessorTable = new

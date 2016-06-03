@@ -19,6 +19,7 @@ package org.apache.bookkeeper.client;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.TextFormat;
+
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
 import org.apache.bookkeeper.versioning.Version;
@@ -31,13 +32,16 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
 import static com.google.common.base.Charsets.UTF_8;
+
 import com.google.common.base.Optional;
+import com.google.common.collect.Maps;
 
 /**
  * This class encapsulates all the ledger metadata that is persistently stored
@@ -79,8 +83,10 @@ public class LedgerMetadata {
     private LedgerMetadataFormat.DigestType digestType;
     private byte[] password;
 
+    private Map<String, byte[]> customMetadata = Maps.newHashMap();
+
     public LedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-                          BookKeeper.DigestType digestType, byte[] password) {
+                          BookKeeper.DigestType digestType, byte[] password, Map<String, byte[]> customMetadata) {
         this.ensembleSize = ensembleSize;
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
@@ -99,6 +105,14 @@ public class LedgerMetadata {
             LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.CRC32;
         this.password = Arrays.copyOf(password, password.length);
         this.hasPassword = true;
+        if (customMetadata != null) {
+            this.customMetadata = customMetadata;
+        }
+    }
+
+    public LedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+            BookKeeper.DigestType digestType, byte[] password) {
+        this(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password, null);
     }
 
     /**
@@ -124,6 +138,7 @@ public class LedgerMetadata {
             ArrayList<BookieSocketAddress> newEnsemble = new ArrayList<BookieSocketAddress>(entry.getValue());
             this.addEnsemble(startEntryId, newEnsemble);
         }
+        this.customMetadata = other.customMetadata;
     }
 
     private LedgerMetadata() {
@@ -255,6 +270,14 @@ public class LedgerMetadata {
         }
     }
 
+    public Map<String, byte[]> getCustomMetadata() {
+        return this.customMetadata;
+    }
+
+    void setCustomMetadata(Map<String, byte[]> customMetadata) {
+        this.customMetadata = customMetadata;
+    }
+
     /**
      * Generates a byte array of this object
      *
@@ -271,6 +294,14 @@ public class LedgerMetadata {
 
         if (hasPassword) {
             builder.setDigestType(digestType).setPassword(ByteString.copyFrom(password));
+        }
+
+        if (customMetadata != null) {
+            LedgerMetadataFormat.cMetadataMapEntry.Builder cMetadataBuilder = LedgerMetadataFormat.cMetadataMapEntry.newBuilder();
+            for (String key : customMetadata.keySet()) {
+                cMetadataBuilder.setKey(key).setValue(ByteString.copyFrom(customMetadata.get(key)));
+                builder.addCustomMetadata(cMetadataBuilder.build());
+            }
         }
 
         for (Map.Entry<Long, ArrayList<BookieSocketAddress>> entry : ensembles.entrySet()) {
@@ -395,6 +426,14 @@ public class LedgerMetadata {
             }
             lc.addEnsemble(s.getFirstEntryId(), addrs);
         }
+
+        if (data.getCustomMetadataCount() > 0) {
+            List<LedgerMetadataFormat.cMetadataMapEntry> cMetadataList = data.getCustomMetadataList();
+            lc.customMetadata = Maps.newHashMap();
+            for (LedgerMetadataFormat.cMetadataMapEntry ent : cMetadataList) {
+                lc.customMetadata.put(ent.getKey(), ent.getValue().toByteArray());
+            }
+        }
         return lc;
     }
 
@@ -467,6 +506,37 @@ public class LedgerMetadata {
     }
 
     /**
+     * Routine to compare two Map<String, byte[]>; Since the values in the map are byte[], we can't use Map.equals
+     * @param first
+     *          The first map
+     * @param second
+     *          The second map to compare with
+     * @return true if the 2 maps contain the exact set of <K,V> pairs.
+     */
+    public static boolean areByteArrayValMapsEqual(Map<String, byte[]> first, Map<String, byte[]> second) {
+        if(first == null && second == null) {
+            return true;
+        }
+
+        // above check confirms that both are not null;
+        // if one is null the other isn't; so they must
+        // be different
+        if (first == null || second == null) {
+            return false;
+        }
+
+        if (first.size() != second.size()) {
+            return false;
+        }
+        for (Map.Entry<String, byte[]> entry : first.entrySet()) {
+            if (!Arrays.equals(entry.getValue(), second.get(entry.getKey()))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Is the metadata conflict with new updated metadata.
      *
      * @param newMeta
@@ -487,7 +557,8 @@ public class LedgerMetadata {
             length != newMeta.length ||
             state != newMeta.state ||
             !digestType.equals(newMeta.digestType) ||
-            !Arrays.equals(password, newMeta.password)) {
+            !Arrays.equals(password, newMeta.password) ||
+            !LedgerMetadata.areByteArrayValMapsEqual(customMetadata, newMeta.customMetadata)) {
             return true;
         }
         if (state == LedgerMetadataFormat.State.CLOSED

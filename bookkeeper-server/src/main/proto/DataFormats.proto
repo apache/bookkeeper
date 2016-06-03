@@ -50,6 +50,12 @@ message LedgerMetadataFormat {
     optional int32 ackQuorumSize = 9;
     
     optional int64 ctime = 10;
+
+    message cMetadataMapEntry {
+        optional string key = 1;
+        optional bytes value = 2;
+    }
+    repeated cMetadataMapEntry customMetadata = 11;
 }
 
 message LedgerRereplicationLayoutFormat {

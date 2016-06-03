@@ -23,6 +23,7 @@ package org.apache.bookkeeper.client;
 
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
@@ -75,14 +76,14 @@ class LedgerCreateOp implements GenericCallback<Void> {
      *       callback implementation
      * @param ctx
      *       optional control object
+     * @param customMetadata
+     *       A map of user specified custom metadata about the ledger to be persisted; will not try to
+     *       preserve the order(e.g. sortedMap) upon later retireval.
      */
-
-    LedgerCreateOp(BookKeeper bk, int ensembleSize,
-                   int writeQuorumSize, int ackQuorumSize,
-                   DigestType digestType,
-                   byte[] passwd, CreateCallback cb, Object ctx) {
+    LedgerCreateOp(BookKeeper bk, int ensembleSize, int writeQuorumSize, int ackQuorumSize, DigestType digestType,
+            byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata) {
         this.bk = bk;
-        this.metadata = new LedgerMetadata(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, passwd);
+        this.metadata = new LedgerMetadata(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, passwd, customMetadata);
         this.digestType = digestType;
         this.passwd = passwd;
         this.cb = cb;
