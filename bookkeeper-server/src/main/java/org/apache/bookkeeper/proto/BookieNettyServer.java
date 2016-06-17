@@ -91,9 +91,13 @@ class BookieNettyServer {
 
         ThreadFactoryBuilder tfb = new ThreadFactoryBuilder();
         String base = "bookie-" + conf.getBookiePort() + "-netty";
-        serverChannelFactory = new NioServerSocketChannelFactory(
-                Executors.newCachedThreadPool(tfb.setNameFormat(base + "-boss-%d").build()),
-                Executors.newCachedThreadPool(tfb.setNameFormat(base + "-worker-%d").build()));
+        if (!conf.isDisableServerSocketBind()) {
+            serverChannelFactory = new NioServerSocketChannelFactory(
+                    Executors.newCachedThreadPool(tfb.setNameFormat(base + "-boss-%d").build()),
+                    Executors.newCachedThreadPool(tfb.setNameFormat(base + "-worker-%d").build()));
+        } else {
+            serverChannelFactory = null;
+        }
         if (conf.isEnableLocalTransport()) {
             jvmServerChannelFactory = new DefaultLocalServerChannelFactory();
         } else {
@@ -132,13 +136,15 @@ class BookieNettyServer {
     }
 
     private void listenOn(InetSocketAddress address, BookieSocketAddress bookieAddress) {
-        ServerBootstrap bootstrap = new ServerBootstrap(serverChannelFactory);
-        bootstrap.setPipelineFactory(new BookiePipelineFactory());
-        bootstrap.setOption("child.tcpNoDelay", conf.getServerTcpNoDelay());
-        bootstrap.setOption("child.soLinger", 2);
+        if (!conf.isDisableServerSocketBind()) {
+            ServerBootstrap bootstrap = new ServerBootstrap(serverChannelFactory);
+            bootstrap.setPipelineFactory(new BookiePipelineFactory());
+            bootstrap.setOption("child.tcpNoDelay", conf.getServerTcpNoDelay());
+            bootstrap.setOption("child.soLinger", 2);
 
-        Channel listen = bootstrap.bind(address);
-        allChannels.add(listen);
+            Channel listen = bootstrap.bind(address);
+            allChannels.add(listen);
+        }
 
         if (conf.isEnableLocalTransport()) {
             ServerBootstrap jvmbootstrap = new ServerBootstrap(jvmServerChannelFactory);
@@ -162,7 +168,9 @@ class BookieNettyServer {
         }
         isRunning.set(false);
         allChannels.close().awaitUninterruptibly();
-        serverChannelFactory.releaseExternalResources();
+        if (!conf.isDisableServerSocketBind()) {
+            serverChannelFactory.releaseExternalResources();
+        }
         if (conf.isEnableLocalTransport()) {
             jvmServerChannelFactory.releaseExternalResources();
         }

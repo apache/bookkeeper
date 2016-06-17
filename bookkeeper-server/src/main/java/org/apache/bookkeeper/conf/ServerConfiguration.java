@@ -114,6 +114,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     // registration.
     protected final static String USE_HOST_NAME_AS_BOOKIE_ID = "useHostNameAsBookieID";
     protected final static String ENABLE_LOCAL_TRANSPORT = "enableLocalTransport";
+    protected final static String DISABLE_SERVER_SOCKET_BIND = "disableServerSocketBind";
 
     protected final static String SORTED_LEDGER_STORAGE_ENABLED = "sortedLedgerStorageEnabled";
     protected final static String SKIP_LIST_SIZE_LIMIT = "skipListSizeLimit";
@@ -1561,7 +1562,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get hwhether to use listen for local JVM clients. Defaults to false.
+     * Get whether to listen for local JVM clients. Defaults to false.
      *
      * @return true, then bookie will be listen for local JVM clients
      */
@@ -1582,6 +1583,28 @@ public class ServerConfiguration extends AbstractConfiguration {
         return this;
     }
 
+    /**
+     * Get whether to disable bind of server-side sockets. Defaults to false.
+     *
+     * @return true, then bookie will not listen for network connections
+     */
+    public boolean isDisableServerSocketBind() {
+        return getBoolean(DISABLE_SERVER_SOCKET_BIND, false);
+    }
+
+    /**
+     * Configure the bookie to disable bind on network interfaces,
+     * this bookie will be available only to BookKeeper clients executed on the local JVM
+     *
+     * @see #getDisableServerSocketBind
+     * @param disableServerSocketBind
+     *            whether to disable binding on network interfaces
+     * @return server configuration
+     */
+    public ServerConfiguration setDisableServerSocketBind(boolean disableServerSocketBind) {
+        setProperty(DISABLE_SERVER_SOCKET_BIND, disableServerSocketBind);
+        return this;
+    }
 
     /**
      * Get the stats provider used by bookie.
