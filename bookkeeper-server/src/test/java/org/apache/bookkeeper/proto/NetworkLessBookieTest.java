@@ -29,8 +29,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.test.BaseTestCase;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -69,8 +68,11 @@ public class NetworkLessBookieTest extends BaseTestCase {
         }
 
         for (BookieServer bk : bs) {
-            assertNull(bk.nettyServer.serverChannelFactory);
-            assertNotNull(bk.nettyServer.jvmServerChannelFactory);
+            for (ChannelManager channel : bk.nettyServer.channels) {
+                if (! (channel instanceof VMLocalChannelManager)) {
+                    Assert.fail();
+                }
+            }
         }
     }
 
