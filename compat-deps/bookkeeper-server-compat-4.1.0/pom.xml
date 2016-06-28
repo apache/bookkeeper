@@ -33,6 +33,11 @@
   </properties>
   <dependencies>
     <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>2.4.1</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-server</artifactId>
       <version>4.1.0</version>
@@ -54,6 +59,7 @@
               <createDependencyReducedPom>false</createDependencyReducedPom>
               <artifactSet>
                 <includes>
+                  <include>com.google.protobuf:protobuf-java</include>
                   <include>org.apache.*:*</include>
                   <include>org.jboss.*:*</include>
                   <include>commons-*:*</include>
@@ -63,6 +69,10 @@
                 </excludes>
               </artifactSet>
               <relocations>
+                <relocation>
+                  <pattern>com.google.protobuf</pattern>
+                  <shadedPattern>bk-shade.com.google.proto_bk_v4_1_0</shadedPattern>
+                </relocation>
                 <relocation>
                   <pattern>org.apache.commons</pattern>
                   <shadedPattern>org.apache.bk_v4_1_0.commons</shadedPattern>

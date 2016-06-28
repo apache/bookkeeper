@@ -200,6 +200,10 @@
               <minimizeJar>true</minimizeJar>
               <relocations>
                 <relocation>
+                  <pattern>com.google.protobuf</pattern>
+                  <shadedPattern>bk-shade.com.google.proto_${protobuf.version}</shadedPattern>
+                </relocation>
+                <relocation>
                   <pattern>com.google</pattern>
                   <shadedPattern>bk-shade.com.google</shadedPattern>
                 </relocation>
