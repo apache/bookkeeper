@@ -136,8 +136,8 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
 
         final byte[] passwd;
         DigestType digestType = enableDigestAutodetection 
-									? metadata.getDigestType() 
-									: suggestedDigestType;
+                                    ? metadata.getDigestType() 
+                                    : suggestedDigestType;
 										
         /* For an administrative open, the default passwords
          * are read from the configuration, but if the metadata
