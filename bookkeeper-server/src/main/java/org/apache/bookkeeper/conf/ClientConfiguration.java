@@ -43,6 +43,8 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     // Digest Type
     protected final static String DIGEST_TYPE = "digestType";
+    protected final static String ENABLE_DIGEST_TYPE_AUTODETECTION = "enableDigestTypeAutodetection";
+
     // Passwd
     protected final static String PASSWD = "passwd";
 
@@ -131,6 +133,28 @@ public class ClientConfiguration extends AbstractConfiguration {
         return this;
     }
 
+    /**
+     * Whether to enable autodetection of digest type.
+     * Ignores provided digestType, if enabled and uses one from ledger metadata instead.
+     * Incompatible with ledger created by bookie versions < 4.2
+     *
+     * @return flag to enable/disable autodetection of digest type.
+     */
+    public boolean getEnableDigestTypeAutodetection() {
+        return getBoolean(ENABLE_DIGEST_TYPE_AUTODETECTION, false);
+    }
+
+    /**
+     * Whether to enable autodetection of digest type.
+     * Ignores provided digestType, if enabled and uses one from ledger metadata instead.
+     * Incompatible with ledger created by bookie versions < 4.2
+     *
+     * @return client configuration.
+     */    public ClientConfiguration setEnableDigestTypeAutodetection(boolean enable) {
+        this.setProperty(ENABLE_DIGEST_TYPE_AUTODETECTION, enable);
+        return this;
+    }
+    
     /**
      * Get digest type used in bookkeeper admin
      *

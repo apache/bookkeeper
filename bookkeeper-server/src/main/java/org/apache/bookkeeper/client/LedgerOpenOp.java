@@ -48,11 +48,13 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
     final Object ctx;
     LedgerHandle lh;
     final byte[] passwd;
-    final DigestType digestType;
     boolean doRecovery = true;
     boolean administrativeOpen = false;
     long startTime;
     OpStatsLogger openOpLogger;
+    
+    final DigestType suggestedDigestType;
+    final boolean enableDigestAutodetection;
 
     /**
      * Constructor.
@@ -64,6 +66,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
      * @param cb
      * @param ctx
      */
+    // needed strictly for cases when BK still has ledgers created by versions < 4.2
     public LedgerOpenOp(BookKeeper bk, long ledgerId, DigestType digestType, byte[] passwd,
                         OpenCallback cb, Object ctx) {
         this.bk = bk;
@@ -71,8 +74,20 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         this.passwd = passwd;
         this.cb = cb;
         this.ctx = ctx;
-        this.digestType = digestType;
+        this.enableDigestAutodetection = bk.conf.getEnableDigestTypeAutodetection();
+        this.suggestedDigestType = digestType;
     }
+
+    public LedgerOpenOp(BookKeeper bk, long ledgerId, byte[] passwd,
+            OpenCallback cb, Object ctx) {
+		this.bk = bk;
+		this.ledgerId = ledgerId;
+		this.passwd = passwd;
+		this.cb = cb;
+		this.ctx = ctx;
+		this.enableDigestAutodetection = true;
+		this.suggestedDigestType = bk.conf.getBookieRecoveryDigestType();
+	}
 
     public LedgerOpenOp(BookKeeper bk, long ledgerId, OpenCallback cb, Object ctx) {
         this.bk = bk;
@@ -81,8 +96,9 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         this.ctx = ctx;
 
         this.passwd = bk.getConf().getBookieRecoveryPasswd();
-        this.digestType = bk.getConf().getBookieRecoveryDigestType();
         this.administrativeOpen = true;
+        this.enableDigestAutodetection = false;
+        this.suggestedDigestType = bk.conf.getBookieRecoveryDigestType();
     }
 
     /**
@@ -119,8 +135,10 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         }
 
         final byte[] passwd;
-        final DigestType digestType;
-
+        DigestType digestType = enableDigestAutodetection 
+									? metadata.getDigestType() 
+									: suggestedDigestType;
+										
         /* For an administrative open, the default passwords
          * are read from the configuration, but if the metadata
          * already contains passwords, use these instead. */
@@ -129,7 +147,6 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
             digestType = metadata.getDigestType();
         } else {
             passwd = this.passwd;
-            digestType = this.digestType;
 
             if (metadata.hasPassword()) {
                 if (!Arrays.equals(passwd, metadata.getPassword())) {
