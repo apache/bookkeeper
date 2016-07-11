@@ -61,12 +61,11 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
      *
      * @param bk
      * @param ledgerId
-     * @param digestType
+     * @param digestType. Ignored if conf.getEnableDigestTypeAutodetection() is true
      * @param passwd
      * @param cb
      * @param ctx
      */
-    // needed strictly for cases when BK still has ledgers created by versions < 4.2
     public LedgerOpenOp(BookKeeper bk, long ledgerId, DigestType digestType, byte[] passwd,
                         OpenCallback cb, Object ctx) {
         this.bk = bk;
@@ -77,17 +76,6 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         this.enableDigestAutodetection = bk.conf.getEnableDigestTypeAutodetection();
         this.suggestedDigestType = digestType;
     }
-
-    public LedgerOpenOp(BookKeeper bk, long ledgerId, byte[] passwd,
-            OpenCallback cb, Object ctx) {
-		this.bk = bk;
-		this.ledgerId = ledgerId;
-		this.passwd = passwd;
-		this.cb = cb;
-		this.ctx = ctx;
-		this.enableDigestAutodetection = true;
-		this.suggestedDigestType = bk.conf.getBookieRecoveryDigestType();
-	}
 
     public LedgerOpenOp(BookKeeper bk, long ledgerId, OpenCallback cb, Object ctx) {
         this.bk = bk;
