@@ -336,7 +336,7 @@ def resolve_jira_issues(title, merge_branches, comment):
     jira_ids = re.findall("%s-[0-9]{3,6}" % CAPITALIZED_PROJECT_NAME, title)
 
     if len(jira_ids) == 0:
-        pritnf ("No JIRA issue found to update")
+        print "No JIRA issue found to update"
     for jira_id in jira_ids:
         resolve_jira_issue(merge_branches, comment, jira_id)
 
