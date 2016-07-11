@@ -24,6 +24,9 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Random;
+import java.util.Map;
+import java.util.UUID;
+import java.util.HashMap;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -35,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.*;
+
 
 /**
  * Testing ledger write entry cases
@@ -170,6 +174,52 @@ public class BookieWriteLedgerTest extends
 
         readEntries(lh, entries1);
         lh.close();
+    }
+
+    /**
+     * Verify the functionality of Ledger create which accepts customMetadata as input.
+     * Also verifies that the data written is read back properly.
+     *
+     * @throws Exception
+     */
+    @Test(timeout = 60000)
+    public void testLedgerCreateWithCustomMetadata() throws Exception {
+        // Create a ledger
+        long ledgerId;
+        int maxLedgers = 10;
+        for (int i = 0; i < maxLedgers; i++) {
+            Map<String, byte[]> inputCustomMetadataMap = new HashMap<String, byte[]>();
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+
+            // each ledger has different number of key, value pairs.
+            for (int j = 0; j < i; j++) {
+                inputCustomMetadataMap.put("key" + j, UUID.randomUUID().toString().getBytes());
+            }
+
+            if (i < maxLedgers/2) {
+                // 0 to 4 test with createLedger interface
+                lh = bkc.createLedger(5, 3, 2, digestType, ledgerPassword, inputCustomMetadataMap);
+                ledgerId = lh.getId();
+                lh.addEntry(entry.array());
+            } else {
+                // 5 to 9 test with createLedgerAdv interface
+                lh = bkc.createLedgerAdv(5, 3, 2, digestType, ledgerPassword, inputCustomMetadataMap);
+                ledgerId = lh.getId();
+                lh.addEntry(0, entry.array());
+            }
+            lh.close();
+
+            // now reopen the ledger; this should fetch all the metadata stored on zk
+            // and the customMetadata written and read should match
+            lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
+            Map<String, byte[]> outputCustomMetadataMap = lh.getCustomMetadata();
+            assertTrue("Can't retrieve proper Custom Data",
+                       LedgerMetadata.areByteArrayValMapsEqual(inputCustomMetadataMap, outputCustomMetadataMap));
+            lh.close();
+            bkc.deleteLedger(ledgerId);
+        }
     }
 
     /**

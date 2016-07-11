@@ -22,6 +22,7 @@ package org.apache.bookkeeper.client;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -431,7 +432,7 @@ public class BookKeeper implements AutoCloseable {
                                   final DigestType digestType,
                                   final byte[] passwd, final CreateCallback cb, final Object ctx)
     {
-        asyncCreateLedger(ensSize, writeQuorumSize, writeQuorumSize, digestType, passwd, cb, ctx);
+        asyncCreateLedger(ensSize, writeQuorumSize, writeQuorumSize, digestType, passwd, cb, ctx, null);
     }
 
     /**
@@ -462,13 +463,13 @@ public class BookKeeper implements AutoCloseable {
      *          createCallback implementation
      * @param ctx
      *          optional control object
+     * @param customMetadata
+     *          optional customMetadata that holds user specified metadata
      */
 
-    public void asyncCreateLedger(final int ensSize,
-                                  final int writeQuorumSize,
-                                  final int ackQuorumSize,
-                                  final DigestType digestType,
-                                  final byte[] passwd, final CreateCallback cb, final Object ctx) {
+    public void asyncCreateLedger(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
+                                  final DigestType digestType, final byte[] passwd,
+                                  final CreateCallback cb, final Object ctx, final Map<String, byte[]> customMetadata) {
         if (writeQuorumSize < ackQuorumSize) {
             throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
         }
@@ -479,7 +480,7 @@ public class BookKeeper implements AutoCloseable {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx)
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata)
                 .initiate();
         } finally {
             closeLock.readLock().unlock();
@@ -519,12 +520,12 @@ public class BookKeeper implements AutoCloseable {
     public LedgerHandle createLedger(int ensSize, int qSize,
                                      DigestType digestType, byte passwd[])
             throws InterruptedException, BKException {
-        return createLedger(ensSize, qSize, qSize, digestType, passwd);
+        return createLedger(ensSize, qSize, qSize, digestType, passwd, null);
     }
 
     /**
      * Synchronous call to create ledger. Parameters match those of
-     * {@link #asyncCreateLedger(int, int, int, DigestType, byte[],
+     * {@link #asyncCreateLedger(int, int, DigestType, byte[],
      *                           AsyncCallback.CreateCallback, Object)}
      *
      * @param ensSize
@@ -537,7 +538,28 @@ public class BookKeeper implements AutoCloseable {
      * @throws BKException
      */
     public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
-                                     DigestType digestType, byte passwd[])
+            DigestType digestType, byte passwd[])
+            throws InterruptedException, BKException {
+        return createLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, null);
+    }
+
+    /**
+     * Synchronous call to create ledger. Parameters match those of
+     * {@link #asyncCreateLedger(int, int, int, DigestType, byte[],
+     *                           AsyncCallback.CreateCallback, Object)}
+     *
+     * @param ensSize
+     * @param writeQuorumSize
+     * @param ackQuorumSize
+     * @param digestType
+     * @param passwd
+     * @param customMetadata
+     * @return a handle to the newly created ledger
+     * @throws InterruptedException
+     * @throws BKException
+     */
+    public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
+                                     DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
         SyncCounter counter = new SyncCounter();
         counter.inc();
@@ -545,7 +567,7 @@ public class BookKeeper implements AutoCloseable {
          * Calls asynchronous version
          */
         asyncCreateLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                          new SyncCreateCallback(), counter);
+                          new SyncCreateCallback(), counter, customMetadata);
 
         /*
          * Wait
@@ -574,6 +596,7 @@ public class BookKeeper implements AutoCloseable {
      * @param ackQuorumSize
      * @param digestType
      * @param passwd
+     * @param customMetadata
      * @return a handle to the newly created ledger
      * @throws InterruptedException
      * @throws BKException
@@ -581,13 +604,36 @@ public class BookKeeper implements AutoCloseable {
     public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
                                         DigestType digestType, byte passwd[])
             throws InterruptedException, BKException {
+        return createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, null);
+    }
+
+    /**
+     * Synchronous call to create ledger.
+     * Creates a new ledger asynchronously and returns {@link LedgerHandleAdv} which can accept entryId.
+     * Parameters must match those of
+     * {@link #asyncCreateLedgerAdv(int, int, int, DigestType, byte[],
+     *                           AsyncCallback.CreateCallback, Object)}
+     *
+     * @param ensSize
+     * @param writeQuorumSize
+     * @param ackQuorumSize
+     * @param digestType
+     * @param passwd
+     * @param customMetadata
+     * @return a handle to the newly created ledger
+     * @throws InterruptedException
+     * @throws BKException
+     */
+    public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
+                                        DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
+            throws InterruptedException, BKException {
         SyncCounter counter = new SyncCounter();
         counter.inc();
         /*
          * Calls asynchronous version
          */
         asyncCreateLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                             new SyncCreateCallback(), counter);
+                             new SyncCreateCallback(), counter, customMetadata);
 
         /*
          * Wait
@@ -633,12 +679,12 @@ public class BookKeeper implements AutoCloseable {
      *          createCallback implementation
      * @param ctx
      *          optional control object
+     * @param customMetadata
+     *          optional customMetadata that holds user specified metadata
      */
-    public void asyncCreateLedgerAdv(final int ensSize,
-                                     final int writeQuorumSize,
-                                     final int ackQuorumSize,
-                                     final DigestType digestType,
-                                     final byte[] passwd, final CreateCallback cb, final Object ctx) {
+    public void asyncCreateLedgerAdv(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
+            final DigestType digestType, final byte[] passwd, final CreateCallback cb, final Object ctx,
+            final Map<String, byte[]> customMetadata) {
         if (writeQuorumSize < ackQuorumSize) {
             throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
         }
@@ -649,7 +695,7 @@ public class BookKeeper implements AutoCloseable {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx).initiateAdv();
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv();
         } finally {
             closeLock.readLock().unlock();
         }
