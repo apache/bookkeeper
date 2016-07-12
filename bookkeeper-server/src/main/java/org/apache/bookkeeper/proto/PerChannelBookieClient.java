@@ -180,7 +180,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         this.extRegistry = extRegistry;
 
         StringBuilder nameBuilder = new StringBuilder();
-        nameBuilder.append(addr.getHostname().replace('.', '_').replace('-', '_'))
+        nameBuilder.append(addr.getHostName().replace('.', '_').replace('-', '_'))
             .append("_").append(addr.getPort());
 
         this.statsLogger = parentStatsLogger.scope(BookKeeperClientStats.CHANNEL_SCOPE)

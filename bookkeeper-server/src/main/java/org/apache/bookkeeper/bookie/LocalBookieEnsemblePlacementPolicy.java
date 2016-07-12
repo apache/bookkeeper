@@ -17,16 +17,21 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.base.Optional;
+
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.jboss.netty.util.HashedWheelTimer;
 import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,8 +48,7 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
     private BookieSocketAddress bookieAddress;
 
     @Override
-    public EnsemblePlacementPolicy initialize(Configuration conf) {
-
+    public EnsemblePlacementPolicy initialize(ClientConfiguration conf, Optional<DNSToSwitchMapping> optionalDnsResolver, HashedWheelTimer hashedWheelTimer, FeatureProvider featureProvider, StatsLogger statsLogger) {
         // Configuration will have already the bookie configuration inserted
         ServerConfiguration serverConf = new ServerConfiguration();
         serverConf.addConfiguration(conf);
@@ -70,19 +74,28 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
     }
 
     @Override
-    public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize,
+    public BookieSocketAddress replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize, Collection<BookieSocketAddress> currentEnsemble, BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException {
+        throw new BKNotEnoughBookiesException();
+    }
+
+    @Override
+    public List<Integer> reorderReadSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
+        return null;
+    }
+
+    @Override
+    public List<Integer> reorderReadLACSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
+        return null;
+    }
+
+    @Override
+    public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
             Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException {
         if (ensembleSize > 1) {
             throw new IllegalArgumentException("Local ensemble policy can only return 1 bookie");
         }
 
         return Lists.newArrayList(bookieAddress);
-    }
-
-    @Override
-    public BookieSocketAddress replaceBookie(BookieSocketAddress bookieToReplace,
-            Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException {
-        throw new BKNotEnoughBookiesException();
     }
 
 }

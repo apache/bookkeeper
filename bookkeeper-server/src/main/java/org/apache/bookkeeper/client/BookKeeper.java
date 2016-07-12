@@ -29,6 +29,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
@@ -36,11 +37,14 @@ import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.feature.FeatureProvider;
+import org.apache.bookkeeper.feature.SettableFeatureProvider;
 import org.apache.bookkeeper.meta.CleanupLedgerManager;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -56,6 +60,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,6 +106,9 @@ public class BookKeeper implements AutoCloseable {
 
     final OrderedSafeExecutor mainWorkerPool;
     final ScheduledExecutorService scheduler;
+    final HashedWheelTimer requestTimer;
+    final boolean ownTimer;
+    final FeatureProvider featureProvider;
 
     // Ledger manager responsible for how to store ledger meta data
     final LedgerManagerFactory ledgerManagerFactory;
@@ -122,6 +130,9 @@ public class BookKeeper implements AutoCloseable {
         ZooKeeper zk = null;
         ClientSocketChannelFactory channelFactory = null;
         StatsLogger statsLogger = NullStatsLogger.INSTANCE;
+        DNSToSwitchMapping dnsResolver = null;
+        HashedWheelTimer requestTimer = null;
+        FeatureProvider featureProvider = null;
 
         Builder(ClientConfiguration conf) {
             this.conf = conf;
@@ -142,9 +153,25 @@ public class BookKeeper implements AutoCloseable {
             return this;
         }
 
+
+        public Builder dnsResolver(DNSToSwitchMapping dnsResolver) {
+            this.dnsResolver = dnsResolver;
+            return this;
+        }
+
+        public Builder requestTimer(HashedWheelTimer requestTimer) {
+            this.requestTimer = requestTimer;
+            return this;
+        }
+
+        public Builder featureProvider(FeatureProvider featureProvider) {
+            this.featureProvider = featureProvider;
+            return this;
+        }
+
         public BookKeeper build() throws IOException, InterruptedException, KeeperException {
             Preconditions.checkNotNull(statsLogger, "No stats logger provided");
-            return new BookKeeper(conf, zk, channelFactory, statsLogger);
+            return new BookKeeper(conf, zk, channelFactory, statsLogger, dnsResolver, requestTimer, featureProvider);
         }
     }
 
@@ -183,7 +210,8 @@ public class BookKeeper implements AutoCloseable {
      */
     public BookKeeper(final ClientConfiguration conf)
             throws IOException, InterruptedException, KeeperException {
-        this(conf, null, null, NullStatsLogger.INSTANCE);
+        this(conf, null, null, NullStatsLogger.INSTANCE,
+                null, null, null);
     }
 
     private static ZooKeeper validateZooKeeper(ZooKeeper zk) throws NullPointerException {
@@ -240,7 +268,8 @@ public class BookKeeper implements AutoCloseable {
      */
     public BookKeeper(ClientConfiguration conf, ZooKeeper zk, ClientSocketChannelFactory channelFactory)
             throws IOException, InterruptedException, KeeperException {
-        this(conf, validateZooKeeper(zk), validateChannelFactory(channelFactory), NullStatsLogger.INSTANCE);
+        this(conf, validateZooKeeper(zk), validateChannelFactory(channelFactory), NullStatsLogger.INSTANCE,
+                null, null, null);
     }
 
     /**
@@ -249,7 +278,10 @@ public class BookKeeper implements AutoCloseable {
     private BookKeeper(ClientConfiguration conf,
                        ZooKeeper zkc,
                        ClientSocketChannelFactory channelFactory,
-                       StatsLogger statsLogger)
+                       StatsLogger statsLogger,
+                       DNSToSwitchMapping dnsResolver,
+                       HashedWheelTimer requestTimer,
+                       FeatureProvider featureProvider)
             throws IOException, InterruptedException, KeeperException {
         this.conf = conf;
 
@@ -286,6 +318,23 @@ public class BookKeeper implements AutoCloseable {
             this.ownChannelFactory = false;
         }
 
+        if (null == requestTimer) {
+            this.requestTimer = new HashedWheelTimer(
+                    new ThreadFactoryBuilder().setNameFormat("BookieClientTimer-%d").build(),
+                    conf.getTimeoutTimerTickDurationMs(), TimeUnit.MILLISECONDS,
+                    conf.getTimeoutTimerNumTicks());
+            this.ownTimer = true;
+        } else {
+            this.requestTimer = requestTimer;
+            this.ownTimer = false;
+        }
+
+        if (null == featureProvider) {
+            this.featureProvider = SettableFeatureProvider.DISABLE_ALL;
+        } else {
+            this.featureProvider = featureProvider;
+        }
+
         // initialize scheduler
         ThreadFactoryBuilder tfb = new ThreadFactoryBuilder().setNameFormat(
                 "BookKeeperClientScheduler-%d");
@@ -297,7 +346,8 @@ public class BookKeeper implements AutoCloseable {
         initOpLoggers(this.statsLogger);
 
         // initialize the ensemble placement
-        this.placementPolicy = initializeEnsemblePlacementPolicy(conf);
+        this.placementPolicy = initializeEnsemblePlacementPolicy(conf,
+                dnsResolver, this.requestTimer, this.featureProvider, this.statsLogger);
 
         // initialize main worker pool
         this.mainWorkerPool = OrderedSafeExecutor.newBuilder()
@@ -321,11 +371,16 @@ public class BookKeeper implements AutoCloseable {
         scheduleBookieHealthCheckIfEnabled();
     }
 
-    private EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf)
+    private EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf,
+                                                                      DNSToSwitchMapping dnsResolver,
+                                                                      HashedWheelTimer timer,
+                                                                      FeatureProvider featureProvider,
+                                                                      StatsLogger statsLogger)
         throws IOException {
         try {
             Class<? extends EnsemblePlacementPolicy> policyCls = conf.getEnsemblePlacementPolicy();
-            return ReflectionUtils.newInstance(policyCls).initialize(conf);
+            return ReflectionUtils.newInstance(policyCls).initialize(conf, Optional.fromNullable(dnsResolver),
+                    timer, featureProvider, statsLogger);
         } catch (ConfigurationException e) {
             throw new IOException("Failed to initialize ensemble placement policy : ", e);
         }
@@ -1001,6 +1056,9 @@ public class BookKeeper implements AutoCloseable {
             LOG.warn("The mainWorkerPool did not shutdown cleanly");
         }
 
+        if (ownTimer) {
+            requestTimer.stop();
+        }
         if (ownChannelFactory) {
             channelFactory.releaseExternalResources();
         }

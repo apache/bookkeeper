@@ -26,6 +26,7 @@ import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -1005,9 +1006,13 @@ public class LedgerHandle implements AutoCloseable {
 
         // avoid parallel ensemble changes to same ensemble.
         synchronized (metadata) {
-            newBookie = bk.bookieWatcher.replaceBookie(metadata.currentEnsemble, bookieIndex);
-
             newEnsemble.addAll(metadata.currentEnsemble);
+            newBookie = bk.bookieWatcher.replaceBookie(metadata.getEnsembleSize(),
+                    metadata.getWriteQuorumSize(),
+                    metadata.getAckQuorumSize(), newEnsemble,
+                    bookieIndex, new HashSet<>(Arrays.asList(addr)));
+
+
             newEnsemble.set(bookieIndex, newBookie);
 
             if (LOG.isDebugEnabled()) {

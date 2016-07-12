@@ -85,7 +85,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
         BookieSocketAddress curBookieAddr = ensemble.get(0);
         baseConf.setUseHostNameAsBookieID(true);
         BookieSocketAddress curBookieId = Bookie.getBookieAddress(baseConf);
-        BookieSocketAddress toBookieAddr = new BookieSocketAddress(curBookieId.getHostname() + ":"
+        BookieSocketAddress toBookieAddr = new BookieSocketAddress(curBookieId.getHostName() + ":"
                 + curBookieAddr.getPort());
         UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, bkadmin);
         updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 5, Integer.MIN_VALUE, progressable);
@@ -125,7 +125,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
         BookieSocketAddress curBookieAddr = ensemble.get(0);
         baseConf.setUseHostNameAsBookieID(true);
         BookieSocketAddress toBookieId = Bookie.getBookieAddress(baseConf);
-        BookieSocketAddress toBookieAddr = new BookieSocketAddress(toBookieId.getHostname() + ":"
+        BookieSocketAddress toBookieAddr = new BookieSocketAddress(toBookieId.getHostName() + ":"
                 + curBookieAddr.getPort());
         UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, bkadmin);
         updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 7, 4, progressable);
@@ -172,7 +172,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
         Assert.assertNotNull("Couldn't find the bookie in ledger metadata!", curBookieAddr);
         baseConf.setUseHostNameAsBookieID(true);
         BookieSocketAddress toBookieId = Bookie.getBookieAddress(baseConf);
-        BookieSocketAddress toBookieAddr = new BookieSocketAddress(toBookieId.getHostname() + ":"
+        BookieSocketAddress toBookieAddr = new BookieSocketAddress(toBookieId.getHostName() + ":"
                 + curBookieAddr.getPort());
         UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, bkadmin);
         updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 5, 100, progressable);

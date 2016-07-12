@@ -18,14 +18,22 @@
 package org.apache.bookkeeper.client;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import com.google.common.base.Optional;
+
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.commons.configuration.Configuration;
+import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.jboss.netty.util.HashedWheelTimer;
 
 /**
  * Default Ensemble Placement Policy, which picks bookies randomly
@@ -37,7 +45,7 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
     private Set<BookieSocketAddress> knownBookies = new HashSet<BookieSocketAddress>();
 
     @Override
-    public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int quorumSize,
+    public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int quorumSize, int ackQuorumSize,
             Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException {
         ArrayList<BookieSocketAddress> newBookies = new ArrayList<BookieSocketAddress>(ensembleSize);
         if (ensembleSize <= 0) {
@@ -62,9 +70,11 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
     }
 
     @Override
-    public BookieSocketAddress replaceBookie(BookieSocketAddress bookieToReplace,
-            Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException {
-        ArrayList<BookieSocketAddress> addresses = newEnsemble(1, 1, excludeBookies);
+    public BookieSocketAddress replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize, Collection<BookieSocketAddress> currentEnsemble,
+                                           BookieSocketAddress bookieToReplace,
+                                           Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException {
+        excludeBookies.addAll(currentEnsemble);
+        ArrayList<BookieSocketAddress> addresses = newEnsemble(1, 1, 1, excludeBookies);
         return addresses.get(0);
     }
 
@@ -81,7 +91,29 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
     }
 
     @Override
-    public EnsemblePlacementPolicy initialize(Configuration conf) {
+    public List<Integer> reorderReadSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
+        return writeSet;
+    }
+
+    @Override
+    public List<Integer> reorderReadLACSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
+        List<Integer> retList = new ArrayList<Integer>(writeSet);
+        if (retList.size() < ensemble.size()) {
+            for (int i = 0; i < ensemble.size(); i++) {
+                if (!retList.contains(i)) {
+                    retList.add(i);
+                }
+            }
+        }
+        return retList;
+    }
+
+    @Override
+    public EnsemblePlacementPolicy initialize(ClientConfiguration conf,
+                                              Optional<DNSToSwitchMapping> optionalDnsResolver,
+                                              HashedWheelTimer timer,
+                                              FeatureProvider featureProvider,
+                                              StatsLogger statsLogger) {
         return this;
     }
 
@@ -89,5 +121,4 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
     public void uninitalize() {
         // do nothing
     }
-
 }

@@ -18,11 +18,20 @@
 package org.apache.bookkeeper.client;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import com.google.common.base.Optional;
+
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.commons.configuration.Configuration;
+import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.jboss.netty.util.HashedWheelTimer;
 
 /**
  * Encapsulation of the algorithm that selects a number of bookies from the cluster as an ensemble for storing
@@ -33,11 +42,17 @@ public interface EnsemblePlacementPolicy {
     /**
      * Initialize the policy.
      *
-     * @param conf
-     *          client configuration.
-     * @return initialized ensemble placement policy
+     * @param conf client configuration
+     * @param optionalDnsResolver dns resolver
+     * @param hashedWheelTimer timer
+     * @param featureProvider feature provider
+     * @param statsLogger stats logger
      */
-    public EnsemblePlacementPolicy initialize(Configuration conf);
+    public EnsemblePlacementPolicy initialize(ClientConfiguration conf,
+                                              Optional<DNSToSwitchMapping> optionalDnsResolver,
+                                              HashedWheelTimer hashedWheelTimer,
+                                              FeatureProvider featureProvider,
+                                              StatsLogger statsLogger);
 
     /**
      * Uninitialize the policy
@@ -55,7 +70,7 @@ public interface EnsemblePlacementPolicy {
      * @return the dead bookies during this cluster change.
      */
     public Set<BookieSocketAddress> onClusterChanged(Set<BookieSocketAddress> writableBookies,
-            Set<BookieSocketAddress> readOnlyBookies);
+                                                     Set<BookieSocketAddress> readOnlyBookies);
 
     /**
      * Choose <i>numBookies</i> bookies for ensemble. If the count is more than the number of available
@@ -70,8 +85,8 @@ public interface EnsemblePlacementPolicy {
      * @return list of bookies chosen as targets.
      * @throws BKNotEnoughBookiesException if not enough bookies available.
      */
-    public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize,
-            Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException;
+    public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+                                                      Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException;
 
     /**
      * Choose a new bookie to replace <i>bookieToReplace</i>. If no bookie available in the cluster,
@@ -84,6 +99,36 @@ public interface EnsemblePlacementPolicy {
      * @return the bookie chosen as target.
      * @throws BKNotEnoughBookiesException
      */
-    public BookieSocketAddress replaceBookie(BookieSocketAddress bookieToReplace,
-            Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException;
+    public BookieSocketAddress replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+                                             Collection<BookieSocketAddress> currentEnsemble, BookieSocketAddress bookieToReplace,
+                                             Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException;
+
+    /**
+     * Reorder the read sequence of a given write quorum <i>writeSet</i>.
+     *
+     * @param ensemble
+     *          Ensemble to read entries.
+     * @param writeSet
+     *          Write quorum to read entries.
+     * @param bookieFailureHistory
+     *          Observed failures on the bookies
+     * @return read sequence of bookies
+     */
+    public List<Integer> reorderReadSequence(ArrayList<BookieSocketAddress> ensemble,
+                                             List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory);
+
+
+    /**
+     * Reorder the read last add confirmed sequence of a given write quorum <i>writeSet</i>.
+     *
+     * @param ensemble
+     *          Ensemble to read entries.
+     * @param writeSet
+     *          Write quorum to read entries.
+     * @param bookieFailureHistory
+     *          Observed failures on the bookies
+     * @return read sequence of bookies
+     */
+    public List<Integer> reorderReadLACSequence(ArrayList<BookieSocketAddress> ensemble,
+                                                List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory);
 }

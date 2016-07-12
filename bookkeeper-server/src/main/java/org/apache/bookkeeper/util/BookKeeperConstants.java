@@ -50,4 +50,6 @@ public class BookKeeperConstants {
      * memtable (for performance consideration)
      */
     public static final long MAX_LOG_SIZE_LIMIT = 1 * 1024 * 1024 * 1024;
+
+    public static final String FEATURE_REPP_DISABLE_DURABILITY_ENFORCEMENT = "repp_disable_durability_enforcement";
 }
