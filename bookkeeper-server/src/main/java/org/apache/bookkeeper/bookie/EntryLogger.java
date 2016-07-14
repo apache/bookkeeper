@@ -651,12 +651,14 @@ public class EntryLogger {
             }
         });
         List<Long> logs = new ArrayList<Long>();
-        for (File lf : logFiles) {
-            String idString = lf.getName().split("\\.")[0];
-            try {
-                long lid = Long.parseLong(idString, 16);
-                logs.add(lid);
-            } catch (NumberFormatException nfe) {
+        if (logFiles != null) {
+            for (File lf : logFiles) {
+                String idString = lf.getName().split("\\.")[0];
+                try {
+                    long lid = Long.parseLong(idString, 16);
+                    logs.add(lid);
+                } catch (NumberFormatException nfe) {
+                }
             }
         }
         // no log file found in this directory

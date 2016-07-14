@@ -196,7 +196,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     private long getLedgerId(String path) throws NumberFormatException {
         Matcher m = idExtractionPattern.matcher(path);
         if (m.find()) {
-            return Long.valueOf(m.group(1));
+            return Long.parseLong(m.group(1));
         } else {
             throw new NumberFormatException("Couldn't find ledgerid in path");
         }

@@ -70,9 +70,11 @@ public class FileSystemUpgrade {
                     File d = new File(dir, name);
                     if (d.isDirectory()) {
                         String[] files = d.list();
-                        for (String f : files) {
-                            if (containsIndexFiles(d, f)) {
-                                return true;
+                        if (files != null) {
+                            for (String f : files) {
+                                if (containsIndexFiles(d, f)) {
+                                    return true;
+                                }
                             }
                         }
                     }
@@ -107,7 +109,7 @@ public class FileSystemUpgrade {
         String[] files = directory.list(BOOKIE_FILES_FILTER);
         File v2versionFile = new File(directory,
                 BookKeeperConstants.VERSION_FILENAME);
-        if (files.length == 0 && !v2versionFile.exists()) { // no old data, so we're ok
+        if ((files == null || files.length == 0) && !v2versionFile.exists()) { // no old data, so we're ok
             return Cookie.CURRENT_COOKIE_LAYOUT_VERSION;
         }
 
@@ -149,7 +151,9 @@ public class FileSystemUpgrade {
 
     private static void linkIndexDirectories(File srcPath, File targetPath) throws IOException {
         String[] files = srcPath.list();
-
+        if (files == null) {
+            return;
+        }
         for (String f : files) {
             if (f.endsWith(".idx")) { // this is an index dir, create the links
                 if (!targetPath.mkdirs()) {
@@ -257,12 +261,14 @@ public class FileSystemUpgrade {
                         }
                     }
                     File[] files = d.listFiles(BOOKIE_FILES_FILTER);
-                    for (File f : files) {
-                        if (f.isDirectory()) {
-                            FileUtils.deleteDirectory(f);
-                        } else{
-                            if (!f.delete()) {
-                                LOG.warn("Could not delete {}", f);
+                    if (files != null) {
+                        for (File f : files) {
+                            if (f.isDirectory()) {
+                                FileUtils.deleteDirectory(f);
+                            } else{
+                                if (!f.delete()) {
+                                    LOG.warn("Could not delete {}", f);
+                                }
                             }
                         }
                     }
