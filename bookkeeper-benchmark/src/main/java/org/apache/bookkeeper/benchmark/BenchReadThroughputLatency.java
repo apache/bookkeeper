@@ -58,8 +58,8 @@ public class BenchReadThroughputLatency {
                 Matcher m1 = LEDGER_PATTERN.matcher(o1);
                 Matcher m2 = LEDGER_PATTERN.matcher(o2);
                 if (m1.find() && m2.find()) {
-                    return Integer.valueOf(m1.group(1))
-                        - Integer.valueOf(m2.group(1));
+                    return Integer.parseInt(m1.group(1))
+                        - Integer.parseInt(m2.group(1));
                 } else {
                     return o1.compareTo(o2);
                 }
@@ -164,7 +164,7 @@ public class BenchReadThroughputLatency {
 
         final String servers = cmd.getOptionValue("zookeeper", "localhost:2181");
         final byte[] passwd = cmd.getOptionValue("password", "benchPasswd").getBytes(UTF_8);
-        final int sockTimeout = Integer.valueOf(cmd.getOptionValue("sockettimeout", "5"));
+        final int sockTimeout = Integer.parseInt(cmd.getOptionValue("sockettimeout", "5"));
         if (cmd.hasOption("ledger") && cmd.hasOption("listen")) {
             LOG.error("Cannot used -ledger and -listen together");
             usage(options);
@@ -174,9 +174,9 @@ public class BenchReadThroughputLatency {
         final AtomicInteger ledger = new AtomicInteger(0);
         final AtomicInteger numLedgers = new AtomicInteger(0);
         if (cmd.hasOption("ledger")) {
-            ledger.set(Integer.valueOf(cmd.getOptionValue("ledger")));
+            ledger.set(Integer.parseInt(cmd.getOptionValue("ledger")));
         } else if (cmd.hasOption("listen")) {
-            numLedgers.set(Integer.valueOf(cmd.getOptionValue("listen")));
+            numLedgers.set(Integer.parseInt(cmd.getOptionValue("listen")));
         } else {
             LOG.error("You must use -ledger or -listen");
             usage(options);

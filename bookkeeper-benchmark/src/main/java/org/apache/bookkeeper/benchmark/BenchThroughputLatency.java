@@ -260,21 +260,21 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
             System.exit(-1);
         }
 
-        long runningTime = Long.valueOf(cmd.getOptionValue("time", "60"));
+        long runningTime = Long.parseLong(cmd.getOptionValue("time", "60"));
         String servers = cmd.getOptionValue("zookeeper", "localhost:2181");
-        int entrysize = Integer.valueOf(cmd.getOptionValue("entrysize", "1024"));
+        int entrysize = Integer.parseInt(cmd.getOptionValue("entrysize", "1024"));
 
-        int ledgers = Integer.valueOf(cmd.getOptionValue("ledgers", "1"));
-        int ensemble = Integer.valueOf(cmd.getOptionValue("ensemble", "3"));
-        int quorum = Integer.valueOf(cmd.getOptionValue("quorum", "2"));
+        int ledgers = Integer.parseInt(cmd.getOptionValue("ledgers", "1"));
+        int ensemble = Integer.parseInt(cmd.getOptionValue("ensemble", "3"));
+        int quorum = Integer.parseInt(cmd.getOptionValue("quorum", "2"));
         int ackQuorum = quorum;
         if (cmd.hasOption("ackQuorum")) {
-            ackQuorum = Integer.valueOf(cmd.getOptionValue("ackQuorum"));
+            ackQuorum = Integer.parseInt(cmd.getOptionValue("ackQuorum"));
         }
-        int throttle = Integer.valueOf(cmd.getOptionValue("throttle", "10000"));
-        int sendLimit = Integer.valueOf(cmd.getOptionValue("sendlimit", "20000000"));
+        int throttle = Integer.parseInt(cmd.getOptionValue("throttle", "10000"));
+        int sendLimit = Integer.parseInt(cmd.getOptionValue("sendlimit", "20000000"));
 
-        final int sockTimeout = Integer.valueOf(cmd.getOptionValue("sockettimeout", "5"));
+        final int sockTimeout = Integer.parseInt(cmd.getOptionValue("sockettimeout", "5"));
 
         String coordinationZnode = cmd.getOptionValue("coordnode");
         final byte[] passwd = cmd.getOptionValue("password", "benchPasswd").getBytes(UTF_8);
@@ -283,7 +283,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
 
         Timer timeouter = new Timer();
         if (cmd.hasOption("timeout")) {
-            final long timeout = Long.valueOf(cmd.getOptionValue("timeout", "360")) * 1000;
+            final long timeout = Long.parseLong(cmd.getOptionValue("timeout", "360")) * 1000;
 
             timeouter.schedule(new TimerTask() {
                     public void run() {

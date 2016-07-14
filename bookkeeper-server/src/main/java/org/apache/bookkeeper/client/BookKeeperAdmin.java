@@ -406,6 +406,9 @@ public class BookKeeperAdmin {
 
         @Override
         public LedgerEntry next() {
+            if (lastEntryId > -1 && nextEntryId > lastEntryId) {
+                throw new NoSuchElementException();
+            }
             ++nextEntryId;
             LedgerEntry entry = currentEntry;
             currentEntry = null;

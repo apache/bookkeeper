@@ -325,7 +325,7 @@ public class AuditorElector {
         AuditorVoteFormat v = builder.build();
         String[] parts = v.getBookieId().split(":");
         return new BookieSocketAddress(parts[0],
-                                       Integer.valueOf(parts[1]));
+                                       Integer.parseInt(parts[1]));
     }
 
     /**

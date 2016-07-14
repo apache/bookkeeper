@@ -190,7 +190,7 @@ class LedgerLayout {
         String lines[] = layout.split(lSplitter);
 
         try {
-            int layoutFormatVersion = new Integer(lines[0]);
+            int layoutFormatVersion = Integer.parseInt(lines[0]);
             if (LAYOUT_FORMAT_VERSION < layoutFormatVersion ||
                 LAYOUT_MIN_COMPAT_VERSION > layoutFormatVersion) {
                 throw new IOException("Metadata version not compatible. Expected " 
@@ -208,7 +208,7 @@ class LedgerLayout {
             // ledger manager factory class
             String managerFactoryCls = parts[0];
             // ledger manager version
-            int managerVersion = new Integer(parts[1]);
+            int managerVersion = Integer.parseInt(parts[1]);
             return new LedgerLayout(managerFactoryCls, managerVersion, layoutFormatVersion);
         } catch (NumberFormatException e) {
             throw new IOException("Could not parse layout '" + layout + "'", e);

@@ -189,11 +189,23 @@ public class IndexPersistenceMgr {
         // grandParent directory. We'll have to go two levels deep into these
         // directories to find the index files.
         for (File ledgerDirectory : ledgerDirsManager.getAllLedgerDirs()) {
-            for (File grandParent : ledgerDirectory.listFiles()) {
+            File[] grandParents = ledgerDirectory.listFiles();
+            if (grandParents == null) {
+                continue;
+            }
+            for (File grandParent : grandParents) {
                 if (grandParent.isDirectory()) {
-                    for (File parent : grandParent.listFiles()) {
+                    File[] parents = grandParent.listFiles();
+                    if (parents == null) {
+                        continue;
+                    }
+                    for (File parent : parents) {
                         if (parent.isDirectory()) {
-                            for (File index : parent.listFiles()) {
+                            File[] indexFiles = parent.listFiles();
+                            if (indexFiles == null) {
+                                continue;
+                            }
+                            for (File index : indexFiles) {
                                 if (!index.isFile()
                                         || (!index.getName().endsWith(IDX) && !index.getName().endsWith(RLOC))) {
                                     continue;

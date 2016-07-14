@@ -17,7 +17,7 @@
  */
 package org.apache.bookkeeper.metastore;
 
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Set;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -27,7 +27,7 @@ public interface MetastoreTable {
     // select all fields when reading or scanning entries
     public static final Set<String> ALL_FIELDS = null;
     // select non fields to return when reading/scanning entries
-    public static final Set<String> NON_FIELDS = new HashSet<String>();
+    public static final Set<String> NON_FIELDS = Collections.emptySet();
 
     /**
      * Get table name.

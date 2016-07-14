@@ -106,8 +106,9 @@ public class Value {
         if (fields.size() != other.fields.size()) {
             return false;
         }
-        for (String f : fields.keySet()) {
-            byte[] v1 = fields.get(f);
+        for (Map.Entry<String,byte[]> entry : fields.entrySet()) {
+            String f = entry.getKey();
+            byte[] v1 = entry.getValue();
             byte[] v2 = other.fields.get(f);
             if (0 != comparator.compare(v1, v2)) {
                 return false;
