@@ -25,6 +25,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
 
+import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.util.ReflectionUtils;
 
@@ -233,5 +234,17 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      */
     public void setMetastoreMaxEntriesPerScan(int maxEntries) {
         setProperty(METASTORE_MAX_ENTRIES_PER_SCAN, maxEntries);
+    }
+
+    public void setFeature(String configProperty, Feature feature) {
+        setProperty(configProperty, feature);
+    }
+
+    public Feature getFeature(String configProperty, Feature defaultValue) {
+        if (null == getProperty(configProperty)) {
+            return defaultValue;
+        } else {
+            return (Feature)getProperty(configProperty);
+        }
     }
 }
