@@ -134,7 +134,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Whether to enable autodetection of digest type.
+     * Get autodetection of digest type.
      * Ignores provided digestType, if enabled and uses one from ledger metadata instead.
      * Incompatible with ledger created by bookie versions < 4.2
      *
@@ -145,7 +145,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Whether to enable autodetection of digest type.
+     * Enable autodetection of digest type.
      * Ignores provided digestType, if enabled and uses one from ledger metadata instead.
      * Incompatible with ledger created by bookie versions < 4.2
      *
