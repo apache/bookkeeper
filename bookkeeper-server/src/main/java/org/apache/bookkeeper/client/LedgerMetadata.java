@@ -237,6 +237,8 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
                 return DigestType.CRC32;
             case CRC32C:
                 return DigestType.CRC32C;
+            case DUMMY:
+                return DigestType.DUMMY;
             default:
                 throw new IllegalArgumentException("Unable to convert digest type " + digestType);
         }

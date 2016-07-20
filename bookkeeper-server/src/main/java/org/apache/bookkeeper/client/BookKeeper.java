@@ -658,9 +658,12 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * The CRC32C, which use SSE processor instruction, has better performance than CRC32.
      * Legacy DigestType for backward compatibility. If we want to add new DigestType,
      * we should add it in here, client.api.DigestType and DigestType in DataFormats.proto.
+     * If the digest type is set/passed in as DUMMY, a dummy digest is added/checked.
+     * This DUMMY digest is mostly for test purposes or in situations/use-cases
+     * where digest is considered a overhead.
      */
     public enum DigestType {
-        MAC, CRC32, CRC32C;
+        MAC, CRC32, CRC32C, DUMMY;
 
         public static DigestType fromApiDigestType(org.apache.bookkeeper.client.api.DigestType digestType) {
             switch (digestType) {
@@ -670,6 +673,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     return DigestType.CRC32;
                 case CRC32C:
                     return DigestType.CRC32C;
+                case DUMMY:
+                    return DigestType.DUMMY;
                 default:
                     throw new IllegalArgumentException("Unable to convert digest type " + digestType);
             }
@@ -682,6 +687,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     return DataFormats.LedgerMetadataFormat.DigestType.CRC32;
                 case CRC32C:
                     return DataFormats.LedgerMetadataFormat.DigestType.CRC32C;
+                case DUMMY:
+                    return DataFormats.LedgerMetadataFormat.DigestType.DUMMY;
                 default:
                     throw new IllegalArgumentException("Unable to convert digest type " + digestType);
             }
