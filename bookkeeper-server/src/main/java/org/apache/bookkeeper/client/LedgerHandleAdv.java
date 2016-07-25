@@ -170,7 +170,9 @@ public class LedgerHandleAdv extends LedgerHandle {
                 "Invalid values for offset("+offset
                 +") or length("+length+")");
         }
-        throttler.acquire();
+        if (throttler != null) {
+            throttler.acquire();
+        }
 
         if (metadata.isClosed()) {
             // make sure the callback is triggered in main worker pool
