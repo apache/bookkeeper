@@ -128,7 +128,7 @@ public class BookieWriteLedgersWithDifferentDigestsTest extends
         lh2 = bkc.createLedgerAdv(3, 2, 2, DigestType.CRC32, ledgerPassword);
         
         final long id = lh.ledgerId;
-        final long id2 = lh.ledgerId;
+        final long id2 = lh2.ledgerId;
 
         LOG.info("Ledger ID-1: " + lh.getId());
         LOG.info("Ledger ID-2: " + lh2.getId());
