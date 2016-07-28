@@ -150,7 +150,8 @@ public class ClientConfiguration extends AbstractConfiguration {
      * Incompatible with ledger created by bookie versions < 4.2
      *
      * @return client configuration.
-     */    public ClientConfiguration setEnableDigestTypeAutodetection(boolean enable) {
+     */
+    public ClientConfiguration setEnableDigestTypeAutodetection(boolean enable) {
         this.setProperty(ENABLE_DIGEST_TYPE_AUTODETECTION, enable);
         return this;
     }
