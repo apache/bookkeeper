@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
+import com.twitter.distributedlog.logsegment.LogSegmentFilter;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.Utils;
 import com.twitter.util.Await;
@@ -91,7 +92,12 @@ public class TestReadUtils extends TestDistributedLogBase {
 
     private Future<LogRecordWithDLSN> getLastUserRecord(BKDistributedLogManager bkdlm, int ledgerNo) throws Exception {
         BKLogReadHandler readHandler = bkdlm.createReadHandler();
-        List<LogSegmentMetadata> ledgerList = readHandler.getLedgerList(false, false, LogSegmentMetadata.COMPARATOR, false);
+        List<LogSegmentMetadata> ledgerList = FutureUtils.result(
+                readHandler.readLogSegmentsFromStore(
+                        LogSegmentMetadata.COMPARATOR,
+                        LogSegmentFilter.DEFAULT_FILTER,
+                        null)
+        ).getValue();
         final LedgerHandleCache handleCache = LedgerHandleCache.newBuilder()
                 .bkc(bkdlm.getWriterBKC())
                 .conf(conf)

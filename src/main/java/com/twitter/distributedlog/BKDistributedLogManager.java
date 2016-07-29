@@ -20,6 +20,7 @@ package com.twitter.distributedlog;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Ticker;
 import com.twitter.distributedlog.bk.DynamicQuorumConfigProvider;
 import com.twitter.distributedlog.bk.LedgerAllocator;
 import com.twitter.distributedlog.bk.LedgerAllocatorDelegator;
@@ -32,6 +33,8 @@ import com.twitter.distributedlog.exceptions.DLInterruptedException;
 import com.twitter.distributedlog.exceptions.LogEmptyException;
 import com.twitter.distributedlog.exceptions.LogNotFoundException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
+import com.twitter.distributedlog.function.CloseAsyncCloseableFunction;
+import com.twitter.distributedlog.function.GetVersionedValueFunction;
 import com.twitter.distributedlog.impl.ZKLogSegmentMetadataStore;
 import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForReader;
 import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForWriter;
@@ -41,6 +44,8 @@ import com.twitter.distributedlog.lock.NopDistributedLock;
 import com.twitter.distributedlog.lock.SessionLockFactory;
 import com.twitter.distributedlog.lock.ZKDistributedLock;
 import com.twitter.distributedlog.lock.ZKSessionLockFactory;
+import com.twitter.distributedlog.logsegment.LogSegmentFilter;
+import com.twitter.distributedlog.logsegment.LogSegmentMetadataCache;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataStore;
 import com.twitter.distributedlog.metadata.BKDLConfig;
 import com.twitter.distributedlog.stats.BroadCastStatsLogger;
@@ -159,6 +164,7 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
     // log segment metadata stores
     private final LogSegmentMetadataStore writerMetadataStore;
     private final LogSegmentMetadataStore readerMetadataStore;
+    private final LogSegmentMetadataCache logSegmentMetadataCache;
 
     // bookkeeper clients
     // NOTE: The actual bookkeeper client is initialized lazily when it is referenced by
@@ -232,6 +238,7 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
              null,
              null,
              null,
+             new LogSegmentMetadataCache(conf, Ticker.systemTicker()),
              OrderedScheduler.newBuilder().name("BKDL-" + name).corePoolSize(1).build(),
              null,
              null,
@@ -293,6 +300,7 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
                             SessionLockFactory lockFactory,
                             LogSegmentMetadataStore writerMetadataStore,
                             LogSegmentMetadataStore readerMetadataStore,
+                            LogSegmentMetadataCache logSegmentMetadataCache,
                             OrderedScheduler scheduler,
                             OrderedScheduler readAheadScheduler,
                             OrderedScheduler lockStateExecutor,
@@ -336,6 +344,7 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
         } else {
             this.readerMetadataStore = readerMetadataStore;
         }
+        this.logSegmentMetadataCache = logSegmentMetadataCache;
 
         // create the bkc for writers
         if (null == writerBKCBuilder) {
@@ -451,7 +460,8 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
     private synchronized BKLogReadHandler getReadHandlerForListener(boolean create) {
         if (null == readHandlerForListener && create) {
             readHandlerForListener = createReadHandler();
-            readHandlerForListener.scheduleGetLedgersTask(true, true);
+            // start fetch the log segments
+            readHandlerForListener.asyncStartFetchLogSegments();
         }
         return readHandlerForListener;
     }
@@ -463,13 +473,12 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
 
     protected Future<List<LogSegmentMetadata>> getLogSegmentsAsync() {
         final BKLogReadHandler readHandler = createReadHandler();
-        return readHandler.asyncGetFullLedgerList(true, false).ensure(new AbstractFunction0<BoxedUnit>() {
-            @Override
-            public BoxedUnit apply() {
-                readHandler.asyncClose();
-                return BoxedUnit.UNIT;
-            }
-        });
+        return readHandler.readLogSegmentsFromStore(
+                LogSegmentMetadata.COMPARATOR,
+                LogSegmentFilter.DEFAULT_FILTER,
+                null)
+                .map(GetVersionedValueFunction.GET_LOGSEGMENT_LIST_FUNC)
+                .ensure(CloseAsyncCloseableFunction.of(readHandler));
     }
 
     @Override
@@ -534,6 +543,7 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
                 readerZKCBuilder,
                 readerBKCBuilder,
                 readerMetadataStore,
+                logSegmentMetadataCache,
                 scheduler,
                 lockExecutor,
                 readAheadScheduler,
@@ -634,6 +644,7 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
                 writerZKCBuilder,
                 writerBKCBuilder,
                 writerMetadataStore,
+                logSegmentMetadataCache,
                 scheduler,
                 allocator,
                 statsLogger,

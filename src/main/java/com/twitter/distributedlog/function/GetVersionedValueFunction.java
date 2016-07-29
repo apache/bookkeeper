@@ -15,28 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.distributedlog.callback;
+package com.twitter.distributedlog.function;
 
 import com.twitter.distributedlog.LogSegmentMetadata;
+import org.apache.bookkeeper.versioning.Versioned;
+import scala.Function1;
+import scala.runtime.AbstractFunction1;
 
 import java.util.List;
 
 /**
- * Listener on log segments changes for a given stream used by {@link com.twitter.distributedlog.BKLogReadHandler}
+ * Function to get the versioned value from {@link org.apache.bookkeeper.versioning.Versioned}
  */
-public interface LogSegmentListener {
+public class GetVersionedValueFunction<T> extends AbstractFunction1<Versioned<T>, T> {
 
-    /**
-     * Notified when <i>segments</i> updated. The new sorted log segments
-     * list is returned in this method.
-     *
-     * @param segments
-     *          updated list of segments.
-     */
-    void onSegmentsUpdated(List<LogSegmentMetadata> segments);
+    public static final Function1<Versioned<List<LogSegmentMetadata>>, List<LogSegmentMetadata>>
+            GET_LOGSEGMENT_LIST_FUNC = new GetVersionedValueFunction<List<LogSegmentMetadata>>();
 
-    /**
-     * Notified when the log stream is deleted.
-     */
-    void onLogStreamDeleted();
+    @Override
+    public T apply(Versioned<T> versionedValue) {
+        return versionedValue.getValue();
+    }
 }

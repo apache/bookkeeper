@@ -17,6 +17,7 @@
  */
 package com.twitter.distributedlog.logsegment;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.twitter.distributedlog.DistributedLogConstants;
 import com.twitter.distributedlog.LogSegmentMetadata;
@@ -45,18 +46,26 @@ import java.util.concurrent.ConcurrentMap;
  * to change if we change the behavior
  * </p>
  */
-public class LogSegmentCache {
+public class PerStreamLogSegmentCache {
 
-    static final Logger LOG = LoggerFactory.getLogger(LogSegmentCache.class);
+    static final Logger LOG = LoggerFactory.getLogger(PerStreamLogSegmentCache.class);
 
     protected final String streamName;
+    protected final boolean validateLogSegmentSequenceNumber;
     protected final Map<String, LogSegmentMetadata> logSegments =
             new HashMap<String, LogSegmentMetadata>();
     protected final ConcurrentMap<Long, LogSegmentMetadata> lid2LogSegments =
             new ConcurrentHashMap<Long, LogSegmentMetadata>();
 
-    public LogSegmentCache(String streamName) {
+    @VisibleForTesting
+    PerStreamLogSegmentCache(String streamName) {
+        this(streamName, true);
+    }
+
+    public PerStreamLogSegmentCache(String streamName,
+                                    boolean validateLogSegmentSequenceNumber) {
         this.streamName = streamName;
+        this.validateLogSegmentSequenceNumber = validateLogSegmentSequenceNumber;
     }
 
     /**
@@ -79,25 +88,30 @@ public class LogSegmentCache {
             segmentsToReturn.addAll(logSegments.values());
         }
         Collections.sort(segmentsToReturn, LogSegmentMetadata.COMPARATOR);
-        long startSequenceId = DistributedLogConstants.UNASSIGNED_SEQUENCE_ID;
+
         LogSegmentMetadata prevSegment = null;
-        for (int i = 0; i < segmentsToReturn.size(); i++) {
-            LogSegmentMetadata segment = segmentsToReturn.get(i);
+        if (validateLogSegmentSequenceNumber) {
+            // validation ledger sequence number to ensure the log segments are unique.
+            for (int i = 0; i < segmentsToReturn.size(); i++) {
+                LogSegmentMetadata segment = segmentsToReturn.get(i);
 
-            // validation on ledger sequence number
-            // - we are ok that if there are same log segments exist. it is just same log segment in different
-            //   states (inprogress vs completed). it could happen during completing log segment without transaction
-            if (null != prevSegment
-                    && prevSegment.getVersion() >= LogSegmentMetadata.LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO.value
-                    && segment.getVersion() >= LogSegmentMetadata.LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO.value
-                    && prevSegment.getLogSegmentSequenceNumber() != segment.getLogSegmentSequenceNumber()
-                    && prevSegment.getLogSegmentSequenceNumber() + 1 != segment.getLogSegmentSequenceNumber()) {
-                LOG.error("{} found ledger sequence number gap between log segment {} and {}",
-                        new Object[] { streamName, prevSegment, segment });
-                throw new UnexpectedException(streamName + " found ledger sequence number gap between log segment "
-                        + prevSegment.getLogSegmentSequenceNumber() + " and " + segment.getLogSegmentSequenceNumber());
+                if (null != prevSegment
+                        && prevSegment.getVersion() >= LogSegmentMetadata.LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO.value
+                        && segment.getVersion() >= LogSegmentMetadata.LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO.value
+                        && prevSegment.getLogSegmentSequenceNumber() + 1 != segment.getLogSegmentSequenceNumber()) {
+                    LOG.error("{} found ledger sequence number gap between log segment {} and {}",
+                            new Object[] { streamName, prevSegment, segment });
+                    throw new UnexpectedException(streamName + " found ledger sequence number gap between log segment "
+                            + prevSegment.getLogSegmentSequenceNumber() + " and " + segment.getLogSegmentSequenceNumber());
+                }
+                prevSegment = segment;
             }
+        }
 
+        prevSegment = null;
+        long startSequenceId = DistributedLogConstants.UNASSIGNED_SEQUENCE_ID;
+        for (int i = 0; i < segmentsToReturn.size(); i++) {
+                LogSegmentMetadata segment = segmentsToReturn.get(i);
             // assign sequence id
             if (!segment.isInProgress()) {
                 if (segment.supportsSequenceId()) {
@@ -117,6 +131,7 @@ public class LogSegmentCache {
                             .build();
                     segmentsToReturn.set(i, newSegment);
                 }
+
                 break;
             }
             prevSegment = segment;

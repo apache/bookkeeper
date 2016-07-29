@@ -18,6 +18,7 @@
 package com.twitter.distributedlog;
 
 import com.twitter.distributedlog.impl.BKLogSegmentEntryWriter;
+import com.twitter.distributedlog.logsegment.LogSegmentFilter;
 import com.twitter.distributedlog.metadata.BKDLConfig;
 import com.twitter.distributedlog.metadata.DLMetadata;
 import com.twitter.distributedlog.namespace.DistributedLogNamespace;
@@ -185,7 +186,12 @@ public class DLMTestUtil {
         BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(name, conf, uri);
         try {
             BKLogReadHandler readHandler = dlm.createReadHandler();
-            List<LogSegmentMetadata> ledgerList = readHandler.getFullLedgerList(true, true);
+            List<LogSegmentMetadata> ledgerList = FutureUtils.result(
+                    readHandler.readLogSegmentsFromStore(
+                            LogSegmentMetadata.COMPARATOR,
+                            LogSegmentFilter.DEFAULT_FILTER,
+                            null)
+            ).getValue();
             LogSegmentMetadata lastSegment = ledgerList.get(ledgerList.size() - 1);
             BookKeeperClient bkc = dlm.getWriterBKC();
             LedgerHandle lh = bkc.get().openLedger(lastSegment.getLedgerId(),
@@ -415,10 +421,12 @@ public class DLMTestUtil {
                 conf.getAckQuorumSize(), BookKeeper.DigestType.CRC32, conf.getBKDigestPW().getBytes());
         String inprogressZnodeName = writeHandler.inprogressZNodeName(lh.getId(), startTxID, logSegmentSeqNo);
         String znodePath = writeHandler.inprogressZNode(lh.getId(), startTxID, logSegmentSeqNo);
+        int logSegmentMetadataVersion = conf.getDLLedgerMetadataLayoutVersion();
         LogSegmentMetadata l =
             new LogSegmentMetadata.LogSegmentMetadataBuilder(znodePath,
-                    conf.getDLLedgerMetadataLayoutVersion(), lh.getId(), startTxID)
+                    logSegmentMetadataVersion, lh.getId(), startTxID)
                 .setLogSegmentSequenceNo(logSegmentSeqNo)
+                .setEnvelopeEntries(LogSegmentMetadata.supportsEnvelopedEntries(logSegmentMetadataVersion))
                 .build();
         l.write(dlm.writerZKC);
         writeHandler.maxTxId.store(startTxID);

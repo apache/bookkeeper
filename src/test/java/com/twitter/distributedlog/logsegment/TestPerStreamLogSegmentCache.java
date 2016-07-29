@@ -26,7 +26,6 @@ import com.twitter.distributedlog.exceptions.UnexpectedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,9 +33,9 @@ import java.util.Set;
 import static org.junit.Assert.*;
 
 /**
- * Test Case for Log Segment Cache.
+ * Test Case for Per Stream Log Segment Cache.
  */
-public class TestLogSegmentCache {
+public class TestPerStreamLogSegmentCache {
 
     @Test(timeout = 60000)
     public void testBasicOperations() {
@@ -44,7 +43,7 @@ public class TestLogSegmentCache {
                 DLMTestUtil.completedLogSegment("/segment1", 1L, 1L, 100L, 100, 1L, 99L, 0L);
         String name = DLMTestUtil.completedLedgerZNodeNameWithLogSegmentSequenceNumber(1L);
 
-        LogSegmentCache cache = new LogSegmentCache("test-basic-operations");
+        PerStreamLogSegmentCache cache = new PerStreamLogSegmentCache("test-basic-operations");
         assertNull("No log segment " + name + " should be cached", cache.get(name));
         cache.add(name, metadata);
         LogSegmentMetadata metadataRetrieved = cache.get(name);
@@ -60,7 +59,7 @@ public class TestLogSegmentCache {
 
     @Test(timeout = 60000)
     public void testDiff() {
-        LogSegmentCache cache = new LogSegmentCache("test-diff");
+        PerStreamLogSegmentCache cache = new PerStreamLogSegmentCache("test-diff");
         // add 5 completed log segments
         for (int i = 1; i <= 5; i++) {
             LogSegmentMetadata metadata =
@@ -98,7 +97,7 @@ public class TestLogSegmentCache {
 
     @Test(timeout = 60000)
     public void testUpdate() {
-        LogSegmentCache cache = new LogSegmentCache("test-update");
+        PerStreamLogSegmentCache cache = new PerStreamLogSegmentCache("test-update");
         // add 5 completed log segments
         for (int i = 1; i <= 5; i++) {
             LogSegmentMetadata metadata =
@@ -144,7 +143,7 @@ public class TestLogSegmentCache {
 
     @Test(timeout = 60000, expected = UnexpectedException.class)
     public void testGapDetection() throws Exception {
-        LogSegmentCache cache = new LogSegmentCache("test-gap-detection");
+        PerStreamLogSegmentCache cache = new PerStreamLogSegmentCache("test-gap-detection");
         cache.add(DLMTestUtil.completedLedgerZNodeNameWithLogSegmentSequenceNumber(1L),
                 DLMTestUtil.completedLogSegment("/segment-1", 1L, 1L, 100L, 100, 1L, 99L, 0L));
         cache.add(DLMTestUtil.completedLedgerZNodeNameWithLogSegmentSequenceNumber(3L),
@@ -154,7 +153,7 @@ public class TestLogSegmentCache {
 
     @Test(timeout = 60000)
     public void testGapDetectionOnLogSegmentsWithoutLogSegmentSequenceNumber() throws Exception {
-        LogSegmentCache cache = new LogSegmentCache("test-gap-detection");
+        PerStreamLogSegmentCache cache = new PerStreamLogSegmentCache("test-gap-detection");
         LogSegmentMetadata segment1 =
                 DLMTestUtil.completedLogSegment("/segment-1", 1L, 1L, 100L, 100, 1L, 99L, 0L)
                         .mutator().setVersion(LogSegmentMetadata.LogSegmentMetadataVersion.VERSION_V1_ORIGINAL).build();
@@ -168,9 +167,9 @@ public class TestLogSegmentCache {
         assertEquals(expectedList, resultList);
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 60000, expected = UnexpectedException.class)
     public void testSameLogSegment() throws Exception {
-        LogSegmentCache cache = new LogSegmentCache("test-same-log-segment");
+        PerStreamLogSegmentCache cache = new PerStreamLogSegmentCache("test-same-log-segment");
         List<LogSegmentMetadata> expectedList = Lists.newArrayListWithExpectedSize(2);
         LogSegmentMetadata inprogress =
                 DLMTestUtil.inprogressLogSegment("/inprogress-1", 1L, 1L, 1L);
@@ -181,40 +180,7 @@ public class TestLogSegmentCache {
         expectedList.add(completed);
         cache.add(DLMTestUtil.completedLedgerZNodeNameWithLogSegmentSequenceNumber(1L), completed);
 
-        List<LogSegmentMetadata> retrievedList = cache.getLogSegments(LogSegmentMetadata.COMPARATOR);
-        assertEquals("Should get both log segments in ascending order",
-                expectedList.size(), retrievedList.size());
-        for (int i = 0; i < expectedList.size(); i++) {
-            assertEqualsWithoutSequenceId(expectedList.get(i), retrievedList.get(i));
-        }
-        assertEquals("inprogress log segment should see start sequence id : 0",
-                0L, retrievedList.get(0).getStartSequenceId());
-        Collections.reverse(expectedList);
-        retrievedList = cache.getLogSegments(LogSegmentMetadata.DESC_COMPARATOR);
-        assertEquals("Should get both log segments in descending order",
-                expectedList.size(), retrievedList.size());
-        for (int i = 0; i < expectedList.size(); i++) {
-            assertEqualsWithoutSequenceId(expectedList.get(i), retrievedList.get(i));
-        }
-        assertEquals("inprogress log segment should see start sequence id : 0",
-                0L, retrievedList.get(1).getStartSequenceId());
-    }
-
-    private static void assertEqualsWithoutSequenceId(LogSegmentMetadata m1, LogSegmentMetadata m2) {
-        assertEquals("expected " + m1 + " but got " + m2,
-                m1.getLogSegmentSequenceNumber(), m2.getLogSegmentSequenceNumber());
-        assertEquals("expected " + m1 + " but got " + m2,
-                m1.getLedgerId(), m2.getLedgerId());
-        assertEquals("expected " + m1 + " but got " + m2,
-                m1.getFirstTxId(), m2.getFirstTxId());
-        assertEquals("expected " + m1 + " but got " + m2,
-                m1.getLastTxId(), m2.getLastTxId());
-        assertEquals("expected " + m1 + " but got " + m2,
-                m1.getLastDLSN(), m2.getLastDLSN());
-        assertEquals("expected " + m1 + " but got " + m2,
-                m1.getRecordCount(), m2.getRecordCount());
-        assertEquals("expected " + m1 + " but got " + m2,
-                m1.isInProgress(), m2.isInProgress());
+        cache.getLogSegments(LogSegmentMetadata.COMPARATOR);
     }
 
 }

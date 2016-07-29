@@ -21,6 +21,7 @@ import java.net.URI;
 
 import com.twitter.distributedlog.DLMTestUtil;
 import com.twitter.distributedlog.DLSN;
+import com.twitter.distributedlog.DistributedLogConfiguration;
 import com.twitter.distributedlog.DistributedLogManager;
 import com.twitter.distributedlog.TestDistributedLogBase;
 import com.twitter.distributedlog.LocalDLMEmulator;
@@ -205,8 +206,11 @@ public class TestDistributedLogTool extends TestDistributedLogBase {
 
     @Test(timeout = 60000)
     public void testToolTruncateStream() throws Exception {
-        DistributedLogManager dlm = DLMTestUtil.createNewDLM("testToolTruncateStream", conf, defaultUri);
-        DLMTestUtil.generateCompletedLogSegments(dlm, conf, 3, 1000);
+        DistributedLogConfiguration confLocal = new DistributedLogConfiguration();
+        confLocal.addConfiguration(conf);
+        confLocal.setLogSegmentCacheEnabled(false);
+        DistributedLogManager dlm = DLMTestUtil.createNewDLM("testToolTruncateStream", confLocal, defaultUri);
+        DLMTestUtil.generateCompletedLogSegments(dlm, confLocal, 3, 1000);
 
         DLSN dlsn = new DLSN(2,1,0);
         TruncateStreamCommand cmd = new TruncateStreamCommand();

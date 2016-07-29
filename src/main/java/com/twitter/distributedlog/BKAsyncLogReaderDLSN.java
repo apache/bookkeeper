@@ -104,7 +104,7 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
 
     private boolean lockStream = false;
 
-    private boolean disableReadAheadZKNotification = false;
+    private boolean disableReadAheadLogSegmentsNotification = false;
 
     private final boolean returnEndOfStreamRecord;
 
@@ -400,23 +400,17 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
                         bkLedgerManager.startReadAhead(
                                 new LedgerReadPosition(getStartDLSN()),
                                 failureInjector);
-                        if (disableReadAheadZKNotification) {
-                            bkLedgerManager.disableReadAheadZKNotification();
+                        if (disableReadAheadLogSegmentsNotification) {
+                            bkLedgerManager.disableReadAheadLogSegmentsNotification();
                         }
                     } catch (Exception exc) {
-                        setLastException(new IOException(exc));
-                        notifyOnError();
+                        notifyOnError(exc);
                     }
                 }
 
                 @Override
                 public void onFailure(Throwable cause) {
-                    if (cause instanceof IOException) {
-                        setLastException((IOException)cause);
-                    } else {
-                        setLastException(new IOException(cause));
-                    }
-                    notifyOnError();
+                    notifyOnError(cause);
                 }
             });
             readAheadStarted = true;
@@ -643,7 +637,12 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
      * Triggered when the background activity encounters an exception
      */
     @Override
-    public void notifyOnError() {
+    public void notifyOnError(Throwable cause) {
+        if (cause instanceof IOException) {
+            setLastException((IOException) cause);
+        } else {
+            setLastException(new IOException(cause));
+        }
         scheduleBackgroundRead();
     }
 
@@ -661,9 +660,9 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
     }
 
     @VisibleForTesting
-    synchronized void disableReadAheadZKNotification() {
-        disableReadAheadZKNotification = true;
-        bkLedgerManager.disableReadAheadZKNotification();
+    synchronized void disableReadAheadLogSegmentsNotification() {
+        disableReadAheadLogSegmentsNotification = true;
+        bkLedgerManager.disableReadAheadLogSegmentsNotification();
     }
 
     @VisibleForTesting

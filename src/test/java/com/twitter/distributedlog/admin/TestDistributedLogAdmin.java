@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import com.twitter.distributedlog.DistributedLogConfiguration;
 import com.twitter.distributedlog.TestZooKeeperClientBuilder;
 import com.twitter.distributedlog.annotations.DistributedLogAnnotations;
+import com.twitter.distributedlog.exceptions.UnexpectedException;
 import com.twitter.distributedlog.util.Utils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
@@ -46,7 +47,6 @@ import com.twitter.distributedlog.metadata.LogSegmentMetadataStoreUpdater;
 import com.twitter.util.Await;
 import com.twitter.util.Duration;
 import com.twitter.util.Future;
-import com.twitter.util.TimeoutException;
 
 import static org.junit.Assert.*;
 
@@ -81,11 +81,19 @@ public class TestDistributedLogAdmin extends TestDistributedLogBase {
         DistributedLogConfiguration confLocal = new DistributedLogConfiguration();
         confLocal.addConfiguration(conf);
         confLocal.setLogSegmentSequenceNumberValidationEnabled(false);
+        confLocal.setLogSegmentCacheEnabled(false);
+
+        DistributedLogConfiguration readConf = new DistributedLogConfiguration();
+        readConf.addConfiguration(conf);
+        readConf.setLogSegmentCacheEnabled(false);
+        readConf.setLogSegmentSequenceNumberValidationEnabled(true);
 
         URI uri = createDLMURI("/change-sequence-number");
         zooKeeperClient.get().create(uri.getPath(), new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         com.twitter.distributedlog.DistributedLogManagerFactory factory =
                 new com.twitter.distributedlog.DistributedLogManagerFactory(confLocal, uri);
+        com.twitter.distributedlog.DistributedLogManagerFactory readFactory =
+                new com.twitter.distributedlog.DistributedLogManagerFactory(readConf, uri);
 
         String streamName = "change-sequence-number";
 
@@ -96,61 +104,64 @@ public class TestDistributedLogAdmin extends TestDistributedLogBase {
         dlm.close();
 
         // create a reader
-        DistributedLogManager readDLM = factory.createDistributedLogManagerWithSharedClients(streamName);
+        DistributedLogManager readDLM = readFactory.createDistributedLogManagerWithSharedClients(streamName);
         AsyncLogReader reader = readDLM.getAsyncLogReader(DLSN.InitialDLSN);
 
         // read the records
         long expectedTxId = 1L;
+        DLSN lastDLSN = DLSN.InitialDLSN;
         for (int i = 0; i < 4 * 10; i++) {
-            LogRecord record = Await.result(reader.readNext());
+            LogRecordWithDLSN record = Await.result(reader.readNext());
             assertNotNull(record);
             DLMTestUtil.verifyLogRecord(record);
             assertEquals(expectedTxId, record.getTransactionId());
             expectedTxId++;
+            lastDLSN = record.getDlsn();
         }
+
+        LOG.info("Injecting bad log segment '3'");
 
         dlm = factory.createDistributedLogManagerWithSharedClients(streamName);
         DLMTestUtil.injectLogSegmentWithGivenLogSegmentSeqNo(dlm, confLocal, 3L, 5 * 10 + 1, true, 10, false);
 
-        // Wait for reader to be aware of new log segments
-        TimeUnit.SECONDS.sleep(2);
+        LOG.info("Injected bad log segment '3'");
 
-        DLSN dlsn = readDLM.getLastDLSN();
-        assertTrue(dlsn.compareTo(new DLSN(5, Long.MIN_VALUE, Long.MIN_VALUE)) < 0);
-        assertTrue(dlsn.compareTo(new DLSN(4, -1, Long.MIN_VALUE)) > 0);
         // there isn't records should be read
         Future<LogRecordWithDLSN> readFuture = reader.readNext();
         try {
-            Await.result(readFuture, Duration.fromMilliseconds(1000));
-            fail("Should fail reading next when there is a corrupted log segment");
-        } catch (TimeoutException te) {
+            LogRecordWithDLSN record = Await.result(readFuture);
+            fail("Should fail reading next record "
+                    + record
+                    + " when there is a corrupted log segment");
+        } catch (UnexpectedException ue) {
             // expected
         }
+
+        LOG.info("Dryrun fix inprogress segment that has lower sequence number");
 
         // Dryrun
         DistributedLogAdmin.fixInprogressSegmentWithLowerSequenceNumber(factory,
                 new DryrunLogSegmentMetadataStoreUpdater(confLocal, getLogSegmentMetadataStore(factory)), streamName, false, false);
 
-        // Wait for reader to be aware of new log segments
-        TimeUnit.SECONDS.sleep(2);
-
-        dlsn = readDLM.getLastDLSN();
-        assertTrue(dlsn.compareTo(new DLSN(5, Long.MIN_VALUE, Long.MIN_VALUE)) < 0);
-        assertTrue(dlsn.compareTo(new DLSN(4, -1, Long.MIN_VALUE)) > 0);
-        // there isn't records should be read
         try {
-            Await.result(readFuture, Duration.fromMilliseconds(1000));
+            reader = readDLM.getAsyncLogReader(lastDLSN);
+            Await.result(reader.readNext());
             fail("Should fail reading next when there is a corrupted log segment");
-        } catch (TimeoutException te) {
+        } catch (UnexpectedException ue) {
             // expected
         }
+
+        LOG.info("Actual run fix inprogress segment that has lower sequence number");
 
         // Actual run
         DistributedLogAdmin.fixInprogressSegmentWithLowerSequenceNumber(factory,
                 LogSegmentMetadataStoreUpdater.createMetadataUpdater(confLocal, getLogSegmentMetadataStore(factory)), streamName, false, false);
 
-        // Wait for reader to be aware of new log segments
-        TimeUnit.SECONDS.sleep(2);
+        // be able to read more after fix
+        reader = readDLM.getAsyncLogReader(lastDLSN);
+        // skip the first record
+        Await.result(reader.readNext());
+        readFuture = reader.readNext();
 
         expectedTxId = 51L;
         LogRecord record = Await.result(readFuture);
@@ -167,15 +178,11 @@ public class TestDistributedLogAdmin extends TestDistributedLogBase {
             expectedTxId++;
         }
 
-        dlsn = readDLM.getLastDLSN();
-        LOG.info("LastDLSN after fix inprogress segment : {}", dlsn);
-        assertTrue(dlsn.compareTo(new DLSN(7, Long.MIN_VALUE, Long.MIN_VALUE)) < 0);
-        assertTrue(dlsn.compareTo(new DLSN(6, -1, Long.MIN_VALUE)) > 0);
-
         Utils.close(reader);
         readDLM.close();
 
         dlm.close();
         factory.close();
+        readFactory.close();
     }
 }

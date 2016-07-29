@@ -979,12 +979,17 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
                     return;
                 }
                 if (updates >= 1) {
-                    if (segments.get(0).getLogSegmentSequenceNumber() != updates) {
+                    if (segments.get(segments.size() - 1).getLogSegmentSequenceNumber() != updates) {
                         numFailures.incrementAndGet();
                     }
                 }
                 receivedStreams.set(segments);
                 latches[updates].countDown();
+            }
+
+            @Override
+            public void onLogStreamDeleted() {
+                // no-op
             }
         });
         LOG.info("Registered listener for stream {}.", name);
@@ -1006,12 +1011,12 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         assertEquals(0, numFailures.get());
         assertNotNull(receivedStreams.get());
         assertEquals(numSegments, receivedStreams.get().size());
-        int seqno = numSegments;
+        int seqno = 1;
         for (LogSegmentMetadata m : receivedStreams.get()) {
             assertEquals(seqno, m.getLogSegmentSequenceNumber());
             assertEquals((seqno - 1) * DEFAULT_SEGMENT_SIZE + 1, m.getFirstTxId());
             assertEquals(seqno * DEFAULT_SEGMENT_SIZE, m.getLastTxId());
-            --seqno;
+            ++seqno;
         }
     }
 
@@ -1122,6 +1127,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         confLocal.loadConf(conf);
         confLocal.setDLLedgerMetadataLayoutVersion(LogSegmentMetadata.LEDGER_METADATA_CURRENT_LAYOUT_VERSION);
         confLocal.setOutputBufferSize(0);
+        confLocal.setLogSegmentCacheEnabled(false);
 
         LogSegmentMetadataStore metadataStore = new ZKLogSegmentMetadataStore(confLocal, zookeeperClient, scheduler);
 
@@ -1174,7 +1180,8 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         {
             LogReader reader = dlm.getInputStream(DLSN.InitialDLSN);
             LogRecordWithDLSN record = reader.readNext(false);
-            assertTrue((record != null) && (record.getDlsn().compareTo(new DLSN(2, 0, 0)) == 0));
+            assertTrue("Unexpected record : " + record,
+                    (record != null) && (record.getDlsn().compareTo(new DLSN(2, 0, 0)) == 0));
             reader.close();
         }
 
@@ -1225,7 +1232,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         BKAsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned();
         Assert.assertTrue(Await.result(writer.truncate(truncDLSN)));
         BKLogWriteHandler handler = writer.getCachedWriteHandler();
-        List<LogSegmentMetadata> cachedSegments = handler.getFullLedgerList(false, false);
+        List<LogSegmentMetadata> cachedSegments = handler.getCachedLogSegments(LogSegmentMetadata.COMPARATOR);
         for (LogSegmentMetadata segment: cachedSegments) {
             if (segment.getLastDLSN().compareTo(truncDLSN) < 0) {
                 Assert.assertTrue(segment.isTruncated());

@@ -343,9 +343,10 @@ public class FutureUtils {
      */
     public static Throwable zkException(Throwable throwable, String path) {
         if (throwable instanceof KeeperException) {
-            return throwable;
+            return new ZKException("Encountered zookeeper exception on " + path, (KeeperException) throwable);
         } else if (throwable instanceof ZooKeeperClient.ZooKeeperConnectionException) {
-            return KeeperException.create(KeeperException.Code.CONNECTIONLOSS, path);
+            return new ZKException("Encountered zookeeper connection loss on " + path,
+                    KeeperException.Code.CONNECTIONLOSS);
         } else if (throwable instanceof InterruptedException) {
             return new DLInterruptedException("Interrupted on operating " + path, throwable);
         } else {

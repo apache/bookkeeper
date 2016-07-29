@@ -17,10 +17,13 @@
  */
 package com.twitter.distributedlog.callback;
 
+import org.apache.bookkeeper.versioning.Versioned;
+
 import java.util.List;
 
 /**
- * Listener on list of log segments changes for a given stream.
+ * Listener on list of log segments changes for a given stream used by
+ * {@link com.twitter.distributedlog.logsegment.LogSegmentMetadataStore}.
  */
 public interface LogSegmentNamesListener {
     /**
@@ -30,5 +33,10 @@ public interface LogSegmentNamesListener {
      * @param segments
      *          updated list of segments.
      */
-    void onSegmentsUpdated(List<String> segments);
+    void onSegmentsUpdated(Versioned<List<String>> segments);
+
+    /**
+     * Notified when the log stream is deleted.
+     */
+    void onLogStreamDeleted();
 }

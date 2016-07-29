@@ -130,24 +130,17 @@ public interface LogSegmentMetadataStore extends Closeable {
     Future<LogSegmentMetadata> getLogSegment(String logSegmentPath);
 
     /**
-     * Retrieve the list of log segments under <code>logSegmentsPath</code>.
+     * Retrieve the list of log segments under <code>logSegmentsPath</code> and register a <i>listener</i>
+     * for subsequent changes for the list of log segments.
      *
      * @param logSegmentsPath
      *          path to store list of log segments
-     * @return future of the retrieved list of log segment names
-     */
-    Future<List<String>> getLogSegmentNames(String logSegmentsPath);
-
-    /**
-     * Register a log segment <code>listener</code> on log segment changes under <code>logSegmentsPath</code>.
-     *
-     * @param logSegmentsPath
-     *          log segments path
      * @param listener
      *          log segment listener on log segment changes
+     * @return future of the retrieved list of log segment names
      */
-    void registerLogSegmentListener(String logSegmentsPath,
-                                    LogSegmentNamesListener listener);
+    Future<Versioned<List<String>>> getLogSegmentNames(String logSegmentsPath,
+                                                       LogSegmentNamesListener listener);
 
     /**
      * Unregister a log segment <code>listener</code> on log segment changes under <code>logSegmentsPath</code>.

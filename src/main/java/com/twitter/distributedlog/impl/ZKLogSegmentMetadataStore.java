@@ -22,6 +22,8 @@ import com.twitter.distributedlog.DistributedLogConfiguration;
 import com.twitter.distributedlog.LogSegmentMetadata;
 import com.twitter.distributedlog.ZooKeeperClient;
 import com.twitter.distributedlog.callback.LogSegmentNamesListener;
+import com.twitter.distributedlog.exceptions.LogNotFoundException;
+import com.twitter.distributedlog.exceptions.ZKException;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataStore;
 import com.twitter.distributedlog.util.DLUtils;
 import com.twitter.distributedlog.util.FutureUtils;
@@ -88,30 +90,21 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         public void onSuccess(final Versioned<List<String>> segments) {
             // reset the back off after a successful operation
             currentZKBackOffMs = store.minZKBackoffMs;
-            final Map<LogSegmentNamesListener, VersionedLogSegmentNamesListener> listenerSet =
-                    store.listeners.get(logSegmentsPath);
-            if (null != listenerSet) {
-                store.submitTask(logSegmentsPath, new Runnable() {
-                    @Override
-                    public void run() {
-                        for (VersionedLogSegmentNamesListener listener : listenerSet.values()) {
-                            listener.onSegmentsUpdated(segments);
-                        }
-                    }
-                });
-            }
+            store.notifyLogSegmentsUpdated(
+                    logSegmentsPath,
+                    store.listeners.get(logSegmentsPath),
+                    segments);
         }
 
         @Override
         public void onFailure(Throwable cause) {
-            int backoffMs = store.minZKBackoffMs;
-            if ((cause instanceof KeeperException)) {
-                KeeperException ke = (KeeperException) cause;
-                if (KeeperException.Code.NONODE == ke.code()) {
-                    // the log segment has been deleted, remove all the registered listeners
-                    store.listeners.remove(logSegmentsPath);
-                    return;
-                }
+            int backoffMs;
+            if (cause instanceof LogNotFoundException) {
+                // the log segment has been deleted, remove all the registered listeners
+                store.notifyLogStreamDeleted(logSegmentsPath,
+                        store.listeners.remove(logSegmentsPath));
+                return;
+            } else {
                 backoffMs = currentZKBackOffMs;
                 currentZKBackOffMs = Math.min(2 * currentZKBackOffMs, store.maxZKBackoffMs);
             }
@@ -121,7 +114,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         @Override
         public void run() {
             if (null != store.listeners.get(logSegmentsPath)) {
-                store.getLogSegmentNames(logSegmentsPath, store).addEventListener(this);
+                store.zkGetLogSegmentNames(logSegmentsPath, store).addEventListener(this);
             } else {
                 logger.debug("Log segments listener for {} has been removed.", logSegmentsPath);
             }
@@ -146,7 +139,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
             if (lastNotifiedLogSegments.getVersion() == Version.NEW ||
                     lastNotifiedLogSegments.getVersion().compare(logSegments.getVersion()) == Version.Occurred.BEFORE) {
                 lastNotifiedLogSegments = logSegments;
-                listener.onSegmentsUpdated(logSegments.getValue());
+                listener.onSegmentsUpdated(logSegments);
             }
         }
 
@@ -309,7 +302,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         }
         switch (event.getType()) {
             case NodeDeleted:
-                listeners.remove(path);
+                notifyLogStreamDeleted(path, listeners.remove(path));
                 break;
             case NodeChildrenChanged:
                 new ReadLogSegmentsTask(path, this).run();
@@ -324,17 +317,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         return LogSegmentMetadata.read(zkc, logSegmentPath, skipMinVersionCheck);
     }
 
-    @Override
-    public Future<List<String>> getLogSegmentNames(String logSegmentsPath) {
-        return getLogSegmentNames(logSegmentsPath, null).map(new AbstractFunction1<Versioned<List<String>>, List<String>>() {
-            @Override
-            public List<String> apply(Versioned<List<String>> list) {
-                return list.getValue();
-            }
-        });
-    }
-
-    Future<Versioned<List<String>>> getLogSegmentNames(String logSegmentsPath, Watcher watcher) {
+    Future<Versioned<List<String>>> zkGetLogSegmentNames(String logSegmentsPath, Watcher watcher) {
         Promise<Versioned<List<String>>> result = new Promise<Versioned<List<String>>>();
         try {
             zkc.get().getChildren(logSegmentsPath, watcher, this, result);
@@ -354,46 +337,59 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
             /** cversion: the number of changes to the children of this znode **/
             ZkVersion zkVersion = new ZkVersion(stat.getCversion());
             result.setValue(new Versioned(children, zkVersion));
+        } else if (KeeperException.Code.NONODE.intValue() == rc) {
+            result.setException(new LogNotFoundException("Log " + path + " not found"));
         } else {
-            result.setException(KeeperException.create(KeeperException.Code.get(rc)));
+            result.setException(new ZKException("Failed to get log segments from " + path,
+                    KeeperException.Code.get(rc)));
         }
     }
 
     @Override
-    public void registerLogSegmentListener(String logSegmentsPath,
-                                           LogSegmentNamesListener listener) {
+    public Future<Versioned<List<String>>> getLogSegmentNames(String logSegmentsPath,
+                                                              LogSegmentNamesListener listener) {
+        Watcher zkWatcher;
         if (null == listener) {
-            return;
-        }
-        closeLock.readLock().lock();
-        try {
-            if (closed) {
-                return;
-            }
-            Map<LogSegmentNamesListener, VersionedLogSegmentNamesListener> listenerSet =
-                    listeners.get(logSegmentsPath);
-            if (null == listenerSet) {
-                Map<LogSegmentNamesListener, VersionedLogSegmentNamesListener> newListenerSet =
-                        new HashMap<LogSegmentNamesListener, VersionedLogSegmentNamesListener>();
-                Map<LogSegmentNamesListener, VersionedLogSegmentNamesListener> oldListenerSet =
-                        listeners.putIfAbsent(logSegmentsPath, newListenerSet);
-                if (null != oldListenerSet) {
-                    listenerSet = oldListenerSet;
+            zkWatcher = null;
+        } else {
+            closeLock.readLock().lock();
+            try {
+                if (closed) {
+                    zkWatcher = null;
                 } else {
-                    listenerSet = newListenerSet;
+                    Map<LogSegmentNamesListener, VersionedLogSegmentNamesListener> listenerSet =
+                            listeners.get(logSegmentsPath);
+                    if (null == listenerSet) {
+                        Map<LogSegmentNamesListener, VersionedLogSegmentNamesListener> newListenerSet =
+                                new HashMap<LogSegmentNamesListener, VersionedLogSegmentNamesListener>();
+                        Map<LogSegmentNamesListener, VersionedLogSegmentNamesListener> oldListenerSet =
+                                listeners.putIfAbsent(logSegmentsPath, newListenerSet);
+                        if (null != oldListenerSet) {
+                            listenerSet = oldListenerSet;
+                        } else {
+                            listenerSet = newListenerSet;
+                        }
+                    }
+                    synchronized (listenerSet) {
+                        listenerSet.put(listener, new VersionedLogSegmentNamesListener(listener));
+                        if (!listeners.containsKey(logSegmentsPath)) {
+                            // listener set has been removed, add it back
+                            if (null != listeners.putIfAbsent(logSegmentsPath, listenerSet)) {
+                                logger.debug("Listener set is already found for log segments path {}", logSegmentsPath);
+                            }
+                        }
+                    }
+                    zkWatcher = ZKLogSegmentMetadataStore.this;
                 }
+            } finally {
+                closeLock.readLock().unlock();
             }
-            synchronized (listenerSet) {
-                listenerSet.put(listener, new VersionedLogSegmentNamesListener(listener));
-                if (!listeners.containsKey(logSegmentsPath)) {
-                    // listener set has been removed, add it back
-                    listeners.put(logSegmentsPath, listenerSet);
-                }
-            }
-            new ReadLogSegmentsTask(logSegmentsPath, this).run();
-        } finally {
-            closeLock.readLock().unlock();
         }
+        Future<Versioned<List<String>>> getLogSegmentNamesResult = zkGetLogSegmentNames(logSegmentsPath, zkWatcher);
+        if (null != listener) {
+            getLogSegmentNamesResult.addEventListener(new ReadLogSegmentsTask(logSegmentsPath, this));
+        }
+        return zkGetLogSegmentNames(logSegmentsPath, zkWatcher);
     }
 
     @Override
@@ -431,6 +427,40 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         } finally {
             closeLock.writeLock().unlock();
         }
+    }
+
+    // Notifications
+
+    void notifyLogStreamDeleted(String logSegmentsPath,
+                                final Map<LogSegmentNamesListener, VersionedLogSegmentNamesListener> listeners) {
+        if (null == listeners) {
+            return;
+        }
+        this.submitTask(logSegmentsPath, new Runnable() {
+            @Override
+            public void run() {
+                for (LogSegmentNamesListener listener : listeners.keySet()) {
+                    listener.onLogStreamDeleted();
+                }
+            }
+        });
+
+    }
+
+    void notifyLogSegmentsUpdated(String logSegmentsPath,
+                                  final Map<LogSegmentNamesListener, VersionedLogSegmentNamesListener> listeners,
+                                  final Versioned<List<String>> segments) {
+        if (null == listeners) {
+            return;
+        }
+        this.submitTask(logSegmentsPath, new Runnable() {
+            @Override
+            public void run() {
+                for (VersionedLogSegmentNamesListener listener : listeners.values()) {
+                    listener.onSegmentsUpdated(segments);
+                }
+            }
+        });
     }
 
 }

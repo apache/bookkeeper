@@ -18,16 +18,25 @@
 package com.twitter.distributedlog;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Ticker;
+import com.twitter.distributedlog.callback.LogSegmentListener;
+import com.twitter.distributedlog.callback.LogSegmentNamesListener;
 import com.twitter.distributedlog.config.DynamicDistributedLogConfiguration;
 import com.twitter.distributedlog.exceptions.DLIllegalStateException;
 import com.twitter.distributedlog.exceptions.DLInterruptedException;
 import com.twitter.distributedlog.exceptions.LockCancelledException;
 import com.twitter.distributedlog.exceptions.LockingException;
 import com.twitter.distributedlog.exceptions.LogNotFoundException;
+import com.twitter.distributedlog.exceptions.LogSegmentNotFoundException;
+import com.twitter.distributedlog.exceptions.UnexpectedException;
 import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForReader;
 import com.twitter.distributedlog.injector.AsyncFailureInjector;
 import com.twitter.distributedlog.lock.DistributedLock;
@@ -35,6 +44,7 @@ import com.twitter.distributedlog.lock.SessionLockFactory;
 import com.twitter.distributedlog.lock.ZKDistributedLock;
 import com.twitter.distributedlog.lock.ZKSessionLockFactory;
 import com.twitter.distributedlog.logsegment.LogSegmentFilter;
+import com.twitter.distributedlog.logsegment.LogSegmentMetadataCache;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataStore;
 import com.twitter.distributedlog.readahead.ReadAheadWorker;
 import com.twitter.distributedlog.stats.BroadCastStatsLogger;
@@ -55,6 +65,8 @@ import org.apache.bookkeeper.stats.AlertStatsLogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.SafeRunnable;
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
@@ -102,10 +114,8 @@ import scala.runtime.BoxedUnit;
  * All read lock related stats are exposed under scope `read_lock`. See {@link ZKDistributedLock}
  * for detail stats.
  */
-class BKLogReadHandler extends BKLogHandler {
+class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
     static final Logger LOG = LoggerFactory.getLogger(BKLogReadHandler.class);
-
-    private static final int LAYOUT_VERSION = -1;
 
     protected final ZKLogMetadataForReader logMetadataForReader;
     protected final ReadAheadCache readAheadCache;
@@ -123,6 +133,16 @@ class BKLogReadHandler extends BKLogHandler {
     private DistributedLock readLock;
     private Future<Void> lockAcquireFuture;
 
+    // notify the state change about the read handler
+    protected final AsyncNotification readerStateNotification;
+
+    // log segments listener
+    protected boolean logSegmentsNotificationDisabled = false;
+    protected final CopyOnWriteArraySet<LogSegmentListener> listeners =
+            new CopyOnWriteArraySet<LogSegmentListener>();
+    protected Versioned<List<LogSegmentMetadata>> lastNotifiedLogSegments =
+            new Versioned<List<LogSegmentMetadata>>(null, Version.NEW);
+
     // stats
     private final AlertStatsLogger alertStatsLogger;
     private final StatsLogger handlerStatsLogger;
@@ -132,26 +152,35 @@ class BKLogReadHandler extends BKLogHandler {
     /**
      * Construct a Bookkeeper journal manager.
      */
-    public BKLogReadHandler(ZKLogMetadataForReader logMetadata,
-                            Optional<String> subscriberId,
-                            DistributedLogConfiguration conf,
-                            DynamicDistributedLogConfiguration dynConf,
-                            ZooKeeperClientBuilder zkcBuilder,
-                            BookKeeperClientBuilder bkcBuilder,
-                            LogSegmentMetadataStore metadataStore,
-                            OrderedScheduler scheduler,
-                            OrderedScheduler lockStateExecutor,
-                            OrderedScheduler readAheadExecutor,
-                            AlertStatsLogger alertStatsLogger,
-                            ReadAheadExceptionsLogger readAheadExceptionsLogger,
-                            StatsLogger statsLogger,
-                            StatsLogger perLogStatsLogger,
-                            String clientId,
-                            AsyncNotification notification,
-                            boolean isHandleForReading,
-                            boolean deserializeRecordSet) {
-        super(logMetadata, conf, zkcBuilder, bkcBuilder, metadataStore, scheduler,
-              statsLogger, alertStatsLogger, notification, LogSegmentFilter.DEFAULT_FILTER, clientId);
+    BKLogReadHandler(ZKLogMetadataForReader logMetadata,
+                     Optional<String> subscriberId,
+                     DistributedLogConfiguration conf,
+                     DynamicDistributedLogConfiguration dynConf,
+                     ZooKeeperClientBuilder zkcBuilder,
+                     BookKeeperClientBuilder bkcBuilder,
+                     LogSegmentMetadataStore metadataStore,
+                     LogSegmentMetadataCache metadataCache,
+                     OrderedScheduler scheduler,
+                     OrderedScheduler lockStateExecutor,
+                     OrderedScheduler readAheadExecutor,
+                     AlertStatsLogger alertStatsLogger,
+                     ReadAheadExceptionsLogger readAheadExceptionsLogger,
+                     StatsLogger statsLogger,
+                     StatsLogger perLogStatsLogger,
+                     String clientId,
+                     AsyncNotification readerStateNotification,
+                     boolean isHandleForReading,
+                     boolean deserializeRecordSet) {
+        super(logMetadata,
+                conf,
+                zkcBuilder,
+                bkcBuilder,
+                metadataStore,
+                metadataCache,
+                scheduler,
+                statsLogger,
+                alertStatsLogger,
+                clientId);
         this.logMetadataForReader = logMetadata;
         this.dynConf = dynConf;
         this.readAheadExecutor = readAheadExecutor;
@@ -161,6 +190,7 @@ class BKLogReadHandler extends BKLogHandler {
         this.handlerStatsLogger =
                 BroadCastStatsLogger.masterslave(this.perLogStatsLogger, statsLogger);
         this.readAheadExceptionsLogger = readAheadExceptionsLogger;
+        this.readerStateNotification = readerStateNotification;
 
         handleCache = LedgerHandleCache.newBuilder()
                 .bkc(this.bookKeeperClient)
@@ -171,7 +201,7 @@ class BKLogReadHandler extends BKLogHandler {
                 getFullyQualifiedName(),
                 handlerStatsLogger,
                 alertStatsLogger,
-                notification,
+                readerStateNotification,
                 dynConf.getReadAheadMaxRecords(),
                 deserializeRecordSet,
                 conf.getTraceReadAheadDeliveryLatency(),
@@ -308,14 +338,14 @@ class BKLogReadHandler extends BKLogHandler {
                 if (null != readAheadCache) {
                     readAheadCache.clear();
                 }
+                if (null != readAheadWorker) {
+                    unregisterListener(readAheadWorker);
+                }
                 if (null != handleCache) {
                     handleCache.clear();
                 }
-                // No-op
-                zooKeeperClient.getWatcherManager().unregisterChildWatcher(
-                        logMetadata.getLogSegmentsPath(),
-                        BKLogReadHandler.this,
-                        true);
+                // unregister the log segment listener
+                metadataStore.unregisterLogSegmentListener(logMetadata.getLogSegmentsPath(), BKLogReadHandler.this);
                 return Future.Void();
             }
         });
@@ -326,6 +356,52 @@ class BKLogReadHandler extends BKLogHandler {
         return asyncClose();
     }
 
+    /**
+     * Start fetch the log segments and register the {@link LogSegmentNamesListener}.
+     * The future is satisfied only on a successful fetch or encountered a fatal failure.
+     *
+     * @return future represents the fetch result
+     */
+    Future<Versioned<List<LogSegmentMetadata>>> asyncStartFetchLogSegments() {
+        Promise<Versioned<List<LogSegmentMetadata>>> promise =
+                new Promise<Versioned<List<LogSegmentMetadata>>>();
+        asyncStartFetchLogSegments(promise);
+        return promise;
+    }
+
+    void asyncStartFetchLogSegments(final Promise<Versioned<List<LogSegmentMetadata>>> promise) {
+        readLogSegmentsFromStore(
+                LogSegmentMetadata.COMPARATOR,
+                LogSegmentFilter.DEFAULT_FILTER,
+                this).addEventListener(new FutureEventListener<Versioned<List<LogSegmentMetadata>>>() {
+            @Override
+            public void onFailure(Throwable cause) {
+                if (cause instanceof LogNotFoundException ||
+                        cause instanceof LogSegmentNotFoundException ||
+                        cause instanceof UnexpectedException) {
+                    // indicate some inconsistent behavior, abort
+                    metadataException.compareAndSet(null, (IOException) cause);
+                    // notify the reader that read handler is in error state
+                    notifyReaderOnError(cause);
+                    FutureUtils.setException(promise, cause);
+                    return;
+                }
+                scheduler.schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        asyncStartFetchLogSegments(promise);
+                    }
+                }, conf.getZKRetryBackoffMaxMillis(), TimeUnit.MILLISECONDS);
+            }
+
+            @Override
+            public void onSuccess(Versioned<List<LogSegmentMetadata>> segments) {
+                // no-op
+                FutureUtils.setValue(promise, segments);
+            }
+        });
+    }
+
     public void startReadAhead(LedgerReadPosition startPosition,
                                AsyncFailureInjector failureInjector) {
         if (null == readAheadWorker) {
@@ -334,7 +410,6 @@ class BKLogReadHandler extends BKLogHandler {
                     dynConf,
                     logMetadataForReader,
                     this,
-                    zooKeeperClient,
                     readAheadExecutor,
                     handleCache,
                     startPosition,
@@ -345,8 +420,16 @@ class BKLogReadHandler extends BKLogHandler {
                     perLogStatsLogger,
                     alertStatsLogger,
                     failureInjector,
-                    notification);
-            readAheadWorker.start();
+                    readerStateNotification);
+            registerListener(readAheadWorker);
+            // start the readahead worker after the log segments are fetched
+            asyncStartFetchLogSegments().map(new AbstractFunction1<Versioned<List<LogSegmentMetadata>>, BoxedUnit>() {
+                @Override
+                public BoxedUnit apply(Versioned<List<LogSegmentMetadata>> logSegments) {
+                    readAheadWorker.start(logSegments.getValue());
+                    return BoxedUnit.UNIT;
+                }
+            });
         }
     }
 
@@ -407,10 +490,110 @@ class BKLogReadHandler extends BKLogHandler {
     }
 
     @VisibleForTesting
-    void disableReadAheadZKNotification() {
-        if (null != readAheadWorker) {
-            readAheadWorker.disableZKNotification();
+    void disableReadAheadLogSegmentsNotification() {
+        logSegmentsNotificationDisabled = true;
+    }
+
+    @Override
+    public void onSegmentsUpdated(final Versioned<List<String>> segments) {
+        synchronized (this) {
+            if (lastNotifiedLogSegments.getVersion() != Version.NEW &&
+                    lastNotifiedLogSegments.getVersion().compare(segments.getVersion()) != Version.Occurred.BEFORE) {
+                // the log segments has been read, and it is possibly a retry from last segments update
+                return;
+            }
+        }
+
+        Promise<Versioned<List<LogSegmentMetadata>>> readLogSegmentsPromise =
+                new Promise<Versioned<List<LogSegmentMetadata>>>();
+        readLogSegmentsPromise.addEventListener(new FutureEventListener<Versioned<List<LogSegmentMetadata>>>() {
+            @Override
+            public void onFailure(Throwable cause) {
+                if (cause instanceof LogNotFoundException ||
+                        cause instanceof LogSegmentNotFoundException ||
+                        cause instanceof UnexpectedException) {
+                    // indicate some inconsistent behavior, abort
+                    metadataException.compareAndSet(null, (IOException) cause);
+                    // notify the reader that read handler is in error state
+                    notifyReaderOnError(cause);
+                    return;
+                }
+                scheduler.schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        onSegmentsUpdated(segments);
+                    }
+                }, conf.getZKRetryBackoffMaxMillis(), TimeUnit.MILLISECONDS);
+            }
+
+            @Override
+            public void onSuccess(Versioned<List<LogSegmentMetadata>> logSegments) {
+                List<LogSegmentMetadata> segmentsToNotify = null;
+                synchronized (BKLogReadHandler.this) {
+                    Versioned<List<LogSegmentMetadata>> lastLogSegments = lastNotifiedLogSegments;
+                    if (lastLogSegments.getVersion() == Version.NEW ||
+                            lastLogSegments.getVersion().compare(logSegments.getVersion()) == Version.Occurred.BEFORE) {
+                        lastNotifiedLogSegments = logSegments;
+                        segmentsToNotify = logSegments.getValue();
+                    }
+                }
+                if (null != segmentsToNotify) {
+                    notifyUpdatedLogSegments(segmentsToNotify);
+                }
+            }
+        });
+        // log segments list is updated, read their metadata
+        readLogSegmentsFromStore(
+                segments,
+                LogSegmentMetadata.COMPARATOR,
+                LogSegmentFilter.DEFAULT_FILTER,
+                readLogSegmentsPromise);
+    }
+
+    @Override
+    public void onLogStreamDeleted() {
+        notifyLogStreamDeleted();
+    }
+
+    //
+    // Listener for log segments
+    //
+
+    protected void registerListener(LogSegmentListener listener) {
+        listeners.add(listener);
+    }
+
+    protected void unregisterListener(LogSegmentListener listener) {
+        listeners.remove(listener);
+    }
+
+    protected void notifyUpdatedLogSegments(List<LogSegmentMetadata> segments) {
+        if (logSegmentsNotificationDisabled) {
+            return;
+        }
+
+        for (LogSegmentListener listener : listeners) {
+            List<LogSegmentMetadata> listToReturn =
+                    new ArrayList<LogSegmentMetadata>(segments);
+            Collections.sort(listToReturn, LogSegmentMetadata.COMPARATOR);
+            listener.onSegmentsUpdated(listToReturn);
         }
     }
 
+    protected void notifyLogStreamDeleted() {
+        if (logSegmentsNotificationDisabled) {
+            return;
+        }
+
+        for (LogSegmentListener listener : listeners) {
+            listener.onLogStreamDeleted();
+        }
+    }
+
+    // notify the errors
+    protected void notifyReaderOnError(Throwable cause) {
+        if (null != readerStateNotification) {
+            readerStateNotification.notifyOnError(cause);
+        }
+    }
 }

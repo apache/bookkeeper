@@ -24,7 +24,6 @@ import com.twitter.distributedlog.AsyncNotification;
 import com.twitter.distributedlog.BKLogHandler;
 import com.twitter.distributedlog.DLSN;
 import com.twitter.distributedlog.DistributedLogConfiguration;
-import com.twitter.distributedlog.DistributedLogConstants;
 import com.twitter.distributedlog.LedgerDescriptor;
 import com.twitter.distributedlog.LedgerHandleCache;
 import com.twitter.distributedlog.LedgerReadPosition;
@@ -32,13 +31,16 @@ import com.twitter.distributedlog.exceptions.LogNotFoundException;
 import com.twitter.distributedlog.exceptions.LogReadException;
 import com.twitter.distributedlog.LogSegmentMetadata;
 import com.twitter.distributedlog.ReadAheadCache;
-import com.twitter.distributedlog.ZooKeeperClient;
+import com.twitter.distributedlog.callback.LogSegmentListener;
 import com.twitter.distributedlog.callback.ReadAheadCallback;
 import com.twitter.distributedlog.config.DynamicDistributedLogConfiguration;
 import com.twitter.distributedlog.exceptions.DLInterruptedException;
+import com.twitter.distributedlog.exceptions.UnexpectedException;
+import com.twitter.distributedlog.exceptions.ZKException;
 import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForReader;
 import com.twitter.distributedlog.injector.AsyncFailureInjector;
 import com.twitter.distributedlog.io.AsyncCloseable;
+import com.twitter.distributedlog.logsegment.LogSegmentFilter;
 import com.twitter.distributedlog.stats.ReadAheadExceptionsLogger;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.OrderedScheduler;
@@ -55,10 +57,8 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Function1;
@@ -97,7 +97,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Exceptions Handling Phase: Handle all the exceptions and properly schedule next readahead request.
  * </p>
  */
-public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, AsyncCloseable {
+public class ReadAheadWorker implements ReadAheadCallback, Runnable, AsyncCloseable, LogSegmentListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReadAheadWorker.class);
 
@@ -115,7 +115,6 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
     protected final AsyncNotification notification;
 
     // resources
-    private final ZooKeeperClient zkc;
     protected final OrderedScheduler scheduler;
     private final LedgerHandleCache handleCache;
     private final ReadAheadCache readAheadCache;
@@ -144,10 +143,6 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
     // LogSegments & Metadata Notification
     //
 
-    // variables related to getting log segments from zookeeper
-    volatile boolean zkNotificationDisabled = false;
-    private final Watcher getLedgersWatcher;
-
     // variables related to zookeeper watcher notification to interrupt long poll waits
     final Object notificationLock = new Object();
     AsyncNotification metadataNotification = null;
@@ -155,11 +150,13 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
 
     // variables related to log segments
     private volatile boolean reInitializeMetadata = true;
+    private volatile boolean forceReadLogSegments = false;
     volatile boolean inProgressChanged = false;
     private LogSegmentMetadata currentMetadata = null;
     private int currentMetadataIndex;
     protected LedgerDescriptor currentLH;
-    private volatile List<LogSegmentMetadata> ledgerList;
+    private volatile List<LogSegmentMetadata> logSegmentListNotified;
+    private volatile List<LogSegmentMetadata> logSegmentList;
 
     //
     // ReadAhead Phases
@@ -208,7 +205,6 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
                            DynamicDistributedLogConfiguration dynConf,
                            ZKLogMetadataForReader logMetadata,
                            BKLogHandler ledgerManager,
-                           ZooKeeperClient zkc,
                            OrderedScheduler scheduler,
                            LedgerHandleCache handleCache,
                            LedgerReadPosition startPosition,
@@ -229,7 +225,6 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
         this.isHandleForReading = isHandleForReading;
         this.notification = notification;
         // Resources
-        this.zkc = zkc;
         this.scheduler = scheduler;
         this.handleCache = handleCache;
         this.readAheadCache = readAheadCache;
@@ -237,8 +232,7 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
         this.startReadPosition = new LedgerReadPosition(startPosition);
         this.nextReadAheadPosition = new LedgerReadPosition(startPosition);
         // LogSegments
-        this.getLedgersWatcher = this.zkc.getWatcherManager()
-                .registerChildWatcher(logMetadata.getLogSegmentsPath(), this);
+
         // Failure Detection
         this.failureInjector = failureInjector;
         // Tracing
@@ -283,12 +277,12 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
     // ReadAhead Status
     //
 
-    void setReadAheadError(ReadAheadTracker tracker) {
+    void setReadAheadError(ReadAheadTracker tracker, Throwable cause) {
         LOG.error("Read Ahead for {} is set to error.", logMetadata.getFullyQualifiedName());
         readAheadError = true;
         tracker.enterPhase(ReadAheadPhase.ERROR);
         if (null != notification) {
-            notification.notifyOnError();
+            notification.notifyOnError(cause);
         }
         if (null != stopPromise) {
             FutureUtils.setValue(stopPromise, null);
@@ -299,7 +293,8 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
         readAheadInterrupted = true;
         tracker.enterPhase(ReadAheadPhase.INTERRUPTED);
         if (null != notification) {
-            notification.notifyOnError();
+            notification.notifyOnError(new DLInterruptedException("ReadAhead worker for "
+                    + bkLedgerManager.getFullyQualifiedName() + " is interrupted."));
         }
         if (null != stopPromise) {
             FutureUtils.setValue(stopPromise, null);
@@ -310,7 +305,9 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
         readingFromTruncated = true;
         tracker.enterPhase(ReadAheadPhase.TRUNCATED);
         if (null != notification) {
-            notification.notifyOnError();
+            notification.notifyOnError(
+                    new AlreadyTruncatedTransactionException(logMetadata.getFullyQualifiedName()
+                            + ": Trying to position read ahead to a segment that is marked truncated"));
         }
         if (null != stopPromise) {
             FutureUtils.setValue(stopPromise, null);
@@ -347,9 +344,11 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
         return !isCatchingUp;
     }
 
-    public void start() {
-        LOG.debug("Starting ReadAhead Worker for {}", fullyQualifiedName);
+    public void start(List<LogSegmentMetadata> segmentList) {
+        LOG.debug("Starting ReadAhead Worker for {} : segments = {}",
+                fullyQualifiedName, segmentList);
         running = true;
+        logSegmentListNotified = segmentList;
         schedulePhase.process(BKException.Code.OK);
     }
 
@@ -357,9 +356,6 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
     public Future<Void> asyncClose() {
         LOG.info("Stopping Readahead worker for {}", fullyQualifiedName);
         running = false;
-
-        this.zkc.getWatcherManager()
-                .unregisterChildWatcher(this.logMetadata.getLogSegmentsPath(), this, true);
 
         // Aside from unfortunate naming of variables, this allows
         // the currently active long poll to be interrupted and completed
@@ -417,7 +413,7 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
                 } catch (RuntimeException rte) {
                     LOG.error("ReadAhead on stream {} encountered runtime exception",
                             logMetadata.getFullyQualifiedName(), rte);
-                    setReadAheadError(tracker);
+                    setReadAheadError(tracker, rte);
                     throw rte;
                 }
             }
@@ -455,7 +451,7 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
         try {
             scheduler.submit(addRTEHandler(runnable));
         } catch (RejectedExecutionException ree) {
-            setReadAheadError(tracker);
+            setReadAheadError(tracker, ree);
         }
     }
 
@@ -470,7 +466,7 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
             scheduler.schedule(addRTEHandler(task), timeInMillis, TimeUnit.MILLISECONDS);
             readAheadWorkerWaits.inc();
         } catch (RejectedExecutionException ree) {
-            setReadAheadError(tracker);
+            setReadAheadError(tracker, ree);
         }
     }
 
@@ -533,12 +529,14 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
                     LOG.error("{} : BookKeeper Client used by the ReadAhead Thread has encountered {} zookeeper exceptions : simulate = {}",
                               new Object[] { fullyQualifiedName, bkcZkExceptions.get(), injectErrors });
                     running = false;
-                    setReadAheadError(tracker);
+                    setReadAheadError(tracker, new LogReadException(
+                            "Encountered too many zookeeper issues on read ahead for " + bkLedgerManager.getFullyQualifiedName()));
                 } else if (bkcUnExpectedExceptions.get() > BKC_UNEXPECTED_EXCEPTION_THRESHOLD) {
                     LOG.error("{} : ReadAhead Thread has encountered {} unexpected BK exceptions.",
                               fullyQualifiedName, bkcUnExpectedExceptions.get());
                     running = false;
-                    setReadAheadError(tracker);
+                    setReadAheadError(tracker, new LogReadException(
+                            "Encountered too many unexpected bookkeeper issues on read ahead for " + bkLedgerManager.getFullyQualifiedName()));
                 } else {
                     // We must always reinitialize metadata if the last attempt to read failed.
                     reInitializeMetadata = true;
@@ -629,39 +627,21 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
      * Phase on checking in progress changed.
      */
     final class CheckInProgressChangedPhase extends Phase
-        implements BookkeeperInternalCallbacks.GenericCallback<List<LogSegmentMetadata>> {
+            implements FutureEventListener<Versioned<List<LogSegmentMetadata>>> {
 
         CheckInProgressChangedPhase(Phase next) {
             super(next);
         }
 
-        @Override
-        public void operationComplete(final int rc, final List<LogSegmentMetadata> result) {
+        void processLogSegments(final List<LogSegmentMetadata> segments) {
             // submit callback execution to dlg executor to avoid deadlock.
             submit(new Runnable() {
                 @Override
                 public void run() {
-                    if (KeeperException.Code.OK.intValue() != rc) {
-                        if (KeeperException.Code.NONODE.intValue() == rc) {
-                            LOG.info("Log {} has been deleted. Set ReadAhead to error to stop reading.",
-                                    logMetadata.getFullyQualifiedName());
-                            logDeleted = true;
-                            setReadAheadError(tracker);
-                            return;
-                        }
-                        LOG.info("ZK Exception {} while reading ledger list", rc);
-                        reInitializeMetadata = true;
-                        if (DistributedLogConstants.DL_INTERRUPTED_EXCEPTION_RESULT_CODE == rc) {
-                            handleException(ReadAheadPhase.GET_LEDGERS, BKException.Code.InterruptedException);
-                        } else {
-                            handleException(ReadAheadPhase.GET_LEDGERS, BKException.Code.ZKException);
-                        }
-                        return;
-                    }
-                    ledgerList = result;
+                    logSegmentList = segments;
                     boolean isInitialPositioning = nextReadAheadPosition.definitelyLessThanOrEqualTo(startReadPosition);
-                    for (int i = 0; i < ledgerList.size(); i++) {
-                        LogSegmentMetadata l = ledgerList.get(i);
+                    for (int i = 0; i < logSegmentList.size(); i++) {
+                        LogSegmentMetadata l = logSegmentList.get(i);
                         // By default we should skip truncated segments during initial positioning
                         if (l.isTruncated() &&
                             isInitialPositioning &&
@@ -820,10 +800,33 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
                             TimeUnit.MILLISECONDS.toMicros(elapsedMillisSinceMetadataChanged));
                     metadataNotificationTimeMillis = -1L;
                 }
-                bkLedgerManager.asyncGetLedgerList(LogSegmentMetadata.COMPARATOR, getLedgersWatcher, this);
+                if (forceReadLogSegments) {
+                    forceReadLogSegments = false;
+                    bkLedgerManager.readLogSegmentsFromStore(
+                            LogSegmentMetadata.COMPARATOR,
+                            LogSegmentFilter.DEFAULT_FILTER,
+                            null
+                    ).addEventListener(this);
+                } else {
+                    processLogSegments(logSegmentListNotified);
+                }
             } else {
                 next.process(BKException.Code.OK);
             }
+        }
+
+        @Override
+        public void onSuccess(Versioned<List<LogSegmentMetadata>> segments) {
+            processLogSegments(segments.getValue());
+        }
+
+        @Override
+        public void onFailure(Throwable cause) {
+            LOG.info("Encountered metadata exception while reading log segments of {} : {}. Retrying ...",
+                    bkLedgerManager.getFullyQualifiedName(), cause.getMessage());
+            reInitializeMetadata = true;
+            forceReadLogSegments = true;
+            handleException(ReadAheadPhase.GET_LEDGERS, BKException.Code.ZKException);
         }
     }
 
@@ -922,6 +925,7 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
                                     LOG.info("{} Ledger {} for inprogress segment {} closed for idle reader warn threshold",
                                         new Object[] { fullyQualifiedName, currentMetadata, currentLH });
                                     reInitializeMetadata = true;
+                                    forceReadLogSegments = true;
                                 }
                             } else {
                                 lastLedgerCloseDetected.reset().start();
@@ -986,7 +990,9 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
                                 }
 
                                 if (conf.getPositionGapDetectionEnabled() && gapDetected) {
-                                    setReadAheadError(tracker);
+                                    setReadAheadError(tracker, new UnexpectedException(
+                                            "Unexpected last entry id during read ahead : " + currentMetadata
+                                                    + ", lac = " + lastAddConfirmed));
                                 } else {
                                     // This disconnect will only surface during repositioning and
                                     // will not silently miss records; therefore its safe to not halt
@@ -1003,14 +1009,16 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
                                     }
                                     LogSegmentMetadata oldMetadata = currentMetadata;
                                     currentMetadata = null;
-                                    if (currentMetadataIndex + 1 < ledgerList.size()) {
-                                        currentMetadata = ledgerList.get(++currentMetadataIndex);
+                                    if (currentMetadataIndex + 1 < logSegmentList.size()) {
+                                        currentMetadata = logSegmentList.get(++currentMetadataIndex);
                                         if (currentMetadata.getLogSegmentSequenceNumber() != (oldMetadata.getLogSegmentSequenceNumber() + 1)) {
                                             // We should never get here as we should have exited the loop if
                                             // pendingRequests were empty
                                             alertStatsLogger.raise("Unexpected condition during read ahead; {} , {}",
                                                 currentMetadata, oldMetadata);
-                                            setReadAheadError(tracker);
+                                            setReadAheadError(tracker, new UnexpectedException(
+                                                    "Unexpected condition during read ahead : current metadata "
+                                                            + currentMetadata + ", old metadata " + oldMetadata));
                                         } else {
                                             if (currentMetadata.isTruncated()) {
                                                 if (conf.getAlertWhenPositioningOnTruncated()) {
@@ -1345,37 +1353,26 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
     }
 
     @Override
-    public void process(WatchedEvent event) {
-        if (zkNotificationDisabled) {
-            return;
+    public void onSegmentsUpdated(List<LogSegmentMetadata> segments) {
+        AsyncNotification notification;
+        synchronized (notificationLock) {
+            logSegmentListNotified = segments;
+            reInitializeMetadata = true;
+            LOG.debug("{} Read ahead node changed", fullyQualifiedName);
+            notification = metadataNotification;
+            metadataNotification = null;
         }
-
-        if ((event.getType() == Watcher.Event.EventType.None)
-                && (event.getState() == Watcher.Event.KeeperState.SyncConnected)) {
-            LOG.debug("Reconnected ...");
-        } else if (((event.getType() == Event.EventType.None) && (event.getState() == Event.KeeperState.Expired)) ||
-                   ((event.getType() == Event.EventType.NodeChildrenChanged))) {
-            AsyncNotification notification;
-            synchronized (notificationLock) {
-                reInitializeMetadata = true;
-                LOG.debug("{} Read ahead node changed", fullyQualifiedName);
-                notification = metadataNotification;
-                metadataNotification = null;
-            }
-            metadataNotificationTimeMillis = System.currentTimeMillis();
-            if (null != notification) {
-                notification.notifyOnOperationComplete();
-            }
-        } else if (event.getType() == Event.EventType.NodeDeleted) {
-            logDeleted = true;
-            setReadAheadError(tracker);
+        metadataNotificationTimeMillis = System.currentTimeMillis();
+        if (null != notification) {
+            notification.notifyOnOperationComplete();
         }
     }
 
-    @VisibleForTesting
-    public void disableZKNotification() {
-        LOG.info("{} ZK Notification was disabled", fullyQualifiedName);
-        zkNotificationDisabled = true;
+    @Override
+    public void onLogStreamDeleted() {
+        logDeleted = true;
+        setReadAheadError(tracker, new LogNotFoundException("Log stream "
+                + bkLedgerManager.getFullyQualifiedName() + " is deleted."));
     }
 
     /**
@@ -1424,7 +1421,7 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
         }
 
         @Override
-        public void notifyOnError() {
+        public void notifyOnError(Throwable t) {
             longPollInterruptionStat.registerFailedEvent(MathUtils.elapsedMicroSec(startNanos));
             execute();
         }
@@ -1477,7 +1474,7 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
         abstract void doComplete(boolean success);
 
         @Override
-        public void notifyOnError() {
+        public void notifyOnError(Throwable cause) {
             longPollInterruptionStat.registerFailedEvent(MathUtils.elapsedMicroSec(startNanos));
             complete(false);
         }

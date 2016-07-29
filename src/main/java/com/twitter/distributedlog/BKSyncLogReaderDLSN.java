@@ -238,8 +238,8 @@ class BKSyncLogReaderDLSN implements LogReader, Runnable, FutureEventListener<Lo
     // Test Methods
     //
     @VisibleForTesting
-    void disableReadAheadZKNotification() {
-        reader.bkLedgerManager.disableReadAheadZKNotification();
+    void disableReadAheadLogSegmentsNotification() {
+        reader.bkLedgerManager.disableReadAheadLogSegmentsNotification();
     }
 
     @VisibleForTesting

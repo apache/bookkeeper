@@ -20,8 +20,10 @@ package com.twitter.distributedlog;
 public interface AsyncNotification {
     /**
      * Triggered when the background activity encounters an exception
+     *
+     * @param reason the exception that encountered.
      */
-    void notifyOnError();
+    void notifyOnError(Throwable reason);
 
     /**
      *  Triggered when the background activity completes an operation

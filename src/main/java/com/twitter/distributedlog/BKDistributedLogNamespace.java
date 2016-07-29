@@ -20,6 +20,7 @@ package com.twitter.distributedlog;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Ticker;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -41,6 +42,7 @@ import com.twitter.distributedlog.impl.ZKLogSegmentMetadataStore;
 import com.twitter.distributedlog.impl.federated.FederatedZKLogMetadataStore;
 import com.twitter.distributedlog.lock.SessionLockFactory;
 import com.twitter.distributedlog.lock.ZKSessionLockFactory;
+import com.twitter.distributedlog.logsegment.LogSegmentMetadataCache;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataStore;
 import com.twitter.distributedlog.metadata.BKDLConfig;
 import com.twitter.distributedlog.metadata.LogMetadataStore;
@@ -301,6 +303,7 @@ public class BKDistributedLogNamespace implements DistributedLogNamespace {
     // log metadata store
     private final LogMetadataStore metadataStore;
     // log segment metadata store
+    private final LogSegmentMetadataCache logSegmentMetadataCache;
     private final LogSegmentMetadataStore writerSegmentMetadataStore;
     private final LogSegmentMetadataStore readerSegmentMetadataStore;
     // lock factory
@@ -478,6 +481,7 @@ public class BKDistributedLogNamespace implements DistributedLogNamespace {
                 new ZKLogSegmentMetadataStore(conf, sharedWriterZKCForDL, scheduler);
         this.readerSegmentMetadataStore =
                 new ZKLogSegmentMetadataStore(conf, sharedReaderZKCForDL, scheduler);
+        this.logSegmentMetadataCache = new LogSegmentMetadataCache(conf, Ticker.systemTicker());
 
         LOG.info("Constructed BK DistributedLogNamespace : clientId = {}, regionId = {}, federated = {}.",
                 new Object[] { clientId, regionId, bkdlConfig.isFederatedNamespace() });
@@ -883,6 +887,7 @@ public class BKDistributedLogNamespace implements DistributedLogNamespace {
                 lockFactory,                        /* Lock Factory */
                 writerSegmentMetadataStore,         /* Log Segment Metadata Store for DL Writers */
                 readerSegmentMetadataStore,         /* Log Segment Metadata Store for DL Readers */
+                logSegmentMetadataCache,            /* Log Segment Metadata Cache */
                 scheduler,                          /* DL scheduler */
                 readAheadExecutor,                  /* Read Aheader Executor */
                 lockStateExecutor,                  /* Lock State Executor */

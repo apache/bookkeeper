@@ -86,6 +86,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         this.testConf = new DistributedLogConfiguration();
         this.testConf.loadConf(conf);
         this.testConf.setReaderIdleErrorThresholdMillis(1200000);
+        this.testConf.setReadAheadWaitTimeOnEndOfStream(20);
     }
 
     @Rule
@@ -816,7 +817,8 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
     @Ignore
     @Test(timeout = 120000)
     public void testSimpleAsyncReadWriteStartEmptyFactory() throws Exception {
-        int count = 50;
+        // int count = 50;
+        int count = 1;
         String name = runtime.getMethodName();
         DistributedLogConfiguration confLocal = new DistributedLogConfiguration();
         confLocal.loadConf(testConf);
@@ -1484,9 +1486,8 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
     }
 
     @DistributedLogAnnotations.FlakyTest
-    @Ignore
     @Test(timeout = 60000)
-    public void testAsyncReadMissingZKNotification() throws Exception {
+    public void testAsyncReadMissingLogSegmentsNotification() throws Exception {
         String name = "distrlog-async-reader-missing-zk-notification";
         DistributedLogConfiguration confLocal = new DistributedLogConfiguration();
         confLocal.loadConf(testConf);
@@ -1501,6 +1502,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         final int segmentSize = 10;
         final int numSegments = 3;
         final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch readLatch = new CountDownLatch(1);
         final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
         executor.schedule(
                 new Runnable() {
@@ -1515,6 +1517,9 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                                     writer.write(DLMTestUtil.getLargeLogRecordInstance(txid++));
                                     if ((i == 0) && (j == 1)) {
                                         latch.countDown();
+                                    } else {
+                                        // wait for reader to start
+                                        readLatch.await();
                                     }
                                 }
                                 writer.closeAndComplete();
@@ -1530,13 +1535,16 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
 
         latch.await();
         BKAsyncLogReaderDLSN reader = (BKAsyncLogReaderDLSN)dlm.getAsyncLogReader(DLSN.InitialDLSN);
-        reader.disableReadAheadZKNotification();
+        reader.disableReadAheadLogSegmentsNotification();
         boolean exceptionEncountered = false;
         int recordCount = 0;
         try {
             while (true) {
                 Future<LogRecordWithDLSN> record = reader.readNext();
                 Await.result(record);
+                if (recordCount == 0) {
+                    readLatch.countDown();
+                }
                 recordCount++;
 
                 if (recordCount >= segmentSize * numSegments) {

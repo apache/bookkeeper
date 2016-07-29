@@ -65,7 +65,7 @@ class NonBlockingReadsTestUtil {
         try {
             LOG.info("Created reader reading from {}", dlm.getStreamName());
             if (forceStall) {
-                reader.disableReadAheadZKNotification();
+                reader.disableReadAheadLogSegmentsNotification();
             }
 
             long numTrans = 0;

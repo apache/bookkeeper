@@ -139,14 +139,6 @@ public class TestReadAhead extends TestDistributedLogBase {
         }
         Thread.sleep(1000);
 
-        // Expire the session, so the readahead should be awaken from backoff
-        ZooKeeperClientUtils.expireSession(reader.bkLedgerManager.zooKeeperClient, zkServers, 1000);
-        AsyncNotification notification2;
-        do {
-            Thread.sleep(200);
-            notification2 = reader.bkLedgerManager.readAheadWorker.getMetadataNotification();
-        } while (null == notification2 || notification1 == notification2);
-
         // write another record
         BKSyncLogWriter writer =
                     (BKSyncLogWriter) dlm.startLogSegmentNonPartitioned();

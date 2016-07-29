@@ -33,6 +33,8 @@ import com.twitter.distributedlog.function.GetLastTxIdFunction;
 import com.twitter.distributedlog.impl.BKLogSegmentEntryWriter;
 import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForWriter;
 import com.twitter.distributedlog.lock.DistributedLock;
+import com.twitter.distributedlog.logsegment.LogSegmentFilter;
+import com.twitter.distributedlog.logsegment.LogSegmentMetadataCache;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataStore;
 import com.twitter.distributedlog.logsegment.RollingPolicy;
 import com.twitter.distributedlog.logsegment.SizeBasedRollingPolicy;
@@ -63,6 +65,7 @@ import org.apache.bookkeeper.stats.AlertStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Op;
@@ -76,6 +79,7 @@ import scala.runtime.AbstractFunction1;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -99,9 +103,6 @@ class BKLogWriteHandler extends BKLogHandler {
     static final Logger LOG = LoggerFactory.getLogger(BKLogReadHandler.class);
 
     protected final DistributedLock lock;
-    protected final int ensembleSize;
-    protected final int writeQuorumSize;
-    protected final int ackQuorumSize;
     protected final LedgerAllocator ledgerAllocator;
     protected final MaxTxId maxTxId;
     protected final MaxLogSegmentSequenceNo maxLogSegmentSequenceNo;
@@ -116,6 +117,10 @@ class BKLogWriteHandler extends BKLogHandler {
     protected final MetadataUpdater metadataUpdater;
     // tracking the inprogress log segments
     protected final LinkedList<Long> inprogressLSSNs;
+
+    // Fetch LogSegments State: write can continue without full list of log segments while truncation needs
+    private final Future<Versioned<List<LogSegmentMetadata>>> fetchForWrite;
+    private Future<Versioned<List<LogSegmentMetadata>>> fetchForTruncation;
 
     // Recover Functions
     private final RecoverLogSegmentFunction recoverLogSegmentFunction =
@@ -162,6 +167,7 @@ class BKLogWriteHandler extends BKLogHandler {
                       ZooKeeperClientBuilder zkcBuilder,
                       BookKeeperClientBuilder bkcBuilder,
                       LogSegmentMetadataStore metadataStore,
+                      LogSegmentMetadataCache metadataCache,
                       OrderedScheduler scheduler,
                       LedgerAllocator allocator,
                       StatsLogger statsLogger,
@@ -173,8 +179,16 @@ class BKLogWriteHandler extends BKLogHandler {
                       FeatureProvider featureProvider,
                       DynamicDistributedLogConfiguration dynConf,
                       DistributedLock lock /** owned by handler **/) {
-        super(logMetadata, conf, zkcBuilder, bkcBuilder, metadataStore,
-              scheduler, statsLogger, alertStatsLogger, null, WRITE_HANDLE_FILTER, clientId);
+        super(logMetadata,
+                conf,
+                zkcBuilder,
+                bkcBuilder,
+                metadataStore,
+                metadataCache,
+                scheduler,
+                statsLogger,
+                alertStatsLogger,
+                clientId);
         this.perLogStatsLogger = perLogStatsLogger;
         this.writeLimiter = writeLimiter;
         this.featureProvider = featureProvider;
@@ -182,23 +196,6 @@ class BKLogWriteHandler extends BKLogHandler {
         this.ledgerAllocator = allocator;
         this.lock = lock;
         this.metadataUpdater = LogSegmentMetadataStoreUpdater.createMetadataUpdater(conf, metadataStore);
-
-        ensembleSize = conf.getEnsembleSize();
-
-        if (ensembleSize < conf.getWriteQuorumSize()) {
-            writeQuorumSize = ensembleSize;
-            LOG.warn("Setting write quorum size {} greater than ensemble size {}",
-                conf.getWriteQuorumSize(), ensembleSize);
-        } else {
-            writeQuorumSize = conf.getWriteQuorumSize();
-        }
-        if (writeQuorumSize < conf.getAckQuorumSize()) {
-            ackQuorumSize = writeQuorumSize;
-            LOG.warn("Setting write ack quorum size {} greater than write quorum size {}",
-                conf.getAckQuorumSize(), writeQuorumSize);
-        } else {
-            ackQuorumSize = conf.getAckQuorumSize();
-        }
 
         if (conf.getEncodeRegionIDInLogSegmentMetadata()) {
             this.regionId = regionId;
@@ -215,9 +212,12 @@ class BKLogWriteHandler extends BKLogHandler {
         maxTxId = new MaxTxId(zooKeeperClient, logMetadata.getMaxTxIdPath(),
                 conf.getSanityCheckTxnID(), logMetadata.getMaxTxIdData());
 
-        // Schedule fetching ledgers list in background before we access it.
-        // We don't need to watch the ledgers list changes for writer, as it manages ledgers list.
-        scheduleGetLedgersTask(false, true);
+        // Schedule fetching log segment list in background before we access it.
+        // We don't need to watch the log segment list changes for writer, as it manages log segment list.
+        fetchForWrite = readLogSegmentsFromStore(
+                LogSegmentMetadata.COMPARATOR,
+                WRITE_HANDLE_FILTER,
+                null);
 
         // Initialize other parameters.
         setLastLedgerRollingTimeMillis(Utils.nowInMillis());
@@ -235,6 +235,59 @@ class BKLogWriteHandler extends BKLogHandler {
         closeOpStats = segmentsStatsLogger.getOpStatsLogger("close");
         recoverOpStats = segmentsStatsLogger.getOpStatsLogger("recover");
         deleteOpStats = segmentsStatsLogger.getOpStatsLogger("delete");
+    }
+
+    private Future<List<LogSegmentMetadata>> getCachedLogSegmentsAfterFirstFetch(
+            final Comparator<LogSegmentMetadata> comparator) {
+        final Promise<List<LogSegmentMetadata>> promise = new Promise<List<LogSegmentMetadata>>();
+        fetchForWrite.addEventListener(new FutureEventListener<Versioned<List<LogSegmentMetadata>>>() {
+            @Override
+            public void onFailure(Throwable cause) {
+                FutureUtils.setException(promise, cause);
+            }
+
+            @Override
+            public void onSuccess(Versioned<List<LogSegmentMetadata>> result) {
+                try {
+                    FutureUtils.setValue(promise, getCachedLogSegments(comparator));
+                } catch (UnexpectedException e) {
+                    FutureUtils.setException(promise, e);
+                }
+            }
+        });
+        return promise;
+    }
+
+    private Future<List<LogSegmentMetadata>> getCachedLogSegmentsAfterFirstFullFetch(
+            final Comparator<LogSegmentMetadata> comparator) {
+        Future<Versioned<List<LogSegmentMetadata>>> result;
+        synchronized (this) {
+            if (null == fetchForTruncation) {
+                fetchForTruncation = readLogSegmentsFromStore(
+                        LogSegmentMetadata.COMPARATOR,
+                        LogSegmentFilter.DEFAULT_FILTER,
+                        null);
+            }
+            result = fetchForTruncation;
+        }
+
+        final Promise<List<LogSegmentMetadata>> promise = new Promise<List<LogSegmentMetadata>>();
+        result.addEventListener(new FutureEventListener<Versioned<List<LogSegmentMetadata>>>() {
+            @Override
+            public void onFailure(Throwable cause) {
+                FutureUtils.setException(promise, cause);
+            }
+
+            @Override
+            public void onSuccess(Versioned<List<LogSegmentMetadata>> result) {
+                try {
+                    FutureUtils.setValue(promise, getCachedLogSegments(comparator));
+                } catch (UnexpectedException e) {
+                    FutureUtils.setException(promise, e);
+                }
+            }
+        });
+        return promise;
     }
 
     // Transactional operations for MaxLogSegmentSequenceNo
@@ -413,7 +466,7 @@ class BKLogWriteHandler extends BKLogHandler {
         boolean logSegmentsFound = false;
 
         if (LogSegmentMetadata.supportsLogSegmentSequenceNo(conf.getDLLedgerMetadataLayoutVersion())) {
-            List<LogSegmentMetadata> ledgerListDesc = getFilteredLedgerListDesc(false, false);
+            List<LogSegmentMetadata> ledgerListDesc = getCachedLogSegments(LogSegmentMetadata.DESC_COMPARATOR);
             Long nextLogSegmentSeqNo = DLUtils.nextLogSegmentSequenceNumber(ledgerListDesc);
 
             if (null == nextLogSegmentSeqNo) {
@@ -452,17 +505,27 @@ class BKLogWriteHandler extends BKLogHandler {
         return FutureUtils.result(asyncStartLogSegment(txId, bestEffort, allowMaxTxID));
     }
 
-    protected Future<BKLogSegmentWriter> asyncStartLogSegment(long txId,
-                                                              boolean bestEffort,
-                                                              boolean allowMaxTxID) {
-        Promise<BKLogSegmentWriter> promise = new Promise<BKLogSegmentWriter>();
+    protected Future<BKLogSegmentWriter> asyncStartLogSegment(final long txId,
+                                                              final boolean bestEffort,
+                                                              final boolean allowMaxTxID) {
+        final Promise<BKLogSegmentWriter> promise = new Promise<BKLogSegmentWriter>();
         try {
             lock.checkOwnershipAndReacquire();
         } catch (LockingException e) {
             FutureUtils.setException(promise, e);
             return promise;
         }
-        doStartLogSegment(txId, bestEffort, allowMaxTxID, promise);
+        fetchForWrite.addEventListener(new FutureEventListener<Versioned<List<LogSegmentMetadata>>>() {
+            @Override
+            public void onFailure(Throwable cause) {
+                FutureUtils.setException(promise, cause);
+            }
+
+            @Override
+            public void onSuccess(Versioned<List<LogSegmentMetadata>> list) {
+                doStartLogSegment(txId, bestEffort, allowMaxTxID, promise);
+            }
+        });
         return promise;
     }
 
@@ -732,7 +795,8 @@ class BKLogWriteHandler extends BKLogHandler {
         // we only record sequence id when both write version and logsegment's version support sequence id
         if (LogSegmentMetadata.supportsSequenceId(conf.getDLLedgerMetadataLayoutVersion())
                 && segment.supportsSequenceId()) {
-            List<LogSegmentMetadata> logSegmentDescList = getFilteredLedgerListDesc(false, false);
+            List<LogSegmentMetadata> logSegmentDescList =
+                    getCachedLogSegments(LogSegmentMetadata.DESC_COMPARATOR);
             startSequenceId = DLUtils.computeStartSequenceId(logSegmentDescList, segment);
         }
 
@@ -776,14 +840,46 @@ class BKLogWriteHandler extends BKLogHandler {
     }
 
     protected void doCompleteAndCloseLogSegment(final String inprogressZnodeName,
-                                                long logSegmentSeqNo,
-                                                long ledgerId,
-                                                long firstTxId,
-                                                long lastTxId,
-                                                int recordCount,
-                                                long lastEntryId,
-                                                long lastSlotId,
+                                                final long logSegmentSeqNo,
+                                                final long ledgerId,
+                                                final long firstTxId,
+                                                final long lastTxId,
+                                                final int recordCount,
+                                                final long lastEntryId,
+                                                final long lastSlotId,
                                                 final Promise<LogSegmentMetadata> promise) {
+        fetchForWrite.addEventListener(new FutureEventListener<Versioned<List<LogSegmentMetadata>>>() {
+            @Override
+            public void onFailure(Throwable cause) {
+                FutureUtils.setException(promise, cause);
+            }
+
+            @Override
+            public void onSuccess(Versioned<List<LogSegmentMetadata>> segments) {
+                doCompleteAndCloseLogSegmentAfterLogSegmentListFetched(
+                        inprogressZnodeName,
+                        logSegmentSeqNo,
+                        ledgerId,
+                        firstTxId,
+                        lastTxId,
+                        recordCount,
+                        lastEntryId,
+                        lastSlotId,
+                        promise);
+            }
+        });
+    }
+
+    private void doCompleteAndCloseLogSegmentAfterLogSegmentListFetched(
+            final String inprogressZnodeName,
+            long logSegmentSeqNo,
+            long ledgerId,
+            long firstTxId,
+            long lastTxId,
+            int recordCount,
+            long lastEntryId,
+            long lastSlotId,
+            final Promise<LogSegmentMetadata> promise) {
         try {
             lock.checkOwnershipAndReacquire();
         } catch (IOException ioe) {
@@ -912,7 +1008,7 @@ class BKLogWriteHandler extends BKLogHandler {
         } catch (IOException ioe) {
             return Future.exception(ioe);
         }
-        return asyncGetFilteredLedgerList(false, false).flatMap(recoverLogSegmentsFunction);
+        return getCachedLogSegmentsAfterFirstFetch(LogSegmentMetadata.COMPARATOR).flatMap(recoverLogSegmentsFunction);
     }
 
     class RecoverLogSegmentFunction extends Function<LogSegmentMetadata, Future<LogSegmentMetadata>> {
@@ -1002,8 +1098,7 @@ class BKLogWriteHandler extends BKLogHandler {
             List<LogSegmentMetadata> emptyList = new ArrayList<LogSegmentMetadata>(0);
             return Future.value(emptyList);
         }
-        scheduleGetAllLedgersTaskIfNeeded();
-        return asyncGetFullLedgerList(false, false).flatMap(
+        return getCachedLogSegmentsAfterFirstFullFetch(LogSegmentMetadata.COMPARATOR).flatMap(
                 new AbstractFunction1<List<LogSegmentMetadata>, Future<List<LogSegmentMetadata>>>() {
                     @Override
                     public Future<List<LogSegmentMetadata>> apply(List<LogSegmentMetadata> logSegments) {
@@ -1068,7 +1163,7 @@ class BKLogWriteHandler extends BKLogHandler {
             return Future.exception(new IllegalArgumentException(
                     "Invalid timestamp " + minTimestampToKeep + " to purge logs for " + getFullyQualifiedName()));
         }
-        return asyncGetFullLedgerList(false, false).flatMap(
+        return getCachedLogSegmentsAfterFirstFullFetch(LogSegmentMetadata.COMPARATOR).flatMap(
                 new Function<List<LogSegmentMetadata>, Future<List<LogSegmentMetadata>>>() {
             @Override
             public Future<List<LogSegmentMetadata>> apply(List<LogSegmentMetadata> logSegments) {
@@ -1097,7 +1192,7 @@ class BKLogWriteHandler extends BKLogHandler {
     }
 
     Future<List<LogSegmentMetadata>> purgeLogSegmentsOlderThanTxnId(final long minTxIdToKeep) {
-        return asyncGetFullLedgerList(true, false).flatMap(
+        return getCachedLogSegmentsAfterFirstFullFetch(LogSegmentMetadata.COMPARATOR).flatMap(
             new AbstractFunction1<List<LogSegmentMetadata>, Future<List<LogSegmentMetadata>>>() {
                 @Override
                 public Future<List<LogSegmentMetadata>> apply(List<LogSegmentMetadata> logSegments) {
@@ -1260,16 +1355,7 @@ class BKLogWriteHandler extends BKLogHandler {
         return Utils.closeSequence(scheduler,
                 lock,
                 ledgerAllocator
-        ).flatMap(new AbstractFunction1<Void, Future<Void>>() {
-            @Override
-            public Future<Void> apply(Void result) {
-                zooKeeperClient.getWatcherManager().unregisterChildWatcher(
-                        logMetadata.getLogSegmentsPath(),
-                        BKLogWriteHandler.this,
-                        false);
-                return Future.Void();
-            }
-        });
+        );
     }
 
     @Override

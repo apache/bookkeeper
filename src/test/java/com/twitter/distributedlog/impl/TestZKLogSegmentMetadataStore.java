@@ -52,6 +52,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -311,7 +312,8 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         Collections.sort(children);
         assertEquals("Should find 10 log segments",
                 10, children.size());
-        List<String> logSegmentNames = FutureUtils.result(lsmStore.getLogSegmentNames(rootPath));
+        List<String> logSegmentNames =
+                FutureUtils.result(lsmStore.getLogSegmentNames(rootPath, null)).getValue();
         Collections.sort(logSegmentNames);
         assertEquals("Should find 10 log segments",
                 10, logSegmentNames.size());
@@ -331,9 +333,13 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
     public void testRegisterListenerAfterLSMStoreClosed() throws Exception {
         lsmStore.close();
         LogSegmentMetadata segment = createLogSegment(1L);
-        lsmStore.registerLogSegmentListener(segment.getZkPath(), new LogSegmentNamesListener() {
+        lsmStore.getLogSegmentNames(segment.getZkPath(), new LogSegmentNamesListener() {
             @Override
-            public void onSegmentsUpdated(List<String> segments) {
+            public void onSegmentsUpdated(Versioned<List<String>> segments) {
+                // no-op;
+            }
+            @Override
+            public void onLogStreamDeleted() {
                 // no-op;
             }
         });
@@ -358,13 +364,17 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         final List<List<String>> segmentLists = Lists.newArrayListWithExpectedSize(2);
         LogSegmentNamesListener listener = new LogSegmentNamesListener() {
             @Override
-            public void onSegmentsUpdated(List<String> segments) {
+            public void onSegmentsUpdated(Versioned<List<String>> segments) {
                 logger.info("Received segments : {}", segments);
-                segmentLists.add(segments);
+                segmentLists.add(segments.getValue());
                 numNotifications.incrementAndGet();
             }
+            @Override
+            public void onLogStreamDeleted() {
+                // no-op;
+            }
         };
-        lsmStore.registerLogSegmentListener(rootPath, listener);
+        lsmStore.getLogSegmentNames(rootPath, listener);
         assertEquals(1, lsmStore.listeners.size());
         assertTrue("Should contain listener", lsmStore.listeners.containsKey(rootPath));
         assertTrue("Should contain listener", lsmStore.listeners.get(rootPath).containsKey(listener));
@@ -420,13 +430,18 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         final List<List<String>> segmentLists = Lists.newArrayListWithExpectedSize(2);
         LogSegmentNamesListener listener = new LogSegmentNamesListener() {
             @Override
-            public void onSegmentsUpdated(List<String> segments) {
+            public void onSegmentsUpdated(Versioned<List<String>> segments) {
                 logger.info("Received segments : {}", segments);
-                segmentLists.add(segments);
+                segmentLists.add(segments.getValue());
                 numNotifications.incrementAndGet();
             }
+
+            @Override
+            public void onLogStreamDeleted() {
+                // no-op;
+            }
         };
-        lsmStore.registerLogSegmentListener(rootPath, listener);
+        lsmStore.getLogSegmentNames(rootPath, listener);
         assertEquals(1, lsmStore.listeners.size());
         assertTrue("Should contain listener", lsmStore.listeners.containsKey(rootPath));
         assertTrue("Should contain listener", lsmStore.listeners.get(rootPath).containsKey(listener));
@@ -487,13 +502,18 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         final List<List<String>> segmentLists = Lists.newArrayListWithExpectedSize(2);
         LogSegmentNamesListener listener = new LogSegmentNamesListener() {
             @Override
-            public void onSegmentsUpdated(List<String> segments) {
+            public void onSegmentsUpdated(Versioned<List<String>> segments) {
                 logger.info("Received segments : {}", segments);
-                segmentLists.add(segments);
+                segmentLists.add(segments.getValue());
                 numNotifications.incrementAndGet();
             }
+
+            @Override
+            public void onLogStreamDeleted() {
+                // no-op;
+            }
         };
-        lsmStore.registerLogSegmentListener(rootPath, listener);
+        lsmStore.getLogSegmentNames(rootPath, listener);
         assertEquals(1, lsmStore.listeners.size());
         assertTrue("Should contain listener", lsmStore.listeners.containsKey(rootPath));
         assertTrue("Should contain listener", lsmStore.listeners.get(rootPath).containsKey(listener));
@@ -533,6 +553,80 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
                 2 * numSegments, thirdSegmentList.size());
         assertEquals("List of segments should be updated",
                 newChildren, thirdSegmentList);
+    }
+
+    @Test(timeout = 60000)
+    public void testLogSegmentNamesListenerOnDeletingLogStream() throws Exception {
+        int numSegments = 3;
+        Transaction<Object> createTxn = lsmStore.transaction();
+        for (int i = 0; i < numSegments; i++) {
+            LogSegmentMetadata segment = createLogSegment(i);
+            lsmStore.createLogSegment(createTxn, segment);
+        }
+        FutureUtils.result(createTxn.execute());
+        String rootPath = "/" + runtime.getMethodName();
+        List<String> children = zkc.get().getChildren(rootPath, false);
+        Collections.sort(children);
+
+        final AtomicInteger numNotifications = new AtomicInteger(0);
+        final List<List<String>> segmentLists = Lists.newArrayListWithExpectedSize(2);
+        final CountDownLatch deleteLatch = new CountDownLatch(1);
+        LogSegmentNamesListener listener = new LogSegmentNamesListener() {
+            @Override
+            public void onSegmentsUpdated(Versioned<List<String>> segments) {
+                logger.info("Received segments : {}", segments);
+                segmentLists.add(segments.getValue());
+                numNotifications.incrementAndGet();
+            }
+
+            @Override
+            public void onLogStreamDeleted() {
+                deleteLatch.countDown();
+            }
+        };
+        lsmStore.getLogSegmentNames(rootPath, listener);
+        assertEquals(1, lsmStore.listeners.size());
+        assertTrue("Should contain listener", lsmStore.listeners.containsKey(rootPath));
+        assertTrue("Should contain listener", lsmStore.listeners.get(rootPath).containsKey(listener));
+        while (numNotifications.get() < 1) {
+            TimeUnit.MILLISECONDS.sleep(10);
+        }
+        assertEquals("Should receive one segment list update",
+                1, numNotifications.get());
+        List<String> firstSegmentList = segmentLists.get(0);
+        Collections.sort(firstSegmentList);
+        assertEquals("List of segments should be same",
+                children, firstSegmentList);
+
+        // delete all log segments, it should trigger segment list updated
+        Transaction<Object> deleteTxn = lsmStore.transaction();
+        for (int i = 0; i < numSegments; i++) {
+            LogSegmentMetadata segment = createLogSegment(i);
+            lsmStore.deleteLogSegment(deleteTxn, segment);
+        }
+        FutureUtils.result(deleteTxn.execute());
+        List<String> newChildren = zkc.get().getChildren(rootPath, false);
+        Collections.sort(newChildren);
+        while (numNotifications.get() < 2) {
+            TimeUnit.MILLISECONDS.sleep(10);
+        }
+        assertEquals("Should receive second segment list update",
+                2, numNotifications.get());
+        List<String> secondSegmentList = segmentLists.get(1);
+        Collections.sort(secondSegmentList);
+        assertEquals("List of segments should be updated",
+                0, secondSegmentList.size());
+        assertEquals("List of segments should be updated",
+                newChildren, secondSegmentList);
+
+        // delete the root path
+        zkc.get().delete(rootPath, -1);
+        while (!lsmStore.listeners.isEmpty()) {
+            TimeUnit.MILLISECONDS.sleep(10);
+        }
+        assertTrue("listener should be removed after root path is deleted",
+                lsmStore.listeners.isEmpty());
+        deleteLatch.await();
     }
 
     @Test(timeout = 60000)

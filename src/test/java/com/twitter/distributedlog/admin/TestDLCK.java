@@ -99,6 +99,7 @@ public class TestDLCK extends TestDistributedLogBase {
         confLocal.setImmediateFlushEnabled(true);
         confLocal.setOutputBufferSize(0);
         confLocal.setLogSegmentSequenceNumberValidationEnabled(false);
+        confLocal.setLogSegmentCacheEnabled(false);
         URI uri = createDLMURI("/check-and-repair-dl-namespace");
         zkc.get().create(uri.getPath(), new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         com.twitter.distributedlog.DistributedLogManagerFactory factory =
