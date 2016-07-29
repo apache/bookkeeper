@@ -94,6 +94,8 @@ enum StatusCode {
     CHECKSUM_FAILED = 523,
     /* Overcapacity: too many streams */
     TOO_MANY_STREAMS = 524,
+    // Log Segment Not Found
+    LOG_SEGMENT_NOT_FOUND = 525,
 
     /* 6xx: unexpected */
 
