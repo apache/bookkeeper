@@ -37,6 +37,13 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractConfiguration extends CompositeConfiguration {
 
     static final Logger LOG = LoggerFactory.getLogger(AbstractConfiguration.class);
+    public static final String READ_SYSTEM_PROPERTIES_PROPERTY
+                            = "org.apache.bookkeeper.conf.readsystemproperties";
+    /**
+     * Enable the use of System Properties, which was the default behaviour till 4.4.0
+     */
+    private static final boolean READ_SYSTEM_PROPERTIES
+                                    = Boolean.getBoolean(READ_SYSTEM_PROPERTIES_PROPERTY);
 
     protected static final ClassLoader defaultLoader;
     static {
@@ -60,8 +67,10 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
 
     protected AbstractConfiguration() {
         super();
-        // add configuration for system properties
-        addConfiguration(new SystemConfiguration());
+        if (READ_SYSTEM_PROPERTIES) {
+            // add configuration for system properties
+            addConfiguration(new SystemConfiguration());
+        }
     }
 
     /**
