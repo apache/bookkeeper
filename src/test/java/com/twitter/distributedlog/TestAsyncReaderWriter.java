@@ -45,6 +45,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.feature.FixedValueFeature;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -1979,7 +1980,8 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         dlm = namespace.openLog(
                 name + "-custom",
                 Optional.<DistributedLogConfiguration>absent(),
-                Optional.of(dynConf));
+                Optional.of(dynConf),
+                Optional.<StatsLogger>absent());
         writer = dlm.startAsyncLogSegmentNonPartitioned();
         FutureUtils.result(writer.write(DLMTestUtil.getLogRecordInstance(1L)));
         segments = dlm.getLogSegments();

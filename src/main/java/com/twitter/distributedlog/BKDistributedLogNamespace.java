@@ -512,7 +512,8 @@ public class BKDistributedLogNamespace implements DistributedLogNamespace {
                 logName,
                 ClientSharingOption.SharedClients,
                 Optional.<DistributedLogConfiguration>absent(),
-                Optional.<DynamicDistributedLogConfiguration>absent());
+                Optional.<DynamicDistributedLogConfiguration>absent(),
+                Optional.<StatsLogger>absent());
         dlm.delete();
     }
 
@@ -521,13 +522,15 @@ public class BKDistributedLogNamespace implements DistributedLogNamespace {
             throws InvalidStreamNameException, IOException {
         return openLog(logName,
                 Optional.<DistributedLogConfiguration>absent(),
-                Optional.<DynamicDistributedLogConfiguration>absent());
+                Optional.<DynamicDistributedLogConfiguration>absent(),
+                Optional.<StatsLogger>absent());
     }
 
     @Override
     public DistributedLogManager openLog(String logName,
                                          Optional<DistributedLogConfiguration> logConf,
-                                         Optional<DynamicDistributedLogConfiguration> dynamicLogConf)
+                                         Optional<DynamicDistributedLogConfiguration> dynamicLogConf,
+                                         Optional<StatsLogger> perStreamStatsLogger)
             throws InvalidStreamNameException, IOException {
         validateName(logName);
         Optional<URI> uri = FutureUtils.result(metadataStore.getLogLocation(logName));
@@ -539,7 +542,8 @@ public class BKDistributedLogNamespace implements DistributedLogNamespace {
                 logName,
                 ClientSharingOption.SharedClients,
                 logConf,
-                dynamicLogConf);
+                dynamicLogConf,
+                perStreamStatsLogger);
     }
 
     @Override
@@ -780,7 +784,8 @@ public class BKDistributedLogNamespace implements DistributedLogNamespace {
                 nameOfLogStream,
                 clientSharingOption,
                 logConfiguration,
-                dynamicLogConfiguration
+                dynamicLogConfiguration,
+                Optional.<StatsLogger>absent()
         );
     }
 
@@ -806,7 +811,8 @@ public class BKDistributedLogNamespace implements DistributedLogNamespace {
             String nameOfLogStream,
             ClientSharingOption clientSharingOption,
             Optional<DistributedLogConfiguration> logConfiguration,
-            Optional<DynamicDistributedLogConfiguration> dynamicLogConfiguration)
+            Optional<DynamicDistributedLogConfiguration> dynamicLogConfiguration,
+            Optional<StatsLogger> perStreamStatsLogger)
         throws InvalidStreamNameException, IOException {
         // Make sure the name is well formed
         validateName(nameOfLogStream);
@@ -872,6 +878,8 @@ public class BKDistributedLogNamespace implements DistributedLogNamespace {
             dlmLedgerAlloctor = this.allocator;
             dlmLogSegmentRollingPermitManager = this.logSegmentRollingPermitManager;
         }
+        // if there's a specified perStreamStatsLogger, user it, otherwise use the default one.
+        StatsLogger perLogStatsLogger = perStreamStatsLogger.or(this.perLogStatsLogger);
 
         return new BKDistributedLogManager(
                 nameOfLogStream,                    /* Log Name */
