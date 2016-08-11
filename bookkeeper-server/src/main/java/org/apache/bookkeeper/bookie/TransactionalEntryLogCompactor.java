@@ -21,6 +21,8 @@
 
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -172,18 +174,17 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                 }
 
                 @Override
-                public void process(long ledgerId, long offset, ByteBuffer entry) throws IOException {
-                    throttler.acquire(entry.remaining());
+                public void process(long ledgerId, long offset, ByteBuf entry) throws IOException {
+                    throttler.acquire(entry.readableBytes());
                     synchronized (TransactionalEntryLogCompactor.this) {
-                        long lid = entry.getLong();
-                        long entryId = entry.getLong();
+                        long lid = entry.getLong(entry.readerIndex());
+                        long entryId = entry.getLong(entry.readerIndex() + 8);
                         if (lid != ledgerId || entryId < -1) {
                             LOG.warn("Scanning expected ledgerId {}, but found invalid entry "
                                     + "with ledgerId {} entryId {} at offset {}",
                                 new Object[]{ledgerId, lid, entryId, offset});
                             throw new IOException("Invalid entry found @ offset " + offset);
                         }
-                        entry.rewind();
                         long newOffset = entryLogger.addEntryForCompaction(ledgerId, entry);
                         offsets.add(new EntryLocation(ledgerId, entryId, newOffset));
 
