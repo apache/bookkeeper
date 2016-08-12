@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.google.common.collect.Sets;
 import com.twitter.distributedlog.callback.NamespaceListener;
+import com.twitter.distributedlog.exceptions.AlreadyClosedException;
 import com.twitter.distributedlog.exceptions.InvalidStreamNameException;
 import com.twitter.distributedlog.exceptions.LockingException;
 import com.twitter.distributedlog.exceptions.ZKException;
@@ -41,6 +42,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.Stat;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -418,5 +420,75 @@ public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
         testConf.setLedgerAllocatorPoolPath(".test");
         testConf.setLedgerAllocatorPoolName(null);
         validateBadAllocatorConfiguration(testConf, uri);
+    }
+
+    @Test(timeout = 60000)
+    public void testUseNamespaceAfterCloseShouldFailFast() throws Exception {
+        URI uri = createDLMURI("/" + runtime.getMethodName());
+        BKDistributedLogNamespace namespace = BKDistributedLogNamespace.newBuilder()
+            .conf(conf)
+            .uri(uri)
+            .build();
+        // before closing the namespace, no exception should be thrown
+        String logName = "test-stream";
+        // create a log
+        namespace.createLog(logName);
+        // log exists
+        Assert.assertTrue(namespace.logExists(logName));
+        // create a dlm
+        DistributedLogManager dlm = namespace.openLog(logName);
+        // do some writes
+        BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
+        for (long i = 0; i < 3; i++) {
+            LogRecord record = DLMTestUtil.getLargeLogRecordInstance(i);
+            writer.write(record);
+        }
+        writer.closeAndComplete();
+        // do some reads
+        LogReader reader = dlm.getInputStream(0);
+        for (long i = 0; i < 3; i++) {
+            Assert.assertEquals(reader.readNext(false).getTransactionId(), i);
+        }
+        namespace.deleteLog(logName);
+        Assert.assertFalse(namespace.logExists(logName));
+
+        // now try to close the namespace
+        namespace.close();
+        try {
+            namespace.createLog(logName);
+            fail("Should throw exception after namespace is closed");
+        } catch (AlreadyClosedException e) {
+            // No-ops
+        }
+        try {
+            namespace.openLog(logName);
+            fail("Should throw exception after namespace is closed");
+        } catch (AlreadyClosedException e) {
+            // No-ops
+        }
+        try {
+            namespace.logExists(logName);
+            fail("Should throw exception after namespace is closed");
+        } catch (AlreadyClosedException e) {
+            // No-ops
+        }
+        try {
+            namespace.getLogs();
+            fail("Should throw exception after namespace is closed");
+        } catch (AlreadyClosedException e) {
+            // No-ops
+        }
+        try {
+            namespace.deleteLog(logName);
+            fail("Should throw exception after namespace is closed");
+        } catch (AlreadyClosedException e) {
+            // No-ops
+        }
+        try {
+            namespace.createAccessControlManager();
+            fail("Should throw exception after namespace is closed");
+        } catch (AlreadyClosedException e) {
+            // No-ops
+        }
     }
 }
