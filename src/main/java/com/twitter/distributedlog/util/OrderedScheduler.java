@@ -310,6 +310,8 @@ public class OrderedScheduler implements ScheduledExecutorService {
     @Override
     public void shutdown() {
         for (MonitoredScheduledThreadPoolExecutor executor : executors) {
+            // Unregister gauges
+            executor.unregisterGauges();
             executor.shutdown();
         }
     }

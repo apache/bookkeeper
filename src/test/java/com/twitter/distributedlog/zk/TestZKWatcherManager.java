@@ -73,7 +73,8 @@ public class TestZKWatcherManager {
 
         // unregister watcher
         watcherManager.unregisterChildWatcher(path, watcher, true);
-
+        // unregister gauges
+        watcherManager.unregisterGauges();
         assertEquals(0, watcherManager.childWatches.size());
     }
 }

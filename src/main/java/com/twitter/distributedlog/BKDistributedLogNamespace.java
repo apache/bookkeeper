@@ -1079,6 +1079,10 @@ public class BKDistributedLogNamespace implements DistributedLogNamespace {
             LOG.info("Ledger Allocator stopped.");
         }
 
+        // Unregister gauge to avoid GC spiral
+        ((LimitedPermitManager)this.logSegmentRollingPermitManager).unregisterGauge();
+        ((SimplePermitLimiter)this.writeLimiter).unregisterGauge();
+
         // Shutdown log segment metadata stores
         Utils.close(writerSegmentMetadataStore);
         Utils.close(readerSegmentMetadataStore);

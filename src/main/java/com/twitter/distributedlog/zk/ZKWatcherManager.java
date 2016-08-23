@@ -78,6 +78,11 @@ public class ZKWatcherManager implements Watcher {
     private final String name;
     private final ZooKeeperClient zkc;
     private final StatsLogger statsLogger;
+    // Gauges and their labels
+    private final Gauge<Number> totalWatchesGauge;
+    private static final String totalWatchesGauageLabel = "total_watches";
+    private final Gauge<Number> numChildWatchesGauge;
+    private static final String numChildWatchesGauageLabel = "num_child_watches";
 
     protected final ConcurrentMap<String, Set<Watcher>> childWatches;
     protected final AtomicInteger allWatchesGauge;
@@ -94,7 +99,7 @@ public class ZKWatcherManager implements Watcher {
         this.allWatchesGauge = new AtomicInteger(0);
 
         // stats
-        this.statsLogger.registerGauge("total_watches", new Gauge<Number>() {
+        totalWatchesGauge = new Gauge<Number>() {
             @Override
             public Number getDefaultValue() {
                 return 0;
@@ -104,9 +109,10 @@ public class ZKWatcherManager implements Watcher {
             public Number getSample() {
                 return allWatchesGauge.get();
             }
-        });
+        };
+        this.statsLogger.registerGauge(totalWatchesGauageLabel, totalWatchesGauge);
 
-        this.statsLogger.registerGauge("num_child_watches", new Gauge<Number>() {
+        numChildWatchesGauge = new Gauge<Number>() {
             @Override
             public Number getDefaultValue() {
                 return 0;
@@ -116,7 +122,9 @@ public class ZKWatcherManager implements Watcher {
             public Number getSample() {
                 return childWatches.size();
             }
-        });
+        };
+
+        this.statsLogger.registerGauge(numChildWatchesGauageLabel, numChildWatchesGauge);
     }
 
     public Watcher registerChildWatcher(String path, Watcher watcher) {
@@ -176,6 +184,11 @@ public class ZKWatcherManager implements Watcher {
                 childWatches.remove(path, watchers);
             }
         }
+    }
+
+    public void unregisterGauges() {
+        this.statsLogger.unregisterGauge(totalWatchesGauageLabel, totalWatchesGauge);
+        this.statsLogger.unregisterGauge(numChildWatchesGauageLabel, numChildWatchesGauge);
     }
 
     @Override

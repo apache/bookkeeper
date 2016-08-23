@@ -110,6 +110,14 @@ public class MonitoredScheduledThreadPoolExecutor extends ScheduledThreadPoolExe
     protected final boolean traceTaskExecution;
     protected final OpStatsLogger taskExecutionStats;
     protected final OpStatsLogger taskPendingStats;
+    protected final StatsLogger statsLogger;
+    // Gauges and their labels
+    private static final String pendingTasksGaugeLabel = "pending_tasks";
+    private final Gauge<Number> pendingTasksGauge;
+    private static final String completedTasksGaugeLabel = "completed_tasks";
+    protected final Gauge<Number> completedTasksGauge;
+    private static final String totalTasksGaugeLabel = "total_tasks";
+    protected final Gauge<Number> totalTasksGauge;
 
     public MonitoredScheduledThreadPoolExecutor(int corePoolSize,
                                                 ThreadFactory threadFactory,
@@ -117,11 +125,10 @@ public class MonitoredScheduledThreadPoolExecutor extends ScheduledThreadPoolExe
                                                 boolean traceTaskExecution) {
         super(corePoolSize, threadFactory);
         this.traceTaskExecution = traceTaskExecution;
-
-        this.taskPendingStats = statsLogger.getOpStatsLogger("task_pending_time");
-        this.taskExecutionStats = statsLogger.getOpStatsLogger("task_execution_time");
-        // outstanding tasks
-        statsLogger.registerGauge("pending_tasks", new Gauge<Number>() {
+        this.statsLogger = statsLogger;
+        this.taskPendingStats = this.statsLogger.getOpStatsLogger("task_pending_time");
+        this.taskExecutionStats = this.statsLogger.getOpStatsLogger("task_execution_time");
+        this.pendingTasksGauge = new Gauge<Number>() {
             @Override
             public Number getDefaultValue() {
                 return 0;
@@ -131,9 +138,8 @@ public class MonitoredScheduledThreadPoolExecutor extends ScheduledThreadPoolExe
             public Number getSample() {
                 return getQueue().size();
             }
-        });
-        // completed tasks
-        statsLogger.registerGauge("completed_tasks", new Gauge<Number>() {
+        };
+        this.completedTasksGauge = new Gauge<Number>() {
             @Override
             public Number getDefaultValue() {
                 return 0;
@@ -143,9 +149,8 @@ public class MonitoredScheduledThreadPoolExecutor extends ScheduledThreadPoolExe
             public Number getSample() {
                 return getCompletedTaskCount();
             }
-        });
-        // total tasks
-        statsLogger.registerGauge("total_tasks", new Gauge<Number>() {
+        };
+        this.totalTasksGauge = new Gauge<Number>() {
             @Override
             public Number getDefaultValue() {
                 return 0;
@@ -155,7 +160,14 @@ public class MonitoredScheduledThreadPoolExecutor extends ScheduledThreadPoolExe
             public Number getSample() {
                 return getTaskCount();
             }
-        });
+        };
+
+        // outstanding tasks
+        this.statsLogger.registerGauge(pendingTasksGaugeLabel, pendingTasksGauge);
+        // completed tasks
+        this.statsLogger.registerGauge(completedTasksGaugeLabel, completedTasksGauge);
+        // total tasks
+        this.statsLogger.registerGauge(totalTasksGaugeLabel, pendingTasksGauge);
     }
 
     private Runnable timedRunnable(Runnable r) {
@@ -236,6 +248,10 @@ public class MonitoredScheduledThreadPoolExecutor extends ScheduledThreadPoolExe
         return null;
     }
 
-
+    void unregisterGauges() {
+        this.statsLogger.unregisterGauge(pendingTasksGaugeLabel, pendingTasksGauge);
+        this.statsLogger.unregisterGauge(completedTasksGaugeLabel, completedTasksGauge);
+        this.statsLogger.unregisterGauge(totalTasksGaugeLabel, totalTasksGauge);
+    }
 
 }

@@ -395,6 +395,8 @@ public class ZooKeeperClient {
         }
         LOG.info("Close zookeeper client {}.", name);
         closeInternal();
+        // unregister gauges to prevent GC spiral
+        this.watcherManager.unregisterGauges();
         closed = true;
     }
 }

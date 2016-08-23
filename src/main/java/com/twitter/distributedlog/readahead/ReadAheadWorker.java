@@ -356,6 +356,8 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, AsyncClosea
     public Future<Void> asyncClose() {
         LOG.info("Stopping Readahead worker for {}", fullyQualifiedName);
         running = false;
+        // Unregister associated gauages to prevent GC spiral
+        this.tracker.unregisterGauge();
 
         // Aside from unfortunate naming of variables, this allows
         // the currently active long poll to be interrupted and completed

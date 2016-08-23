@@ -68,6 +68,8 @@ public class LimitedPermitManager implements PermitManager, Runnable, Watcher {
     final TimeUnit timeUnit;
     final ScheduledExecutorService executorService;
     final AtomicInteger epoch = new AtomicInteger(0);
+    private StatsLogger statsLogger = null;
+    private Gauge<Number> outstandingGauge = null;
 
     public LimitedPermitManager(int concurrency, int period, TimeUnit timeUnit,
                                 ScheduledExecutorService executorService) {
@@ -84,7 +86,8 @@ public class LimitedPermitManager implements PermitManager, Runnable, Watcher {
         this.period = period;
         this.timeUnit = timeUnit;
         this.executorService = executorService;
-        statsLogger.scope("permits").registerGauge("outstanding", new Gauge<Number>() {
+        this.statsLogger = statsLogger;
+        this.outstandingGauge = new Gauge<Number>() {
             @Override
             public Number getDefaultValue() {
                 return 0;
@@ -94,7 +97,8 @@ public class LimitedPermitManager implements PermitManager, Runnable, Watcher {
             public Number getSample() {
                 return null == semaphore ? 0 : concurrency - semaphore.availablePermits();
             }
-        });
+        };
+        this.statsLogger.scope("permits").registerGauge("outstanding", this.outstandingGauge);
     }
 
     @Override
@@ -174,6 +178,12 @@ public class LimitedPermitManager implements PermitManager, Runnable, Watcher {
             default:
                 break;
             }
+        }
+    }
+
+    public void unregisterGauge() {
+        if(this.statsLogger != null && this.outstandingGauge != null) {
+            this.statsLogger.scope("permits").unregisterGauge("outstanding", this.outstandingGauge);
         }
     }
 }

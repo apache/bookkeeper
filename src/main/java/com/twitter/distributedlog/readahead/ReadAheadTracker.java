@@ -32,13 +32,22 @@ public class ReadAheadTracker {
     final AtomicLong ticks = new AtomicLong(0);
     // which phase that the worker is in.
     ReadAheadPhase phase;
+    private final StatsLogger statsLogger;
+    // Gauges and their labels
+    private static final String phaseGaugeLabel = "phase";
+    private final Gauge<Number> phaseGauge;
+    private static final String ticksGaugeLabel = "ticks";
+    private final Gauge<Number> ticksGauge;
+    private static final String cachEntriesGaugeLabel = "cache_entries";
+    private final Gauge<Number> cacheEntriesGauge;
 
     ReadAheadTracker(String streamName,
                      final ReadAheadCache cache,
                      ReadAheadPhase initialPhase,
                      StatsLogger statsLogger) {
+        this.statsLogger = statsLogger;
         this.phase = initialPhase;
-        statsLogger.registerGauge("phase", new Gauge<Number>() {
+        phaseGauge = new Gauge<Number>() {
             @Override
             public Number getDefaultValue() {
                 return ReadAheadPhase.SCHEDULE_READAHEAD.getCode();
@@ -48,8 +57,10 @@ public class ReadAheadTracker {
             public Number getSample() {
                 return phase.getCode();
             }
-        });
-        statsLogger.registerGauge("ticks", new Gauge<Number>() {
+        };
+        this.statsLogger.registerGauge(phaseGaugeLabel, phaseGauge);
+
+        ticksGauge = new Gauge<Number>() {
             @Override
             public Number getDefaultValue() {
                 return 0;
@@ -59,8 +70,10 @@ public class ReadAheadTracker {
             public Number getSample() {
                 return ticks.get();
             }
-        });
-        statsLogger.registerGauge("cache_entries", new Gauge<Number>() {
+        };
+        this.statsLogger.registerGauge(ticksGaugeLabel, ticksGauge);
+
+        cacheEntriesGauge = new Gauge<Number>() {
             @Override
             public Number getDefaultValue() {
                 return 0;
@@ -70,7 +83,8 @@ public class ReadAheadTracker {
             public Number getSample() {
                 return cache.getNumCachedRecords();
             }
-        });
+        };
+        this.statsLogger.registerGauge(cachEntriesGaugeLabel, cacheEntriesGauge);
     }
 
     ReadAheadPhase getPhase() {
@@ -80,5 +94,11 @@ public class ReadAheadTracker {
     public void enterPhase(ReadAheadPhase readAheadPhase) {
         this.ticks.incrementAndGet();
         this.phase = readAheadPhase;
+    }
+
+    public void unregisterGauge() {
+        this.statsLogger.unregisterGauge(phaseGaugeLabel, phaseGauge);
+        this.statsLogger.unregisterGauge(ticksGaugeLabel, ticksGauge);
+        this.statsLogger.unregisterGauge(cachEntriesGaugeLabel, cacheEntriesGauge);
     }
 }

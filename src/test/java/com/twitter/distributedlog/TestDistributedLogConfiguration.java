@@ -109,14 +109,15 @@ public class TestDistributedLogConfiguration {
         DistributedLogConfiguration conf = new DistributedLogConfiguration();
         // validate default configuration
         conf.validate();
-        // test invalid timeout, should throw exception
+        // test equal, should not throw exception
         conf.setReadLACLongPollTimeout(conf.getBKClientReadTimeout() * 1000);
         try {
             conf.validate();
         } catch (IllegalArgumentException e){
             exceptionThrown=true;
         }
-        assertTrue(exceptionThrown);
+        assertFalse(exceptionThrown);
+        // test invalid case, should throw exception
         exceptionThrown=false;
         conf.setReadLACLongPollTimeout(conf.getBKClientReadTimeout() * 1000 * 2);
         try {

@@ -47,6 +47,9 @@ public class SimplePermitLimiter implements PermitLimiter {
     final int permitsMax;
     final boolean darkmode;
     final Feature disableWriteLimitFeature;
+    private StatsLogger statsLogger = null;
+    private Gauge<Number> permitsGauge = null;
+    private String permitsGaugeLabel = "";
 
     public SimplePermitLimiter(boolean darkmode, int permitsMax, StatsLogger statsLogger,
                                boolean singleton, Feature disableWriteLimitFeature) {
@@ -57,7 +60,8 @@ public class SimplePermitLimiter implements PermitLimiter {
 
         // stats
         if (singleton) {
-            statsLogger.registerGauge("num_permits", new Gauge<Number>() {
+            this.statsLogger = statsLogger;
+            this.permitsGauge = new Gauge<Number>() {
                 @Override
                 public Number getDefaultValue() {
                     return 0;
@@ -66,7 +70,9 @@ public class SimplePermitLimiter implements PermitLimiter {
                 public Number getSample() {
                     return permits.get();
                 }
-            });
+            };
+            this.permitsGaugeLabel = "permits";
+            statsLogger.registerGauge(permitsGaugeLabel, permitsGauge);
         }
         acquireFailureCounter = statsLogger.getCounter("acquireFailure");
         permitsMetric = statsLogger.getOpStatsLogger("permits");
@@ -96,5 +102,11 @@ public class SimplePermitLimiter implements PermitLimiter {
     @VisibleForTesting
     public int getPermits() {
         return permits.get();
+    }
+
+    public void unregisterGauge() {
+        if (this.statsLogger != null && this.permitsGauge != null) {
+            this.statsLogger.unregisterGauge(permitsGaugeLabel, permitsGauge);
+        }
     }
 }
