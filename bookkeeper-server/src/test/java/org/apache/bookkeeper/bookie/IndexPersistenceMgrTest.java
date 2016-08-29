@@ -22,6 +22,7 @@ package org.apache.bookkeeper.bookie;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.SnapshotMap;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -45,6 +46,7 @@ public class IndexPersistenceMgrTest {
     ServerConfiguration conf;
     File journalDir, ledgerDir;
     LedgerDirsManager ledgerDirsManager;
+    LedgerDirsMonitor ledgerMonitor;
 
     @Before
     public void setUp() throws Exception {
@@ -64,11 +66,15 @@ public class IndexPersistenceMgrTest {
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
         ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs());
+        ledgerMonitor = new LedgerDirsMonitor(conf, 
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), ledgerDirsManager);
+        ledgerMonitor.init();
     }
 
     @After
     public void tearDown() throws Exception {
-        ledgerDirsManager.shutdown();
+        //TODO: it is being shut down but never started. why?
+        ledgerMonitor.shutdown();
         FileUtils.deleteDirectory(journalDir);
         FileUtils.deleteDirectory(ledgerDir);
     }
