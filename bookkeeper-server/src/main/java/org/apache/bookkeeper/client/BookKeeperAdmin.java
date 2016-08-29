@@ -52,6 +52,8 @@ import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
@@ -137,24 +139,29 @@ public class BookKeeperAdmin {
         // Create the BookKeeper client instance
         bkc = new BookKeeper(conf, zk);
         ownsBK = true;
-
-        this.lfr = new LedgerFragmentReplicator(bkc);
+        this.lfr = new LedgerFragmentReplicator(bkc, NullStatsLogger.INSTANCE);
     }
 
     /**
      * Constructor that takes in a BookKeeper instance . This will be useful,
-     * when users already has bk instance ready.
+     * when user already has bk instance ready.
      *
      * @param bkc
      *            - bookkeeper instance
+     * @param statsLogger
+     *            - stats logger
      */
-    public BookKeeperAdmin(final BookKeeper bkc) {
+    public BookKeeperAdmin(final BookKeeper bkc, StatsLogger statsLogger) {
         this.bkc = bkc;
         ownsBK = false;
         this.zk = bkc.zk;
         ownsZK = false;
         this.bookiesPath = bkc.getConf().getZkAvailableBookiesPath();
-        this.lfr = new LedgerFragmentReplicator(bkc);
+        this.lfr = new LedgerFragmentReplicator(bkc, statsLogger);
+    }
+
+    public BookKeeperAdmin(final BookKeeper bkc) {
+        this(bkc, NullStatsLogger.INSTANCE);
     }
 
     /**

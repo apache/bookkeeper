@@ -51,6 +51,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -84,6 +85,7 @@ public class ReplicationWorker implements Runnable {
 
     // Expose Stats
     private final OpStatsLogger rereplicateOpStats;
+    private final Counter numLedgersReplicated;
 
     /**
      * Replication worker for replicating the ledger fragments from
@@ -134,7 +136,7 @@ public class ReplicationWorker implements Runnable {
                 .setZookeeper(zkc)
                 .setStatsLogger(statsLogger.scope(BK_CLIENT_SCOPE))
                 .build();
-        this.admin = new BookKeeperAdmin(bkc);
+        this.admin = new BookKeeperAdmin(bkc, statsLogger);
         this.ledgerChecker = new LedgerChecker(bkc);
         this.workerThread = new BookieThread(this, "ReplicationWorker");
         this.openLedgerRereplicationGracePeriod = conf
@@ -143,6 +145,7 @@ public class ReplicationWorker implements Runnable {
 
         // Expose Stats
         this.rereplicateOpStats = statsLogger.getOpStatsLogger(REREPLICATE_OP);
+        this.numLedgersReplicated = statsLogger.getCounter(ReplicationStats.NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED);
     }
 
     /** Start the replication worker */
@@ -254,6 +257,7 @@ public class ReplicationWorker implements Runnable {
         LOG.debug("Founds fragments {} for replication from ledger: {}", fragments, ledgerIdToReplicate);
 
         boolean foundOpenFragments = false;
+        long numFragsReplicated = 0;
         for (LedgerFragment ledgerFragment : fragments) {
             if (!ledgerFragment.isClosed()) {
                 foundOpenFragments = true;
@@ -266,6 +270,7 @@ public class ReplicationWorker implements Runnable {
             }
             try {
                 admin.replicateLedgerFragment(lh, ledgerFragment, targetBookie);
+                numFragsReplicated++;
             } catch (BKException.BKBookieHandleNotAvailableException e) {
                 LOG.warn("BKBookieHandleNotAvailableException "
                         + "while replicating the fragment", e);
@@ -277,6 +282,10 @@ public class ReplicationWorker implements Runnable {
                     throw new BKException.BKWriteOnReadOnlyBookieException();
                 }
             }
+        }
+
+        if (numFragsReplicated > 0) {
+            numLedgersReplicated.inc();
         }
 
         if (foundOpenFragments || isLastSegmentOpenAndMissingBookies(lh)) {
