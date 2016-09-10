@@ -29,6 +29,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,6 +52,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
 
 /**
@@ -187,6 +189,30 @@ public class LedgerHandle implements AutoCloseable {
      */
     public Map<String, byte[]> getCustomMetadata() {
         return metadata.getCustomMetadata();
+    }
+
+    /**
+     * Get the number of fragments that makeup this ledger
+     *
+     * @return the count of fragments
+     */
+    synchronized public long getNumFragments() {
+        return metadata.getEnsembles().size();
+    }
+
+    /**
+     * Get the count of unique bookies that own part of this ledger
+     * by going over all the fragments of the ledger.
+     *
+     * @return count of unique bookies
+     */
+    synchronized public long getNumBookies() {
+        Map<Long, ArrayList<BookieSocketAddress>> m = metadata.getEnsembles();
+        Set<BookieSocketAddress> s = Sets.newHashSet();
+        for (ArrayList<BookieSocketAddress> aList : m.values()) {
+            s.addAll(aList);
+        }
+        return s.size();
     }
 
     /**

@@ -33,6 +33,11 @@ import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.replication.ReplicationStats;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException.Code;
@@ -48,9 +53,23 @@ public class LedgerFragmentReplicator {
 
     // BookKeeper instance
     private BookKeeper bkc;
+    private StatsLogger statsLogger;
+    private final Counter numEntriesRead;
+    private final OpStatsLogger numBytesRead;
+    private final Counter numEntriesWritten;
+    private final OpStatsLogger numBytesWritten;
+
+    public LedgerFragmentReplicator(BookKeeper bkc, StatsLogger statsLogger) {
+        this.bkc = bkc;
+        this.statsLogger = statsLogger;
+        numEntriesRead = this.statsLogger.getCounter(ReplicationStats.NUM_ENTRIES_READ);
+        numBytesRead = this.statsLogger.getOpStatsLogger(ReplicationStats.NUM_BYTES_READ);
+        numEntriesWritten = this.statsLogger.getCounter(ReplicationStats.NUM_ENTRIES_WRITTEN);
+        numBytesWritten = this.statsLogger.getOpStatsLogger(ReplicationStats.NUM_BYTES_WRITTEN);
+    }
 
     public LedgerFragmentReplicator(BookKeeper bkc) {
-        this.bkc = bkc;
+        this(bkc, NullStatsLogger.INSTANCE);
     }
 
     private final static Logger LOG = LoggerFactory
@@ -259,6 +278,9 @@ public class LedgerFragmentReplicator {
                  */
                 LedgerEntry entry = seq.nextElement();
                 byte[] data = entry.getEntry();
+                final long dataLength = data.length;
+                numEntriesRead.inc();
+                numBytesRead.registerSuccessfulValue(dataLength);
                 ChannelBuffer toSend = lh.getDigestManager()
                         .computeDigestAndPackageForSending(entryId,
                                 lh.getLastAddConfirmed(), entry.getLength(),
@@ -278,6 +300,8 @@ public class LedgerFragmentReplicator {
                                                     + addr, BKException
                                                     .create(rc));
                                 } else {
+                                    numEntriesWritten.inc();
+                                    numBytesWritten.registerSuccessfulValue(dataLength);
                                     if (LOG.isDebugEnabled()) {
                                         LOG.debug("Success writing ledger id "
                                                 + ledgerId + ", entry id "

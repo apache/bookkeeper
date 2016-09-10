@@ -20,7 +20,9 @@
  */
 package org.apache.bookkeeper.replication;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Sets;
+
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -39,13 +41,18 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
-import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.replication.ReplicationStats;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.zookeeper.AsyncCallback;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.SettableFuture;
+
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -83,11 +90,28 @@ public class Auditor implements BookiesListener {
     private final ScheduledExecutorService executor;
     private List<String> knownBookies = new ArrayList<String>();
     private final String bookieIdentifier;
+    private final StatsLogger statsLogger;
+    private final OpStatsLogger numUnderReplicatedLedger;
+    private final OpStatsLogger uRLPublishTimeForLostBookies;
+    private final OpStatsLogger bookieToLedgersMapCreationTime;
+    private final OpStatsLogger checkAllLedgersTime;
+    private final Counter numLedgersChecked;
+    private final OpStatsLogger numFragmentsPerLedger;
+    private final OpStatsLogger numBookiesPerLedger;
 
     public Auditor(final String bookieIdentifier, ServerConfiguration conf,
-                   ZooKeeper zkc) throws UnavailableException {
+                   ZooKeeper zkc, StatsLogger statsLogger) throws UnavailableException {
         this.conf = conf;
         this.bookieIdentifier = bookieIdentifier;
+        this.statsLogger = statsLogger;
+
+        numUnderReplicatedLedger = this.statsLogger.getOpStatsLogger(ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS);
+        uRLPublishTimeForLostBookies = this.statsLogger.getOpStatsLogger(ReplicationStats.URL_PUBLISH_TIME_FOR_LOST_BOOKIE);
+        bookieToLedgersMapCreationTime = this.statsLogger.getOpStatsLogger(ReplicationStats.BOOKIE_TO_LEDGERS_MAP_CREATION_TIME);
+        checkAllLedgersTime = this.statsLogger.getOpStatsLogger(ReplicationStats.CHECK_ALL_LEDGERS_TIME);
+        numLedgersChecked = this.statsLogger.getCounter(ReplicationStats.NUM_LEDGERS_CHECKED);
+        numFragmentsPerLedger = statsLogger.getOpStatsLogger(ReplicationStats.NUM_FRAGMENTS_PER_LEDGER);
+        numBookiesPerLedger = statsLogger.getOpStatsLogger(ReplicationStats.NUM_BOOKIES_PER_LEDGER);
 
         initialize(conf, zkc);
 
@@ -113,7 +137,7 @@ public class Auditor implements BookiesListener {
                     .newLedgerUnderreplicationManager();
 
             this.bkc = new BookKeeper(new ClientConfiguration(conf), zkc);
-            this.admin = new BookKeeperAdmin(bkc);
+            this.admin = new BookKeeperAdmin(bkc, statsLogger);
         } catch (CompatibilityException ce) {
             throw new UnavailableException(
                     "CompatibilityException while initializing Auditor", ce);
@@ -215,7 +239,10 @@ public class Auditor implements BookiesListener {
                                     return;
                                 }
 
+                                Stopwatch stopwatch = new Stopwatch().start();
                                 checkAllLedgers();
+                                checkAllLedgersTime.registerSuccessfulEvent(stopwatch.stop().elapsedMillis(),
+                                                                            TimeUnit.MILLISECONDS);
                             } catch (KeeperException ke) {
                                 LOG.error("Exception while running periodic check", ke);
                             } catch (InterruptedException ie) {
@@ -295,6 +322,7 @@ public class Auditor implements BookiesListener {
             return;
         }
 
+        Stopwatch stopwatch = new Stopwatch().start();
         // put exit cases here
         Map<String, Set<Long>> ledgerDetails = generateBookie2LedgersIndex();
         try {
@@ -316,8 +344,12 @@ public class Auditor implements BookiesListener {
         Collection<String> lostBookies = CollectionUtils.subtract(knownBookies,
                 availableBookies);
 
-        if (lostBookies.size() > 0)
+        bookieToLedgersMapCreationTime.registerSuccessfulEvent(stopwatch.elapsedMillis(), TimeUnit.MILLISECONDS);
+        if (lostBookies.size() > 0) {
             handleLostBookies(lostBookies, ledgerDetails);
+            uRLPublishTimeForLostBookies.registerSuccessfulEvent(stopwatch.stop().elapsedMillis(), TimeUnit.MILLISECONDS);
+        }
+
     }
 
     private Map<String, Set<Long>> generateBookie2LedgersIndex()
@@ -347,6 +379,7 @@ public class Auditor implements BookiesListener {
         }
         LOG.info("Following ledgers: " + ledgers + " of bookie: " + bookieIP
                 + " are identified as underreplicated");
+        numUnderReplicatedLedger.registerSuccessfulValue(ledgers.size());
         for (Long ledgerId : ledgers) {
             try {
                 ledgerUnderreplicationManager.markLedgerUnderreplicated(
@@ -418,7 +451,7 @@ public class Auditor implements BookiesListener {
 
         final BookKeeper client = new BookKeeper(new ClientConfiguration(conf),
                                                  newzk);
-        final BookKeeperAdmin admin = new BookKeeperAdmin(client);
+        final BookKeeperAdmin admin = new BookKeeperAdmin(client, statsLogger);
 
         try {
             final LedgerChecker checker = new LedgerChecker(client);
@@ -447,6 +480,12 @@ public class Auditor implements BookiesListener {
                     try {
                         lh = admin.openLedgerNoRecovery(ledgerId);
                         checker.checkLedger(lh, new ProcessLostFragmentsCb(lh, callback));
+                        // we collect the following stats to get a measure of the
+                        // distribution of a single ledger within the bk cluster
+                        // the higher the number of fragments/bookies, the more distributed it is
+                        numFragmentsPerLedger.registerSuccessfulValue(lh.getNumFragments());
+                        numBookiesPerLedger.registerSuccessfulValue(lh.getNumBookies());
+                        numLedgersChecked.inc();
                     } catch (BKException.BKNoSuchLedgerExistsException bknsle) {
                         LOG.debug("Ledger was deleted before we could check it", bknsle);
                         callback.processResult(BKException.Code.OK,
