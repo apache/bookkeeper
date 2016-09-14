@@ -33,6 +33,8 @@ public interface ReplicationStats {
     public final static String NUM_FRAGMENTS_PER_LEDGER = "NUM_FRAGMENTS_PER_LEDGER";
     public final static String NUM_BOOKIES_PER_LEDGER = "NUM_BOOKIES_PER_LEDGER";
     public final static String NUM_LEDGERS_CHECKED = "NUM_LEDGERS_CHECKED";
+    public final static String NUM_BOOKIE_AUDITS_DELAYED = "NUM_BOOKIE_AUDITS_DELAYED";
+    public final static String NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED = "NUM_DELAYED_BOOKIE_AUDITS_CANCELLED";
 
     public final static String REPLICATION_WORKER_SCOPE = "replication_worker";
     public final static String REREPLICATE_OP = "rereplicate";
