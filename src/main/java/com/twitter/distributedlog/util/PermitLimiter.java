@@ -31,6 +31,11 @@ public interface PermitLimiter {
         @Override
         public void release(int permits) {
         }
+
+        @Override
+        public void close() {
+
+        }
     };
 
     /**
@@ -44,4 +49,9 @@ public interface PermitLimiter {
      * Release a permit.
      */
     void release(int permits);
+
+    /**
+     * Close the resources created by the limiter
+     */
+    void close();
 }

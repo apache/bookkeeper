@@ -50,6 +50,11 @@ public interface PermitManager {
             return false;
         }
 
+        @Override
+        public void close() {
+            // nop
+        }
+
     };
 
     /**
@@ -80,4 +85,9 @@ public interface PermitManager {
      *          permit context to disallow
      */
     boolean disallowObtainPermits(Permit permit);
+
+    /**
+     * Release the resources
+     */
+    void close();
 }

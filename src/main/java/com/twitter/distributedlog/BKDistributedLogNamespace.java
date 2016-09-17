@@ -1080,8 +1080,8 @@ public class BKDistributedLogNamespace implements DistributedLogNamespace {
         }
 
         // Unregister gauge to avoid GC spiral
-        ((LimitedPermitManager)this.logSegmentRollingPermitManager).unregisterGauge();
-        ((SimplePermitLimiter)this.writeLimiter).unregisterGauge();
+        this.logSegmentRollingPermitManager.close();
+        this.writeLimiter.close();
 
         // Shutdown log segment metadata stores
         Utils.close(writerSegmentMetadataStore);

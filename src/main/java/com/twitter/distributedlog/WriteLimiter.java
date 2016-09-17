@@ -54,4 +54,9 @@ public class WriteLimiter {
         streamLimiter.release(permits);
         globalLimiter.release(permits);
     }
+
+    public void close() {
+        streamLimiter.close();
+        globalLimiter.close();
+    }
 }

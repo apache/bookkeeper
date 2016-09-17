@@ -534,8 +534,9 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
     private void closeInternal(final boolean abort,
                                final AtomicReference<Throwable> throwExc,
                                final Promise<Void> closePromise) {
-        // remove stats
+        // clean stats resources
         this.transmitOutstandingLogger.unregisterGauge("requests", transmitOutstandingGauge);
+        this.writeLimiter.close();
 
         // Cancel the periodic keep alive schedule first
         if (null != periodicKeepAliveSchedule) {

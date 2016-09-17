@@ -146,6 +146,11 @@ public class LimitedPermitManager implements PermitManager, Runnable, Watcher {
     }
 
     @Override
+    public void close() {
+        unregisterGauge();
+    }
+
+    @Override
     synchronized public boolean allowObtainPermits() {
         forceSetAllowPermits(true);
         return true;

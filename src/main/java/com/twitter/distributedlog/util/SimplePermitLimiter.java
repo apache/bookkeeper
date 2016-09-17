@@ -99,6 +99,11 @@ public class SimplePermitLimiter implements PermitLimiter {
         permits.addAndGet(-permitsToRelease);
     }
 
+    @Override
+    public void close() {
+        unregisterGauge();
+    }
+
     @VisibleForTesting
     public int getPermits() {
         return permits.get();
