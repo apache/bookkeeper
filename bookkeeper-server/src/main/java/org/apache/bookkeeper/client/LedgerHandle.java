@@ -266,11 +266,10 @@ public class LedgerHandle implements AutoCloseable {
     public void close()
             throws InterruptedException, BKException {
         SyncCounter counter = new SyncCounter();
-        counter.inc();
 
         asyncClose(new SyncCloseCallback(), counter);
 
-        counter.block(0);
+        counter.block();
         if (counter.getrc() != BKException.Code.OK) {
             throw BKException.create(counter.getrc());
         }
@@ -461,11 +460,10 @@ public class LedgerHandle implements AutoCloseable {
     public Enumeration<LedgerEntry> readEntries(long firstEntry, long lastEntry)
             throws InterruptedException, BKException {
         SyncCounter counter = new SyncCounter();
-        counter.inc();
 
         asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
 
-        counter.block(0);
+        counter.block();
         if (counter.getrc() != BKException.Code.OK) {
             throw BKException.create(counter.getrc());
         }
@@ -550,11 +548,10 @@ public class LedgerHandle implements AutoCloseable {
         LOG.debug("Adding entry {}", data);
 
         SyncCounter counter = new SyncCounter();
-        counter.inc();
 
         SyncAddCallback callback = new SyncAddCallback();
         asyncAddEntry(data, offset, length, callback, counter);
-        counter.block(0);
+        counter.block();
 
         if (counter.getrc() != BKException.Code.OK) {
             throw BKException.create(counter.getrc());

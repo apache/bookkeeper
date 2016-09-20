@@ -562,7 +562,6 @@ public class BookKeeper implements AutoCloseable {
                                      DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
         SyncCounter counter = new SyncCounter();
-        counter.inc();
         /*
          * Calls asynchronous version
          */
@@ -572,7 +571,7 @@ public class BookKeeper implements AutoCloseable {
         /*
          * Wait
          */
-        counter.block(0);
+        counter.block();
         if (counter.getrc() != BKException.Code.OK) {
             LOG.error("Error while creating ledger : {}", counter.getrc());
             throw BKException.create(counter.getrc());
@@ -628,7 +627,6 @@ public class BookKeeper implements AutoCloseable {
                                         DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
         SyncCounter counter = new SyncCounter();
-        counter.inc();
         /*
          * Calls asynchronous version
          */
@@ -638,7 +636,7 @@ public class BookKeeper implements AutoCloseable {
         /*
          * Wait
          */
-        counter.block(0);
+        counter.block();
         if (counter.getrc() != BKException.Code.OK) {
             LOG.error("Error while creating ledger : {}", counter.getrc());
             throw BKException.create(counter.getrc());
@@ -801,7 +799,6 @@ public class BookKeeper implements AutoCloseable {
     public LedgerHandle openLedger(long lId, DigestType digestType, byte passwd[])
             throws BKException, InterruptedException {
         SyncCounter counter = new SyncCounter();
-        counter.inc();
 
         /*
          * Calls async open ledger
@@ -811,7 +808,7 @@ public class BookKeeper implements AutoCloseable {
         /*
          * Wait
          */
-        counter.block(0);
+        counter.block();
         if (counter.getrc() != BKException.Code.OK)
             throw BKException.create(counter.getrc());
 
@@ -836,7 +833,6 @@ public class BookKeeper implements AutoCloseable {
     public LedgerHandle openLedgerNoRecovery(long lId, DigestType digestType, byte passwd[])
             throws BKException, InterruptedException {
         SyncCounter counter = new SyncCounter();
-        counter.inc();
 
         /*
          * Calls async open ledger
@@ -847,7 +843,7 @@ public class BookKeeper implements AutoCloseable {
         /*
          * Wait
          */
-        counter.block(0);
+        counter.block();
         if (counter.getrc() != BKException.Code.OK)
             throw BKException.create(counter.getrc());
 
@@ -890,11 +886,10 @@ public class BookKeeper implements AutoCloseable {
      */
     public void deleteLedger(long lId) throws InterruptedException, BKException {
         SyncCounter counter = new SyncCounter();
-        counter.inc();
         // Call asynchronous version
         asyncDeleteLedger(lId, new SyncDeleteCallback(), counter);
         // Wait
-        counter.block(0);
+        counter.block();
         if (counter.getrc() != BKException.Code.OK) {
             LOG.error("Error deleting ledger " + lId + " : " + counter.getrc());
             throw BKException.create(counter.getrc());

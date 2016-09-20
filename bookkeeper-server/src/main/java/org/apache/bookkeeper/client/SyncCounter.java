@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.client;
 
 import java.util.Enumeration;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Implements objects to help with the synchronization of asynchronous calls
@@ -31,32 +32,16 @@ import java.util.Enumeration;
 class SyncCounter {
     int i;
     int rc;
-    int total;
     Enumeration<LedgerEntry> seq = null;
     LedgerHandle lh = null;
+    private CountDownLatch latch = new CountDownLatch(1);
 
-    synchronized void inc() {
-        i++;
-        total++;
+    void dec() {
+        latch.countDown();
     }
 
-    synchronized void dec() {
-        i--;
-        notifyAll();
-    }
-
-    synchronized void block(int limit) throws InterruptedException {
-        while (i > limit) {
-            int prev = i;
-            wait();
-            if (i == prev) {
-                break;
-            }
-        }
-    }
-
-    synchronized int total() {
-        return total;
+    void block() throws InterruptedException {
+        latch.await();
     }
 
     void setrc(int rc) {

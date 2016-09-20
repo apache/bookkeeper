@@ -91,12 +91,11 @@ public class LedgerHandleAdv extends LedgerHandle {
         LOG.debug("Adding entry {}", data);
 
         SyncCounter counter = new SyncCounter();
-        counter.inc();
 
         SyncAddCallback callback = new SyncAddCallback();
         asyncAddEntry(entryId, data, offset, length, callback, counter);
 
-        counter.block(0);
+        counter.block();
 
         if (counter.getrc() != BKException.Code.OK) {
             throw BKException.create(counter.getrc());
