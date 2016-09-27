@@ -19,9 +19,9 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.File;
+import java.util.List;
 
 import org.junit.Assert;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.junit.After;
@@ -92,6 +92,36 @@ public class CreateNewLogTest {
         File newLogFile = new File(dir, logFileName);
         newLogFile.createNewFile();
         
+        // Calls createNewLog, and with the number of directories we
+        // are using, if it picks one at random it will fail.
+        el.createNewLog();
+        LOG.info("This is the current log id: " + el.getCurrentLogId());
+        Assert.assertTrue("Wrong log id", el.getCurrentLogId() > 1);
+    }
+
+    @Test(timeout=60000)
+    public void testCreateNewLogWithNoWritableLedgerDirs() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+
+        // Creating a new configuration with a number of ledger directories.
+        conf.setLedgerDirNames(ledgerDirs);
+        conf.setIsForceGCAllowWhenNoSpace(true);
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs());
+        EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
+
+        // Extracted from createNewLog()
+        String logFileName = Long.toHexString(1) + ".log";
+        File dir = ledgerDirsManager.pickRandomWritableDir();
+        LOG.info("Picked this directory: " + dir);
+        File newLogFile = new File(dir, logFileName);
+        newLogFile.createNewFile();
+
+        // Now let us move all dirs to filled dirs
+        List<File> wDirs = ledgerDirsManager.getWritableLedgerDirs();
+        for (File tdir: wDirs) {
+            ledgerDirsManager.addToFilledDirs(tdir);
+        }
+
         // Calls createNewLog, and with the number of directories we
         // are using, if it picks one at random it will fail.
         el.createNewLog();
