@@ -84,6 +84,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Sets;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_ADD_ENTRY_BYTES;
@@ -323,8 +324,12 @@ public class Bookie extends BookieCriticalThread {
         if (zk == null) { // exists only for testing, just make sure directories are correct
             checkDirectoryStructure(journalDirectory);
             for (File dir : allLedgerDirs) {
-                    checkDirectoryStructure(dir);
+                checkDirectoryStructure(dir);
             }
+            return;
+        }
+        if (conf.getAllowStorageExpansion()) {
+            checkEnvironmentWithStorageExpansion(conf, zk, journalDirectory, allLedgerDirs);
             return;
         }
         try {
@@ -343,7 +348,7 @@ public class Bookie extends BookieCriticalThread {
                 newEnv = true;
                 missedCookieDirs.add(journalDirectory);
             }
-            String instanceId = getInstanceId(zk);
+            String instanceId = getInstanceId(conf, zk);
             Cookie.Builder builder = Cookie.generateCookie(conf);
             if (null != instanceId) {
                 builder.setInstanceId(instanceId);
@@ -360,32 +365,137 @@ public class Bookie extends BookieCriticalThread {
             checkDirectoryStructure(journalDirectory);
 
             if(!newEnv){
-                journalCookie.verify(masterCookie);
+                masterCookie.verify(journalCookie);
             }
             for (File dir : allLedgerDirs) {
                 checkDirectoryStructure(dir);
                 try {
                     Cookie c = Cookie.readFromDirectory(dir);
-                    c.verify(masterCookie);
+                    masterCookie.verify(c);
                 } catch (FileNotFoundException fnf) {
                     missedCookieDirs.add(dir);
                 }
             }
 
-            if (!newEnv && missedCookieDirs.size() > 0){
+            if (!newEnv && missedCookieDirs.size() > 0) {
                 LOG.error("Cookie exists in zookeeper, but not in all local directories. "
-                        + " Directories missing cookie file are " + missedCookieDirs);
+                          + " Directories missing cookie file are " + missedCookieDirs);
                 throw new BookieException.InvalidCookieException();
             }
+
             if (newEnv) {
                 if (missedCookieDirs.size() > 0) {
-                    LOG.debug("Directories missing cookie file are {}", missedCookieDirs);
+                    LOG.info("Directories missing cookie file are {}", missedCookieDirs);
                     masterCookie.writeToDirectory(journalDirectory);
                     for (File dir : allLedgerDirs) {
                         masterCookie.writeToDirectory(dir);
                     }
                 }
                 masterCookie.writeToZooKeeper(zk, conf, Version.NEW);
+            }
+        } catch (KeeperException ke) {
+            LOG.error("Couldn't access cookie in zookeeper", ke);
+            throw new BookieException.InvalidCookieException(ke);
+        } catch (UnknownHostException uhe) {
+            LOG.error("Couldn't check cookies, networking is broken", uhe);
+            throw new BookieException.InvalidCookieException(uhe);
+        } catch (IOException ioe) {
+            LOG.error("Error accessing cookie on disks", ioe);
+            throw new BookieException.InvalidCookieException(ioe);
+        } catch (InterruptedException ie) {
+            LOG.error("Thread interrupted while checking cookies, exiting", ie);
+            throw new BookieException.InvalidCookieException(ie);
+        }
+    }
+
+    public static void checkEnvironmentWithStorageExpansion(ServerConfiguration conf,
+            ZooKeeper zk, File journalDirectory, List<File> allLedgerDirs) throws BookieException, IOException {
+        try {
+            boolean newEnv = false;
+            List<File> missedCookieDirs = new ArrayList<File>();
+            Cookie journalCookie = null;
+            // try to read cookie from journal directory.
+            try {
+                journalCookie = Cookie.readFromDirectory(journalDirectory);
+                if (journalCookie.isBookieHostCreatedFromIp()) {
+                    conf.setUseHostNameAsBookieID(false);
+                } else {
+                    conf.setUseHostNameAsBookieID(true);
+                }
+            } catch (FileNotFoundException fnf) {
+                newEnv = true;
+                missedCookieDirs.add(journalDirectory);
+            }
+            String instanceId = getInstanceId(conf, zk);
+            Cookie.Builder builder = Cookie.generateCookie(conf);
+            if (null != instanceId) {
+                builder.setInstanceId(instanceId);
+            }
+            Cookie masterCookie = builder.build();
+            Versioned<Cookie> zkCookie = null;
+            try {
+                zkCookie = Cookie.readFromZooKeeper(zk, conf);
+                // If allowStorageExpansion option is set, we should 
+                // make sure that the new set of ledger/index dirs
+                // is a super set of the old; else, we fail the cookie check
+                masterCookie.verifyIsSuperSet(zkCookie.getValue());
+            } catch (KeeperException.NoNodeException nne) {
+                // can occur in cases:
+                // 1) new environment or
+                // 2) done only metadata format and started bookie server.
+            }
+            checkDirectoryStructure(journalDirectory);
+
+            if(!newEnv){
+                masterCookie.verifyIsSuperSet(journalCookie);
+            }
+
+            for (File dir : allLedgerDirs) {
+                checkDirectoryStructure(dir);
+                try {
+                    Cookie c = Cookie.readFromDirectory(dir);
+                    masterCookie.verifyIsSuperSet(c);
+                } catch (FileNotFoundException fnf) {
+                    missedCookieDirs.add(dir);
+                }
+            }
+
+            if (!newEnv && missedCookieDirs.size() > 0) {
+                // If we find that any of the dirs in missedCookieDirs, existed
+                // previously, we stop because we could be missing data
+                // Also, if a new ledger dir is being added, we make sure that
+                // that dir is empty. Else, we reject the request
+                Set<String> existingLedgerDirs = Sets.newHashSet(journalCookie.getLedgerDirPathsFromCookie());
+                List<File> dirsMissingData = new ArrayList<File>();
+                List<File> nonEmptyDirs = new ArrayList<File>();
+                for (File dir : missedCookieDirs) {
+                    if (existingLedgerDirs.contains(dir.getParent())) {
+                        // if one of the existing ledger dirs doesn't have cookie,
+                        // let us not proceed further
+                        dirsMissingData.add(dir);
+                        continue;
+                    }
+                    String[] content = dir.list();
+                    if (content != null && content.length != 0) {
+                        nonEmptyDirs.add(dir);
+                    }
+                }
+                if (dirsMissingData.size() > 0 || nonEmptyDirs.size() > 0) {
+                    LOG.error("Either not all local directories have cookies or directories being added "
+                            + " newly are not empty. "
+                            + "Directories missing cookie file are: " + dirsMissingData
+                            + " New directories that are not empty are: " + nonEmptyDirs);
+                    throw new BookieException.InvalidCookieException();
+                }
+            }
+
+            if (missedCookieDirs.size() > 0) {
+                LOG.info("Stamping new cookies on all dirs {}", missedCookieDirs);
+                masterCookie.writeToDirectory(journalDirectory);
+                for (File dir : allLedgerDirs) {
+                    masterCookie.writeToDirectory(dir);
+                }
+                masterCookie.writeToZooKeeper(zk, conf, zkCookie != null ? zkCookie.getVersion() : Version.NEW);
             }
         } catch (KeeperException ke) {
             LOG.error("Couldn't access cookie in zookeeper", ke);
@@ -427,7 +537,7 @@ public class Bookie extends BookieCriticalThread {
         return addr;
     }
 
-    private String getInstanceId(ZooKeeper zk) throws KeeperException,
+    private static String getInstanceId(ServerConfiguration conf, ZooKeeper zk) throws KeeperException,
             InterruptedException {
         String instanceId = null;
         if (zk.exists(conf.getZkLedgersRootPath(), null) == null) {
