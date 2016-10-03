@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -35,6 +36,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
@@ -260,18 +263,11 @@ public class BookKeeperAdmin {
      */
     public LedgerHandle openLedger(final long lId) throws InterruptedException,
             BKException {
-        SyncCounter counter = new SyncCounter();
-        counter.inc();
-        new LedgerOpenOp(bkc, lId, new SyncOpenCallback(), counter).initiate();
-        /*
-         * Wait
-         */
-        counter.block(0);
-        if (counter.getrc() != BKException.Code.OK) {
-            throw BKException.create(counter.getrc());
-        }
+        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
 
-        return counter.getLh();
+        new LedgerOpenOp(bkc, lId, new SyncOpenCallback(), counter).initiate();
+
+        return SynchCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -303,19 +299,12 @@ public class BookKeeperAdmin {
      */
     public LedgerHandle openLedgerNoRecovery(final long lId)
             throws InterruptedException, BKException {
-        SyncCounter counter = new SyncCounter();
-        counter.inc();
+        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
+
         new LedgerOpenOp(bkc, lId, new SyncOpenCallback(), counter)
                 .initiateWithoutRecovery();
-        /*
-         * Wait
-         */
-        counter.block(0);
-        if (counter.getrc() != BKException.Code.OK) {
-            throw BKException.create(counter.getrc());
-        }
 
-        return counter.getLh();
+        return SynchCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -384,16 +373,13 @@ public class BookKeeperAdmin {
             }
             if (lastEntryId == -1 || nextEntryId <= lastEntryId) {
                 try {
-                    SyncCounter counter = new SyncCounter();
-                    counter.inc();
+                    CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
 
                     handle.asyncReadEntriesInternal(nextEntryId, nextEntryId, new LedgerHandle.SyncReadCallback(),
                             counter);
-                    counter.block(0);
-                    if (counter.getrc() != BKException.Code.OK) {
-                        throw BKException.create(counter.getrc());
-                    }
-                    currentEntry = counter.getSequence().nextElement();
+
+                    currentEntry = SynchCallbackUtils.waitForResult(counter).nextElement();
+
                     return true;
                 } catch (Exception e) {
                     if (e instanceof BKException.BKNoSuchEntryException && lastEntryId == -1) {
@@ -862,31 +848,33 @@ public class BookKeeperAdmin {
             final LedgerFragment ledgerFragment,
             final BookieSocketAddress targetBookieAddress)
             throws InterruptedException, BKException {
-        SyncCounter syncCounter = new SyncCounter();
-        ResultCallBack resultCallBack = new ResultCallBack(syncCounter);
+        CompletableFuture<Void> counter = new CompletableFuture<>();
+        ResultCallBack resultCallBack = new ResultCallBack(counter);
         SingleFragmentCallback cb = new SingleFragmentCallback(resultCallBack,
                 lh, ledgerFragment.getFirstEntryId(), ledgerFragment
                         .getAddress(), targetBookieAddress);
-        syncCounter.inc();
+
         asyncRecoverLedgerFragment(lh, ledgerFragment, cb, targetBookieAddress);
-        syncCounter.block(0);
-        if (syncCounter.getrc() != BKException.Code.OK) {
-            throw BKException.create(bkc.getReturnRc(syncCounter.getrc()));
+
+        try {
+            SynchCallbackUtils.waitForResult(counter);
+        } catch (BKException err) {
+            throw BKException.create(bkc.getReturnRc(err.getCode()));
         }
     }
 
     /** This is the class for getting the replication result */
     static class ResultCallBack implements AsyncCallback.VoidCallback {
-        private SyncCounter sync;
+        private final CompletableFuture<Void> sync;
 
-        public ResultCallBack(SyncCounter sync) {
+        public ResultCallBack(CompletableFuture<Void> sync) {
             this.sync = sync;
         }
 
         @Override
-        public void processResult(int rc, String s, Object obj) {
-            sync.setrc(rc);
-            sync.dec();
+        @SuppressWarnings("unchecked")
+        public void processResult(int rc, String s, Object ctx) {
+            SynchCallbackUtils.finish(rc, null, sync);
         }
     }
 

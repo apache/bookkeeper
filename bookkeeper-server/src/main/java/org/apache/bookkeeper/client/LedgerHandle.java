@@ -54,6 +54,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Ledger handle contains ledger metadata and is used to access the read and
@@ -265,15 +267,11 @@ public class LedgerHandle implements AutoCloseable {
      */
     public void close()
             throws InterruptedException, BKException {
-        SyncCounter counter = new SyncCounter();
-        counter.inc();
+        CompletableFuture<Void> counter = new CompletableFuture<>();
 
         asyncClose(new SyncCloseCallback(), counter);
 
-        counter.block(0);
-        if (counter.getrc() != BKException.Code.OK) {
-            throw BKException.create(counter.getrc());
-        }
+        SynchCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -460,17 +458,11 @@ public class LedgerHandle implements AutoCloseable {
      */
     public Enumeration<LedgerEntry> readEntries(long firstEntry, long lastEntry)
             throws InterruptedException, BKException {
-        SyncCounter counter = new SyncCounter();
-        counter.inc();
+        CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
 
         asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
 
-        counter.block(0);
-        if (counter.getrc() != BKException.Code.OK) {
-            throw BKException.create(counter.getrc());
-        }
-
-        return counter.getSequence();
+        return SynchCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -549,18 +541,12 @@ public class LedgerHandle implements AutoCloseable {
             throws InterruptedException, BKException {
         LOG.debug("Adding entry {}", data);
 
-        SyncCounter counter = new SyncCounter();
-        counter.inc();
+        CompletableFuture<Long> counter = new CompletableFuture<>();
 
         SyncAddCallback callback = new SyncAddCallback();
         asyncAddEntry(data, offset, length, callback, counter);
-        counter.block(0);
 
-        if (counter.getrc() != BKException.Code.OK) {
-            throw BKException.create(counter.getrc());
-        }
-
-        return callback.entryId;
+        return SynchCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -1348,21 +1334,14 @@ public class LedgerHandle implements AutoCloseable {
          *          control object
          */
         @Override
+        @SuppressWarnings("unchecked")
         public void readComplete(int rc, LedgerHandle lh,
                                  Enumeration<LedgerEntry> seq, Object ctx) {
-
-            SyncCounter counter = (SyncCounter) ctx;
-            synchronized (counter) {
-                counter.setSequence(seq);
-                counter.setrc(rc);
-                counter.dec();
-                counter.notify();
-            }
+            SynchCallbackUtils.finish(rc, seq, (CompletableFuture<Enumeration<LedgerEntry>>)ctx);
         }
     }
 
     static class SyncAddCallback implements AddCallback {
-        long entryId = -1;
 
         /**
          * Implementation of callback interface for synchronous read method.
@@ -1377,12 +1356,9 @@ public class LedgerHandle implements AutoCloseable {
          *          control object
          */
         @Override
+        @SuppressWarnings("unchecked")
         public void addComplete(int rc, LedgerHandle lh, long entry, Object ctx) {
-            SyncCounter counter = (SyncCounter) ctx;
-
-            this.entryId = entry;
-            counter.setrc(rc);
-            counter.dec();
+            SynchCallbackUtils.finish(rc, entry, (CompletableFuture<Long>)ctx);
         }
     }
 
@@ -1411,13 +1387,9 @@ public class LedgerHandle implements AutoCloseable {
          * @param ctx
          */
         @Override
+        @SuppressWarnings("unchecked")
         public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
-            SyncCounter counter = (SyncCounter) ctx;
-            counter.setrc(rc);
-            synchronized (counter) {
-                counter.dec();
-                counter.notify();
-            }
+            SynchCallbackUtils.finish(rc, null, (CompletableFuture<Void>)ctx);
         }
     }
 }

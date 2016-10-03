@@ -24,6 +24,8 @@ package org.apache.bookkeeper.client;
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
 import java.util.Comparator;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -90,18 +92,16 @@ public class LedgerHandleAdv extends LedgerHandle {
             BKException {
         LOG.debug("Adding entry {}", data);
 
-        SyncCounter counter = new SyncCounter();
-        counter.inc();
+        CompletableFuture<Long> counter = new CompletableFuture<>();
 
         SyncAddCallback callback = new SyncAddCallback();
         asyncAddEntry(entryId, data, offset, length, callback, counter);
 
-        counter.block(0);
-
-        if (counter.getrc() != BKException.Code.OK) {
-            throw BKException.create(counter.getrc());
+        try {
+            return counter.get();
+        } catch (ExecutionException err) {
+            throw (BKException) err.getCause();
         }
-        return callback.entryId;
     }
 
     /**
