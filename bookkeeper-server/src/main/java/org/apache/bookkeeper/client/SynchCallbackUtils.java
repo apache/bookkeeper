@@ -19,13 +19,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Utility for synch callbacks
+ * Utility for callbacks
  * 
  */
 public class SynchCallbackUtils {
 
     /**
-     * Wait for a result. This is convenience method to implement synch callbacks
+     * Wait for a result. This is convenience method to implement callbacks
      *
      * @param <T>
      * @param future
@@ -49,6 +49,13 @@ public class SynchCallbackUtils {
         }
     }
 
+    /**
+     * Handle the Response Code and transform it to a BKException
+     * @param <T>
+     * @param rc
+     * @param result
+     * @param future 
+     */
     public static <T> void finish(int rc, T result, CompletableFuture<T> future) {
         if (rc != BKException.Code.OK) {
             future.completeExceptionally(BKException.create(rc).fillInStackTrace());
