@@ -20,8 +20,7 @@ import java.util.concurrent.ExecutionException;
 
 /**
  * Utility for synch callbacks
- *
- * @author enrico.olivelli
+ * 
  */
 public class SynchCallbackUtils {
 
