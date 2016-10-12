@@ -571,8 +571,12 @@ public class BookKeeper implements AutoCloseable {
         asyncCreateLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
                           new SyncCreateCallback(), counter, customMetadata);
 
-        return SynchCallbackUtils.waitForResult(counter);
-
+        LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
+        if (lh == null) {
+            LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
+            throw BKException.create(BKException.Code.UnexpectedConditionException);
+        }
+        return lh;
     }
 
     /**
@@ -626,7 +630,12 @@ public class BookKeeper implements AutoCloseable {
         asyncCreateLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
                              new SyncCreateCallback(), counter, customMetadata);
 
-        return SynchCallbackUtils.waitForResult(counter);
+        LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
+        if (lh == null) {
+            LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
+            throw BKException.create(BKException.Code.UnexpectedConditionException);
+        }
+        return lh;
     }
 
     /**
