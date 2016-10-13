@@ -65,6 +65,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 /**
  * BookKeeper client. We assume there is one single writer to a ledger at any
@@ -616,27 +618,20 @@ public class BookKeeper implements AutoCloseable {
     public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
                                      DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
-        SyncCounter counter = new SyncCounter();
-        counter.inc();
+        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
+
         /*
          * Calls asynchronous version
          */
         asyncCreateLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
                           new SyncCreateCallback(), counter, customMetadata);
 
-        /*
-         * Wait
-         */
-        counter.block(0);
-        if (counter.getrc() != BKException.Code.OK) {
-            LOG.error("Error while creating ledger : {}", counter.getrc());
-            throw BKException.create(counter.getrc());
-        } else if (counter.getLh() == null) {
+        LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
+        if (lh == null) {
             LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
         }
-
-        return counter.getLh();
+        return lh;
     }
 
     /**
@@ -682,27 +677,20 @@ public class BookKeeper implements AutoCloseable {
     public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
                                         DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
-        SyncCounter counter = new SyncCounter();
-        counter.inc();
+        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
+
         /*
          * Calls asynchronous version
          */
         asyncCreateLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
                              new SyncCreateCallback(), counter, customMetadata);
 
-        /*
-         * Wait
-         */
-        counter.block(0);
-        if (counter.getrc() != BKException.Code.OK) {
-            LOG.error("Error while creating ledger : {}", counter.getrc());
-            throw BKException.create(counter.getrc());
-        } else if (counter.getLh() == null) {
+        LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
+        if (lh == null) {
             LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
         }
-
-        return counter.getLh();
+        return lh;
     }
 
     /**
@@ -855,22 +843,14 @@ public class BookKeeper implements AutoCloseable {
 
     public LedgerHandle openLedger(long lId, DigestType digestType, byte passwd[])
             throws BKException, InterruptedException {
-        SyncCounter counter = new SyncCounter();
-        counter.inc();
+        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
 
         /*
          * Calls async open ledger
          */
         asyncOpenLedger(lId, digestType, passwd, new SyncOpenCallback(), counter);
 
-        /*
-         * Wait
-         */
-        counter.block(0);
-        if (counter.getrc() != BKException.Code.OK)
-            throw BKException.create(counter.getrc());
-
-        return counter.getLh();
+        return SynchCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -890,8 +870,7 @@ public class BookKeeper implements AutoCloseable {
 
     public LedgerHandle openLedgerNoRecovery(long lId, DigestType digestType, byte passwd[])
             throws BKException, InterruptedException {
-        SyncCounter counter = new SyncCounter();
-        counter.inc();
+        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
 
         /*
          * Calls async open ledger
@@ -899,14 +878,7 @@ public class BookKeeper implements AutoCloseable {
         asyncOpenLedgerNoRecovery(lId, digestType, passwd,
                                   new SyncOpenCallback(), counter);
 
-        /*
-         * Wait
-         */
-        counter.block(0);
-        if (counter.getrc() != BKException.Code.OK)
-            throw BKException.create(counter.getrc());
-
-        return counter.getLh();
+        return SynchCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -944,16 +916,11 @@ public class BookKeeper implements AutoCloseable {
      * @throws BKException
      */
     public void deleteLedger(long lId) throws InterruptedException, BKException {
-        SyncCounter counter = new SyncCounter();
-        counter.inc();
+        CompletableFuture<Void> counter = new CompletableFuture<>();
         // Call asynchronous version
         asyncDeleteLedger(lId, new SyncDeleteCallback(), counter);
-        // Wait
-        counter.block(0);
-        if (counter.getrc() != BKException.Code.OK) {
-            LOG.error("Error deleting ledger " + lId + " : " + counter.getrc());
-            throw BKException.create(counter.getrc());
-        }
+
+        SynchCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -1079,11 +1046,9 @@ public class BookKeeper implements AutoCloseable {
          *          optional control object
          */
         @Override
+        @SuppressWarnings("unchecked")
         public void createComplete(int rc, LedgerHandle lh, Object ctx) {
-            SyncCounter counter = (SyncCounter) ctx;
-            counter.setLh(lh);
-            counter.setrc(rc);
-            counter.dec();
+            SynchCallbackUtils.finish(rc, lh, (CompletableFuture<LedgerHandle>) ctx);
         }
     }
 
@@ -1099,14 +1064,9 @@ public class BookKeeper implements AutoCloseable {
          *          optional control object
          */
         @Override
+        @SuppressWarnings("unchecked")
         public void openComplete(int rc, LedgerHandle lh, Object ctx) {
-            SyncCounter counter = (SyncCounter) ctx;
-            counter.setLh(lh);
-
-            LOG.debug("Open complete: {}", rc);
-
-            counter.setrc(rc);
-            counter.dec();
+            SynchCallbackUtils.finish(rc, lh, (CompletableFuture<LedgerHandle>) ctx);
         }
     }
 
@@ -1120,10 +1080,9 @@ public class BookKeeper implements AutoCloseable {
          *            optional control object
          */
         @Override
+        @SuppressWarnings("unchecked")
         public void deleteComplete(int rc, Object ctx) {
-            SyncCounter counter = (SyncCounter) ctx;
-            counter.setrc(rc);
-            counter.dec();
+            SynchCallbackUtils.finish(rc, null, (CompletableFuture<Void>) ctx);
         }
     }
 
