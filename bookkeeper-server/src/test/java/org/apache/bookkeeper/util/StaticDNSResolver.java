@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.apache.bookkeeper.net.AbstractDNSToSwitchMapping;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
+import org.apache.bookkeeper.net.NodeBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +51,15 @@ public class StaticDNSResolver extends AbstractDNSToSwitchMapping {
             rack = NetworkTopology.DEFAULT_RACK;
         }
         return rack;
+    }
+
+    public static String getRegion(String name) {
+        String[] parts = getRack(name).split(NodeBase.PATH_SEPARATOR_STR);
+        if (parts.length <= 1) {
+            return NetworkTopology.DEFAULT_REGION;
+        } else {
+            return parts[1];
+        }
     }
 
     public static void reset() {

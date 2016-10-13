@@ -69,6 +69,10 @@ public class DNS {
         // This is formed by reversing the IP numbers and appending in-addr.arpa
         //
         String[] parts = hostIp.getHostAddress().split("\\.");
+        if(parts.length !=4) {
+            //Not proper address. May be IPv6
+            throw new NamingException("IPV6");
+        }
         String reverseIP = parts[3] + "." + parts[2] + "." + parts[1] + "."
                 + parts[0] + ".in-addr.arpa";
 

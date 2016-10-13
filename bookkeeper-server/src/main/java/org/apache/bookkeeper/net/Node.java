@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// This code has been copied from hadoop-common 0.23.1
 package org.apache.bookkeeper.net;
 
 import com.google.common.annotations.Beta;
@@ -31,6 +30,9 @@ import com.google.common.annotations.Beta;
  */
 @Beta
 public interface Node {
+    /** @return the string representation of this node's network location at the specified level in the hierarchy*/
+    public String getNetworkLocation(int level);
+
     /** @return the string representation of this node's network location */
     public String getNetworkLocation();
 

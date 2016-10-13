@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// This code has been copied from hadoop-common 0.23.1
 package org.apache.bookkeeper.net;
 
 /** A base class that implements interface Node
@@ -182,5 +181,19 @@ public class NodeBase implements Node {
             }
         }
         return depth;
+    }
+
+    @Override
+    public String getNetworkLocation(int distanceFromLeaves) {
+        Node node = this;
+        while (distanceFromLeaves > 1) {
+            Node parent = node.getParent();
+            if (null == parent) {
+                break;
+            }
+            node = parent;
+            distanceFromLeaves--;
+        }
+        return node.getNetworkLocation();
     }
 }
