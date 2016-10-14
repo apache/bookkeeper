@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -341,8 +342,21 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         }
     }
 
+    /**
+     * Get a list of all the ledgers which have been
+     * marked for rereplication, filtered by the predicate on the replicas list.
+     * 
+     * Replicas list of an underreplicated ledger is the list of the bookies which are part of 
+     * the ensemble of this ledger and are currently unavailable/down.
+     * 
+     * If filtering is not needed then it is suggested to pass null for predicate,
+     * otherwise it will read the content of the ZNode to decide on filtering.
+     * 
+     * @param predicate filter to use while listing under replicated ledgers. 'null' if filtering is not required.
+     * @return an iterator which returns ledger ids
+     */
     @Override
-    public Iterator<Long> listLedgersToRereplicate() {
+    public Iterator<Long> listLedgersToRereplicate(final Predicate<List<String>> predicate) {
         final Queue<String> queue = new LinkedList<String>();
         queue.add(urLedgerPath);
 
@@ -363,12 +377,20 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                 while (queue.size() > 0 && curBatch.size() == 0) {
                     String parent = queue.remove();
                     try {
-                        for (String c : zkc.getChildren(parent,false)) {
-                            String child = parent + "/" + c;
-                            if (c.startsWith("urL")) {
-                                curBatch.add(getLedgerId(child));
-                            } else {
-                                queue.add(child);
+                        for (String c : zkc.getChildren(parent, false)) {
+                            try {
+                                String child = parent + "/" + c;
+                                if (c.startsWith("urL")) {
+                                    long ledgerId = getLedgerId(child);
+                                    if ((predicate == null)
+                                            || predicate.test(getLedgerUnreplicationInfo(ledgerId).getReplicaList())) {
+                                        curBatch.add(ledgerId);
+                                    }
+                                } else {
+                                    queue.add(child);
+                                }
+                            } catch (KeeperException.NoNodeException nne) {
+                                // ignore
                             }
                         }
                     } catch (InterruptedException ie) {
