@@ -142,12 +142,12 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             }
         }
 
-        for(String region: perRegionPlacement.keySet()) {
-            Set<BookieSocketAddress> regionSet = perRegionClusterChange.get(region);
+        for (Map.Entry<String, TopologyAwareEnsemblePlacementPolicy> regionEntry : perRegionPlacement.entrySet()) {
+            Set<BookieSocketAddress> regionSet = perRegionClusterChange.get(regionEntry.getKey());
             if (null == regionSet) {
                 regionSet = new HashSet<BookieSocketAddress>();
             }
-            perRegionPlacement.get(region).handleBookiesThatJoined(regionSet);
+            regionEntry.getValue().handleBookiesThatJoined(regionSet);
         }
     }
 
