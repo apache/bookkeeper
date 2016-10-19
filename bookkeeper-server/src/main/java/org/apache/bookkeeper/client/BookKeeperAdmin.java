@@ -1008,10 +1008,9 @@ public class BookKeeperAdmin {
                     }
 
                     @Override
-                    public Long next()
-                    throws NoSuchElementException {
-                        try{
-                            if (currentRange == null) {
+                    public Long next() throws NoSuchElementException {
+                        try {
+                            if ((currentRange == null) || (!currentRange.hasNext())) {
                                 currentRange = iterator.next().getLedgers().iterator();
                             }
                         } catch (IOException e) {
