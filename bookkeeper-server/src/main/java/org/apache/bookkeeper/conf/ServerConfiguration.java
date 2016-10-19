@@ -103,6 +103,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String READ_ONLY_MODE_ENABLED = "readOnlyModeEnabled";
     //Whether the bookie is force started in ReadOnly mode
     protected final static String FORCE_READ_ONLY_BOOKIE = "forceReadOnlyBookie";
+    //Whether to persist the bookie status
+    protected final static String PERSIST_BOOKIE_STATUS_ENABLED = "persistBookieStatusEnabled";
     //Disk utilization
     protected final static String DISK_USAGE_THRESHOLD = "diskUsageThreshold";
     protected final static String DISK_USAGE_WARN_THRESHOLD = "diskUsageWarnThreshold";
@@ -1465,6 +1467,28 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public float getDiskUsageWarnThreshold() {
         return getFloat(DISK_USAGE_WARN_THRESHOLD, 0.90f);
+    }
+
+    /**
+     * Whether to persist the bookie status so that when bookie server restart,
+     * it will continue using the previous status
+     *
+     * @param enabled
+     *            - true if persist the bookie status. Otherwise false.
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setPersistBookieStatusEnabled(boolean enabled) {
+        setProperty(PERSIST_BOOKIE_STATUS_ENABLED, enabled);
+        return this;
+    }
+
+    /**
+     * Get whether the Bookie is force started in read only mode or not
+     *
+     * @return true - if need to start a bookie in read only mode. Otherwise false.
+     */
+    public boolean isPersistBookieStatusEnabled() {
+        return getBoolean(PERSIST_BOOKIE_STATUS_ENABLED, false);
     }
 
     /**

@@ -116,6 +116,7 @@ public class BookieServer {
         // fail fast, when bookie startup is not successful
         if (!this.bookie.isRunning()) {
             exitCode = bookie.getExitCode();
+            this.nettyServer.shutdown();
             return;
         }
         if (isAutoRecoveryDaemonEnabled && this.autoRecoveryMain != null) {
@@ -243,7 +244,7 @@ public class BookieServer {
         bkOpts.addOption("c", "conf", true, "Configuration for Bookie Server");
         bkOpts.addOption("withAutoRecovery", false,
                 "Start Autorecovery service Bookie server");
-        bkOpts.addOption("readOnly", false,
+        bkOpts.addOption("r", "readOnly", false,
                 "Force Start a ReadOnly Bookie server");
         bkOpts.addOption("z", "zkserver", true, "Zookeeper Server");
         bkOpts.addOption("m", "zkledgerpath", true, "Zookeeper ledgers root path");
@@ -300,6 +301,10 @@ public class BookieServer {
 
             ServerConfiguration conf = new ServerConfiguration();
 
+            if (cmdLine.hasOption("r")) {
+                conf.setForceReadOnlyBookie(true);
+            }
+
             if (cmdLine.hasOption('c')) {
                 String confFile = cmdLine.getOptionValue("c");
                 loadConfFile(conf, confFile);
@@ -308,11 +313,6 @@ public class BookieServer {
             if (cmdLine.hasOption("withAutoRecovery")) {
                 conf.setAutoRecoveryDaemonEnabled(true);
             }
-
-            if (cmdLine.hasOption("readOnly")) {
-                conf.setForceReadOnlyBookie(true);
-            }
-
 
             // command line arguments overwrite settings in configuration file
             if (cmdLine.hasOption('z')) {
