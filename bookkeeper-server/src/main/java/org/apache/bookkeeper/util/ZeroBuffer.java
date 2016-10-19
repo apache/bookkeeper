@@ -67,6 +67,7 @@ public class ZeroBuffer {
         else {
             buffer = ByteBuffer.allocate(length);
             put(buffer);
+            buffer.rewind();
         }
         return buffer.asReadOnlyBuffer();
     }
