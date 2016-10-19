@@ -150,9 +150,7 @@ public class LedgerHandleAdv extends LedgerHandle {
             cb.addComplete(BKException.Code.DuplicateEntryIdException,
                     LedgerHandleAdv.this, entryId, ctx);
             return;
-        }
-        pendingAddOps.add(op);
-
+        }       
         doAsyncAddEntry(op, data, offset, length, cb, ctx);
     }
 
@@ -174,7 +172,22 @@ public class LedgerHandleAdv extends LedgerHandle {
             throttler.acquire();
         }
 
-        if (metadata.isClosed()) {
+        final long currentLength;
+        boolean wasClosed = false;
+        synchronized (this) {
+            // synchronized on this to ensure that
+            // the ledger isn't closed between checking and
+            // updating lastAddPushed
+            if (metadata.isClosed()) {
+                wasClosed = true;
+                currentLength = 0;
+            } else {
+                currentLength = addToLength(length);
+                pendingAddOps.add(op);
+            }
+        }
+
+        if (wasClosed) {
             // make sure the callback is triggered in main worker pool
             try {
                 bk.mainWorkerPool.submit(new SafeRunnable() {
@@ -197,8 +210,6 @@ public class LedgerHandleAdv extends LedgerHandle {
         }
 
         try {
-            final long currentLength = addToLength(length);
-
             bk.mainWorkerPool.submit(new SafeRunnable() {
                 @Override
                 public void safeRun() {
