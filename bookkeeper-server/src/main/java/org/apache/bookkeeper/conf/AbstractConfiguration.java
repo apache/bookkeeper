@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.conf;
 
 import java.net.URL;
+import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDER_FACTORY_CLASS;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
@@ -65,6 +66,9 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     // Metastore settings, only being used when LEDGER_MANAGER_FACTORY_CLASS is MSLedgerManagerFactory
     protected final static String METASTORE_IMPL_CLASS = "metastoreImplClass";
     protected final static String METASTORE_MAX_ENTRIES_PER_SCAN = "metastoreMaxEntriesPerScan";
+
+    // Client auth provider factory class name. It must be configured on Bookies to for the Auditor
+    protected final static String CLIENT_AUTH_PROVIDER_FACTORY_CLASS = "clientAuthProviderFactoryClass";
 
     protected AbstractConfiguration() {
         super();
@@ -255,5 +259,29 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
         } else {
             return (Feature)getProperty(configProperty);
         }
+    }
+
+    /**
+     * Set the client authentication provider factory class name.
+     * If this is not set, no authentication will be used
+     *
+     * @param factoryClass
+     *          the client authentication provider factory class name
+     * @return client configuration
+     */
+    public AbstractConfiguration setClientAuthProviderFactoryClass(
+            String factoryClass) {
+        setProperty(CLIENT_AUTH_PROVIDER_FACTORY_CLASS, factoryClass);
+        return this;
+    }
+
+    /**
+     * Get the client authentication provider factory class name. If this returns null, no authentication will take
+     * place.
+     *
+     * @return the client authentication provider factory class name or null.
+     */
+    public String getClientAuthProviderFactoryClass() {
+        return getString(CLIENT_AUTH_PROVIDER_FACTORY_CLASS, null);
     }
 }

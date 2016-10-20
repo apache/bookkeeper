@@ -124,11 +124,7 @@ message AddResponse {
     required int64 entryId = 3;
 }
 
-/**
- * Extendible message which auth mechanisms
- * can use to carry their payload.
- */
 message AuthMessage {
     required string authPluginName = 1;
-    extensions 1000 to max;
+    required bytes payload = 2;
 }

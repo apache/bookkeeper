@@ -44,13 +44,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.common.annotations.VisibleForTesting;
+import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import org.apache.bookkeeper.auth.BookKeeperPrincipal;
+import org.apache.bookkeeper.bookie.BookieConnectionPeer;
 
 /**
  * Netty server for serving bookie requests
  */
 class BookieNettyServer {
+
     private final static Logger LOG = LoggerFactory.getLogger(BookieNettyServer.class);
 
     final static int maxMessageSize = 0xfffff;
@@ -67,12 +73,12 @@ class BookieNettyServer {
     final BookieProtoEncoding.RequestDecoder requestDecoder;
 
     BookieNettyServer(ServerConfiguration conf, RequestProcessor processor)
-            throws IOException, KeeperException, InterruptedException, BookieException {
+        throws IOException, KeeperException, InterruptedException, BookieException {
         this.conf = conf;
         this.requestProcessor = processor;
 
         ExtensionRegistry registry = ExtensionRegistry.newInstance();
-        authProviderFactory = AuthProviderFactoryFactory.newBookieAuthProviderFactory(conf, registry);
+        authProviderFactory = AuthProviderFactoryFactory.newBookieAuthProviderFactory(conf);
 
         responseEncoder = new BookieProtoEncoding.ResponseEncoder(registry);
         requestDecoder = new BookieProtoEncoding.RequestDecoder(registry);
@@ -130,6 +136,64 @@ class BookieNettyServer {
         for (ChannelManager channel : channels) {
             channel.close();
         }
+        authProviderFactory.close();
+    }
+
+    class BookieSideConnectionPeerContextHandler extends SimpleChannelHandler {
+
+        final BookieConnectionPeer connectionPeer;
+        volatile Channel channel;
+        volatile BookKeeperPrincipal authorizedId = BookKeeperPrincipal.ANONYMOUS;
+
+        public BookieSideConnectionPeerContextHandler() {
+            this.connectionPeer = new BookieConnectionPeer() {
+                @Override
+                public SocketAddress getRemoteAddr() {
+                    Channel c = channel;
+                    if (c != null) {
+                        return c.getRemoteAddress();
+                    } else {
+                        return null;
+                    }
+                }
+
+                @Override
+                public Collection<Object> getProtocolPrincipals() {
+                    return Collections.emptyList();
+                }
+
+                @Override
+                public void disconnect() {
+                    Channel c = channel;
+                    if (c != null) {
+                        c.close();
+                    }
+                    LOG.info("authplugin disconnected channel {}", channel);
+                }
+
+                @Override
+                public BookKeeperPrincipal getAuthorizedId() {
+                    return authorizedId;
+                }
+
+                @Override
+                public void setAuthorizedId(BookKeeperPrincipal principal) {
+                    LOG.info("connection {} authenticated as {}", channel, principal);
+                    authorizedId = principal;
+                }
+
+            };
+        }
+
+        public BookieConnectionPeer getConnectionPeer() {
+            return connectionPeer;
+        }
+
+        @Override
+        public void channelBound(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+            channel = ctx.getChannel();
+        }
+
     }
 
     class BookiePipelineFactory implements ChannelPipelineFactory {
@@ -140,21 +204,23 @@ class BookieNettyServer {
                     suspensionLock.wait();
                 }
             }
+            BookieSideConnectionPeerContextHandler contextHandler = new BookieSideConnectionPeerContextHandler();
             ChannelPipeline pipeline = Channels.pipeline();
             pipeline.addLast("lengthbaseddecoder",
-                    new LengthFieldBasedFrameDecoder(maxMessageSize, 0, 4, 0, 4));
+                new LengthFieldBasedFrameDecoder(maxMessageSize, 0, 4, 0, 4));
             pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
 
             pipeline.addLast("bookieProtoDecoder", requestDecoder);
             pipeline.addLast("bookieProtoEncoder", responseEncoder);
             pipeline.addLast("bookieAuthHandler",
-                    new AuthHandler.ServerSideHandler(authProviderFactory));
+                new AuthHandler.ServerSideHandler(contextHandler.getConnectionPeer(), authProviderFactory));
 
             SimpleChannelHandler requestHandler = isRunning.get()
-                    ? new BookieRequestHandler(conf, requestProcessor, allChannels)
-                    : new RejectRequestHandler();
+                ? new BookieRequestHandler(conf, requestProcessor, allChannels)
+                : new RejectRequestHandler();
 
             pipeline.addLast("bookieRequestHandler", requestHandler);
+            pipeline.addLast("contextHandler", contextHandler);
             return pipeline;
         }
     }
@@ -198,7 +264,7 @@ class BookieNettyServer {
             }
             CleanupChannelGroup other = (CleanupChannelGroup) o;
             return other.closed.get() == closed.get()
-                    && super.equals(other);
+                && super.equals(other);
         }
 
         @Override
