@@ -142,12 +142,12 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             }
         }
 
-        for(String region: perRegionPlacement.keySet()) {
-            Set<BookieSocketAddress> regionSet = perRegionClusterChange.get(region);
+        for (Map.Entry<String, TopologyAwareEnsemblePlacementPolicy> regionEntry : perRegionPlacement.entrySet()) {
+            Set<BookieSocketAddress> regionSet = perRegionClusterChange.get(regionEntry.getKey());
             if (null == regionSet) {
                 regionSet = new HashSet<BookieSocketAddress>();
             }
-            perRegionPlacement.get(region).handleBookiesThatJoined(regionSet);
+            regionEntry.getValue().handleBookiesThatJoined(regionSet);
         }
     }
 
@@ -289,12 +289,11 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 regionsWiseAllocation.put(region, Pair.of(0,0));
             }
             int remainingEnsembleBeforeIteration;
+            int numRemainingRegions;
             Set<String> regionsReachedMaxAllocation = new HashSet<String>();
             RRTopologyAwareCoverageEnsemble ensemble;
-            int iteration = 0;
             do {
-                LOG.info("RegionAwareEnsemblePlacementPolicy#newEnsemble Iteration {}", iteration++);
-                int numRemainingRegions = numRegionsAvailable - regionsReachedMaxAllocation.size();
+                numRemainingRegions = numRegionsAvailable - regionsReachedMaxAllocation.size();
                 ensemble = new RRTopologyAwareCoverageEnsemble(ensembleSize,
                                     writeQuorumSize,
                                     ackQuorumSize,
@@ -305,6 +304,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                                     effectiveMinRegionsForDurability > 0 ? new HashSet<String>(perRegionPlacement.keySet()) : null,
                                     effectiveMinRegionsForDurability);
                 remainingEnsembleBeforeIteration = remainingEnsemble;
+                int regionsToAllocate = numRemainingRegions;
                 for (Map.Entry<String, Pair<Integer, Integer>> regionEntry: regionsWiseAllocation.entrySet()) {
                     String region = regionEntry.getKey();
                     final Pair<Integer, Integer> currentAllocation = regionEntry.getValue();
@@ -314,12 +314,11 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                             LOG.error("Inconsistent State: This should never happen");
                             throw new BKException.BKNotEnoughBookiesException();
                         }
-
-                        int addToEnsembleSize = Math.min(remainingEnsemble, (remainingEnsembleBeforeIteration + numRemainingRegions - 1) / numRemainingRegions);
+                        // try to place the bookies as balance as possible across all the regions
+                        int addToEnsembleSize = Math.min(remainingEnsemble, remainingEnsemble / regionsToAllocate + (remainingEnsemble % regionsToAllocate == 0 ? 0 : 1));
                         boolean success = false;
-                        while(addToEnsembleSize > 0) {
+                        while (addToEnsembleSize > 0) {
                             int addToWriteQuorum = Math.max(1, Math.min(remainingWriteQuorum, Math.round(1.0f * writeQuorumSize * addToEnsembleSize / ensembleSize)));
-
                             // Temp ensemble will be merged back into the ensemble only if we are able to successfully allocate
                             // the target number of bookies in this region; if we fail because we dont have enough bookies; then we
                             // retry the process with a smaller target
@@ -327,14 +326,15 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                             int newEnsembleSize = currentAllocation.getLeft() + addToEnsembleSize;
                             int newWriteQuorumSize = currentAllocation.getRight() + addToWriteQuorum;
                             try {
-                                policyWithinRegion.newEnsemble(newEnsembleSize, newWriteQuorumSize, newWriteQuorumSize, excludeBookies, tempEnsemble, tempEnsemble);
+                                List<BookieSocketAddress> allocated = policyWithinRegion.newEnsemble(newEnsembleSize, newWriteQuorumSize, newWriteQuorumSize, excludeBookies, tempEnsemble, tempEnsemble);
                                 ensemble = tempEnsemble;
                                 remainingEnsemble -= addToEnsembleSize;
-                                remainingWriteQuorum -= writeQuorumSize;
+                                remainingWriteQuorum -= addToWriteQuorum;
                                 regionsWiseAllocation.put(region, Pair.of(newEnsembleSize, newWriteQuorumSize));
                                 success = true;
-                                LOG.info("Allocated {} bookies in region {} : {}",
-                                        new Object[]{newEnsembleSize, region, ensemble});
+                                regionsToAllocate--;
+                                LOG.info("Region {} allocating bookies with ensemble size {} and write quorum size {} : {}",
+                                    new Object[]{region, newEnsembleSize, newWriteQuorumSize, allocated});
                                 break;
                             } catch (BKException.BKNotEnoughBookiesException exc) {
                                 LOG.warn("Could not allocate {} bookies in region {}, try allocating {} bookies",
@@ -384,7 +384,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                     ensembleSize, bookieList);
                 throw new BKException.BKNotEnoughBookiesException();
             }
-
+            LOG.info("Bookies allocated successfully {}", ensemble);
             return ensemble.toList();
         } finally {
             rwLock.readLock().unlock();
@@ -597,6 +597,5 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             }
         }
         return finalList;
-
     }
 }
