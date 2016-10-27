@@ -257,6 +257,10 @@ public class DistributedLogTool extends Tool {
             return this.factory;
         }
 
+        protected DistributedLogNamespace getNamespace() throws IOException {
+            return getFactory().getNamespace();
+        }
+
         protected LogSegmentMetadataStore getLogSegmentMetadataStore() throws IOException {
             DistributedLogNamespace namespace = getFactory().getNamespace();
             assert(namespace instanceof BKDistributedLogNamespace);
@@ -2048,6 +2052,42 @@ public class DistributedLogTool extends Tool {
         }
     }
 
+    protected static class FindLedgerCommand extends PerLedgerCommand {
+
+        FindLedgerCommand() {
+            super("findledger", "find the stream for a given ledger");
+        }
+
+        @Override
+        protected int runCmd() throws Exception {
+            Iterator<String> logs = getNamespace().getLogs();
+            while (logs.hasNext()) {
+                String logName = logs.next();
+                if (processLog(logName)) {
+                    System.out.println("Found ledger " + getLedgerID() + " at log stream '" + logName + "'");
+                }
+            }
+            return 0;
+        }
+
+        boolean processLog(String logName) throws Exception {
+            DistributedLogManager dlm = getNamespace().openLog(logName);
+            try {
+                List<LogSegmentMetadata> segments = dlm.getLogSegments();
+                for (LogSegmentMetadata segment : segments) {
+                    if (getLedgerID() == segment.getLedgerId()) {
+                        System.out.println("Found ledger " + getLedgerID() + " at log segment "
+                                + segment + " for stream '" + logName + "'");
+                        return true;
+                    }
+                }
+                return false;
+            } finally {
+                dlm.close();
+            }
+        }
+    }
+
     protected static class ReadLastConfirmedCommand extends PerLedgerCommand {
 
         ReadLastConfirmedCommand() {
@@ -2643,6 +2683,7 @@ public class DistributedLogTool extends Tool {
         addCommand(new DeleteAllocatorPoolCommand());
         addCommand(new DeleteLedgersCommand());
         addCommand(new DumpCommand());
+        addCommand(new FindLedgerCommand());
         addCommand(new InspectCommand());
         addCommand(new InspectStreamCommand());
         addCommand(new ListCommand());
