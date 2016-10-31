@@ -80,28 +80,32 @@ public interface EnsemblePlacementPolicy {
      *          Ensemble Size
      * @param writeQuorumSize
      *          Write Quorum Size
-     * @param excludeBookies
-     *          Bookies that should not be considered as targets.
-     * @return list of bookies chosen as targets.
+     * @param ackQuorumSize
+     *          the value of ackQuorumSize
+     * @param customMetadata the value of customMetadata
+     * @param excludeBookies Bookies that should not be considered as targets.
      * @throws BKNotEnoughBookiesException if not enough bookies available.
+     * @return the java.util.ArrayList<org.apache.bookkeeper.net.BookieSocketAddress>
      */
-    public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-                                                      Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException;
+    public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize, int ackQuorumSize, Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException;
 
     /**
      * Choose a new bookie to replace <i>bookieToReplace</i>. If no bookie available in the cluster,
      * {@link BKNotEnoughBookiesException} is thrown.
      *
-     * @param bookieToReplace
-     *          bookie to replace
-     * @param excludeBookies
-     *          bookies that should not be considered as candidate.
-     * @return the bookie chosen as target.
+     * @param ensembleSize
+     *          the value of ensembleSize
+     * @param writeQuorumSize
+     *          the value of writeQuorumSize
+     * @param ackQuorumSize the value of ackQuorumSize
+     * @param customMetadata the value of customMetadata
+     * @param currentEnsemble the value of currentEnsemble
+     * @param bookieToReplace bookie to replace
+     * @param excludeBookies bookies that should not be considered as candidate.
      * @throws BKNotEnoughBookiesException
+     * @return the org.apache.bookkeeper.net.BookieSocketAddress
      */
-    public BookieSocketAddress replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-                                             Collection<BookieSocketAddress> currentEnsemble, BookieSocketAddress bookieToReplace,
-                                             Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException;
+    public BookieSocketAddress replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize, java.util.Map<String, byte[]> customMetadata, Collection<BookieSocketAddress> currentEnsemble, BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException;
 
     /**
      * Reorder the read sequence of a given write quorum <i>writeSet</i>.
