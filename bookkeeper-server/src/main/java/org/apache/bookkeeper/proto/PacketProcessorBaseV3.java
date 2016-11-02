@@ -28,9 +28,10 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.util.SafeRunnable;
 import org.jboss.netty.channel.Channel;
 
-public abstract class PacketProcessorBaseV3 {
+public abstract class PacketProcessorBaseV3 extends SafeRunnable {
 
     final Request request;
     final Channel channel;

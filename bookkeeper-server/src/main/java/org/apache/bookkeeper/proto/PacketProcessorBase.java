@@ -19,15 +19,15 @@ package org.apache.bookkeeper.proto;
 
 import java.util.concurrent.TimeUnit;
 
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookieProtocol.Request;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.util.SafeRunnable;
 import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-abstract class PacketProcessorBase implements Runnable {
+abstract class PacketProcessorBase extends SafeRunnable {
     private final static Logger logger = LoggerFactory.getLogger(PacketProcessorBase.class);
     final Request request;
     final Channel channel;
@@ -64,7 +64,7 @@ abstract class PacketProcessorBase implements Runnable {
     }
 
     @Override
-    public void run() {
+    public void safeRun() {
         if (!isVersionCompatible()) {
             sendResponse(BookieProtocol.EBADVERSION,
                          ResponseBuilder.buildErrorResponse(BookieProtocol.EBADVERSION, request),
