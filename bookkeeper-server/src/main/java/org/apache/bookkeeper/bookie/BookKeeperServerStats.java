@@ -46,12 +46,15 @@ public interface BookKeeperServerStats {
     // Journal Stats
     public final static String JOURNAL_SCOPE = "journal";
     public final static String JOURNAL_ADD_ENTRY = "JOURNAL_ADD_ENTRY";
+    public final static String JOURNAL_SYNC = "JOURNAL_SYNC";
     public final static String JOURNAL_MEM_ADD_ENTRY = "JOURNAL_MEM_ADD_ENTRY";
     public final static String JOURNAL_PREALLOCATION = "JOURNAL_PREALLOCATION";
     public final static String JOURNAL_FORCE_WRITE_LATENCY = "JOURNAL_FORCE_WRITE_LATENCY";
     public final static String JOURNAL_FORCE_WRITE_BATCH_ENTRIES = "JOURNAL_FORCE_WRITE_BATCH_ENTRIES";
     public final static String JOURNAL_FORCE_WRITE_BATCH_BYTES = "JOURNAL_FORCE_WRITE_BATCH_BYTES";
     public final static String JOURNAL_FLUSH_LATENCY = "JOURNAL_FLUSH_LATENCY";
+    public final static String JOURNAL_QUEUE_LATENCY = "JOURNAL_QUEUE_LATENCY";
+    public final static String JOURNAL_PROCESS_TIME_LATENCY = "JOURNAL_PROCESS_TIME_LATENCY";
     public final static String JOURNAL_CREATION_LATENCY = "JOURNAL_CREATION_LATENCY";
 
     // Ledger Storage Stats
