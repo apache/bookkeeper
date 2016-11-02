@@ -192,9 +192,12 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
         Assert.assertEquals("Wrongly updated cookie!", useHostNameAsBookieID, !cookie.isBookieHostCreatedFromIp());
         verifyCookieInZooKeeper(newconf, 1);
 
-        File journalDir = Bookie.getCurrentDirectory(conf.getJournalDir());
-        Cookie jCookie = Cookie.readFromDirectory(journalDir);
-        jCookie.verify(cookie);
+        for (File journalDir : conf.getJournalDirs()) {
+            journalDir = Bookie.getCurrentDirectory(journalDir);
+            Cookie jCookie = Cookie.readFromDirectory(journalDir);
+            jCookie.verify(cookie);
+        }
+
         File[] ledgerDir = Bookie.getCurrentDirectories(conf.getLedgerDirs());
         for (File dir : ledgerDir) {
             Cookie lCookie = Cookie.readFromDirectory(dir);
