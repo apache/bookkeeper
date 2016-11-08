@@ -318,6 +318,30 @@ public class IndexPersistenceMgr {
         fileInfoCache.clear();
     }
 
+    Long getLastAddConfirmed(long ledgerId) throws IOException {
+        FileInfo fi = null;
+        try {
+            fi = getFileInfo(ledgerId, null);
+            return fi.getLastAddConfirmed();
+        } finally {
+            if (null != fi) {
+                fi.release();
+            }
+        }
+    }
+
+    long updateLastAddConfirmed(long ledgerId, long lac) throws IOException {
+        FileInfo fi = null;
+        try {
+            fi = getFileInfo(ledgerId, null);
+            return fi.setLastAddConfirmed(lac);
+        } finally {
+            if (null != fi) {
+                fi.release();
+            }
+        }
+    }
+
     byte[] readMasterKey(long ledgerId) throws IOException, BookieException {
         FileInfo fi = fileInfoCache.get(ledgerId);
         if (fi == null) {

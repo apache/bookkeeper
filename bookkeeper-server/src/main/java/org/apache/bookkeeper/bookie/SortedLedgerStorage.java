@@ -96,8 +96,10 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
     public long addEntry(ByteBuffer entry) throws IOException {
         long ledgerId = entry.getLong();
         long entryId = entry.getLong();
+        long lac = entry.getLong();
         entry.rewind();
         memTable.addEntry(ledgerId, entryId, entry, this);
+        ledgerCache.updateLastAddConfirmed(ledgerId, lac);
         return entryId;
     }
 
