@@ -103,6 +103,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
     protected final static String AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL = "auditorPeriodicBookieCheckInterval";
     protected final static String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
+    protected final static String LOST_BOOKIE_RECOVERY_DELAY = "lostBookieRecoveryDelay";
 
     // Worker Thread parameters.
     protected final static String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
@@ -1337,6 +1338,22 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public boolean isAutoRecoveryDaemonEnabled() {
         return getBoolean(AUTO_RECOVERY_DAEMON_ENABLED, false);
+    }
+
+    /**
+     * Get how long to delay the recovery of ledgers of a lost bookie.
+     *
+     * @return delay interval in seconds
+     */
+    public int getLostBookieRecoveryDelay() {
+        return getInt(LOST_BOOKIE_RECOVERY_DELAY, 0);
+    }
+
+    /**
+     * Set the delay interval for starting recovery of a lost bookie.
+     */
+    public void setLostBookieRecoveryDelay(int interval) {
+        setProperty(LOST_BOOKIE_RECOVERY_DELAY, interval);
     }
 
     /**
