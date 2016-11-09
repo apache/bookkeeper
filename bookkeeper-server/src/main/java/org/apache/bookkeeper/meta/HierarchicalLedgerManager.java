@@ -311,7 +311,9 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
                 boolean hasMoreElements = false;
                 try {
                     if (l1NodesIter == null) {
-                        l1NodesIter = zk.getChildren(ledgerRootPath, null).iterator();
+                        List<String> l1Nodes = zk.getChildren(ledgerRootPath, null);
+                        Collections.sort(l1Nodes);
+                        l1NodesIter = l1Nodes.iterator();
                         hasMoreElements = nextL1Node();
                     } else if (l2NodesIter == null || !l2NodesIter.hasNext()) {
                         hasMoreElements = nextL1Node();
