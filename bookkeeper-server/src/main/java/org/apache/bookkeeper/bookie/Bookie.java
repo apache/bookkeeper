@@ -1344,8 +1344,9 @@ public class Bookie extends BookieCriticalThread {
     public static boolean format(ServerConfiguration conf,
             boolean isInteractive, boolean force) {
         File journalDir = conf.getJournalDir();
-        if (journalDir.exists() && journalDir.isDirectory()
-                && journalDir.list().length != 0) {
+        String[] journalDirFiles =
+                journalDir.exists() && journalDir.isDirectory() ? journalDir.list() : null;
+        if (journalDirFiles != null && journalDirFiles.length != 0) {
             try {
                 boolean confirm = false;
                 if (!isInteractive) {
@@ -1400,11 +1401,14 @@ public class Bookie extends BookieCriticalThread {
 
     private static boolean cleanDir(File dir) {
         if (dir.exists()) {
-            for (File child : dir.listFiles()) {
-                boolean delete = FileUtils.deleteQuietly(child);
-                if (!delete) {
-                    LOG.error("Not able to delete " + child);
-                    return false;
+            File[] files = dir.listFiles();
+            if (files != null) {
+                for (File child : files) {
+                    boolean delete = FileUtils.deleteQuietly(child);
+                    if (!delete) {
+                        LOG.error("Not able to delete " + child);
+                        return false;
+                    }
                 }
             }
         } else if (!dir.mkdirs()) {

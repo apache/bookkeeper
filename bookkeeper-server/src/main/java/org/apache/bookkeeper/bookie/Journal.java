@@ -75,6 +75,9 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
      */
     private static List<Long> listJournalIds(File journalDir, JournalIdFilter filter) {
         File logFiles[] = journalDir.listFiles();
+        if (logFiles == null || logFiles.length == 0) {
+            return Collections.emptyList();
+        }
         List<Long> logs = new ArrayList<Long>();
         for(File f: logFiles) {
             String name = f.getName();

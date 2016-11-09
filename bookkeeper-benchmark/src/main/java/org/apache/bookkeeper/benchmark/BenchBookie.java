@@ -133,8 +133,8 @@ public class BenchBookie {
         }
 
         String addr = cmd.getOptionValue("host");
-        int port = Integer.valueOf(cmd.getOptionValue("port", "3181"));
-        int size = Integer.valueOf(cmd.getOptionValue("size", "1024"));
+        int port = Integer.parseInt(cmd.getOptionValue("port", "3181"));
+        int size = Integer.parseInt(cmd.getOptionValue("size", "1024"));
         String servers = cmd.getOptionValue("zookeeper", "localhost:2181");
 
 

@@ -20,7 +20,9 @@
  */
 package org.apache.bookkeeper.replication;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Sets;
+
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -39,13 +41,18 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
-import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.replication.ReplicationStats;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.zookeeper.AsyncCallback;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.SettableFuture;
+
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -83,11 +90,37 @@ public class Auditor implements BookiesListener {
     private final ScheduledExecutorService executor;
     private List<String> knownBookies = new ArrayList<String>();
     private final String bookieIdentifier;
+    private final StatsLogger statsLogger;
+    private final OpStatsLogger numUnderReplicatedLedger;
+    private final OpStatsLogger uRLPublishTimeForLostBookies;
+    private final OpStatsLogger bookieToLedgersMapCreationTime;
+    private final OpStatsLogger checkAllLedgersTime;
+    private final Counter numLedgersChecked;
+    private final OpStatsLogger numFragmentsPerLedger;
+    private final OpStatsLogger numBookiesPerLedger;
+    private final Counter numBookieAuditsDelayed;
+    private final Counter numDelayedBookieAuditsCancelled;
+    private volatile Future<?> auditTask;
+    private Set<String> bookiesToBeAudited = Sets.newHashSet();
 
     public Auditor(final String bookieIdentifier, ServerConfiguration conf,
-                   ZooKeeper zkc) throws UnavailableException {
+                   ZooKeeper zkc, StatsLogger statsLogger) throws UnavailableException {
         this.conf = conf;
         this.bookieIdentifier = bookieIdentifier;
+        this.statsLogger = statsLogger;
+
+        numUnderReplicatedLedger = this.statsLogger.getOpStatsLogger(ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS);
+        uRLPublishTimeForLostBookies = this.statsLogger
+                .getOpStatsLogger(ReplicationStats.URL_PUBLISH_TIME_FOR_LOST_BOOKIE);
+        bookieToLedgersMapCreationTime = this.statsLogger
+                .getOpStatsLogger(ReplicationStats.BOOKIE_TO_LEDGERS_MAP_CREATION_TIME);
+        checkAllLedgersTime = this.statsLogger.getOpStatsLogger(ReplicationStats.CHECK_ALL_LEDGERS_TIME);
+        numLedgersChecked = this.statsLogger.getCounter(ReplicationStats.NUM_LEDGERS_CHECKED);
+        numFragmentsPerLedger = statsLogger.getOpStatsLogger(ReplicationStats.NUM_FRAGMENTS_PER_LEDGER);
+        numBookiesPerLedger = statsLogger.getOpStatsLogger(ReplicationStats.NUM_BOOKIES_PER_LEDGER);
+        numBookieAuditsDelayed = this.statsLogger.getCounter(ReplicationStats.NUM_BOOKIE_AUDITS_DELAYED);
+        numDelayedBookieAuditsCancelled = this.statsLogger
+                .getCounter(ReplicationStats.NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED);
 
         initialize(conf, zkc);
 
@@ -113,7 +146,7 @@ public class Auditor implements BookiesListener {
                     .newLedgerUnderreplicationManager();
 
             this.bkc = new BookKeeper(new ClientConfiguration(conf), zkc);
-            this.admin = new BookKeeperAdmin(bkc);
+            this.admin = new BookKeeperAdmin(bkc, statsLogger);
         } catch (CompatibilityException ce) {
             throw new UnavailableException(
                     "CompatibilityException while initializing Auditor", ce);
@@ -165,27 +198,64 @@ public class Auditor implements BookiesListener {
                         Collection<String> newBookies = CollectionUtils.subtract(
                                 availableBookies, knownBookies);
                         knownBookies.addAll(newBookies);
+                        if (!bookiesToBeAudited.isEmpty() && knownBookies.containsAll(bookiesToBeAudited)) {
+                            // the bookie, which went down earlier and had an audit scheduled for,
+                            // has come up. So let us stop tracking it and cancel the audit. Since
+                            // we allow delaying of audit when there is only one failed bookie,
+                            // bookiesToBeAudited should just have 1 element and hence containsAll
+                            // check should be ok
+                            if (auditTask != null && auditTask.cancel(false)) {
+                                auditTask = null;
+                                numDelayedBookieAuditsCancelled.inc();
+                            }
+                            bookiesToBeAudited.clear();
+                        }
 
                         // find lost bookies(if any)
-                        Collection<String> lostBookies = CollectionUtils.subtract(
-                                knownBookies, availableBookies);
+                        bookiesToBeAudited.addAll(CollectionUtils.subtract(knownBookies, availableBookies));
+                        if (bookiesToBeAudited.size() == 0) {
+                            return;
+                        }
 
-                        if (lostBookies.size() > 0) {
-                            knownBookies.removeAll(lostBookies);
-
-                            auditBookies();
+                        knownBookies.removeAll(bookiesToBeAudited);
+                        if (conf.getLostBookieRecoveryDelay() == 0) {
+                            startAudit(false);
+                            bookiesToBeAudited.clear();
+                            return;
+                        }
+                        if (bookiesToBeAudited.size() > 1) {
+                            // if more than one bookie is down, start the audit immediately;
+                            LOG.info("Multiple bookie failure; not delaying bookie audit. Bookies lost now: "
+                                     + CollectionUtils.subtract(knownBookies, availableBookies)
+                                     +"; All lost bookies: " + bookiesToBeAudited.toString());
+                            if (auditTask != null && auditTask.cancel(false)) {
+                                auditTask = null;
+                                numDelayedBookieAuditsCancelled.inc();
+                            }
+                            startAudit(false);
+                            bookiesToBeAudited.clear();
+                            return;
+                        }
+                        if (auditTask == null) {
+                            // if there is no scheduled audit, schedule one
+                            auditTask = executor.schedule( new Runnable() {
+                                public void run() {
+                                    startAudit(false);
+                                    auditTask = null;
+                                    bookiesToBeAudited.clear();
+                                }
+                            }, conf.getLostBookieRecoveryDelay(), TimeUnit.SECONDS);
+                            numBookieAuditsDelayed.inc();
+                            LOG.info("Delaying bookie audit by " + conf.getLostBookieRecoveryDelay()
+                                     + "secs for " + bookiesToBeAudited.toString());
                         }
                     } catch (BKException bke) {
                         LOG.error("Exception getting bookie list", bke);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                         LOG.error("Interrupted while watching available bookies ", ie);
-                    } catch (BKAuditException bke) {
-                        LOG.error("Exception while watching available bookies", bke);
                     } catch (UnavailableException ue) {
                         LOG.error("Exception while watching available bookies", ue);
-                    } catch (KeeperException ke) {
-                        LOG.error("Exception reading bookie list", ke);
                     }
                 }
             });
@@ -207,15 +277,16 @@ public class Auditor implements BookiesListener {
                          + " 'auditorPeriodicCheckInterval' {} seconds", interval);
                 executor.scheduleAtFixedRate(new Runnable() {
                         public void run() {
-                            LOG.info("Running periodic check");
-
                             try {
                                 if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
                                     LOG.info("Ledger replication disabled, skipping");
                                     return;
                                 }
 
+                                Stopwatch stopwatch = new Stopwatch().start();
                                 checkAllLedgers();
+                                checkAllLedgersTime.registerSuccessfulEvent(stopwatch.stop().elapsedMillis(),
+                                                                            TimeUnit.MILLISECONDS);
                             } catch (KeeperException ke) {
                                 LOG.error("Exception while running periodic check", ke);
                             } catch (InterruptedException ie) {
@@ -283,6 +354,35 @@ public class Auditor implements BookiesListener {
         admin.notifyReadOnlyBookiesChanged(this);
     }
 
+    /**
+     * Start running the actual audit task
+     *
+     * @param shutDownTask
+     *      A boolean that indicates whether or not to schedule shutdown task on any failure
+     */
+    private void startAudit(boolean shutDownTask) {
+        try {
+            auditBookies();
+            shutDownTask = false;
+        } catch (BKException bke) {
+            LOG.error("Exception getting bookie list", bke);
+            shutDownTask &= true;
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            LOG.error("Interrupted while watching available bookies ", ie);
+            shutDownTask &= true;
+        } catch (BKAuditException bke) {
+            LOG.error("Exception while watching available bookies", bke);
+            shutDownTask &= true;
+        } catch (KeeperException ke) {
+            LOG.error("Exception reading bookie list", ke);
+            shutDownTask &= true;
+        }
+        if (shutDownTask) {
+            submitShutdownTask();
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private void auditBookies()
             throws BKAuditException, KeeperException,
@@ -295,6 +395,7 @@ public class Auditor implements BookiesListener {
             return;
         }
 
+        Stopwatch stopwatch = new Stopwatch().start();
         // put exit cases here
         Map<String, Set<Long>> ledgerDetails = generateBookie2LedgersIndex();
         try {
@@ -316,8 +417,12 @@ public class Auditor implements BookiesListener {
         Collection<String> lostBookies = CollectionUtils.subtract(knownBookies,
                 availableBookies);
 
-        if (lostBookies.size() > 0)
+        bookieToLedgersMapCreationTime.registerSuccessfulEvent(stopwatch.elapsedMillis(), TimeUnit.MILLISECONDS);
+        if (lostBookies.size() > 0) {
             handleLostBookies(lostBookies, ledgerDetails);
+            uRLPublishTimeForLostBookies.registerSuccessfulEvent(stopwatch.stop().elapsedMillis(), TimeUnit.MILLISECONDS);
+        }
+
     }
 
     private Map<String, Set<Long>> generateBookie2LedgersIndex()
@@ -347,6 +452,7 @@ public class Auditor implements BookiesListener {
         }
         LOG.info("Following ledgers: " + ledgers + " of bookie: " + bookieIP
                 + " are identified as underreplicated");
+        numUnderReplicatedLedger.registerSuccessfulValue(ledgers.size());
         for (Long ledgerId : ledgers) {
             try {
                 ledgerUnderreplicationManager.markLedgerUnderreplicated(
@@ -418,7 +524,7 @@ public class Auditor implements BookiesListener {
 
         final BookKeeper client = new BookKeeper(new ClientConfiguration(conf),
                                                  newzk);
-        final BookKeeperAdmin admin = new BookKeeperAdmin(client);
+        final BookKeeperAdmin admin = new BookKeeperAdmin(client, statsLogger);
 
         try {
             final LedgerChecker checker = new LedgerChecker(client);
@@ -447,6 +553,12 @@ public class Auditor implements BookiesListener {
                     try {
                         lh = admin.openLedgerNoRecovery(ledgerId);
                         checker.checkLedger(lh, new ProcessLostFragmentsCb(lh, callback));
+                        // we collect the following stats to get a measure of the
+                        // distribution of a single ledger within the bk cluster
+                        // the higher the number of fragments/bookies, the more distributed it is
+                        numFragmentsPerLedger.registerSuccessfulValue(lh.getNumFragments());
+                        numBookiesPerLedger.registerSuccessfulValue(lh.getNumBookies());
+                        numLedgersChecked.inc();
                     } catch (BKException.BKNoSuchLedgerExistsException bknsle) {
                         LOG.debug("Ledger was deleted before we could check it", bknsle);
                         callback.processResult(BKException.Code.OK,
@@ -546,21 +658,14 @@ public class Auditor implements BookiesListener {
 
     private final Runnable BOOKIE_CHECK = new Runnable() {
             public void run() {
-                try {
-                    auditBookies();
-                } catch (BKException bke) {
-                    LOG.error("Couldn't get bookie list, exiting", bke);
-                    submitShutdownTask();
-                } catch (KeeperException ke) {
-                    LOG.error("Exception while watching available bookies", ke);
-                    submitShutdownTask();
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    LOG.error("Interrupted while watching available bookies ", ie);
-                    submitShutdownTask();
-                } catch (BKAuditException bke) {
-                    LOG.error("Exception while watching available bookies", bke);
-                    submitShutdownTask();
+                if (auditTask == null) {
+                    startAudit(true);
+                } else {
+                    // if due to a lost bookie an audit task was scheduled,
+                    // let us not run this periodic bookie check now, if we
+                    // went ahead, we'll report under replication and the user
+                    // wanted to avoid that(with lostBookieRecoveryDelay option)
+                    LOG.info("Audit already scheduled; skipping periodic bookie check");
                 }
             }
         };

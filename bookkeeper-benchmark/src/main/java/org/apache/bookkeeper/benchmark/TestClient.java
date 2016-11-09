@@ -97,9 +97,9 @@ public class TestClient {
             System.exit(-1);
         }
 
-        int length = Integer.valueOf(cmd.getOptionValue("length", "1024"));
+        int length = Integer.parseInt(cmd.getOptionValue("length", "1024"));
         String target = cmd.getOptionValue("target", "fs");
-        long runfor = Long.valueOf(cmd.getOptionValue("runfor", "60")) * 1000;
+        long runfor = Long.parseLong(cmd.getOptionValue("runfor", "60")) * 1000;
 
         StringBuilder sb = new StringBuilder();
         while(length-- > 0) {
@@ -108,7 +108,7 @@ public class TestClient {
 
         Timer timeouter = new Timer();
         if (cmd.hasOption("timeout")) {
-            final long timeout = Long.valueOf(cmd.getOptionValue("timeout", "360")) * 1000;
+            final long timeout = Long.parseLong(cmd.getOptionValue("timeout", "360")) * 1000;
 
             timeouter.schedule(new TimerTask() {
                     public void run() {
@@ -120,7 +120,7 @@ public class TestClient {
 
         BookKeeper bkc = null;
         try {
-            int numFiles = Integer.valueOf(cmd.getOptionValue("numconcurrent", "1"));
+            int numFiles = Integer.parseInt(cmd.getOptionValue("numconcurrent", "1"));
             int numThreads = Math.min(numFiles, 1000);
             byte[] data = sb.toString().getBytes(UTF_8);
             long runid = System.currentTimeMillis();
@@ -128,9 +128,9 @@ public class TestClient {
 
             if (target.equals("bk")) {
                 String zkservers = cmd.getOptionValue("zkservers", "localhost:2181");
-                int bkensemble = Integer.valueOf(cmd.getOptionValue("bkensemble", "3"));
-                int bkquorum = Integer.valueOf(cmd.getOptionValue("bkquorum", "2"));
-                int bkthrottle = Integer.valueOf(cmd.getOptionValue("bkthrottle", "10000"));
+                int bkensemble = Integer.parseInt(cmd.getOptionValue("bkensemble", "3"));
+                int bkquorum = Integer.parseInt(cmd.getOptionValue("bkquorum", "2"));
+                int bkthrottle = Integer.parseInt(cmd.getOptionValue("bkthrottle", "10000"));
 
                 ClientConfiguration conf = new ClientConfiguration();
                 conf.setThrottleValue(bkthrottle);

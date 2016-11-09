@@ -30,5 +30,5 @@ enum AuthMessageType {
  *
  */
 extend AuthMessage {
-    required AuthMessageType messageType = 1000;
+    optional AuthMessageType messageType = 1000;
 }

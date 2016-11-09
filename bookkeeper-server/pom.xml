@@ -84,6 +84,11 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.3.2</version>
+    </dependency>
+    <dependency>
       <groupId>commons-configuration</groupId>
       <artifactId>commons-configuration</artifactId>
       <version>1.6</version>
@@ -199,6 +204,10 @@
               </artifactSet>
               <minimizeJar>true</minimizeJar>
               <relocations>
+                <relocation>
+                  <pattern>com.google.protobuf</pattern>
+                  <shadedPattern>bk-shade.com.google.proto_${protobuf.version}</shadedPattern>
+                </relocation>
                 <relocation>
                   <pattern>com.google</pattern>
                   <shadedPattern>bk-shade.com.google</shadedPattern>

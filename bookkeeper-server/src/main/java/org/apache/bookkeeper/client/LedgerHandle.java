@@ -26,9 +26,11 @@ import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,7 +53,10 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Ledger handle contains ledger metadata and is used to access the read and
@@ -190,6 +195,30 @@ public class LedgerHandle implements AutoCloseable {
     }
 
     /**
+     * Get the number of fragments that makeup this ledger
+     *
+     * @return the count of fragments
+     */
+    synchronized public long getNumFragments() {
+        return metadata.getEnsembles().size();
+    }
+
+    /**
+     * Get the count of unique bookies that own part of this ledger
+     * by going over all the fragments of the ledger.
+     *
+     * @return count of unique bookies
+     */
+    synchronized public long getNumBookies() {
+        Map<Long, ArrayList<BookieSocketAddress>> m = metadata.getEnsembles();
+        Set<BookieSocketAddress> s = Sets.newHashSet();
+        for (ArrayList<BookieSocketAddress> aList : m.values()) {
+            s.addAll(aList);
+        }
+        return s.size();
+    }
+
+    /**
      * Get the DigestManager
      *
      * @return DigestManager for the LedgerHandle
@@ -239,15 +268,11 @@ public class LedgerHandle implements AutoCloseable {
      */
     public void close()
             throws InterruptedException, BKException {
-        SyncCounter counter = new SyncCounter();
-        counter.inc();
+        CompletableFuture<Void> counter = new CompletableFuture<>();
 
         asyncClose(new SyncCloseCallback(), counter);
 
-        counter.block(0);
-        if (counter.getrc() != BKException.Code.OK) {
-            throw BKException.create(counter.getrc());
-        }
+        SynchCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -434,17 +459,11 @@ public class LedgerHandle implements AutoCloseable {
      */
     public Enumeration<LedgerEntry> readEntries(long firstEntry, long lastEntry)
             throws InterruptedException, BKException {
-        SyncCounter counter = new SyncCounter();
-        counter.inc();
+        CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
 
         asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
 
-        counter.block(0);
-        if (counter.getrc() != BKException.Code.OK) {
-            throw BKException.create(counter.getrc());
-        }
-
-        return counter.getSequence();
+        return SynchCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -523,18 +542,12 @@ public class LedgerHandle implements AutoCloseable {
             throws InterruptedException, BKException {
         LOG.debug("Adding entry {}", data);
 
-        SyncCounter counter = new SyncCounter();
-        counter.inc();
+        CompletableFuture<Long> counter = new CompletableFuture<>();
 
         SyncAddCallback callback = new SyncAddCallback();
         asyncAddEntry(data, offset, length, callback, counter);
-        counter.block(0);
 
-        if (counter.getrc() != BKException.Code.OK) {
-            throw BKException.create(counter.getrc());
-        }
-
-        return callback.entryId;
+        return SynchCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -979,9 +992,13 @@ public class LedgerHandle implements AutoCloseable {
 
         // avoid parallel ensemble changes to same ensemble.
         synchronized (metadata) {
-            newBookie = bk.bookieWatcher.replaceBookie(metadata.currentEnsemble, bookieIndex);
-
             newEnsemble.addAll(metadata.currentEnsemble);
+            newBookie = bk.bookieWatcher.replaceBookie(metadata.getEnsembleSize(),
+                    metadata.getWriteQuorumSize(),
+                    metadata.getAckQuorumSize(), newEnsemble,
+                    bookieIndex, new HashSet<>(Arrays.asList(addr)));
+
+
             newEnsemble.set(bookieIndex, newBookie);
 
             if (LOG.isDebugEnabled()) {
@@ -1322,21 +1339,14 @@ public class LedgerHandle implements AutoCloseable {
          *          control object
          */
         @Override
+        @SuppressWarnings("unchecked")
         public void readComplete(int rc, LedgerHandle lh,
                                  Enumeration<LedgerEntry> seq, Object ctx) {
-
-            SyncCounter counter = (SyncCounter) ctx;
-            synchronized (counter) {
-                counter.setSequence(seq);
-                counter.setrc(rc);
-                counter.dec();
-                counter.notify();
-            }
+            SynchCallbackUtils.finish(rc, seq, (CompletableFuture<Enumeration<LedgerEntry>>)ctx);
         }
     }
 
     static class SyncAddCallback implements AddCallback {
-        long entryId = -1;
 
         /**
          * Implementation of callback interface for synchronous read method.
@@ -1351,12 +1361,9 @@ public class LedgerHandle implements AutoCloseable {
          *          control object
          */
         @Override
+        @SuppressWarnings("unchecked")
         public void addComplete(int rc, LedgerHandle lh, long entry, Object ctx) {
-            SyncCounter counter = (SyncCounter) ctx;
-
-            this.entryId = entry;
-            counter.setrc(rc);
-            counter.dec();
+            SynchCallbackUtils.finish(rc, entry, (CompletableFuture<Long>)ctx);
         }
     }
 
@@ -1385,13 +1392,9 @@ public class LedgerHandle implements AutoCloseable {
          * @param ctx
          */
         @Override
+        @SuppressWarnings("unchecked")
         public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
-            SyncCounter counter = (SyncCounter) ctx;
-            counter.setrc(rc);
-            synchronized (counter) {
-                counter.dec();
-                counter.notify();
-            }
+            SynchCallbackUtils.finish(rc, null, (CompletableFuture<Void>)ctx);
         }
     }
 }

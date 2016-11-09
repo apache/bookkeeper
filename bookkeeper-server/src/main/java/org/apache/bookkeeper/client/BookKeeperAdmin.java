@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -35,6 +36,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
@@ -42,6 +45,7 @@ import org.apache.bookkeeper.client.BookKeeper.SyncOpenCallback;
 import org.apache.bookkeeper.client.LedgerFragmentReplicator.SingleFragmentCallback;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
+import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
@@ -52,6 +56,8 @@ import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
@@ -137,24 +143,29 @@ public class BookKeeperAdmin {
         // Create the BookKeeper client instance
         bkc = new BookKeeper(conf, zk);
         ownsBK = true;
-
-        this.lfr = new LedgerFragmentReplicator(bkc);
+        this.lfr = new LedgerFragmentReplicator(bkc, NullStatsLogger.INSTANCE);
     }
 
     /**
      * Constructor that takes in a BookKeeper instance . This will be useful,
-     * when users already has bk instance ready.
+     * when user already has bk instance ready.
      *
      * @param bkc
      *            - bookkeeper instance
+     * @param statsLogger
+     *            - stats logger
      */
-    public BookKeeperAdmin(final BookKeeper bkc) {
+    public BookKeeperAdmin(final BookKeeper bkc, StatsLogger statsLogger) {
         this.bkc = bkc;
         ownsBK = false;
         this.zk = bkc.zk;
         ownsZK = false;
         this.bookiesPath = bkc.getConf().getZkAvailableBookiesPath();
-        this.lfr = new LedgerFragmentReplicator(bkc);
+        this.lfr = new LedgerFragmentReplicator(bkc, statsLogger);
+    }
+
+    public BookKeeperAdmin(final BookKeeper bkc) {
+        this(bkc, NullStatsLogger.INSTANCE);
     }
 
     /**
@@ -253,18 +264,11 @@ public class BookKeeperAdmin {
      */
     public LedgerHandle openLedger(final long lId) throws InterruptedException,
             BKException {
-        SyncCounter counter = new SyncCounter();
-        counter.inc();
-        new LedgerOpenOp(bkc, lId, new SyncOpenCallback(), counter).initiate();
-        /*
-         * Wait
-         */
-        counter.block(0);
-        if (counter.getrc() != BKException.Code.OK) {
-            throw BKException.create(counter.getrc());
-        }
+        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
 
-        return counter.getLh();
+        new LedgerOpenOp(bkc, lId, new SyncOpenCallback(), counter).initiate();
+
+        return SynchCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -296,19 +300,12 @@ public class BookKeeperAdmin {
      */
     public LedgerHandle openLedgerNoRecovery(final long lId)
             throws InterruptedException, BKException {
-        SyncCounter counter = new SyncCounter();
-        counter.inc();
+        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
+
         new LedgerOpenOp(bkc, lId, new SyncOpenCallback(), counter)
                 .initiateWithoutRecovery();
-        /*
-         * Wait
-         */
-        counter.block(0);
-        if (counter.getrc() != BKException.Code.OK) {
-            throw BKException.create(counter.getrc());
-        }
 
-        return counter.getLh();
+        return SynchCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -377,16 +374,13 @@ public class BookKeeperAdmin {
             }
             if (lastEntryId == -1 || nextEntryId <= lastEntryId) {
                 try {
-                    SyncCounter counter = new SyncCounter();
-                    counter.inc();
+                    CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
 
                     handle.asyncReadEntriesInternal(nextEntryId, nextEntryId, new LedgerHandle.SyncReadCallback(),
                             counter);
-                    counter.block(0);
-                    if (counter.getrc() != BKException.Code.OK) {
-                        throw BKException.create(counter.getrc());
-                    }
-                    currentEntry = counter.getSequence().nextElement();
+
+                    currentEntry = SynchCallbackUtils.waitForResult(counter).nextElement();
+
                     return true;
                 } catch (Exception e) {
                     if (e instanceof BKException.BKNoSuchEntryException && lastEntryId == -1) {
@@ -406,6 +400,9 @@ public class BookKeeperAdmin {
 
         @Override
         public LedgerEntry next() {
+            if (lastEntryId > -1 && nextEntryId > lastEntryId) {
+                throw new NoSuchElementException();
+            }
             ++nextEntryId;
             LedgerEntry entry = currentEntry;
             currentEntry = null;
@@ -852,31 +849,33 @@ public class BookKeeperAdmin {
             final LedgerFragment ledgerFragment,
             final BookieSocketAddress targetBookieAddress)
             throws InterruptedException, BKException {
-        SyncCounter syncCounter = new SyncCounter();
-        ResultCallBack resultCallBack = new ResultCallBack(syncCounter);
+        CompletableFuture<Void> counter = new CompletableFuture<>();
+        ResultCallBack resultCallBack = new ResultCallBack(counter);
         SingleFragmentCallback cb = new SingleFragmentCallback(resultCallBack,
                 lh, ledgerFragment.getFirstEntryId(), ledgerFragment
                         .getAddress(), targetBookieAddress);
-        syncCounter.inc();
+
         asyncRecoverLedgerFragment(lh, ledgerFragment, cb, targetBookieAddress);
-        syncCounter.block(0);
-        if (syncCounter.getrc() != BKException.Code.OK) {
-            throw BKException.create(bkc.getReturnRc(syncCounter.getrc()));
+
+        try {
+            SynchCallbackUtils.waitForResult(counter);
+        } catch (BKException err) {
+            throw BKException.create(bkc.getReturnRc(err.getCode()));
         }
     }
 
     /** This is the class for getting the replication result */
     static class ResultCallBack implements AsyncCallback.VoidCallback {
-        private SyncCounter sync;
+        private final CompletableFuture<Void> sync;
 
-        public ResultCallBack(SyncCounter sync) {
+        public ResultCallBack(CompletableFuture<Void> sync) {
             this.sync = sync;
         }
 
         @Override
-        public void processResult(int rc, String s, Object obj) {
-            sync.setrc(rc);
-            sync.dec();
+        @SuppressWarnings("unchecked")
+        public void processResult(int rc, String s, Object ctx) {
+            SynchCallbackUtils.finish(rc, null, sync);
         }
     }
 
@@ -941,7 +940,23 @@ public class BookKeeperAdmin {
             bkc = new BookKeeper(conf, zkc);
             // Format all ledger metadata layout
             bkc.ledgerManagerFactory.format(conf, zkc);
+            
+            // Clear underreplicated ledgers
+            try {
+                ZKUtil.deleteRecursive(zkc, ZkLedgerUnderreplicationManager.getBasePath(conf.getZkLedgersRootPath())
+                        + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH);
+            } catch (KeeperException.NoNodeException e) {
+                LOG.debug("underreplicated ledgers root path node not exists in zookeeper to delete");
+            }
 
+            // Clear underreplicatedledger locks
+            try {
+                ZKUtil.deleteRecursive(zkc, ZkLedgerUnderreplicationManager.getBasePath(conf.getZkLedgersRootPath())
+                        + '/' + BookKeeperConstants.UNDER_REPLICATION_LOCK);
+            } catch (KeeperException.NoNodeException e) {
+                LOG.debug("underreplicatedledger locks node not exists in zookeeper to delete");
+            }
+            
             // Clear the cookies
             try {
                 ZKUtil.deleteRecursive(zkc, conf.getZkLedgersRootPath()

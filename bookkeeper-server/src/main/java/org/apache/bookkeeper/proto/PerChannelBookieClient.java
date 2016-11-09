@@ -180,7 +180,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         this.extRegistry = extRegistry;
 
         StringBuilder nameBuilder = new StringBuilder();
-        nameBuilder.append(addr.getHostname().replace('.', '_').replace('-', '_'))
+        nameBuilder.append(addr.getHostName().replace('.', '_').replace('-', '_'))
             .append("_").append(addr.getPort());
 
         this.statsLogger = parentStatsLogger.scope(BookKeeperClientStats.CHANNEL_SCOPE)
@@ -588,7 +588,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             public void safeRun() {
                 String bAddress = "null";
                 Channel c = channel;
-                if (c != null) {
+                if (c != null && c.getRemoteAddress() != null) {
                     bAddress = c.getRemoteAddress().toString();
                 }
 
@@ -620,7 +620,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             public void safeRun() {
                 String bAddress = "null";
                 Channel c = channel;
-                if(c != null) {
+                if(c != null && c.getRemoteAddress() != null) {
                     bAddress = c.getRemoteAddress().toString();
                 }
                 LOG.debug("Could not write request for adding entry: {} ledger-id: {} bookie: {} rc: {}",

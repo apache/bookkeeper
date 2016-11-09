@@ -103,6 +103,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
     protected final static String AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL = "auditorPeriodicBookieCheckInterval";
     protected final static String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
+    protected final static String LOST_BOOKIE_RECOVERY_DELAY = "lostBookieRecoveryDelay";
 
     // Worker Thread parameters.
     protected final static String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
@@ -114,6 +115,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     // registration.
     protected final static String USE_HOST_NAME_AS_BOOKIE_ID = "useHostNameAsBookieID";
     protected final static String ENABLE_LOCAL_TRANSPORT = "enableLocalTransport";
+    protected final static String DISABLE_SERVER_SOCKET_BIND = "disableServerSocketBind";
 
     protected final static String SORTED_LEDGER_STORAGE_ENABLED = "sortedLedgerStorageEnabled";
     protected final static String SKIP_LIST_SIZE_LIMIT = "skipListSizeLimit";
@@ -1339,6 +1341,22 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Get how long to delay the recovery of ledgers of a lost bookie.
+     *
+     * @return delay interval in seconds
+     */
+    public int getLostBookieRecoveryDelay() {
+        return getInt(LOST_BOOKIE_RECOVERY_DELAY, 0);
+    }
+
+    /**
+     * Set the delay interval for starting recovery of a lost bookie.
+     */
+    public void setLostBookieRecoveryDelay(int interval) {
+        setProperty(LOST_BOOKIE_RECOVERY_DELAY, interval);
+    }
+
+    /**
      * Sets that whether force start a bookie in readonly mode
      *
      * @param enabled
@@ -1561,7 +1579,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get hwhether to use listen for local JVM clients. Defaults to false.
+     * Get whether to listen for local JVM clients. Defaults to false.
      *
      * @return true, then bookie will be listen for local JVM clients
      */
@@ -1582,6 +1600,28 @@ public class ServerConfiguration extends AbstractConfiguration {
         return this;
     }
 
+    /**
+     * Get whether to disable bind of server-side sockets. Defaults to false.
+     *
+     * @return true, then bookie will not listen for network connections
+     */
+    public boolean isDisableServerSocketBind() {
+        return getBoolean(DISABLE_SERVER_SOCKET_BIND, false);
+    }
+
+    /**
+     * Configure the bookie to disable bind on network interfaces,
+     * this bookie will be available only to BookKeeper clients executed on the local JVM
+     *
+     * @see #getDisableServerSocketBind
+     * @param disableServerSocketBind
+     *            whether to disable binding on network interfaces
+     * @return server configuration
+     */
+    public ServerConfiguration setDisableServerSocketBind(boolean disableServerSocketBind) {
+        setProperty(DISABLE_SERVER_SOCKET_BIND, disableServerSocketBind);
+        return this;
+    }
 
     /**
      * Get the stats provider used by bookie.

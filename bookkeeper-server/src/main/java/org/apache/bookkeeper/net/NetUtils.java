@@ -15,16 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// This code has been copied from hadoop-common 0.23.1
 package org.apache.bookkeeper.net;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class NetUtils {
+    private static final Logger logger = LoggerFactory.getLogger(NetUtils.class);
 
     /**
      * Given a string representation of a host, return its ip address
@@ -56,6 +60,26 @@ public class NetUtils {
             hostNames.add(normalizeHostName(name));
         }
         return hostNames;
+    }
+
+    public static String resolveNetworkLocation(DNSToSwitchMapping dnsResolver, InetSocketAddress addr) {
+        List<String> names = new ArrayList<String>(1);
+        if (dnsResolver instanceof CachedDNSToSwitchMapping) {
+            names.add(addr.getAddress().getHostAddress());
+        } else {
+            names.add(addr.getHostName());
+        }
+        // resolve network addresses
+        List<String> rNames = dnsResolver.resolve(names);
+        String netLoc;
+        if (null == rNames) {
+            logger.warn("Failed to resolve network location for {}, using default rack for them : {}.", names,
+                NetworkTopology.DEFAULT_RACK);
+            netLoc = NetworkTopology.DEFAULT_RACK;
+        } else {
+            netLoc = rNames.get(0);
+        }
+        return netLoc;
     }
 
 }

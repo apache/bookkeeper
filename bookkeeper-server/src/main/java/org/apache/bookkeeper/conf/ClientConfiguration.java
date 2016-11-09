@@ -43,6 +43,8 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     // Digest Type
     protected final static String DIGEST_TYPE = "digestType";
+    protected final static String ENABLE_DIGEST_TYPE_AUTODETECTION = "enableDigestTypeAutodetection";
+
     // Passwd
     protected final static String PASSWD = "passwd";
 
@@ -64,6 +66,8 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String TIMEOUT_TASK_INTERVAL_MILLIS = "timeoutTaskIntervalMillis";
     protected final static String PCBC_TIMEOUT_TIMER_TICK_DURATION_MS = "pcbcTimeoutTimerTickDurationMs";
     protected final static String PCBC_TIMEOUT_TIMER_NUM_TICKS = "pcbcTimeoutTimerNumTicks";
+    protected final static String TIMEOUT_TIMER_TICK_DURATION_MS = "timeoutTimerTickDurationMs";
+    protected final static String TIMEOUT_TIMER_NUM_TICKS = "timeoutTimerNumTicks";
 
     // Bookie health check settings
     protected final static String BOOKIE_HEALTH_CHECK_ENABLED = "bookieHealthCheckEnabled";
@@ -76,6 +80,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     // Ensemble Placement Policy
     protected final static String ENSEMBLE_PLACEMENT_POLICY = "ensemblePlacementPolicy";
+    protected final static String NETWORK_TOPOLOGY_STABILIZE_PERIOD_SECONDS = "networkTopologyStabilizePeriodSeconds";
 
     // Stats
     protected final static String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
@@ -131,6 +136,29 @@ public class ClientConfiguration extends AbstractConfiguration {
         return this;
     }
 
+    /**
+     * Get autodetection of digest type.
+     * Ignores provided digestType, if enabled and uses one from ledger metadata instead.
+     * Incompatible with ledger created by bookie versions < 4.2
+     *
+     * @return flag to enable/disable autodetection of digest type.
+     */
+    public boolean getEnableDigestTypeAutodetection() {
+        return getBoolean(ENABLE_DIGEST_TYPE_AUTODETECTION, false);
+    }
+
+    /**
+     * Enable autodetection of digest type.
+     * Ignores provided digestType, if enabled and uses one from ledger metadata instead.
+     * Incompatible with ledger created by bookie versions < 4.2
+     *
+     * @return client configuration.
+     */
+    public ClientConfiguration setEnableDigestTypeAutodetection(boolean enable) {
+        this.setProperty(ENABLE_DIGEST_TYPE_AUTODETECTION, enable);
+        return this;
+    }
+    
     /**
      * Get digest type used in bookkeeper admin
      *
@@ -300,6 +328,48 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setClientWriteBufferHighWaterMark(int waterMark) {
         setProperty(CLIENT_WRITEBUFFER_HIGH_WATER_MARK, waterMark);
+        return this;
+    }
+
+    /**
+     * Get the tick duration in milliseconds that used for timeout timer.
+     *
+     * @return tick duration in milliseconds
+     */
+    public long getTimeoutTimerTickDurationMs() {
+        return getLong(TIMEOUT_TIMER_TICK_DURATION_MS, 100);
+    }
+
+    /**
+     * Set the tick duration in milliseconds that used for timeout timer.
+     *
+     * @param tickDuration
+     *          tick duration in milliseconds.
+     * @return client configuration.
+     */
+    public ClientConfiguration setTimeoutTimerTickDurationMs(long tickDuration) {
+        setProperty(TIMEOUT_TIMER_TICK_DURATION_MS, tickDuration);
+        return this;
+    }
+
+    /**
+     * Get number of ticks that used for timeout timer.
+     *
+     * @return number of ticks that used for timeout timer.
+     */
+    public int getTimeoutTimerNumTicks() {
+        return getInt(TIMEOUT_TIMER_NUM_TICKS, 1024);
+    }
+
+    /**
+     * Set number of ticks that used for timeout timer.
+     *
+     * @param numTicks
+     *          number of ticks that used for timeout timer.
+     * @return client configuration.
+     */
+    public ClientConfiguration setTimeoutTimerNumTicks(int numTicks) {
+        setProperty(TIMEOUT_TIMER_NUM_TICKS, numTicks);
         return this;
     }
 
@@ -641,10 +711,10 @@ public class ClientConfiguration extends AbstractConfiguration {
      * @return ensemble placement policy class.
      */
     public Class<? extends EnsemblePlacementPolicy> getEnsemblePlacementPolicy()
-        throws ConfigurationException {
+            throws ConfigurationException {
         return ReflectionUtils.getClass(this, ENSEMBLE_PLACEMENT_POLICY,
-                                        RackawareEnsemblePlacementPolicy.class,
-                                        EnsemblePlacementPolicy.class,
+                RackawareEnsemblePlacementPolicy.class,
+                EnsemblePlacementPolicy.class,
                                         defaultLoader);
     }
 
@@ -656,6 +726,27 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setEnsemblePlacementPolicy(Class<? extends EnsemblePlacementPolicy> policyClass) {
         setProperty(ENSEMBLE_PLACEMENT_POLICY, policyClass.getName());
+        return this;
+    }
+
+    /**
+     * Get the network topology stabilize period in seconds. if it is zero, this feature is turned off.
+     *
+     * @return network topology stabilize period in seconds.
+     */
+    public int getNetworkTopologyStabilizePeriodSeconds() {
+        return getInt(NETWORK_TOPOLOGY_STABILIZE_PERIOD_SECONDS, 0);
+    }
+
+    /**
+     * Set the network topology stabilize period in seconds.
+     *
+     * @see #getNetworkTopologyStabilizePeriodSeconds()
+     * @param seconds stabilize period in seconds
+     * @return client configuration.
+     */
+    public ClientConfiguration setNetworkTopologyStabilizePeriodSeconds(int seconds) {
+        setProperty(NETWORK_TOPOLOGY_STABILIZE_PERIOD_SECONDS, seconds);
         return this;
     }
 

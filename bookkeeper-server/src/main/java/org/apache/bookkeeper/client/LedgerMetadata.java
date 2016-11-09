@@ -298,8 +298,8 @@ public class LedgerMetadata {
 
         if (customMetadata != null) {
             LedgerMetadataFormat.cMetadataMapEntry.Builder cMetadataBuilder = LedgerMetadataFormat.cMetadataMapEntry.newBuilder();
-            for (String key : customMetadata.keySet()) {
-                cMetadataBuilder.setKey(key).setValue(ByteString.copyFrom(customMetadata.get(key)));
+            for (Map.Entry<String,byte[]> entry : customMetadata.entrySet()) {
+                cMetadataBuilder.setKey(entry.getKey()).setValue(ByteString.copyFrom(entry.getValue()));
                 builder.addCustomMetadata(cMetadataBuilder.build());
             }
         }
@@ -371,7 +371,7 @@ public class LedgerMetadata {
         }
         if (versionLine.startsWith(VERSION_KEY)) {
             String parts[] = versionLine.split(tSplitter);
-            lc.metadataFormatVersion = new Integer(parts[1]);
+            lc.metadataFormatVersion = Integer.parseInt(parts[1]);
         } else {
             // if no version is set, take it to be version 1
             // as the parsing is the same as what we had before
@@ -440,16 +440,16 @@ public class LedgerMetadata {
     static LedgerMetadata parseVersion1Config(LedgerMetadata lc,
                                               BufferedReader reader) throws IOException {
         try {
-            lc.writeQuorumSize = lc.ackQuorumSize = new Integer(reader.readLine());
-            lc.ensembleSize = new Integer(reader.readLine());
-            lc.length = new Long(reader.readLine());
+            lc.writeQuorumSize = lc.ackQuorumSize = Integer.parseInt(reader.readLine());
+            lc.ensembleSize = Integer.parseInt(reader.readLine());
+            lc.length = Long.parseLong(reader.readLine());
 
             String line = reader.readLine();
             while (line != null) {
                 String parts[] = line.split(tSplitter);
 
                 if (parts[1].equals(closed)) {
-                    Long l = new Long(parts[0]);
+                    Long l = Long.parseLong(parts[0]);
                     if (l == IN_RECOVERY) {
                         lc.state = LedgerMetadataFormat.State.IN_RECOVERY;
                     } else {
@@ -465,7 +465,7 @@ public class LedgerMetadata {
                 for (int j = 1; j < parts.length; j++) {
                     addrs.add(new BookieSocketAddress(parts[j]));
                 }
-                lc.addEnsemble(new Long(parts[0]), addrs);
+                lc.addEnsemble(Long.parseLong(parts[0]), addrs);
                 line = reader.readLine();
             }
         } catch (NumberFormatException e) {

@@ -24,6 +24,8 @@ package org.apache.bookkeeper.client;
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
 import java.util.Comparator;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -90,18 +92,16 @@ public class LedgerHandleAdv extends LedgerHandle {
             BKException {
         LOG.debug("Adding entry {}", data);
 
-        SyncCounter counter = new SyncCounter();
-        counter.inc();
+        CompletableFuture<Long> counter = new CompletableFuture<>();
 
         SyncAddCallback callback = new SyncAddCallback();
         asyncAddEntry(entryId, data, offset, length, callback, counter);
 
-        counter.block(0);
-
-        if (counter.getrc() != BKException.Code.OK) {
-            throw BKException.create(counter.getrc());
+        try {
+            return counter.get();
+        } catch (ExecutionException err) {
+            throw (BKException) err.getCause();
         }
-        return callback.entryId;
     }
 
     /**
@@ -150,9 +150,7 @@ public class LedgerHandleAdv extends LedgerHandle {
             cb.addComplete(BKException.Code.DuplicateEntryIdException,
                     LedgerHandleAdv.this, entryId, ctx);
             return;
-        }
-        pendingAddOps.add(op);
-
+        }       
         doAsyncAddEntry(op, data, offset, length, cb, ctx);
     }
 
@@ -170,9 +168,26 @@ public class LedgerHandleAdv extends LedgerHandle {
                 "Invalid values for offset("+offset
                 +") or length("+length+")");
         }
-        throttler.acquire();
+        if (throttler != null) {
+            throttler.acquire();
+        }
 
-        if (metadata.isClosed()) {
+        final long currentLength;
+        boolean wasClosed = false;
+        synchronized (this) {
+            // synchronized on this to ensure that
+            // the ledger isn't closed between checking and
+            // updating lastAddPushed
+            if (metadata.isClosed()) {
+                wasClosed = true;
+                currentLength = 0;
+            } else {
+                currentLength = addToLength(length);
+                pendingAddOps.add(op);
+            }
+        }
+
+        if (wasClosed) {
             // make sure the callback is triggered in main worker pool
             try {
                 bk.mainWorkerPool.submit(new SafeRunnable() {
@@ -195,8 +210,6 @@ public class LedgerHandleAdv extends LedgerHandle {
         }
 
         try {
-            final long currentLength = addToLength(length);
-
             bk.mainWorkerPool.submit(new SafeRunnable() {
                 @Override
                 public void safeRun() {

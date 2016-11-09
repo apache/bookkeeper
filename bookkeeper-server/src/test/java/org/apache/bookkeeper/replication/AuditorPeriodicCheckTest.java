@@ -30,6 +30,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
@@ -313,7 +314,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         }
         final Auditor auditor = new Auditor(
                 Bookie.getBookieAddress(bsConfs.get(0)).toString(),
-                bsConfs.get(0), zkc);
+                bsConfs.get(0), zkc, NullStatsLogger.INSTANCE);
         final AtomicBoolean exceptionCaught = new AtomicBoolean(false);
         final CountDownLatch latch = new CountDownLatch(1);
         Thread t = new Thread() {

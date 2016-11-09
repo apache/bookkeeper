@@ -72,7 +72,7 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
         final ServerConfiguration conf = bsConfs.get(0);
         conf.setUseHostNameAsBookieID(true);
         BookieSocketAddress toBookieId = Bookie.getBookieAddress(conf);
-        BookieSocketAddress toBookieAddr = new BookieSocketAddress(toBookieId.getHostname() + ":"
+        BookieSocketAddress toBookieAddr = new BookieSocketAddress(toBookieId.getHostName() + ":"
                 + conf.getBookiePort());
 
         updateLedgerCmd(argv, 0, conf);

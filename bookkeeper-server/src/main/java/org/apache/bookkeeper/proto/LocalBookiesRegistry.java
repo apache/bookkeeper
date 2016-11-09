@@ -35,7 +35,9 @@ class LocalBookiesRegistry {
         localBookiesRegistry.put(address,Boolean.TRUE);
     }
     static void unregisterLocalBookieAddress(BookieSocketAddress address) {
-        localBookiesRegistry.remove(address);
+        if (address!= null) {
+            localBookiesRegistry.remove(address);
+        }
     }
     static boolean isLocalBookie(BookieSocketAddress address) {        
         return localBookiesRegistry.containsKey(address);
