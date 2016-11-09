@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.bookkeeper.conf.AbstractConfiguration;
 
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
@@ -36,6 +37,7 @@ import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.AsyncCallback.StringCallback;
 import org.apache.zookeeper.KeeperException.Code;
+import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -229,6 +231,15 @@ public class ZkUtils {
                 }, null);
             }
         }, null);
+    }
+
+    /**
+     * Compute ZooKeeper ACLs using actual configuration
+     *
+     * @param conf Bookie or BookKeeper configuration
+     */
+    public static List<ACL> getACLs(AbstractConfiguration conf) {
+        return conf.isZkEnableSecurity() ? ZooDefs.Ids.CREATOR_ALL_ACL: ZooDefs.Ids.OPEN_ACL_UNSAFE;
     }
 
 }

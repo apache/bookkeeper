@@ -54,6 +54,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import com.google.common.collect.Lists;
+import org.apache.zookeeper.ZooDefs;
 
 @RunWith(Parameterized.class)
 public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
@@ -201,7 +202,7 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
         lh.close();
 
         ZkLedgerUnderreplicationManager.acquireUnderreplicatedLedgerLock(zkc, baseConf.getZkLedgersRootPath(),
-                lh.getId());
+                lh.getId(), ZooDefs.Ids.OPEN_ACL_UNSAFE);
 
         final CompactableLedgerStorage mockLedgerStorage = new MockLedgerStorage();
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, mockLedgerStorage,

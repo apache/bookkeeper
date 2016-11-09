@@ -57,6 +57,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.protobuf.TextFormat;
+import org.apache.zookeeper.data.ACL;
 
 /**
  * ZooKeeper implementation of underreplication manager.
@@ -99,11 +100,12 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     private final String urLedgerPath;
     private final String urLockPath;
     private final String layoutZNode;
-
+    private final AbstractConfiguration conf;
     private final ZooKeeper zkc;
 
     public ZkLedgerUnderreplicationManager(AbstractConfiguration conf, ZooKeeper zkc)
             throws KeeperException, InterruptedException, ReplicationException.CompatibilityException {
+        this.conf = conf;
         basePath = getBasePath(conf.getZkLedgersRootPath());
         layoutZNode = basePath + '/' + BookKeeperConstants.LAYOUT_ZNODE;
         urLedgerPath = basePath
@@ -137,9 +139,10 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     private void checkLayout()
             throws KeeperException, InterruptedException, ReplicationException.CompatibilityException {
+        List<ACL> zkAcls = ZkUtils.getACLs(conf);
         if (zkc.exists(basePath, false) == null) {
             try {
-                zkc.create(basePath, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                zkc.create(basePath, new byte[0], zkAcls, CreateMode.PERSISTENT);
             } catch (KeeperException.NodeExistsException nee) {
                 // do nothing, someone each could have created it
             }
@@ -151,7 +154,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                 builder.setType(LAYOUT).setVersion(LAYOUT_VERSION);
                 try {
                     zkc.create(layoutZNode, TextFormat.printToString(builder.build()).getBytes(UTF_8),
-                               Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                               zkAcls, CreateMode.PERSISTENT);
                 } catch (KeeperException.NodeExistsException nne) {
                     // someone else managed to create it
                     continue;
@@ -179,14 +182,14 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         }
         if (zkc.exists(urLedgerPath, false) == null) {
             try {
-                zkc.create(urLedgerPath, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                zkc.create(urLedgerPath, new byte[0], zkAcls, CreateMode.PERSISTENT);
             } catch (KeeperException.NodeExistsException nee) {
                 // do nothing, someone each could have created it
             }
         }
         if (zkc.exists(urLockPath, false) == null) {
             try {
-                zkc.create(urLockPath, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                zkc.create(urLockPath, new byte[0], zkAcls, CreateMode.PERSISTENT);
             } catch (KeeperException.NodeExistsException nee) {
                 // do nothing, someone each could have created it
             }
@@ -239,6 +242,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             throws ReplicationException.UnavailableException {
         LOG.debug("markLedgerUnderreplicated(ledgerId={}, missingReplica={})", ledgerId, missingReplica);
         try {
+            List<ACL> zkAcls = ZkUtils.getACLs(conf);
             String znode = getUrLedgerZnode(ledgerId);
             while (true) {
                 UnderreplicatedLedgerFormat.Builder builder = UnderreplicatedLedgerFormat.newBuilder();
@@ -246,7 +250,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                     builder.addReplica(missingReplica);
                     ZkUtils.createFullPathOptimistic(zkc, znode, TextFormat
                             .printToString(builder.build()).getBytes(UTF_8),
-                            Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                            zkAcls, CreateMode.PERSISTENT);
                 } catch (KeeperException.NodeExistsException nee) {
                     Stat s = zkc.exists(znode, false);
                     if (s == null) {
@@ -389,7 +393,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             }
 
             Collections.shuffle(children);
-
+            List<ACL> zkAcls = ZkUtils.getACLs(conf);
             while (children.size() > 0) {
                 String tryChild = children.get(0);
                 try {
@@ -407,7 +411,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                     }
 
                     long ledgerId = getLedgerId(tryChild);
-                    zkc.create(lockPath, LOCK_DATA, Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+                    zkc.create(lockPath, LOCK_DATA, zkAcls, CreateMode.EPHEMERAL);
                     heldLocks.put(ledgerId, new Lock(lockPath, stat.getVersion()));
                     return ledgerId;
                 } catch (KeeperException.NodeExistsException nee) {
@@ -542,10 +546,11 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     @Override
     public void disableLedgerReplication()
             throws ReplicationException.UnavailableException {
+        List<ACL> zkAcls = ZkUtils.getACLs(conf);
         LOG.debug("disableLedegerReplication()");
         try {
             String znode = basePath + '/' + BookKeeperConstants.DISABLE_NODE;
-            zkc.create(znode, "".getBytes(UTF_8), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            zkc.create(znode, "".getBytes(UTF_8), zkAcls, CreateMode.PERSISTENT);
             LOG.info("Auto ledger re-replication is disabled!");
         } catch (KeeperException.NodeExistsException ke) {
             LOG.warn("AutoRecovery is already disabled!", ke);
@@ -647,10 +652,11 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     /**
      * Acquire the underreplicated ledger lock
      */
-    public static void acquireUnderreplicatedLedgerLock(ZooKeeper zkc, String zkLedgersRootPath, long ledgerId)
+    public static void acquireUnderreplicatedLedgerLock(ZooKeeper zkc, String zkLedgersRootPath,
+        long ledgerId, List<ACL> zkAcls)
             throws KeeperException, InterruptedException {
         ZkUtils.createFullPathOptimistic(zkc, getUrLedgerLockZnode(getUrLockPath(zkLedgersRootPath), ledgerId),
-                LOCK_DATA, Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+                LOCK_DATA, zkAcls, CreateMode.EPHEMERAL);
     }
 
     /**
