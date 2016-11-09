@@ -45,6 +45,7 @@ import org.apache.bookkeeper.client.BookKeeper.SyncOpenCallback;
 import org.apache.bookkeeper.client.LedgerFragmentReplicator.SingleFragmentCallback;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
+import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
@@ -939,7 +940,23 @@ public class BookKeeperAdmin {
             bkc = new BookKeeper(conf, zkc);
             // Format all ledger metadata layout
             bkc.ledgerManagerFactory.format(conf, zkc);
+            
+            // Clear underreplicated ledgers
+            try {
+                ZKUtil.deleteRecursive(zkc, ZkLedgerUnderreplicationManager.getBasePath(conf.getZkLedgersRootPath())
+                        + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH);
+            } catch (KeeperException.NoNodeException e) {
+                LOG.debug("underreplicated ledgers root path node not exists in zookeeper to delete");
+            }
 
+            // Clear underreplicatedledger locks
+            try {
+                ZKUtil.deleteRecursive(zkc, ZkLedgerUnderreplicationManager.getBasePath(conf.getZkLedgersRootPath())
+                        + '/' + BookKeeperConstants.UNDER_REPLICATION_LOCK);
+            } catch (KeeperException.NoNodeException e) {
+                LOG.debug("underreplicatedledger locks node not exists in zookeeper to delete");
+            }
+            
             // Clear the cookies
             try {
                 ZKUtil.deleteRecursive(zkc, conf.getZkLedgersRootPath()
