@@ -56,6 +56,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
     // Sync Parameters
     protected final static String FLUSH_INTERVAL = "flushInterval";
+    protected final static String FLUSH_ENTRYLOG_INTERVAL_BYTES = "flushEntrylogBytes";
     // Bookie death watch interval
     protected final static String DEATH_WATCH_INTERVAL = "bookieDeathWatchInterval";
     // Ledger Cache Parameters
@@ -264,6 +265,33 @@ public class ServerConfiguration extends AbstractConfiguration {
         return this;
     }
 
+    /**
+     * Set entry log flush interval in bytes.
+     * 
+     * Default is 0. 0 or less disables this feature and effectively flush
+     * happens on log rotation.
+     *
+     * Flushing in smaller chunks but more frequently reduces spikes in disk
+     * I/O. Flushing too frequently may also affect performance negatively.
+     * 
+     * @return Entry log flush interval in bytes
+     */
+    public long getFlushIntervalInBytes() {
+        return this.getLong(FLUSH_ENTRYLOG_INTERVAL_BYTES, 0);
+    }
+
+    /**
+     * Set entry log flush interval in bytes
+     *
+     * @param flushInterval in bytes
+     * @return server configuration
+     */
+    public ServerConfiguration setFlushIntervalInBytes(long flushInterval) {
+        this.setProperty(FLUSH_ENTRYLOG_INTERVAL_BYTES, Long.toString(flushInterval));
+        return this;
+    }
+    
+    
     /**
      * Get bookie death watch interval
      *
