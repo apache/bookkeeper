@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
 
-class ReadEntryProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
+class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
 
     private final static Logger LOG = LoggerFactory.getLogger(ReadEntryProcessorV3.class);
 
@@ -148,7 +148,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     }
 
     @Override
-    public void run() {
+    public void safeRun() {
         ReadResponse readResponse = getReadResponse();
         sendResponse(readResponse);
     }
