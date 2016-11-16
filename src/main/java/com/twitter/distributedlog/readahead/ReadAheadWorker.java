@@ -180,7 +180,7 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, AsyncClosea
     protected final long metadataLatencyWarnThresholdMillis;
     final ReadAheadTracker tracker;
     final Stopwatch resumeStopWatch;
-    final Stopwatch lastLedgerCloseDetected = Stopwatch.createUnstarted();
+    final Stopwatch LACNotAdvancedStopWatch = Stopwatch.createUnstarted();
     // Misc
     private final boolean readAheadSkipBrokenEntries;
     // Stats
@@ -901,9 +901,7 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, AsyncClosea
                             });
                 } else {
                     final long lastAddConfirmed;
-                    boolean isClosed;
                     try {
-                        isClosed = handleCache.isLedgerHandleClosed(currentLH);
                         lastAddConfirmed = handleCache.getLastAddConfirmed(currentLH);
                     } catch (BKException ie) {
                         // Exception is thrown due to no ledger handle
@@ -912,30 +910,26 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, AsyncClosea
                     }
 
                     if (lastAddConfirmed < nextReadAheadPosition.getEntryId()) {
-                        if (isClosed) {
-                            // This indicates that the currentMetadata is still marked in
-                            // progress while the ledger has been closed. This specific ledger
-                            // is not going to produce any more entries - so we should
-                            // be reading metadata entries to mark the current metadata
-                            // as complete
-                            if (lastLedgerCloseDetected.isRunning()) {
-                                if (lastLedgerCloseDetected.elapsed(TimeUnit.MILLISECONDS)
-                                    > conf.getReaderIdleWarnThresholdMillis()) {
-                                    idleReaderWarn.inc();
-                                    LOG.info("{} Ledger {} for inprogress segment {} closed for idle reader warn threshold",
-                                        new Object[] { fullyQualifiedName, currentMetadata, currentLH });
-                                    reInitializeMetadata = true;
-                                    forceReadLogSegments = true;
-                                }
-                            } else {
-                                lastLedgerCloseDetected.reset().start();
-                                if (conf.getTraceReadAheadMetadataChanges()) {
-                                    LOG.info("{} Ledger {} for inprogress segment {} closed",
-                                        new Object[] { fullyQualifiedName, currentMetadata, currentLH });
-                                }
+                        // This indicates that the currentMetadata is still marked in
+                        // progress while we have already read all the entries. It might
+                        // indicate a failure to detect metadata change. So we
+                        // should probably try force read log segments if the reader has
+                        // been idle for after a while.
+                        if (LACNotAdvancedStopWatch.isRunning()) {
+                            if (LACNotAdvancedStopWatch.elapsed(TimeUnit.MILLISECONDS)
+                                > conf.getReaderIdleWarnThresholdMillis()) {
+                                idleReaderWarn.inc();
+                                LOG.info("{} Ledger {} for inprogress segment {}, reader has been idle for warn threshold {}",
+                                    new Object[] { fullyQualifiedName, currentMetadata, currentLH, conf.getReaderIdleWarnThresholdMillis() });
+                                reInitializeMetadata = true;
+                                forceReadLogSegments = true;
                             }
                         } else {
-                            lastLedgerCloseDetected.reset();
+                            LACNotAdvancedStopWatch.reset().start();
+                            if (conf.getTraceReadAheadMetadataChanges()) {
+                                LOG.info("{} Ledger {} for inprogress segment {} closed",
+                                    new Object[] { fullyQualifiedName, currentMetadata, currentLH });
+                            }
                         }
 
                         tracker.enterPhase(ReadAheadPhase.READ_LAST_CONFIRMED);
@@ -966,7 +960,7 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, AsyncClosea
                     }
                 }
             } else {
-                lastLedgerCloseDetected.reset();
+                LACNotAdvancedStopWatch.reset();
                 if (null != currentLH) {
                     try {
                         if (inProgressChanged) {
