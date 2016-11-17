@@ -79,39 +79,31 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
 
     @Override
     public ArrayList<BookieSocketAddress> newEnsemble(
-            int ensembleSize,
-            int writeQuorumSize,
-            int ackQuorumSize,
-            Set<BookieSocketAddress> excludeBookies)
+        int ensembleSize, int writeQuorumSize, int ackQuorumSize, java.util.Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
         try {
-            return super.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, excludeBookies);
+            return super.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, excludeBookies);
         } catch (BKException.BKNotEnoughBookiesException bnebe) {
             if (slave == null) {
                 throw bnebe;
             } else {
-                return slave.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, excludeBookies);
+                return slave.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, excludeBookies);
             }
         }
     }
 
     @Override
     public BookieSocketAddress replaceBookie(
-            int ensembleSize,
-            int writeQuorumSize,
-            int ackQuorumSize,
-            Collection<BookieSocketAddress> currentEnsemble,
-            BookieSocketAddress bookieToReplace,
-            Set<BookieSocketAddress> excludeBookies)
+        int ensembleSize, int writeQuorumSize, int ackQuorumSize, java.util.Map<String, byte[]> customMetadata, Collection<BookieSocketAddress> currentEnsemble, BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
         try {
-            return super.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize,
+            return super.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
                     currentEnsemble, bookieToReplace, excludeBookies);
         } catch (BKException.BKNotEnoughBookiesException bnebe) {
             if (slave == null) {
                 throw bnebe;
             } else {
-                return slave.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize,
+                return slave.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize,customMetadata,
                         currentEnsemble, bookieToReplace, excludeBookies);
             }
         }
