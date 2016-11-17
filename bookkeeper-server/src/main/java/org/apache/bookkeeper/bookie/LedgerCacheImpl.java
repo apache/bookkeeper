@@ -73,6 +73,16 @@ public class LedgerCacheImpl implements LedgerCache {
     }
 
     @Override
+    public Long getLastAddConfirmed(long ledgerId) throws IOException {
+        return indexPersistenceManager.getLastAddConfirmed(ledgerId);
+    }
+
+    @Override
+    public long updateLastAddConfirmed(long ledgerId, long lac) throws IOException {
+        return indexPersistenceManager.updateLastAddConfirmed(ledgerId, lac);
+    }
+
+    @Override
     public void putEntryOffset(long ledger, long entry, long offset) throws IOException {
         indexPageManager.putEntryOffset(ledger, entry, offset);
     }

@@ -231,12 +231,32 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
+    public long getLastAddConfirmed(long ledgerId) throws IOException {
+        Long lac = ledgerCache.getLastAddConfirmed(ledgerId);
+        if (lac == null) {
+            ByteBuffer bb = getEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
+            if (null == bb) {
+                return BookieProtocol.INVALID_ENTRY_ID;
+            } else {
+                bb.getLong(); // ledger id
+                bb.getLong(); // entry id
+                lac = bb.getLong();
+                lac = ledgerCache.updateLastAddConfirmed(ledgerId, lac);
+            }
+        }
+        return lac;
+    }
+
+    @Override
     synchronized public long addEntry(ByteBuffer entry) throws IOException {
         long ledgerId = entry.getLong();
         long entryId = entry.getLong();
+        long lac = entry.getLong();
         entry.rewind();
 
         processEntry(ledgerId, entryId, entry);
+
+        ledgerCache.updateLastAddConfirmed(ledgerId, lac);
 
         return entryId;
     }

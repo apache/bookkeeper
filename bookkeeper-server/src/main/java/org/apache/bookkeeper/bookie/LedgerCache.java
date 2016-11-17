@@ -44,6 +44,9 @@ interface LedgerCache extends Closeable {
     void flushLedger(boolean doAll) throws IOException;
     long getLastEntry(long ledgerId) throws IOException;
 
+    Long getLastAddConfirmed(long ledgerId) throws IOException;
+    long updateLastAddConfirmed(long ledgerId, long lac) throws IOException;
+
     void deleteLedger(long ledgerId) throws IOException;
 
     LedgerCacheBean getJMXBean();
