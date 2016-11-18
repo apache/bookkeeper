@@ -75,7 +75,7 @@ public class TestLedgerDirsManager {
 
         mockDiskChecker = new MockDiskChecker(threshold, warnThreshold);
         dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(), NullStatsLogger.INSTANCE, mockDiskChecker);
-        dirsManager.init();
+        dirsManager.checkAllDirs();
     }
 
     @After

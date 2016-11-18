@@ -304,6 +304,36 @@ public class GarbageCollectorThread extends BookieThread {
         }
     }
 
+
+    /**
+     * gc ledger storage.
+     */
+    void gc() {
+        LOG.info("Starting garbage collecting ledger storage.");
+
+        LOG.info("Garbage collecting deleted ledgers' index files.");
+        // gc inactive/deleted ledgers
+        doGcLedgers();
+
+        LOG.info("Scanning entry log files to extract metadata and delete empty entry logs if possible.");
+        // Extract all of the ledger ID's that comprise all of the entry logs
+        // (except for the current new one which is still being written to).
+        entryLogMetaMap = extractMetaFromEntryLogs(entryLogMetaMap);
+
+        // if it isn't running, break to not access zookeeper
+        if (!running) {
+            return;
+        }
+
+        LOG.info("Garbage collecting deleted ledgers' index files again just in case ledgers deleted during scanning.");
+        // gc inactive/deleted ledgers again, just in case ledgers are deleted during scanning entry logs
+        doGcLedgers();
+
+        LOG.info("Garbage collecting empty entry log files.");
+        // gc entry logs
+        doGcEntryLogs();
+    }
+
     @Override
     public void run() {
         while (running) {
@@ -321,45 +351,40 @@ public class GarbageCollectorThread extends BookieThread {
                 LOG.info("Garbage collector thread forced to perform GC before expiry of wait time.");
             }
 
-            // Extract all of the ledger ID's that comprise all of the entry logs
-            // (except for the current new one which is still being written to).
-            entryLogMetaMap = extractMetaFromEntryLogs(entryLogMetaMap);
+            try {
+                gc();
 
-            // gc inactive/deleted ledgers
-            doGcLedgers();
+                boolean suspendMajor = suspendMajorCompaction.get();
+                boolean suspendMinor = suspendMinorCompaction.get();
+                if (suspendMajor) {
+                    LOG.info("Disk almost full, suspend major compaction to slow down filling disk.");
+                }
+                if (suspendMinor) {
+                    LOG.info("Disk full, suspend minor compaction to slow down filling disk.");
+                }
 
-            // gc entry logs
-            doGcEntryLogs();
+                long curTime = MathUtils.now();
+                if (enableMajorCompaction && (!suspendMajor) &&
+                        (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
+                    // enter major compaction
+                    LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
+                    doCompactEntryLogs(majorCompactionThreshold);
+                    lastMajorCompactionTime = MathUtils.now();
+                    // also move minor compaction time
+                    lastMinorCompactionTime = lastMajorCompactionTime;
+                    continue;
+                }
 
-            boolean suspendMajor = suspendMajorCompaction.get();
-            boolean suspendMinor = suspendMinorCompaction.get();
-            if (suspendMajor) {
-                LOG.info("Disk almost full, suspend major compaction to slow down filling disk.");
+                if (enableMinorCompaction && (!suspendMinor) &&
+                        (force || curTime - lastMinorCompactionTime > minorCompactionInterval)) {
+                    // enter minor compaction
+                    LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
+                    doCompactEntryLogs(minorCompactionThreshold);
+                    lastMinorCompactionTime = MathUtils.now();
+                }
+            } finally {
+                forceGarbageCollection.set(false);
             }
-            if (suspendMinor) {
-                LOG.info("Disk full, suspend minor compaction to slow down filling disk.");
-            }
-
-            long curTime = MathUtils.now();
-            if (enableMajorCompaction && (!suspendMajor) &&
-                (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
-                // enter major compaction
-                LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
-                doCompactEntryLogs(majorCompactionThreshold);
-                lastMajorCompactionTime = MathUtils.now();
-                // also move minor compaction time
-                lastMinorCompactionTime = lastMajorCompactionTime;
-                continue;
-            }
-
-            if (enableMinorCompaction && (!suspendMinor) &&
-                (force || curTime - lastMinorCompactionTime > minorCompactionInterval)) {
-                // enter minor compaction
-                LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
-                doCompactEntryLogs(minorCompactionThreshold);
-                lastMinorCompactionTime = MathUtils.now();
-            }
-            forceGarbageCollection.set(false);
         }
         LOG.info("GarbageCollectorThread exited loop!");
     }

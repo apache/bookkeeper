@@ -36,6 +36,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.Enumeration;
 
+import static org.junit.Assert.*;
+
 public class GarbageCollectionTest extends BookKeeperClusterTestCase {
 
     static final Logger LOG = LoggerFactory.getLogger(GarbageCollectionTest.class);
@@ -65,7 +67,7 @@ public class GarbageCollectionTest extends BookKeeperClusterTestCase {
     @Override
     public void setUp() throws Exception {
         baseConf.setEntryLogSizeLimit(numEntries * ENTRY_SIZE);
-        baseConf.setSortedLedgerStorageEnabled(false);
+        baseConf.setLedgerStorageClass(SortedLedgerStorage.class.getName());
         baseConf.setEntryLogFilePreAllocationEnabled(false);
 
         super.setUp();
@@ -106,7 +108,7 @@ public class GarbageCollectionTest extends BookKeeperClusterTestCase {
         killConf.setDiskUsageWarnThreshold((1f - ((float) (usableSpace + 2 * numEntries * ENTRY_SIZE) / (float) totalSpace)));
 
         try {
-            new Bookie(killConf);
+            newBookie(killConf);
             fail("Should fail as no space to reclaim during startup.");
         } catch (NoWritableLedgerDirException nwlde) {
             // expected
@@ -132,7 +134,7 @@ public class GarbageCollectionTest extends BookKeeperClusterTestCase {
         newConf.setDiskUsageThreshold(0.95f);
         newConf.setDiskUsageWarnThreshold(0.90f);
 
-        new Bookie(newConf);
+        newBookie(newConf);
 
         // entry logs ([0,1].log) should not be garbage collected if all the disks are still writable
         for (File ledgerDirectory : tmpDirs) {
@@ -142,7 +144,7 @@ public class GarbageCollectionTest extends BookKeeperClusterTestCase {
 
         // should be able to reclaim disk space after restarted.
         try {
-            new Bookie(killConf);
+            newBookie(killConf);
         } catch (NoWritableLedgerDirException nwlde) {
             // we can't rely on checking disk usage in a laptop by deleting a few KB.
             // so it is possible the it still throwing no writable ledger dir.

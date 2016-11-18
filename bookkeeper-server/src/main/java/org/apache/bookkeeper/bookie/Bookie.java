@@ -42,9 +42,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.google.common.util.concurrent.SettableFuture;
@@ -548,10 +546,6 @@ public class Bookie extends BookieCriticalThread {
         LOG.info("instantiate ledger manager {}", ledgerManagerFactory.getClass().getName());
         ledgerManager = ledgerManagerFactory.newLedgerManager();
 
-        // Initialise ledgerDirManager. This would look through all the
-        // configured directories. When disk errors or all the ledger
-        // directories are full, would throws exception and fail bookie startup.
-        this.ledgerDirsManager.init();
         // instantiate the journal
         journal = new Journal(conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE));
 
@@ -560,7 +554,6 @@ public class Bookie extends BookieCriticalThread {
         LOG.info("Using ledger storage: {}", ledgerStorageClass);
         ledgerStorage = LedgerStorageFactory.createLedgerStorage(ledgerStorageClass);
         ledgerStorage.initialize(conf, ledgerManager, ledgerDirsManager, indexDirsManager, journal, statsLogger);
-        ledgerStorage.registerListener(this);
 
         // start sync thread
         syncThread = new SyncThread(conf, getLedgerDirsListener(),
@@ -587,11 +580,6 @@ public class Bookie extends BookieCriticalThread {
         zkBookieReadOnlyPath = this.bookieReadonlyRegistrationPath + "/" + myID;
     }
     
-    @Override
-    public void onLedgerDeleted(long ledgerId) {
-        masterKeyCache.remove(ledgerId);
-    }
-
     @Override
     synchronized public void start() {
         setDaemon(true);

@@ -26,19 +26,22 @@ import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetAddress;
-import org.junit.Assert;
 
-import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.DiskChecker.DiskErrorException;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
+import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.KeeperException;
 import org.jboss.netty.channel.ChannelException;
+import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,12 +95,11 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             protected Bookie newBookie(ServerConfiguration conf)
                     throws IOException, KeeperException, InterruptedException,
                     BookieException {
-                MockBookie bookie = new MockBookie(conf);
-                bookie.zk = zkc;
-                zkc.close();
-                return bookie;
-            };
+                return new MockBookie(conf);
+            }
         };
+        bkServer.getBookie().zk = zkc;
+        zkc.close();
 
         bkServer.start();
         bkServer.join();
@@ -118,6 +120,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 + conf.getBookiePort();
 
         MockBookie b = new MockBookie(conf);
+        b.initialize();
         b.zk = zkc;
         b.testRegisterBookie(conf);
         Assert.assertNotNull("Bookie registration node doesn't exists!",
@@ -147,6 +150,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 + conf.getBookiePort();
 
         MockBookie b = new MockBookie(conf);
+        b.initialize();
         b.zk = zkc;
         b.testRegisterBookie(conf);
         Stat bkRegNode1 = zkc.exists(bkRegPath, false);
@@ -211,6 +215,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 + conf.getBookiePort();
 
         MockBookie b = new MockBookie(conf);
+        b.initialize();
         b.zk = zkc;
         b.testRegisterBookie(conf);
         Stat bkRegNode1 = zkc.exists(bkRegPath, false);
@@ -271,6 +276,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         } catch (ChannelException ce) {
             Assert.assertTrue("Should be caused by a bind exception",
                               ce.getCause() instanceof BindException);            
+            Assert.assertTrue("BKServer allowed duplicate startups!",
+                    ce.getCause().getMessage().contains("Address already in use"));
         }
     }
 
@@ -288,7 +295,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 .setZkTimeout(5000).setJournalDirName(tmpDir.getPath())
                 .setLedgerDirNames(new String[] { tmpDir.getPath() });
         try {
-            new Bookie(conf);
+            Bookie b = new Bookie(conf);
+            b.initialize();
             fail("Should throw ConnectionLossException as ZKServer is not running!");
         } catch (KeeperException.ConnectionLossException e) {
             // expected behaviour
@@ -310,7 +318,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             .setLedgerDirNames(new String[] { tmpDir.getPath() });
         conf.setZkLedgersRootPath(ZK_ROOT);
         try {
-            new Bookie(conf);
+            Bookie b = new Bookie(conf);
+            b.initialize();
             fail("Should throw NoNodeException");
         } catch (Exception e) {
             // shouldn't be able to start
@@ -321,6 +330,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         BookKeeperAdmin.format(clientConf, false, false);
 
         Bookie b = new Bookie(conf);
+        b.initialize();
         b.shutdown();
     }
 
@@ -340,8 +350,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         conf.setDiskUsageThreshold((1f - ((float) usableSpace / (float) totalSpace)) - 0.05f);
         conf.setDiskUsageWarnThreshold((1f - ((float) usableSpace / (float) totalSpace)) - 0.25f);
         try {
-            new Bookie(conf);
-        } catch (Exception e) {
+            new Bookie(conf).initialize();
+            fail("Should fail with NoWritableLedgerDirException");
+        } catch (NoWritableLedgerDirException nlde) {
             // expected
         }
     }
@@ -357,14 +368,14 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 .setZkServers(zkUtil.getZooKeeperConnectString())
                 .setZkTimeout(5000).setJournalDirName(child.getPath())
                 .setLedgerDirNames(new String[] { child.getPath() });
+        // LedgerDirsManager#init() is used in Bookie instantiation.
+        // Simulating disk errors by directly calling #init
+        LedgerDirsManager ldm = new LedgerDirsManager(conf, conf.getLedgerDirs());
         try {
-            // LedgerDirsManager#init() is used in Bookie instantiation.
-            // Simulating disk errors by directly calling #init
-            LedgerDirsManager ldm = new LedgerDirsManager(conf, conf.getLedgerDirs());
-            ldm.init();
-        } catch (Exception e) {
-            // expected
             ldm.checkAllDirs();
+            fail("Should fail with DiskErrorException");
+        } catch (DiskErrorException e) {
+            // expected
         } finally {
             FileUtils.deleteDirectory(parent);
         }

@@ -90,7 +90,8 @@ public class TestSyncThread {
         final CountDownLatch flushLatch = new CountDownLatch(1);
         final AtomicBoolean failedSomewhere = new AtomicBoolean(false);
         LedgerStorage storage = new DummyLedgerStorage() {
-                @Override
+
+            @Override
                 public void flush() throws IOException {
                     flushCalledLatch.countDown();
                     try {
@@ -273,6 +274,10 @@ public class TestSyncThread {
                 LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
                 CheckpointSource checkpointSource, StatsLogger statsLogger)
                 throws IOException {
+        }
+
+        @Override
+        public void reclaimDiskSpace() throws IOException {
         }
 
         @Override

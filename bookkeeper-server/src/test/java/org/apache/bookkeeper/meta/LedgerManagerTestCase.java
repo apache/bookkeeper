@@ -119,6 +119,11 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         }
 
         @Override
+        public void reclaimDiskSpace() throws IOException {
+            // no-op
+        }
+
+        @Override
         public void start() {
         }
 

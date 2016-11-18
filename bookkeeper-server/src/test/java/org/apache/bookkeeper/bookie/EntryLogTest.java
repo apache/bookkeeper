@@ -59,6 +59,12 @@ public class EntryLogTest {
         tempDirs.clear();
     }
 
+    protected Bookie newBookie(ServerConfiguration conf) throws Exception {
+        Bookie b = new Bookie(conf);
+        b.initialize();
+        return b;
+    }
+
     @Test(timeout=60000)
     public void testCorruptEntryLog() throws Exception {
         File tmpDir = createTempDir("bkTest", ".dir");
@@ -69,7 +75,7 @@ public class EntryLogTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
-        Bookie bookie = new Bookie(conf);
+        Bookie bookie = newBookie(conf);
         // create some entries
         EntryLogger logger = ((InterleavedLedgerStorage)bookie.ledgerStorage).entryLogger;
         logger.addEntry(1, generateEntry(1, 1));
@@ -109,7 +115,7 @@ public class EntryLogTest {
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
-        Bookie bookie = new Bookie(conf);
+        Bookie bookie = newBookie(conf);
         // create some entries
         int numLogs = 3;
         int numEntries = 10;
@@ -193,7 +199,7 @@ public class EntryLogTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(),
                 ledgerDir2.getAbsolutePath() });
-        Bookie bookie = new Bookie(conf);
+        Bookie bookie = newBookie(conf);
         EntryLogger entryLogger = new EntryLogger(conf,
                 bookie.getLedgerDirsManager());
         InterleavedLedgerStorage ledgerStorage = ((InterleavedLedgerStorage) bookie.ledgerStorage);
@@ -227,7 +233,7 @@ public class EntryLogTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
-        Bookie bookie = new Bookie(conf);
+        Bookie bookie = newBookie(conf);
 
         // create some entries
         EntryLogger logger = ((InterleavedLedgerStorage)bookie.ledgerStorage).entryLogger;
@@ -261,7 +267,7 @@ public class EntryLogTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
-        Bookie bookie = new Bookie(conf);
+        Bookie bookie = newBookie(conf);
 
         // create some entries
         EntryLogger logger = ((InterleavedLedgerStorage) bookie.ledgerStorage).entryLogger;

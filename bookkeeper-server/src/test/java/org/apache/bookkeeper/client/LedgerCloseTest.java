@@ -209,6 +209,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
                 throw new IOException("Dead bookie for recovery adds.");
             }
         };
+        sBookie.initialize();
         bsConfs.add(conf);
         bs.add(startBookie(conf, sBookie));
     }
@@ -228,6 +229,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
                 throw new IOException("Dead bookie");
             }
         };
+        dBookie.initialize();
         bsConfs.add(conf);
         bs.add(startBookie(conf, dBookie));
     }
