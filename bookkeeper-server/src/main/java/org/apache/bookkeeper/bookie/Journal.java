@@ -334,12 +334,14 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
 
             try {
                 if (shouldForceWrite) {
+                    long startTime = MathUtils.nowInNano();
                     if (enableGroupForceWrites) {
                         this.logFile.forceWrite(false);
                     } else {
                         this.logFile.syncRangeOrForceWrite(this.startFlushPosition,
                             this.endFlushPosition - this.startFlushPosition);
                     }
+                    journalSyncStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
                 }
                 lastLogMark.setCurLogMark(this.logId, this.endFlushPosition);
 
@@ -539,6 +541,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
     private final StatsLogger statsLogger;
     private final OpStatsLogger journalAddEntryStats;
     private final OpStatsLogger journalMemAddEntryStats;
+    private final OpStatsLogger journalSyncStats;
     private final OpStatsLogger journalCreationStats;
     private final OpStatsLogger journalFlushStats;
     private final OpStatsLogger journalMemAddFlushStats;
@@ -594,6 +597,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
         this.statsLogger = statsLogger;
         journalAddEntryStats = statsLogger.getOpStatsLogger(JOURNAL_ADD_ENTRY);
         journalMemAddEntryStats = statsLogger.getOpStatsLogger(JOURNAL_MEM_ADD_ENTRY);
+        journalSyncStats = statsLogger.getOpStatsLogger(JOURNAL_SYNC);
         journalCreationStats = statsLogger.getOpStatsLogger(JOURNAL_CREATION_LATENCY);
         journalFlushStats = statsLogger.getOpStatsLogger(JOURNAL_FLUSH_LATENCY);
         journalMemAddFlushStats = statsLogger.getOpStatsLogger(JOURNAL_FLUSH_IN_MEM_ADD);
@@ -857,7 +861,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
 
                     bc = logFile.getBufferedChannel();
 
-                    lastFlushPosition = 0;
+                    lastFlushPosition = bc.position();
                 }
 
                 if (qe == null) {
@@ -928,7 +932,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                                 logFile.startSyncRange(prevFlushPosition, lastFlushPosition);
                             }
                             journalFlushStats.registerSuccessfulEvent(
-                                    journalFlushWatcher.stop().elapsedTime(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
+                                    journalFlushWatcher.stop().elapsedTime(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
 
                             // Trace the lifetime of entries through persistence
                             if (LOG.isDebugEnabled()) {
