@@ -24,8 +24,9 @@ package org.apache.bookkeeper.bookie;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import org.apache.bookkeeper.util.ZeroBuffer;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.bookkeeper.util.ZeroBuffer;
 
 /**
  * Provides a buffering layer in front of a FileChannel.
@@ -64,8 +65,9 @@ public class BufferedChannel extends BufferedReadChannel {
      * @param src The source ByteBuffer which contains the data to be written.
      * @throws IOException if a write operation fails.
      */
-    synchronized public void write(ByteBuffer src) throws IOException {
+    synchronized public int write(ByteBuffer src) throws IOException {
         int copied = 0;
+        int flushes = 0;
         while(src.remaining() > 0) {
             int truncated = 0;
             if (writeBuffer.remaining() < src.remaining()) {
@@ -78,9 +80,11 @@ public class BufferedChannel extends BufferedReadChannel {
             // if we have run out of buffer space, we should flush to the file
             if (writeBuffer.remaining() == 0) {
                 flushInternal();
+                ++flushes;
             }
         }
         position += copied;
+        return flushes;
     }
 
     /**
