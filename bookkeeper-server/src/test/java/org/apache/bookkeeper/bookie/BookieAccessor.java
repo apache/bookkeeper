@@ -32,8 +32,11 @@ public class BookieAccessor {
      * Force a bookie to flush its ledger storage
      */
     public static void forceFlush(Bookie b) throws IOException {
-        Checkpoint cp = b.journal.newCheckpoint();
+        CheckpointSourceList source = new CheckpointSourceList(b.journals);
+        Checkpoint checkpoint = source.newCheckpoint();
+
         b.ledgerStorage.flush();
-        b.journal.checkpointComplete(cp, true);
+
+        source.checkpointComplete(checkpoint, true);
     }
 }

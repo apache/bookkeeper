@@ -21,6 +21,19 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static com.google.common.base.Charsets.UTF_8;
+
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
+
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.HardLink;
@@ -28,29 +41,18 @@ import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.cli.BasicParser;
-import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.net.MalformedURLException;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Scanner;
-import java.util.NoSuchElementException;
 
-import static com.google.common.base.Charsets.UTF_8;
+import com.google.common.collect.Lists;
 
 /**
  * Application for upgrading the bookkeeper filesystem
@@ -98,7 +100,7 @@ public class FileSystemUpgrade {
 
     private static List<File> getAllDirectories(ServerConfiguration conf) {
         List<File> dirs = new ArrayList<File>();
-        dirs.add(conf.getJournalDir());
+        dirs.addAll(Lists.newArrayList(conf.getJournalDirs()));
         for (File d: conf.getLedgerDirs()) {
             dirs.add(d);
         }

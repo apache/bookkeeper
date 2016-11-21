@@ -535,15 +535,15 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
     private final Counter flushEmptyQueueCounter;
     private final Counter journalWriteBytes;
 
-    public Journal(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager) {
-        this(conf, ledgerDirsManager, NullStatsLogger.INSTANCE);
+    public Journal(File journalDir, ServerConfiguration conf, LedgerDirsManager ledgerDirsManager) {
+        this(journalDir, conf, ledgerDirsManager, NullStatsLogger.INSTANCE);
     }
 
-    public Journal(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager, StatsLogger statsLogger) {
+    public Journal(File journalDir, ServerConfiguration conf, LedgerDirsManager ledgerDirsManager, StatsLogger statsLogger) {
         super("BookieJournal-" + conf.getBookiePort());
         this.ledgerDirsManager = ledgerDirsManager;
         this.conf = conf;
-        this.journalDirectory = Bookie.getCurrentDirectory(conf.getJournalDir());
+        this.journalDirectory = journalDir;
         this.maxJournalSize = conf.getMaxJournalSizeMB() * MB;
         this.journalPreAllocSize = conf.getJournalPreAllocSizeMB() * MB;
         this.journalWriteBufferSize = conf.getJournalWriteBufferSizeKB() * KB;
@@ -783,6 +783,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
      */
     @Override
     public void run() {
+        LOG.info("Starting journal on {}", journalDirectory);
         LinkedList<QueueEntry> toFlush = new LinkedList<QueueEntry>();
         ByteBuffer lenBuff = ByteBuffer.allocate(4);
         ByteBuffer paddingBuff = ByteBuffer.allocate(2 * conf.getJournalAlignmentSize());
@@ -948,6 +949,8 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
             LOG.error("I/O exception in Journal thread!", ioe);
         } catch (InterruptedException ie) {
             LOG.warn("Journal exits when shutting down", ie);
+        } catch (Throwable e) {
+            LOG.error("Journal error", e);
         } finally {
             // There could be packets queued for forceWrite on this logFile
             // That is fine as this exception is going to anyway take down the
@@ -981,6 +984,10 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
         } catch (InterruptedException ie) {
             LOG.warn("Interrupted during shutting down journal : ", ie);
         }
+    }
+
+    public File getJournalDirectory() {
+        return journalDirectory;
     }
 
     private static int fullRead(JournalChannel fc, ByteBuffer bb) throws IOException {
