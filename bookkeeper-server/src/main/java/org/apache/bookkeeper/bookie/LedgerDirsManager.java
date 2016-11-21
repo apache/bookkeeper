@@ -293,8 +293,17 @@ public class LedgerDirsManager {
      * @throws NoWritableLedgerDirException if there is no writable dir available.
      */
     File pickRandomWritableDir(File excludedDir) throws NoWritableLedgerDirException {
-        List<File> writableDirs = getWritableLedgerDirs();
+        return pickRandomDir(excludedDir, getWritableLedgerDirs());
+    }
 
+    /**
+     * Return one dir from all dirs, regardless writable or not.
+     */
+    File pickRandomDir(File excludeDir) throws NoWritableLedgerDirException {
+        return pickRandomDir(excludeDir, getAllLedgerDirs());
+    }
+
+    private File pickRandomDir(File excludedDir, List<File> writableDirs) throws NoWritableLedgerDirException {
         final int start = rand.nextInt(writableDirs.size());
         int idx = start;
         File candidate = writableDirs.get(idx);

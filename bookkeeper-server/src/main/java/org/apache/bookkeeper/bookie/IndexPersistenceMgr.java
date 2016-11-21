@@ -126,7 +126,7 @@ public class IndexPersistenceMgr {
                         throw new Bookie.NoLedgerException(ledger);
                     }
                     // We don't have a ledger index file on disk, so create it.
-                    lf = getNewLedgerIndexFile(ledger, null);
+                    lf = getNewLedgerIndexFile(ledger, null, true);
                     createdNewFile = true;
                 }
             }
@@ -177,7 +177,35 @@ public class IndexPersistenceMgr {
      */
     private File getNewLedgerIndexFile(Long ledger, File excludedDir)
                     throws NoWritableLedgerDirException {
-        File dir = ledgerDirsManager.pickRandomWritableDir(excludedDir);
+        return getNewLedgerIndexFile(ledger, excludedDir, false);
+    }
+
+    /**
+     * Get a new index file for a ledger in a lazy way.
+     *
+     + <p>If fallback is false, this function will throw exception when there are no writable dirs.
+     + If fallback is true and there's no writable dirs, it will ignore the error and pick any dir.
+     + Set fallback to true is useful when we want to delay disk check and just get the File pointer, e.g. fence ledger
+     *
+     * @param ledger
+     *          Ledger id.
+     * @param excludedDir
+     *          The ledger directory to exclude.
+     * @return new index file object.
+     * @throws NoWritableLedgerDirException if there is no writable dir available.
+     */
+    private File getNewLedgerIndexFile(Long ledger, File excludedDir, boolean fallback)
+                    throws NoWritableLedgerDirException {
+        File dir = null;
+        try {
+            dir = ledgerDirsManager.pickRandomWritableDir(excludedDir);
+        } catch (NoWritableLedgerDirException e) {
+            if (fallback) {
+                dir = ledgerDirsManager.pickRandomDir(excludedDir);
+            } else {
+                throw e;
+            }
+        }
         String ledgerName = getLedgerName(ledger);
         return new File(dir, ledgerName);
     }
