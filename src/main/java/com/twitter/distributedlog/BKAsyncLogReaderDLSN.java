@@ -118,6 +118,10 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
         }
     };
 
+    // State
+    private Entry.Reader currentEntry = null;
+    private LogRecordWithDLSN nextRecord = null;
+
     // Failure Injector
     private final AsyncFailureInjector failureInjector;
     private boolean disableProcessingReadRequests = false;
@@ -281,8 +285,14 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
                     //     that means notification was missed between readahead and reader.
                     //   - cache is empty and readahead is idle (no records added for a long time)
                     idleReaderCheckIdleReadAheadCount.inc();
-                    if (cache.getNumCachedRecords() <= 0
-                            && !cache.isReadAheadIdle(idleErrorThresholdMillis, TimeUnit.MILLISECONDS)) {
+                    try {
+                        if (!hasMoreRecords(cache)
+                                && !cache.isReadAheadIdle(idleErrorThresholdMillis, TimeUnit.MILLISECONDS)) {
+                            return;
+                        }
+                    } catch (IOException e) {
+                        // we encountered exceptions on checking more records
+                        setLastException(e);
                         return;
                     }
 
@@ -488,6 +498,46 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
         pendingRequests.clear();
     }
 
+    boolean hasMoreRecords() throws IOException {
+        return hasMoreRecords(bkLedgerManager.readAheadCache);
+    }
+
+    private synchronized boolean hasMoreRecords(ReadAheadCache cache) throws IOException {
+        if (cache.getNumCachedEntries() > 0 || null != nextRecord) {
+            return true;
+        } else if (null != currentEntry) {
+            nextRecord = currentEntry.nextRecord();
+            return null != nextRecord;
+        } else {
+            return false;
+        }
+    }
+
+    private synchronized LogRecordWithDLSN readNextRecord() throws IOException {
+        if (null == currentEntry) {
+            currentEntry = bkLedgerManager.getNextReadAheadEntry();
+            // no current entry after reading from read head then return null
+            if (null == currentEntry) {
+                return null;
+            }
+        }
+
+        LogRecordWithDLSN recordToReturn;
+        if (null == nextRecord) {
+            nextRecord = currentEntry.nextRecord();
+            // no more records in current entry
+            if (null == nextRecord) {
+                currentEntry = null;
+                return readNextRecord();
+            }
+        }
+
+        // found a record to return and prefetch the next one
+        recordToReturn = nextRecord;
+        nextRecord = currentEntry.nextRecord();
+        return recordToReturn;
+    }
+
     @Override
     public void run() {
         synchronized(scheduleLock) {
@@ -549,7 +599,7 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
                     while (!nextRequest.hasReadEnoughRecords()) {
                         // read single record
                         do {
-                            record = bkLedgerManager.getNextReadAheadRecord();
+                            record = readNextRecord();
                         } while (null != record && (record.isControl() || (record.getDlsn().compareTo(getStartDLSN()) < 0)));
                         if (null == record) {
                             break;

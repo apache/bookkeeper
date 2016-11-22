@@ -692,7 +692,6 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, AsyncClosea
                             long startBKEntry = 0;
                             if (l.isPartiallyTruncated() && !conf.getIgnoreTruncationStatus()) {
                                 startBKEntry = l.getMinActiveDLSN().getEntryId();
-                                readAheadCache.setMinActiveDLSN(l.getMinActiveDLSN());
                             }
 
                             if(l.getLogSegmentSequenceNumber() == nextReadAheadPosition.getLogSegmentSequenceNumber()) {
@@ -743,7 +742,6 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, AsyncClosea
                     if (null == currentMetadata) {
                         if (isCatchingUp) {
                             isCatchingUp = false;
-                            readAheadCache.setSuppressDeliveryLatency(false);
                             if (isHandleForReading) {
                                 LOG.info("{} caught up at {}: position = {} and no log segment to position on at this point.",
                                          new Object[] { fullyQualifiedName, System.currentTimeMillis(), nextReadAheadPosition });
@@ -945,7 +943,6 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, AsyncClosea
                         // the readahead is caught up if current ledger is in progress and read position moves over last add confirmed
                         if (isCatchingUp) {
                             isCatchingUp = false;
-                            readAheadCache.setSuppressDeliveryLatency(false);
                             if (isHandleForReading) {
                                 LOG.info("{} caught up at {}: lac = {}, position = {}.",
                                          new Object[] { fullyQualifiedName, System.currentTimeMillis(), lastAddConfirmed, nextReadAheadPosition });

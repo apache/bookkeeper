@@ -199,13 +199,10 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
                 .build();
         readAheadCache = new ReadAheadCache(
                 getFullyQualifiedName(),
-                handlerStatsLogger,
                 alertStatsLogger,
                 readerStateNotification,
                 dynConf.getReadAheadMaxRecords(),
                 deserializeRecordSet,
-                conf.getTraceReadAheadDeliveryLatency(),
-                conf.getDataLatencyWarnThresholdMillis(),
                 Ticker.systemTicker());
 
         this.subscriberId = subscriberId;
@@ -481,8 +478,8 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
         return promise;
     }
 
-    public LogRecordWithDLSN getNextReadAheadRecord() throws IOException {
-        return readAheadCache.getNextReadAheadRecord();
+    public Entry.Reader getNextReadAheadEntry() throws IOException {
+        return readAheadCache.getNextReadAheadEntry();
     }
 
     public ReadAheadCache getReadAheadCache() {

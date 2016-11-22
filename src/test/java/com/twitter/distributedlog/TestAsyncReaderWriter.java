@@ -1618,17 +1618,17 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         assertEquals(1L, record.getTransactionId());
 
         assertNotNull(reader.bkLedgerManager.readAheadWorker);
-        assertTrue(reader.bkLedgerManager.readAheadCache.getNumCachedRecords() <= maxAllowedCachedRecords);
+        assertTrue(reader.bkLedgerManager.readAheadCache.getNumCachedEntries() <= maxAllowedCachedRecords);
 
         for (int i = 2; i <= numRecords; i++) {
             record = Await.result(reader.readNext());
             LOG.info("Read record {}", record);
             assertEquals((long) i, record.getTransactionId());
             TimeUnit.MILLISECONDS.sleep(20);
-            int numCachedRecords = reader.bkLedgerManager.readAheadCache.getNumCachedRecords();
+            int numCachedEntries = reader.bkLedgerManager.readAheadCache.getNumCachedEntries();
             assertTrue("Should cache less than " + batchSize + " records but already found "
-                    + numCachedRecords + " records when reading " + i + "th record",
-                    numCachedRecords <= maxAllowedCachedRecords);
+                    + numCachedEntries + " records when reading " + i + "th record",
+                    numCachedEntries <= maxAllowedCachedRecords);
         }
     }
 

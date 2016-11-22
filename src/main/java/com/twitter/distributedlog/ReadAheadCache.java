@@ -20,7 +20,6 @@ package com.twitter.distributedlog;
 import java.io.IOException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.google.common.base.Stopwatch;
@@ -30,8 +29,6 @@ import com.twitter.distributedlog.exceptions.InvalidEnvelopedEntryException;
 import com.twitter.distributedlog.exceptions.LogReadException;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.stats.AlertStatsLogger;
-import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,11 +36,8 @@ public class ReadAheadCache {
     static final Logger LOG = LoggerFactory.getLogger(ReadAheadCache.class);
 
     private final String streamName;
-    private final LinkedBlockingQueue<LogRecordWithDLSN> readAheadRecords;
-    private final int maxCachedRecords;
-    private final AtomicReference<DLSN> minActiveDLSN = new AtomicReference<DLSN>(DLSN.NonInclusiveLowerBound);
-    private DLSN lastReadAheadDLSN = DLSN.InvalidDLSN;
-    private DLSN lastReadAheadUserDLSN = DLSN.InvalidDLSN;
+    private final LinkedBlockingQueue<Entry.Reader> readAheadEntries;
+    private final int maxCachedEntries;
     private final AtomicReference<IOException> lastException = new AtomicReference<IOException>();
     private final boolean deserializeRecordSet;
     // callbacks
@@ -53,53 +47,27 @@ public class ReadAheadCache {
     // variables for idle reader detection
     private final Stopwatch lastEntryProcessTime;
 
-    // Stats
-    private final AtomicLong cacheBytes = new AtomicLong(0);
-
     private final AlertStatsLogger alertStatsLogger;
-    private final StatsLogger statsLogger;
-    private final OpStatsLogger readAheadDeliveryLatencyStat;
-    private final OpStatsLogger negativeReadAheadDeliveryLatencyStat;
-    // Flags on controlling delivery latency stats collection
-    private final boolean traceDeliveryLatencyEnabled;
-    private volatile boolean suppressDeliveryLatency = true;
-    private final long deliveryLatencyWarnThresholdMillis;
 
     public ReadAheadCache(String streamName,
-                          StatsLogger statsLogger,
                           AlertStatsLogger alertStatsLogger,
                           AsyncNotification notification,
                           int maxCachedRecords,
                           boolean deserializeRecordSet,
-                          boolean traceDeliveryLatencyEnabled,
-                          long deliveryLatencyWarnThresholdMillis,
                           Ticker ticker) {
         this.streamName = streamName;
-        this.maxCachedRecords = maxCachedRecords;
+        this.maxCachedEntries = maxCachedRecords;
         this.notification = notification;
         this.deserializeRecordSet = deserializeRecordSet;
 
         // create the readahead queue
-        readAheadRecords = new LinkedBlockingQueue<LogRecordWithDLSN>();
+        readAheadEntries = new LinkedBlockingQueue<Entry.Reader>();
 
         // start the idle reader detection
         lastEntryProcessTime = Stopwatch.createStarted(ticker);
 
-        // Flags to control delivery latency tracing
-        this.traceDeliveryLatencyEnabled = traceDeliveryLatencyEnabled;
-        this.deliveryLatencyWarnThresholdMillis = deliveryLatencyWarnThresholdMillis;
         // Stats
-        StatsLogger readAheadStatsLogger = statsLogger.scope("readahead");
-        this.statsLogger = readAheadStatsLogger;
         this.alertStatsLogger = alertStatsLogger;
-        this.readAheadDeliveryLatencyStat =
-                readAheadStatsLogger.getOpStatsLogger("delivery_latency");
-        this.negativeReadAheadDeliveryLatencyStat =
-                readAheadStatsLogger.getOpStatsLogger("negative_delivery_latency");
-    }
-
-    DLSN getLastReadAheadUserDLSN() {
-        return lastReadAheadUserDLSN;
     }
 
     /**
@@ -133,26 +101,25 @@ public class ReadAheadCache {
     }
 
     /**
-     * Poll next record from the readahead queue.
+     * Poll next entry from the readahead queue.
      *
-     * @return next record from readahead queue. null if no records available in the queue.
+     * @return next entry from readahead queue. null if no entries available in the queue.
      * @throws IOException
      */
-    public LogRecordWithDLSN getNextReadAheadRecord() throws IOException {
+    public Entry.Reader getNextReadAheadEntry() throws IOException {
         if (null != lastException.get()) {
             throw lastException.get();
         }
 
-        LogRecordWithDLSN record = readAheadRecords.poll();
+        Entry.Reader entry = readAheadEntries.poll();
 
-        if (null != record) {
-            cacheBytes.addAndGet(-record.getPayload().length);
+        if (null != entry) {
             if (!isCacheFull()) {
                 invokeReadAheadCallback();
             }
         }
 
-        return record;
+        return entry;
     }
 
     /**
@@ -196,7 +163,7 @@ public class ReadAheadCache {
     }
 
     public boolean isCacheFull() {
-        return getNumCachedRecords() >= maxCachedRecords;
+        return getNumCachedEntries() >= maxCachedEntries;
     }
 
     /**
@@ -204,25 +171,8 @@ public class ReadAheadCache {
      *
      * @return number cached records.
      */
-    public int getNumCachedRecords() {
-        return readAheadRecords.size();
-    }
-
-    /**
-     * Return number cached bytes.
-     *
-     * @return number cached bytes.
-     */
-    public long getNumCachedBytes() {
-        return cacheBytes.get();
-    }
-
-    public void setSuppressDeliveryLatency(boolean suppressed) {
-        this.suppressDeliveryLatency = suppressed;
-    }
-
-    public void setMinActiveDLSN(DLSN minActiveDLSN) {
-        this.minActiveDLSN.set(minActiveDLSN);
+    public int getNumCachedEntries() {
+        return readAheadEntries.size();
     }
 
     /**
@@ -252,44 +202,7 @@ public class ReadAheadCache {
                     .deserializeRecordSet(deserializeRecordSet)
                     .setInputStream(ledgerEntry.getEntryInputStream())
                     .buildReader();
-            while(true) {
-                LogRecordWithDLSN record = reader.nextRecord();
-
-                if (null == record) {
-                    break;
-                }
-
-                if (lastReadAheadDLSN.compareTo(record.getDlsn()) >= 0) {
-                    LOG.error("Out of order reads last {} : curr {}", lastReadAheadDLSN, record.getDlsn());
-                    throw new LogReadException("Out of order reads");
-                }
-                lastReadAheadDLSN = record.getDlsn();
-
-                if (record.isControl()) {
-                    continue;
-                }
-                lastReadAheadUserDLSN = lastReadAheadDLSN;
-
-                if (minActiveDLSN.get().compareTo(record.getDlsn()) > 0) {
-                    continue;
-                }
-
-                if (traceDeliveryLatencyEnabled && !suppressDeliveryLatency) {
-                    long currentMs = System.currentTimeMillis();
-                    long deliveryMs = currentMs - record.getTransactionId();
-                    if (deliveryMs >= 0) {
-                        readAheadDeliveryLatencyStat.registerSuccessfulEvent(deliveryMs);
-                    } else {
-                        negativeReadAheadDeliveryLatencyStat.registerSuccessfulEvent(-deliveryMs);
-                    }
-                    if (deliveryMs > deliveryLatencyWarnThresholdMillis) {
-                        LOG.warn("Record {} for stream {} took long time to deliver : publish time = {}, available time = {}, delivery time = {}, reason = {}.",
-                                 new Object[] { record.getDlsn(), streamName, record.getTransactionId(), currentMs, deliveryMs, reason });
-                    }
-                }
-                readAheadRecords.add(record);
-                cacheBytes.addAndGet(record.getPayload().length);
-            }
+            readAheadEntries.add(reader);
         } catch (InvalidEnvelopedEntryException ieee) {
             alertStatsLogger.raise("Found invalid enveloped entry on stream {} : ", streamName, ieee);
             setLastException(ieee);
@@ -299,13 +212,12 @@ public class ReadAheadCache {
     }
 
     public void clear() {
-        readAheadRecords.clear();
-        cacheBytes.set(0L);
+        readAheadEntries.clear();
     }
 
     @Override
     public String toString() {
-        return String.format("%s: Cache Bytes: %d, Num Cached Records: %d",
-            streamName, cacheBytes.get(), getNumCachedRecords());
+        return String.format("%s: Num Cached Entries: %d",
+            streamName, getNumCachedEntries());
     }
 }

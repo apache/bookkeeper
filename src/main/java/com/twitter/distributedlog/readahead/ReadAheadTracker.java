@@ -81,7 +81,7 @@ public class ReadAheadTracker {
 
             @Override
             public Number getSample() {
-                return cache.getNumCachedRecords();
+                return cache.getNumCachedEntries();
             }
         };
         this.statsLogger.registerGauge(cachEntriesGaugeLabel, cacheEntriesGauge);
