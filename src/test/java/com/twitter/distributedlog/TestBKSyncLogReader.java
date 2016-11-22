@@ -162,7 +162,7 @@ public class TestBKSyncLogReader extends TestDistributedLogBase {
         BKSyncLogReaderDLSN reader = (BKSyncLogReaderDLSN) dlm.getInputStream(1L);
 
         // wait until readahead caught up
-        while (!reader.getAsyncReader().bkLedgerManager.isReadAheadCaughtUp()) {
+        while (!reader.getReadHandler().isReadAheadCaughtUp()) {
             TimeUnit.MILLISECONDS.sleep(20);
         }
 
@@ -178,7 +178,7 @@ public class TestBKSyncLogReader extends TestDistributedLogBase {
         logger.info("Write another 10 records");
 
         // wait until readahead move on
-        while (reader.getAsyncReader().bkLedgerManager
+        while (reader.getReadHandler()
                 .readAheadWorker.getNextReadAheadPosition().getEntryId() < 21) {
             TimeUnit.MILLISECONDS.sleep(20);
         }

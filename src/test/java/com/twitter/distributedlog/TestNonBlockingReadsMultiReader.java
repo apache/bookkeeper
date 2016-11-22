@@ -150,7 +150,7 @@ public class TestNonBlockingReadsMultiReader extends TestDistributedLogBase {
             while (writeCount.get() > (readerThreads[0].getReadCount())) {
                 LOG.info("Write Count = {}, Read Count = {}, ReadAhead = {}",
                         new Object[] { writeCount.get(), readerThreads[0].getReadCount(),
-                                        reader0.getReadAheadPosition() });
+                                        reader0.getReadHandler().getReadAheadCache() });
                 TimeUnit.MILLISECONDS.sleep(100);
             }
             assertEquals(writeCount.get(),

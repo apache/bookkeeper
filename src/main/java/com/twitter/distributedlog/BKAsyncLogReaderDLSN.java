@@ -97,7 +97,7 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
     private int lastPosition = 0;
     private final boolean positionGapDetectionEnabled;
     private final int idleErrorThresholdMillis;
-    private final ScheduledFuture<?> idleReaderTimeoutTask;
+    final ScheduledFuture<?> idleReaderTimeoutTask;
     private ScheduledFuture<?> backgroundScheduleTask = null;
 
     protected Promise<Void> closeFuture = null;
@@ -312,6 +312,17 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
         return null;
     }
 
+    void cancelIdleReaderTask() {
+        // Do this after we have checked that the reader was not previously closed
+        try {
+            if (null != idleReaderTimeoutTask) {
+                idleReaderTimeoutTask.cancel(true);
+            }
+        } catch (Exception exc) {
+            LOG.info("{}: Failed to cancel the background idle reader timeout task", bkLedgerManager.getFullyQualifiedName());
+        }
+    }
+
     protected synchronized void setStartDLSN(DLSN fromDLSN) throws UnexpectedException {
         if (readAheadStarted) {
             throw new UnexpectedException("Could't reset from dlsn after reader already starts reading.");
@@ -471,13 +482,7 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
         }
 
         // Do this after we have checked that the reader was not previously closed
-        try {
-            if (null != idleReaderTimeoutTask) {
-                idleReaderTimeoutTask.cancel(true);
-            }
-        } catch (Exception exc) {
-            LOG.info("{}: Failed to cancel the background idle reader timeout task", bkLedgerManager.getFullyQualifiedName());
-        }
+        cancelIdleReaderTask();
 
         synchronized (scheduleLock) {
             if (null != backgroundScheduleTask) {

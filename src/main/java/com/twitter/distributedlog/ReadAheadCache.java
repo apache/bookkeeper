@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Ticker;
 import com.twitter.distributedlog.callback.ReadAheadCallback;
+import com.twitter.distributedlog.exceptions.DLInterruptedException;
 import com.twitter.distributedlog.exceptions.InvalidEnvelopedEntryException;
 import com.twitter.distributedlog.exceptions.LogReadException;
 import org.apache.bookkeeper.client.LedgerEntry;
@@ -107,11 +108,20 @@ public class ReadAheadCache {
      * @throws IOException
      */
     public Entry.Reader getNextReadAheadEntry() throws IOException {
+        return getNextReadAheadEntry(0L, TimeUnit.MILLISECONDS);
+    }
+
+    public Entry.Reader getNextReadAheadEntry(long waitTime, TimeUnit waitTimeUnit) throws IOException {
         if (null != lastException.get()) {
             throw lastException.get();
         }
 
-        Entry.Reader entry = readAheadEntries.poll();
+        Entry.Reader entry = null;
+        try {
+            entry = readAheadEntries.poll(waitTime, waitTimeUnit);
+        } catch (InterruptedException e) {
+            throw new DLInterruptedException("Interrupted on polling readahead entries : ", e);
+        }
 
         if (null != entry) {
             if (!isCacheFull()) {

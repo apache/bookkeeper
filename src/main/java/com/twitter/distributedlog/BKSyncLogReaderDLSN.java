@@ -19,122 +19,110 @@ package com.twitter.distributedlog;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
-import com.twitter.distributedlog.callback.ReadAheadCallback;
-import com.twitter.distributedlog.exceptions.DLInterruptedException;
 import com.twitter.distributedlog.exceptions.EndOfStreamException;
+import com.twitter.distributedlog.exceptions.IdleReaderException;
+import com.twitter.distributedlog.injector.AsyncFailureInjector;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
 import com.twitter.util.Promise;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.StatsLogger;
 
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Synchronous Log Reader based on {@link AsyncLogReader}
  */
-class BKSyncLogReaderDLSN implements LogReader, Runnable, FutureEventListener<LogRecordWithDLSN>, ReadAheadCallback {
+class BKSyncLogReaderDLSN implements LogReader, AsyncNotification {
 
-    private final BKAsyncLogReaderDLSN reader;
-    private final ScheduledExecutorService executorService;
-    private final LinkedBlockingQueue<LogRecordWithDLSN> readAheadRecords;
+    private final BKLogReadHandler readHandler;
     private final AtomicReference<IOException> readerException =
             new AtomicReference<IOException>(null);
-    private final int maxNumCachedRecords;
     private final int maxReadAheadWaitTime;
-    private ReadAheadCallback readAheadCallback = null;
     private Promise<Void> closeFuture;
     private final Optional<Long> startTransactionId;
-    private final DLSN startDLSN;
-    // lock on variables that would be accessed by both background threads and foreground threads
-    private final Object sharedLock = new Object();
+    private boolean positioned = false;
+    private Entry.Reader currentEntry = null;
+
+    // idle reader settings
+    private final boolean shouldCheckIdleReader;
+    private final int idleErrorThresholdMillis;
+
+    // Stats
+    private final Counter idleReaderError;
 
     BKSyncLogReaderDLSN(DistributedLogConfiguration conf,
-                        BKAsyncLogReaderDLSN reader,
-                        ScheduledExecutorService executorService,
-                        Optional<Long> startTransactionId) {
-        this.maxNumCachedRecords = conf.getReadAheadMaxRecords();
+                        BKDistributedLogManager bkdlm,
+                        DLSN startDLSN,
+                        Optional<Long> startTransactionId,
+                        StatsLogger statsLogger) {
+        this.readHandler = bkdlm.createReadHandler(
+                Optional.<String>absent(),
+                bkdlm.getLockStateExecutor(true),
+                this,
+                conf.getDeserializeRecordSetOnReads(),
+                true);
         this.maxReadAheadWaitTime = conf.getReadAheadWaitTime();
-        this.reader = reader;
-        this.executorService = executorService;
-        this.readAheadRecords = new LinkedBlockingQueue<LogRecordWithDLSN>();
+        this.idleErrorThresholdMillis = conf.getReaderIdleErrorThresholdMillis();
+        this.shouldCheckIdleReader = idleErrorThresholdMillis > 0 && idleErrorThresholdMillis < Integer.MAX_VALUE;
         this.startTransactionId = startTransactionId;
-        this.startDLSN = reader.getStartDLSN();
-        scheduleReadNext();
+        readHandler.startReadAhead(
+                new LedgerReadPosition(startDLSN),
+                AsyncFailureInjector.NULL);
+        if (!startTransactionId.isPresent()) {
+            positioned = true;
+        }
+
+        // Stats
+        StatsLogger syncReaderStatsLogger = statsLogger.scope("sync_reader");
+        idleReaderError = syncReaderStatsLogger.getCounter("idle_reader_error");
     }
 
     @VisibleForTesting
-    BKAsyncLogReaderDLSN getAsyncReader() {
-        return reader;
+    BKLogReadHandler getReadHandler() {
+        return readHandler;
     }
 
-    private void scheduleReadNext() {
-        synchronized (sharedLock) {
-            if (null != closeFuture) {
-                return;
-            }
-        }
-        this.executorService.submit(this);
-    }
+    // reader is still catching up, waiting for next record
 
-    private void invokeReadAheadCallback() {
-        synchronized (sharedLock) {
-            if (null != readAheadCallback) {
-                readAheadCallback.resumeReadAhead();
-                readAheadCallback = null;
-            }
-        }
-    }
-
-    private void setReadAheadCallback(ReadAheadCallback callback) {
-        synchronized (sharedLock) {
-            this.readAheadCallback = callback;
-            if (readAheadRecords.size() < maxNumCachedRecords) {
-                invokeReadAheadCallback();
-            }
-        }
-    }
-
-    // Background Read Future Listener
-
-    @Override
-    public void resumeReadAhead() {
-        scheduleReadNext();
-    }
-
-    @Override
-    public void onSuccess(LogRecordWithDLSN record) {
-        if (!startTransactionId.isPresent() || record.getTransactionId() >= startTransactionId.get()) {
-            readAheadRecords.add(record);
-        }
-        if (readAheadRecords.size() >= maxNumCachedRecords) {
-            setReadAheadCallback(this);
+    private Entry.Reader readNextEntry(boolean nonBlocking) throws IOException {
+        Entry.Reader entry = null;
+        if (nonBlocking) {
+            return readHandler.getNextReadAheadEntry();
         } else {
-            scheduleReadNext();
+            while (!readHandler.isReadAheadCaughtUp()
+                    && null == readerException.get()
+                    && null == entry) {
+                entry = readHandler.getNextReadAheadEntry(maxReadAheadWaitTime,
+                        TimeUnit.MILLISECONDS);
+            }
+            if (null != entry) {
+                return entry;
+            }
+            // reader is caught up
+            if (readHandler.isReadAheadCaughtUp()
+                    && null == entry
+                    && null == readerException.get()) {
+                entry = readHandler.getNextReadAheadEntry(maxReadAheadWaitTime,
+                        TimeUnit.MILLISECONDS);
+            }
+            return entry;
         }
     }
 
-    @Override
-    public void onFailure(Throwable cause) {
-        if (cause instanceof IOException) {
-            readerException.compareAndSet(null, (IOException) cause);
-        } else {
-            readerException.compareAndSet(null, new IOException("Encountered exception on reading "
-                    + reader.getStreamName() + " : ", cause));
-        }
+    private void markReaderAsIdle() throws IdleReaderException {
+        idleReaderError.inc();
+        IdleReaderException ire = new IdleReaderException("Sync reader on stream "
+                + readHandler.getFullyQualifiedName()
+                + " is idle for more than " + idleErrorThresholdMillis + " ms");
+        readerException.compareAndSet(null, ire);
+        throw ire;
     }
 
-    // Background Read
-
-    @Override
-    public void run() {
-        this.reader.readNext().addEventListener(this);
-    }
 
     @Override
     public synchronized LogRecordWithDLSN readNext(boolean nonBlocking)
@@ -142,48 +130,64 @@ class BKSyncLogReaderDLSN implements LogReader, Runnable, FutureEventListener<Lo
         if (null != readerException.get()) {
             throw readerException.get();
         }
-        LogRecordWithDLSN record = null;
-        if (nonBlocking) {
-            record = readAheadRecords.poll();
-        } else {
-            try {
-                // reader is still catching up, waiting for next record
-                while (!reader.bkLedgerManager.isReadAheadCaughtUp()
-                        && null == readerException.get()
-                        && null == record) {
-                    record = readAheadRecords.poll(maxReadAheadWaitTime,
-                            TimeUnit.MILLISECONDS);
-                }
-                // reader caught up
-                boolean shallWait = true;
-                while (shallWait
-                        && reader.bkLedgerManager.isReadAheadCaughtUp()
-                        && null == record
-                        && null == readerException.get()) {
-                    record = readAheadRecords.poll(maxReadAheadWaitTime,
-                            TimeUnit.MILLISECONDS);
-                    if (null != record) {
-                        break;
-                    }
-                    shallWait = reader.hasMoreRecords();
-                }
-            } catch (InterruptedException e) {
-                throw new DLInterruptedException("Interrupted on waiting next available log record for stream "
-                        + reader.getStreamName(), e);
+
+        LogRecordWithDLSN record = doReadNext(nonBlocking);
+
+        // no record is returned, check if the reader becomes idle
+        if (null == record && shouldCheckIdleReader) {
+            ReadAheadCache cache = readHandler.getReadAheadCache();
+            if (cache.getNumCachedEntries() <= 0 &&
+                    cache.isReadAheadIdle(idleErrorThresholdMillis, TimeUnit.MILLISECONDS)) {
+                markReaderAsIdle();
             }
         }
-        if (null != readerException.get()) {
-            throw readerException.get();
-        }
-        if (null != record) {
+
+        return record;
+    }
+
+    private synchronized LogRecordWithDLSN doReadNext(boolean nonBlocking)
+            throws IOException {
+        LogRecordWithDLSN record = null;
+
+        do {
+            // fetch one record until we don't find any entry available in the readahead cache
+            while (null == record) {
+                if (null == currentEntry) {
+                    currentEntry = readNextEntry(nonBlocking);
+                    if (null == currentEntry) {
+                        return null;
+                    }
+                }
+                record = currentEntry.nextRecord();
+                if (null == record) {
+                    currentEntry = null;
+                }
+            }
+
+            // check if we reached the end of stream
             if (record.isEndOfStream()) {
                 EndOfStreamException eos = new EndOfStreamException("End of Stream Reached for "
-                                        + reader.bkLedgerManager.getFullyQualifiedName());
+                        + readHandler.getFullyQualifiedName());
                 readerException.compareAndSet(null, eos);
                 throw eos;
             }
-            invokeReadAheadCallback();
-        }
+            // skip control records
+            if (record.isControl()) {
+                record = null;
+                continue;
+            }
+            if (!positioned) {
+                if (record.getTransactionId() < startTransactionId.get()) {
+                    record = null;
+                    continue;
+                } else {
+                    positioned = true;
+                    break;
+                }
+            } else {
+                break;
+            }
+        } while (true);
         return record;
     }
 
@@ -209,13 +213,13 @@ class BKSyncLogReaderDLSN implements LogReader, Runnable, FutureEventListener<Lo
     @Override
     public Future<Void> asyncClose() {
         Promise<Void> closePromise;
-        synchronized (sharedLock) {
+        synchronized (this) {
             if (null != closeFuture) {
                 return closeFuture;
             }
             closeFuture = closePromise = new Promise<Void>();
         }
-        reader.asyncClose().proxyTo(closePromise);
+        readHandler.asyncClose().proxyTo(closePromise);
         return closePromise;
     }
 
@@ -225,18 +229,20 @@ class BKSyncLogReaderDLSN implements LogReader, Runnable, FutureEventListener<Lo
     }
 
     //
-    // Test Methods
+    // Notification From ReadHandler
     //
-    @VisibleForTesting
-    void disableReadAheadLogSegmentsNotification() {
-        reader.bkLedgerManager.disableReadAheadLogSegmentsNotification();
+
+    @Override
+    public void notifyOnError(Throwable cause) {
+        if (cause instanceof IOException) {
+            readerException.compareAndSet(null, (IOException) cause);
+        } else {
+            readerException.compareAndSet(null, new IOException(cause));
+        }
     }
 
-    @VisibleForTesting
-    LedgerReadPosition getReadAheadPosition() {
-        if (null != reader.bkLedgerManager.readAheadWorker) {
-            return reader.bkLedgerManager.readAheadWorker.getNextReadAheadPosition();
-        }
-        return null;
+    @Override
+    public void notifyOnOperationComplete() {
+        // no-op
     }
 }

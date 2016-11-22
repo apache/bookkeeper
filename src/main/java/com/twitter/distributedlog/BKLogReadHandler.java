@@ -482,6 +482,10 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
         return readAheadCache.getNextReadAheadEntry();
     }
 
+    public Entry.Reader getNextReadAheadEntry(long waitTime, TimeUnit waitTimeUnit) throws IOException {
+        return readAheadCache.getNextReadAheadEntry(waitTime, waitTimeUnit);
+    }
+
     public ReadAheadCache getReadAheadCache() {
         return readAheadCache;
     }

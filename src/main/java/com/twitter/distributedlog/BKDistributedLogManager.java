@@ -75,7 +75,6 @@ import org.apache.bookkeeper.stats.AlertStatsLogger;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZKUtil;
@@ -408,7 +407,7 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
         this.readAheadExceptionsLogger = readAheadExceptionsLogger;
     }
 
-    private synchronized OrderedScheduler getLockStateExecutor(boolean createIfNull) {
+    synchronized OrderedScheduler getLockStateExecutor(boolean createIfNull) {
         if (createIfNull && null == lockStateExecutor && ownExecutor) {
             lockStateExecutor = OrderedScheduler.newBuilder()
                     .corePoolSize(1).name("BKDL-LockState").build();
@@ -1106,18 +1105,13 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
             throws IOException {
         LOG.info("Create async reader starting from {}", fromDLSN);
         checkClosedOrInError("getInputStream");
-        Optional<String> subscriberId = Optional.absent();
-        BKAsyncLogReaderDLSN asyncReader = new BKAsyncLogReaderDLSN(
+        LogReader reader = new BKSyncLogReaderDLSN(
+                conf,
                 this,
-                scheduler,
-                getLockStateExecutor(true),
                 fromDLSN,
-                subscriberId,
-                true,
-                dynConf.getDeserializeRecordSetOnReads(),
+                fromTxnId,
                 statsLogger);
-        pendingReaders.add(asyncReader);
-        return new BKSyncLogReaderDLSN(conf, asyncReader, scheduler, fromTxnId);
+        return reader;
     }
 
     /**
@@ -1325,17 +1319,17 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
     static class PendingReaders implements AsyncCloseable {
 
         final ExecutorService executorService;
-        final Set<AsyncLogReader> readers = new HashSet<AsyncLogReader>();
+        final Set<AsyncCloseable> readers = new HashSet<AsyncCloseable>();
 
         PendingReaders(ExecutorService executorService) {
             this.executorService = executorService;
         }
 
-        public synchronized void remove(AsyncLogReader reader) {
+        public synchronized void remove(AsyncCloseable reader) {
             readers.remove(reader);
         }
 
-        public synchronized void add(AsyncLogReader reader) {
+        public synchronized void add(AsyncCloseable reader) {
             readers.add(reader);
         }
 
