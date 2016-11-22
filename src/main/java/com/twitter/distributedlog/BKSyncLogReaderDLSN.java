@@ -105,7 +105,6 @@ class BKSyncLogReaderDLSN implements LogReader, AsyncNotification {
             }
             // reader is caught up
             if (readHandler.isReadAheadCaughtUp()
-                    && null == entry
                     && null == readerException.get()) {
                 entry = readHandler.getNextReadAheadEntry(maxReadAheadWaitTime,
                         TimeUnit.MILLISECONDS);
