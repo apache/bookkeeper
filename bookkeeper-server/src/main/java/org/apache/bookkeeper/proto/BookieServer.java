@@ -276,6 +276,9 @@ public class BookieServer {
         bkOpts.addOption("m", "zkledgerpath", true, "Zookeeper ledgers root path");
         bkOpts.addOption("p", "bookieport", true, "bookie port exported");
         bkOpts.addOption("j", "journal", true, "bookie journal directory");
+        Option indexDirs = new Option ("i", "indexdirs", true, "bookie index directories");
+        indexDirs.setArgs(10);
+        bkOpts.addOption(indexDirs);
         Option ledgerDirs = new Option ("l", "ledgerdirs", true, "bookie ledgers directories");
         ledgerDirs.setArgs(10);
         bkOpts.addOption(ledgerDirs);
@@ -293,7 +296,7 @@ public class BookieServer {
                         + "Options including:\n";
         String footer = "Here is an example:\n" +
                         "\tBookieServer -c bookie.conf -z localhost:2181 -m /bookkeeper/ledgers " +
-                        "-p 3181 -j /mnt/journal -l \"/mnt/ledger1 /mnt/ledger2 /mnt/ledger3\"\n";
+                        "-p 3181 -j /mnt/journal -i \"/mnt/index1 /mnt/index2\" -l \"/mnt/ledger1 /mnt/ledger2 /mnt/ledger3\"\n";
         hf.printHelp("BookieServer [options]\n", header,  bkOpts, footer, true);
     }
 
@@ -363,6 +366,15 @@ public class BookieServer {
                 String sJournalDir = cmdLine.getOptionValue('j');
                 LOG.info("Get cmdline journal dir: " + sJournalDir);
                 conf.setJournalDirName(sJournalDir);
+            }
+
+            if (cmdLine.hasOption('i')) {
+                String[] sIndexDirs = cmdLine.getOptionValues('i');
+                LOG.info("Get cmdline index dirs: ");
+                for(String index : sIndexDirs) {
+                    LOG.info("indexDir : " + index);
+                }
+                conf.setIndexDirName(sIndexDirs);
             }
 
             if (cmdLine.hasOption('l')) {
