@@ -62,7 +62,7 @@ public class CodahaleMetricsProvider implements StatsProvider {
         }
     }
 
-    synchronized MetricRegistry getMetrics() {
+    public synchronized MetricRegistry getMetrics() {
         return metrics;
     }
 
