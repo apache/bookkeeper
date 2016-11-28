@@ -1314,6 +1314,8 @@ public class EntryLogger {
                 // Move to next entry, if any
                 offset += ledgersMapSize + 4;
             }
+        } catch (IndexOutOfBoundsException e) {
+            throw new IOException(e);
         } finally {
             ledgersMap.release();
         }
