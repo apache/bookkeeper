@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Arrays;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -79,6 +80,7 @@ import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AbstractFuture;
 
 /**
@@ -107,6 +109,7 @@ public class BookieShell implements Tool {
     static final String CMD_AUTORECOVERY = "autorecovery";
     static final String CMD_LISTBOOKIES = "listbookies";
     static final String CMD_UPDATECOOKIE = "updatecookie";
+    static final String CMD_EXPANDSTORAGE = "expandstorage";
     static final String CMD_UPDATELEDGER = "updateledgers";
     static final String CMD_HELP = "help";
 
@@ -1386,6 +1389,63 @@ public class BookieShell implements Tool {
     }
 
     /**
+     * Expand the storage directories owned by a bookie
+     */
+    class ExpandStorageCmd extends MyCommand {
+        Options opts = new Options();
+
+        ExpandStorageCmd() {
+            super(CMD_EXPANDSTORAGE);
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Add new empty ledger/index directories. Update the directories"
+                   + "info in the conf file before running the command.";
+        }
+
+        @Override
+        String getUsage() {
+            return "expandstorage";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) {
+            ServerConfiguration conf = new ServerConfiguration(bkConf);
+            ZooKeeper zk;
+            try {
+                zk = ZooKeeperClient.newBuilder()
+                        .connectString(bkConf.getZkServers())
+                        .sessionTimeoutMs(bkConf.getZkTimeout()).build();
+            } catch (KeeperException | InterruptedException | IOException e) {
+                LOG.error("Exception while establishing zookeeper connection.", e);
+                return -1;
+            }
+
+            List<File> allLedgerDirs = Lists.newArrayList();
+            allLedgerDirs.addAll(Arrays.asList(ledgerDirectories));
+            if (indexDirectories != ledgerDirectories) {
+                allLedgerDirs.addAll(Arrays.asList(indexDirectories));
+            }
+
+            try {
+                Bookie.checkEnvironmentWithStorageExpansion(conf, zk,
+                        journalDirectory, allLedgerDirs);
+            } catch (BookieException | IOException e) {
+                LOG.error(
+                        "Exception while updating cookie for storage expansion", e);
+                return -1;
+            }
+            return 0;
+        }
+    }
+
+    /**
      * Update ledger command
      */
     class UpdateLedgerCmd extends MyCommand {
@@ -1519,6 +1579,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_AUTORECOVERY, new AutoRecoveryCmd());
         commands.put(CMD_LISTBOOKIES, new ListBookiesCmd());
         commands.put(CMD_UPDATECOOKIE, new UpdateCookieCmd());
+        commands.put(CMD_EXPANDSTORAGE, new ExpandStorageCmd());
         commands.put(CMD_UPDATELEDGER, new UpdateLedgerCmd());
         commands.put(CMD_HELP, new HelpCmd());
     }

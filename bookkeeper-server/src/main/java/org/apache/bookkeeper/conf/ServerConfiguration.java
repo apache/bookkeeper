@@ -84,6 +84,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String JOURNAL_DIR = "journalDirectory";
     protected final static String LEDGER_DIRS = "ledgerDirectories";
     protected final static String INDEX_DIRS = "indexDirectories";
+    protected final static String ALLOW_STORAGE_EXPANSION = "allowStorageExpansion";
     // NIO Parameters
     protected final static String SERVER_TCP_NODELAY = "serverTcpNoDelay";
     // Zookeeper Parameters
@@ -517,6 +518,28 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setAllowLoopback(boolean allow) {
         this.setProperty(ALLOW_LOOPBACK, allow);
+        return this;
+    }
+
+    /**
+     * Return whether we should allow addition of ledger/index dirs to an existing bookie.
+     *
+     * @return true if the addition is allowed; false otherwise
+     */
+    public boolean getAllowStorageExpansion() {
+        return this.getBoolean(ALLOW_STORAGE_EXPANSION, false);
+    }
+
+    /**
+     * Change the setting of whether or not we should allow ledger/index
+     * dirs to be added to the current set of dirs.
+     *
+     * @param val - true if new ledger/index dirs can be added; false otherwise.
+     *
+     * @return server configuration
+     */
+    public ServerConfiguration setAllowStorageExpansion(boolean val) {
+        this.setProperty(ALLOW_STORAGE_EXPANSION, val);
         return this;
     }
 
