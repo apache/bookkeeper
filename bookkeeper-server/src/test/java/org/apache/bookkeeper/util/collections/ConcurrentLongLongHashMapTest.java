@@ -1,0 +1,473 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+package org.apache.bookkeeper.util.collections;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap.LongLongFunction;
+import org.junit.Test;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
+public class ConcurrentLongLongHashMapTest {
+
+    @Test
+    public void testConstructor() {
+        try {
+            new ConcurrentLongLongHashMap(0);
+            fail("should have thrown exception");
+        } catch (IllegalArgumentException e) {
+            // ok
+        }
+
+        try {
+            new ConcurrentLongLongHashMap(16, 0);
+            fail("should have thrown exception");
+        } catch (IllegalArgumentException e) {
+            // ok
+        }
+
+        try {
+            new ConcurrentLongLongHashMap(4, 8);
+            fail("should have thrown exception");
+        } catch (IllegalArgumentException e) {
+            // ok
+        }
+    }
+
+    @Test
+    public void simpleInsertions() {
+        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap(16);
+
+        assertTrue(map.isEmpty());
+        assertEquals(map.put(1, 11), -1);
+        assertFalse(map.isEmpty());
+
+        assertEquals(map.put(2, 22), -1);
+        assertEquals(map.put(3, 33), -1);
+
+        assertEquals(map.size(), 3);
+
+        assertEquals(map.get(1), 11);
+        assertEquals(map.size(), 3);
+
+        assertEquals(map.remove(1), 11);
+        assertEquals(map.size(), 2);
+        assertEquals(map.get(1), -1);
+        assertEquals(map.get(5), -1);
+        assertEquals(map.size(), 2);
+
+        assertEquals(map.put(1, 11), -1);
+        assertEquals(map.size(), 3);
+        assertEquals(map.put(1, 111), 11);
+        assertEquals(map.size(), 3);
+    }
+
+    @Test
+    public void testRemove() {
+        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap();
+
+        assertTrue(map.isEmpty());
+        assertEquals(map.put(1, 11), -1);
+        assertFalse(map.isEmpty());
+
+        assertFalse(map.remove(0, 0));
+        assertFalse(map.remove(1, 111));
+
+        assertFalse(map.isEmpty());
+        assertTrue(map.remove(1, 11));
+        assertTrue(map.isEmpty());
+    }
+
+    @Test
+    public void testNegativeUsedBucketCount() {
+        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap(16, 1);
+
+        map.put(0, 0);
+        assertEquals(1, map.getUsedBucketCount());
+        map.put(0, 1);
+        assertEquals(1, map.getUsedBucketCount());
+        map.remove(0);
+        assertEquals(0, map.getUsedBucketCount());
+        map.remove(0);
+        assertEquals(0, map.getUsedBucketCount());
+    }
+
+    @Test
+    public void testRehashing() {
+        int n = 16;
+        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap(n / 2, 1);
+        assertEquals(map.capacity(), n);
+        assertEquals(map.size(), 0);
+
+        for (int i = 0; i < n; i++) {
+            map.put(i, i);
+        }
+
+        assertEquals(map.capacity(), 2 * n);
+        assertEquals(map.size(), n);
+    }
+
+    @Test
+    public void testRehashingWithDeletes() {
+        int n = 16;
+        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap(n / 2, 1);
+        assertEquals(map.capacity(), n);
+        assertEquals(map.size(), 0);
+
+        for (int i = 0; i < n / 2; i++) {
+            map.put(i, i);
+        }
+
+        for (int i = 0; i < n / 2; i++) {
+            map.remove(i);
+        }
+
+        for (int i = n; i < (2 * n); i++) {
+            map.put(i, i);
+        }
+
+        assertEquals(map.capacity(), 2 * n);
+        assertEquals(map.size(), n);
+    }
+
+    @Test
+    public void concurrentInsertions() throws Throwable {
+        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap();
+        ExecutorService executor = Executors.newCachedThreadPool();
+
+        final int nThreads = 16;
+        final int N = 100_000;
+        long value = 55;
+
+        List<Future<?>> futures = new ArrayList<>();
+        for (int i = 0; i < nThreads; i++) {
+            final int threadIdx = i;
+
+            futures.add(executor.submit(() -> {
+                Random random = new Random();
+
+                for (int j = 0; j < N; j++) {
+                    long key = Math.abs(random.nextLong());
+                    // Ensure keys are uniques
+                    key -= key % (threadIdx + 1);
+
+                    map.put(key, value);
+                }
+            }));
+        }
+
+        for (Future<?> future : futures) {
+            future.get();
+        }
+
+        assertEquals(map.size(), N * nThreads);
+
+        executor.shutdown();
+    }
+
+    @Test
+    public void concurrentInsertionsAndReads() throws Throwable {
+        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap();
+        ExecutorService executor = Executors.newCachedThreadPool();
+
+        final int nThreads = 16;
+        final int N = 100_000;
+        final long value = 55;
+
+        List<Future<?>> futures = new ArrayList<>();
+        for (int i = 0; i < nThreads; i++) {
+            final int threadIdx = i;
+
+            futures.add(executor.submit(() -> {
+                Random random = new Random();
+
+                for (int j = 0; j < N; j++) {
+                    long key = Math.abs(random.nextLong());
+                    // Ensure keys are uniques
+                    key -= key % (threadIdx + 1);
+
+                    map.put(key, value);
+                }
+            }));
+        }
+
+        for (Future<?> future : futures) {
+            future.get();
+        }
+
+        assertEquals(map.size(), N * nThreads);
+
+        executor.shutdown();
+    }
+
+    @Test
+    public void testIteration() {
+        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap();
+
+        assertEquals(map.keys(), Collections.emptyList());
+        assertEquals(map.values(), Collections.emptyList());
+
+        map.put(0, 0);
+
+        assertEquals(map.keys(), Lists.newArrayList(0l));
+        assertEquals(map.values(), Lists.newArrayList(0l));
+
+        map.remove(0);
+
+        assertEquals(map.keys(), Collections.emptyList());
+        assertEquals(map.values(), Collections.emptyList());
+
+        map.put(0, 0);
+        map.put(1, 11);
+        map.put(2, 22);
+
+        List<Long> keys = map.keys();
+        Collections.sort(keys);
+        assertEquals(keys, Lists.newArrayList(0l, 1l, 2l));
+
+        List<Long> values = map.values();
+        Collections.sort(values);
+        assertEquals(values, Lists.newArrayList(0l, 11l, 22l));
+
+        map.put(1, 111);
+
+        keys = map.keys();
+        Collections.sort(keys);
+        assertEquals(keys, Lists.newArrayList(0l, 1l, 2l));
+
+        values = map.values();
+        Collections.sort(values);
+        assertEquals(values, Lists.newArrayList(0l, 22l, 111l));
+
+        map.clear();
+        assertTrue(map.isEmpty());
+    }
+
+    @Test
+    public void testHashConflictWithDeletion() {
+        final int Buckets = 16;
+        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap(Buckets, 1);
+
+        // Pick 2 keys that fall into the same bucket
+        long key1 = 1;
+        long key2 = 27;
+
+        int bucket1 = ConcurrentLongLongHashMap.signSafeMod(ConcurrentLongLongHashMap.hash(key1), Buckets);
+        int bucket2 = ConcurrentLongLongHashMap.signSafeMod(ConcurrentLongLongHashMap.hash(key2), Buckets);
+        assertEquals(bucket1, bucket2);
+
+        final long value1 = 1;
+        final long value2 = 2;
+        final long value1Overwrite = 3;
+        final long value2Overwrite = 3;
+
+        assertEquals(map.put(key1, value1), -1);
+        assertEquals(map.put(key2, value2), -1);
+        assertEquals(map.size(), 2);
+
+        assertEquals(map.remove(key1), value1);
+        assertEquals(map.size(), 1);
+
+        assertEquals(map.put(key1, value1Overwrite), -1);
+        assertEquals(map.size(), 2);
+
+        assertEquals(map.remove(key1), value1Overwrite);
+        assertEquals(map.size(), 1);
+
+        assertEquals(map.put(key2, value2Overwrite), value2);
+        assertEquals(map.get(key2), value2Overwrite);
+
+        assertEquals(map.size(), 1);
+        assertEquals(map.remove(key2), value2Overwrite);
+        assertTrue(map.isEmpty());
+    }
+
+    @Test
+    public void testPutIfAbsent() {
+        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap();
+        assertEquals(map.putIfAbsent(1, 11), -1);
+        assertEquals(map.get(1), 11);
+
+        assertEquals(map.putIfAbsent(1, 111), 11);
+        assertEquals(map.get(1), 11);
+    }
+
+    @Test
+    public void testComputeIfAbsent() {
+        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap(16, 1);
+        AtomicLong counter = new AtomicLong();
+        LongLongFunction provider = new LongLongFunction() {
+            public long apply(long key) {
+                return counter.getAndIncrement();
+            }
+        };
+
+        assertEquals(map.computeIfAbsent(0, provider), 0);
+        assertEquals(map.get(0), 0);
+
+        assertEquals(map.computeIfAbsent(1, provider), 1);
+        assertEquals(map.get(1), 1);
+
+        assertEquals(map.computeIfAbsent(1, provider), 1);
+        assertEquals(map.get(1), 1);
+
+        assertEquals(map.computeIfAbsent(2, provider), 2);
+        assertEquals(map.get(2), 2);
+    }
+
+    @Test
+    public void testAddAndGet() {
+        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap(16, 1);
+
+        assertEquals(map.addAndGet(0, 0), 0);
+        assertEquals(map.containsKey(0), true);
+        assertEquals(map.get(0), 0);
+
+        assertEquals(map.containsKey(5), false);
+
+        assertEquals(map.addAndGet(0, 5), 5);
+        assertEquals(map.get(0), 5);
+
+        assertEquals(map.addAndGet(0, 1), 6);
+        assertEquals(map.get(0), 6);
+
+        assertEquals(map.addAndGet(0, -2), 4);
+        assertEquals(map.get(0), 4);
+
+        // Cannot bring to value to negative
+        try {
+            map.addAndGet(0, -5);
+            fail("should have failed");
+        } catch (IllegalArgumentException e) {
+            // ok
+        }
+        assertEquals(map.get(0), 4);
+    }
+
+    @Test
+    public void testRemoveIf() {
+        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap(16, 1);
+
+        map.put(1L, 1L);
+        map.put(2L, 2L);
+        map.put(3L, 3L);
+        map.put(4L, 4L);
+
+        map.removeIf(key -> key < 3);
+        assertFalse(map.containsKey(1L));
+        assertFalse(map.containsKey(2L));
+        assertTrue(map.containsKey(3L));
+        assertTrue(map.containsKey(4L));
+        assertEquals(2, map.size());
+    }
+
+    @Test
+    public void testRemoveIfValue() {
+        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap(16, 1);
+
+        map.put(1L, 1L);
+        map.put(2L, 2L);
+        map.put(3L, 1L);
+        map.put(4L, 2L);
+
+        map.removeIf((key, value) -> value < 2);
+        assertFalse(map.containsKey(1L));
+        assertTrue(map.containsKey(2L));
+        assertFalse(map.containsKey(3L));
+        assertTrue(map.containsKey(4L));
+        assertEquals(2, map.size());
+    }
+
+    @Test
+    public void testIvalidKeys() {
+        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap(16, 1);
+
+        try {
+            map.put(-5, 4);
+            fail("should have failed");
+        } catch (IllegalArgumentException e) {
+            // ok
+        }
+
+        try {
+            map.get(-1);
+            fail("should have failed");
+        } catch (IllegalArgumentException e) {
+            // ok
+        }
+
+        try {
+            map.containsKey(-1);
+            fail("should have failed");
+        } catch (IllegalArgumentException e) {
+            // ok
+        }
+
+        try {
+            map.putIfAbsent(-1, 1);
+            fail("should have failed");
+        } catch (IllegalArgumentException e) {
+            // ok
+        }
+
+        try {
+            map.computeIfAbsent(-1, new LongLongFunction() {
+                @Override
+                public long apply(long key) {
+                    return 1;
+                }
+            });
+            fail("should have failed");
+        } catch (IllegalArgumentException e) {
+            // ok
+        }
+    }
+
+    @Test
+    public void testAsMap() {
+        ConcurrentLongLongHashMap lmap = new ConcurrentLongLongHashMap(16, 1);
+        lmap.put(1, 11);
+        lmap.put(2, 22);
+        lmap.put(3, 33);
+
+        Map<Long, Long> map = Maps.newTreeMap();
+        map.put(1l, 11l);
+        map.put(2l, 22l);
+        map.put(3l, 33l);
+
+        assertEquals(map, lmap.asMap());
+    }
+}
