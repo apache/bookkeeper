@@ -105,6 +105,8 @@ import com.twitter.distributedlog.metadata.MetadataUpdater;
 import com.twitter.distributedlog.metadata.LogSegmentMetadataStoreUpdater;
 import com.twitter.distributedlog.util.SchedulerUtils;
 import com.twitter.util.Await;
+import com.twitter.util.Future;
+import com.twitter.util.FutureEventListener;
 
 import static com.google.common.base.Charsets.UTF_8;
 
@@ -802,7 +804,7 @@ public class DistributedLogTool extends Tool {
                 return 0;
             }
             numThreads = Math.min(streams.size(), numThreads);
-            final int numStreamsPerThreads = streams.size() / numThreads;
+            final int numStreamsPerThreads = streams.size() / numThreads + 1;
             Thread[] threads = new Thread[numThreads];
             for (int i = 0; i < numThreads; i++) {
                 final int tid = i;
@@ -2723,6 +2725,120 @@ public class DistributedLogTool extends Tool {
         }
     }
 
+    public static class DeleteSubscriberCommand extends PerDLCommand {
+
+        int numThreads = 1;
+        String streamPrefix = null;
+        String subscriberId = null;
+        AtomicInteger streamIndex = new AtomicInteger();
+
+        DeleteSubscriberCommand() {
+            super("delete_subscriber", "Delete the subscriber in subscription store. ");
+            options.addOption("s", "subscriberId", true, "SubscriberId to remove from the stream");
+            options.addOption("t", "threads", true, "Number of threads");
+            options.addOption("ft", "filter", true, "Stream filter by prefix");
+        }
+
+        @Override
+        protected void parseCommandLine(CommandLine cmdline) throws ParseException {
+            super.parseCommandLine(cmdline);
+            if (!cmdline.hasOption("s")) {
+                throw new ParseException("No subscriberId provided.");
+            } else {
+                subscriberId = cmdline.getOptionValue("s");
+            }
+            if (cmdline.hasOption("t")) {
+                numThreads = Integer.parseInt(cmdline.getOptionValue("t"));
+            }
+            if (cmdline.hasOption("ft")) {
+                streamPrefix = cmdline.getOptionValue("ft");
+            }
+        }
+
+        @Override
+        protected String getUsage() {
+            return "delete_subscriber [options]";
+        }
+
+        @Override
+        protected int runCmd() throws Exception {
+            getConf().setZkAclId(getZkAclId());
+            return deleteSubscriber(getFactory());
+        }
+
+        private int deleteSubscriber(final com.twitter.distributedlog.DistributedLogManagerFactory factory) throws Exception {
+            Collection<String> streamCollection = factory.enumerateAllLogsInNamespace();
+            final List<String> streams = new ArrayList<String>();
+            if (null != streamPrefix) {
+                for (String s : streamCollection) {
+                    if (s.startsWith(streamPrefix)) {
+                        streams.add(s);
+                    }
+                }
+            } else {
+                streams.addAll(streamCollection);
+            }
+            if (0 == streams.size()) {
+                return 0;
+            }
+            System.out.println("Streams : " + streams);
+            if (!getForce() && !IOUtils.confirmPrompt("Do you want to delete subscriber "
+                + subscriberId + " for " + streams.size() + " streams ?")) {
+                return 0;
+            }
+            numThreads = Math.min(streams.size(), numThreads);
+            final int numStreamsPerThreads = streams.size() / numThreads + 1;
+            Thread[] threads = new Thread[numThreads];
+            for (int i = 0; i < numThreads; i++) {
+                final int tid = i;
+                threads[i] = new Thread("RemoveSubscriberThread-" + i) {
+                    @Override
+                    public void run() {
+                        try {
+                            deleteSubscriber(factory, streams, tid, numStreamsPerThreads);
+                            System.out.println("Thread " + tid + " finished.");
+                        } catch (Exception e) {
+                            System.err.println("Thread " + tid + " quits with exception : " + e.getMessage());
+                        }
+                    }
+                };
+                threads[i].start();
+            }
+            for (int i = 0; i < numThreads; i++) {
+                threads[i].join();
+            }
+            return 0;
+        }
+
+        private void deleteSubscriber(com.twitter.distributedlog.DistributedLogManagerFactory factory, List<String> streams,
+                                      int tid, int numStreamsPerThreads) throws Exception {
+            int startIdx = tid * numStreamsPerThreads;
+            int endIdx = Math.min(streams.size(), (tid + 1) * numStreamsPerThreads);
+            for (int i = startIdx; i < endIdx; i++) {
+                final String s = streams.get(i);
+                DistributedLogManager dlm =
+                    factory.createDistributedLogManagerWithSharedClients(s);
+                final CountDownLatch countDownLatch = new CountDownLatch(1);
+                dlm.getSubscriptionsStore().deleteSubscriber(subscriberId)
+                    .addEventListener(new FutureEventListener<Boolean>() {
+                        @Override
+                        public void onFailure(Throwable cause) {
+                            System.out.println("Failed to delete subscriber for stream " + s);
+                            cause.printStackTrace();
+                            countDownLatch.countDown();
+                        }
+
+                        @Override
+                        public void onSuccess(Boolean value) {
+                            countDownLatch.countDown();
+                        }
+                    });
+                countDownLatch.await();
+                dlm.close();
+            }
+        }
+    }
+
     public DistributedLogTool() {
         super();
         addCommand(new AuditBKSpaceCommand());
@@ -2748,6 +2864,7 @@ public class DistributedLogTool extends Tool {
         addCommand(new DeserializeDLSNCommand());
         addCommand(new SerializeDLSNCommand());
         addCommand(new WatchNamespaceCommand());
+        addCommand(new DeleteSubscriberCommand());
     }
 
     @Override

@@ -432,6 +432,44 @@ public class Utils {
         return promise;
     }
 
+    /**
+     * Delete the given <i>path</i> from zookeeper.
+     *
+     * @param zkc
+     *          zookeeper client
+     * @param path
+     *          path to delete
+     * @param version
+     *          version used to set data
+     * @return future representing if the delete is successful. Return true if the node is deleted,
+     * false if the node doesn't exist, otherwise future will throw exception
+     *
+     */
+    public static Future<Boolean> zkDeleteIfNotExist(ZooKeeperClient zkc, String path, ZkVersion version) {
+        ZooKeeper zk;
+        try {
+            zk = zkc.get();
+        } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
+            return Future.exception(FutureUtils.zkException(e, path));
+        } catch (InterruptedException e) {
+            return Future.exception(FutureUtils.zkException(e, path));
+        }
+        final Promise<Boolean> promise = new Promise<Boolean>();
+        zk.delete(path, version.getZnodeVersion(), new AsyncCallback.VoidCallback() {
+            @Override
+            public void processResult(int rc, String path, Object ctx) {
+                if (KeeperException.Code.OK.intValue() == rc ) {
+                    promise.setValue(true);
+                } else if (KeeperException.Code.NONODE.intValue() == rc) {
+                    promise.setValue(false);
+                } else {
+                    promise.setException(KeeperException.create(KeeperException.Code.get(rc)));
+                }
+            }
+        }, null);
+        return promise;
+    }
+
     public static Future<Void> asyncClose(@Nullable AsyncCloseable closeable,
                                           boolean swallowIOException) {
         if (null == closeable) {

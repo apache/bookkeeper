@@ -20,9 +20,12 @@ package com.twitter.distributedlog.subscription;
 import com.twitter.distributedlog.DLSN;
 import com.twitter.distributedlog.ZooKeeperClient;
 import com.twitter.distributedlog.exceptions.DLInterruptedException;
+import com.twitter.distributedlog.util.Utils;
 import com.twitter.util.Function;
 import com.twitter.util.Future;
 import com.twitter.util.Promise;
+
+import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
@@ -59,7 +62,7 @@ public class ZKSubscriptionsStore implements SubscriptionsStore {
         ZKSubscriptionStateStore ss = subscribers.get(subscriberId);
         if (ss == null) {
             ZKSubscriptionStateStore newSS = new ZKSubscriptionStateStore(zkc,
-                    String.format("%s/%s", zkPath, subscriberId));
+                getSubscriberZKPath(subscriberId));
             ZKSubscriptionStateStore oldSS = subscribers.putIfAbsent(subscriberId, newSS);
             if (oldSS == null) {
                 ss = newSS;
@@ -73,6 +76,10 @@ public class ZKSubscriptionsStore implements SubscriptionsStore {
             }
         }
         return ss;
+    }
+
+    private String getSubscriberZKPath(String subscriberId) {
+        return String.format("%s/%s", zkPath, subscriberId);
     }
 
     @Override
@@ -138,6 +145,13 @@ public class ZKSubscriptionsStore implements SubscriptionsStore {
     @Override
     public Future<BoxedUnit> advanceCommitPosition(String subscriberId, DLSN newPosition) {
         return getSubscriber(subscriberId).advanceCommitPosition(newPosition);
+    }
+
+    @Override
+    public Future<Boolean> deleteSubscriber(String subscriberId) {
+        subscribers.remove(subscriberId);
+        String path = getSubscriberZKPath(subscriberId);
+        return Utils.zkDeleteIfNotExist(zkc, path, new ZkVersion(-1));
     }
 
     @Override

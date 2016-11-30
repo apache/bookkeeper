@@ -56,4 +56,14 @@ public interface SubscriptionsStore extends Closeable {
      */
     public Future<BoxedUnit> advanceCommitPosition(String subscriberId, DLSN newPosition);
 
+    /**
+     * Delete the subscriber <i>subscriberId</i> permanently. Once the subscriber is deleted, all the
+     * data stored under this subscriber will be lost.
+     * @param subscriberId subscriber id
+     * @return future represent success or failure.
+     * return true only if there's such subscriber and we removed it successfully.
+     * return false if there's no such subscriber, or we failed to remove.
+     */
+    public Future<Boolean> deleteSubscriber(String subscriberId);
+
 }
