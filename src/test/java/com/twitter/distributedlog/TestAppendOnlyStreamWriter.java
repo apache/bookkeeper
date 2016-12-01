@@ -21,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.net.URI;
 
 import com.twitter.distributedlog.exceptions.BKTransmitException;
+import com.twitter.distributedlog.util.FutureUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -203,7 +204,7 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
         BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(conf, name);
 
         URI uri = createDLMURI("/" + name);
-        BKDistributedLogManager.createLog(conf, dlm.getReaderZKC(), uri, name);
+        FutureUtils.result(dlm.getWriterMetadataStore().getLog(uri, name, true, true));
 
         // Log exists but is empty, better not throw.
         AppendOnlyStreamWriter writer = dlm.getAppendOnlyStreamWriter();
@@ -264,7 +265,7 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
         BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(conf, name);
 
         URI uri = createDLMURI("/" + name);
-        BKDistributedLogManager.createLog(conf, dlm.getReaderZKC(), uri, name);
+        FutureUtils.result(dlm.getWriterMetadataStore().getLog(uri, name, true, true));
 
         // Log exists but is empty, better not throw.
         AppendOnlyStreamWriter writer = dlm.getAppendOnlyStreamWriter();

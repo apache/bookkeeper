@@ -23,12 +23,16 @@ import com.twitter.distributedlog.LogSegmentMetadata;
 import com.twitter.distributedlog.ZooKeeperClient;
 import com.twitter.distributedlog.callback.LogSegmentNamesListener;
 import com.twitter.distributedlog.exceptions.LogNotFoundException;
+import com.twitter.distributedlog.exceptions.LogSegmentNotFoundException;
 import com.twitter.distributedlog.exceptions.ZKException;
+import com.twitter.distributedlog.impl.metadata.ZKLogMetadata;
+import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForWriter;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataStore;
 import com.twitter.distributedlog.util.DLUtils;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.OrderedScheduler;
 import com.twitter.distributedlog.util.Transaction;
+import com.twitter.distributedlog.util.Transaction.OpListener;
 import com.twitter.distributedlog.zk.DefaultZKOp;
 import com.twitter.distributedlog.zk.ZKOp;
 import com.twitter.distributedlog.zk.ZKTransaction;
@@ -48,10 +52,8 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.runtime.AbstractFunction1;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -220,30 +222,28 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
 
     @Override
     public void storeMaxLogSegmentSequenceNumber(Transaction<Object> txn,
-                                                 String path,
+                                                 ZKLogMetadata logMetadata,
                                                  Versioned<Long> lssn,
                                                  Transaction.OpListener<Version> listener) {
         Version version = lssn.getVersion();
         assert(version instanceof ZkVersion);
-
         ZkVersion zkVersion = (ZkVersion) version;
         byte[] data = DLUtils.serializeLogSegmentSequenceNumber(lssn.getValue());
-        Op setDataOp = Op.setData(path, data, zkVersion.getZnodeVersion());
+        Op setDataOp = Op.setData(logMetadata.getLogSegmentsPath(), data, zkVersion.getZnodeVersion());
         ZKOp zkOp = new ZKVersionedSetOp(setDataOp, listener);
         txn.addOp(zkOp);
     }
 
     @Override
     public void storeMaxTxnId(Transaction<Object> txn,
-                              String path,
+                              ZKLogMetadataForWriter logMetadata,
                               Versioned<Long> transactionId,
                               Transaction.OpListener<Version> listener) {
         Version version = transactionId.getVersion();
         assert(version instanceof ZkVersion);
-
         ZkVersion zkVersion = (ZkVersion) version;
         byte[] data = DLUtils.serializeTransactionId(transactionId.getValue());
-        Op setDataOp = Op.setData(path, data, zkVersion.getZnodeVersion());
+        Op setDataOp = Op.setData(logMetadata.getMaxTxIdPath(), data, zkVersion.getZnodeVersion());
         ZKOp zkOp = new ZKVersionedSetOp(setDataOp, listener);
         txn.addOp(zkOp);
     }
@@ -256,29 +256,66 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
     }
 
     @Override
-    public void createLogSegment(Transaction<Object> txn, LogSegmentMetadata segment) {
+    public void createLogSegment(Transaction<Object> txn,
+                                 LogSegmentMetadata segment,
+                                 OpListener<Void> listener) {
         byte[] finalisedData = segment.getFinalisedData().getBytes(UTF_8);
         Op createOp = Op.create(
                 segment.getZkPath(),
                 finalisedData,
                 zkc.getDefaultACL(),
                 CreateMode.PERSISTENT);
-        txn.addOp(DefaultZKOp.of(createOp));
+        txn.addOp(DefaultZKOp.of(createOp, listener));
     }
 
     @Override
-    public void deleteLogSegment(Transaction<Object> txn, LogSegmentMetadata segment) {
+    public void deleteLogSegment(Transaction<Object> txn,
+                                 final LogSegmentMetadata segment,
+                                 final OpListener<Void> listener) {
         Op deleteOp = Op.delete(
                 segment.getZkPath(),
                 -1);
-        txn.addOp(DefaultZKOp.of(deleteOp));
+        logger.info("Delete segment : {}", segment);
+        txn.addOp(DefaultZKOp.of(deleteOp, new OpListener<Void>() {
+            @Override
+            public void onCommit(Void r) {
+                if (null != listener) {
+                    listener.onCommit(r);
+                }
+            }
+
+            @Override
+            public void onAbort(Throwable t) {
+                logger.info("Aborted transaction on deleting segment {}", segment);
+                KeeperException.Code kc;
+                if (t instanceof KeeperException) {
+                    kc = ((KeeperException) t).code();
+                } else if (t instanceof ZKException) {
+                    kc = ((ZKException) t).getKeeperExceptionCode();
+                } else {
+                    abortListener(t);
+                    return;
+                }
+                if (KeeperException.Code.NONODE == kc) {
+                    abortListener(new LogSegmentNotFoundException(segment.getZkPath()));
+                    return;
+                }
+                abortListener(t);
+            }
+
+            private void abortListener(Throwable t) {
+                if (null != listener) {
+                    listener.onAbort(t);
+                }
+            }
+        }));
     }
 
     @Override
     public void updateLogSegment(Transaction<Object> txn, LogSegmentMetadata segment) {
         byte[] finalisedData = segment.getFinalisedData().getBytes(UTF_8);
         Op updateOp = Op.setData(segment.getZkPath(), finalisedData, -1);
-        txn.addOp(DefaultZKOp.of(updateOp));
+        txn.addOp(DefaultZKOp.of(updateOp, null));
     }
 
     // reads

@@ -148,61 +148,6 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
     }
 
     @Test(timeout = 60000)
-    public void testSanityCheckTxnID() throws Exception {
-        String name = "distrlog-sanity-check-txnid";
-        BKDistributedLogManager dlm = createNewDLM(conf, name);
-        BKSyncLogWriter out = dlm.startLogSegmentNonPartitioned();
-        long txid = 1;
-        for (long j = 1; j <= DEFAULT_SEGMENT_SIZE; j++) {
-            LogRecord op = DLMTestUtil.getLogRecordInstance(txid++);
-            out.write(op);
-        }
-        out.closeAndComplete();
-
-        BKSyncLogWriter out1 = dlm.startLogSegmentNonPartitioned();
-        LogRecord op1 = DLMTestUtil.getLogRecordInstance(1);
-        try {
-            out1.write(op1);
-            fail("Should fail writing lower txn id if sanityCheckTxnID is enabled.");
-        } catch (TransactionIdOutOfOrderException tioooe) {
-            // expected
-        }
-        out1.closeAndComplete();
-        dlm.close();
-
-        DLMTestUtil.updateBKDLConfig(bkutil.getUri(), bkutil.getZkServers(), bkutil.getBkLedgerPath(), false);
-        LOG.info("Disable sanity check txn id.");
-        BKDLConfig.clearCachedDLConfigs();
-
-        DistributedLogConfiguration newConf = new DistributedLogConfiguration();
-        newConf.addConfiguration(conf);
-        BKDistributedLogManager newDLM = createNewDLM(newConf, name);
-        BKSyncLogWriter out2 = newDLM.startLogSegmentNonPartitioned();
-        LogRecord op2 = DLMTestUtil.getLogRecordInstance(1);
-        out2.write(op2);
-        out2.closeAndComplete();
-        newDLM.close();
-
-        DLMTestUtil.updateBKDLConfig(bkutil.getUri(), bkutil.getZkServers(), bkutil.getBkLedgerPath(), true);
-        LOG.info("Enable sanity check txn id.");
-        BKDLConfig.clearCachedDLConfigs();
-
-        DistributedLogConfiguration conf3 = new DistributedLogConfiguration();
-        conf3.addConfiguration(conf);
-        BKDistributedLogManager dlm3 = createNewDLM(newConf, name);
-        BKSyncLogWriter out3 = dlm3.startLogSegmentNonPartitioned();
-        LogRecord op3 = DLMTestUtil.getLogRecordInstance(1);
-        try {
-            out3.write(op3);
-            fail("Should fail writing lower txn id if sanityCheckTxnID is enabled.");
-        } catch (TransactionIdOutOfOrderException tioooe) {
-            // expected
-        }
-        out3.closeAndComplete();
-        dlm3.close();
-    }
-
-    @Test(timeout = 60000)
     public void testContinuousReaders() throws Exception {
         String name = "distrlog-continuous";
         BKDistributedLogManager dlm = createNewDLM(conf, name);
@@ -958,12 +903,9 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         final AtomicReference<Collection<LogSegmentMetadata>> receivedStreams =
                 new AtomicReference<Collection<LogSegmentMetadata>>();
 
-        DistributedLogManager dlm = createNewDLM(conf, name);
-        ZooKeeperClient zkClient = TestZooKeeperClientBuilder.newBuilder()
-                .uri(createDLMURI("/"))
-                .build();
+        BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(conf, name);
 
-        BKDistributedLogManager.createLog(conf, zkClient, ((BKDistributedLogManager) dlm).uri, name);
+        FutureUtils.result(dlm.getWriterMetadataStore().getLog(dlm.getUri(), name, true, true));
         dlm.registerListener(new LogSegmentListener() {
             @Override
             public void onSegmentsUpdated(List<LogSegmentMetadata> segments) {
@@ -992,7 +934,6 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
                 // no-op
             }
         });
-        LOG.info("Registered listener for stream {}.", name);
         long txid = 1;
         for (int i = 0; i < numSegments; i++) {
             LOG.info("Waiting for creating log segment {}.", i);
@@ -1018,6 +959,8 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             assertEquals(seqno * DEFAULT_SEGMENT_SIZE, m.getLastTxId());
             ++seqno;
         }
+
+        dlm.close();
     }
 
     @Test(timeout = 60000)

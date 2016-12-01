@@ -28,9 +28,10 @@ import org.junit.Test;
 import java.net.URI;
 import java.util.List;
 
+import static com.twitter.distributedlog.impl.metadata.ZKLogStreamMetadataStore.*;
 import static org.junit.Assert.*;
 
-public class TestZKLogMetadataForWriterUtilFunctions {
+public class TestZKLogStreamMetadataStoreUtils {
 
     @SuppressWarnings("unchecked")
     @Test(timeout = 60000, expected = UnexpectedException.class)
@@ -43,7 +44,7 @@ public class TestZKLogMetadataForWriterUtilFunctions {
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null));
-        ZKLogMetadataForWriter.processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
+        processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
     }
 
     @SuppressWarnings("unchecked")
@@ -58,7 +59,7 @@ public class TestZKLogMetadataForWriterUtilFunctions {
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1)),
                 new Versioned<byte[]>(null, null));
-        ZKLogMetadataForWriter.processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
+        processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
     }
 
     @SuppressWarnings("unchecked")
@@ -72,8 +73,8 @@ public class TestZKLogMetadataForWriterUtilFunctions {
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1)),
-                new Versioned<byte[]>(ZKLogMetadataForWriter.intToBytes(9999), null));
-        ZKLogMetadataForWriter.processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
+                new Versioned<byte[]>(intToBytes(9999), null));
+        processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
     }
 
     @SuppressWarnings("unchecked")
@@ -87,9 +88,9 @@ public class TestZKLogMetadataForWriterUtilFunctions {
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1)),
-                new Versioned<byte[]>(ZKLogMetadataForWriter.intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
+                new Versioned<byte[]>(intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
                 new Versioned<byte[]>(null, null));
-        ZKLogMetadataForWriter.processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
+        processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
     }
 
     @SuppressWarnings("unchecked")
@@ -103,10 +104,10 @@ public class TestZKLogMetadataForWriterUtilFunctions {
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1)),
-                new Versioned<byte[]>(ZKLogMetadataForWriter.intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
+                new Versioned<byte[]>(intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 new Versioned<byte[]>(null, null));
-        ZKLogMetadataForWriter.processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
+        processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
     }
 
     @SuppressWarnings("unchecked")
@@ -120,11 +121,11 @@ public class TestZKLogMetadataForWriterUtilFunctions {
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1)),
-                new Versioned<byte[]>(ZKLogMetadataForWriter.intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
+                new Versioned<byte[]>(intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 new Versioned<byte[]>(null, null));
-        ZKLogMetadataForWriter.processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
+        processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
     }
 
     @SuppressWarnings("unchecked")
@@ -138,12 +139,12 @@ public class TestZKLogMetadataForWriterUtilFunctions {
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1)),
-                new Versioned<byte[]>(ZKLogMetadataForWriter.intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
+                new Versioned<byte[]>(intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 new Versioned<byte[]>(DLUtils.serializeLogSegmentSequenceNumber(1L), new ZkVersion(1)),
                 new Versioned<byte[]>(null, null));
-        ZKLogMetadataForWriter.processLogMetadatas(uri, logName, logIdentifier, metadatas, true);
+        processLogMetadatas(uri, logName, logIdentifier, metadatas, true);
     }
 
     @SuppressWarnings("unchecked")
@@ -161,12 +162,12 @@ public class TestZKLogMetadataForWriterUtilFunctions {
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
                 maxTxnIdData,
-                new Versioned<byte[]>(ZKLogMetadataForWriter.intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
+                new Versioned<byte[]>(intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 logSegmentsData);
         ZKLogMetadataForWriter metadata =
-                ZKLogMetadataForWriter.processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
+                processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
         assertTrue(maxTxnIdData == metadata.getMaxTxIdData());
         assertTrue(logSegmentsData == metadata.getMaxLSSNData());
         assertNull(metadata.getAllocationData().getValue());
@@ -190,15 +191,16 @@ public class TestZKLogMetadataForWriterUtilFunctions {
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
                 maxTxnIdData,
-                new Versioned<byte[]>(ZKLogMetadataForWriter.intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
+                new Versioned<byte[]>(intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 logSegmentsData,
                 allocationData);
         ZKLogMetadataForWriter metadata =
-                ZKLogMetadataForWriter.processLogMetadatas(uri, logName, logIdentifier, metadatas, true);
+                processLogMetadatas(uri, logName, logIdentifier, metadatas, true);
         assertTrue(maxTxnIdData == metadata.getMaxTxIdData());
         assertTrue(logSegmentsData == metadata.getMaxLSSNData());
         assertTrue(allocationData == metadata.getAllocationData());
     }
+
 }

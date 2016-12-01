@@ -51,16 +51,15 @@ public class BKDLConfig implements DLConfig {
             new ConcurrentHashMap<URI, DLConfig>();
 
     public static void propagateConfiguration(BKDLConfig bkdlConfig, DistributedLogConfiguration dlConf) {
-        dlConf.setSanityCheckTxnID(bkdlConfig.getSanityCheckTxnID());
         dlConf.setEncodeRegionIDInLogSegmentMetadata(bkdlConfig.getEncodeRegionID());
         dlConf.setFirstLogSegmentSequenceNumber(bkdlConfig.getFirstLogSegmentSeqNo());
         if (bkdlConfig.isFederatedNamespace()) {
             dlConf.setCreateStreamIfNotExists(false);
             LOG.info("Disabled createIfNotExists for federated namespace.");
         }
-        LOG.info("Propagate BKDLConfig to DLConfig : sanityCheckTxnID = {}, encodeRegionID = {}," +
+        LOG.info("Propagate BKDLConfig to DLConfig : encodeRegionID = {}," +
                         " firstLogSegmentSequenceNumber = {}, createStreamIfNotExists = {}, isFederated = {}.",
-                new Object[] { dlConf.getSanityCheckTxnID(), dlConf.getEncodeRegionIDInLogSegmentMetadata(),
+                new Object[] { dlConf.getEncodeRegionIDInLogSegmentMetadata(),
                         dlConf.getFirstLogSegmentSequenceNumber(), dlConf.getCreateStreamIfNotExists(),
                         bkdlConfig.isFederatedNamespace() });
     }

@@ -33,7 +33,8 @@ public class ZKVersionedSetOp extends ZKOp {
 
     private final OpListener<Version> listener;
 
-    public ZKVersionedSetOp(Op op, OpListener<Version> opListener) {
+    public ZKVersionedSetOp(Op op,
+                            @Nullable OpListener<Version> opListener) {
         super(op);
         this.listener = opListener;
     }
@@ -42,7 +43,9 @@ public class ZKVersionedSetOp extends ZKOp {
     protected void commitOpResult(OpResult opResult) {
         assert(opResult instanceof OpResult.SetDataResult);
         OpResult.SetDataResult setDataResult = (OpResult.SetDataResult) opResult;
-        listener.onCommit(new ZkVersion(setDataResult.getStat().getVersion()));
+        if (null != listener) {
+            listener.onCommit(new ZkVersion(setDataResult.getStat().getVersion()));
+        }
     }
 
     @Override
@@ -60,7 +63,9 @@ public class ZKVersionedSetOp extends ZKOp {
                 cause = KeeperException.create(KeeperException.Code.get(errorResult.getErr()));
             }
         }
-        listener.onAbort(cause);
+        if (null != listener) {
+            listener.onAbort(cause);
+        }
     }
 
 }

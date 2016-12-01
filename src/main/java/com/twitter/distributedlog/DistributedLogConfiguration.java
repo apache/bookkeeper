@@ -1557,6 +1557,7 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
      *
      * @return true if should check txn id with max txn id, otherwise false.
      */
+    @Deprecated
     public boolean getSanityCheckTxnID() {
         return getBoolean(BKDL_MAXID_SANITYCHECK, BKDL_MAXID_SANITYCHECK_DEFAULT);
     }
@@ -1569,6 +1570,7 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
      * @return configuration.
      * @see #getSanityCheckTxnID()
      */
+    @Deprecated
     public DistributedLogConfiguration setSanityCheckTxnID(boolean enabled) {
         setProperty(BKDL_MAXID_SANITYCHECK, enabled);
         return this;

@@ -29,25 +29,22 @@ import com.twitter.distributedlog.bk.SimpleLedgerAllocator;
 import com.twitter.distributedlog.callback.LogSegmentListener;
 import com.twitter.distributedlog.config.DynamicDistributedLogConfiguration;
 import com.twitter.distributedlog.exceptions.AlreadyClosedException;
-import com.twitter.distributedlog.exceptions.DLInterruptedException;
 import com.twitter.distributedlog.exceptions.LogEmptyException;
 import com.twitter.distributedlog.exceptions.LogNotFoundException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
 import com.twitter.distributedlog.function.CloseAsyncCloseableFunction;
 import com.twitter.distributedlog.function.GetVersionedValueFunction;
-import com.twitter.distributedlog.impl.ZKLogSegmentMetadataStore;
 import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForReader;
 import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForWriter;
+import com.twitter.distributedlog.impl.metadata.ZKLogStreamMetadataStore;
 import com.twitter.distributedlog.io.AsyncCloseable;
 import com.twitter.distributedlog.lock.DistributedLock;
 import com.twitter.distributedlog.lock.NopDistributedLock;
-import com.twitter.distributedlog.lock.SessionLockFactory;
 import com.twitter.distributedlog.lock.ZKDistributedLock;
-import com.twitter.distributedlog.lock.ZKSessionLockFactory;
 import com.twitter.distributedlog.logsegment.LogSegmentFilter;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataCache;
-import com.twitter.distributedlog.logsegment.LogSegmentMetadataStore;
 import com.twitter.distributedlog.metadata.BKDLConfig;
+import com.twitter.distributedlog.metadata.LogStreamMetadataStore;
 import com.twitter.distributedlog.stats.BroadCastStatsLogger;
 import com.twitter.distributedlog.stats.ReadAheadExceptionsLogger;
 import com.twitter.distributedlog.subscription.SubscriptionStateStore;
@@ -75,10 +72,6 @@ import org.apache.bookkeeper.stats.AlertStatsLogger;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZKUtil;
-import org.apache.zookeeper.ZooKeeper;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
@@ -93,7 +86,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -119,13 +111,6 @@ import java.util.concurrent.TimeUnit;
  */
 class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedLogManager {
     static final Logger LOG = LoggerFactory.getLogger(BKDistributedLogManager.class);
-
-    static void createLog(DistributedLogConfiguration conf, ZooKeeperClient zkc, URI uri, String streamName)
-            throws IOException, InterruptedException {
-        Future<ZKLogMetadataForWriter> createFuture = ZKLogMetadataForWriter.of(
-                        uri, streamName, conf.getUnpartitionedStreamName(), zkc.get(), zkc.getDefaultACL(), true, true);
-        FutureUtils.result(createFuture);
-    }
 
     static final Function<LogRecordWithDLSN, Long> RECORD_2_TXID_FUNCTION =
             new Function<LogRecordWithDLSN, Long>() {
@@ -158,12 +143,10 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
     private final StatsLogger perLogStatsLogger;
     private final AlertStatsLogger alertStatsLogger;
 
-    // lock factory
-    private SessionLockFactory lockFactory = null;
-
-    // log segment metadata stores
-    private final LogSegmentMetadataStore writerMetadataStore;
-    private final LogSegmentMetadataStore readerMetadataStore;
+    // log stream metadata stores
+    private final LogStreamMetadataStore writerMetadataStore;
+    private final LogStreamMetadataStore readerMetadataStore;
+    // log segment metadata cache
     private final LogSegmentMetadataCache logSegmentMetadataCache;
 
     // bookkeeper clients
@@ -183,9 +166,6 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
     //
     private final LedgerAllocator ledgerAllocator;
     private final PermitLimiter writeLimiter;
-    // Log Segment Rolling Manager to control rolling speed
-    private final PermitManager logSegmentRollingPermitManager;
-    private OrderedScheduler lockStateExecutor = null;
 
     //
     // Reader Related Variables
@@ -237,10 +217,8 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
              readerBKCBuilder,
              null,
              null,
-             null,
              new LogSegmentMetadataCache(conf, Ticker.systemTicker()),
              OrderedScheduler.newBuilder().name("BKDL-" + name).corePoolSize(1).build(),
-             null,
              null,
              null,
              null,
@@ -249,7 +227,6 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
              DistributedLogConstants.LOCAL_REGION_ID,
              null,
              writeLimiter,
-             PermitManager.UNLIMITED_PERMIT_MANAGER,
              featureProvider,
              statsLogger,
              NullStatsLogger.INSTANCE);
@@ -268,12 +245,10 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
      * @param zkcForReaderBKC zookeeper builder for bookkeeper shared by readers
      * @param writerBKCBuilder bookkeeper builder for writers
      * @param readerBKCBuilder bookkeeper builder for readers
-     * @param lockFactory distributed lock factory
      * @param writerMetadataStore writer metadata store
      * @param readerMetadataStore reader metadata store
      * @param scheduler ordered scheduled used by readers and writers
      * @param readAheadScheduler readAhead scheduler used by readers
-     * @param lockStateExecutor ordered scheduled used by locks to execute lock actions
      * @param channelFactory client socket channel factory to build bookkeeper clients
      * @param requestTimer request timer to build bookkeeper clients
      * @param readAheadExceptionsLogger stats logger to record readahead exceptions
@@ -297,13 +272,11 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
                             ZooKeeperClient zkcForReaderBKC,
                             BookKeeperClientBuilder writerBKCBuilder,
                             BookKeeperClientBuilder readerBKCBuilder,
-                            SessionLockFactory lockFactory,
-                            LogSegmentMetadataStore writerMetadataStore,
-                            LogSegmentMetadataStore readerMetadataStore,
+                            LogStreamMetadataStore writerMetadataStore,
+                            LogStreamMetadataStore readerMetadataStore,
                             LogSegmentMetadataCache logSegmentMetadataCache,
                             OrderedScheduler scheduler,
                             OrderedScheduler readAheadScheduler,
-                            OrderedScheduler lockStateExecutor,
                             ClientSocketChannelFactory channelFactory,
                             HashedWheelTimer requestTimer,
                             ReadAheadExceptionsLogger readAheadExceptionsLogger,
@@ -311,7 +284,6 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
                             Integer regionId,
                             LedgerAllocator ledgerAllocator,
                             PermitLimiter writeLimiter,
-                            PermitManager logSegmentRollingPermitManager,
                             FeatureProvider featureProvider,
                             StatsLogger statsLogger,
                             StatsLogger perLogStatsLogger) throws IOException {
@@ -320,8 +292,6 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
         this.conf = conf;
         this.dynConf = dynConf;
         this.scheduler = scheduler;
-        this.lockFactory = lockFactory;
-        this.lockStateExecutor = lockStateExecutor;
         this.readAheadScheduler = null == readAheadScheduler ? scheduler : readAheadScheduler;
         this.statsLogger = statsLogger;
         this.perLogStatsLogger = BroadCastStatsLogger.masterslave(perLogStatsLogger, statsLogger);
@@ -332,15 +302,24 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
         this.streamIdentifier = conf.getUnpartitionedStreamName();
         this.ledgerAllocator = ledgerAllocator;
         this.writeLimiter = writeLimiter;
-        this.logSegmentRollingPermitManager = logSegmentRollingPermitManager;
 
         if (null == writerMetadataStore) {
-            this.writerMetadataStore = new ZKLogSegmentMetadataStore(conf, writerZKC, scheduler);
+            this.writerMetadataStore = new ZKLogStreamMetadataStore(
+                    clientId,
+                    conf,
+                    writerZKC,
+                    scheduler,
+                    statsLogger);
         } else {
             this.writerMetadataStore = writerMetadataStore;
         }
         if (null == readerMetadataStore) {
-            this.readerMetadataStore = new ZKLogSegmentMetadataStore(conf, readerZKC, scheduler);
+            this.readerMetadataStore = new ZKLogStreamMetadataStore(
+                    clientId,
+                    conf,
+                    readerZKC,
+                    scheduler,
+                    statsLogger);
         } else {
             this.readerMetadataStore = readerMetadataStore;
         }
@@ -407,26 +386,13 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
         this.readAheadExceptionsLogger = readAheadExceptionsLogger;
     }
 
-    synchronized OrderedScheduler getLockStateExecutor(boolean createIfNull) {
-        if (createIfNull && null == lockStateExecutor && ownExecutor) {
-            lockStateExecutor = OrderedScheduler.newBuilder()
-                    .corePoolSize(1).name("BKDL-LockState").build();
-        }
-        return lockStateExecutor;
+    @VisibleForTesting
+    LogStreamMetadataStore getWriterMetadataStore() {
+        return writerMetadataStore;
     }
 
-    private synchronized SessionLockFactory getLockFactory(boolean createIfNull) {
-        if (createIfNull && null == lockFactory) {
-            lockFactory = new ZKSessionLockFactory(
-                    writerZKC,
-                    clientId,
-                    getLockStateExecutor(createIfNull),
-                    conf.getZKNumRetries(),
-                    conf.getLockTimeoutMilliSeconds(),
-                    conf.getZKRetryBackoffStartMillis(),
-                    statsLogger);
-        }
-        return lockFactory;
+    URI getUri() {
+        return uri;
     }
 
     DistributedLogConfiguration getConf() {
@@ -457,12 +423,16 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
         return this.featureProvider;
     }
 
-    private synchronized BKLogReadHandler getReadHandlerForListener(boolean create) {
+    private synchronized BKLogReadHandler getReadHandlerAndRegisterListener(
+            boolean create, LogSegmentListener listener) {
         if (null == readHandlerForListener && create) {
             readHandlerForListener = createReadHandler();
-            // start fetch the log segments
+            readHandlerForListener.registerListener(listener);
+            // start fetch the log segments after created the listener
             readHandlerForListener.asyncStartFetchLogSegments();
+            return readHandlerForListener;
         }
+        readHandlerForListener.registerListener(listener);
         return readHandlerForListener;
     }
 
@@ -483,8 +453,7 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
 
     @Override
     public void registerListener(LogSegmentListener listener) throws IOException {
-        BKLogReadHandler readHandler = getReadHandlerForListener(true);
-        readHandler.registerListener(listener);
+        getReadHandlerAndRegisterListener(true, listener);
     }
 
     @Override
@@ -523,14 +492,12 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
                                                     boolean isHandleForReading) {
         return createReadHandler(
                 subscriberId,
-                getLockStateExecutor(true),
                 null,
                 true, /* deserialize record set */
                 isHandleForReading);
     }
 
     synchronized BKLogReadHandler createReadHandler(Optional<String> subscriberId,
-                                                    OrderedScheduler lockExecutor,
                                                     AsyncNotification notification,
                                                     boolean deserializeRecordSet,
                                                     boolean isHandleForReading) {
@@ -540,12 +507,10 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
                 subscriberId,
                 conf,
                 dynConf,
-                readerZKCBuilder,
                 readerBKCBuilder,
                 readerMetadataStore,
                 logSegmentMetadataCache,
                 scheduler,
-                lockExecutor,
                 readAheadScheduler,
                 alertStatsLogger,
                 readAheadExceptionsLogger,
@@ -585,24 +550,15 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
     }
 
     Future<BKLogWriteHandler> asyncCreateWriteHandler(final boolean lockHandler) {
-        final ZooKeeper zk;
-        try {
-            zk = writerZKC.get();
-        } catch (InterruptedException e) {
-            LOG.error("Failed to initialize zookeeper client : ", e);
-            return Future.exception(new DLInterruptedException("Failed to initialize zookeeper client", e));
-        } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            return Future.exception(FutureUtils.zkException(e, uri.getPath()));
-        }
-
         boolean ownAllocator = null == ledgerAllocator;
 
-        // Fetching Log Metadata
-        Future<ZKLogMetadataForWriter> metadataFuture =
-                ZKLogMetadataForWriter.of(uri, name, streamIdentifier,
-                        zk, writerZKC.getDefaultACL(),
-                        ownAllocator, conf.getCreateStreamIfNotExists() || ownAllocator);
-        return metadataFuture.flatMap(new AbstractFunction1<ZKLogMetadataForWriter, Future<BKLogWriteHandler>>() {
+        // Fetching Log Metadata (create if not exists)
+        return writerMetadataStore.getLog(
+                uri,
+                name,
+                ownAllocator,
+                conf.getCreateStreamIfNotExists() || ownAllocator
+        ).flatMap(new AbstractFunction1<ZKLogMetadataForWriter, Future<BKLogWriteHandler>>() {
             @Override
             public Future<BKLogWriteHandler> apply(ZKLogMetadataForWriter logMetadata) {
                 Promise<BKLogWriteHandler> createPromise = new Promise<BKLogWriteHandler>();
@@ -615,16 +571,10 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
     private void createWriteHandler(ZKLogMetadataForWriter logMetadata,
                                     boolean lockHandler,
                                     final Promise<BKLogWriteHandler> createPromise) {
-        OrderedScheduler lockStateExecutor = getLockStateExecutor(true);
         // Build the locks
         DistributedLock lock;
         if (conf.isWriteLockEnabled()) {
-            lock = new ZKDistributedLock(
-                    lockStateExecutor,
-                    getLockFactory(true),
-                    logMetadata.getLockPath(),
-                    conf.getLockTimeoutMilliSeconds(),
-                    statsLogger);
+            lock = writerMetadataStore.createWriteLock(logMetadata);
         } else {
             lock = NopDistributedLock.INSTANCE;
         }
@@ -641,7 +591,6 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
         final BKLogWriteHandler writeHandler = new BKLogWriteHandler(
                 logMetadata,
                 conf,
-                writerZKCBuilder,
                 writerBKCBuilder,
                 writerMetadataStore,
                 logSegmentMetadataCache,
@@ -656,10 +605,6 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
                 featureProvider,
                 dynConf,
                 lock);
-        PermitManager manager = getLogSegmentRollingPermitManager();
-        if (manager instanceof Watcher) {
-            writeHandler.register((Watcher) manager);
-        }
         if (lockHandler) {
             writeHandler.lockHandler().addEventListener(new FutureEventListener<DistributedLock>() {
                 @Override
@@ -684,7 +629,7 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
     }
 
     PermitManager getLogSegmentRollingPermitManager() {
-        return logSegmentRollingPermitManager;
+        return writerMetadataStore.getPermitManager();
     }
 
     <T> Future<T> processReaderOperation(final Function<BKLogReadHandler, Future<T>> func) {
@@ -692,7 +637,7 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
         return readerFuturePool.apply(new ExceptionalFunction0<BKLogReadHandler>() {
             @Override
             public BKLogReadHandler applyE() throws Throwable {
-                return getReadHandlerForListener(true);
+                return getReadHandlerAndRegisterListener(true, null);
             }
         }).flatMap(new ExceptionalFunction<BKLogReadHandler, Future<T>>() {
             @Override
@@ -982,7 +927,6 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
         AsyncLogReader reader = new BKAsyncLogReaderDLSN(
                 this,
                 scheduler,
-                getLockStateExecutor(true),
                 fromDLSN,
                 subscriberId,
                 false,
@@ -1022,7 +966,6 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
         final BKAsyncLogReaderDLSN reader = new BKAsyncLogReaderDLSN(
                 BKDistributedLogManager.this,
                 scheduler,
-                getLockStateExecutor(true),
                 fromDLSN.isPresent() ? fromDLSN.get() : DLSN.InitialDLSN,
                 subscriberId,
                 false,
@@ -1266,32 +1209,8 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
      */
     @Override
     public void delete() throws IOException {
-        BKLogWriteHandler ledgerHandler = createWriteHandler(true);
-        try {
-            ledgerHandler.deleteLog();
-        } finally {
-            Utils.closeQuietly(ledgerHandler);
-        }
-
-        // Delete the ZK path associated with the log stream
-        String zkPath = getZKPath();
-        // Safety check when we are using the shared zookeeper
-        if (zkPath.toLowerCase().contains("distributedlog")) {
-            try {
-                LOG.info("Delete the path associated with the log {}, ZK Path {}", name, zkPath);
-                ZKUtil.deleteRecursive(writerZKC.get(), zkPath);
-            } catch (InterruptedException ie) {
-                LOG.error("Interrupted while accessing ZK", ie);
-                throw new DLInterruptedException("Error initializing zk", ie);
-            } catch (KeeperException ke) {
-                LOG.error("Error accessing entry in zookeeper", ke);
-                throw new IOException("Error initializing zk", ke);
-            }
-        } else {
-            LOG.warn("Skip deletion of unrecognized ZK Path {}", zkPath);
-        }
+        FutureUtils.result(writerMetadataStore.deleteLog(uri, getStreamName()));
     }
-
 
     /**
      * The DistributedLogManager may archive/purge any logs for transactionId
@@ -1377,9 +1296,6 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
                         SchedulerUtils.shutdownScheduler(readAheadScheduler, schedTimeout, TimeUnit.MILLISECONDS);
                         LOG.info("Stopped BKDL ReadAhead Executor Service for {}.", name);
                     }
-
-                    SchedulerUtils.shutdownScheduler(getLockStateExecutor(false), schedTimeout, TimeUnit.MILLISECONDS);
-                    LOG.info("Stopped BKDL Lock State Executor for {}.", name);
                 }
                 if (ownWriterBKC) {
                     writerBKC.close();
@@ -1408,16 +1324,6 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
     @Override
     public void close() throws IOException {
         FutureUtils.result(asyncClose());
-    }
-
-    public boolean scheduleTask(Runnable task) {
-        try {
-            scheduler.submit(task);
-            return true;
-        } catch (RejectedExecutionException ree) {
-            LOG.error("Task {} is rejected : ", task, ree);
-            return false;
-        }
     }
 
     private FuturePool buildFuturePool(ExecutorService executorService,

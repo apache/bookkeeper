@@ -17,6 +17,7 @@
  */
 package com.twitter.distributedlog.util;
 
+import com.twitter.distributedlog.zk.LimitedPermitManager;
 import org.junit.Test;
 
 import java.util.ArrayList;

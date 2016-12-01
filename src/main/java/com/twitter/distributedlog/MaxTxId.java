@@ -18,12 +18,10 @@
 package com.twitter.distributedlog;
 
 import com.twitter.distributedlog.util.DLUtils;
+import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 /**
  * Utility class for storing and reading
@@ -32,73 +30,43 @@ import java.io.IOException;
 class MaxTxId {
     static final Logger LOG = LoggerFactory.getLogger(MaxTxId.class);
 
-    private final ZooKeeperClient zkc;
-    private final String path;
-    private final boolean enabled;
-
+    private Version version;
     private long currentMax;
 
-    MaxTxId(ZooKeeperClient zkc, String path, boolean enabled,
-            Versioned<byte[]> maxTxIdData) {
-        this.zkc = zkc;
-        this.path = path;
-        this.enabled = enabled && null != maxTxIdData && null != maxTxIdData.getVersion()
-                && null != maxTxIdData.getValue();
-        if (this.enabled) {
+    MaxTxId(Versioned<byte[]> maxTxIdData) {
+        if (null != maxTxIdData
+                && null != maxTxIdData.getValue()
+                && null != maxTxIdData.getVersion()) {
+            this.version = maxTxIdData.getVersion();
             try {
                 this.currentMax = DLUtils.deserializeTransactionId(maxTxIdData.getValue());
             } catch (NumberFormatException e) {
-                LOG.warn("Invalid txn id stored in {}", path, e);
-                this.currentMax = 0L;
+                LOG.warn("Invalid txn id stored in {}", e);
+                this.currentMax = DistributedLogConstants.INVALID_TXID;
             }
         } else {
-            this.currentMax = -1L;
+            this.currentMax = DistributedLogConstants.INVALID_TXID;
+            if (null != maxTxIdData && null != maxTxIdData.getVersion()) {
+                this.version = maxTxIdData.getVersion();
+            } else {
+                throw new IllegalStateException("Invalid MaxTxId found - " + maxTxIdData);
+            }
         }
     }
 
-    String getZkPath() {
-        return path;
-    }
-
-    synchronized void setMaxTxId(long txId) {
-        if (enabled && this.currentMax < txId) {
+    synchronized void update(Version version, long txId) {
+        if (version.compare(this.version) == Version.Occurred.AFTER) {
+            this.version = version;
             this.currentMax = txId;
-        }
-    }
-
-    synchronized byte[] couldStore(long maxTxId) {
-        if (enabled && currentMax < maxTxId) {
-            return DLUtils.serializeTransactionId(maxTxId);
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Store the highest TxID encountered so far so that we
-     * can enforce the monotonically non-decreasing property
-     * This is best effort as this enforcement is only done
-     *
-     * @param maxTxId - the maximum transaction id seen so far
-     * @throws IOException
-     */
-    synchronized void store(long maxTxId) throws IOException {
-        if (enabled && currentMax < maxTxId) {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Setting maxTxId to " + maxTxId);
-            }
-            String txidStr = Long.toString(maxTxId);
-            try {
-                zkc.get().setData(path, txidStr.getBytes("UTF-8"), -1);
-                currentMax = maxTxId;
-            } catch (Exception e) {
-                LOG.error("Error writing new MaxTxId value {}", maxTxId, e);
-            }
         }
     }
 
     synchronized long get() {
         return currentMax;
+    }
+
+    public Versioned<Long> getVersionedData(long txId) {
+        return new Versioned<Long>(Math.max(txId, currentMax), version);
     }
 
 }

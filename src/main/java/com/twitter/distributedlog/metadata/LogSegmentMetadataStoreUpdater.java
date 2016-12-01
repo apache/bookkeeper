@@ -177,8 +177,8 @@ public class LogSegmentMetadataStoreUpdater implements MetadataUpdater {
     protected void addNewSegmentAndDeleteOldSegment(Transaction<Object> txn,
                                                     LogSegmentMetadata newSegment,
                                                     LogSegmentMetadata oldSegment) {
-        metadataStore.deleteLogSegment(txn, oldSegment);
-        metadataStore.createLogSegment(txn, newSegment);
+        metadataStore.deleteLogSegment(txn, oldSegment, null);
+        metadataStore.createLogSegment(txn, newSegment, null);
     }
 
 }

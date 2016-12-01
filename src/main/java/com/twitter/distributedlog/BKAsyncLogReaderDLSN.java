@@ -30,7 +30,6 @@ import com.twitter.distributedlog.exceptions.UnexpectedException;
 import com.twitter.distributedlog.injector.AsyncFailureInjector;
 import com.twitter.distributedlog.injector.AsyncRandomFailureInjector;
 import com.twitter.distributedlog.util.FutureUtils;
-import com.twitter.distributedlog.util.OrderedScheduler;
 import com.twitter.util.Future;
 import com.twitter.util.FutureEventListener;
 import com.twitter.util.Promise;
@@ -210,7 +209,6 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
 
     BKAsyncLogReaderDLSN(BKDistributedLogManager bkdlm,
                          ScheduledExecutorService executorService,
-                         OrderedScheduler lockStateExecutor,
                          DLSN startDLSN,
                          Optional<String> subscriberId,
                          boolean returnEndOfStreamRecord,
@@ -219,7 +217,7 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
         this.bkDistributedLogManager = bkdlm;
         this.executorService = executorService;
         this.bkLedgerManager = bkDistributedLogManager.createReadHandler(subscriberId,
-                lockStateExecutor, this, deserializeRecordSet, true);
+                this, deserializeRecordSet, true);
         LOG.debug("Starting async reader at {}", startDLSN);
         this.startDLSN = startDLSN;
         this.scheduleDelayStopwatch = Stopwatch.createUnstarted();
@@ -414,7 +412,7 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
         final PendingReadRequest readRequest = new PendingReadRequest(numEntries, deadlineTime, deadlineTimeUnit);
 
         if (!readAheadStarted) {
-            bkLedgerManager.checkLogStreamExistsAsync().addEventListener(new FutureEventListener<Void>() {
+            bkLedgerManager.checkLogStreamExists().addEventListener(new FutureEventListener<Void>() {
                 @Override
                 public void onSuccess(Void value) {
                     try {

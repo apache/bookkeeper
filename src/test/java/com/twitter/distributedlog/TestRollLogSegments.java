@@ -253,6 +253,7 @@ public class TestRollLogSegments extends TestDistributedLogBase {
         confLocal.setOutputBufferSize(0);
         confLocal.setLogSegmentRollingIntervalMinutes(0);
         confLocal.setMaxLogSegmentBytes(1);
+        confLocal.setLogSegmentRollingConcurrency(Integer.MAX_VALUE);
 
         int numLogSegments = 10;
 

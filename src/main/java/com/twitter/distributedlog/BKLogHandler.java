@@ -20,12 +20,9 @@ package com.twitter.distributedlog;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.twitter.distributedlog.callback.LogSegmentNamesListener;
-import com.twitter.distributedlog.exceptions.DLInterruptedException;
 import com.twitter.distributedlog.exceptions.LogEmptyException;
-import com.twitter.distributedlog.exceptions.LogNotFoundException;
 import com.twitter.distributedlog.exceptions.LogSegmentNotFoundException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
-import com.twitter.distributedlog.exceptions.ZKException;
 import com.twitter.distributedlog.impl.metadata.ZKLogMetadata;
 import com.twitter.distributedlog.io.AsyncAbortable;
 import com.twitter.distributedlog.io.AsyncCloseable;
@@ -33,6 +30,7 @@ import com.twitter.distributedlog.logsegment.LogSegmentMetadataCache;
 import com.twitter.distributedlog.logsegment.PerStreamLogSegmentCache;
 import com.twitter.distributedlog.logsegment.LogSegmentFilter;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataStore;
+import com.twitter.distributedlog.metadata.LogStreamMetadataStore;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.OrderedScheduler;
 import com.twitter.util.Function;
@@ -45,10 +43,6 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.zookeeper.AsyncCallback;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.runtime.AbstractFunction0;
@@ -95,8 +89,8 @@ public abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
 
     protected final ZKLogMetadata logMetadata;
     protected final DistributedLogConfiguration conf;
-    protected final ZooKeeperClient zooKeeperClient;
     protected final BookKeeperClient bookKeeperClient;
+    protected final LogStreamMetadataStore streamMetadataStore;
     protected final LogSegmentMetadataStore metadataStore;
     protected final LogSegmentMetadataCache metadataCache;
     protected final int firstNumEntriesPerReadLastRecordScan;
@@ -111,8 +105,6 @@ public abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
 
     // Maintain the list of log segments per stream
     protected final PerStreamLogSegmentCache logSegmentCache;
-
-
 
     // trace
     protected final long metadataLatencyWarnThresholdMillis;
@@ -130,15 +122,13 @@ public abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
      */
     BKLogHandler(ZKLogMetadata metadata,
                  DistributedLogConfiguration conf,
-                 ZooKeeperClientBuilder zkcBuilder,
                  BookKeeperClientBuilder bkcBuilder,
-                 LogSegmentMetadataStore metadataStore,
+                 LogStreamMetadataStore streamMetadataStore,
                  LogSegmentMetadataCache metadataCache,
                  OrderedScheduler scheduler,
                  StatsLogger statsLogger,
                  AlertStatsLogger alertStatsLogger,
                  String lockClientId) {
-        Preconditions.checkNotNull(zkcBuilder);
         Preconditions.checkNotNull(bkcBuilder);
         this.logMetadata = metadata;
         this.conf = conf;
@@ -148,13 +138,11 @@ public abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
         this.logSegmentCache = new PerStreamLogSegmentCache(
                 metadata.getLogName(),
                 conf.isLogSegmentSequenceNumberValidationEnabled());
-
         firstNumEntriesPerReadLastRecordScan = conf.getFirstNumEntriesPerReadLastRecordScan();
         maxNumEntriesPerReadLastRecordScan = conf.getMaxNumEntriesPerReadLastRecordScan();
-        this.zooKeeperClient = zkcBuilder.build();
-        LOG.debug("Using ZK Path {}", logMetadata.getLogRootPath());
         this.bookKeeperClient = bkcBuilder.build();
-        this.metadataStore = metadataStore;
+        this.streamMetadataStore = streamMetadataStore;
+        this.metadataStore = streamMetadataStore.getLogSegmentMetadataStore();
         this.metadataCache = metadataCache;
         this.lockClientId = lockClientId;
 
@@ -188,7 +176,8 @@ public abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
 
     public Future<LogRecordWithDLSN> asyncGetFirstLogRecord() {
         final Promise<LogRecordWithDLSN> promise = new Promise<LogRecordWithDLSN>();
-        checkLogStreamExistsAsync().addEventListener(new FutureEventListener<Void>() {
+        streamMetadataStore.logExists(logMetadata.getUri(), logMetadata.getLogName())
+                .addEventListener(new FutureEventListener<Void>() {
             @Override
             public void onSuccess(Void value) {
                 readLogSegmentsFromStore(
@@ -234,7 +223,8 @@ public abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
 
     public Future<LogRecordWithDLSN> getLastLogRecordAsync(final boolean recover, final boolean includeEndOfStream) {
         final Promise<LogRecordWithDLSN> promise = new Promise<LogRecordWithDLSN>();
-        checkLogStreamExistsAsync().addEventListener(new FutureEventListener<Void>() {
+        streamMetadataStore.logExists(logMetadata.getUri(), logMetadata.getLogName())
+                .addEventListener(new FutureEventListener<Void>() {
             @Override
             public void onSuccess(Void value) {
                 readLogSegmentsFromStore(
@@ -381,8 +371,8 @@ public abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
      * @return the count of records present in the range
      */
     public Future<Long> asyncGetLogRecordCount(final DLSN beginDLSN) {
-
-        return checkLogStreamExistsAsync().flatMap(new Function<Void, Future<Long>>() {
+        return streamMetadataStore.logExists(logMetadata.getUri(), logMetadata.getLogName())
+                .flatMap(new Function<Void, Future<Long>>() {
             public Future<Long> apply(Void done) {
 
                 return readLogSegmentsFromStore(
@@ -415,48 +405,6 @@ public abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
             sum += value;
         }
         return sum;
-    }
-
-    Future<Void> checkLogStreamExistsAsync() {
-        final Promise<Void> promise = new Promise<Void>();
-        try {
-            final ZooKeeper zk = zooKeeperClient.get();
-            zk.sync(logMetadata.getLogSegmentsPath(), new AsyncCallback.VoidCallback() {
-                @Override
-                public void processResult(int syncRc, String path, Object syncCtx) {
-                    if (KeeperException.Code.NONODE.intValue() == syncRc) {
-                        promise.setException(new LogNotFoundException(
-                                String.format("Log %s does not exist or has been deleted", getFullyQualifiedName())));
-                        return;
-                    } else if (KeeperException.Code.OK.intValue() != syncRc){
-                        promise.setException(new ZKException("Error on checking log existence for " + getFullyQualifiedName(),
-                                KeeperException.create(KeeperException.Code.get(syncRc))));
-                        return;
-                    }
-                    zk.exists(logMetadata.getLogSegmentsPath(), false, new AsyncCallback.StatCallback() {
-                        @Override
-                        public void processResult(int rc, String path, Object ctx, Stat stat) {
-                            if (KeeperException.Code.OK.intValue() == rc) {
-                                promise.setValue(null);
-                            } else if (KeeperException.Code.NONODE.intValue() == rc) {
-                                promise.setException(new LogNotFoundException(String.format("Log %s does not exist or has been deleted", getFullyQualifiedName())));
-                            } else {
-                                promise.setException(new ZKException("Error on checking log existence for " + getFullyQualifiedName(),
-                                        KeeperException.create(KeeperException.Code.get(rc))));
-                            }
-                        }
-                    }, null);
-                }
-            }, null);
-
-        } catch (InterruptedException ie) {
-            LOG.error("Interrupted while reading {}", logMetadata.getLogSegmentsPath(), ie);
-            promise.setException(new DLInterruptedException("Interrupted while checking "
-                    + logMetadata.getLogSegmentsPath(), ie));
-        } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            promise.setException(e);
-        }
-        return promise;
     }
 
     @Override

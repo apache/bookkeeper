@@ -29,6 +29,17 @@ public class ZKLogMetadata {
     }
 
     /**
+     * Get the top stream path for a given log.
+     *
+     * @param uri namespace to store the log
+     * @param logName name of the log
+     * @return top stream path
+     */
+    public static String getLogStreamPath(URI uri, String logName) {
+        return String.format("%s/%s", uri.getPath(), logName);
+    }
+
+    /**
      * Get the log root path for a given log.
      *
      * @param uri
@@ -59,14 +70,14 @@ public class ZKLogMetadata {
     }
 
     protected static final int LAYOUT_VERSION = -1;
-    protected final static String LOGSEGMENTS_PATH = "/ledgers";
-    protected final static String VERSION_PATH = "/version";
+    public final static String LOGSEGMENTS_PATH = "/ledgers";
+    public final static String VERSION_PATH = "/version";
     // writer znodes
-    protected final static String MAX_TXID_PATH = "/maxtxid";
-    protected final static String LOCK_PATH = "/lock";
-    protected final static String ALLOCATION_PATH = "/allocation";
+    public final static String MAX_TXID_PATH = "/maxtxid";
+    public final static String LOCK_PATH = "/lock";
+    public final static String ALLOCATION_PATH = "/allocation";
     // reader znodes
-    protected final static String READ_LOCK_PATH = "/readLock";
+    public final static String READ_LOCK_PATH = "/readLock";
 
     protected final URI uri;
     protected final String logName;

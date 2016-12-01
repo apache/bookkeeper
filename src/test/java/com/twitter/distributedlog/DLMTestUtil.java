@@ -36,6 +36,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.versioning.Version;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
@@ -429,7 +430,7 @@ public class DLMTestUtil {
                 .setEnvelopeEntries(LogSegmentMetadata.supportsEnvelopedEntries(logSegmentMetadataVersion))
                 .build();
         l.write(dlm.writerZKC);
-        writeHandler.maxTxId.store(startTxID);
+        writeHandler.maxTxId.update(Version.ANY, startTxID);
         writeHandler.addLogSegmentToCache(inprogressZnodeName, l);
         BKLogSegmentWriter writer = new BKLogSegmentWriter(
                 writeHandler.getFullyQualifiedName(),
@@ -479,7 +480,7 @@ public class DLMTestUtil {
             .setInprogress(false)
             .build();
         l.write(dlm.writerZKC);
-        writeHandler.maxTxId.store(startTxID);
+        writeHandler.maxTxId.update(Version.ANY, startTxID);
         writeHandler.addLogSegmentToCache(inprogressZnodeName, l);
         BKLogSegmentWriter writer = new BKLogSegmentWriter(
                 writeHandler.getFullyQualifiedName(),

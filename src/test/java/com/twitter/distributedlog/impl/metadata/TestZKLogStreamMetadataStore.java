@@ -52,14 +52,15 @@ import java.net.URI;
 import java.util.List;
 
 import static com.twitter.distributedlog.impl.metadata.ZKLogMetadata.*;
+import static com.twitter.distributedlog.impl.metadata.ZKLogStreamMetadataStore.*;
 import static org.junit.Assert.*;
 
 /**
- * Test {@link ZKLogMetadataForWriter}
+ * Test {@link ZKLogStreamMetadataStore}
  */
-public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
+public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
 
-    private static final Logger logger = LoggerFactory.getLogger(TestZKLogMetadataForWriter.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestZKLogStreamMetadataStore.class);
 
     private final static int sessionTimeoutMs = 30000;
 
@@ -91,7 +92,7 @@ public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
                 zk.getDefaultACL(), CreateMode.PERSISTENT);
         txn.create(readLockPath, DistributedLogConstants.EMPTY_BYTES,
                 zk.getDefaultACL(), CreateMode.PERSISTENT);
-        txn.create(versionPath, ZKLogMetadataForWriter.intToBytes(LAYOUT_VERSION),
+        txn.create(versionPath, intToBytes(LAYOUT_VERSION),
                 zk.getDefaultACL(), CreateMode.PERSISTENT);
         txn.create(allocationPath, DistributedLogConstants.EMPTY_BYTES,
                 zk.getDefaultACL(), CreateMode.PERSISTENT);
@@ -127,7 +128,7 @@ public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
     public void testCheckLogMetadataPathsWithAllocator() throws Exception {
         String logRootPath = "/" + testName.getMethodName();
         List<Versioned<byte[]>> metadatas =
-                FutureUtils.result(ZKLogMetadataForWriter.checkLogMetadataPaths(
+                FutureUtils.result(checkLogMetadataPaths(
                         zkc.get(), logRootPath, true));
         assertEquals("Should have 8 paths",
                 8, metadatas.size());
@@ -141,7 +142,7 @@ public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
     public void testCheckLogMetadataPathsWithoutAllocator() throws Exception {
         String logRootPath = "/" + testName.getMethodName();
         List<Versioned<byte[]>> metadatas =
-                FutureUtils.result(ZKLogMetadataForWriter.checkLogMetadataPaths(
+                FutureUtils.result(checkLogMetadataPaths(
                         zkc.get(), logRootPath, false));
         assertEquals("Should have 7 paths",
                 7, metadatas.size());
@@ -167,13 +168,12 @@ public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
         }
 
         ZKLogMetadataForWriter logMetadata =
-                FutureUtils.result(ZKLogMetadataForWriter.of(uri, logName, logIdentifier,
-                        zkc.get(), zkc.getDefaultACL(), ownAllocator, true));
+                FutureUtils.result(getLog(uri, logName, logIdentifier, zkc, ownAllocator, true));
 
         final String logRootPath = getLogRootPath(uri, logName, logIdentifier);
 
         List<Versioned<byte[]>> metadatas =
-                FutureUtils.result(ZKLogMetadataForWriter.checkLogMetadataPaths(zkc.get(), logRootPath, ownAllocator));
+                FutureUtils.result(checkLogMetadataPaths(zkc.get(), logRootPath, ownAllocator));
 
         if (ownAllocator) {
             assertEquals("Should have 8 paths : ownAllocator = " + ownAllocator,
@@ -184,7 +184,7 @@ public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
         }
 
         for (Versioned<byte[]> metadata : metadatas) {
-            assertTrue(ZKLogMetadataForWriter.pathExists(metadata));
+            assertTrue(pathExists(metadata));
             assertTrue(((ZkVersion) metadata.getVersion()).getZnodeVersion() >= 0);
         }
 
@@ -300,8 +300,7 @@ public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
     public void testCreateLogMetadataWithCreateIfNotExistsSetToFalse() throws Exception {
         String logName = testName.getMethodName();
         String logIdentifier = "<default>";
-        FutureUtils.result(ZKLogMetadataForWriter.of(uri, logName, logIdentifier,
-                        zkc.get(), zkc.getDefaultACL(), true, false));
+        FutureUtils.result(getLog(uri, logName, logIdentifier, zkc, true, false));
     }
 
     @Test(timeout = 60000)

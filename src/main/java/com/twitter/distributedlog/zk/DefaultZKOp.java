@@ -17,29 +17,39 @@
  */
 package com.twitter.distributedlog.zk;
 
+import com.twitter.distributedlog.util.Transaction.OpListener;
 import org.apache.zookeeper.Op;
 import org.apache.zookeeper.OpResult;
+
+import javax.annotation.Nullable;
 
 /**
  * Default zookeeper operation. No action on commiting or aborting.
  */
 public class DefaultZKOp extends ZKOp {
 
-    public static DefaultZKOp of(Op op) {
-        return new DefaultZKOp(op);
+    public static DefaultZKOp of(Op op, OpListener<Void> listener) {
+        return new DefaultZKOp(op, listener);
     }
 
-    private DefaultZKOp(Op op) {
+    private final OpListener<Void> listener;
+
+    private DefaultZKOp(Op op, @Nullable OpListener<Void> opListener) {
         super(op);
+        this.listener = opListener;
     }
 
     @Override
     protected void commitOpResult(OpResult opResult) {
-        // no-op
+        if (null != listener) {
+            listener.onCommit(null);
+        }
     }
 
     @Override
     protected void abortOpResult(Throwable t, OpResult opResult) {
-        // no-op
+        if (null != listener) {
+            listener.onAbort(t);
+        }
     }
 }

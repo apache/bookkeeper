@@ -62,7 +62,6 @@ class BKSyncLogReaderDLSN implements LogReader, AsyncNotification {
                         StatsLogger statsLogger) {
         this.readHandler = bkdlm.createReadHandler(
                 Optional.<String>absent(),
-                bkdlm.getLockStateExecutor(true),
                 this,
                 conf.getDeserializeRecordSetOnReads(),
                 true);

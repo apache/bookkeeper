@@ -140,7 +140,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         logger.info("Try obtaining ledger handle {}", lh.getId());
         byte[] data = zkc.get().getData(allocationPath, false, null);
         assertEquals((Long) lh.getId(), Long.valueOf(new String(data, UTF_8)));
-        txn.addOp(DefaultZKOp.of(Op.setData("/unexistedpath", "data".getBytes(UTF_8), -1)));
+        txn.addOp(DefaultZKOp.of(Op.setData("/unexistedpath", "data".getBytes(UTF_8), -1), null));
         try {
             FutureUtils.result(txn.execute());
             fail("Should fail the transaction when setting unexisted path");
@@ -337,7 +337,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         ZKTransaction txn = newTxn();
         // close during obtaining ledger.
         LedgerHandle lh = FutureUtils.result(allocator.tryObtain(txn, NULL_LISTENER));
-        txn.addOp(DefaultZKOp.of(Op.setData("/unexistedpath", "data".getBytes(UTF_8), -1)));
+        txn.addOp(DefaultZKOp.of(Op.setData("/unexistedpath", "data".getBytes(UTF_8), -1), null));
         try {
             FutureUtils.result(txn.execute());
             fail("Should fail the transaction when setting unexisted path");

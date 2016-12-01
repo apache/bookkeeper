@@ -191,7 +191,8 @@ public class TestDistributedLogBase {
     protected LogSegmentMetadataStore getLogSegmentMetadataStore(DistributedLogManagerFactory factory) {
         DistributedLogNamespace namespace = factory.getNamespace();
         assertTrue(namespace instanceof BKDistributedLogNamespace);
-        return ((BKDistributedLogNamespace) namespace).getWriterSegmentMetadataStore();
+        return ((BKDistributedLogNamespace) namespace).getWriterStreamMetadataStore()
+                .getLogSegmentMetadataStore();
     }
 
     @SuppressWarnings("deprecation")

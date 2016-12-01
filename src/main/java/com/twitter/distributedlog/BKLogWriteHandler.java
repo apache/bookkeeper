@@ -23,22 +23,21 @@ import com.google.common.collect.Lists;
 import com.twitter.distributedlog.bk.LedgerAllocator;
 import com.twitter.distributedlog.config.DynamicDistributedLogConfiguration;
 import com.twitter.distributedlog.exceptions.DLIllegalStateException;
-import com.twitter.distributedlog.exceptions.DLInterruptedException;
 import com.twitter.distributedlog.exceptions.EndOfStreamException;
 import com.twitter.distributedlog.exceptions.LockingException;
+import com.twitter.distributedlog.exceptions.LogSegmentNotFoundException;
 import com.twitter.distributedlog.exceptions.TransactionIdOutOfOrderException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
-import com.twitter.distributedlog.exceptions.ZKException;
 import com.twitter.distributedlog.function.GetLastTxIdFunction;
 import com.twitter.distributedlog.impl.BKLogSegmentEntryWriter;
 import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForWriter;
 import com.twitter.distributedlog.lock.DistributedLock;
 import com.twitter.distributedlog.logsegment.LogSegmentFilter;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataCache;
-import com.twitter.distributedlog.logsegment.LogSegmentMetadataStore;
 import com.twitter.distributedlog.logsegment.RollingPolicy;
 import com.twitter.distributedlog.logsegment.SizeBasedRollingPolicy;
 import com.twitter.distributedlog.logsegment.TimeBasedRollingPolicy;
+import com.twitter.distributedlog.metadata.LogStreamMetadataStore;
 import com.twitter.distributedlog.metadata.MetadataUpdater;
 import com.twitter.distributedlog.metadata.LogSegmentMetadataStoreUpdater;
 import com.twitter.distributedlog.util.DLUtils;
@@ -49,9 +48,6 @@ import com.twitter.distributedlog.util.OrderedScheduler;
 import com.twitter.distributedlog.util.Transaction;
 import com.twitter.distributedlog.util.PermitLimiter;
 import com.twitter.distributedlog.util.Utils;
-import com.twitter.distributedlog.zk.ZKOp;
-import com.twitter.distributedlog.zk.ZKTransaction;
-import com.twitter.distributedlog.zk.ZKVersionedSetOp;
 import com.twitter.util.Function;
 import com.twitter.util.Future;
 import com.twitter.util.FutureEventListener;
@@ -60,19 +56,11 @@ import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.feature.FeatureProvider;
-import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.bookkeeper.stats.AlertStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.Op;
-import org.apache.zookeeper.OpResult;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZKUtil;
-import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.runtime.AbstractFunction1;
@@ -84,7 +72,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Charsets.UTF_8;
 import static com.twitter.distributedlog.impl.ZKLogSegmentFilters.WRITE_HANDLE_FILTER;
 
 /**
@@ -102,11 +89,11 @@ import static com.twitter.distributedlog.impl.ZKLogSegmentFilters.WRITE_HANDLE_F
 class BKLogWriteHandler extends BKLogHandler {
     static final Logger LOG = LoggerFactory.getLogger(BKLogReadHandler.class);
 
+    protected final ZKLogMetadataForWriter logMetadataForWriter;
     protected final DistributedLock lock;
     protected final LedgerAllocator ledgerAllocator;
     protected final MaxTxId maxTxId;
     protected final MaxLogSegmentSequenceNo maxLogSegmentSequenceNo;
-    protected final boolean sanityCheckTxnId;
     protected final boolean validateLogSegmentSequenceNumber;
     protected final int regionId;
     protected final RollingPolicy rollingPolicy;
@@ -164,9 +151,8 @@ class BKLogWriteHandler extends BKLogHandler {
      */
     BKLogWriteHandler(ZKLogMetadataForWriter logMetadata,
                       DistributedLogConfiguration conf,
-                      ZooKeeperClientBuilder zkcBuilder,
                       BookKeeperClientBuilder bkcBuilder,
-                      LogSegmentMetadataStore metadataStore,
+                      LogStreamMetadataStore streamMetadataStore,
                       LogSegmentMetadataCache metadataCache,
                       OrderedScheduler scheduler,
                       LedgerAllocator allocator,
@@ -181,14 +167,14 @@ class BKLogWriteHandler extends BKLogHandler {
                       DistributedLock lock /** owned by handler **/) {
         super(logMetadata,
                 conf,
-                zkcBuilder,
                 bkcBuilder,
-                metadataStore,
+                streamMetadataStore,
                 metadataCache,
                 scheduler,
                 statsLogger,
                 alertStatsLogger,
                 clientId);
+        this.logMetadataForWriter = logMetadata;
         this.perLogStatsLogger = perLogStatsLogger;
         this.writeLimiter = writeLimiter;
         this.featureProvider = featureProvider;
@@ -202,15 +188,13 @@ class BKLogWriteHandler extends BKLogHandler {
         } else {
             this.regionId = DistributedLogConstants.LOCAL_REGION_ID;
         }
-        this.sanityCheckTxnId = conf.getSanityCheckTxnID();
         this.validateLogSegmentSequenceNumber = conf.isLogSegmentSequenceNumberValidationEnabled();
 
         // Construct the max sequence no
         maxLogSegmentSequenceNo = new MaxLogSegmentSequenceNo(logMetadata.getMaxLSSNData());
         inprogressLSSNs = new LinkedList<Long>();
         // Construct the max txn id.
-        maxTxId = new MaxTxId(zooKeeperClient, logMetadata.getMaxTxIdPath(),
-                conf.getSanityCheckTxnID(), logMetadata.getMaxTxIdData());
+        maxTxId = new MaxTxId(logMetadata.getMaxTxIdData());
 
         // Schedule fetching log segment list in background before we access it.
         // We don't need to watch the log segment list changes for writer, as it manages log segment list.
@@ -291,13 +275,12 @@ class BKLogWriteHandler extends BKLogHandler {
     }
 
     // Transactional operations for MaxLogSegmentSequenceNo
-    void storeMaxSequenceNumber(final Transaction txn,
+    void storeMaxSequenceNumber(final Transaction<Object> txn,
                                 final MaxLogSegmentSequenceNo maxSeqNo,
                                 final long seqNo,
                                 final boolean isInprogress) {
-        byte[] data = DLUtils.serializeLogSegmentSequenceNumber(seqNo);
-        Op zkOp = Op.setData(logMetadata.getLogSegmentsPath(), data, maxSeqNo.getZkVersion());
-        txn.addOp(new ZKVersionedSetOp(zkOp, new Transaction.OpListener<Version>() {
+        metadataStore.storeMaxLogSegmentSequenceNumber(txn, logMetadata, maxSeqNo.getVersionedData(seqNo),
+                new Transaction.OpListener<Version>() {
             @Override
             public void onCommit(Version version) {
                 if (validateLogSegmentSequenceNumber) {
@@ -309,69 +292,60 @@ class BKLogWriteHandler extends BKLogHandler {
                         }
                     }
                 }
-                maxSeqNo.update((ZkVersion) version, seqNo);
+                maxSeqNo.update(version, seqNo);
             }
 
             @Override
             public void onAbort(Throwable t) {
                 // no-op
             }
-        }));
+        });
     }
 
     // Transactional operations for MaxTxId
-    void storeMaxTxId(final ZKTransaction txn,
+    void storeMaxTxId(final Transaction<Object> txn,
                       final MaxTxId maxTxId,
                       final long txId) {
-        byte[] data = maxTxId.couldStore(txId);
-        if (null != data) {
-            Op zkOp = Op.setData(maxTxId.getZkPath(), data, -1);
-            txn.addOp(new ZKVersionedSetOp(zkOp, new Transaction.OpListener<Version>() {
-                @Override
-                public void onCommit(Version version) {
-                    maxTxId.setMaxTxId(txId);
-                }
+        metadataStore.storeMaxTxnId(txn, logMetadataForWriter, maxTxId.getVersionedData(txId),
+                new Transaction.OpListener<Version>() {
+                    @Override
+                    public void onCommit(Version version) {
+                                                        maxTxId.update(version, txId);
+                                                                                      }
 
-                @Override
-                public void onAbort(Throwable t) {
-
-                }
-            }));
-        }
+                    @Override
+                    public void onAbort(Throwable t) {
+                        // no-op
+                    }
+                });
     }
 
     // Transactional operations for logsegment
-    void writeLogSegment(final ZKTransaction txn,
-                         final List<ACL> acl,
-                         final String inprogressSegmentName,
-                         final LogSegmentMetadata metadata,
-                         final String path) {
-        byte[] finalisedData = metadata.getFinalisedData().getBytes(UTF_8);
-        Op zkOp = Op.create(path, finalisedData, acl, CreateMode.PERSISTENT);
-        txn.addOp(new ZKOp(zkOp) {
+    void writeLogSegment(final Transaction<Object> txn,
+                         final LogSegmentMetadata metadata) {
+        metadataStore.createLogSegment(txn, metadata, new Transaction.OpListener<Void>() {
             @Override
-            protected void commitOpResult(OpResult opResult) {
-                addLogSegmentToCache(inprogressSegmentName, metadata);
+            public void onCommit(Void r) {
+                addLogSegmentToCache(metadata.getSegmentName(), metadata);
             }
 
             @Override
-            protected void abortOpResult(Throwable t, OpResult opResult) {
+            public void onAbort(Throwable t) {
                 // no-op
             }
         });
     }
 
-    void deleteLogSegment(final ZKTransaction txn,
-                          final String logSegmentName,
-                          final String logSegmentPath) {
-        Op zkOp = Op.delete(logSegmentPath, -1);
-        txn.addOp(new ZKOp(zkOp) {
+    void deleteLogSegment(final Transaction<Object> txn,
+                          final LogSegmentMetadata metadata) {
+        metadataStore.deleteLogSegment(txn, metadata, new Transaction.OpListener<Void>() {
             @Override
-            protected void commitOpResult(OpResult opResult) {
-                removeLogSegmentFromCache(logSegmentName);
+            public void onCommit(Void r) {
+                removeLogSegmentFromCache(metadata.getSegmentName());
             }
+
             @Override
-            protected void abortOpResult(Throwable t, OpResult opResult) {
+            public void onAbort(Throwable t) {
                 // no-op
             }
         });
@@ -403,10 +377,6 @@ class BKLogWriteHandler extends BKLogHandler {
         } else {
             return Future.Void();
         }
-    }
-
-    void register(Watcher watcher) {
-        this.zooKeeperClient.register(watcher);
     }
 
     /**
@@ -539,19 +509,17 @@ class BKLogWriteHandler extends BKLogHandler {
             FutureUtils.setException(promise, new IOException("Invalid Transaction Id " + txId));
             return;
         }
-        if (this.sanityCheckTxnId) {
-            long highestTxIdWritten = maxTxId.get();
-            if (txId < highestTxIdWritten) {
-                if (highestTxIdWritten == DistributedLogConstants.MAX_TXID) {
-                    LOG.error("We've already marked the stream as ended and attempting to start a new log segment");
-                    FutureUtils.setException(promise, new EndOfStreamException("Writing to a stream after it has been marked as completed"));
-                    return;
-                }
-                else {
-                    LOG.error("We've already seen TxId {} the max TXId is {}", txId, highestTxIdWritten);
-                    FutureUtils.setException(promise, new TransactionIdOutOfOrderException(txId, highestTxIdWritten));
-                    return;
-                }
+
+        long highestTxIdWritten = maxTxId.get();
+        if (txId < highestTxIdWritten) {
+            if (highestTxIdWritten == DistributedLogConstants.MAX_TXID) {
+                LOG.error("We've already marked the stream as ended and attempting to start a new log segment");
+                FutureUtils.setException(promise, new EndOfStreamException("Writing to a stream after it has been marked as completed"));
+                return;
+            } else {
+                LOG.error("We've already seen TxId {} the max TXId is {}", txId, highestTxIdWritten);
+                FutureUtils.setException(promise, new TransactionIdOutOfOrderException(txId, highestTxIdWritten));
+                return;
             }
         }
 
@@ -564,7 +532,7 @@ class BKLogWriteHandler extends BKLogHandler {
         }
 
         // start the transaction from zookeeper
-        final ZKTransaction txn = new ZKTransaction(zooKeeperClient);
+        final Transaction<Object> txn = streamMetadataStore.newTransaction();
 
         // failpoint injected before creating ledger
         try {
@@ -617,7 +585,7 @@ class BKLogWriteHandler extends BKLogHandler {
     // once the ledger handle is obtained from allocator, this function should guarantee
     // either the transaction is executed or aborted. Otherwise, the ledger handle will
     // just leak from the allocation pool - hence cause "No Ledger Allocator"
-    private void createInprogressLogSegment(ZKTransaction txn,
+    private void createInprogressLogSegment(Transaction<Object> txn,
                                             final long txId,
                                             final LedgerHandle lh,
                                             boolean bestEffort,
@@ -634,7 +602,6 @@ class BKLogWriteHandler extends BKLogHandler {
             return;
         }
 
-        final String inprogressZnodeName = inprogressZNodeName(lh.getId(), txId, logSegmentSeqNo);
         final String inprogressZnodePath = inprogressZNode(lh.getId(), txId, logSegmentSeqNo);
         final LogSegmentMetadata l =
             new LogSegmentMetadata.LogSegmentMetadataBuilder(inprogressZnodePath,
@@ -645,12 +612,7 @@ class BKLogWriteHandler extends BKLogHandler {
                     .build();
 
         // Create an inprogress segment
-        writeLogSegment(
-                txn,
-                zooKeeperClient.getDefaultACL(),
-                inprogressZnodeName,
-                l,
-                inprogressZnodePath);
+        writeLogSegment(txn, l);
 
         // Try storing max sequence number.
         LOG.debug("Try storing max sequence number in startLogSegment {} : {}", inprogressZnodePath, logSegmentSeqNo);
@@ -667,7 +629,7 @@ class BKLogWriteHandler extends BKLogHandler {
                 try {
                     FutureUtils.setValue(promise, new BKLogSegmentWriter(
                             getFullyQualifiedName(),
-                            inprogressZnodeName,
+                            l.getSegmentName(),
                             conf,
                             conf.getDLLedgerMetadataLayoutVersion(),
                             new BKLogSegmentEntryWriter(lh),
@@ -888,7 +850,6 @@ class BKLogWriteHandler extends BKLogHandler {
         }
 
         LOG.debug("Completing and Closing Log Segment {} {}", firstTxId, lastTxId);
-        final String inprogressZnodePath = inprogressZNode(inprogressZnodeName);
         LogSegmentMetadata inprogressLogSegment = readLogSegmentFromCache(inprogressZnodeName);
 
         // validate log segment
@@ -936,7 +897,7 @@ class BKLogWriteHandler extends BKLogHandler {
             // ignore the case that a new inprogress log segment is pre-allocated
             // before completing current inprogress one
             LOG.info("Try storing max sequence number {} in completing {}.",
-                    new Object[] { logSegmentSeqNo, inprogressZnodePath });
+                    new Object[] { logSegmentSeqNo, inprogressLogSegment.getZkPath() });
         } else {
             LOG.warn("Unexpected max ledger sequence number {} found while completing log segment {} for {}",
                     new Object[] { maxLogSegmentSequenceNo.getSequenceNumber(), logSegmentSeqNo, getFullyQualifiedName() });
@@ -949,7 +910,6 @@ class BKLogWriteHandler extends BKLogHandler {
         }
 
         // Prepare the completion
-        final String nameForCompletedLedger = completedLedgerZNodeName(firstTxId, lastTxId, logSegmentSeqNo);
         final String pathForCompletedLedger = completedLedgerZNode(firstTxId, lastTxId, logSegmentSeqNo);
         long startSequenceId;
         try {
@@ -970,17 +930,12 @@ class BKLogWriteHandler extends BKLogHandler {
         setLastLedgerRollingTimeMillis(completedLogSegment.getCompletionTime());
 
         // prepare the transaction
-        ZKTransaction txn = new ZKTransaction(zooKeeperClient);
+        Transaction<Object> txn = streamMetadataStore.newTransaction();
 
         // create completed log segment
-        writeLogSegment(
-                txn,
-                zooKeeperClient.getDefaultACL(),
-                nameForCompletedLedger,
-                completedLogSegment,
-                pathForCompletedLedger);
+        writeLogSegment(txn, completedLogSegment);
         // delete inprogress log segment
-        deleteLogSegment(txn, inprogressZnodeName, inprogressZnodePath);
+        deleteLogSegment(txn, inprogressLogSegment);
         // store max sequence number
         storeMaxSequenceNumber(txn, maxLogSegmentSequenceNo, maxSeqNo, false);
         // update max txn id.
@@ -991,7 +946,8 @@ class BKLogWriteHandler extends BKLogHandler {
             @Override
             public void onSuccess(Void value) {
                 LOG.info("Completed {} to {} for {} : {}",
-                        new Object[] { inprogressZnodeName, nameForCompletedLedger, getFullyQualifiedName(), completedLogSegment });
+                        new Object[] { inprogressZnodeName, completedLogSegment.getSegmentName(),
+                                getFullyQualifiedName(), completedLogSegment });
                 FutureUtils.setValue(promise, completedLogSegment);
             }
 
@@ -1070,27 +1026,6 @@ class BKLogWriteHandler extends BKLogHandler {
             return promise;
         }
 
-    }
-
-    public void deleteLog() throws IOException {
-        lock.checkOwnershipAndReacquire();
-        FutureUtils.result(purgeLogSegmentsOlderThanTxnId(-1));
-
-        try {
-            Utils.closeQuietly(lock);
-            zooKeeperClient.get().exists(logMetadata.getLogSegmentsPath(), false);
-            zooKeeperClient.get().exists(logMetadata.getMaxTxIdPath(), false);
-            if (logMetadata.getLogRootPath().toLowerCase().contains("distributedlog")) {
-                ZKUtil.deleteRecursive(zooKeeperClient.get(), logMetadata.getLogRootPath());
-            } else {
-                LOG.warn("Skip deletion of unrecognized ZK Path {}", logMetadata.getLogRootPath());
-            }
-        } catch (InterruptedException ie) {
-            LOG.error("Interrupted while deleting log znodes", ie);
-            throw new DLInterruptedException("Interrupted while deleting " + logMetadata.getLogRootPath(), ie);
-        } catch (KeeperException ke) {
-            LOG.error("Error deleting" + logMetadata.getLogRootPath() + " in zookeeper", ke);
-        }
     }
 
     Future<List<LogSegmentMetadata>> setLogSegmentsOlderThanDLSNTruncated(final DLSN dlsn) {
@@ -1321,33 +1256,29 @@ class BKLogWriteHandler extends BKLogHandler {
     private void deleteLogSegmentMetadata(final LogSegmentMetadata segmentMetadata,
                                           final Promise<LogSegmentMetadata> promise) {
         Transaction<Object> deleteTxn = metadataStore.transaction();
-        metadataStore.deleteLogSegment(deleteTxn, segmentMetadata);
-        deleteTxn.execute().addEventListener(new FutureEventListener<Void>() {
+        metadataStore.deleteLogSegment(deleteTxn, segmentMetadata, new Transaction.OpListener<Void>() {
             @Override
-            public void onSuccess(Void result) {
+            public void onCommit(Void r) {
                 // purge log segment
                 removeLogSegmentFromCache(segmentMetadata.getZNodeName());
                 promise.setValue(segmentMetadata);
             }
 
             @Override
-            public void onFailure(Throwable cause) {
-                if (cause instanceof ZKException) {
-                    ZKException zke = (ZKException) cause;
-                    if (KeeperException.Code.NONODE == zke.getKeeperExceptionCode()) {
-                        LOG.error("No log segment {} found for {}.",
-                                segmentMetadata, getFullyQualifiedName());
-                        // purge log segment
-                        removeLogSegmentFromCache(segmentMetadata.getZNodeName());
-                        promise.setValue(segmentMetadata);
-                        return;
-                    }
+            public void onAbort(Throwable t) {
+                if (t instanceof LogSegmentNotFoundException) {
+                    // purge log segment
+                    removeLogSegmentFromCache(segmentMetadata.getZNodeName());
+                    promise.setValue(segmentMetadata);
+                    return;
+                } else {
+                    LOG.error("Couldn't purge {} for {}: with error {}",
+                            new Object[]{ segmentMetadata, getFullyQualifiedName(), t });
+                    promise.setException(t);
                 }
-                LOG.error("Couldn't purge {} for {}: with error {}",
-                        new Object[]{ segmentMetadata, getFullyQualifiedName(), cause });
-                promise.setException(cause);
             }
         });
+        deleteTxn.execute();
     }
 
     @Override

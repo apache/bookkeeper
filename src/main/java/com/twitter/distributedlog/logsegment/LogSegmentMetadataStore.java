@@ -20,6 +20,8 @@ package com.twitter.distributedlog.logsegment;
 import com.google.common.annotations.Beta;
 import com.twitter.distributedlog.LogSegmentMetadata;
 import com.twitter.distributedlog.callback.LogSegmentNamesListener;
+import com.twitter.distributedlog.impl.metadata.ZKLogMetadata;
+import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForWriter;
 import com.twitter.distributedlog.util.Transaction;
 import com.twitter.distributedlog.util.Transaction.OpListener;
 import com.twitter.util.Future;
@@ -52,15 +54,15 @@ public interface LogSegmentMetadataStore extends Closeable {
      *
      * @param txn
      *          transaction to execute for storing log segment sequence number.
-     * @param path
-     *          path to store sequence number
+     * @param logMetadata
+     *          metadata of the log stream
      * @param sequenceNumber
      *          log segment sequence number to store
      * @param listener
      *          listener on the result to this operation
      */
     void storeMaxLogSegmentSequenceNumber(Transaction<Object> txn,
-                                          String path,
+                                          ZKLogMetadata logMetadata,
                                           Versioned<Long> sequenceNumber,
                                           OpListener<Version> listener);
 
@@ -69,15 +71,15 @@ public interface LogSegmentMetadataStore extends Closeable {
      *
      * @param txn
      *          transaction to execute for storing transaction id
-     * @param path
-     *          path to store sequence number
+     * @param logMetadata
+     *          metadata of the log stream
      * @param transactionId
      *          transaction id to store
      * @param listener
      *          listener on the result to this operation
      */
     void storeMaxTxnId(Transaction<Object> txn,
-                       String path,
+                       ZKLogMetadataForWriter logMetadata,
                        Versioned<Long> transactionId,
                        OpListener<Version> listener);
 
@@ -91,8 +93,12 @@ public interface LogSegmentMetadataStore extends Closeable {
      *          transaction to execute for this operation
      * @param segment
      *          segment to create
+     * @param opListener
+     *          the listener on the operation result
      */
-    void createLogSegment(Transaction<Object> txn, LogSegmentMetadata segment);
+    void createLogSegment(Transaction<Object> txn,
+                          LogSegmentMetadata segment,
+                          OpListener<Void> opListener);
 
     /**
      * Delete a log segment <code>segment</code> under transaction <code>txn</code>.
@@ -105,7 +111,9 @@ public interface LogSegmentMetadataStore extends Closeable {
      * @param segment
      *          segment to delete
      */
-    void deleteLogSegment(Transaction<Object> txn, LogSegmentMetadata segment);
+    void deleteLogSegment(Transaction<Object> txn,
+                          LogSegmentMetadata segment,
+                          OpListener<Void> opListener);
 
     /**
      * Update a log segment <code>segment</code> under transaction <code>txn</code>.

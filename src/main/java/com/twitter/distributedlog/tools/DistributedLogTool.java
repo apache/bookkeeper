@@ -267,7 +267,8 @@ public class DistributedLogTool extends Tool {
         protected LogSegmentMetadataStore getLogSegmentMetadataStore() throws IOException {
             DistributedLogNamespace namespace = getFactory().getNamespace();
             assert(namespace instanceof BKDistributedLogNamespace);
-            return ((BKDistributedLogNamespace) namespace).getWriterSegmentMetadataStore();
+            return ((BKDistributedLogNamespace) namespace).getWriterStreamMetadataStore()
+                    .getLogSegmentMetadataStore();
         }
 
         protected ZooKeeperClient getZooKeeperClient() throws IOException {
