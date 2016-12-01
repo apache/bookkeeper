@@ -35,11 +35,13 @@ import com.twitter.util.FutureEventListener;
 import com.twitter.util.Promise;
 import com.twitter.util.Return;
 import com.twitter.util.Throw;
+import com.twitter.util.Try;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.runtime.AbstractFunction1;
 import scala.runtime.BoxedUnit;
 
 import javax.annotation.Nullable;
@@ -384,14 +386,25 @@ public class FutureUtils {
         if (timeout < DistributedLogConstants.FUTURE_TIMEOUT_IMMEDIATE || promise.isDefined()) {
             return promise;
         }
-        scheduler.schedule(key, new Runnable() {
+        // schedule a timeout to raise timeout exception
+        final java.util.concurrent.ScheduledFuture<?> task = scheduler.schedule(key, new Runnable() {
             @Override
             public void run() {
-                logger.info("Raise exception", cause);
-                // satisfy the promise
-                FutureUtils.setException(promise, cause);
+                if (!promise.isDefined() && FutureUtils.setException(promise, cause)) {
+                    logger.info("Raise exception", cause);
+                }
             }
         }, timeout, unit);
+        // when the promise is satisfied, cancel the timeout task
+        promise.respond(new AbstractFunction1<Try<T>, BoxedUnit>() {
+            @Override
+            public BoxedUnit apply(Try<T> value) {
+                if (!task.cancel(true)) {
+                    logger.debug("Failed to cancel the timeout task");
+                }
+                return BoxedUnit.UNIT;
+            }
+        });
         return promise;
     }
 

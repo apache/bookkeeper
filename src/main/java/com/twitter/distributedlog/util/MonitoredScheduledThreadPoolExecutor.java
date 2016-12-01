@@ -237,9 +237,9 @@ public class MonitoredScheduledThreadPoolExecutor extends ScheduledThreadPoolExe
             try {
                 ((Future<?>) runnable).get();
             } catch (CancellationException e) {
-                LOG.info("Task {} cancelled", runnable, e.getCause());
+                LOG.debug("Task {} cancelled", runnable, e.getCause());
             } catch (InterruptedException e) {
-                LOG.info("Task {} was interrupted", runnable, e);
+                LOG.debug("Task {} was interrupted", runnable, e);
             } catch (ExecutionException e) {
                 return e.getCause();
             }
