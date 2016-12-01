@@ -36,8 +36,7 @@ import com.twitter.distributedlog.callback.ReadAheadCallback;
 import com.twitter.distributedlog.config.DynamicDistributedLogConfiguration;
 import com.twitter.distributedlog.exceptions.DLInterruptedException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
-import com.twitter.distributedlog.exceptions.ZKException;
-import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForReader;
+import com.twitter.distributedlog.metadata.LogMetadataForReader;
 import com.twitter.distributedlog.injector.AsyncFailureInjector;
 import com.twitter.distributedlog.io.AsyncCloseable;
 import com.twitter.distributedlog.logsegment.LogSegmentFilter;
@@ -108,7 +107,7 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, AsyncClosea
     private final String fullyQualifiedName;
     private final DistributedLogConfiguration conf;
     private final DynamicDistributedLogConfiguration dynConf;
-    private final ZKLogMetadataForReader logMetadata;
+    private final LogMetadataForReader logMetadata;
     private final BKLogHandler bkLedgerManager;
     private final boolean isHandleForReading;
     // Notification to notify readahead status
@@ -203,7 +202,7 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, AsyncClosea
 
     public ReadAheadWorker(DistributedLogConfiguration conf,
                            DynamicDistributedLogConfiguration dynConf,
-                           ZKLogMetadataForReader logMetadata,
+                           LogMetadataForReader logMetadata,
                            BKLogHandler ledgerManager,
                            OrderedScheduler scheduler,
                            LedgerHandleCache handleCache,

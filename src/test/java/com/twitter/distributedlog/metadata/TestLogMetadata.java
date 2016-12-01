@@ -15,17 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.distributedlog.impl.metadata;
+package com.twitter.distributedlog.metadata;
 
 import com.twitter.distributedlog.DLMTestUtil;
 import org.junit.Test;
 
 import java.net.URI;
 
-import static com.twitter.distributedlog.impl.metadata.ZKLogMetadata.*;
+import static com.twitter.distributedlog.metadata.LogMetadata.*;
 import static org.junit.Assert.*;
 
-public class TestZKLogMetadata {
+public class TestLogMetadata {
 
     @Test(timeout = 60000)
     public void testGetPaths() throws Exception {
@@ -36,7 +36,7 @@ public class TestZKLogMetadata {
         String logRootPath = uri.getPath() + "/" + logName + "/" + logIdentifier;
         String logSegmentName = "test-segment";
 
-        ZKLogMetadata logMetadata = new ZKLogMetadata(uri, logName, logIdentifier);
+        LogMetadata logMetadata = new LogMetadata(uri, logName, logIdentifier);
         assertEquals("wrong log name", logName, logMetadata.getLogName());
         assertEquals("wrong root path", logRootPath, logMetadata.getLogRootPath());
         assertEquals("wrong log segments path",

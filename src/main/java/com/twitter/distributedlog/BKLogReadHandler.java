@@ -35,7 +35,7 @@ import com.twitter.distributedlog.exceptions.LockingException;
 import com.twitter.distributedlog.exceptions.LogNotFoundException;
 import com.twitter.distributedlog.exceptions.LogSegmentNotFoundException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
-import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForReader;
+import com.twitter.distributedlog.metadata.LogMetadataForReader;
 import com.twitter.distributedlog.injector.AsyncFailureInjector;
 import com.twitter.distributedlog.lock.DistributedLock;
 import com.twitter.distributedlog.logsegment.LogSegmentFilter;
@@ -110,7 +110,7 @@ import javax.annotation.Nullable;
 class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
     static final Logger LOG = LoggerFactory.getLogger(BKLogReadHandler.class);
 
-    protected final ZKLogMetadataForReader logMetadataForReader;
+    protected final LogMetadataForReader logMetadataForReader;
     protected final ReadAheadCache readAheadCache;
     protected final LedgerHandleCache handleCache;
 
@@ -142,7 +142,7 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
     /**
      * Construct a Bookkeeper journal manager.
      */
-    BKLogReadHandler(ZKLogMetadataForReader logMetadata,
+    BKLogReadHandler(LogMetadataForReader logMetadata,
                      Optional<String> subscriberId,
                      DistributedLogConfiguration conf,
                      DynamicDistributedLogConfiguration dynConf,

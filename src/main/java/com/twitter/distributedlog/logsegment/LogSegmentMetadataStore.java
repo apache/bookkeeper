@@ -20,8 +20,8 @@ package com.twitter.distributedlog.logsegment;
 import com.google.common.annotations.Beta;
 import com.twitter.distributedlog.LogSegmentMetadata;
 import com.twitter.distributedlog.callback.LogSegmentNamesListener;
-import com.twitter.distributedlog.impl.metadata.ZKLogMetadata;
-import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForWriter;
+import com.twitter.distributedlog.metadata.LogMetadata;
+import com.twitter.distributedlog.metadata.LogMetadataForWriter;
 import com.twitter.distributedlog.util.Transaction;
 import com.twitter.distributedlog.util.Transaction.OpListener;
 import com.twitter.util.Future;
@@ -62,7 +62,7 @@ public interface LogSegmentMetadataStore extends Closeable {
      *          listener on the result to this operation
      */
     void storeMaxLogSegmentSequenceNumber(Transaction<Object> txn,
-                                          ZKLogMetadata logMetadata,
+                                          LogMetadata logMetadata,
                                           Versioned<Long> sequenceNumber,
                                           OpListener<Version> listener);
 
@@ -79,7 +79,7 @@ public interface LogSegmentMetadataStore extends Closeable {
      *          listener on the result to this operation
      */
     void storeMaxTxnId(Transaction<Object> txn,
-                       ZKLogMetadataForWriter logMetadata,
+                       LogMetadataForWriter logMetadata,
                        Versioned<Long> transactionId,
                        OpListener<Version> listener);
 

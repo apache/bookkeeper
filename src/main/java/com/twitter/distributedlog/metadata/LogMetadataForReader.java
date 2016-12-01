@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.distributedlog.impl.metadata;
+package com.twitter.distributedlog.metadata;
 
 import com.google.common.base.Optional;
 
@@ -24,7 +24,7 @@ import java.net.URI;
 /**
  * Log Metadata for Reader
  */
-public class ZKLogMetadataForReader extends ZKLogMetadata {
+public class LogMetadataForReader extends LogMetadata {
 
     /**
      * Get the root path to store subscription infos of a log.
@@ -69,8 +69,8 @@ public class ZKLogMetadataForReader extends ZKLogMetadata {
      *          identifier of the log
      * @return metadata representation of a log for reader
      */
-    public static ZKLogMetadataForReader of(URI uri, String logName, String logIdentifier) {
-        return new ZKLogMetadataForReader(uri, logName, logIdentifier);
+    public static LogMetadataForReader of(URI uri, String logName, String logIdentifier) {
+        return new LogMetadataForReader(uri, logName, logIdentifier);
     }
 
     final static String SUBSCRIBERS_PATH = "/subscribers";
@@ -82,7 +82,7 @@ public class ZKLogMetadataForReader extends ZKLogMetadata {
      * @param logName       name of the log
      * @param logIdentifier identifier of the log
      */
-    private ZKLogMetadataForReader(URI uri, String logName, String logIdentifier) {
+    private LogMetadataForReader(URI uri, String logName, String logIdentifier) {
         super(uri, logName, logIdentifier);
     }
 

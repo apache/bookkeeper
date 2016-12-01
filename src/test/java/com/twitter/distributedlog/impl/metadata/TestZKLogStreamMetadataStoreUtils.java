@@ -20,6 +20,8 @@ package com.twitter.distributedlog.impl.metadata;
 import com.google.common.collect.Lists;
 import com.twitter.distributedlog.DLMTestUtil;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
+import com.twitter.distributedlog.metadata.LogMetadata;
+import com.twitter.distributedlog.metadata.LogMetadataForWriter;
 import com.twitter.distributedlog.util.DLUtils;
 import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -88,7 +90,7 @@ public class TestZKLogStreamMetadataStoreUtils {
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1)),
-                new Versioned<byte[]>(intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
+                new Versioned<byte[]>(intToBytes(LogMetadata.LAYOUT_VERSION), null),
                 new Versioned<byte[]>(null, null));
         processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
     }
@@ -104,7 +106,7 @@ public class TestZKLogStreamMetadataStoreUtils {
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1)),
-                new Versioned<byte[]>(intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
+                new Versioned<byte[]>(intToBytes(LogMetadata.LAYOUT_VERSION), null),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 new Versioned<byte[]>(null, null));
         processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
@@ -121,7 +123,7 @@ public class TestZKLogStreamMetadataStoreUtils {
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1)),
-                new Versioned<byte[]>(intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
+                new Versioned<byte[]>(intToBytes(LogMetadata.LAYOUT_VERSION), null),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 new Versioned<byte[]>(null, null));
@@ -139,7 +141,7 @@ public class TestZKLogStreamMetadataStoreUtils {
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1)),
-                new Versioned<byte[]>(intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
+                new Versioned<byte[]>(intToBytes(LogMetadata.LAYOUT_VERSION), null),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 new Versioned<byte[]>(DLUtils.serializeLogSegmentSequenceNumber(1L), new ZkVersion(1)),
@@ -162,11 +164,11 @@ public class TestZKLogStreamMetadataStoreUtils {
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
                 maxTxnIdData,
-                new Versioned<byte[]>(intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
+                new Versioned<byte[]>(intToBytes(LogMetadata.LAYOUT_VERSION), null),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 logSegmentsData);
-        ZKLogMetadataForWriter metadata =
+        LogMetadataForWriter metadata =
                 processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
         assertTrue(maxTxnIdData == metadata.getMaxTxIdData());
         assertTrue(logSegmentsData == metadata.getMaxLSSNData());
@@ -191,12 +193,12 @@ public class TestZKLogStreamMetadataStoreUtils {
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
                 maxTxnIdData,
-                new Versioned<byte[]>(intToBytes(ZKLogMetadata.LAYOUT_VERSION), null),
+                new Versioned<byte[]>(intToBytes(LogMetadata.LAYOUT_VERSION), null),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
                 logSegmentsData,
                 allocationData);
-        ZKLogMetadataForWriter metadata =
+        LogMetadataForWriter metadata =
                 processLogMetadatas(uri, logName, logIdentifier, metadatas, true);
         assertTrue(maxTxnIdData == metadata.getMaxTxIdData());
         assertTrue(logSegmentsData == metadata.getMaxLSSNData());

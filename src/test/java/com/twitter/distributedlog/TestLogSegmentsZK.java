@@ -19,7 +19,7 @@ package com.twitter.distributedlog;
 
 import com.twitter.distributedlog.exceptions.DLIllegalStateException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
-import com.twitter.distributedlog.impl.metadata.ZKLogMetadata;
+import com.twitter.distributedlog.metadata.LogMetadata;
 import com.twitter.distributedlog.namespace.DistributedLogNamespace;
 import com.twitter.distributedlog.namespace.DistributedLogNamespaceBuilder;
 import com.twitter.distributedlog.util.DLUtils;
@@ -46,7 +46,7 @@ public class TestLogSegmentsZK extends TestDistributedLogBase {
     private static MaxLogSegmentSequenceNo getMaxLogSegmentSequenceNo(ZooKeeperClient zkc, URI uri, String streamName,
                                                                       DistributedLogConfiguration conf) throws Exception {
         Stat stat = new Stat();
-        String logSegmentsPath = ZKLogMetadata.getLogSegmentsPath(
+        String logSegmentsPath = LogMetadata.getLogSegmentsPath(
                 uri, streamName, conf.getUnpartitionedStreamName());
         byte[] data = zkc.get().getData(logSegmentsPath, false, stat);
         Versioned<byte[]> maxLSSNData = new Versioned<byte[]>(data, new ZkVersion(stat.getVersion()));
@@ -55,7 +55,7 @@ public class TestLogSegmentsZK extends TestDistributedLogBase {
 
     private static void updateMaxLogSegmentSequenceNo(ZooKeeperClient zkc, URI uri, String streamName,
                                                       DistributedLogConfiguration conf, byte[] data) throws Exception {
-        String logSegmentsPath = ZKLogMetadata.getLogSegmentsPath(
+        String logSegmentsPath = LogMetadata.getLogSegmentsPath(
                 uri, streamName, conf.getUnpartitionedStreamName());
         zkc.get().setData(logSegmentsPath, data, -1);
     }

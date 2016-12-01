@@ -38,6 +38,9 @@ import com.twitter.distributedlog.lock.ZKDistributedLock;
 import com.twitter.distributedlog.lock.ZKSessionLockFactory;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataStore;
 import com.twitter.distributedlog.metadata.LogStreamMetadataStore;
+import com.twitter.distributedlog.metadata.LogMetadata;
+import com.twitter.distributedlog.metadata.LogMetadataForReader;
+import com.twitter.distributedlog.metadata.LogMetadataForWriter;
 import com.twitter.distributedlog.util.DLUtils;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.SchedulerUtils;
@@ -75,7 +78,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.twitter.distributedlog.impl.metadata.ZKLogMetadata.*;
+import static com.twitter.distributedlog.metadata.LogMetadata.*;
 
 /**
  * zookeeper based {@link LogStreamMetadataStore}
@@ -172,7 +175,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
 
     @Override
     public Future<Void> logExists(URI uri, final String logName) {
-        final String logSegmentsPath = ZKLogMetadata.getLogSegmentsPath(
+        final String logSegmentsPath = LogMetadata.getLogSegmentsPath(
                 uri, logName, conf.getUnpartitionedStreamName());
         final Promise<Void> promise = new Promise<Void>();
         try {
@@ -221,7 +224,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
     //
 
     @Override
-    public DistributedLock createWriteLock(ZKLogMetadataForWriter metadata) {
+    public DistributedLock createWriteLock(LogMetadataForWriter metadata) {
         return new ZKDistributedLock(
                 getLockStateExecutor(true),
                 getLockFactory(true),
@@ -234,7 +237,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
     // Create Read Lock
     //
 
-    private Future<Void> ensureReadLockPathExist(final ZKLogMetadata logMetadata,
+    private Future<Void> ensureReadLockPathExist(final LogMetadata logMetadata,
                                                  final String readLockPath) {
         final Promise<Void> promise = new Promise<Void>();
         promise.setInterruptHandler(new com.twitter.util.Function<Throwable, BoxedUnit>() {
@@ -274,7 +277,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
     }
 
     @Override
-    public Future<DistributedLock> createReadLock(final ZKLogMetadataForReader metadata,
+    public Future<DistributedLock> createReadLock(final LogMetadataForReader metadata,
                                                   Optional<String> readerId) {
         final String readLockPath = metadata.getReadLockPath(readerId);
         return ensureReadLockPathExist(metadata, readLockPath).flatMap(
@@ -492,11 +495,11 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
         }, null);
     }
 
-    static ZKLogMetadataForWriter processLogMetadatas(URI uri,
-                                                      String logName,
-                                                      String logIdentifier,
-                                                      List<Versioned<byte[]>> metadatas,
-                                                      boolean ownAllocator)
+    static LogMetadataForWriter processLogMetadatas(URI uri,
+                                                    String logName,
+                                                    String logIdentifier,
+                                                    List<Versioned<byte[]>> metadatas,
+                                                    boolean ownAllocator)
             throws UnexpectedException {
         try {
             // max id
@@ -526,7 +529,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
             } else {
                 allocationData = new Versioned<byte[]>(null, null);
             }
-            return new ZKLogMetadataForWriter(uri, logName, logIdentifier,
+            return new LogMetadataForWriter(uri, logName, logIdentifier,
                     maxLSSNData, maxTxnIdData, allocationData);
         } catch (IllegalArgumentException iae) {
             throw new UnexpectedException("Invalid log " + logName, iae);
@@ -535,13 +538,13 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
         }
     }
 
-    static Future<ZKLogMetadataForWriter> getLog(final URI uri,
-                                                 final String logName,
-                                                 final String logIdentifier,
-                                                 final ZooKeeperClient zooKeeperClient,
-                                                 final boolean ownAllocator,
-                                                 final boolean createIfNotExists) {
-        final String logRootPath = ZKLogMetadata.getLogRootPath(uri, logName, logIdentifier);
+    static Future<LogMetadataForWriter> getLog(final URI uri,
+                                               final String logName,
+                                               final String logIdentifier,
+                                               final ZooKeeperClient zooKeeperClient,
+                                               final boolean ownAllocator,
+                                               final boolean createIfNotExists) {
+        final String logRootPath = LogMetadata.getLogRootPath(uri, logName, logIdentifier);
         try {
             PathUtils.validatePath(logRootPath);
         } catch (IllegalArgumentException e) {
@@ -561,9 +564,9 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                                     ownAllocator, createIfNotExists, promise);
                             return promise;
                         }
-                    }).map(new ExceptionalFunction<List<Versioned<byte[]>>, ZKLogMetadataForWriter>() {
+                    }).map(new ExceptionalFunction<List<Versioned<byte[]>>, LogMetadataForWriter>() {
                         @Override
-                        public ZKLogMetadataForWriter applyE(List<Versioned<byte[]>> metadatas) throws DLException {
+                        public LogMetadataForWriter applyE(List<Versioned<byte[]>> metadatas) throws DLException {
                             return processLogMetadatas(
                                     uri,
                                     logName,
@@ -581,10 +584,10 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
     }
 
     @Override
-    public Future<ZKLogMetadataForWriter> getLog(final URI uri,
-                                                 final String logName,
-                                                 final boolean ownAllocator,
-                                                 final boolean createIfNotExists) {
+    public Future<LogMetadataForWriter> getLog(final URI uri,
+                                               final String logName,
+                                               final boolean ownAllocator,
+                                               final boolean createIfNotExists) {
         return getLog(
                 uri,
                 logName,
@@ -602,7 +605,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
     public Future<Void> deleteLog(URI uri, final String logName) {
         final Promise<Void> promise = new Promise<Void>();
         try {
-            String streamPath = ZKLogMetadata.getLogStreamPath(uri, logName);
+            String streamPath = LogMetadata.getLogStreamPath(uri, logName);
             ZKUtil.deleteRecursive(zooKeeperClient.get(), streamPath, new AsyncCallback.VoidCallback() {
                 @Override
                 public void processResult(int rc, String path, Object ctx) {

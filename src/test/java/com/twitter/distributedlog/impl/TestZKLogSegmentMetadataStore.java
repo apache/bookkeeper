@@ -27,8 +27,8 @@ import com.twitter.distributedlog.ZooKeeperClient;
 import com.twitter.distributedlog.ZooKeeperClientUtils;
 import com.twitter.distributedlog.callback.LogSegmentNamesListener;
 import com.twitter.distributedlog.exceptions.ZKException;
-import com.twitter.distributedlog.impl.metadata.ZKLogMetadata;
-import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForWriter;
+import com.twitter.distributedlog.metadata.LogMetadata;
+import com.twitter.distributedlog.metadata.LogMetadataForWriter;
 import com.twitter.distributedlog.util.DLUtils;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.OrderedScheduler;
@@ -637,7 +637,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         Transaction<Object> updateTxn = lsmStore.transaction();
         Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(0));
         final Promise<Version> result = new Promise<Version>();
-        ZKLogMetadata metadata = mock(ZKLogMetadata.class);
+        LogMetadata metadata = mock(LogMetadata.class);
         when(metadata.getLogSegmentsPath()).thenReturn(rootZkPath);
         lsmStore.storeMaxLogSegmentSequenceNumber(updateTxn, metadata, value,
                 new Transaction.OpListener<Version>() {
@@ -664,7 +664,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         Transaction<Object> updateTxn = lsmStore.transaction();
         Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(10));
         final Promise<Version> result = new Promise<Version>();
-        ZKLogMetadata metadata = mock(ZKLogMetadata.class);
+        LogMetadata metadata = mock(LogMetadata.class);
         when(metadata.getLogSegmentsPath()).thenReturn(rootZkPath);
         lsmStore.storeMaxLogSegmentSequenceNumber(updateTxn, metadata, value,
                 new Transaction.OpListener<Version>() {
@@ -702,7 +702,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(10));
         final Promise<Version> result = new Promise<Version>();
         String nonExistentPath = rootZkPath + "/non-existent";
-        ZKLogMetadata metadata = mock(ZKLogMetadata.class);
+        LogMetadata metadata = mock(LogMetadata.class);
         when(metadata.getLogSegmentsPath()).thenReturn(nonExistentPath);
         lsmStore.storeMaxLogSegmentSequenceNumber(updateTxn, metadata, value,
                 new Transaction.OpListener<Version>() {
@@ -735,7 +735,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         Transaction<Object> updateTxn = lsmStore.transaction();
         Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(0));
         final Promise<Version> result = new Promise<Version>();
-        ZKLogMetadataForWriter metadata = mock(ZKLogMetadataForWriter.class);
+        LogMetadataForWriter metadata = mock(LogMetadataForWriter.class);
         when(metadata.getMaxTxIdPath()).thenReturn(rootZkPath);
         lsmStore.storeMaxTxnId(updateTxn, metadata, value,
                 new Transaction.OpListener<Version>() {
@@ -762,7 +762,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         Transaction<Object> updateTxn = lsmStore.transaction();
         Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(10));
         final Promise<Version> result = new Promise<Version>();
-        ZKLogMetadataForWriter metadata = mock(ZKLogMetadataForWriter.class);
+        LogMetadataForWriter metadata = mock(LogMetadataForWriter.class);
         when(metadata.getMaxTxIdPath()).thenReturn(rootZkPath);
         lsmStore.storeMaxTxnId(updateTxn, metadata, value,
                 new Transaction.OpListener<Version>() {
@@ -800,7 +800,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(10));
         final Promise<Version> result = new Promise<Version>();
         String nonExistentPath = rootZkPath + "/non-existent";
-        ZKLogMetadataForWriter metadata = mock(ZKLogMetadataForWriter.class);
+        LogMetadataForWriter metadata = mock(LogMetadataForWriter.class);
         when(metadata.getMaxTxIdPath()).thenReturn(nonExistentPath);
         lsmStore.storeMaxTxnId(updateTxn, metadata, value,
                 new Transaction.OpListener<Version>() {

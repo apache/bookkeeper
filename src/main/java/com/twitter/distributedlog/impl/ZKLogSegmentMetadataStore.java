@@ -25,8 +25,8 @@ import com.twitter.distributedlog.callback.LogSegmentNamesListener;
 import com.twitter.distributedlog.exceptions.LogNotFoundException;
 import com.twitter.distributedlog.exceptions.LogSegmentNotFoundException;
 import com.twitter.distributedlog.exceptions.ZKException;
-import com.twitter.distributedlog.impl.metadata.ZKLogMetadata;
-import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForWriter;
+import com.twitter.distributedlog.metadata.LogMetadata;
+import com.twitter.distributedlog.metadata.LogMetadataForWriter;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataStore;
 import com.twitter.distributedlog.util.DLUtils;
 import com.twitter.distributedlog.util.FutureUtils;
@@ -222,7 +222,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
 
     @Override
     public void storeMaxLogSegmentSequenceNumber(Transaction<Object> txn,
-                                                 ZKLogMetadata logMetadata,
+                                                 LogMetadata logMetadata,
                                                  Versioned<Long> lssn,
                                                  Transaction.OpListener<Version> listener) {
         Version version = lssn.getVersion();
@@ -236,7 +236,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
 
     @Override
     public void storeMaxTxnId(Transaction<Object> txn,
-                              ZKLogMetadataForWriter logMetadata,
+                              LogMetadataForWriter logMetadata,
                               Versioned<Long> transactionId,
                               Transaction.OpListener<Version> listener) {
         Version version = transactionId.getVersion();

@@ -19,8 +19,6 @@ package com.twitter.distributedlog.metadata;
 
 import com.google.common.annotations.Beta;
 import com.google.common.base.Optional;
-import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForReader;
-import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForWriter;
 import com.twitter.distributedlog.lock.DistributedLock;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataStore;
 import com.twitter.distributedlog.util.PermitManager;
@@ -61,7 +59,7 @@ public interface LogStreamMetadataStore extends Closeable {
      * @param readerId the reader id used for lock
      * @return the read lock
      */
-    Future<DistributedLock> createReadLock(ZKLogMetadataForReader metadata,
+    Future<DistributedLock> createReadLock(LogMetadataForReader metadata,
                                            Optional<String> readerId);
 
     /**
@@ -70,7 +68,7 @@ public interface LogStreamMetadataStore extends Closeable {
      * @param metadata the metadata for a log stream
      * @return the write lock
      */
-    DistributedLock createWriteLock(ZKLogMetadataForWriter metadata);
+    DistributedLock createWriteLock(LogMetadataForWriter metadata);
 
     /**
      * Create the metadata of a log.
@@ -81,10 +79,10 @@ public interface LogStreamMetadataStore extends Closeable {
      * @param createIfNotExists flag to create the stream if it doesn't exist
      * @return the metadata of the log
      */
-    Future<ZKLogMetadataForWriter> getLog(URI uri,
-                                          String streamName,
-                                          boolean ownAllocator,
-                                          boolean createIfNotExists);
+    Future<LogMetadataForWriter> getLog(URI uri,
+                                        String streamName,
+                                        boolean ownAllocator,
+                                        boolean createIfNotExists);
 
     /**
      * Delete the metadata of a log.

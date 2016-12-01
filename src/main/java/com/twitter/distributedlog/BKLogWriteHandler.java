@@ -30,7 +30,7 @@ import com.twitter.distributedlog.exceptions.TransactionIdOutOfOrderException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
 import com.twitter.distributedlog.function.GetLastTxIdFunction;
 import com.twitter.distributedlog.impl.BKLogSegmentEntryWriter;
-import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForWriter;
+import com.twitter.distributedlog.metadata.LogMetadataForWriter;
 import com.twitter.distributedlog.lock.DistributedLock;
 import com.twitter.distributedlog.logsegment.LogSegmentFilter;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataCache;
@@ -89,7 +89,7 @@ import static com.twitter.distributedlog.impl.ZKLogSegmentFilters.WRITE_HANDLE_F
 class BKLogWriteHandler extends BKLogHandler {
     static final Logger LOG = LoggerFactory.getLogger(BKLogReadHandler.class);
 
-    protected final ZKLogMetadataForWriter logMetadataForWriter;
+    protected final LogMetadataForWriter logMetadataForWriter;
     protected final DistributedLock lock;
     protected final LedgerAllocator ledgerAllocator;
     protected final MaxTxId maxTxId;
@@ -149,7 +149,7 @@ class BKLogWriteHandler extends BKLogHandler {
     /**
      * Construct a Bookkeeper journal manager.
      */
-    BKLogWriteHandler(ZKLogMetadataForWriter logMetadata,
+    BKLogWriteHandler(LogMetadataForWriter logMetadata,
                       DistributedLogConfiguration conf,
                       BookKeeperClientBuilder bkcBuilder,
                       LogStreamMetadataStore streamMetadataStore,

@@ -34,8 +34,8 @@ import com.twitter.distributedlog.exceptions.LogNotFoundException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
 import com.twitter.distributedlog.function.CloseAsyncCloseableFunction;
 import com.twitter.distributedlog.function.GetVersionedValueFunction;
-import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForReader;
-import com.twitter.distributedlog.impl.metadata.ZKLogMetadataForWriter;
+import com.twitter.distributedlog.metadata.LogMetadataForReader;
+import com.twitter.distributedlog.metadata.LogMetadataForWriter;
 import com.twitter.distributedlog.impl.metadata.ZKLogStreamMetadataStore;
 import com.twitter.distributedlog.io.AsyncCloseable;
 import com.twitter.distributedlog.lock.DistributedLock;
@@ -501,7 +501,7 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
                                                     AsyncNotification notification,
                                                     boolean deserializeRecordSet,
                                                     boolean isHandleForReading) {
-        ZKLogMetadataForReader logMetadata = ZKLogMetadataForReader.of(uri, name, streamIdentifier);
+        LogMetadataForReader logMetadata = LogMetadataForReader.of(uri, name, streamIdentifier);
         return new BKLogReadHandler(
                 logMetadata,
                 subscriberId,
@@ -524,7 +524,7 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
 
     // Create Ledger Allocator
 
-    LedgerAllocator createLedgerAllocator(ZKLogMetadataForWriter logMetadata) throws IOException {
+    LedgerAllocator createLedgerAllocator(LogMetadataForWriter logMetadata) throws IOException {
         LedgerAllocator ledgerAllocatorDelegator;
         if (!dynConf.getEnableLedgerAllocatorPool()) {
             QuorumConfigProvider quorumConfigProvider =
@@ -558,9 +558,9 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
                 name,
                 ownAllocator,
                 conf.getCreateStreamIfNotExists() || ownAllocator
-        ).flatMap(new AbstractFunction1<ZKLogMetadataForWriter, Future<BKLogWriteHandler>>() {
+        ).flatMap(new AbstractFunction1<LogMetadataForWriter, Future<BKLogWriteHandler>>() {
             @Override
-            public Future<BKLogWriteHandler> apply(ZKLogMetadataForWriter logMetadata) {
+            public Future<BKLogWriteHandler> apply(LogMetadataForWriter logMetadata) {
                 Promise<BKLogWriteHandler> createPromise = new Promise<BKLogWriteHandler>();
                 createWriteHandler(logMetadata, lockHandler, createPromise);
                 return createPromise;
@@ -568,7 +568,7 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
         });
     }
 
-    private void createWriteHandler(ZKLogMetadataForWriter logMetadata,
+    private void createWriteHandler(LogMetadataForWriter logMetadata,
                                     boolean lockHandler,
                                     final Promise<BKLogWriteHandler> createPromise) {
         // Build the locks
@@ -1374,7 +1374,7 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
      */
     private SubscriptionStateStore getSubscriptionStateStoreInternal(String streamIdentifier, String subscriberId) {
         return new ZKSubscriptionStateStore(writerZKC,
-                ZKLogMetadataForReader.getSubscriberPath(uri, name, streamIdentifier, subscriberId));
+                LogMetadataForReader.getSubscriberPath(uri, name, streamIdentifier, subscriberId));
     }
 
     @Override
@@ -1390,6 +1390,6 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
      */
     private SubscriptionsStore getSubscriptionsStoreInternal(String streamIdentifier) {
         return new ZKSubscriptionsStore(writerZKC,
-                ZKLogMetadataForReader.getSubscribersPath(uri, name, streamIdentifier));
+                LogMetadataForReader.getSubscribersPath(uri, name, streamIdentifier));
     }
 }

@@ -50,8 +50,7 @@ import com.twitter.distributedlog.exceptions.InvalidStreamNameException;
 import com.twitter.distributedlog.exceptions.LogRecordTooLongException;
 import com.twitter.distributedlog.exceptions.OwnershipAcquireFailedException;
 import com.twitter.distributedlog.exceptions.TransactionIdOutOfOrderException;
-import com.twitter.distributedlog.impl.metadata.ZKLogMetadata;
-import com.twitter.distributedlog.metadata.BKDLConfig;
+import com.twitter.distributedlog.metadata.LogMetadata;
 import com.twitter.distributedlog.metadata.MetadataUpdater;
 import com.twitter.distributedlog.metadata.LogSegmentMetadataStoreUpdater;
 import com.twitter.distributedlog.namespace.DistributedLogNamespace;
@@ -1107,7 +1106,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         }
 
         Map<Long, LogSegmentMetadata> segmentList = DLMTestUtil.readLogSegments(zookeeperClient,
-                ZKLogMetadata.getLogSegmentsPath(uri, name, confLocal.getUnpartitionedStreamName()));
+                LogMetadata.getLogSegmentsPath(uri, name, confLocal.getUnpartitionedStreamName()));
 
         LOG.info("Read segments before truncating first segment : {}", segmentList);
 
@@ -1116,7 +1115,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         FutureUtils.result(updater.setLogSegmentTruncated(segmentList.get(1L)));
 
         segmentList = DLMTestUtil.readLogSegments(zookeeperClient,
-                ZKLogMetadata.getLogSegmentsPath(uri, name, confLocal.getUnpartitionedStreamName()));
+                LogMetadata.getLogSegmentsPath(uri, name, confLocal.getUnpartitionedStreamName()));
 
         LOG.info("Read segments after truncated first segment : {}", segmentList);
 
@@ -1139,7 +1138,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         FutureUtils.result(updater.setLogSegmentActive(segmentList.get(1L)));
 
         segmentList = DLMTestUtil.readLogSegments(zookeeperClient,
-                ZKLogMetadata.getLogSegmentsPath(uri, name, confLocal.getUnpartitionedStreamName()));
+                LogMetadata.getLogSegmentsPath(uri, name, confLocal.getUnpartitionedStreamName()));
 
         LOG.info("Read segments after marked first segment as active : {}", segmentList);
 
@@ -1147,7 +1146,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         FutureUtils.result(updater.setLogSegmentTruncated(segmentList.get(2L)));
 
         segmentList = DLMTestUtil.readLogSegments(zookeeperClient,
-                ZKLogMetadata.getLogSegmentsPath(uri, name, confLocal.getUnpartitionedStreamName()));
+                LogMetadata.getLogSegmentsPath(uri, name, confLocal.getUnpartitionedStreamName()));
 
         LOG.info("Read segments after truncated second segment : {}", segmentList);
 
@@ -1190,7 +1189,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         }
 
         segmentList = DLMTestUtil.readLogSegments(zookeeperClient,
-                ZKLogMetadata.getLogSegmentsPath(uri, name, conf.getUnpartitionedStreamName()));
+                LogMetadata.getLogSegmentsPath(uri, name, conf.getUnpartitionedStreamName()));
 
         Assert.assertTrue(segmentList.get(truncDLSN.getLogSegmentSequenceNo()).getMinActiveDLSN().compareTo(truncDLSN) == 0);
 

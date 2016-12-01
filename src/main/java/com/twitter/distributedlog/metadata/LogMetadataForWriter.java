@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.distributedlog.impl.metadata;
+package com.twitter.distributedlog.metadata;
 
 import org.apache.bookkeeper.versioning.Versioned;
 
@@ -24,7 +24,7 @@ import java.net.URI;
 /**
  * Log Metadata for writer
  */
-public class ZKLogMetadataForWriter extends ZKLogMetadata {
+public class LogMetadataForWriter extends LogMetadata {
 
     private final Versioned<byte[]> maxLSSNData;
     private final Versioned<byte[]> maxTxIdData;
@@ -37,12 +37,12 @@ public class ZKLogMetadataForWriter extends ZKLogMetadata {
      * @param logName       name of the log
      * @param logIdentifier identifier of the log
      */
-    public ZKLogMetadataForWriter(URI uri,
-                                  String logName,
-                                  String logIdentifier,
-                                  Versioned<byte[]> maxLSSNData,
-                                  Versioned<byte[]> maxTxIdData,
-                                  Versioned<byte[]> allocationData) {
+    public LogMetadataForWriter(URI uri,
+                                String logName,
+                                String logIdentifier,
+                                Versioned<byte[]> maxLSSNData,
+                                Versioned<byte[]> maxTxIdData,
+                                Versioned<byte[]> allocationData) {
         super(uri, logName, logIdentifier);
         this.maxLSSNData = maxLSSNData;
         this.maxTxIdData = maxTxIdData;

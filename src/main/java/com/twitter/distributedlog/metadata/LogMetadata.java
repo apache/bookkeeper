@@ -15,14 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.distributedlog.impl.metadata;
+package com.twitter.distributedlog.metadata;
 
 import java.net.URI;
 
 /**
  * Class to represent the layout and metadata of the zookeeper-based log metadata
  */
-public class ZKLogMetadata {
+public class LogMetadata {
 
     protected static String getLogComponentPath(URI uri, String logName, String logIdentifier, String component) {
         return String.format("%s/%s/%s%s", uri.getPath(), logName, logIdentifier, component);
@@ -69,7 +69,7 @@ public class ZKLogMetadata {
         return getLogComponentPath(uri, logName, logIdentifier, LOGSEGMENTS_PATH);
     }
 
-    protected static final int LAYOUT_VERSION = -1;
+    public static final int LAYOUT_VERSION = -1;
     public final static String LOGSEGMENTS_PATH = "/ledgers";
     public final static String VERSION_PATH = "/version";
     // writer znodes
@@ -101,9 +101,9 @@ public class ZKLogMetadata {
      * @param logIdentifier
      *          identifier of the log
      */
-    protected ZKLogMetadata(URI uri,
-                            String logName,
-                            String logIdentifier) {
+    protected LogMetadata(URI uri,
+                          String logName,
+                          String logIdentifier) {
         this.uri = uri;
         this.logName = logName;
         this.logIdentifier = logIdentifier;
