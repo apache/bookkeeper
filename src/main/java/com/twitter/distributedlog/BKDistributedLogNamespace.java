@@ -609,10 +609,10 @@ public class BKDistributedLogNamespace implements DistributedLogNamespace {
         return rootPath;
     }
 
-    private static ZooKeeperClientBuilder createDLZKClientBuilder(String zkcName,
-                                                                  DistributedLogConfiguration conf,
-                                                                  String zkServers,
-                                                                  StatsLogger statsLogger) {
+    public static ZooKeeperClientBuilder createDLZKClientBuilder(String zkcName,
+                                                                 DistributedLogConfiguration conf,
+                                                                 String zkServers,
+                                                                 StatsLogger statsLogger) {
         RetryPolicy retryPolicy = null;
         if (conf.getZKNumRetries() > 0) {
             retryPolicy = new BoundExponentialBackoffRetryPolicy(
