@@ -125,7 +125,8 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             String region = getLocalRegion(node);
             if (null == perRegionPlacement.get(region)) {
                 perRegionPlacement.put(region, new RackawareEnsemblePlacementPolicy()
-                        .initialize(dnsResolver, timer, this.reorderReadsRandom, this.stabilizePeriodSeconds, statsLogger));
+                        .initialize(dnsResolver, timer, this.reorderReadsRandom, this.stabilizePeriodSeconds, 
+                                this.isWeighted, this.maxWeightMultiple, statsLogger));
             }
 
             Set<BookieSocketAddress> regionSet = perRegionClusterChange.get(region);
@@ -160,7 +161,6 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
         super.initialize(conf, optionalDnsResolver, timer, featureProvider, statsLogger);
         myRegion = getLocalRegion(localNode);
         enableValidation = conf.getBoolean(REPP_ENABLE_VALIDATION, true);
-
         // We have to statically provide regions we want the writes to go through and how many regions
         // are required for durability. This decision cannot be driven by the active bookies as the
         // current topology will not be indicative of constraints that must be enforced for durability
@@ -171,7 +171,8 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             String[] regions = regionsString.split(";");
             for (String region: regions) {
                 perRegionPlacement.put(region, new RackawareEnsemblePlacementPolicy(true)
-                        .initialize(dnsResolver, timer, this.reorderReadsRandom, this.stabilizePeriodSeconds, statsLogger));
+                        .initialize(dnsResolver, timer, this.reorderReadsRandom, this.stabilizePeriodSeconds,
+                                this.isWeighted, this.maxWeightMultiple, statsLogger));
             }
             minRegionsForDurability = conf.getInt(REPP_MINIMUM_REGIONS_FOR_DURABILITY, MINIMUM_REGIONS_FOR_DURABILITY_DEFAULT);
             if (minRegionsForDurability > 0) {

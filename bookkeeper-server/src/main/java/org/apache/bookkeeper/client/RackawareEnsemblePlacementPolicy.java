@@ -22,8 +22,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.Node;
@@ -32,7 +30,6 @@ import org.jboss.netty.util.HashedWheelTimer;
 
 public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacementPolicyImpl
         implements ITopologyAwareEnsemblePlacementPolicy<TopologyAwareEnsemblePlacementPolicy.BookieNode> {
-
     RackawareEnsemblePlacementPolicyImpl slave = null;
 
     RackawareEnsemblePlacementPolicy() {
@@ -48,13 +45,17 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
                                                           HashedWheelTimer timer,
                                                           boolean reorderReadsRandom,
                                                           int stabilizePeriodSeconds,
+                                                          boolean isWeighted,
+                                                          int maxWeightMultiple,
                                                           StatsLogger statsLogger) {
         if (stabilizePeriodSeconds > 0) {
-            super.initialize(dnsResolver, timer, reorderReadsRandom, 0, statsLogger);
+            super.initialize(dnsResolver, timer, reorderReadsRandom, 0, isWeighted, maxWeightMultiple, statsLogger);
             slave = new RackawareEnsemblePlacementPolicyImpl(enforceDurability);
-            slave.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds, statsLogger);
+            slave.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds, isWeighted,
+                    maxWeightMultiple, statsLogger);
         } else {
-            super.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds, statsLogger);
+            super.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds, isWeighted,
+                    maxWeightMultiple, statsLogger);
             slave = null;
         }
         return this;
@@ -96,7 +97,7 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     public BookieSocketAddress replaceBookie(
         int ensembleSize, int writeQuorumSize, int ackQuorumSize, java.util.Map<String, byte[]> customMetadata, Collection<BookieSocketAddress> currentEnsemble, BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
-        try {
+       try {
             return super.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
                     currentEnsemble, bookieToReplace, excludeBookies);
         } catch (BKException.BKNotEnoughBookiesException bnebe) {
