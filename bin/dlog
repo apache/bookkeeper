@@ -54,9 +54,6 @@ source "${DLOG_ROOT}"/scripts/common.sh
 COMMAND=$1
 shift
 
-#Change to DLOG_HOME to support relative paths
-cd "$DLOG_HOME"
-
 case "${COMMAND}" in
   local)
     exec java $OPTS $JMX_ARGS com.twitter.distributedlog.LocalDLMEmulator $@
