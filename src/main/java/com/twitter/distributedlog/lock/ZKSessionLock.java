@@ -480,6 +480,31 @@ class ZKSessionLock implements SessionLock {
         return id;
     }
 
+    static boolean areLockWaitersInSameSession(String node1, String node2) {
+        String[] parts1 = node1.split("_");
+        String[] parts2 = node2.split("_");
+        if (parts1.length != 4 || parts2.length != 4) {
+            return node1.equals(node2);
+        }
+        if (!parts1[2].startsWith("s") || !parts2[2].startsWith("s")) {
+            return node1.equals(node2);
+        }
+        long sessionOwner1 = Long.parseLong(parts1[2].substring(1));
+        long sessionOwner2 = Long.parseLong(parts2[2].substring(1));
+        if (sessionOwner1 != sessionOwner2) {
+            return false;
+        }
+        String clientId1, clientId2;
+        try {
+            clientId1 = URLDecoder.decode(parts1[1], UTF_8.name());
+            clientId2 = URLDecoder.decode(parts2[1], UTF_8.name());
+            return clientId1.equals(clientId2);
+        } catch (UnsupportedEncodingException e) {
+            // if failed to parse client id, we have to get client id by zookeeper#getData.
+            return node1.equals(node2);
+        }
+    }
+
     /**
      * Get client id and its ephemeral owner.
      *
@@ -1209,17 +1234,19 @@ class ZKSessionLock implements SessionLock {
             @Override
             public void execute() {
                 boolean shouldWatch;
+                final boolean shouldClaimOwnership;
                 if (lockContext.hasLockId(currentOwner) && siblingNode.equals(ownerNode)) {
                     // if the current owner is the znode left from previous session
                     // we should watch it and claim ownership
                     shouldWatch = true;
+                    shouldClaimOwnership = true;
                     LOG.info("LockWatcher {} for {} found its previous session {} held lock, watch it to claim ownership.",
                             new Object[] { myNode, lockPath, currentOwner });
-                } else if (lockId.compareTo(currentOwner) == 0 && siblingNode.equals(ownerNode)) {
+                } else if (lockId.compareTo(currentOwner) == 0 && areLockWaitersInSameSession(siblingNode, ownerNode)) {
                     // I found that my sibling is the current owner with same lock id (client id & session id)
                     // It must be left by any race condition from same zookeeper client
-                    // I would watch owner instead of sibling
                     shouldWatch = true;
+                    shouldClaimOwnership = true;
                     LOG.info("LockWatcher {} for {} found itself {} already held lock at sibling node {}, watch it to claim ownership.",
                             new Object[]{myNode, lockPath, lockId, siblingNode});
                 } else {
@@ -1230,6 +1257,7 @@ class ZKSessionLock implements SessionLock {
                                     new Object[]{lockPath, myNode, siblingNode, System.currentTimeMillis()});
                         }
                     }
+                    shouldClaimOwnership = false;
                 }
 
                 // watch sibling for lock ownership
@@ -1247,8 +1275,7 @@ class ZKSessionLock implements SessionLock {
                                     }
 
                                     if (KeeperException.Code.OK.intValue() == rc) {
-                                        if (siblingNode.equals(ownerNode) &&
-                                                (lockId.compareTo(currentOwner) == 0 || lockContext.hasLockId(currentOwner))) {
+                                        if (shouldClaimOwnership) {
                                             // watch owner successfully
                                             LOG.info("LockWatcher {} claimed ownership for {} after set watcher on {}.",
                                                     new Object[]{ myNode, lockPath, ownerNode });
