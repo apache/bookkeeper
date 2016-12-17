@@ -169,6 +169,7 @@ public class ZooKeeperClient {
         this.credentials = credentials;
         this.watcherManager = ZKWatcherManager.newBuilder()
                 .name(name)
+                .zkc(this)
                 .statsLogger(statsLogger.scope("watcher_manager"))
                 .build();
     }

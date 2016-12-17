@@ -17,8 +17,11 @@
  */
 package com.twitter.distributedlog.zk;
 
+import com.twitter.distributedlog.ZooKeeperClient;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.zookeeper.AsyncCallback;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.slf4j.Logger;
@@ -50,9 +53,15 @@ public class ZKWatcherManager implements Watcher {
 
         private String _name;
         private StatsLogger _statsLogger;
+        private ZooKeeperClient _zkc;
 
         public Builder name(String name) {
             this._name = name;
+            return this;
+        }
+
+        public Builder zkc(ZooKeeperClient zkc) {
+            this._zkc = zkc;
             return this;
         }
 
@@ -62,19 +71,22 @@ public class ZKWatcherManager implements Watcher {
         }
 
         public ZKWatcherManager build() {
-            return new ZKWatcherManager(_name, _statsLogger);
+            return new ZKWatcherManager(_name, _zkc, _statsLogger);
         }
     }
 
     private final String name;
+    private final ZooKeeperClient zkc;
     private final StatsLogger statsLogger;
 
     protected final ConcurrentMap<String, Set<Watcher>> childWatches;
     protected final AtomicInteger allWatchesGauge;
 
     private ZKWatcherManager(String name,
+                             ZooKeeperClient zkc,
                              StatsLogger statsLogger) {
         this.name = name;
+        this.zkc = zkc;
         this.statsLogger = statsLogger;
 
         // watches
@@ -127,7 +139,7 @@ public class ZKWatcherManager implements Watcher {
         return this;
     }
 
-    public void unregisterChildWatcher(String path, Watcher watcher) {
+    public void unregisterChildWatcher(String path, Watcher watcher, boolean removeFromServer) {
         Set<Watcher> watchers = childWatches.get(path);
         if (null == watchers) {
             logger.warn("No watchers found on path {} while unregistering child watcher {}.",
@@ -141,6 +153,26 @@ public class ZKWatcherManager implements Watcher {
                 logger.warn("Remove a non-registered child watcher {} from path {}", watcher, path);
             }
             if (watchers.isEmpty()) {
+                // best-efforts to remove watches
+                try {
+                    if (null != zkc && removeFromServer) {
+                        zkc.get().removeWatches(path, this, WatcherType.Children, true, new AsyncCallback.VoidCallback() {
+                            @Override
+                            public void processResult(int rc, String path, Object ctx) {
+                                if (KeeperException.Code.OK.intValue() == rc) {
+                                    logger.debug("Successfully removed children watches from {}", path);
+                                } else {
+                                    logger.debug("Encountered exception on removing children watches from {}",
+                                            path, KeeperException.create(KeeperException.Code.get(rc)));
+                                }
+                            }
+                        }, null);
+                    }
+                } catch (InterruptedException e) {
+                    logger.debug("Encountered exception on removing watches from {}", path, e);
+                } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
+                    logger.debug("Encountered exception on removing watches from {}", path, e);
+                }
                 childWatches.remove(path, watchers);
             }
         }

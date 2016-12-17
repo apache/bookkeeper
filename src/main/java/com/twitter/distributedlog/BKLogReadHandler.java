@@ -311,7 +311,12 @@ class BKLogReadHandler extends BKLogHandler {
                 if (null != handleCache) {
                     handleCache.clear();
                 }
-                return BKLogReadHandler.super.asyncClose();
+                // No-op
+                zooKeeperClient.getWatcherManager().unregisterChildWatcher(
+                        logMetadata.getLogSegmentsPath(),
+                        BKLogReadHandler.this,
+                        true);
+                return Future.Void();
             }
         });
     }

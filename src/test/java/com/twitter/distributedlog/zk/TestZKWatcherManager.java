@@ -34,6 +34,7 @@ public class TestZKWatcherManager {
     public void testRegisterUnregisterWatcher() throws Exception {
         ZKWatcherManager watcherManager = ZKWatcherManager.newBuilder()
                 .name("test-register-unregister-watcher")
+                .zkc(null)
                 .statsLogger(NullStatsLogger.INSTANCE)
                 .build();
         String path = "/test-register-unregister-watcher";
@@ -71,7 +72,7 @@ public class TestZKWatcherManager {
         assertEquals(event2, events.get(1));
 
         // unregister watcher
-        watcherManager.unregisterChildWatcher(path, watcher);
+        watcherManager.unregisterChildWatcher(path, watcher, true);
 
         assertEquals(0, watcherManager.childWatches.size());
     }

@@ -1263,7 +1263,11 @@ class BKLogWriteHandler extends BKLogHandler {
         ).flatMap(new AbstractFunction1<Void, Future<Void>>() {
             @Override
             public Future<Void> apply(Void result) {
-                return BKLogWriteHandler.super.asyncClose();
+                zooKeeperClient.getWatcherManager().unregisterChildWatcher(
+                        logMetadata.getLogSegmentsPath(),
+                        BKLogWriteHandler.this,
+                        false);
+                return Future.Void();
             }
         });
     }

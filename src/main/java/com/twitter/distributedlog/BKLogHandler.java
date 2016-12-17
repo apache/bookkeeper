@@ -702,13 +702,6 @@ public abstract class BKLogHandler implements Watcher, AsyncCloseable, AsyncAbor
     }
 
     @Override
-    public Future<Void> asyncClose() {
-        // No-op
-        this.zooKeeperClient.getWatcherManager().unregisterChildWatcher(logMetadata.getLogSegmentsPath(), this);
-        return Future.Void();
-    }
-
-    @Override
     public Future<Void> asyncAbort() {
         return asyncClose();
     }

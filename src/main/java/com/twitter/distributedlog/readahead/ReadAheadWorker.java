@@ -359,7 +359,7 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, Watcher, As
         running = false;
 
         this.zkc.getWatcherManager()
-                .unregisterChildWatcher(this.logMetadata.getLogSegmentsPath(), this);
+                .unregisterChildWatcher(this.logMetadata.getLogSegmentsPath(), this, true);
 
         // Aside from unfortunate naming of variables, this allows
         // the currently active long poll to be interrupted and completed
