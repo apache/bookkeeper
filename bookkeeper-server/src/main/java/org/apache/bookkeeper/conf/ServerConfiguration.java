@@ -133,6 +133,10 @@ public class ServerConfiguration extends AbstractConfiguration {
     // Bookie auth provider factory class name
     protected final static String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
 
+    protected final static String SSL_ENABLED = "sslEnabled";
+    protected final static String SSL_KEY_STORE = "sslKeyStore";
+    protected final static String SSL_KEY_STORE_PASSWORD = "sslKeyStorePassword";
+
     /**
      * Construct a default configuration object
      */
@@ -1740,4 +1744,74 @@ public class ServerConfiguration extends AbstractConfiguration {
     public String getBookieAuthProviderFactoryClass() {
         return getString(BOOKIE_AUTH_PROVIDER_FACTORY_CLASS, null);
     }
+
+    /**
+      * Whether SSL is enabled on the bookie. Bookies use the same port for SSL
+      * and non-SSL traffic, using a STARTTLS mechanism to initiate an SSL handshake.
+      * If SSL is enabled, then a keystore containing a cert must be configured.
+      * @see #setSSLKeyStore(String)
+      * @see #setSSLKeyStorePassword(String)
+      * @param Whether to enable SSL or not
+      * @return the server configuration
+      */
+     public ServerConfiguration setSSLEnabled(boolean enabled) {
+         setProperty(SSL_ENABLED, enabled);
+         return this;
+     }
+
+     /**
+      * Whether SSL is enabled on the bookie.
+      * @see #setSSLEnabled(boolean)
+      * @return whether SSL is enabled on the bookie or not.
+      */
+     public boolean isSSLEnabled() {
+         return getBoolean(SSL_ENABLED, false);
+     }
+
+     /**
+      * Set the keystore containing the SSL certificate to be used during SSL
+      * negotiation. The keystore must be in PKCS12 format. The keystore can be
+      * generated using keytool, which comes as standard with the JDK.
+      *
+      * The path specified can be a filesystem path or a resource path. In the
+      * case of a resource path, the keystore must exist in the classpath. The
+      * bookie will interpret the path as a resource path first, and if the
+      * keystore cannot be found on the classpath, it will try to interpret it
+      * as a filesystem path.
+      *
+      * @param keyStore Path to the keystore
+      * @return the server configuration
+      */
+     public ServerConfiguration setSSLKeyStore(String keyStore) {
+         setProperty(SSL_KEY_STORE, keyStore);
+         return this;
+     }
+
+     /**
+      * Get the configured keystore, containing the certificate to be used for
+      * SSL negotiation.
+      *
+      * @return the path to the keystore. This may be a filesystem or a resource path.
+      */
+     public String getSSLKeyStore() {
+         return getString(SSL_KEY_STORE, "nonexistent_keystore");
+     }
+
+     /**
+      * Set the password to decrypt the configured SSL keystore.
+      * @see #setSSLKeyStore(String)
+      * @return the server configuration
+      */
+     public ServerConfiguration setSSLKeyStorePassword(String keyStorePassword) {
+         setProperty(SSL_KEY_STORE_PASSWORD, keyStorePassword);
+         return this;
+     }
+
+     /**
+      * Get the password to decrypt the configured SSL keystore.
+      * @return the password
+      */
+     public String getSSLKeyStorePassword() {
+         return getString(SSL_KEY_STORE_PASSWORD, "");
+     }
 }

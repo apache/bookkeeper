@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.conf;
 
 import java.net.URL;
+import javax.net.ssl.SSLEngine;
 import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDER_FACTORY_CLASS;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -69,6 +70,20 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
 
     // Client auth provider factory class name. It must be configured on Bookies to for the Auditor
     protected final static String CLIENT_AUTH_PROVIDER_FACTORY_CLASS = "clientAuthProviderFactoryClass";
+
+    // Common SSL configuration
+
+    /**
+     * This list will be passed to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }.
+     * Please refer to official JDK JavaDocs
+    */
+    protected final static String SSL_ENABLED_CIPHER_SUITES = "sslEnabledCipherSuites";
+
+    /**
+     * This list will be passed to {@link SSLEngine#setEnabledProtocols(java.lang.String[]) }.
+     * Please refer to official JDK JavaDocs
+    */
+    protected final static String SSL_ENABLED_PROTOCOLS = "sslEnabledProtocols";
 
     protected AbstractConfiguration() {
         super();
@@ -283,5 +298,55 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      */
     public String getClientAuthProviderFactoryClass() {
         return getString(CLIENT_AUTH_PROVIDER_FACTORY_CLASS, null);
+    }
+
+    /**
+     * Set the list of enabled SSL cipher suites. Leave null not to override default JDK list.
+     * This list will be passed to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }.
+     * Please refer to official JDK JavaDocs
+     *
+     * @param list comma separated list of enabled SSL cipher suites
+     * @return current configuration
+     */
+    public AbstractConfiguration setSslEnabledCipherSuites(
+            String list) {
+        setProperty(SSL_ENABLED_CIPHER_SUITES, list);
+        return this;
+    }
+
+    /**
+     * Get the list of enabled SSL cipher suites
+     *
+     * @return this list of enabled SSL cipher suites
+     *
+     * @see #setSslEnabledCipherSuites(java.lang.String)
+     */
+    public String getSslEnabledCipherSuites() {
+        return getString(SSL_ENABLED_CIPHER_SUITES, null);
+    }
+
+    /**
+     * Set the list of enabled SSL protocols. Leave null not to override default JDK list.
+     * This list will be passed to {@link SSLEngine#setEnabledProtocols(java.lang.String[]) }.
+     * Please refer to official JDK JavaDocs
+     *
+     * @param list comma separated list of enabled SSL cipher suites
+     * @return current configuration
+     */
+    public AbstractConfiguration setSslEnabledProtocols(
+            String list) {
+        setProperty(SSL_ENABLED_PROTOCOLS, list);
+        return this;
+    }
+
+    /**
+     * Get the list of enabled SSL protocols
+     *
+     * @return the list of enabled SSL protocols.
+     *
+     * @see #setSslEnabledProtocols(java.lang.String)
+     */
+    public String getSslEnabledProtocols() {
+        return getString(SSL_ENABLED_PROTOCOLS, null);
     }
 }

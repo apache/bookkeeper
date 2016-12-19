@@ -57,6 +57,8 @@ import com.google.common.annotations.VisibleForTesting;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_SCOPE;
+import org.apache.bookkeeper.proto.ssl.SSLConfigurationException;
+import org.apache.bookkeeper.proto.ssl.SSLContextFactory;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_SCOPE;
 
 /**
@@ -86,18 +88,24 @@ public class BookieServer {
 
     public BookieServer(ServerConfiguration conf) throws IOException,
             KeeperException, InterruptedException, BookieException,
-            UnavailableException, CompatibilityException {
+            UnavailableException, CompatibilityException, SSLConfigurationException {
         this(conf, NullStatsLogger.INSTANCE);
     }
 
     public BookieServer(ServerConfiguration conf, StatsLogger statsLogger)
             throws IOException, KeeperException, InterruptedException,
-            BookieException, UnavailableException, CompatibilityException {
+            BookieException, UnavailableException, CompatibilityException, SSLConfigurationException {
         this.conf = conf;
         this.statsLogger = statsLogger;
         this.bookie = newBookie(conf);
+        final SSLContextFactory sslContextFactory;
+        if (conf.isSSLEnabled()) {
+            sslContextFactory = new SSLContextFactory(conf);
+        } else {
+           sslContextFactory = null;
+        }
         this.requestProcessor = new BookieRequestProcessor(conf, bookie,
-                statsLogger.scope(SERVER_SCOPE));
+                statsLogger.scope(SERVER_SCOPE), sslContextFactory);
         this.nettyServer = new BookieNettyServer(this.conf, requestProcessor);
         isAutoRecoveryDaemonEnabled = conf.isAutoRecoveryDaemonEnabled();
         if (isAutoRecoveryDaemonEnabled) {

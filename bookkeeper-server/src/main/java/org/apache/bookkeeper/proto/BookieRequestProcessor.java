@@ -20,10 +20,7 @@
  */
 package org.apache.bookkeeper.proto;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.ByteString;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.AuthToken;
 
@@ -41,9 +38,12 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY_REQUEST;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_REQUEST;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAC;
-
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC;
+import org.apache.bookkeeper.proto.ssl.SSLContextFactory;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.handler.ssl.SslHandler;
 
 public class BookieRequestProcessor implements RequestProcessor {
 
@@ -69,6 +69,11 @@ public class BookieRequestProcessor implements RequestProcessor {
      */
     private final OrderedSafeExecutor writeThreadPool;
 
+    /**
+     * SSL management
+     */
+    private SSLContextFactory sslContextFactory;
+
     // Expose Stats
     private final BKStats bkStats = BKStats.getInstance();
     private final boolean statsEnabled;
@@ -80,11 +85,12 @@ public class BookieRequestProcessor implements RequestProcessor {
     final OpStatsLogger readLacStats;
 
     public BookieRequestProcessor(ServerConfiguration serverCfg, Bookie bookie,
-                                  StatsLogger statsLogger) {
+                                  StatsLogger statsLogger, SSLContextFactory sslContextFactory) {
         this.serverCfg = serverCfg;
         this.bookie = bookie;
         this.readThreadPool = createExecutor(this.serverCfg.getNumReadWorkerThreads(), "BookieReadThread-" + serverCfg.getBookiePort());
         this.writeThreadPool = createExecutor(this.serverCfg.getNumAddWorkerThreads(), "BookieWriteThread-" + serverCfg.getBookiePort());
+        this.sslContextFactory = sslContextFactory;
         // Expose Stats
         this.statsEnabled = serverCfg.isStatisticsEnabled();
         this.addEntryStats = statsLogger.getOpStatsLogger(ADD_ENTRY);
@@ -148,6 +154,9 @@ public class BookieRequestProcessor implements RequestProcessor {
                 case READ_LAC:
                     processReadLacRequestV3(r,c);
                     break;
+                case STARTTLS:
+                    processStartTLSRequestV3(r, c);
+                    break;
                 default:
                     LOG.info("Unknown operation type {}", header.getOperation());
                     BookkeeperProtocol.Response.Builder response =
@@ -180,6 +189,24 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
+     private void processWriteLacRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+        WriteLacProcessorV3 writeLac = new WriteLacProcessorV3(r, c, this);
+        if (null == writeThreadPool) {
+            writeLac.run();
+        } else {
+            writeThreadPool.submit(writeLac);
+        }
+    }
+
+    private void processReadLacRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+        ReadLacProcessorV3 readLac = new ReadLacProcessorV3(r, c, this);
+        if (null == readThreadPool) {
+            readLac.run();
+        } else {
+            readThreadPool.submit(readLac);
+        }
+    }
+
     private void processAddRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
         WriteEntryProcessorV3 write = new WriteEntryProcessorV3(r, c, this);
         if (null == writeThreadPool) {
@@ -198,21 +225,36 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
-    private void processWriteLacRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
-        WriteLacProcessorV3 writeLac = new WriteLacProcessorV3(r, c, this);
-        if (null == writeThreadPool) {
-            writeLac.run();
+    private void processStartTLSRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+        BookkeeperProtocol.Response.Builder response = BookkeeperProtocol.Response.newBuilder();
+        BookkeeperProtocol.BKPacketHeader.Builder header = BookkeeperProtocol.BKPacketHeader.newBuilder();
+        header.setVersion(BookkeeperProtocol.ProtocolVersion.VERSION_THREE);
+        header.setOperation(r.getHeader().getOperation());
+        header.setTxnId(r.getHeader().getTxnId());
+        response.setHeader(header.build());
+        if (sslContextFactory == null) {
+            LOG.error("Got StartTLS request but SSL not configured");
+            response.setStatus(BookkeeperProtocol.StatusCode.EBADREQ);
+            c.write(response.build());
         } else {
-            writeThreadPool.submit(writeLac);
-        }
-    }
+            LOG.info("Got StartTLS request from {}",c);
+            // there is no need to execute in a different thread as this operation is light
+            SslHandler sslHandler = new SslHandler(sslContextFactory.getEngine(), true);
+            c.getPipeline().addFirst("ssl", sslHandler);
 
-    private void processReadLacRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
-        ReadLacProcessorV3 readLac = new ReadLacProcessorV3(r, c, this);
-        if (null == readThreadPool) {
-            readLac.run();
-        } else {
-            readThreadPool.submit(readLac);
+            response.setStatus(BookkeeperProtocol.StatusCode.EOK);
+            BookkeeperProtocol.StartTLSResponse.Builder builder = BookkeeperProtocol.StartTLSResponse.newBuilder();
+            response.setStartTLSResponse(builder.build());
+            sslHandler.handshake().addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                     // notify the AuthPlugin the completion of the handshake, even in case of failure
+                     AuthHandler.ServerSideHandler authHandler = c.getPipeline().get(AuthHandler.ServerSideHandler.class);
+                     authHandler.authProvider.onProtocolUpgrade();
+                }
+            });
+            c.write(response.build());
+
         }
     }
 

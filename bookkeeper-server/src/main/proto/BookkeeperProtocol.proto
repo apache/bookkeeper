@@ -59,6 +59,7 @@ enum OperationType {
     AUTH = 5;
     WRITE_LAC = 6;
     READ_LAC = 7;
+    STARTTLS = 8;
 }
 
 /**
@@ -78,6 +79,7 @@ message Request {
     optional AuthMessage authRequest = 102;
     optional WriteLacRequest writeLacRequest = 103;
     optional ReadLacRequest readLacRequest = 104;
+    optional StartTLSRequest startTLSRequest = 105;
 }
 
 message ReadRequest {
@@ -103,6 +105,9 @@ message AddRequest {
     required bytes body = 4;
 }
 
+message StartTLSRequest {
+}
+
 message WriteLacRequest {
     required int64 ledgerId = 1;
     required int64 lac = 2;
@@ -126,6 +131,7 @@ message Response {
     optional AuthMessage authResponse = 102;
     optional WriteLacResponse writeLacResponse = 103;
     optional ReadLacResponse readLacResponse = 104;
+    optional StartTLSResponse startTLSResponse = 105;
 }
 
 message ReadResponse {
@@ -144,6 +150,9 @@ message AddResponse {
 message AuthMessage {
     required string authPluginName = 1;
     required bytes payload = 2;
+}
+
+message StartTLSResponse {
 }
 
 message WriteLacResponse {

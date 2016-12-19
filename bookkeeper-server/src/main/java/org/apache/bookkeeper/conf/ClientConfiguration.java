@@ -102,6 +102,31 @@ public class ClientConfiguration extends AbstractConfiguration {
     public final static String CLIENT_ROLE_SYSTEM = "system";
 
     /**
+     * Use SSL while talking to Bookies
+     */
+    protected final static String USE_SSL = "useSSL";
+
+    /**
+     * Verify SSL certificates
+     */
+    protected final static String VERIFY_SSL_CERTIFICATES = "verifySSLCertificates";
+
+    /**
+     * Enable client authentication using an SSL certificate
+     */
+    protected final static String CLIENT_SSL_AUTHENTICATION = "clientSSLAuthentication";
+
+    /**
+     * Key store which holds the client-side SSL certificate. The certificate must be in PKCS12 format
+     */
+    protected final static String CLIENT_SSL_KEY_STORE = "clientSSLKeyStore";
+
+    /**
+     * Password for the keystore which holds the client-side SSL certificate
+     */
+    protected final static String CLIENT_SSL_KEY_STORE_PASSWORD = "clientSSLKeyStorePassword";
+
+    /**
      * Construct a default client-side configuration
      */
     public ClientConfiguration() {
@@ -904,6 +929,114 @@ public class ClientConfiguration extends AbstractConfiguration {
         setProperty(BOOKIE_ERROR_THRESHOLD_PER_INTERVAL, thresholdPerInterval);
         return this;
     }
+
+    /**
+    * Whether the client uses SSL or not. By default the client does not use SSL.
+    * @return whether the client uses SSL or not
+    */
+    public boolean getUseSSL() {
+        return getBoolean(USE_SSL, false);
+    }
+
+    /**
+     * Specify whether the client should use SSL or not. BookKeeper uses STARTTLS,
+     * so both SSL communication and non-SSL communication runs on the same port.
+     * If the client is configured to use SSL, and no SSL enabled bookies are available
+     * the client will not be able to connect to the cluster.
+     *
+     * @param useSSL whether to use SSL or not
+     * @return client configuration
+     */
+    public ClientConfiguration setUseSSL(boolean useSSL) {
+        setProperty(USE_SSL, useSSL);
+        return this;
+    }
+
+    /**
+    * Whether the client validates SSL certificates. It defaults to false
+    * @return whether the client will verify certificates or not.
+    */
+    public boolean getVerifySSLCertificates() {
+        return getBoolean(VERIFY_SSL_CERTIFICATES, false);
+    }
+
+    /**
+    * Specify whether the client validates SSL certificates
+    * @return client configuration
+    */
+    public ClientConfiguration setVerifySSLCertificates(boolean value) {
+        setProperty(VERIFY_SSL_CERTIFICATES, value);
+        return this;
+    }
+
+
+    /**
+      * Specify whether the client will send an SSL certificate on TLS-handshake
+      * @param enabled Whether to send a certificate or not
+      * @return client configuration
+      */
+     public ClientConfiguration setClientSSLAuthentication(boolean enabled) {
+         setProperty(CLIENT_SSL_AUTHENTICATION, enabled);
+         return this;
+     }
+
+     /**
+      * Whether the client will send an SSL certificate on TLS-handshake
+      * @see #setClientSSLAuthentication(boolean)
+      * @return whether SSL is enabled on the bookie or not.
+      */
+     public boolean getClientSSLAuthentication() {
+         return getBoolean(CLIENT_SSL_AUTHENTICATION, false);
+     }
+
+     /**
+      * Set the keystore containing the SSL certificate to be used during SSL
+      * negotiation. The keystore must be in PKCS12 format. The keystore can be
+      * generated using keytool, which comes as standard with the JDK.
+      *
+      * The path specified can be a filesystem path or a resource path. In the
+      * case of a resource path, the keystore must exist in the classpath. The
+      * client will interpret the path as a resource path first, and if the
+      * keystore cannot be found on the classpath, it will try to interpret it
+      * as a filesystem path.
+      *
+      * @param keyStore Path to the keystore
+      * @return the client configuration
+      */
+     public ClientConfiguration setClientSSLKeyStore(String keyStore) {
+         setProperty(CLIENT_SSL_KEY_STORE, keyStore);
+         return this;
+     }
+
+     /**
+      * Get the configured keystore, containing the certificate to be used for
+      * SSL negotiation from the client.
+      *
+      * @return the path to the keystore. This may be a filesystem or a resource path.
+      */
+     public String getClientSSLKeyStore() {
+         return getString(CLIENT_SSL_KEY_STORE, "nonexistent_keystore");
+     }
+
+     /**
+      * Set the password to decrypt the configured SSL keystore.
+      *
+      * @param keyStorePassword The password used to access the keystore
+      * @see #setClientSSLKeyStore(String)
+      * @return the client configuration
+      */
+     public ClientConfiguration setClientSSLKeyStorePassword(String keyStorePassword) {
+         setProperty(CLIENT_SSL_KEY_STORE_PASSWORD, keyStorePassword);
+         return this;
+     }
+
+     /**
+      * Get the password to decrypt the configured SSL keystore.
+      * @return the password
+      */
+     public String getClientSSLKeyStorePassword() {
+         return getString(CLIENT_SSL_KEY_STORE_PASSWORD, "");
+     }
 
     /**
      * Get the time for which a bookie will be quarantined.
