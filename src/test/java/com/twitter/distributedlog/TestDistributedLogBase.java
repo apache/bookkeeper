@@ -17,6 +17,8 @@
  */
 package com.twitter.distributedlog;
 
+import static org.junit.Assert.assertTrue;
+
 import com.twitter.distributedlog.impl.BKLogSegmentEntryWriter;
 import com.twitter.distributedlog.logsegment.LogSegmentEntryWriter;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataStore;
@@ -188,27 +190,27 @@ public class TestDistributedLogBase {
     @SuppressWarnings("deprecation")
     protected LogSegmentMetadataStore getLogSegmentMetadataStore(DistributedLogManagerFactory factory) {
         DistributedLogNamespace namespace = factory.getNamespace();
-        assert(namespace instanceof BKDistributedLogNamespace);
+        assertTrue(namespace instanceof BKDistributedLogNamespace);
         return ((BKDistributedLogNamespace) namespace).getWriterSegmentMetadataStore();
     }
 
     @SuppressWarnings("deprecation")
     protected ZooKeeperClient getZooKeeperClient(DistributedLogManagerFactory factory) throws Exception {
         DistributedLogNamespace namespace = factory.getNamespace();
-        assert(namespace instanceof BKDistributedLogNamespace);
+        assertTrue(namespace instanceof BKDistributedLogNamespace);
         return ((BKDistributedLogNamespace) namespace).getSharedWriterZKCForDL();
     }
 
     @SuppressWarnings("deprecation")
     protected BookKeeperClient getBookKeeperClient(DistributedLogManagerFactory factory) throws Exception {
         DistributedLogNamespace namespace = factory.getNamespace();
-        assert(namespace instanceof BKDistributedLogNamespace);
+        assertTrue(namespace instanceof BKDistributedLogNamespace);
         return ((BKDistributedLogNamespace) namespace).getReaderBKC();
     }
 
     protected LedgerHandle getLedgerHandle(BKLogSegmentWriter segmentWriter) {
         LogSegmentEntryWriter entryWriter = segmentWriter.getEntryWriter();
-        assert(entryWriter instanceof BKLogSegmentEntryWriter);
+        assertTrue(entryWriter instanceof BKLogSegmentEntryWriter);
         return ((BKLogSegmentEntryWriter) entryWriter).getLedgerHandle();
     }
 }

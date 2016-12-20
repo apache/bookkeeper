@@ -221,7 +221,7 @@ public class DLMTestUtil {
     public static void verifyLogRecord(LogRecord record) {
         assertEquals(generatePayload(record.getTransactionId()).length, record.getPayload().length);
         assertArrayEquals(generatePayload(record.getTransactionId()), record.getPayload());
-        assert(!record.isControl());
+        assertTrue(!record.isControl());
         verifyPayload(record.getTransactionId(), record.getPayload());
     }
 
@@ -275,7 +275,7 @@ public class DLMTestUtil {
     }
 
     static void verifyEmptyLogRecord(LogRecord record) {
-        assert(record.getPayload().length == 0);
+        assertEquals(record.getPayload().length, 0);
     }
 
     public static LogRecordWithDLSN getLogRecordWithDLSNInstance(DLSN dlsn, long txId) {

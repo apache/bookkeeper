@@ -725,7 +725,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         LogRecord last = dlm.getLastLogRecord();
         assertEquals(txid - 1, last.getTransactionId());
         DLMTestUtil.verifyLogRecord(last);
-        assert(dlm.isEndOfStreamMarked());
+        assertTrue(dlm.isEndOfStreamMarked());
 
         LogWriter writer = null;
         boolean exceptionEncountered = false;
@@ -738,7 +738,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             exceptionEncountered = true;
         }
         writer.close();
-        assert(exceptionEncountered);
+        assertTrue(exceptionEncountered);
     }
 
     @Test(timeout = 60000)
@@ -805,7 +805,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             FutureUtils.result(out.asyncClose());
         }
         bkdlmAndClients.close();
-        assert(exceptionEncountered);
+        assertTrue(exceptionEncountered);
     }
 
     @Test(timeout = 60000)
@@ -831,7 +831,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             FutureUtils.result(out.asyncClose());
         }
         bkdlmAndClients.close();
-        assert(!exceptionEncountered);
+        assertTrue(!exceptionEncountered);
     }
 
     @Test(timeout = 60000)
@@ -884,7 +884,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         } catch (LogNotFoundException exc) {
             exceptionEncountered = true;
         }
-        assert(exceptionEncountered);
+        assertTrue(exceptionEncountered);
         reader.close();
     }
 

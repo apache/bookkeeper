@@ -1108,8 +1108,8 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         writer.abort();
 
         executionTime.stop();
-        assert(!(Thread.interrupted()));
-        assert(success);
+        assertTrue(!(Thread.interrupted()));
+        assertTrue(success);
 
         LogRecordWithDLSN last = dlm.getLastLogRecord();
         LOG.info("Last Entry {}; elapsed time {}", last.getDlsn().getEntryId(), executionTime.elapsed(TimeUnit.MILLISECONDS));
@@ -1546,9 +1546,9 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         } catch (IdleReaderException exc) {
             exceptionEncountered = true;
         }
-        assert(!exceptionEncountered);
+        assertTrue(!exceptionEncountered);
         Assert.assertEquals(recordCount, segmentSize * numSegments);
-        assert(!currentThread.isInterrupted());
+        assertTrue(!currentThread.isInterrupted());
         executor.shutdown();
     }
 

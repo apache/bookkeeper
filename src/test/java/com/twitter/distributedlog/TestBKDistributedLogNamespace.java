@@ -49,6 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.*;
 
 public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
@@ -122,10 +123,10 @@ public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
             BKDistributedLogManager bkdlm2 = (BKDistributedLogManager)namespace.createDistributedLogManager("perstream2",
                 DistributedLogManagerFactory.ClientSharingOption.PerStreamClients);
 
-            assert(bkdlm1.getReaderBKC() != bkdlm2.getReaderBKC());
-            assert(bkdlm1.getWriterBKC() != bkdlm2.getWriterBKC());
-            assert(bkdlm1.getReaderZKC() != bkdlm2.getReaderZKC());
-            assert(bkdlm1.getWriterZKC() != bkdlm2.getWriterZKC());
+            assertThat(bkdlm1.getReaderBKC(), not(bkdlm2.getReaderBKC()));
+            assertThat(bkdlm1.getWriterBKC(), not(bkdlm2.getWriterBKC()));
+            assertThat(bkdlm1.getReaderZKC(), not(bkdlm2.getReaderZKC()));
+            assertThat(bkdlm1.getWriterZKC(), not(bkdlm2.getWriterZKC()));
 
         }
 
@@ -136,10 +137,10 @@ public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
             BKDistributedLogManager bkdlm2 = (BKDistributedLogManager)namespace.createDistributedLogManager("sharedZK2",
                 DistributedLogManagerFactory.ClientSharingOption.SharedZKClientPerStreamBKClient);
 
-            assert(bkdlm1.getReaderBKC() != bkdlm2.getReaderBKC());
-            assert(bkdlm1.getWriterBKC() != bkdlm2.getWriterBKC());
-            assert(bkdlm1.getReaderZKC() == bkdlm2.getReaderZKC());
-            assert(bkdlm1.getWriterZKC() == bkdlm2.getWriterZKC());
+            assertThat(bkdlm1.getReaderBKC(), not(bkdlm2.getReaderBKC()));
+            assertThat(bkdlm1.getWriterBKC(), not(bkdlm2.getWriterBKC()));
+            assertEquals(bkdlm1.getReaderZKC(), bkdlm2.getReaderZKC());
+            assertEquals(bkdlm1.getWriterZKC(), bkdlm2.getWriterZKC());
         }
 
         {
@@ -149,10 +150,10 @@ public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
             BKDistributedLogManager bkdlm2 = (BKDistributedLogManager)namespace.createDistributedLogManager("sharedBoth2",
                 DistributedLogManagerFactory.ClientSharingOption.SharedClients);
 
-            assert(bkdlm1.getReaderBKC() == bkdlm2.getReaderBKC());
-            assert(bkdlm1.getWriterBKC() == bkdlm2.getWriterBKC());
-            assert(bkdlm1.getReaderZKC() == bkdlm2.getReaderZKC());
-            assert(bkdlm1.getWriterZKC() == bkdlm2.getWriterZKC());
+            assertEquals(bkdlm1.getReaderBKC(), bkdlm2.getReaderBKC());
+            assertEquals(bkdlm1.getWriterBKC(), bkdlm2.getWriterBKC());
+            assertEquals(bkdlm1.getReaderZKC(), bkdlm2.getReaderZKC());
+            assertEquals(bkdlm1.getWriterZKC(), bkdlm2.getWriterZKC());
         }
 
     }
