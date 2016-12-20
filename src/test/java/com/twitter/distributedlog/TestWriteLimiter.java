@@ -43,7 +43,7 @@ public class TestWriteLimiter {
         return new SimplePermitLimiter(darkmode, permits, new NullStatsLogger(), false, feature);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testGlobalOnly() throws Exception {
         SimplePermitLimiter streamLimiter = createPermitLimiter(false, Integer.MAX_VALUE);
         SimplePermitLimiter globalLimiter = createPermitLimiter(false, 1);
@@ -59,7 +59,7 @@ public class TestWriteLimiter {
         assertPermits(streamLimiter, 0, globalLimiter, 0);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testStreamOnly() throws Exception {
         SimplePermitLimiter streamLimiter = createPermitLimiter(false, 1);
         SimplePermitLimiter globalLimiter = createPermitLimiter(false, Integer.MAX_VALUE);
@@ -73,7 +73,7 @@ public class TestWriteLimiter {
         assertPermits(streamLimiter, 1, globalLimiter, 1);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testDarkmode() throws Exception {
         SimplePermitLimiter streamLimiter = createPermitLimiter(true, Integer.MAX_VALUE);
         SimplePermitLimiter globalLimiter = createPermitLimiter(true, 1);
@@ -83,7 +83,7 @@ public class TestWriteLimiter {
         assertPermits(streamLimiter, 2, globalLimiter, 2);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testDarkmodeWithDisabledFeature() throws Exception {
         SettableFeature feature = new SettableFeature("test", 10000);
         SimplePermitLimiter streamLimiter = createPermitLimiter(true, 1, feature);
@@ -97,7 +97,7 @@ public class TestWriteLimiter {
         assertPermits(streamLimiter, 0, globalLimiter, 0);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testDisabledFeature() throws Exception {
         // Disable darkmode, but should still ignore limits because of the feature.
         SettableFeature feature = new SettableFeature("test", 10000);
@@ -112,7 +112,7 @@ public class TestWriteLimiter {
         assertPermits(streamLimiter, 0, globalLimiter, 0);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testSetDisableFeatureAfterAcquireAndBeforeRelease() throws Exception {
         SettableFeature feature = new SettableFeature("test", 0);
         SimplePermitLimiter streamLimiter = createPermitLimiter(false, 2, feature);
@@ -127,7 +127,7 @@ public class TestWriteLimiter {
         assertPermits(streamLimiter, 0, globalLimiter, 0);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testUnsetDisableFeatureAfterPermitsExceeded() throws Exception {
         SettableFeature feature = new SettableFeature("test", 10000);
         SimplePermitLimiter streamLimiter = createPermitLimiter(false, 1, feature);
@@ -153,7 +153,7 @@ public class TestWriteLimiter {
         assertPermits(streamLimiter, 0, globalLimiter, 0);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testUnsetDisableFeatureBeforePermitsExceeded() throws Exception {
         SettableFeature feature = new SettableFeature("test", 0);
         SimplePermitLimiter streamLimiter = createPermitLimiter(false, 1, feature);
@@ -171,7 +171,7 @@ public class TestWriteLimiter {
         assertPermits(streamLimiter, 2, globalLimiter, 2);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testDarkmodeGlobalUnderStreamOver() throws Exception {
         SimplePermitLimiter streamLimiter = createPermitLimiter(true, 1);
         SimplePermitLimiter globalLimiter = createPermitLimiter(true, 2);
@@ -184,7 +184,7 @@ public class TestWriteLimiter {
         assertPermits(streamLimiter, 0, globalLimiter, 0);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testDarkmodeGlobalOverStreamUnder() throws Exception {
         SimplePermitLimiter streamLimiter = createPermitLimiter(true, 2);
         SimplePermitLimiter globalLimiter = createPermitLimiter(true, 1);

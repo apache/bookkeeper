@@ -225,7 +225,7 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
         assertEquals(inprogressLogSegment, readInprogressLogSegment);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testChangeTruncationStatus() throws Exception {
         String ledgerPath = "/ledgers2";
         zkc.get().create(ledgerPath, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);

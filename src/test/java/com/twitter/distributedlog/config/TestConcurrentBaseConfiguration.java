@@ -26,7 +26,7 @@ import static org.junit.Assert.*;
 public class TestConcurrentBaseConfiguration {
     static final Logger LOG = LoggerFactory.getLogger(TestConcurrentBaseConfiguration.class);
 
-    @Test
+    @Test(timeout = 20000)
     public void testBasicOperations() throws Exception {
         ConcurrentBaseConfiguration conf = new ConcurrentBaseConfiguration();
         conf.setProperty("prop1", "1");

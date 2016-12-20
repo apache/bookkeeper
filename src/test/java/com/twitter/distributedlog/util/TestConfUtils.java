@@ -25,7 +25,7 @@ import static org.junit.Assert.*;
 
 public class TestConfUtils {
 
-    @Test
+    @Test(timeout = 60000)
     public void testLoadConfiguration() {
         Configuration conf1 = new CompositeConfiguration();
         conf1.setProperty("key1", "value1");

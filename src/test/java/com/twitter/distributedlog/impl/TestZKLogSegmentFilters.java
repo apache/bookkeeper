@@ -37,7 +37,7 @@ public class TestZKLogSegmentFilters {
 
     static final Logger LOG = LoggerFactory.getLogger(TestZKLogSegmentFilters.class);
 
-    @Test
+    @Test(timeout = 60000)
     public void testWriteFilter() {
         Set<String> expectedFilteredSegments = new HashSet<String>();
         List<String> segments = new ArrayList<String>();

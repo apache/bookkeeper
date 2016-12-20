@@ -258,7 +258,7 @@ public class TestLedgerAllocatorPool extends TestDistributedLogBase {
         assertEquals(numLedgers, allocatedLedgers.size());
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testConcurrentAllocation() throws Exception {
         final int numAllocators = 5;
         String allocationPath = "/concurrentAllocation";

@@ -39,7 +39,7 @@ public class TestRequestLimiter {
         }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testChainedRequestLimiter() throws Exception {
         MockRequestLimiter limiter1 = new MockRequestLimiter();
         MockRequestLimiter limiter2 = new MockRequestLimiter();

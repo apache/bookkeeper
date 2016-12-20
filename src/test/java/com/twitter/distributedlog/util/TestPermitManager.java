@@ -29,7 +29,7 @@ import static org.junit.Assert.*;
 
 public class TestPermitManager {
 
-    @Test
+    @Test(timeout = 60000)
     public void testUnlimitedPermitManager() {
         PermitManager pm = PermitManager.UNLIMITED_PERMIT_MANAGER;
         List<PermitManager.Permit> permits = new ArrayList<PermitManager.Permit>();
@@ -53,7 +53,7 @@ public class TestPermitManager {
         }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testLimitedPermitManager() {
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
         PermitManager pm = new LimitedPermitManager(1, 0, TimeUnit.SECONDS, executorService);

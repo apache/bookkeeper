@@ -111,7 +111,7 @@ public class TestTruncate extends TestDistributedLogBase {
         distributedLogManager.close();
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testTruncation() throws Exception {
         String name = "distrlog-truncation";
 
@@ -143,7 +143,7 @@ public class TestTruncate extends TestDistributedLogBase {
         pair.getLeft().close();
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testExplicitTruncation() throws Exception {
         String name = "distrlog-truncation-explicit";
 

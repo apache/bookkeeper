@@ -73,7 +73,7 @@ public class TestSafeQueueingFuturePool {
         }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testSimpleSuccess() throws Exception {
         TestFuturePool<Void> pool = new TestFuturePool<Void>();
         final AtomicBoolean result = new AtomicBoolean(false);
@@ -88,7 +88,7 @@ public class TestSafeQueueingFuturePool {
         pool.shutdown();
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testSimpleFailure() throws Exception {
         TestFuturePool<Void> pool = new TestFuturePool<Void>();
         Future<Void> future = pool.wrapper.apply(new Function0<Void>() {
@@ -104,7 +104,7 @@ public class TestSafeQueueingFuturePool {
         pool.shutdown();
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testFailedDueToClosed() throws Exception {
         TestFuturePool<Void> pool = new TestFuturePool<Void>();
         pool.wrapper.close();
@@ -121,7 +121,7 @@ public class TestSafeQueueingFuturePool {
         pool.shutdown();
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testRejectedFailure() throws Exception {
         TestFuturePool<Void> pool = new TestFuturePool<Void>();
         final AtomicBoolean result = new AtomicBoolean(false);
@@ -146,7 +146,7 @@ public class TestSafeQueueingFuturePool {
         pool.shutdown();
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testRejectedBackupFailure() throws Exception {
         TestFuturePool<Void> pool = new TestFuturePool<Void>();
         final AtomicBoolean result = new AtomicBoolean(false);

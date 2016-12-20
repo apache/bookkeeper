@@ -337,7 +337,7 @@ public class TestInterleavedReaders extends TestDistributedLogBase {
         dlmreader1.close();
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testFactorySharedClients() throws Exception {
         String name = "distrlog-factorysharedclients";
         testFactory(name, true);
