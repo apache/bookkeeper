@@ -17,13 +17,15 @@
  */
 package com.twitter.distributedlog.util;
 
-import com.twitter.distributedlog.exceptions.BKTransmitException;
+import com.google.common.base.Stopwatch;
 import com.twitter.distributedlog.DistributedLogConstants;
+import com.twitter.distributedlog.exceptions.BKTransmitException;
 import com.twitter.distributedlog.exceptions.LockingException;
 import com.twitter.distributedlog.ZooKeeperClient;
 import com.twitter.distributedlog.exceptions.DLInterruptedException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
 import com.twitter.distributedlog.exceptions.ZKException;
+import com.twitter.distributedlog.stats.OpStatsListener;
 import com.twitter.util.Await;
 import com.twitter.util.Duration;
 import com.twitter.util.Function;
@@ -34,6 +36,7 @@ import com.twitter.util.Promise;
 import com.twitter.util.Return;
 import com.twitter.util.Throw;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -222,6 +225,21 @@ public class FutureUtils {
             processor.run();
         }
         return processor.promise;
+    }
+
+    /**
+     * Add a event listener over <i>result</i> for collecting the operation stats.
+     *
+     * @param result result to listen on
+     * @param opStatsLogger stats logger to record operations stats
+     * @param stopwatch stop watch to time operation
+     * @param <T>
+     * @return result after registered the event listener
+     */
+    public static <T> Future<T> stats(Future<T> result,
+                                      OpStatsLogger opStatsLogger,
+                                      Stopwatch stopwatch) {
+        return result.addEventListener(new OpStatsListener<T>(opStatsLogger, stopwatch));
     }
 
     /**

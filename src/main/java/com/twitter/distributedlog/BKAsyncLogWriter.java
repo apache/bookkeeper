@@ -212,8 +212,10 @@ public class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWri
                                                            boolean rollLog,
                                                            boolean allowMaxTxID) {
         Stopwatch stopwatch = Stopwatch.createStarted();
-        return doGetLogSegmentWriter(firstTxid, bestEffort, rollLog, allowMaxTxID)
-                .addEventListener(new OpStatsListener<BKLogSegmentWriter>(getWriterOpStatsLogger, stopwatch));
+        return FutureUtils.stats(
+                doGetLogSegmentWriter(firstTxid, bestEffort, rollLog, allowMaxTxID),
+                getWriterOpStatsLogger,
+                stopwatch);
     }
 
     private Future<BKLogSegmentWriter> doGetLogSegmentWriter(final long firstTxid,
@@ -415,8 +417,10 @@ public class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWri
     @Override
     public Future<DLSN> write(final LogRecord record) {
         final Stopwatch stopwatch = Stopwatch.createStarted();
-        return asyncWrite(record, true)
-                .addEventListener(new OpStatsListener<DLSN>(writeOpStatsLogger, stopwatch));
+        return FutureUtils.stats(
+                asyncWrite(record, true),
+                writeOpStatsLogger,
+                stopwatch);
     }
 
     /**
@@ -430,8 +434,10 @@ public class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWri
     @Override
     public Future<List<Future<DLSN>>> writeBulk(final List<LogRecord> records) {
         final Stopwatch stopwatch = Stopwatch.createStarted();
-        return Future.value(asyncWriteBulk(records))
-                .addEventListener(new OpStatsListener<List<Future<DLSN>>>(bulkWriteOpStatsLogger, stopwatch));
+        return FutureUtils.stats(
+                Future.value(asyncWriteBulk(records)),
+                bulkWriteOpStatsLogger,
+                stopwatch);
     }
 
     @Override
@@ -478,12 +484,15 @@ public class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWri
             logSegmentWriterFuture = getLogSegmentWriterForEndOfStream();
         }
 
-        return logSegmentWriterFuture.flatMap(new AbstractFunction1<BKLogSegmentWriter, Future<Long>>() {
-            @Override
-            public Future<Long> apply(BKLogSegmentWriter w) {
-                return w.markEndOfStream();
-            }
-        }).addEventListener(new OpStatsListener<Long>(markEndOfStreamOpStatsLogger, stopwatch));
+        return FutureUtils.stats(
+                logSegmentWriterFuture.flatMap(new AbstractFunction1<BKLogSegmentWriter, Future<Long>>() {
+                    @Override
+                    public Future<Long> apply(BKLogSegmentWriter w) {
+                        return w.markEndOfStream();
+                    }
+                }),
+                markEndOfStreamOpStatsLogger,
+                stopwatch);
     }
 
     @Override
