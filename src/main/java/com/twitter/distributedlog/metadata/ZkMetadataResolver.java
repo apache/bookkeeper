@@ -62,6 +62,7 @@ public class ZkMetadataResolver implements MetadataResolver {
             try {
                 return DLMetadata.deserialize(uri, data);
             } catch (IOException ie) {
+                throw new IOException("Failed to deserialize uri : " + uri);
             }
         }
         throw new IOException("No bkdl config bound under dl path : " + dlPath);
