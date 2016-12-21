@@ -19,6 +19,11 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Exception is thrown when a log writer attempt to acquire a lock.
+ *
+ * <p>It is typically thrown when the lock is already acquired by another writer.
+ */
 public class OwnershipAcquireFailedException extends LockingException {
     private static final long serialVersionUID = 8176056926552748001L;
     private final String currentOwner;

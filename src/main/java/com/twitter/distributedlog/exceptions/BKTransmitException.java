@@ -17,12 +17,12 @@
  */
 package com.twitter.distributedlog.exceptions;
 
-import com.twitter.distributedlog.exceptions.DLException;
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
 /**
- * Thrown when the send to bookkeeper fails
- * This is thrown by the next attempt to write, send or flush
+ * Thrown when the send to bookkeeper fails.
+ *
+ * <p>This is thrown by the next attempt to write, send or flush
  */
 public class BKTransmitException extends DLException {
 

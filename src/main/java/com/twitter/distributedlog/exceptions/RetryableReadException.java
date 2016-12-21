@@ -19,6 +19,9 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Signals that a read request can be retried..
+ */
 public class RetryableReadException extends DLException {
 
     private static final long serialVersionUID = 2803207702150642330L;

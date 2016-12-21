@@ -20,7 +20,7 @@ package com.twitter.distributedlog.exceptions;
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
 /**
- * Log Already Exists
+ * Exception thrown on creating a log stream but the log stream already exists.
  */
 public class LogExistsException extends DLException {
     private static final long serialVersionUID = 1794053581673506784L;

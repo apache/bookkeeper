@@ -19,6 +19,11 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Exception indicates that the service is not available in one region.
+ *
+ * <p>The client should retry the other regions when encountering this exception.
+ */
 public class RegionUnavailableException extends DLException {
 
     private static final long serialVersionUID = 5727337162533143957L;

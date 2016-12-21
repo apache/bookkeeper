@@ -17,15 +17,19 @@
  */
 package com.twitter.distributedlog;
 
+import static com.twitter.distributedlog.LogRecordSet.COMPRESSION_CODEC_LZ4;
+import static com.twitter.distributedlog.LogRecordSet.METADATA_COMPRESSION_MASK;
+import static com.twitter.distributedlog.LogRecordSet.METADATA_VERSION_MASK;
+import static com.twitter.distributedlog.LogRecordSet.NULL_OP_STATS_LOGGER;
+import static com.twitter.distributedlog.LogRecordSet.VERSION;
+
 import com.twitter.distributedlog.io.CompressionCodec;
 import com.twitter.distributedlog.io.CompressionUtils;
-
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-import static com.twitter.distributedlog.LogRecordSet.*;
 
 /**
  * Record reader to read records from an enveloped entry buffer.
@@ -63,8 +67,8 @@ class EnvelopedRecordSetReader implements LogRecordSet.Reader {
         int metadata = src.readInt();
         int version = metadata & METADATA_VERSION_MASK;
         if (version != VERSION) {
-            throw new IOException(String.format("Version mismatch while reading. Received: %d," +
-                    " Required: %d", version, VERSION));
+            throw new IOException(String.format("Version mismatch while reading. Received: %d,"
+                + " Required: %d", version, VERSION));
         }
         int codecCode = metadata & METADATA_COMPRESSION_MASK;
         this.numRecords = src.readInt();
@@ -76,7 +80,7 @@ class EnvelopedRecordSetReader implements LogRecordSet.Reader {
         if (COMPRESSION_CODEC_LZ4 == codecCode) {
             CompressionCodec codec = CompressionUtils.getCompressionCodec(CompressionCodec.Type.LZ4);
             byte[] decompressedData = codec.decompress(compressedData, 0, actualDataLen,
-                    originDataLen, NullOpStatsLogger);
+                    originDataLen, NULL_OP_STATS_LOGGER);
             this.reader = ByteBuffer.wrap(decompressedData);
         } else {
             if (originDataLen != actualDataLen) {

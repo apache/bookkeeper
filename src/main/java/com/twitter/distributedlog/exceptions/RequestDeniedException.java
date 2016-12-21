@@ -19,6 +19,9 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Signals that a request has been denied at the server.
+ */
 public class RequestDeniedException extends DLException {
 
     private static final long serialVersionUID = 7338220414584728216L;

@@ -17,12 +17,12 @@
  */
 package com.twitter.distributedlog.exceptions;
 
-import com.twitter.distributedlog.exceptions.DLException;
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
 /**
- * Thrown when the distributed log manager has already been closed
- * (connections have been torn down)
+ * Thrown when any distributedlog resources have already been closed.
+ *
+ * <p>For example, it might be thrown when the connections have been torn down.
  */
 public class AlreadyClosedException extends DLException {
 

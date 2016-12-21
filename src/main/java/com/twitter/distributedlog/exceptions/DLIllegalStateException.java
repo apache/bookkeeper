@@ -19,6 +19,9 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Signals that a method has been invoked at an illegal or inappropriate time.
+ */
 public class DLIllegalStateException extends DLException {
 
     private static final long serialVersionUID = -6721471104777747420L;

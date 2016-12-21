@@ -17,6 +17,13 @@
  */
 package com.twitter.distributedlog;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static com.twitter.distributedlog.LogRecord.MAX_LOGRECORD_SIZE;
+import static com.twitter.distributedlog.LogRecordSet.HEADER_LEN;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
 import com.google.common.collect.Lists;
 import com.twitter.distributedlog.LogRecordSet.Reader;
 import com.twitter.distributedlog.LogRecordSet.Writer;
@@ -25,18 +32,12 @@ import com.twitter.distributedlog.io.CompressionCodec.Type;
 import com.twitter.util.Await;
 import com.twitter.util.Future;
 import com.twitter.util.Promise;
-import org.junit.Test;
-
 import java.nio.ByteBuffer;
 import java.util.List;
-
-import static com.google.common.base.Charsets.UTF_8;
-import static com.twitter.distributedlog.LogRecord.*;
-import static com.twitter.distributedlog.LogRecordSet.*;
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
- * Test Case for {@link LogRecordSet}
+ * Test Case for {@link LogRecordSet}.
  */
 public class TestLogRecordSet {
 

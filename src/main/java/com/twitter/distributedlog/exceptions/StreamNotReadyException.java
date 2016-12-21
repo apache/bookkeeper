@@ -19,6 +19,9 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Exception is thrown when a log stream is not ready on server side for serving the write requests.
+ */
 public class StreamNotReadyException extends DLException {
 
     private static final long serialVersionUID = 684211282036293028L;

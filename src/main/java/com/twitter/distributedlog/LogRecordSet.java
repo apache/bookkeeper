@@ -17,20 +17,21 @@
  */
 package com.twitter.distributedlog;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.twitter.distributedlog.exceptions.LogRecordTooLongException;
 import com.twitter.distributedlog.exceptions.WriteException;
 import com.twitter.distributedlog.io.CompressionCodec;
 import com.twitter.util.Promise;
-import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.stats.OpStatsLogger;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.OpStatsLogger;
 
 /**
  * A set of {@link LogRecord}s.
+ *
  * <pre>
  * Structure:
  * Bytes 0  -  4                : Metadata (version + flags)
@@ -56,7 +57,7 @@ import java.nio.ByteBuffer;
  */
 public class LogRecordSet {
 
-    static final OpStatsLogger NullOpStatsLogger =
+    static final OpStatsLogger NULL_OP_STATS_LOGGER =
             NullStatsLogger.INSTANCE.getOpStatsLogger("");
 
     public static final int HEADER_LEN =
@@ -77,7 +78,7 @@ public class LogRecordSet {
     static final int COMPRESSION_CODEC_LZ4 = 0X1;
 
     public static int numRecords(LogRecord record) throws IOException {
-        Preconditions.checkArgument(record.isRecordSet(),
+        checkArgument(record.isRecordSet(),
                 "record is not a recordset");
         byte[] data = record.getPayload();
         return numRecords(data);
@@ -88,8 +89,8 @@ public class LogRecordSet {
         int metadata = buffer.getInt();
         int version = (metadata & METADATA_VERSION_MASK);
         if (version != VERSION) {
-            throw new IOException(String.format("Version mismatch while reading. Received: %d," +
-                    " Required: %d", version, VERSION));
+            throw new IOException(String.format("Version mismatch while reading. Received: %d,"
+                + " Required: %d", version, VERSION));
         }
         return buffer.getInt();
     }
@@ -100,7 +101,7 @@ public class LogRecordSet {
     }
 
     public static Reader of(LogRecordWithDLSN record) throws IOException {
-        Preconditions.checkArgument(record.isRecordSet(),
+        checkArgument(record.isRecordSet(),
                 "record is not a recordset");
         byte[] data = record.getPayload();
         DLSN dlsn = record.getDlsn();
@@ -120,7 +121,7 @@ public class LogRecordSet {
     /**
      * Writer to append {@link LogRecord}s to {@link LogRecordSet}.
      */
-    public static interface Writer extends LogRecordSetBuffer {
+    public interface Writer extends LogRecordSetBuffer {
 
         /**
          * Write a {@link LogRecord} to this record set.
@@ -140,7 +141,7 @@ public class LogRecordSet {
     /**
      * Reader to read {@link LogRecord}s from this record set.
      */
-    public static interface Reader {
+    public interface Reader {
 
         /**
          * Read next log record from this record set.

@@ -17,9 +17,11 @@
  */
 package com.twitter.distributedlog.exceptions;
 
-import com.twitter.distributedlog.exceptions.DLException;
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Exception when a log writer attempts to acquire a lock to write data to the stream.
+ */
 public class LockingException extends DLException {
 
     private static final long serialVersionUID = -4960278188448464473L;

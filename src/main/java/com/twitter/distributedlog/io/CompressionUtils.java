@@ -17,13 +17,16 @@
  */
 package com.twitter.distributedlog.io;
 
+/**
+ * Utils for compression related operations.
+ */
 public class CompressionUtils {
 
-    public final static String LZ4 = "lz4";
-    public final static String NONE = "none";
+    public static final String LZ4 = "lz4";
+    public static final String NONE = "none";
 
-    private static CompressionCodec identityCodec = new IdentityCompressionCodec();
-    private static CompressionCodec lz4Codec = new LZ4CompressionCodec();
+    private static final CompressionCodec IDENTITY_CODEC = new IdentityCompressionCodec();
+    private static final CompressionCodec LZ4_CODEC = new LZ4CompressionCodec();
 
     /**
      * Get a cached compression codec instance for the specified type.
@@ -32,10 +35,10 @@ public class CompressionUtils {
      */
     public static CompressionCodec getCompressionCodec(CompressionCodec.Type type) {
         if (type == CompressionCodec.Type.LZ4) {
-            return lz4Codec;
+            return LZ4_CODEC;
         }
         // No Compression
-        return identityCodec;
+        return IDENTITY_CODEC;
     }
 
     /**

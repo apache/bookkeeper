@@ -17,9 +17,14 @@
  */
 package com.twitter.distributedlog;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
+import org.junit.Test;
+
+/**
+ * Test Case for {@link DLSN}.
+ */
 public class TestDLSN {
 
     @Test(timeout = 60000)

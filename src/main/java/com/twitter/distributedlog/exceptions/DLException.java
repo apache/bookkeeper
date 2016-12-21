@@ -19,9 +19,11 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.ResponseHeader;
 import com.twitter.distributedlog.thrift.service.StatusCode;
-
 import java.io.IOException;
 
+/**
+ * The basic exception of all distributedlog exceptions.
+ */
 public class DLException extends IOException {
     private static final long serialVersionUID = -4485775468586114393L;
     protected final StatusCode code;

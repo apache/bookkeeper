@@ -19,6 +19,11 @@ package com.twitter.distributedlog.exceptions;
 
 import java.io.IOException;
 
+/**
+ * An exception is thrown when a log reader becomes idle.
+ *
+ * <p>A log reader can become idle when there is no records written to the stream.
+ */
 public class IdleReaderException extends IOException {
 
     private static final long serialVersionUID = 4882278671396434834L;

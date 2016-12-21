@@ -19,6 +19,12 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Exception is thrown when the system is over capacity.
+ *
+ * <p>When this exception is received, the client (either writer or reader) should take actions to not
+ * overwhelm the system. For example, backoff sending any requests.
+ */
 public class OverCapacityException extends DLException {
 
     private static final long serialVersionUID = -6398949404860680263L;

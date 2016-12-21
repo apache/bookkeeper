@@ -19,6 +19,9 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Exception thrown when a reader reaches end of a sealed log stream.
+ */
 public class EndOfStreamException extends DLException {
 
     private static final long serialVersionUID = -6398949401860680263L;

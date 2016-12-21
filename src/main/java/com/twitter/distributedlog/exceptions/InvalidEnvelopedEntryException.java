@@ -20,7 +20,7 @@ package com.twitter.distributedlog.exceptions;
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
 /**
- * Exception thrown when encounter invalid enveloped entry
+ * Exception thrown when encounter invalid enveloped entry.
  */
 public class InvalidEnvelopedEntryException extends DLException {
 

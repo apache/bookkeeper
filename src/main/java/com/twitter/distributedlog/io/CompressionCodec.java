@@ -20,14 +20,13 @@ package com.twitter.distributedlog.io;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 
 /**
- * Common interface for compression/decompression operations using different
- * compression codecs.
+ * Common interface for compression/decompression operations using different compression codecs.
  */
 public interface CompressionCodec {
     /**
      * Enum specifying the currently supported compression types.
      */
-    public static enum Type {
+    enum Type {
         NONE, LZ4, UNKNOWN
     }
 

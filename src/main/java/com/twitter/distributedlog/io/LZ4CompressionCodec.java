@@ -17,21 +17,22 @@
  */
 package com.twitter.distributedlog.io;
 
-import java.util.concurrent.TimeUnit;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
-
+import java.util.concurrent.TimeUnit;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Exception;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;
 import net.jpountz.lz4.LZ4SafeDecompressor;
-
 import org.apache.bookkeeper.stats.OpStatsLogger;
 
 /**
- * All functions are thread safe.
+ * An {@code lz4} based {@link CompressionCodec} implementation.
+ *
+ * <p>All functions are thread safe.
  */
 public class LZ4CompressionCodec implements CompressionCodec {
 
@@ -50,10 +51,10 @@ public class LZ4CompressionCodec implements CompressionCodec {
 
     @Override
     public byte[] compress(byte[] data, int offset, int length, OpStatsLogger compressionStat) {
-        Preconditions.checkNotNull(data);
-        Preconditions.checkArgument(offset >= 0 && offset < data.length);
-        Preconditions.checkArgument(length >= 0);
-        Preconditions.checkNotNull(compressionStat);
+        checkNotNull(data);
+        checkArgument(offset >= 0 && offset < data.length);
+        checkArgument(length >= 0);
+        checkNotNull(compressionStat);
 
         Stopwatch watch = Stopwatch.createStarted();
         byte[] compressed = compressor.compress(data, offset, length);
@@ -63,10 +64,10 @@ public class LZ4CompressionCodec implements CompressionCodec {
 
     @Override
     public byte[] decompress(byte[] data, int offset, int length, OpStatsLogger decompressionStat) {
-        Preconditions.checkNotNull(data);
-        Preconditions.checkArgument(offset >= 0 && offset < data.length);
-        Preconditions.checkArgument(length >= 0);
-        Preconditions.checkNotNull(decompressionStat);
+        checkNotNull(data);
+        checkArgument(offset >= 0 && offset < data.length);
+        checkArgument(length >= 0);
+        checkNotNull(decompressionStat);
 
         Stopwatch watch = Stopwatch.createStarted();
         // Assume that we have a compression ratio of 1/3.
@@ -86,11 +87,11 @@ public class LZ4CompressionCodec implements CompressionCodec {
     // length parameter is ignored here because of the way the fastDecompressor works.
     public byte[] decompress(byte[] data, int offset, int length, int decompressedSize,
                              OpStatsLogger decompressionStat) {
-        Preconditions.checkNotNull(data);
-        Preconditions.checkArgument(offset >= 0 && offset < data.length);
-        Preconditions.checkArgument(length >= 0);
-        Preconditions.checkArgument(decompressedSize >= 0);
-        Preconditions.checkNotNull(decompressionStat);
+        checkNotNull(data);
+        checkArgument(offset >= 0 && offset < data.length);
+        checkArgument(length >= 0);
+        checkArgument(decompressedSize >= 0);
+        checkNotNull(decompressionStat);
 
         Stopwatch watch = Stopwatch.createStarted();
         byte[] decompressed = fastDecompressor.decompress(data, offset, decompressedSize);

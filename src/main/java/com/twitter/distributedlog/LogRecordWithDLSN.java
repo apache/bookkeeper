@@ -24,7 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
  *
  * <h3>Sequence Numbers</h3>
  *
- * A log record will be assigned with an unique system generated sequence number {@link DLSN} when it is
+ * <p>A log record will be assigned with an unique system generated sequence number {@link DLSN} when it is
  * written to a log. At the mean time, a 64-bits long number is assigned to the record indicates its position
  * within a log, which is called <code>SequenceId</code>. Besides {@link DLSN} and <code>SequenceID</code>,
  * application can assign its own sequence number (called <code>TransactionID</code>) to the log record while
@@ -32,7 +32,7 @@ import com.google.common.annotations.VisibleForTesting;
  *
  * <h4>Transaction ID</h4>
  *
- * Transaction ID is a positive 64-bits long number that is assigned by the application. It is a very helpful
+ * <p>Transaction ID is a positive 64-bits long number that is assigned by the application. It is a very helpful
  * field when application wants to organize the records and position the readers using their own sequencing method.
  * A typical use case of <code>TransactionID</code> is DistributedLog Write Proxy. It assigns the non-decreasing
  * timestamps to log records, which the timestamps could be used as `physical time` to implement `TTL` in a strong
@@ -40,14 +40,14 @@ import com.google.common.annotations.VisibleForTesting;
  *
  * <h4>DLSN</h4>
  *
- * DistributedLog Sequence Number (<i>DLSN</i>) is the sequence number generated during written time. It is comparable
- * and could be used to figure out the order between records. The DLSN is comprised with 3 components. They are
- * <i>Log Segment Sequence Number</i>, <i>Entry Id</i> and <i>Slot Id</i>. (See {@link DLSN} for more details).
+ * <p>DistributedLog Sequence Number (<i>DLSN</i>) is the sequence number generated during written time.
+ * It is comparable and could be used to figure out the order between records. The DLSN is comprised with 3 components.
+ * They are <i>Log Segment Sequence Number</i>, <i>Entry Id</i> and <i>Slot Id</i>. (See {@link DLSN} for more details).
  * The DLSN is usually used for comparison, positioning and truncation.
  *
  * <h4>Sequence ID</h4>
  *
- * Sequence ID is introduced to address the drawback of <code>DLSN</code>, in favor of answering questions like
+ * <p>Sequence ID is introduced to address the drawback of <code>DLSN</code>, in favor of answering questions like
  * `how many records written between two DLSNs`. It is a 64-bits monotonic increasing number (starting from zero).
  * Sequence ids are only accessible by readers. That means writers don't know the sequence ids of records after they
  * wrote them.
@@ -96,12 +96,12 @@ public class LogRecordWithDLSN extends LogRecord {
 
     @Override
     public String toString() {
-        return "LogRecordWithDLSN{" +
-            "dlsn=" + dlsn +
-            ", txid=" + getTransactionId() +
-            ", position=" + getPositionWithinLogSegment() +
-            ", isControl=" + isControl() +
-            ", isEndOfStream=" + isEndOfStream() +
-            '}';
+        return "LogRecordWithDLSN{"
+            + "dlsn=" + dlsn
+            + ", txid=" + getTransactionId()
+            + ", position=" + getPositionWithinLogSegment()
+            + ", isControl=" + isControl()
+            + ", isEndOfStream=" + isEndOfStream()
+            + '}';
     }
 }

@@ -17,9 +17,11 @@
  */
 package com.twitter.distributedlog.exceptions;
 
-import com.twitter.distributedlog.exceptions.DLException;
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Exception is thrown when a reader attempts to read a log stream that doesn't exist.
+ */
 public class LogNotFoundException extends DLException {
 
     private static final long serialVersionUID = 871435700699403164L;

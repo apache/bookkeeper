@@ -19,6 +19,9 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * An exception is thrown when a log writer attempts to write a record with out-of-order transaction id.
+ */
 public class TransactionIdOutOfOrderException extends DLException {
 
     private static final long serialVersionUID = -6239322552103630036L;

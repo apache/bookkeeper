@@ -17,14 +17,13 @@
  */
 package com.twitter.distributedlog;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-
-import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,38 +40,39 @@ import org.slf4j.LoggerFactory;
  *
  * <h3>User Record</h3>
  *
- * User records are the records written by applications and read by applications. They
+ * <p>User records are the records written by applications and read by applications. They
  * are constructed via {@link #LogRecord(long, byte[])} by applications and appended to
  * logs by writers. And they would be deserialized from bytes by the readers and return
  * to applications.
  *
  * <h3>Control Record</h3>
  *
- * Control records are special records that written by distributedlog. They are invisible
+ * <p>Control records are special records that written by distributedlog. They are invisible
  * to applications. They could be treated as <i>commit requests</i> as what people could find
  * in distributed consensus algorithms, since they are usually written by distributedlog to
  * commit application written records. <i>Commit</i> means making application written records
  * visible to readers to achieve consistent views among them.
- * <p>
- * They are named as 'Control Records' for controlling visibility of application written records.
- * <p>
- * The transaction id of 'Control Records' are assigned by distributedlog by inheriting from last
+ *
+ * <p>They are named as 'Control Records' for controlling visibility of application written records.
+ *
+ * <p>The transaction id of 'Control Records' are assigned by distributedlog by inheriting from last
  * written user records. So we could indicate what user records that a control record is committing
  * by looking at its transaction id.
  *
  * <h4>EndOfStream Record</h4>
  *
- * <code>EoS</code>(EndOfStream) is a special control record that would be written by a writer
+ * <p><code>EoS</code>(EndOfStream) is a special control record that would be written by a writer
  * to seal a log. After a <i>EoS</i> record is written to a log, no writers could append any record
  * after that and readers will get {@link com.twitter.distributedlog.exceptions.EndOfStreamException}
  * when they reach EoS.
+ *
  * <p>TransactionID of EoS is <code>Long.MAX_VALUE</code>.
  *
  * <h3>Serialization & Deserialization</h3>
  *
- * Data type in brackets. Interpretation should be on the basis of data types and not individual
+ * <p>Data type in brackets. Interpretation should be on the basis of data types and not individual
  * bytes to honor Endianness.
- * <p>
+ *
  * <pre>
  * LogRecord structure:
  * -------------------
@@ -98,13 +98,14 @@ import org.slf4j.LoggerFactory;
  *
  * <h3>Sequence Numbers</h3>
  *
- * A record is associated with three types of sequence numbers. They are generated
+ * <p>A record is associated with three types of sequence numbers. They are generated
  * and used for different purposes. Check {@link LogRecordWithDLSN} for more details.
  *
  * @see LogRecordWithDLSN
  */
 public class LogRecord {
-    static final Logger LOG = LoggerFactory.getLogger(LogRecord.class);
+
+    private static final Logger LOG = LoggerFactory.getLogger(LogRecord.class);
 
     // Allow 4K overhead for metadata within the max transmission size
     public static final int MAX_LOGRECORD_SIZE = 1024 * 1024 - 8 * 1024; //1MB - 8KB
@@ -131,8 +132,8 @@ public class LogRecord {
 
     /**
      * Construct an uninitialized log record.
-     * <p>
-     * NOTE: only deserializer should call this constructor.
+     *
+     * <p>NOTE: only deserializer should call this constructor.
      */
     protected LogRecord() {
         this.txid = 0;
@@ -141,6 +142,7 @@ public class LogRecord {
 
     /**
      * Construct a log record with <i>TransactionId</i> and payload.
+     *
      * <p>Usually writer would construct the log record for writing.
      *
      * @param txid
@@ -223,8 +225,8 @@ public class LogRecord {
      */
     void setPositionWithinLogSegment(int positionWithinLogSegment) {
         assert(positionWithinLogSegment >= 0);
-        metadata = (metadata & LOGRECORD_METADATA_POSITION_UMASK) |
-                (((long) positionWithinLogSegment) << LOGRECORD_METADATA_POSITION_SHIFT);
+        metadata = (metadata & LOGRECORD_METADATA_POSITION_UMASK)
+            | (((long) positionWithinLogSegment) << LOGRECORD_METADATA_POSITION_SHIFT);
     }
 
     /**
@@ -243,6 +245,7 @@ public class LogRecord {
 
     /**
      * Get the last position of this record in the log segment.
+     *
      * <p>If the record isn't record set, it would be same as {@link #getPositionWithinLogSegment()},
      * otherwise, it would be {@link #getPositionWithinLogSegment()} + numRecords - 1. If the record set
      * version is unknown, it would be same as {@link #getPositionWithinLogSegment()}.
@@ -264,6 +267,7 @@ public class LogRecord {
 
     /**
      * Set the record to represent a set of records.
+     *
      * <p>The bytes in this record is the serialized format of {@link LogRecordSet}.
      */
     public void setRecordSet() {
@@ -319,6 +323,7 @@ public class LogRecord {
 
     /**
      * Check if the record is a <code>EoS</code> mark.
+     *
      * <p><code>EoS</code> mark is a special record that writer would
      * add to seal a log. after <code>Eos</code> mark is written,
      * writers can't write any more records and readers will get
@@ -356,8 +361,9 @@ public class LogRecord {
     }
 
     /**
-     * The size of the serialized log record, this is used to estimate how much will
-     * be be appended to the in-memory buffer
+     * The size of the serialized log record.
+     *
+     * <p>This is used to estimate how much will be be appended to the in-memory buffer.
      *
      * @return serialized size
      */
@@ -367,7 +373,7 @@ public class LogRecord {
     }
 
     /**
-     * Class for writing log records
+     * Writer class to write log records into an output {@code stream}.
      */
     public static class Writer {
         private final DataOutputStream buf;
@@ -377,7 +383,7 @@ public class LogRecord {
         }
 
         /**
-         * Write an operation to the output stream
+         * Write an operation to the output stream.
          *
          * @param record The operation to write
          * @throws IOException if an error occurs during writing.
@@ -392,8 +398,7 @@ public class LogRecord {
     }
 
     /**
-     * This class is a package private class for reading log records
-     * from the persistent
+     * Reader class to read log records from an input {@code stream}.
       */
     public static class Reader {
         private final RecordStream recordStream;
@@ -405,9 +410,11 @@ public class LogRecord {
         private LogRecordWithDLSN lastRecordSkipTo = null;
 
         /**
-         * Construct the reader
+         * Construct the reader.
          *
+         * @param recordStream the record stream for generating {@code DLSN}s.
          * @param in The stream to read from.
+         * @param startSequenceId the start sequence id.
          */
         public Reader(RecordStream recordStream,
                       DataInputStream in,
@@ -426,9 +433,9 @@ public class LogRecord {
         }
 
         /**
-         * Read an operation from the input stream.
-         * <p/>
-         * Note that the objects returned from this method may be re-used by future
+         * Read an log record from the input stream.
+         *
+         * <p/> Note that the objects returned from this method may be re-used by future
          * calls to the same method.
          *
          * @return the operation read from the stream, or null at the end of the file
@@ -466,9 +473,11 @@ public class LogRecord {
                     nextRecordInStream.readPayload(in);
                     if (LOG.isTraceEnabled()) {
                         if (nextRecordInStream.isControl()) {
-                            LOG.trace("Reading {} Control DLSN {}", recordStream.getName(), nextRecordInStream.getDlsn());
+                            LOG.trace("Reading {} Control DLSN {}",
+                                recordStream.getName(), nextRecordInStream.getDlsn());
                         } else {
-                            LOG.trace("Reading {} Valid DLSN {}", recordStream.getName(), nextRecordInStream.getDlsn());
+                            LOG.trace("Reading {} Valid DLSN {}",
+                                recordStream.getName(), nextRecordInStream.getDlsn());
                         }
                     }
 
@@ -525,7 +534,7 @@ public class LogRecord {
                         currTxId = lastRecordSkipTo.getTransactionId();
                     }
 
-                    if ((null != dlsn) && (recordStream.getCurrentPosition().compareTo(dlsn) >=0)) {
+                    if ((null != dlsn) && (recordStream.getCurrentPosition().compareTo(dlsn) >= 0)) {
                         if (LOG.isTraceEnabled()) {
                             LOG.trace("Found position {} beyond {}", recordStream.getCurrentPosition(), dlsn);
                         }
@@ -556,7 +565,8 @@ public class LogRecord {
                     // get the num of records to skip
                     if (isRecordSet(flags)) {
                         // read record set
-                        LogRecordWithDLSN record = new LogRecordWithDLSN(recordStream.getCurrentPosition(), startSequenceId);
+                        LogRecordWithDLSN record =
+                            new LogRecordWithDLSN(recordStream.getCurrentPosition(), startSequenceId);
                         record.setMetadata(flags);
                         record.setTransactionId(currTxId);
                         record.readPayload(in);
@@ -580,7 +590,8 @@ public class LogRecord {
                             read += bytesToRead;
                         }
                         if (LOG.isTraceEnabled()) {
-                            LOG.trace("Skipped Record with TxId {} DLSN {}", currTxId, recordStream.getCurrentPosition());
+                            LOG.trace("Skipped Record with TxId {} DLSN {}",
+                                currTxId, recordStream.getCurrentPosition());
                         }
                         recordStream.advance(1);
                     }

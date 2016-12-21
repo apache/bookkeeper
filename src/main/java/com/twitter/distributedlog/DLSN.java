@@ -17,12 +17,13 @@
  */
 package com.twitter.distributedlog;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
+import java.nio.ByteBuffer;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 
-import java.nio.ByteBuffer;
 
 /**
  * DistributedLog Sequence Number (DLSN) is the system generated sequence number for log record.
@@ -46,7 +47,7 @@ public class DLSN implements Comparable<DLSN> {
     // The non-inclusive lower bound DLSN
     public static final DLSN NonInclusiveLowerBound = new DLSN(1, 0 , -1);
     // Invalid DLSN
-    public static final DLSN InvalidDLSN = new DLSN(0,-1,-1);
+    public static final DLSN InvalidDLSN = new DLSN(0, -1, -1);
 
     static final byte CUR_VERSION = VERSION1;
     static final int VERSION0_LEN = Long.SIZE * 3 + Byte.SIZE;
@@ -72,14 +73,6 @@ public class DLSN implements Comparable<DLSN> {
     }
 
     /**
-     * use {@link #getLogSegmentSequenceNo()} instead
-     */
-    @Deprecated
-    long getLedgerSequenceNo() {
-        return logSegmentSequenceNo;
-    }
-
-    /**
      * Return the entry id of the batch that the record is written to.
      *
      * @return entry id of the batch that the record is written to.
@@ -100,11 +93,11 @@ public class DLSN implements Comparable<DLSN> {
     @Override
     public int compareTo(DLSN that) {
         if (this.logSegmentSequenceNo != that.logSegmentSequenceNo) {
-            return (this.logSegmentSequenceNo < that.logSegmentSequenceNo)? -1 : 1;
+            return (this.logSegmentSequenceNo < that.logSegmentSequenceNo) ? -1 : 1;
         } else if (this.entryId != that.entryId) {
-            return (this.entryId < that.entryId)? -1 : 1;
+            return (this.entryId < that.entryId) ? -1 : 1;
         } else {
-            return (this.slotId < that.slotId)? -1 : (this.slotId == that.slotId)? 0 : 1;
+            return (this.slotId < that.slotId) ? -1 : (this.slotId == that.slotId) ? 0 : 1;
         }
     }
 
@@ -125,7 +118,7 @@ public class DLSN implements Comparable<DLSN> {
      * @return the serialized bytes
      */
     public byte[] serializeBytes(byte version) {
-        Preconditions.checkArgument(version <= CUR_VERSION && version >= VERSION0);
+        checkArgument(version <= CUR_VERSION && version >= VERSION0);
         byte[] data = new byte[CUR_VERSION == version ? VERSION1_LEN : VERSION0_LEN];
         ByteBuffer bb = ByteBuffer.wrap(data);
         bb.put(version);
@@ -208,23 +201,33 @@ public class DLSN implements Comparable<DLSN> {
 
     @Override
     public String toString() {
-        return "DLSN{" +
-            "logSegmentSequenceNo=" + logSegmentSequenceNo +
-            ", entryId=" + entryId +
-            ", slotId=" + slotId +
-            '}';
+        return "DLSN{"
+            + "logSegmentSequenceNo=" + logSegmentSequenceNo
+            + ", entryId=" + entryId
+            + ", slotId=" + slotId
+            + '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof DLSN)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof DLSN)) {
+            return false;
+        }
 
         DLSN dlsn = (DLSN) o;
 
-        if (entryId != dlsn.entryId) return false;
-        if (logSegmentSequenceNo != dlsn.logSegmentSequenceNo) return false;
-        if (slotId != dlsn.slotId) return false;
+        if (entryId != dlsn.entryId) {
+            return false;
+        }
+        if (logSegmentSequenceNo != dlsn.logSegmentSequenceNo) {
+            return false;
+        }
+        if (slotId != dlsn.slotId) {
+            return false;
+        }
 
         return true;
     }
@@ -238,9 +241,10 @@ public class DLSN implements Comparable<DLSN> {
     }
 
     /**
-     * Positions to a DLSN greater than the current value - this may not
-     * correspond to an actual LogRecord, its just used by the positioning logic
-     * to position the reader
+     * Positions to a DLSN greater than the current value.
+     *
+     * <p>This may not correspond to an actual LogRecord, its just used by the positioning logic
+     * to position the reader.
      *
      * @return the next DLSN
      */
@@ -249,9 +253,10 @@ public class DLSN implements Comparable<DLSN> {
     }
 
     /**
-     * Positions to a DLSN greater than the current value - this may not
-     * correspond to an actual LogRecord, its just used by the positioning logic
-     * to position the reader
+     * Positions to next log segment than the current value.
+     *
+     * <p>this may not correspond to an actual LogRecord, its just used by the positioning logic
+     * to position the reader.
      *
      * @return the next DLSN
      */

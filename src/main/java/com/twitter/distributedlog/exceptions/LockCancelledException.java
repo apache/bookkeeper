@@ -17,6 +17,9 @@
  */
 package com.twitter.distributedlog.exceptions;
 
+/**
+ * A lock is cancelled when waiting for locking a stream.
+ */
 public class LockCancelledException extends LockingException {
 
     private static final long serialVersionUID = -148795017092861106L;

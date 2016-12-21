@@ -19,6 +19,9 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Exception is thrown when encountered invalid log stream.
+ */
 public class InvalidStreamNameException extends DLException {
 
     private static final long serialVersionUID = 6393315766140568100L;

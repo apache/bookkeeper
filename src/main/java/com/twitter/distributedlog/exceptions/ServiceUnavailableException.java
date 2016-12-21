@@ -19,6 +19,9 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Exception indicates that the service is unavailable at the server side.
+ */
 public class ServiceUnavailableException extends DLException {
 
     private static final long serialVersionUID = 6317900286881665746L;

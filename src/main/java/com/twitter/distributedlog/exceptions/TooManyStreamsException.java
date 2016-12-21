@@ -19,6 +19,9 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Signals that a server has been serving too many streams.
+ */
 public class TooManyStreamsException extends OverCapacityException {
 
     private static final long serialVersionUID = -6391941401860180163L;

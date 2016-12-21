@@ -19,6 +19,9 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Exception is thrown when found unsupported metadata version.
+ */
 public class UnsupportedMetadataVersionException extends DLException {
 
     private static final long serialVersionUID = 4980892659955478446L;

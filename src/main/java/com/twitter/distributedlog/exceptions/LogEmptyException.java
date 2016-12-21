@@ -17,9 +17,11 @@
  */
 package com.twitter.distributedlog.exceptions;
 
-import com.twitter.distributedlog.exceptions.DLException;
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Exceptions are thrown when attempt to read a log stream that doesn't have any records.
+ */
 public class LogEmptyException extends DLException {
 
     private static final long serialVersionUID = -1106184127178002282L;

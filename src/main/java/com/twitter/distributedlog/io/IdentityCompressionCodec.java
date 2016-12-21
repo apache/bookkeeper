@@ -17,23 +17,26 @@
  */
 package com.twitter.distributedlog.io;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Arrays;
-
-import com.google.common.base.Preconditions;
-
 import org.apache.bookkeeper.stats.OpStatsLogger;
 
+/**
+ * An identity compression codec implementation for {@link CompressionCodec}.
+ */
 public class IdentityCompressionCodec implements CompressionCodec {
     @Override
     public byte[] compress(byte[] data, int offset, int length, OpStatsLogger compressionStat) {
-        Preconditions.checkNotNull(data);
-        Preconditions.checkArgument(length >= 0);
+        checkNotNull(data);
+        checkArgument(length >= 0);
         return Arrays.copyOfRange(data, offset, offset + length);
     }
 
     @Override
     public byte[] decompress(byte[] data, int offset, int length, OpStatsLogger decompressionStat) {
-        Preconditions.checkNotNull(data);
+        checkNotNull(data);
         return Arrays.copyOfRange(data, offset, offset + length);
     }
 

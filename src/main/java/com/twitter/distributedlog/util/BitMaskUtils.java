@@ -17,15 +17,18 @@
  */
 package com.twitter.distributedlog.util;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkArgument;
 
+/**
+ * Utils for bit mask operations.
+ */
 public class BitMaskUtils {
 
     /**
      * 1) Unset all bits where value in mask is set.
      * 2) Set these bits to value specified by newValue.
      *
-     * e.g.
+     * <p>e.g.
      * if oldValue = 1010, mask = 0011, newValue = 0001
      * 1) 1010 -> 1000
      * 2) 1000 -> 1001
@@ -36,19 +39,19 @@ public class BitMaskUtils {
      * @return updated value
      */
     public static long set(long oldValue, long mask, long newValue) {
-        Preconditions.checkArgument(oldValue >= 0L && mask >= 0L && newValue >= 0L);
+        checkArgument(oldValue >= 0L && mask >= 0L && newValue >= 0L);
         return ((oldValue & (~mask)) | (newValue & mask));
     }
 
     /**
-     * Get the bits where mask is 1
+     * Get the bits where mask is 1.
      *
      * @param value value
      * @param mask mask of the value
      * @return the bit of the mask
      */
     public static long get(long value, long mask) {
-        Preconditions.checkArgument(value >= 0L && mask >= 0L);
+        checkArgument(value >= 0L && mask >= 0L);
         return (value & mask);
     }
 }

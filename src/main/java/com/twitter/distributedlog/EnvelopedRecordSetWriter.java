@@ -17,15 +17,21 @@
  */
 package com.twitter.distributedlog;
 
+import static com.twitter.distributedlog.LogRecord.MAX_LOGRECORD_SIZE;
+import static com.twitter.distributedlog.LogRecordSet.COMPRESSION_CODEC_LZ4;
+import static com.twitter.distributedlog.LogRecordSet.COMPRESSION_CODEC_NONE;
+import static com.twitter.distributedlog.LogRecordSet.HEADER_LEN;
+import static com.twitter.distributedlog.LogRecordSet.METADATA_COMPRESSION_MASK;
+import static com.twitter.distributedlog.LogRecordSet.METADATA_VERSION_MASK;
+import static com.twitter.distributedlog.LogRecordSet.NULL_OP_STATS_LOGGER;
+import static com.twitter.distributedlog.LogRecordSet.VERSION;
+
+import com.twitter.distributedlog.exceptions.LogRecordTooLongException;
+import com.twitter.distributedlog.exceptions.WriteException;
 import com.twitter.distributedlog.io.Buffer;
 import com.twitter.distributedlog.io.CompressionCodec;
 import com.twitter.distributedlog.io.CompressionUtils;
-import com.twitter.distributedlog.exceptions.LogRecordTooLongException;
-import com.twitter.distributedlog.exceptions.WriteException;
 import com.twitter.util.Promise;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -33,16 +39,15 @@ import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.util.LinkedList;
 import java.util.List;
-
-import static com.twitter.distributedlog.LogRecord.MAX_LOGRECORD_SIZE;
-import static com.twitter.distributedlog.LogRecordSet.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link Buffer} based log record set writer.
  */
 class EnvelopedRecordSetWriter implements LogRecordSet.Writer {
 
-    static final Logger logger = LoggerFactory.getLogger(EnvelopedRecordSetWriter.class);
+    private static final Logger logger = LoggerFactory.getLogger(EnvelopedRecordSetWriter.class);
 
     private final Buffer buffer;
     private final DataOutputStream writer;
@@ -158,7 +163,7 @@ class EnvelopedRecordSetWriter implements LogRecordSet.Writer {
         CompressionCodec compressor =
                     CompressionUtils.getCompressionCodec(codec);
         byte[] compressed =
-                compressor.compress(data, dataOffset, dataLen, NullOpStatsLogger);
+                compressor.compress(data, dataOffset, dataLen, NULL_OP_STATS_LOGGER);
 
         ByteBuffer recordSetBuffer;
         if (compressed.length > dataLen) {

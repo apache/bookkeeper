@@ -17,11 +17,10 @@
  */
 package com.twitter.distributedlog.util;
 
-import java.util.zip.CRC32;
+import static com.google.common.base.Charsets.UTF_8;
 
 import com.twitter.distributedlog.DLSN;
-
-import static com.google.common.base.Charsets.UTF_8;
+import java.util.zip.CRC32;
 
 /**
  * With CRC embedded in the application, we have to keep track of per api crc. Ideally this

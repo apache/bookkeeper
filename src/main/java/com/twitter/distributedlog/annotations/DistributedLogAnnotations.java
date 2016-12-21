@@ -17,6 +17,9 @@
  */
 package com.twitter.distributedlog.annotations;
 
+/**
+ * Common annotation types.
+ */
 public class DistributedLogAnnotations {
     /**
      * Annotation to identify flaky tests in DistributedLog.

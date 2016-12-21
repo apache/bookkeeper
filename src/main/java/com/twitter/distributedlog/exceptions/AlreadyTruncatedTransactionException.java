@@ -17,12 +17,10 @@
  */
 package com.twitter.distributedlog.exceptions;
 
-import com.twitter.distributedlog.exceptions.DLException;
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
 /**
- * Thrown when the transaction Id specified in the API is in the range that has already been
- * truncated
+ * Thrown when the transaction Id specified in the API is in the range that has already been truncated.
  */
 public class AlreadyTruncatedTransactionException extends DLException {
 

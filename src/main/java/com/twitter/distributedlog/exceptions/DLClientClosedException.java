@@ -19,6 +19,9 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Exceptions thrown when a distributedlog client is closed.
+ */
 public class DLClientClosedException extends DLException {
 
     private static final long serialVersionUID = -8876218750540927584L;

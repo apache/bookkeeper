@@ -15,18 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.distributedlog.exceptions;
-
-import com.twitter.distributedlog.thrift.service.StatusCode;
-
 /**
- * Exception is thrown when a method is not implemented yet.
+ * Provides the core data structures used across multiple modules.
  */
-public class NotYetImplementedException extends DLException {
-
-    private static final long serialVersionUID = -6002036746792556106L;
-
-    public NotYetImplementedException(String method) {
-        super(StatusCode.NOT_IMPLEMENTED, method + "is not supported by the current version");
-    }
-}
+package com.twitter.distributedlog;

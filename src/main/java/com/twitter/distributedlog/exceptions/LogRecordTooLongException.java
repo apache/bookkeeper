@@ -19,6 +19,11 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Exception is thrown when attempting to write a record whose size is too larger.
+ *
+ * <p>The size limit of a log record is {@link com.twitter.distributedlog.LogRecord#MAX_LOGRECORD_SIZE}.
+ */
 public class LogRecordTooLongException extends DLException {
 
     private static final long serialVersionUID = 2788274084603111386L;

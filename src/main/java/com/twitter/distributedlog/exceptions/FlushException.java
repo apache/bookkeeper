@@ -17,9 +17,11 @@
  */
 package com.twitter.distributedlog.exceptions;
 
-import com.twitter.distributedlog.exceptions.DLException;
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Exception indicates that errors occurred on flushing data.
+ */
 public class FlushException extends DLException {
 
     private final long lastTxIdWritten;

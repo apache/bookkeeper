@@ -19,6 +19,9 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Exception indicates that there is an internal error at distributedlog service side.
+ */
 public class InternalServerException extends DLException {
 
     private static final long serialVersionUID = 288438028880978802L;

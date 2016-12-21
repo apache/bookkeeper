@@ -19,6 +19,9 @@ package com.twitter.distributedlog.exceptions;
 
 import com.twitter.distributedlog.thrift.service.StatusCode;
 
+/**
+ * Exception thrown when a stream is not available for serving traffic.
+ */
 public class StreamUnavailableException extends DLException {
 
     private static final long serialVersionUID = 684211282036993028L;
