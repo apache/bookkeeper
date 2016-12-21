@@ -367,7 +367,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         lsmStore.registerLogSegmentListener(rootPath, listener);
         assertEquals(1, lsmStore.listeners.size());
         assertTrue("Should contain listener", lsmStore.listeners.containsKey(rootPath));
-        assertTrue("Should contain listener", lsmStore.listeners.get(rootPath).contains(listener));
+        assertTrue("Should contain listener", lsmStore.listeners.get(rootPath).containsKey(listener));
         while (numNotifications.get() < 1) {
             TimeUnit.MILLISECONDS.sleep(10);
         }
@@ -429,7 +429,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         lsmStore.registerLogSegmentListener(rootPath, listener);
         assertEquals(1, lsmStore.listeners.size());
         assertTrue("Should contain listener", lsmStore.listeners.containsKey(rootPath));
-        assertTrue("Should contain listener", lsmStore.listeners.get(rootPath).contains(listener));
+        assertTrue("Should contain listener", lsmStore.listeners.get(rootPath).containsKey(listener));
         while (numNotifications.get() < 1) {
             TimeUnit.MILLISECONDS.sleep(10);
         }
@@ -496,7 +496,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         lsmStore.registerLogSegmentListener(rootPath, listener);
         assertEquals(1, lsmStore.listeners.size());
         assertTrue("Should contain listener", lsmStore.listeners.containsKey(rootPath));
-        assertTrue("Should contain listener", lsmStore.listeners.get(rootPath).contains(listener));
+        assertTrue("Should contain listener", lsmStore.listeners.get(rootPath).containsKey(listener));
         while (numNotifications.get() < 1) {
             TimeUnit.MILLISECONDS.sleep(10);
         }
@@ -510,16 +510,6 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         ZooKeeperClientUtils.expireSession(zkc,
                 DLUtils.getZKServersFromDLUri(uri), conf.getZKSessionTimeoutMilliseconds());
 
-        while (numNotifications.get() < 2) {
-            TimeUnit.MILLISECONDS.sleep(10);
-        }
-        assertEquals("Should receive second segment list update",
-                2, numNotifications.get());
-        List<String> secondSegmentList = segmentLists.get(1);
-        Collections.sort(secondSegmentList);
-        assertEquals("List of segments should be same",
-                children, secondSegmentList);
-
         logger.info("Create another {} segments.", numSegments);
 
         // create another log segment, it should trigger segment list updated
@@ -532,12 +522,12 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         List<String> newChildren = zkc.get().getChildren(rootPath, false);
         Collections.sort(newChildren);
         logger.info("All log segments become {}", newChildren);
-        while (numNotifications.get() < 3) {
+        while (numNotifications.get() < 2) {
             TimeUnit.MILLISECONDS.sleep(10);
         }
         assertEquals("Should receive third segment list update",
-                3, numNotifications.get());
-        List<String> thirdSegmentList = segmentLists.get(2);
+                2, numNotifications.get());
+        List<String> thirdSegmentList = segmentLists.get(1);
         Collections.sort(thirdSegmentList);
         assertEquals("List of segments should be updated",
                 2 * numSegments, thirdSegmentList.size());

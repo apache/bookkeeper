@@ -17,6 +17,7 @@
  */
 package com.twitter.distributedlog;
 
+import com.google.common.base.Optional;
 import com.twitter.distributedlog.ZooKeeperClient.Credentials;
 import com.twitter.distributedlog.ZooKeeperClient.DigestCredentials;
 import com.twitter.distributedlog.exceptions.AlreadyClosedException;
@@ -41,16 +42,12 @@ import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.Watcher;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.google.common.base.Optional;
 
 import static com.google.common.base.Charsets.UTF_8;
 
@@ -62,7 +59,7 @@ import static com.google.common.base.Charsets.UTF_8;
  * <li> bookkeeper operation stats are exposed under current scope by {@link BookKeeper}
  * </ul>
  */
-public class BookKeeperClient implements ZooKeeperClient.ZooKeeperSessionExpireNotifier {
+public class BookKeeperClient {
     static final Logger LOG = LoggerFactory.getLogger(BookKeeperClient.class);
 
     // Parameters to build bookkeeper client
@@ -83,14 +80,10 @@ public class BookKeeperClient implements ZooKeeperClient.ZooKeeperSessionExpireN
     // feature provider
     private final Optional<FeatureProvider> featureProvider;
 
-    private Watcher sessionExpireWatcher = null;
-    private AtomicBoolean zkSessionExpired = new AtomicBoolean(false);
-
     @SuppressWarnings("deprecation")
     private synchronized void commonInitialization(
             DistributedLogConfiguration conf, String ledgersPath,
-            ClientSocketChannelFactory channelFactory, StatsLogger statsLogger, HashedWheelTimer requestTimer,
-            boolean registerExpirationHandler)
+            ClientSocketChannelFactory channelFactory, StatsLogger statsLogger, HashedWheelTimer requestTimer)
         throws IOException, InterruptedException, KeeperException {
         ClientConfiguration bkConfig = new ClientConfiguration();
         bkConfig.setAddEntryTimeout(conf.getBKClientWriteTimeout());
@@ -124,10 +117,6 @@ public class BookKeeperClient implements ZooKeeperClient.ZooKeeperSessionExpireN
             .requestTimer(requestTimer)
             .featureProvider(featureProvider.orNull())
             .build();
-
-        if (registerExpirationHandler) {
-            sessionExpireWatcher = this.zkc.registerExpirationHandler(this);
-        }
     }
 
     BookKeeperClient(DistributedLogConfiguration conf,
@@ -159,16 +148,11 @@ public class BookKeeperClient implements ZooKeeperClient.ZooKeeperSessionExpireN
         if (null != this.bkc) {
             return;
         }
-        boolean registerExpirationHandler;
         if (null == this.zkc) {
             int zkSessionTimeout = conf.getBKClientZKSessionTimeoutMilliSeconds();
-            RetryPolicy retryPolicy = null;
-            if (conf.getBKClientZKNumRetries() > 0) {
-                retryPolicy = new BoundExponentialBackoffRetryPolicy(
+            RetryPolicy retryPolicy = new BoundExponentialBackoffRetryPolicy(
                         conf.getBKClientZKRetryBackoffStartMillis(),
                         conf.getBKClientZKRetryBackoffMaxMillis(), conf.getBKClientZKNumRetries());
-            }
-
             Credentials credentials = Credentials.NONE;
             if (conf.getZkAclId() != null) {
                 credentials = new DigestCredentials(conf.getZkAclId(), conf.getZkAclId());
@@ -178,10 +162,9 @@ public class BookKeeperClient implements ZooKeeperClient.ZooKeeperSessionExpireN
                                            retryPolicy, statsLogger.scope("bkc_zkc"), conf.getZKClientNumberRetryThreads(),
                                            conf.getBKClientZKRequestRateLimit(), credentials);
         }
-        registerExpirationHandler = conf.getBKClientZKNumRetries() <= 0;
 
         try {
-            commonInitialization(conf, ledgersPath, channelFactory, statsLogger, requestTimer, registerExpirationHandler);
+            commonInitialization(conf, ledgersPath, channelFactory, statsLogger, requestTimer);
         } catch (InterruptedException e) {
             throw new DLInterruptedException("Interrupted on creating bookkeeper client " + name + " : ", e);
         } catch (KeeperException e) {
@@ -190,18 +173,18 @@ public class BookKeeperClient implements ZooKeeperClient.ZooKeeperSessionExpireN
 
         if (ownZK) {
             LOG.info("BookKeeper Client created {} with its own ZK Client : ledgersPath = {}, numRetries = {}, " +
-                    "sessionTimeout = {}, backoff = {}, maxBackoff = {}, dnsResolver = {}, registerExpirationHandler = {}",
+                    "sessionTimeout = {}, backoff = {}, maxBackoff = {}, dnsResolver = {}",
                     new Object[] { name, ledgersPath,
                     conf.getBKClientZKNumRetries(), conf.getBKClientZKSessionTimeoutMilliSeconds(),
                     conf.getBKClientZKRetryBackoffStartMillis(), conf.getBKClientZKRetryBackoffMaxMillis(),
-                    conf.getBkDNSResolverOverrides(), registerExpirationHandler });
+                    conf.getBkDNSResolverOverrides() });
         } else {
             LOG.info("BookKeeper Client created {} with shared zookeeper client : ledgersPath = {}, numRetries = {}, " +
-                    "sessionTimeout = {}, backoff = {}, maxBackoff = {}, dnsResolver = {}, registerExpirationHandler = {}",
+                    "sessionTimeout = {}, backoff = {}, maxBackoff = {}, dnsResolver = {}",
                     new Object[] { name, ledgersPath,
                     conf.getZKNumRetries(), conf.getZKSessionTimeoutMilliseconds(),
                     conf.getZKRetryBackoffStartMillis(), conf.getZKRetryBackoffMaxMillis(),
-                    conf.getBkDNSResolverOverrides(), registerExpirationHandler });
+                    conf.getBkDNSResolverOverrides() });
         }
     }
 
@@ -284,9 +267,6 @@ public class BookKeeperClient implements ZooKeeperClient.ZooKeeperSessionExpireN
             }
         }
         if (null != zkc) {
-            if (null != sessionExpireWatcher) {
-                zkc.unregister(sessionExpireWatcher);
-            }
             if (ownZK) {
                 zkc.close();
             }
@@ -294,20 +274,10 @@ public class BookKeeperClient implements ZooKeeperClient.ZooKeeperSessionExpireN
         closed = true;
     }
 
-    @Override
-    public void notifySessionExpired() {
-        zkSessionExpired.set(true);
-    }
-
     public synchronized void checkClosedOrInError() throws AlreadyClosedException {
         if (closed) {
             LOG.error("BookKeeper Client {} is already closed", name);
             throw new AlreadyClosedException("BookKeeper Client " + name + " is already closed");
-        }
-
-        if (zkSessionExpired.get()) {
-            LOG.error("BookKeeper Client {}'s Zookeeper session has expired", name);
-            throw new AlreadyClosedException("BookKeeper Client " + name + "'s Zookeeper session has expired");
         }
     }
 }

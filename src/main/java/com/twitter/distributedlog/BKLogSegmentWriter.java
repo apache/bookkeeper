@@ -156,8 +156,10 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
 
     // stats
     private final StatsLogger envelopeStatsLogger;
+    private final StatsLogger transmitOutstandingLogger;
     private final Counter transmitDataSuccesses;
     private final Counter transmitDataMisses;
+    private final Gauge<Number> transmitOutstandingGauge;
     private final OpStatsLogger transmitDataPacketSize;
     private final Counter transmitControlSuccesses;
     private final Counter pFlushSuccesses;
@@ -255,8 +257,8 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
         pendingWrites = segWriterStatsLogger.getCounter("pending");
 
         // outstanding transmit requests
-        StatsLogger transmitOutstandingLogger = perLogStatsLogger.scope("transmit").scope("outstanding");
-        transmitOutstandingLogger.registerGauge("requests", new Gauge<Number>() {
+        transmitOutstandingLogger = perLogStatsLogger.scope("transmit").scope("outstanding");
+        transmitOutstandingGauge = new Gauge<Number>() {
             @Override
             public Number getDefaultValue() {
                 return 0;
@@ -265,7 +267,8 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
             public Number getSample() {
                 return outstandingTransmits.get();
             }
-        });
+        };
+        transmitOutstandingLogger.registerGauge("requests", transmitOutstandingGauge);
 
         outstandingTransmits = new AtomicInteger(0);
         this.fullyQualifiedLogSegment = streamName + ":" + logSegmentName;
@@ -531,6 +534,9 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
     private void closeInternal(final boolean abort,
                                final AtomicReference<Throwable> throwExc,
                                final Promise<Void> closePromise) {
+        // remove stats
+        this.transmitOutstandingLogger.unregisterGauge("requests", transmitOutstandingGauge);
+
         // Cancel the periodic keep alive schedule first
         if (null != periodicKeepAliveSchedule) {
             if (!periodicKeepAliveSchedule.cancel(false)) {

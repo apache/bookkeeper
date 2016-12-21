@@ -49,7 +49,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.zookeeper.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Function1;
@@ -73,7 +72,7 @@ import scala.runtime.AbstractFunction1;
  * <li> `async_reader`/idle_reader_error: counter. the number idle reader errors.
  * </ul>
  */
-class BKAsyncLogReaderDLSN implements ZooKeeperClient.ZooKeeperSessionExpireNotifier, AsyncLogReader, Runnable, AsyncNotification {
+class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotification {
     static final Logger LOG = LoggerFactory.getLogger(BKAsyncLogReaderDLSN.class);
 
     private static final Function1<List<LogRecordWithDLSN>, LogRecordWithDLSN> READ_NEXT_MAP_FUNCTION =
@@ -86,7 +85,6 @@ class BKAsyncLogReaderDLSN implements ZooKeeperClient.ZooKeeperSessionExpireNoti
 
     protected final BKDistributedLogManager bkDistributedLogManager;
     protected final BKLogReadHandler bkLedgerManager;
-    private Watcher sessionExpireWatcher = null;
     private final AtomicReference<Throwable> lastException = new AtomicReference<Throwable>();
     private final ScheduledExecutorService executorService;
     private final ConcurrentLinkedQueue<PendingReadRequest> pendingRequests = new ConcurrentLinkedQueue<PendingReadRequest>();
@@ -218,7 +216,6 @@ class BKAsyncLogReaderDLSN implements ZooKeeperClient.ZooKeeperSessionExpireNoti
         this.executorService = executorService;
         this.bkLedgerManager = bkDistributedLogManager.createReadHandler(subscriberId,
                 lockStateExecutor, this, deserializeRecordSet, true);
-        sessionExpireWatcher = this.bkLedgerManager.registerExpirationHandler(this);
         LOG.debug("Starting async reader at {}", startDLSN);
         this.startDLSN = startDLSN;
         this.scheduleDelayStopwatch = Stopwatch.createUnstarted();
@@ -253,14 +250,6 @@ class BKAsyncLogReaderDLSN implements ZooKeeperClient.ZooKeeperSessionExpireNoti
         // Lock the stream if requested. The lock will be released when the reader is closed.
         this.lockStream = false;
         this.idleReaderTimeoutTask = scheduleIdleReaderTaskIfNecessary();
-    }
-
-    @Override
-    public void notifySessionExpired() {
-        // ZK Session notification is an indication to check if this has resulted in a fatal error
-        // of the underlying reader, in itself this reader doesnt error out unless the underlying
-        // reader has hit an error
-        scheduleBackgroundRead();
     }
 
     private ScheduledFuture<?> scheduleIdleReaderTaskIfNecessary() {
@@ -493,8 +482,6 @@ class BKAsyncLogReaderDLSN implements ZooKeeperClient.ZooKeeperSessionExpireNoti
         }
 
         cancelAllPendingReads(exception);
-
-        bkLedgerManager.unregister(sessionExpireWatcher);
 
         FutureUtils.ignore(bkLedgerManager.asyncClose()).proxyTo(closePromise);
         return closePromise;

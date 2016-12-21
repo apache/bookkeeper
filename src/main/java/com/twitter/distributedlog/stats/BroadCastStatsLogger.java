@@ -133,8 +133,25 @@ public class BroadCastStatsLogger {
         }
 
         @Override
+        public <T extends Number> void unregisterGauge(String statName, Gauge<T> gauge) {
+            // no-op
+        }
+
+        @Override
         public StatsLogger scope(final String scope) {
             return new Two(first.scope(scope), second.scope(scope));
+        }
+
+        @Override
+        public void removeScope(String scope, StatsLogger statsLogger) {
+            if (!(statsLogger instanceof Two)) {
+                return;
+            }
+
+            Two another = (Two) statsLogger;
+
+            first.removeScope(scope, another.first);
+            second.removeScope(scope, another.second);
         }
     }
 
@@ -162,6 +179,11 @@ public class BroadCastStatsLogger {
         @Override
         public <T extends Number> void registerGauge(String statName, Gauge<T> gauge) {
             first.registerGauge(statName, gauge);
+        }
+
+        @Override
+        public <T extends Number> void unregisterGauge(String statName, Gauge<T> gauge) {
+            first.unregisterGauge(statName, gauge);
         }
 
         @Override

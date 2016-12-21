@@ -32,9 +32,7 @@ import com.twitter.distributedlog.io.AsyncCloseable;
 import com.twitter.distributedlog.logsegment.LogSegmentCache;
 import com.twitter.distributedlog.logsegment.LogSegmentFilter;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataStore;
-import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.OrderedScheduler;
-import com.twitter.distributedlog.util.Utils;
 import com.twitter.util.Function;
 import com.twitter.util.Future;
 import com.twitter.util.FutureEventListener;
@@ -56,7 +54,6 @@ import scala.runtime.AbstractFunction0;
 import scala.runtime.BoxedUnit;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -103,8 +100,6 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public abstract class BKLogHandler implements Watcher, AsyncCloseable, AsyncAbortable {
     static final Logger LOG = LoggerFactory.getLogger(BKLogHandler.class);
-
-    private static final int LAYOUT_VERSION = -1;
 
     protected final ZKLogMetadata logMetadata;
     protected final DistributedLogConfiguration conf;
@@ -274,12 +269,7 @@ public abstract class BKLogHandler implements Watcher, AsyncCloseable, AsyncAbor
         LOG.debug("Using ZK Path {}", logMetadata.getLogRootPath());
         this.bookKeeperClient = bkcBuilder.build();
         this.metadataStore = metadataStore;
-
-        if (lockClientId.equals(DistributedLogConstants.UNKNOWN_CLIENT_ID)) {
-            this.lockClientId = getHostIpLockClientId();
-        } else {
-            this.lockClientId = lockClientId;
-        }
+        this.lockClientId = lockClientId;
 
         this.getChildrenWatcher = this.zooKeeperClient.getWatcherManager()
                 .registerChildWatcher(logMetadata.getLogSegmentsPath(), this);
@@ -314,14 +304,6 @@ public abstract class BKLogHandler implements Watcher, AsyncCloseable, AsyncAbor
 
     public String getLockClientId() {
         return lockClientId;
-    }
-
-    private String getHostIpLockClientId() {
-        try {
-            return InetAddress.getLocalHost().toString();
-        } catch(Exception ex) {
-            return DistributedLogConstants.UNKNOWN_CLIENT_ID;
-        }
     }
 
     protected void registerListener(LogSegmentListener listener) {
@@ -472,57 +454,6 @@ public abstract class BKLogHandler implements Watcher, AsyncCloseable, AsyncAbor
         }
     }
 
-    public LogRecordWithDLSN getLastLogRecord(boolean recover, boolean includeEndOfStream) throws IOException {
-        checkLogStreamExists();
-        List<LogSegmentMetadata> ledgerList = getFullLedgerListDesc(true, true);
-
-        for (LogSegmentMetadata metadata: ledgerList) {
-            LogRecordWithDLSN record = recoverLastRecordInLedger(metadata, recover, false, includeEndOfStream);
-
-            if (null != record) {
-                assert(!record.isControl());
-                LOG.debug("{} getLastLogRecord Returned {}", getFullyQualifiedName(), record);
-                return record;
-            }
-        }
-
-        throw new LogEmptyException("Log " + getFullyQualifiedName() + " has no records");
-    }
-
-    public long getLastTxId(boolean recover,
-                            boolean includeEndOfStream) throws IOException {
-        checkLogStreamExists();
-        return getLastLogRecord(recover, includeEndOfStream).getTransactionId();
-    }
-
-    public DLSN getLastDLSN(boolean recover,
-                            boolean includeEndOfStream) throws IOException {
-        checkLogStreamExists();
-        return getLastLogRecord(recover, includeEndOfStream).getDlsn();
-    }
-
-    public long getLogRecordCount() throws IOException {
-        try {
-            checkLogStreamExists();
-        } catch (LogNotFoundException exc) {
-            return 0;
-        }
-
-        List<LogSegmentMetadata> ledgerList = getFullLedgerList(true, false);
-        long count = 0;
-        for (LogSegmentMetadata l : ledgerList) {
-            if (l.isInProgress()) {
-                LogRecord record = recoverLastRecordInLedger(l, false, false, false);
-                if (null != record) {
-                    count += record.getLastPositionWithinLogSegment();
-                }
-            } else {
-                count += l.getRecordCount();
-            }
-        }
-        return count;
-    }
-
     private Future<LogRecordWithDLSN> asyncReadFirstUserRecord(LogSegmentMetadata ledger, DLSN beginDLSN) {
         final LedgerHandleCache handleCache =
                 LedgerHandleCache.newBuilder().bkc(bookKeeperClient).conf(conf).build();
@@ -634,15 +565,6 @@ public abstract class BKLogHandler implements Watcher, AsyncCloseable, AsyncAbor
         return sum;
     }
 
-    public long getFirstTxId() throws IOException {
-        checkLogStreamExists();
-        List<LogSegmentMetadata> ledgerList = getFullLedgerList(true, true);
-
-        // The ledger list should at least have one element
-        // First TxId is populated even for in progress ledgers
-        return ledgerList.get(0).getFirstTxId();
-    }
-
     Future<Void> checkLogStreamExistsAsync() {
         final Promise<Void> promise = new Promise<Void>();
         try {
@@ -685,52 +607,9 @@ public abstract class BKLogHandler implements Watcher, AsyncCloseable, AsyncAbor
         return promise;
     }
 
-    private void checkLogStreamExists() throws IOException {
-        try {
-            if (null == Utils.sync(zooKeeperClient, logMetadata.getLogSegmentsPath())
-                    .exists(logMetadata.getLogSegmentsPath(), false)) {
-                throw new LogNotFoundException("Log " + getFullyQualifiedName() + " doesn't exist");
-            }
-        } catch (InterruptedException ie) {
-            LOG.error("Interrupted while reading {}", logMetadata.getLogSegmentsPath(), ie);
-            throw new DLInterruptedException("Interrupted while checking "
-                    + logMetadata.getLogSegmentsPath(), ie);
-        } catch (KeeperException ke) {
-            LOG.error("Error checking existence for {} : ", logMetadata.getLogSegmentsPath(), ke);
-            throw new ZKException("Error checking existence for " + getFullyQualifiedName() + " : ", ke);
-        }
-    }
-
     @Override
     public Future<Void> asyncAbort() {
         return asyncClose();
-    }
-
-    /**
-     * Find the id of the last edit log transaction written to a edit log
-     * ledger.
-     */
-    protected Pair<Long, DLSN> readLastTxIdInLedger(LogSegmentMetadata l) throws IOException {
-        LogRecordWithDLSN record = recoverLastRecordInLedger(l, false, false, true);
-
-        if (null == record) {
-            return Pair.of(DistributedLogConstants.EMPTY_LOGSEGMENT_TX_ID, DLSN.InvalidDLSN);
-        }
-        else {
-            return Pair.of(record.getTransactionId(), record.getDlsn());
-        }
-    }
-
-    /**
-     * Find the id of the last edit log transaction written to a edit log
-     * ledger.
-     */
-    protected LogRecordWithDLSN recoverLastRecordInLedger(LogSegmentMetadata l,
-                                                          boolean fence,
-                                                          boolean includeControl,
-                                                          boolean includeEndOfStream)
-        throws IOException {
-        return FutureUtils.result(asyncReadLastRecord(l, fence, includeControl, includeEndOfStream));
     }
 
     public Future<LogRecordWithDLSN> asyncReadLastUserRecord(final LogSegmentMetadata l) {
@@ -1293,21 +1172,4 @@ public abstract class BKLogHandler implements Watcher, AsyncCloseable, AsyncAbor
         }
     }
 
-    // ZooKeeper Watchers
-
-    Watcher registerExpirationHandler(final ZooKeeperClient.ZooKeeperSessionExpireNotifier onExpired) {
-        if (conf.getZKNumRetries() > 0) {
-            return new Watcher() {
-                @Override
-                public void process(WatchedEvent event) {
-                    // nop
-                }
-            };
-        }
-        return zooKeeperClient.registerExpirationHandler(onExpired);
-    }
-
-    boolean unregister(Watcher watcher) {
-        return zooKeeperClient.unregister(watcher);
-    }
 }
