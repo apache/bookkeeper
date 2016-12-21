@@ -23,6 +23,7 @@ import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -106,6 +107,9 @@ public class EntryMemTable {
     final long skipListSizeLimit;
 
     SkipListArena allocator;
+    
+    // flag indicating the status of the previous flush call
+    private final AtomicBoolean previousFlushSucceeded;
 
     private EntrySkipList newSkipList() {
         return new EntrySkipList(checkpointSource.newCheckpoint());
@@ -130,6 +134,7 @@ public class EntryMemTable {
         this.conf = conf;
         this.size = new AtomicLong(0);
         this.allocator = new SkipListArena(conf);
+        this.previousFlushSucceeded = new AtomicBoolean(true);
         // skip list size limit
         this.skipListSizeLimit = conf.getSkipListSizeLimit();
 
@@ -199,7 +204,14 @@ public class EntryMemTable {
      * Flush snapshot and clear it.
      */
     long flush(final SkipListFlusher flusher) throws IOException {
-        return flushSnapshot(flusher, Checkpoint.MAX);
+        try {
+            long flushSize = flushSnapshot(flusher, Checkpoint.MAX);
+            previousFlushSucceeded.set(true);
+            return flushSize;
+        } catch (IOException ioe) {
+            previousFlushSucceeded.set(false);
+            throw ioe;
+        }
     }
 
     /**
@@ -209,11 +221,17 @@ public class EntryMemTable {
      *          all data before this checkpoint need to be flushed.
      */
     public long flush(SkipListFlusher flusher, Checkpoint checkpoint) throws IOException {
-        long size = flushSnapshot(flusher, checkpoint);
-        if (null != snapshot(checkpoint)) {
-            size += flushSnapshot(flusher, checkpoint);
+        try {
+            long size = flushSnapshot(flusher, checkpoint);
+            if (null != snapshot(checkpoint)) {
+                size += flushSnapshot(flusher, checkpoint);
+            }
+            previousFlushSucceeded.set(true);
+            return size;
+        } catch (IOException ioe) {
+            previousFlushSucceeded.set(false);
+            throw ioe;
         }
-        return size;
     }
 
     /**
@@ -282,6 +300,7 @@ public class EntryMemTable {
     * Write an update
     * @param entry
     * @return approximate size of the passed key and value.
+     * @throws IOException 
     */
     public long addEntry(long ledgerId, long entryId, final ByteBuffer entry, final CacheCallback cb)
             throws IOException {
@@ -289,9 +308,9 @@ public class EntryMemTable {
         long startTimeNanos = MathUtils.nowInNano();
         boolean success = false;
         try {
-            if (isSizeLimitReached()) {
+            if (isSizeLimitReached() || (!previousFlushSucceeded.get())) {
                 Checkpoint cp = snapshot();
-                if (null != cp) {
+                if ((null != cp) || (!previousFlushSucceeded.get())) {
                     cb.onSizeLimitReached();
                 } else {
                     throttleWriters();
