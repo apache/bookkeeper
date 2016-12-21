@@ -325,8 +325,7 @@ public class BookieServer {
                 throw new IllegalArgumentException();
             }
 
-            ServerConfiguration conf = new ServerConfiguration();
-            String[] leftArgs = cmdLine.getArgs();
+            ServerConfiguration conf = new ServerConfiguration();            
 
             if (cmdLine.hasOption('c')) {
                 String confFile = cmdLine.getOptionValue("c");
