@@ -421,10 +421,10 @@ public class TestAsyncReaderLock extends TestDistributedLogBase {
         URI uri = createDLMURI("/" + name);
         ensureURICreated(uri);
 
-        // Force immediate flush to make dlsn counting easy.
         DistributedLogConfiguration localConf = new DistributedLogConfiguration();
         localConf.addConfiguration(conf);
-        localConf.setImmediateFlushEnabled(true);
+        localConf.setImmediateFlushEnabled(false);
+        localConf.setPeriodicFlushFrequencyMilliSeconds(60 * 1000);
         localConf.setOutputBufferSize(0);
         // Otherwise, we won't be able to run scheduled threads for readahead when we're in a callback.
         localConf.setNumWorkerThreads(2);
