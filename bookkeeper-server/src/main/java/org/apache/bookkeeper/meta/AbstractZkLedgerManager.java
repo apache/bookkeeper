@@ -299,7 +299,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
     @Override
     public void registerLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener) {
         if (null != listener) {
-            LOG.info("Registered ledger metadata listener {} on ledger {}.", listener, ledgerId);
+            LOG.debug("Registered ledger metadata listener {} on ledger {}.", listener, ledgerId);
             Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
             if (listenerSet == null) {
                 Set<LedgerMetadataListener> newListenerSet = new HashSet<LedgerMetadataListener>();
@@ -323,7 +323,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
         if (listenerSet != null) {
             synchronized (listenerSet) {
                 if (listenerSet.remove(listener)) {
-                    LOG.info("Unregistered ledger metadata listener {} on ledger {}.", listener, ledgerId);
+                    LOG.debug("Unregistered ledger metadata listener {} on ledger {}.", listener, ledgerId);
                 }
                 if (listenerSet.isEmpty()) {
                     listeners.remove(ledgerId, listenerSet);
