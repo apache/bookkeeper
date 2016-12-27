@@ -529,6 +529,20 @@ public class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWri
     }
 
     @Override
+    public Future<Void> asyncAbort() {
+        Future<Void> result = super.asyncAbort();
+        synchronized (this) {
+            if (pendingRequests != null) {
+                for (PendingLogRecord pendingLogRecord : pendingRequests) {
+                    pendingLogRecord.promise.setException(new WriteException(bkDistributedLogManager.getStreamName(),
+                            "abort wring: writer has been closed due to error."));
+                }
+            }
+        }
+        return result;
+    }
+
+    @Override
     public String toString() {
         return String.format("AsyncLogWriter:%s", getStreamName());
     }
