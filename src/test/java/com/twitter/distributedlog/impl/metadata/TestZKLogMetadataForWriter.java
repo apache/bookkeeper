@@ -29,20 +29,24 @@ import com.twitter.distributedlog.DistributedLogManager;
 import com.twitter.distributedlog.DistributedLogConstants;
 import com.twitter.distributedlog.exceptions.LogNotFoundException;
 import com.twitter.distributedlog.ZooKeeperClient;
-import com.twitter.distributedlog.ZooKeeperClientBuilder;
 import com.twitter.distributedlog.ZooKeeperClusterTestCase;
 import com.twitter.distributedlog.util.DLUtils;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.Utils;
 import org.apache.bookkeeper.meta.ZkVersion;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Transaction;
+import org.apache.zookeeper.ZooDefs;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.List;
@@ -55,12 +59,15 @@ import static org.junit.Assert.*;
  */
 public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
 
+    private static final Logger logger = LoggerFactory.getLogger(TestZKLogMetadataForWriter.class);
+
     private final static int sessionTimeoutMs = 30000;
 
     @Rule
     public TestName testName = new TestName();
 
     private ZooKeeperClient zkc;
+    private URI uri;
 
     private static void createLog(ZooKeeperClient zk, URI uri, String logName, String logIdentifier)
             throws Exception {
@@ -98,6 +105,17 @@ public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
                 .uri(DLMTestUtil.createDLMURI(zkPort, "/"))
                 .sessionTimeoutMs(sessionTimeoutMs)
                 .build();
+        uri = DLMTestUtil.createDLMURI(zkPort, "");
+        try {
+            ZkUtils.createFullPathOptimistic(
+                    zkc.get(),
+                    uri.getPath(),
+                    new byte[0],
+                    ZooDefs.Ids.OPEN_ACL_UNSAFE,
+                    CreateMode.PERSISTENT);
+        } catch (KeeperException.NodeExistsException nee) {
+            logger.debug("The namespace uri already exists.");
+        }
     }
 
     @After
@@ -187,7 +205,6 @@ public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
 
     @Test(timeout = 60000)
     public void testCreateLogMetadataMissingLogSegmentsPath() throws Exception {
-        URI uri = DLMTestUtil.createDLMURI(zkPort, "");
         String logName = testName.getMethodName();
         String logIdentifier = "<default>";
         String logRootPath = getLogRootPath(uri, logName, logIdentifier);
@@ -198,7 +215,6 @@ public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
 
     @Test(timeout = 60000)
     public void testCreateLogMetadataMissingMaxTxIdPath() throws Exception {
-        URI uri = DLMTestUtil.createDLMURI(zkPort, "");
         String logName = testName.getMethodName();
         String logIdentifier = "<default>";
         String logRootPath = getLogRootPath(uri, logName, logIdentifier);
@@ -209,7 +225,6 @@ public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
 
     @Test(timeout = 60000)
     public void testCreateLogMetadataMissingLockPath() throws Exception {
-        URI uri = DLMTestUtil.createDLMURI(zkPort, "");
         String logName = testName.getMethodName();
         String logIdentifier = "<default>";
         String logRootPath = getLogRootPath(uri, logName, logIdentifier);
@@ -220,7 +235,6 @@ public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
 
     @Test(timeout = 60000)
     public void testCreateLogMetadataMissingReadLockPath() throws Exception {
-        URI uri = DLMTestUtil.createDLMURI(zkPort, "");
         String logName = testName.getMethodName();
         String logIdentifier = "<default>";
         String logRootPath = getLogRootPath(uri, logName, logIdentifier);
@@ -231,7 +245,6 @@ public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
 
     @Test(timeout = 60000)
     public void testCreateLogMetadataMissingVersionPath() throws Exception {
-        URI uri = DLMTestUtil.createDLMURI(zkPort, "");
         String logName = testName.getMethodName();
         String logIdentifier = "<default>";
         String logRootPath = getLogRootPath(uri, logName, logIdentifier);
@@ -253,7 +266,6 @@ public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
 
     @Test(timeout = 60000)
     public void testCreateLogMetadataMissingAllPath() throws Exception {
-        URI uri = DLMTestUtil.createDLMURI(zkPort, "");
         String logName = testName.getMethodName();
         String logIdentifier = "<default>";
         String logRootPath = getLogRootPath(uri, logName, logIdentifier);
@@ -269,7 +281,6 @@ public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
 
     @Test(timeout = 60000)
     public void testCreateLogMetadataOnExistedLog() throws Exception {
-        URI uri = DLMTestUtil.createDLMURI(zkPort, "");
         String logName = testName.getMethodName();
         String logIdentifier = "<default>";
         List<String> pathsToDelete = Lists.newArrayList();
@@ -278,7 +289,6 @@ public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
 
     @Test(timeout = 60000)
     public void testCreateLogMetadata() throws Exception {
-        URI uri = DLMTestUtil.createDLMURI(zkPort, "");
         String logName = testName.getMethodName();
         String logIdentifier = "<default>";
         List<String> pathsToDelete = Lists.newArrayList();
@@ -288,7 +298,6 @@ public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
 
     @Test(timeout = 60000, expected = LogNotFoundException.class)
     public void testCreateLogMetadataWithCreateIfNotExistsSetToFalse() throws Exception {
-        URI uri = DLMTestUtil.createDLMURI(zkPort, "");
         String logName = testName.getMethodName();
         String logIdentifier = "<default>";
         FutureUtils.result(ZKLogMetadataForWriter.of(uri, logName, logIdentifier,
@@ -297,7 +306,6 @@ public class TestZKLogMetadataForWriter extends ZooKeeperClusterTestCase {
 
     @Test(timeout = 60000)
     public void testCreateLogMetadataWithCustomMetadata() throws Exception {
-        URI uri = DLMTestUtil.createDLMURI(zkPort, "");
         String logName = testName.getMethodName();
         String logIdentifier = "<default>";
         List<String> pathsToDelete = Lists.newArrayList();
