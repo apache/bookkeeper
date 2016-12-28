@@ -164,10 +164,10 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
 
         DistributedLogConfiguration confLocal = new DistributedLogConfiguration();
         confLocal.loadConf(conf);
-        confLocal.setImmediateFlushEnabled(true);
+        confLocal.setImmediateFlushEnabled(false);
         confLocal.setOutputBufferSize(0);
 
-        int numEntriesPerSegment = 100;
+        int numEntriesPerSegment = 10;
         DistributedLogManager dlm1 = createNewDLM(confLocal, dlName);
         long txid = 1;
 
@@ -177,15 +177,14 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
             futures.add(out.write(DLMTestUtil.getLogRecordInstance(txid)));
             ++txid;
         }
-        for (Future<DLSN> future : futures) {
-            Await.result(future);
-        }
-
-        BKLogReadHandler readHandler =
-            ((BKDistributedLogManager) dlm1).createReadHandler();
+        FutureUtils.result(Future.collect(futures));
+        // commit
+        LogRecord controlRecord = new LogRecord(txid, DistributedLogConstants.CONTROL_RECORD_CONTENT);
+        controlRecord.setControl();
+        FutureUtils.result(out.write(controlRecord));
 
         DLSN last = dlm1.getLastDLSN();
-        assertEquals(new DLSN(1,99,0), last);
+        assertEquals(new DLSN(1,9,0), last);
         DLSN first = Await.result(dlm1.getFirstDLSNAsync());
         assertEquals(new DLSN(1,0,0), first);
         Utils.close(out);
