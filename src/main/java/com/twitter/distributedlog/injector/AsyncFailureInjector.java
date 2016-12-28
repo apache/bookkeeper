@@ -59,7 +59,7 @@ public interface AsyncFailureInjector {
         }
 
         @Override
-        public boolean shouldInjectCorruption() {
+        public boolean shouldInjectCorruption(long startEntryId, long endEntryId) {
             return false;
         }
 
@@ -122,7 +122,10 @@ public interface AsyncFailureInjector {
     /**
      * Return the flag indicating if should inject corruption.
      *
+     * @param startEntryId the start entry id
+     * @param endEntryId the end entry id
      * @return true to inject corruption otherwise false.
      */
-    boolean shouldInjectCorruption();
+    boolean shouldInjectCorruption(long startEntryId, long endEntryId);
+
 }

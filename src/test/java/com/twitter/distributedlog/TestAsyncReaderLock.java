@@ -81,7 +81,7 @@ public class TestAsyncReaderLock extends TestDistributedLogBase {
         assertEquals(0L, record.getSequenceId());
         DLMTestUtil.verifyLogRecord(record);
 
-        String readLockPath = reader1.bkLedgerManager.getReadLockPath();
+        String readLockPath = reader1.readHandler.getReadLockPath();
         Utils.close(reader1);
 
         // simulate a old stream created without readlock path

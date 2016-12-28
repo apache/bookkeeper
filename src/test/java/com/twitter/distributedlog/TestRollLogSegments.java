@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import com.twitter.distributedlog.feature.CoreFeatureKeys;
+import com.twitter.distributedlog.impl.logsegment.BKLogSegmentEntryReader;
 import com.twitter.distributedlog.util.FailpointUtils;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.Utils;
@@ -318,11 +319,11 @@ public class TestRollLogSegments extends TestDistributedLogBase {
         }
         assertEquals(expectedWriterPosition, getLedgerHandle(writer).getLastAddConfirmed());
         assertEquals(expectedLac, inspector.readLastConfirmed());
-        LedgerReadPosition readPosition = reader.bkLedgerManager.readAheadWorker.getNextReadAheadPosition();
+        EntryPosition readPosition = reader.getReadAheadReader().getNextEntryPosition();
         logger.info("ReadAhead moved read position {} : ", readPosition);
         while (readPosition.getEntryId() < expectedReaderPosition) {
             Thread.sleep(1000);
-            readPosition = reader.bkLedgerManager.readAheadWorker.getNextReadAheadPosition();
+            readPosition = reader.getReadAheadReader().getNextEntryPosition();
             logger.info("ReadAhead moved read position {} : ", readPosition);
         }
         assertEquals(expectedReaderPosition, readPosition.getEntryId());
@@ -386,7 +387,12 @@ public class TestRollLogSegments extends TestDistributedLogBase {
         // Writer moved to lac = 11, while reader knows lac = 10 and moving to wait on 11
         checkAndWaitWriterReaderPosition(perStreamWriter, 11, reader, 11, readLh, 10);
 
-        while (null == reader.bkLedgerManager.readAheadWorker.getMetadataNotification()) {
+        while (true) {
+            BKLogSegmentEntryReader entryReader =
+                    (BKLogSegmentEntryReader) reader.getReadAheadReader().getCurrentSegmentReader().getEntryReader();
+            if (null != entryReader && null != entryReader.getOutstandingLongPoll()) {
+                break;
+            }
             Thread.sleep(1000);
         }
         logger.info("Waiting for long poll getting interrupted with metadata changed");

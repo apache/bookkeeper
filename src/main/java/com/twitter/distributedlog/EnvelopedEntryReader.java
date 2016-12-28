@@ -57,6 +57,16 @@ class EnvelopedEntryReader implements Entry.Reader, RecordStream {
     }
 
     @Override
+    public long getLSSN() {
+        return logSegmentSeqNo;
+    }
+
+    @Override
+    public long getEntryId() {
+        return entryId;
+    }
+
+    @Override
     public LogRecordWithDLSN nextRecord() throws IOException {
         return reader.readOp();
     }

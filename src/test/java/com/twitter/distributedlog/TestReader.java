@@ -17,6 +17,7 @@
  */
 package com.twitter.distributedlog;
 
+import com.twitter.distributedlog.util.Utils;
 import com.twitter.util.Future;
 import com.twitter.util.FutureEventListener;
 import org.slf4j.Logger;
@@ -121,6 +122,9 @@ public class TestReader implements FutureEventListener<LogRecordWithDLSN> {
                     }
                     nextDLSN = dlsn;
                     LOG.info("Positioned reader {} at {}", readerName, dlsn);
+                    if (null != TestReader.this.reader) {
+                        Utils.close(TestReader.this.reader);
+                    }
                     TestReader.this.reader = reader;
                     readNext();
                     readyLatch.countDown();

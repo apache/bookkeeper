@@ -39,8 +39,10 @@ public interface LogSegmentEntryStore {
      * Open the reader for reading data to the log <i>segment</i>.
      *
      * @param segment the log <i>segment</i> to read data from
+     * @param startEntryId the start entry id
      * @return future represent the opened reader
      */
-    Future<LogSegmentEntryReader> openReader(LogSegmentMetadata segment);
+    Future<LogSegmentEntryReader> openReader(LogSegmentMetadata segment,
+                                             long startEntryId);
 
 }

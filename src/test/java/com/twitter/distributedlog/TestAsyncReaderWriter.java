@@ -140,6 +140,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
             }
             record = reader.readNext(false);
         }
+        reader.close();
         assertEquals(3 * 9, numTrans);
         assertEquals(3 * 9, readDlm.getLogRecordCount());
         readDlm.close();
@@ -339,7 +340,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                         assertTrue(value.getSequenceId() < 0);
                         assertTrue(value.getSequenceId() > startSequenceId);
                     }
-                    LOG.debug("Recevied record {} from {}", value.getDlsn(), reader.getStreamName());
+                    LOG.info("Received record {} from {}", value, reader.getStreamName());
                     assertTrue(!value.isControl());
                     assertTrue(value.getDlsn().getSlotId() == 0);
                     assertTrue(value.getDlsn().compareTo(startPosition) >= 0);
@@ -366,7 +367,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
             }
             @Override
             public void onFailure(Throwable cause) {
-                LOG.debug("Encountered Exception on reading {}", reader.getStreamName(), cause);
+                LOG.error("Encountered Exception on reading {}", reader.getStreamName(), cause);
                 errorsFound.set(true);
                 completionLatch.countDown();
             }
@@ -806,6 +807,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         readerSyncLatch.await();
 
         assertTrue("Should position reader at least once", reader.getNumReaderPositions().get() > 1);
+        reader.stop();
         dlm.close();
     }
 
@@ -906,7 +908,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         confLocal.setOutputBufferSize(1024);
         DistributedLogManager dlm = createNewDLM(confLocal, name);
 
-        int numLogSegments = 20;
+        int numLogSegments = 5;
         int numRecordsPerLogSegment = 10;
 
         final CountDownLatch doneLatch = new CountDownLatch(1);
@@ -924,7 +926,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
 
         reader.start();
 
-        final CountDownLatch writeLatch = new CountDownLatch(200);
+        final CountDownLatch writeLatch = new CountDownLatch(numLogSegments * numRecordsPerLogSegment);
         final AtomicBoolean writeErrors = new AtomicBoolean(false);
 
         int txid = 1;
@@ -949,6 +951,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         syncLatch.await();
 
         assertTrue("Should position reader at least once", reader.getNumReaderPositions().get() > 1);
+        reader.stop();
         dlm.close();
     }
 
@@ -1341,7 +1344,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         confLocal.setImmediateFlushEnabled(true);
         confLocal.setReadAheadBatchSize(1);
         confLocal.setReadAheadMaxRecords(1);
-        confLocal.setReaderIdleWarnThresholdMillis(50);
+        confLocal.setReaderIdleWarnThresholdMillis(0);
         confLocal.setReaderIdleErrorThresholdMillis(idleReaderErrorThreshold);
         final DistributedLogManager dlm = createNewDLM(confLocal, name);
         final Thread currentThread = Thread.currentThread();
@@ -1424,6 +1427,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
             Assert.assertEquals(segmentSize, recordCount);
         }
         assertFalse(currentThread.isInterrupted());
+        Utils.close(reader);
         executor.shutdown();
     }
 
@@ -1512,7 +1516,6 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                         try {
                             int txid = 1;
                             for (long i = 0; i < numSegments; i++) {
-                                long start = txid;
                                 BKSyncLogWriter writer = (BKSyncLogWriter) dlm.startLogSegmentNonPartitioned();
                                 for (long j = 1; j <= segmentSize; j++) {
                                     writer.write(DLMTestUtil.getLargeLogRecordInstance(txid++));
@@ -1558,6 +1561,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         assertTrue(!exceptionEncountered);
         Assert.assertEquals(recordCount, segmentSize * numSegments);
         assertTrue(!currentThread.isInterrupted());
+        Utils.close(reader);
         executor.shutdown();
     }
 
@@ -1617,19 +1621,20 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         LOG.info("Read record {}", record);
         assertEquals(1L, record.getTransactionId());
 
-        assertNotNull(reader.bkLedgerManager.readAheadWorker);
-        assertTrue(reader.bkLedgerManager.readAheadCache.getNumCachedEntries() <= maxAllowedCachedRecords);
+        assertNotNull(reader.getReadAheadReader());
+        assertTrue(reader.getReadAheadReader().getNumCachedEntries() <= maxAllowedCachedRecords);
 
         for (int i = 2; i <= numRecords; i++) {
             record = Await.result(reader.readNext());
             LOG.info("Read record {}", record);
             assertEquals((long) i, record.getTransactionId());
             TimeUnit.MILLISECONDS.sleep(20);
-            int numCachedEntries = reader.bkLedgerManager.readAheadCache.getNumCachedEntries();
+            int numCachedEntries = reader.getReadAheadReader().getNumCachedEntries();
             assertTrue("Should cache less than " + batchSize + " records but already found "
                     + numCachedEntries + " records when reading " + i + "th record",
                     numCachedEntries <= maxAllowedCachedRecords);
         }
+        Utils.close(reader);
     }
 
     @Test(timeout = 60000)
@@ -1675,6 +1680,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
             fail("Should have thrown");
         } catch (EndOfStreamException ex) {
         }
+        Utils.close(reader);
     }
 
     @Test(timeout = 60000)
@@ -1694,6 +1700,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
             fail("Should have thrown");
         } catch (EndOfStreamException ex) {
         }
+        writer.close();
 
         BKAsyncLogReaderDLSN reader = (BKAsyncLogReaderDLSN) dlm.getAsyncLogReader(DLSN.InitialDLSN);
         try {
@@ -1701,6 +1708,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
             fail("Should have thrown");
         } catch (EndOfStreamException ex) {
         }
+        Utils.close(reader);
     }
 
     @Test(timeout = 60000)
@@ -1863,7 +1871,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         } catch (DLIllegalStateException e) {
         }
 
-        reader.asyncClose();
+        Utils.close(reader);
         dlm.close();
     }
 
@@ -2096,6 +2104,8 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
             assertEquals(i+1, record.getPositionWithinLogSegment());
             assertArrayEquals(DLMTestUtil.generatePayload(i+1), record.getPayload());
         }
+        Utils.close(reader1);
+        readDLM1.close();
 
         DistributedLogConfiguration readConf2 = new DistributedLogConfiguration();
         readConf2.addConfiguration(confLocal);
@@ -2124,6 +2134,8 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                 assertEquals(5, LogRecordSet.numRecords(record));
             }
         }
+        Utils.close(reader2);
+        readDLM2.close();
     }
 
     @Test(timeout = 60000)
@@ -2152,6 +2164,9 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         } catch (IdleReaderException ire) {
             // expected
         }
+        Utils.close(reader);
+        writer.close();
+        dlm.close();
     }
 
     @Test(timeout = 60000)
@@ -2177,5 +2192,9 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         LogRecordWithDLSN record = FutureUtils.result(reader.readNext());
         assertEquals(1L, record.getTransactionId());
         DLMTestUtil.verifyLogRecord(record);
+
+        Utils.close(reader);
+        writer.close();
+        dlm.close();
     }
 }

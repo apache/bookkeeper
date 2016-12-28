@@ -1245,8 +1245,7 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, AsyncClosea
                         public void onSuccess(Enumeration<LedgerEntry> entries) {
                             int rc = BKException.Code.OK;
 
-                            // If the range includes an entry id that is a multiple of 10, simulate corruption.
-                            if (failureInjector.shouldInjectCorruption() && rangeContainsSimulatedBrokenEntry(startEntryId, endEntryId)) {
+                            if (failureInjector.shouldInjectCorruption(startEntryId, endEntryId)) {
                                 rc = BKException.Code.DigestMatchException;
                             }
                             readComplete(rc, null, entries, readCtx, startEntryId, endEntryId);
@@ -1257,15 +1256,6 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, AsyncClosea
                             readComplete(FutureUtils.bkResultCode(cause), null, null, readCtx, startEntryId, endEntryId);
                         }
                     });
-        }
-
-        private boolean rangeContainsSimulatedBrokenEntry(long start, long end) {
-            for (long i = start; i <= end; i++) {
-                if (i % 10 == 0) {
-                    return true;
-                }
-            }
-            return false;
         }
 
         public void readComplete(final int rc, final LedgerHandle lh,

@@ -358,6 +358,20 @@ public class Entry {
     public interface Reader {
 
         /**
+         * Get the log segment sequence number.
+         *
+         * @return the log segment sequence number.
+         */
+        long getLSSN();
+
+        /**
+         * Return the entry id.
+         *
+         * @return the entry id.
+         */
+        long getEntryId();
+
+        /**
          * Read next log record from this record set.
          *
          * @return next log record from this record set.

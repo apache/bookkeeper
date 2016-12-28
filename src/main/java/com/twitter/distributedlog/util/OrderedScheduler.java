@@ -475,6 +475,14 @@ public class OrderedScheduler implements ScheduledExecutorService {
         return chooseExecutor(key).schedule(command, delay, unit);
     }
 
+    public ScheduledFuture<?> scheduleAtFixedRate(Object key,
+                                                  Runnable command,
+                                                  long initialDelay,
+                                                  long period,
+                                                  TimeUnit unit) {
+        return chooseExecutor(key).scheduleAtFixedRate(command, initialDelay, period, unit);
+    }
+
     public Future<?> submit(Object key, Runnable command) {
         return chooseExecutor(key).submit(command);
     }

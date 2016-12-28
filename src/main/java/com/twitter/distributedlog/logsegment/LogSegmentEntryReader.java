@@ -39,6 +39,13 @@ public interface LogSegmentEntryReader extends AsyncCloseable {
     void start();
 
     /**
+     * Return the log segment metadata for this reader.
+     *
+     * @return the log segment metadata
+     */
+    LogSegmentMetadata getSegment();
+
+    /**
      * Update the log segment each time when the metadata has changed.
      *
      * @param segment new metadata of the log segment.
@@ -63,5 +70,19 @@ public interface LogSegmentEntryReader extends AsyncCloseable {
      * @return the last add confirmed entry id.
      */
     long getLastAddConfirmed();
+
+    /**
+     * Is the reader reading beyond last add confirmed.
+     *
+     * @return true if the reader is reading beyond last add confirmed
+     */
+    boolean isBeyondLastAddConfirmed();
+
+    /**
+     * Has the log segment reader caught up with the inprogress log segment.
+     *
+     * @return true only if the log segment is inprogress and it is caught up, otherwise return false.
+     */
+    boolean hasCaughtUpOnInprogress();
 
 }

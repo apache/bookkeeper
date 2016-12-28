@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
-import com.google.common.base.Ticker;
 import com.twitter.distributedlog.callback.LogSegmentListener;
 import com.twitter.distributedlog.callback.LogSegmentNamesListener;
 import com.twitter.distributedlog.config.DynamicDistributedLogConfiguration;
@@ -36,14 +35,10 @@ import com.twitter.distributedlog.exceptions.LogNotFoundException;
 import com.twitter.distributedlog.exceptions.LogSegmentNotFoundException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
 import com.twitter.distributedlog.metadata.LogMetadataForReader;
-import com.twitter.distributedlog.injector.AsyncFailureInjector;
 import com.twitter.distributedlog.lock.DistributedLock;
 import com.twitter.distributedlog.logsegment.LogSegmentFilter;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataCache;
 import com.twitter.distributedlog.metadata.LogStreamMetadataStore;
-import com.twitter.distributedlog.readahead.ReadAheadWorker;
-import com.twitter.distributedlog.stats.BroadCastStatsLogger;
-import com.twitter.distributedlog.stats.ReadAheadExceptionsLogger;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.OrderedScheduler;
 import com.twitter.distributedlog.util.Utils;
@@ -111,13 +106,9 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
     static final Logger LOG = LoggerFactory.getLogger(BKLogReadHandler.class);
 
     protected final LogMetadataForReader logMetadataForReader;
-    protected final ReadAheadCache readAheadCache;
     protected final LedgerHandleCache handleCache;
 
-    protected final OrderedScheduler readAheadExecutor;
     protected final DynamicDistributedLogConfiguration dynConf;
-    protected ReadAheadWorker readAheadWorker = null;
-    private final boolean isHandleForReading;
 
     private final Optional<String> subscriberId;
     private DistributedLock readLock;
@@ -134,10 +125,7 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
             new Versioned<List<LogSegmentMetadata>>(null, Version.NEW);
 
     // stats
-    private final AlertStatsLogger alertStatsLogger;
-    private final StatsLogger handlerStatsLogger;
     private final StatsLogger perLogStatsLogger;
-    private final ReadAheadExceptionsLogger readAheadExceptionsLogger;
 
     /**
      * Construct a Bookkeeper journal manager.
@@ -150,15 +138,12 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
                      LogStreamMetadataStore streamMetadataStore,
                      LogSegmentMetadataCache metadataCache,
                      OrderedScheduler scheduler,
-                     OrderedScheduler readAheadExecutor,
                      AlertStatsLogger alertStatsLogger,
-                     ReadAheadExceptionsLogger readAheadExceptionsLogger,
                      StatsLogger statsLogger,
                      StatsLogger perLogStatsLogger,
                      String clientId,
                      AsyncNotification readerStateNotification,
-                     boolean isHandleForReading,
-                     boolean deserializeRecordSet) {
+                     boolean isHandleForReading) {
         super(logMetadata,
                 conf,
                 bkcBuilder,
@@ -170,13 +155,8 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
                 clientId);
         this.logMetadataForReader = logMetadata;
         this.dynConf = dynConf;
-        this.readAheadExecutor = readAheadExecutor;
-        this.alertStatsLogger = alertStatsLogger;
         this.perLogStatsLogger =
                 isHandleForReading ? perLogStatsLogger : NullStatsLogger.INSTANCE;
-        this.handlerStatsLogger =
-                BroadCastStatsLogger.masterslave(this.perLogStatsLogger, statsLogger);
-        this.readAheadExceptionsLogger = readAheadExceptionsLogger;
         this.readerStateNotification = readerStateNotification;
 
         handleCache = LedgerHandleCache.newBuilder()
@@ -184,16 +164,7 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
                 .conf(conf)
                 .statsLogger(statsLogger)
                 .build();
-        readAheadCache = new ReadAheadCache(
-                getFullyQualifiedName(),
-                alertStatsLogger,
-                readerStateNotification,
-                dynConf.getReadAheadMaxRecords(),
-                deserializeRecordSet,
-                Ticker.systemTicker());
-
         this.subscriberId = subscriberId;
-        this.isHandleForReading = isHandleForReading;
     }
 
     @VisibleForTesting
@@ -290,16 +261,10 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
             }
             lockToClose = readLock;
         }
-        return Utils.closeSequence(scheduler, readAheadWorker, lockToClose)
+        return Utils.closeSequence(scheduler, lockToClose)
                 .flatMap(new AbstractFunction1<Void, Future<Void>>() {
             @Override
             public Future<Void> apply(Void result) {
-                if (null != readAheadCache) {
-                    readAheadCache.clear();
-                }
-                if (null != readAheadWorker) {
-                    unregisterListener(readAheadWorker);
-                }
                 if (null != handleCache) {
                     handleCache.clear();
                 }
@@ -359,57 +324,6 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
                 FutureUtils.setValue(promise, segments);
             }
         });
-    }
-
-    public void startReadAhead(LedgerReadPosition startPosition,
-                               AsyncFailureInjector failureInjector) {
-        if (null == readAheadWorker) {
-            readAheadWorker = new ReadAheadWorker(
-                    conf,
-                    dynConf,
-                    logMetadataForReader,
-                    this,
-                    readAheadExecutor,
-                    handleCache,
-                    startPosition,
-                    readAheadCache,
-                    isHandleForReading,
-                    readAheadExceptionsLogger,
-                    handlerStatsLogger,
-                    perLogStatsLogger,
-                    alertStatsLogger,
-                    failureInjector,
-                    readerStateNotification);
-            registerListener(readAheadWorker);
-            // start the readahead worker after the log segments are fetched
-            asyncStartFetchLogSegments().map(new AbstractFunction1<Versioned<List<LogSegmentMetadata>>, BoxedUnit>() {
-                @Override
-                public BoxedUnit apply(Versioned<List<LogSegmentMetadata>> logSegments) {
-                    readAheadWorker.start(logSegments.getValue());
-                    return BoxedUnit.UNIT;
-                }
-            });
-        }
-    }
-
-    public boolean isReadAheadCaughtUp() {
-        return null != readAheadWorker && readAheadWorker.isCaughtUp();
-    }
-
-    public LedgerHandleCache getHandleCache() {
-        return handleCache;
-    }
-
-    public Entry.Reader getNextReadAheadEntry() throws IOException {
-        return readAheadCache.getNextReadAheadEntry();
-    }
-
-    public Entry.Reader getNextReadAheadEntry(long waitTime, TimeUnit waitTimeUnit) throws IOException {
-        return readAheadCache.getNextReadAheadEntry(waitTime, waitTimeUnit);
-    }
-
-    public ReadAheadCache getReadAheadCache() {
-        return readAheadCache;
     }
 
     @VisibleForTesting

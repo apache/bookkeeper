@@ -329,7 +329,6 @@ public class TestTruncate extends TestDistributedLogBase {
         LogRecord r = reader.readNext(false);
         while (null != r) {
             DLMTestUtil.verifyLogRecord(r);
-            LOG.trace("Read entry {}.", r.getTransactionId());
             assertEquals(txid++, r.getTransactionId());
             ++numRead;
             r = reader.readNext(false);

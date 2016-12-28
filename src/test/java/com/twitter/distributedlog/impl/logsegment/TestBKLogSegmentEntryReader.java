@@ -32,24 +32,22 @@ import com.twitter.distributedlog.LogSegmentMetadata;
 import com.twitter.distributedlog.TestDistributedLogBase;
 import com.twitter.distributedlog.exceptions.EndOfLogSegmentException;
 import com.twitter.distributedlog.exceptions.ReadCancelledException;
+import com.twitter.distributedlog.injector.AsyncFailureInjector;
+import com.twitter.distributedlog.logsegment.LogSegmentEntryStore;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.OrderedScheduler;
 import com.twitter.distributedlog.util.Utils;
 import com.twitter.util.Future;
-import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Charsets.UTF_8;
 import static org.junit.Assert.*;
 
 /**
@@ -92,25 +90,9 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
                                               long startEntryId,
                                               DistributedLogConfiguration conf)
             throws Exception {
-        LedgerHandle lh;
-        if (segment.isInProgress()) {
-            lh = bkc.get().openLedgerNoRecovery(
-                    segment.getLedgerId(),
-                    BookKeeper.DigestType.CRC32,
-                    conf.getBKDigestPW().getBytes(UTF_8));
-        } else {
-            lh = bkc.get().openLedger(
-                    segment.getLedgerId(),
-                    BookKeeper.DigestType.CRC32,
-                    conf.getBKDigestPW().getBytes(UTF_8));
-        }
-        return new BKLogSegmentEntryReader(
-                segment,
-                lh,
-                startEntryId,
-                bkc.get(),
-                scheduler,
-                conf);
+        LogSegmentEntryStore store = new BKLogSegmentEntryStore(
+                conf, bkc.get(), scheduler, NullStatsLogger.INSTANCE, AsyncFailureInjector.NULL);
+        return (BKLogSegmentEntryReader) FutureUtils.result(store.openReader(segment, startEntryId));
     }
 
     void generateCompletedLogSegments(DistributedLogManager dlm,
@@ -186,6 +168,7 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
             ++entryId;
         }
         assertEquals(21, txId);
+        assertFalse(reader.hasCaughtUpOnInprogress());
         Utils.close(reader);
     }
 
@@ -216,6 +199,7 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
                 // expected
             }
         }
+        assertFalse(reader.hasCaughtUpOnInprogress());
         assertTrue("Reader should be closed yet", reader.isClosed());
     }
 
@@ -245,9 +229,9 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
         long txId = 1L;
         long entryId = 0L;
 
-
         assertEquals(10, reader.readAheadEntries.size());
         assertEquals(10, reader.getNextEntryId());
+        assertFalse(reader.hasCaughtUpOnInprogress());
         // read first entry
         Entry.Reader entryReader = FutureUtils.result(reader.readNext(1)).get(0);
         LogRecordWithDLSN record = entryReader.nextRecord();
@@ -271,6 +255,7 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
 
         assertEquals(10, reader.readAheadEntries.size());
         assertEquals(11, reader.getNextEntryId());
+        assertFalse(reader.hasCaughtUpOnInprogress());
 
         Utils.close(reader);
     }
@@ -326,6 +311,7 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
 
         assertEquals(5, reader.readAheadEntries.size());
         assertEquals(6, reader.getNextEntryId());
+        assertFalse(reader.hasCaughtUpOnInprogress());
 
         Utils.close(reader);
     }
@@ -376,6 +362,7 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
         assertEquals(2L, txId);
         assertEquals(reader.getLastAddConfirmed(), reader.readAheadEntries.size());
         assertEquals((reader.getLastAddConfirmed() + 1), reader.getNextEntryId());
+        assertFalse(reader.hasCaughtUpOnInprogress());
 
         Utils.close(reader);
     }
@@ -434,6 +421,7 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
         // the long poll will be satisfied
         List<Entry.Reader> nextReadEntries = FutureUtils.result(nextReadFuture);
         assertEquals(1, nextReadEntries.size());
+        assertTrue(reader.hasCaughtUpOnInprogress());
         Entry.Reader entryReader = nextReadEntries.get(0);
         LogRecordWithDLSN record = entryReader.nextRecord();
         assertNotNull(record);

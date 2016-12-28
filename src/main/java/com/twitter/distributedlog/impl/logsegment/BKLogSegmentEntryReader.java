@@ -27,6 +27,7 @@ import com.twitter.distributedlog.exceptions.DLIllegalStateException;
 import com.twitter.distributedlog.exceptions.DLInterruptedException;
 import com.twitter.distributedlog.exceptions.EndOfLogSegmentException;
 import com.twitter.distributedlog.exceptions.ReadCancelledException;
+import com.twitter.distributedlog.injector.AsyncFailureInjector;
 import com.twitter.distributedlog.logsegment.LogSegmentEntryReader;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.OrderedScheduler;
@@ -37,14 +38,16 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -128,6 +131,16 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
                                  LedgerHandle lh,
                                  Enumeration<LedgerEntry> entries,
                                  Object ctx) {
+            if (failureInjector.shouldInjectCorruption(entryId, entryId)) {
+                rc = BKException.Code.DigestMatchException;
+            }
+            processReadEntries(rc, lh, entries, ctx);
+        }
+
+        void processReadEntries(int rc,
+                                LedgerHandle lh,
+                                Enumeration<LedgerEntry> entries,
+                                Object ctx) {
             if (isDone()) {
                 return;
             }
@@ -155,6 +168,16 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
                                                       long entryId,
                                                       LedgerEntry entry,
                                                       Object ctx) {
+            if (failureInjector.shouldInjectCorruption(this.entryId, this.entryId)) {
+                rc = BKException.Code.DigestMatchException;
+            }
+            processReadEntry(rc, entryId, entry, ctx);
+        }
+
+        void processReadEntry(int rc,
+                              long entryId,
+                              LedgerEntry entry,
+                              Object ctx) {
             if (isDone()) {
                 return;
             }
@@ -245,10 +268,10 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
     private final BookKeeper bk;
     private final DistributedLogConfiguration conf;
     private final OrderedScheduler scheduler;
-    private final long startEntryId;
     private final long lssn;
     private final long startSequenceId;
     private final boolean envelopeEntries;
+    private final boolean deserializeRecordSet;
     private final int numPrefetchEntries;
     private final int maxPrefetchEntries;
     // state
@@ -260,29 +283,39 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
     private long nextEntryId;
     private final AtomicReference<Throwable> lastException = new AtomicReference<Throwable>(null);
     private final AtomicLong scheduleCount = new AtomicLong(0);
+    private volatile boolean hasCaughtupOnInprogress = false;
     // read retries
     private int readAheadWaitTime;
     private final int maxReadBackoffTime;
     private final AtomicInteger numReadErrors = new AtomicInteger(0);
+    private final boolean skipBrokenEntries;
     // readahead cache
     int cachedEntries = 0;
     int numOutstandingEntries = 0;
     final LinkedBlockingQueue<CacheEntry> readAheadEntries;
     // request queue
-    final ConcurrentLinkedQueue<PendingReadRequest> readQueue;
+    final LinkedList<PendingReadRequest> readQueue;
+
+    // failure injector
+    private final AsyncFailureInjector failureInjector;
+    // Stats
+    private final Counter skippedBrokenEntriesCounter;
 
     BKLogSegmentEntryReader(LogSegmentMetadata metadata,
                             LedgerHandle lh,
                             long startEntryId,
                             BookKeeper bk,
                             OrderedScheduler scheduler,
-                            DistributedLogConfiguration conf) {
+                            DistributedLogConfiguration conf,
+                            StatsLogger statsLogger,
+                            AsyncFailureInjector failureInjector) {
         this.metadata = metadata;
         this.lssn = metadata.getLogSegmentSequenceNumber();
         this.startSequenceId = metadata.getStartSequenceId();
         this.envelopeEntries = metadata.getEnvelopeEntries();
+        this.deserializeRecordSet = conf.getDeserializeRecordSetOnReads();
         this.lh = lh;
-        this.startEntryId = this.nextEntryId = Math.max(startEntryId, 0);
+        this.nextEntryId = Math.max(startEntryId, 0);
         this.bk = bk;
         this.conf = conf;
         this.numPrefetchEntries = conf.getNumPrefetchEntriesPerLogSegment();
@@ -294,17 +327,35 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
         // create the readahead queue
         this.readAheadEntries = new LinkedBlockingQueue<CacheEntry>();
         // create the read request queue
-        this.readQueue = new ConcurrentLinkedQueue<PendingReadRequest>();
+        this.readQueue = new LinkedList<PendingReadRequest>();
         // read backoff settings
         this.readAheadWaitTime = conf.getReadAheadWaitTime();
         this.maxReadBackoffTime = 4 * conf.getReadAheadWaitTime();
+        // other read settings
+        this.skipBrokenEntries = conf.getReadAheadSkipBrokenEntries();
+
+        // Failure Injection
+        this.failureInjector = failureInjector;
+        // Stats
+        this.skippedBrokenEntriesCounter = statsLogger.getCounter("skipped_broken_entries");
+    }
+
+    @VisibleForTesting
+    public synchronized CacheEntry getOutstandingLongPoll() {
+        return outstandingLongPoll;
+    }
+
+    @VisibleForTesting
+    LinkedBlockingQueue<CacheEntry> getReadAheadEntries() {
+        return this.readAheadEntries;
     }
 
     synchronized LedgerHandle getLh() {
         return lh;
     }
 
-    synchronized LogSegmentMetadata getSegment() {
+    @Override
+    public synchronized LogSegmentMetadata getSegment() {
         return metadata;
     }
 
@@ -316,6 +367,11 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
     @Override
     public void start() {
         prefetchIfNecessary();
+    }
+
+    @Override
+    public boolean hasCaughtUpOnInprogress() {
+        return hasCaughtupOnInprogress;
     }
 
     //
@@ -425,10 +481,15 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
     }
 
     private void cancelAllPendingReads(Throwable throwExc) {
-        for (PendingReadRequest request : readQueue) {
+        List<PendingReadRequest> requestsToCancel;
+        synchronized (readQueue) {
+            requestsToCancel = Lists.newArrayListWithExpectedSize(readQueue.size());
+            requestsToCancel.addAll(readQueue);
+            readQueue.clear();
+        }
+        for (PendingReadRequest request : requestsToCancel) {
             request.setException(throwExc);
         }
-        readQueue.clear();
     }
 
     //
@@ -475,14 +536,15 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
                         (!isLedgerClosed() && nextEntryId > getLastAddConfirmed() + 1)) {
                     break;
                 }
-                entriesToFetch.add(new CacheEntry(nextEntryId));
+                CacheEntry entry = new CacheEntry(nextEntryId);
+                entriesToFetch.add(entry);
+                readAheadEntries.add(entry);
                 ++numOutstandingEntries;
                 ++cachedEntries;
                 ++nextEntryId;
             }
         }
         for (CacheEntry entry : entriesToFetch) {
-            readAheadEntries.add(entry);
             issueRead(entry);
         }
     }
@@ -518,6 +580,10 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
         synchronized (this) {
             this.outstandingLongPoll = cacheEntry;
         }
+
+        if (!hasCaughtupOnInprogress) {
+            hasCaughtupOnInprogress = true;
+        }
         getLh().asyncReadLastConfirmedAndEntry(
                 cacheEntry.entryId,
                 conf.getReadLACLongPollTimeout(),
@@ -535,7 +601,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
                 .setLogSegmentInfo(lssn, startSequenceId)
                 .setEntryId(entry.getEntryId())
                 .setEnvelopeEntry(envelopeEntries)
-                .deserializeRecordSet(false)
+                .deserializeRecordSet(deserializeRecordSet)
                 .setInputStream(entry.getEntryInputStream())
                 .buildReader();
     }
@@ -635,12 +701,18 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
 
     private void readEntriesFromReadAheadCache(PendingReadRequest nextRequest) {
         while (!nextRequest.hasReadEnoughEntries()) {
-            CacheEntry entry = readAheadEntries.peek();
-            // no entry available in the read ahead cache
+            CacheEntry entry;
+            boolean hitEndOfLogSegment;
+            synchronized (this) {
+                entry = readAheadEntries.peek();
+                hitEndOfLogSegment = (null == entry) && isEndOfLogSegment();
+            }
+            // reach end of log segment
+            if (hitEndOfLogSegment) {
+                setException(new EndOfLogSegmentException(getSegment().getZNodeName()), false);
+                return;
+            }
             if (null == entry) {
-                if (isEndOfLogSegment()) {
-                    setException(new EndOfLogSegmentException(getSegment().getZNodeName()), false);
-                }
                 return;
             }
             // entry is not complete yet.
@@ -665,6 +737,11 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
                     setException(e, false);
                     return;
                 }
+            } else if (skipBrokenEntries && BKException.Code.DigestMatchException == entry.getRc()) {
+                // skip this entry and move forward
+                skippedBrokenEntriesCounter.inc();
+                readAheadEntries.poll();
+                continue;
             } else {
                 setException(new BKTransmitException("Encountered issue on reading entry " + entry.getEntryId()
                         + " @ log segment " + getSegment(), entry.getRc()), false);
@@ -685,16 +762,13 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
         return isLedgerClosed() && entryId > getLastAddConfirmed();
     }
 
-    private synchronized boolean isBeyondLastAddConfirmed() {
+    @Override
+    public synchronized boolean isBeyondLastAddConfirmed() {
         return isBeyondLastAddConfirmed(nextEntryId);
     }
 
     private boolean isBeyondLastAddConfirmed(long entryId) {
         return entryId > getLastAddConfirmed();
-    }
-
-    private synchronized boolean isNotBeyondLastAddConfirmed() {
-        return isNotBeyondLastAddConfirmed(nextEntryId);
     }
 
     private boolean isNotBeyondLastAddConfirmed(long entryId) {

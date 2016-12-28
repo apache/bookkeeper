@@ -148,9 +148,8 @@ public class TestNonBlockingReadsMultiReader extends TestDistributedLogBase {
             LOG.info("Writer stopped after writing {} records, waiting for reader to complete",
                     writeCount.get());
             while (writeCount.get() > (readerThreads[0].getReadCount())) {
-                LOG.info("Write Count = {}, Read Count = {}, ReadAhead = {}",
-                        new Object[] { writeCount.get(), readerThreads[0].getReadCount(),
-                                        reader0.getReadHandler().getReadAheadCache() });
+                LOG.info("Write Count = {}, Read Count = {}",
+                        new Object[] { writeCount.get(), readerThreads[0].getReadCount() });
                 TimeUnit.MILLISECONDS.sleep(100);
             }
             assertEquals(writeCount.get(),

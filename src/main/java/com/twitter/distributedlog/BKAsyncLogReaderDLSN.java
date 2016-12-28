@@ -20,6 +20,7 @@ package com.twitter.distributedlog;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Stopwatch;
+import com.google.common.base.Ticker;
 import com.twitter.distributedlog.exceptions.DLIllegalStateException;
 import com.twitter.distributedlog.exceptions.DLInterruptedException;
 import com.twitter.distributedlog.exceptions.EndOfStreamException;
@@ -27,9 +28,7 @@ import com.twitter.distributedlog.exceptions.IdleReaderException;
 import com.twitter.distributedlog.exceptions.LogNotFoundException;
 import com.twitter.distributedlog.exceptions.ReadCancelledException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
-import com.twitter.distributedlog.injector.AsyncFailureInjector;
-import com.twitter.distributedlog.injector.AsyncRandomFailureInjector;
-import com.twitter.distributedlog.util.FutureUtils;
+import com.twitter.distributedlog.util.Utils;
 import com.twitter.util.Future;
 import com.twitter.util.FutureEventListener;
 import com.twitter.util.Promise;
@@ -48,10 +47,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Function1;
 import scala.runtime.AbstractFunction1;
+import scala.runtime.BoxedUnit;
 
 /**
  * BookKeeper based {@link AsyncLogReader} implementation.
@@ -83,7 +84,7 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
             };
 
     protected final BKDistributedLogManager bkDistributedLogManager;
-    protected final BKLogReadHandler bkLedgerManager;
+    protected final BKLogReadHandler readHandler;
     private final AtomicReference<Throwable> lastException = new AtomicReference<Throwable>();
     private final ScheduledExecutorService executorService;
     private final ConcurrentLinkedQueue<PendingReadRequest> pendingRequests = new ConcurrentLinkedQueue<PendingReadRequest>();
@@ -92,18 +93,18 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
     final private Stopwatch scheduleDelayStopwatch;
     final private Stopwatch readNextDelayStopwatch;
     private DLSN startDLSN;
-    private boolean readAheadStarted = false;
+    private ReadAheadEntryReader readAheadReader = null;
     private int lastPosition = 0;
     private final boolean positionGapDetectionEnabled;
     private final int idleErrorThresholdMillis;
     final ScheduledFuture<?> idleReaderTimeoutTask;
     private ScheduledFuture<?> backgroundScheduleTask = null;
+    // last process time
+    private final Stopwatch lastProcessTime;
 
     protected Promise<Void> closeFuture = null;
 
     private boolean lockStream = false;
-
-    private boolean disableReadAheadLogSegmentsNotification = false;
 
     private final boolean returnEndOfStreamRecord;
 
@@ -122,7 +123,6 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
     private LogRecordWithDLSN nextRecord = null;
 
     // Failure Injector
-    private final AsyncFailureInjector failureInjector;
     private boolean disableProcessingReadRequests = false;
 
     // Stats
@@ -198,7 +198,7 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
 
         void complete() {
             if (LOG.isTraceEnabled()) {
-                LOG.trace("{} : Satisfied promise with {} records", bkLedgerManager.getFullyQualifiedName(), records.size());
+                LOG.trace("{} : Satisfied promise with {} records", readHandler.getFullyQualifiedName(), records.size());
             }
             delayUntilPromiseSatisfied.registerSuccessfulEvent(enqueueTime.stop().elapsed(TimeUnit.MICROSECONDS));
             Stopwatch stopwatch = Stopwatch.createStarted();
@@ -212,12 +212,11 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
                          DLSN startDLSN,
                          Optional<String> subscriberId,
                          boolean returnEndOfStreamRecord,
-                         boolean deserializeRecordSet,
                          StatsLogger statsLogger) {
         this.bkDistributedLogManager = bkdlm;
         this.executorService = executorService;
-        this.bkLedgerManager = bkDistributedLogManager.createReadHandler(subscriberId,
-                this, deserializeRecordSet, true);
+        this.readHandler = bkDistributedLogManager.createReadHandler(subscriberId,
+                this, true);
         LOG.debug("Starting async reader at {}", startDLSN);
         this.startDLSN = startDLSN;
         this.scheduleDelayStopwatch = Stopwatch.createUnstarted();
@@ -225,16 +224,6 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
         this.positionGapDetectionEnabled = bkdlm.getConf().getPositionGapDetectionEnabled();
         this.idleErrorThresholdMillis = bkdlm.getConf().getReaderIdleErrorThresholdMillis();
         this.returnEndOfStreamRecord = returnEndOfStreamRecord;
-
-        // Failure Injection
-        this.failureInjector = AsyncRandomFailureInjector.newBuilder()
-                .injectDelays(bkdlm.getConf().getEIInjectReadAheadDelay(),
-                              bkdlm.getConf().getEIInjectReadAheadDelayPercent(),
-                              bkdlm.getConf().getEIInjectMaxReadAheadDelayMs())
-                .injectErrors(false, 10)
-                .injectStops(bkdlm.getConf().getEIInjectReadAheadStall(), 10)
-                .injectCorruption(bkdlm.getConf().getEIInjectReadAheadBrokenEntries())
-                .build();
 
         // Stats
         StatsLogger asyncReaderStatsLogger = statsLogger.scope("async_reader");
@@ -252,6 +241,7 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
         // Lock the stream if requested. The lock will be released when the reader is closed.
         this.lockStream = false;
         this.idleReaderTimeoutTask = scheduleIdleReaderTaskIfNecessary();
+        this.lastProcessTime = Stopwatch.createStarted();
     }
 
     private ScheduledFuture<?> scheduleIdleReaderTaskIfNecessary() {
@@ -276,7 +266,7 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
                         return;
                     }
 
-                    ReadAheadCache cache = bkLedgerManager.getReadAheadCache();
+                    ReadAheadEntryReader readAheadReader = getReadAheadReader();
 
                     // read request has been idle
                     //   - cache has records but read request are idle,
@@ -284,30 +274,25 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
                     //   - cache is empty and readahead is idle (no records added for a long time)
                     idleReaderCheckIdleReadAheadCount.inc();
                     try {
-                        if (!hasMoreRecords(cache)
-                                && !cache.isReadAheadIdle(idleErrorThresholdMillis, TimeUnit.MILLISECONDS)) {
+                        if (null == readAheadReader || (!hasMoreRecords() &&
+                                readAheadReader.isReaderIdle(idleErrorThresholdMillis, TimeUnit.MILLISECONDS))) {
+                            markReaderAsIdle();
                             return;
+                        } else if (lastProcessTime.elapsed(TimeUnit.MILLISECONDS) > idleErrorThresholdMillis) {
+                            markReaderAsIdle();;
                         }
                     } catch (IOException e) {
-                        // we encountered exceptions on checking more records
                         setLastException(e);
                         return;
                     }
-
-                    idleReaderError.inc();
-                    IdleReaderException ire = new IdleReaderException("Reader on stream "
-                            + bkLedgerManager.getFullyQualifiedName()
-                            + " is idle for " + idleErrorThresholdMillis +" ms");
-                    setLastException(ire);
-                    // cancel all pending reads directly rather than notifying on error
-                    // because idle reader could happen on idle read requests that usually means something wrong
-                    // in scheduling reads
-                    cancelAllPendingReads(ire);
                 }
             }, period, period, TimeUnit.MILLISECONDS);
         }
-
         return null;
+    }
+
+    synchronized ReadAheadEntryReader getReadAheadReader() {
+        return readAheadReader;
     }
 
     void cancelIdleReaderTask() {
@@ -317,12 +302,24 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
                 idleReaderTimeoutTask.cancel(true);
             }
         } catch (Exception exc) {
-            LOG.info("{}: Failed to cancel the background idle reader timeout task", bkLedgerManager.getFullyQualifiedName());
+            LOG.info("{}: Failed to cancel the background idle reader timeout task", readHandler.getFullyQualifiedName());
         }
     }
 
+    private void markReaderAsIdle() {
+        idleReaderError.inc();
+        IdleReaderException ire = new IdleReaderException("Reader on stream "
+                + readHandler.getFullyQualifiedName()
+                + " is idle for " + idleErrorThresholdMillis +" ms");
+        setLastException(ire);
+        // cancel all pending reads directly rather than notifying on error
+        // because idle reader could happen on idle read requests that usually means something wrong
+        // in scheduling reads
+        cancelAllPendingReads(ire);
+    }
+
     protected synchronized void setStartDLSN(DLSN fromDLSN) throws UnexpectedException {
-        if (readAheadStarted) {
+        if (null != readAheadReader) {
             throw new UnexpectedException("Could't reset from dlsn after reader already starts reading.");
         }
         startDLSN = fromDLSN;
@@ -335,14 +332,14 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
 
     public Future<Void> lockStream() {
         this.lockStream = true;
-        return bkLedgerManager.lockStream();
+        return readHandler.lockStream();
     }
 
     private boolean checkClosedOrInError(String operation) {
         if (null == lastException.get()) {
             try {
-                if (null != bkLedgerManager && null != bkLedgerManager.readAheadWorker) {
-                    bkLedgerManager.readAheadWorker.checkClosedOrInError();
+                if (null != readHandler && null != getReadAheadReader()) {
+                    getReadAheadReader().checkLastException();
                 }
 
                 bkDistributedLogManager.checkClosedOrInError(operation);
@@ -353,7 +350,7 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
 
         if (lockStream) {
             try {
-                bkLedgerManager.checkReadLock();
+                readHandler.checkReadLock();
             } catch (IOException ex) {
                 setLastException(ex);
             }
@@ -411,28 +408,44 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
         readNextDelayStopwatch.reset().start();
         final PendingReadRequest readRequest = new PendingReadRequest(numEntries, deadlineTime, deadlineTimeUnit);
 
-        if (!readAheadStarted) {
-            bkLedgerManager.checkLogStreamExists().addEventListener(new FutureEventListener<Void>() {
-                @Override
-                public void onSuccess(Void value) {
-                    try {
-                        bkLedgerManager.startReadAhead(
-                                new LedgerReadPosition(getStartDLSN()),
-                                failureInjector);
-                        if (disableReadAheadLogSegmentsNotification) {
-                            bkLedgerManager.disableReadAheadLogSegmentsNotification();
+        if (null == readAheadReader) {
+            try {
+                final ReadAheadEntryReader readAheadEntryReader = this.readAheadReader = new ReadAheadEntryReader(
+                        getStreamName(),
+                        getStartDLSN(),
+                        bkDistributedLogManager.getConf(),
+                        readHandler,
+                        bkDistributedLogManager.getReaderEntryStore(),
+                        bkDistributedLogManager.getScheduler(),
+                        Ticker.systemTicker(),
+                        bkDistributedLogManager.alertStatsLogger);
+                readHandler.checkLogStreamExists().addEventListener(new FutureEventListener<Void>() {
+                    @Override
+                    public void onSuccess(Void value) {
+                        try {
+                            readHandler.registerListener(readAheadEntryReader);
+                            readHandler.asyncStartFetchLogSegments()
+                                    .map(new AbstractFunction1<Versioned<List<LogSegmentMetadata>>, BoxedUnit>() {
+                                        @Override
+                                        public BoxedUnit apply(Versioned<List<LogSegmentMetadata>> logSegments) {
+                                            readAheadEntryReader.addStateChangeNotification(BKAsyncLogReaderDLSN.this);
+                                            readAheadEntryReader.start(logSegments.getValue());
+                                            return BoxedUnit.UNIT;
+                                        }
+                                    });
+                        } catch (Exception exc) {
+                            notifyOnError(exc);
                         }
-                    } catch (Exception exc) {
-                        notifyOnError(exc);
                     }
-                }
 
-                @Override
-                public void onFailure(Throwable cause) {
-                    notifyOnError(cause);
-                }
-            });
-            readAheadStarted = true;
+                    @Override
+                    public void onFailure(Throwable cause) {
+                        notifyOnError(cause);
+                    }
+                });
+            } catch (IOException ioe) {
+                notifyOnError(ioe);
+            }
         }
 
         if (checkClosedOrInError("readNext")) {
@@ -475,7 +488,7 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
                 return closeFuture;
             }
             closePromise = closeFuture = new Promise<Void>();
-            exception = new ReadCancelledException(bkLedgerManager.getFullyQualifiedName(), "Reader was closed");
+            exception = new ReadCancelledException(readHandler.getFullyQualifiedName(), "Reader was closed");
             setLastException(exception);
         }
 
@@ -490,7 +503,15 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
 
         cancelAllPendingReads(exception);
 
-        FutureUtils.ignore(bkLedgerManager.asyncClose()).proxyTo(closePromise);
+        ReadAheadEntryReader readAheadReader = getReadAheadReader();
+        if (null != readAheadReader) {
+            readHandler.unregisterListener(readAheadReader);
+            readAheadReader.removeStateChangeNotification(this);
+        }
+        Utils.closeSequence(bkDistributedLogManager.getScheduler(), true,
+                readAheadReader,
+                readHandler
+        ).proxyTo(closePromise);
         return closePromise;
     }
 
@@ -501,25 +522,26 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
         pendingRequests.clear();
     }
 
-    boolean hasMoreRecords() throws IOException {
-        return hasMoreRecords(bkLedgerManager.readAheadCache);
-    }
-
-    private synchronized boolean hasMoreRecords(ReadAheadCache cache) throws IOException {
-        if (cache.getNumCachedEntries() > 0 || null != nextRecord) {
+    synchronized boolean hasMoreRecords() throws IOException {
+        if (null == readAheadReader) {
+            return false;
+        }
+        if (readAheadReader.getNumCachedEntries() > 0 || null != nextRecord) {
             return true;
         } else if (null != currentEntry) {
             nextRecord = currentEntry.nextRecord();
             return null != nextRecord;
-        } else {
-            return false;
         }
+        return false;
     }
 
     private synchronized LogRecordWithDLSN readNextRecord() throws IOException {
+        if (null == readAheadReader) {
+            return null;
+        }
         if (null == currentEntry) {
-            currentEntry = bkLedgerManager.getNextReadAheadEntry();
-            // no current entry after reading from read head then return null
+            currentEntry = readAheadReader.getNextReadAheadEntry(0L, TimeUnit.MILLISECONDS);
+            // no entry after reading from read ahead then return null
             if (null == currentEntry) {
                 return null;
             }
@@ -551,10 +573,10 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
             Stopwatch runTime = Stopwatch.createStarted();
             int iterations = 0;
             long scheduleCountLocal = scheduleCount.get();
-            LOG.debug("{}: Scheduled Background Reader", bkLedgerManager.getFullyQualifiedName());
+            LOG.debug("{}: Scheduled Background Reader", readHandler.getFullyQualifiedName());
             while(true) {
                 if (LOG.isTraceEnabled()) {
-                    LOG.trace("{}: Executing Iteration: {}", bkLedgerManager.getFullyQualifiedName(), iterations++);
+                    LOG.trace("{}: Executing Iteration: {}", readHandler.getFullyQualifiedName(), iterations++);
                 }
 
                 PendingReadRequest nextRequest = null;
@@ -563,31 +585,32 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
 
                     // Queue is empty, nothing to read, return
                     if (null == nextRequest) {
-                        LOG.trace("{}: Queue Empty waiting for Input", bkLedgerManager.getFullyQualifiedName());
+                        LOG.trace("{}: Queue Empty waiting for Input", readHandler.getFullyQualifiedName());
                         scheduleCount.set(0);
                         backgroundReaderRunTime.registerSuccessfulEvent(runTime.stop().elapsed(TimeUnit.MICROSECONDS));
                         return;
                     }
 
                     if (disableProcessingReadRequests) {
-                        LOG.info("Reader of {} is forced to stop processing read requests", bkLedgerManager.getFullyQualifiedName());
+                        LOG.info("Reader of {} is forced to stop processing read requests", readHandler.getFullyQualifiedName());
                         return;
                     }
                 }
+                lastProcessTime.reset().start();
 
                 // If the oldest pending promise is interrupted then we must mark
                 // the reader in error and abort all pending reads since we dont
                 // know the last consumed read
                 if (null == lastException.get()) {
                     if (nextRequest.getPromise().isInterrupted().isDefined()) {
-                        setLastException(new DLInterruptedException("Interrupted on reading " + bkLedgerManager.getFullyQualifiedName() + " : ",
+                        setLastException(new DLInterruptedException("Interrupted on reading " + readHandler.getFullyQualifiedName() + " : ",
                                 nextRequest.getPromise().isInterrupted().get()));
                     }
                 }
 
                 if (checkClosedOrInError("readNext")) {
                     if (!(lastException.get().getCause() instanceof LogNotFoundException)) {
-                        LOG.warn("{}: Exception", bkLedgerManager.getFullyQualifiedName(), lastException.get());
+                        LOG.warn("{}: Exception", readHandler.getFullyQualifiedName(), lastException.get());
                     }
                     backgroundReaderRunTime.registerFailedEvent(runTime.stop().elapsed(TimeUnit.MICROSECONDS));
                     return;
@@ -595,7 +618,7 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
 
                 try {
                     // Fail 10% of the requests when asked to simulate errors
-                    if (failureInjector.shouldInjectErrors()) {
+                    if (bkDistributedLogManager.getFailureInjector().shouldInjectErrors()) {
                         throw new IOException("Reader Simulated Exception");
                     }
                     LogRecordWithDLSN record;
@@ -609,15 +632,15 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
                         } else {
                             if (record.isEndOfStream() && !returnEndOfStreamRecord) {
                                 setLastException(new EndOfStreamException("End of Stream Reached for "
-                                        + bkLedgerManager.getFullyQualifiedName()));
+                                        + readHandler.getFullyQualifiedName()));
                                 break;
                             }
 
                             // gap detection
                             if (recordPositionsContainsGap(record, lastPosition)) {
-                                bkDistributedLogManager.raiseAlert("Gap detected between records at dlsn = {}", record.getDlsn());
+                                bkDistributedLogManager.raiseAlert("Gap detected between records at record = {}", record);
                                 if (positionGapDetectionEnabled) {
-                                    throw new DLIllegalStateException("Gap detected between records at dlsn = " + record.getDlsn());
+                                    throw new DLIllegalStateException("Gap detected between records at record = " + record);
                                 }
                             }
                             lastPosition = record.getLastPositionWithinLogSegment();
@@ -628,7 +651,7 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
                 } catch (IOException exc) {
                     setLastException(exc);
                     if (!(exc instanceof LogNotFoundException)) {
-                        LOG.warn("{} : read with skip Exception", bkLedgerManager.getFullyQualifiedName(), lastException.get());
+                        LOG.warn("{} : read with skip Exception", readHandler.getFullyQualifiedName(), lastException.get());
                     }
                     continue;
                 }
@@ -709,13 +732,12 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
 
     @VisibleForTesting
     void simulateErrors() {
-        failureInjector.injectErrors(true);
+        bkDistributedLogManager.getFailureInjector().injectErrors(true);
     }
 
     @VisibleForTesting
     synchronized void disableReadAheadLogSegmentsNotification() {
-        disableReadAheadLogSegmentsNotification = true;
-        bkLedgerManager.disableReadAheadLogSegmentsNotification();
+        readHandler.disableReadAheadLogSegmentsNotification();
     }
 
     @VisibleForTesting

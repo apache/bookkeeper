@@ -153,8 +153,19 @@ public class AsyncRandomFailureInjector implements AsyncFailureInjector {
     }
 
     @Override
-    public boolean shouldInjectCorruption() {
-        return simulateCorruption;
+    public boolean shouldInjectCorruption(long startEntryId, long endEntryId) {
+        if (!simulateCorruption) {
+            return false;
+        }
+        if (startEntryId == endEntryId) {
+            return startEntryId % 10 == 0;
+        }
+        for (long i = startEntryId; i <= endEntryId; i++) {
+            if (i % 10 == 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
