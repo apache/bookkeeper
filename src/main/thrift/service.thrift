@@ -96,6 +96,8 @@ enum StatusCode {
     TOO_MANY_STREAMS = 524,
     /* Log Segment Not Found */
     LOG_SEGMENT_NOT_FOUND = 525,
+    // End of Log Segment
+    END_OF_LOG_SEGMENT = 526,
 
     /* 6xx: unexpected */
 
