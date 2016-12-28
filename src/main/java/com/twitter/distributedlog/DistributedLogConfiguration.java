@@ -352,6 +352,10 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
     public static final int BKDL_READAHEAD_NOSUCHLEDGER_EXCEPTION_ON_READLAC_ERROR_THRESHOLD_MILLIS_DEFAULT = 10000;
     public static final String BKDL_READAHEAD_SKIP_BROKEN_ENTRIES = "readAheadSkipBrokenEntries";
     public static final boolean BKDL_READAHEAD_SKIP_BROKEN_ENTRIES_DEFAULT = false;
+    public static final String BKDL_NUM_PREFETCH_ENTRIES_PER_LOGSEGMENT = "numPrefetchEntriesPerLogSegment";
+    public static final int BKDL_NUM_PREFETCH_ENTRIES_PER_LOGSEGMENT_DEFAULT = 4;
+    public static final String BKDL_MAX_PREFETCH_ENTRIES_PER_LOGSEGMENT = "maxPrefetchEntriesPerLogSegment";
+    public static final int BKDL_MAX_PREFETCH_ENTRIES_PER_LOGSEGMENT_DEFAULT = 32;
 
     // Scan Settings
     public static final String BKDL_FIRST_NUM_ENTRIES_PER_READ_LAST_RECORD_SCAN = "firstNumEntriesEachPerLastRecordScan";
@@ -2767,6 +2771,46 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
      */
     public DistributedLogConfiguration setReadAheadSkipBrokenEntries(boolean enabled) {
         setProperty(BKDL_READAHEAD_SKIP_BROKEN_ENTRIES, enabled);
+        return this;
+    }
+
+    /**
+     * Get the number prefetch entries per log segment. Default value is 4.
+     *
+     * @return the number prefetch entries per log segment.
+     */
+    public int getNumPrefetchEntriesPerLogSegment() {
+        return getInt(BKDL_NUM_PREFETCH_ENTRIES_PER_LOGSEGMENT, BKDL_NUM_PREFETCH_ENTRIES_PER_LOGSEGMENT_DEFAULT);
+    }
+
+    /**
+     * Set the number prefetch entries per log segment.
+     *
+     * @param numEntries the number prefetch entries per log segment.
+     * @return configuration
+     */
+    public DistributedLogConfiguration setNumPrefetchEntriesPerLogSegment(int numEntries) {
+        setProperty(BKDL_NUM_PREFETCH_ENTRIES_PER_LOGSEGMENT, numEntries);
+        return this;
+    }
+
+    /**
+     * Get the max prefetch entries per log segment. Default value is 4.
+     *
+     * @return the max prefetch entries per log segment.
+     */
+    public int getMaxPrefetchEntriesPerLogSegment() {
+        return getInt(BKDL_MAX_PREFETCH_ENTRIES_PER_LOGSEGMENT, BKDL_MAX_PREFETCH_ENTRIES_PER_LOGSEGMENT_DEFAULT);
+    }
+
+    /**
+     * Set the max prefetch entries per log segment.
+     *
+     * @param numEntries the max prefetch entries per log segment.
+     * @return configuration
+     */
+    public DistributedLogConfiguration setMaxPrefetchEntriesPerLogSegment(int numEntries) {
+        setProperty(BKDL_MAX_PREFETCH_ENTRIES_PER_LOGSEGMENT, numEntries);
         return this;
     }
 
