@@ -1049,8 +1049,7 @@ class BKLogWriteHandler extends BKLogHandler {
         List<LogSegmentMetadata> truncateList = new ArrayList<LogSegmentMetadata>(logSegments.size());
         LogSegmentMetadata partialTruncate = null;
         LOG.info("{}: Truncating log segments older than {}", getFullyQualifiedName(), dlsn);
-        int numCandidates = getNumCandidateLogSegmentsToTruncate(logSegments);
-        for (int i = 0; i < numCandidates; i++) {
+        for (int i = 0; i < logSegments.size(); i++) {
             LogSegmentMetadata l = logSegments.get(i);
             if (!l.isInProgress()) {
                 if (l.getLastDLSN().compareTo(dlsn) < 0) {
@@ -1075,7 +1074,7 @@ class BKLogWriteHandler extends BKLogHandler {
         return setLogSegmentTruncationStatus(truncateList, partialTruncate, dlsn);
     }
 
-    private int getNumCandidateLogSegmentsToTruncate(List<LogSegmentMetadata> logSegments) {
+    private int getNumCandidateLogSegmentsToPurge(List<LogSegmentMetadata> logSegments) {
         if (logSegments.isEmpty()) {
             return 0;
         } else {
@@ -1104,7 +1103,7 @@ class BKLogWriteHandler extends BKLogHandler {
             public Future<List<LogSegmentMetadata>> apply(List<LogSegmentMetadata> logSegments) {
                 List<LogSegmentMetadata> purgeList = new ArrayList<LogSegmentMetadata>(logSegments.size());
 
-                int numCandidates = getNumCandidateLogSegmentsToTruncate(logSegments);
+                int numCandidates = getNumCandidateLogSegmentsToPurge(logSegments);
 
                 for (int iterator = 0; iterator < numCandidates; iterator++) {
                     LogSegmentMetadata l = logSegments.get(iterator);
@@ -1137,7 +1136,7 @@ class BKLogWriteHandler extends BKLogHandler {
                         // we are deleting the log, we can remove whole log segments
                         numLogSegmentsToProcess = logSegments.size();
                     } else {
-                        numLogSegmentsToProcess = getNumCandidateLogSegmentsToTruncate(logSegments);
+                        numLogSegmentsToProcess = getNumCandidateLogSegmentsToPurge(logSegments);
                     }
                     List<LogSegmentMetadata> purgeList = Lists.newArrayListWithExpectedSize(numLogSegmentsToProcess);
                     for (int iterator = 0; iterator < numLogSegmentsToProcess; iterator++) {
