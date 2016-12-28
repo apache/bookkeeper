@@ -456,22 +456,17 @@ public class BookieShell implements Tool {
             conf.addConfiguration(bkConf);
 
             BookKeeperAdmin bk = null;
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
             try {
                 bk = new BookKeeperAdmin(conf);
                 Iterator<LedgerEntry> entries = bk.readEntries(ledgerId, firstEntry, lastEntry).iterator();
                 while (entries.hasNext()) {
                     LedgerEntry entry = entries.next();
-                    HexDump.dump(entry.getEntry(), 0, out, 0);
-                    System.out.println(
-                            "Entry Id: " + entry.getEntryId() + ", Data: " + new String(out.toByteArray(), UTF_8));
-                    out.reset();
+                    formatEntry(entry, true);
                 }
             } catch (Exception e) {
                 LOG.error("Error reading entries from ledger {}", ledgerId, e.getCause());
                 return -1;
             } finally {
-                out.close();
                 if (bk != null) {
                     bk.close();
                 }
@@ -1945,6 +1940,25 @@ public class BookieShell implements Tool {
                 + lastLogMark.getLogFileOffset());
     }
 
+    /**
+     * Format the entry into a readable format.
+     * 
+     * @param entry 
+     *          ledgerentry to print
+     * @param printMsg 
+     *          Whether printing the message body
+     */
+    private void formatEntry(LedgerEntry entry, boolean printMsg) {
+        long ledgerId = entry.getLedgerId();
+        long entryId = entry.getEntryId();
+        long entrySize = entry.getLength();
+        System.out
+                .println("--------- Lid=" + ledgerId + ", Eid=" + entryId + ", EntrySize=" + entrySize + " ---------");
+        if (printMsg) {
+            formatter.formatEntry(entry.getEntry());
+        }
+    }
+    
     /**
      * Format the message into a readable format.
      *
