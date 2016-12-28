@@ -98,6 +98,8 @@ enum StatusCode {
     LOG_SEGMENT_NOT_FOUND = 525,
     // End of Log Segment
     END_OF_LOG_SEGMENT = 526,
+    // Log Segment Is Truncated
+    LOG_SEGMENT_IS_TRUNCATED = 527,
 
     /* 6xx: unexpected */
 
