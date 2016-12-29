@@ -159,7 +159,7 @@ public class TestBKSyncLogReader extends TestDistributedLogBase {
 
         // all 10 records are added to the stream
         // then open a reader to read
-        BKSyncLogReaderDLSN reader = (BKSyncLogReaderDLSN) dlm.getInputStream(1L);
+        BKSyncLogReader reader = (BKSyncLogReader) dlm.getInputStream(1L);
 
         // wait until readahead caught up
         while (!reader.getReadAheadReader().isReadAheadCaughtUp()) {
@@ -226,7 +226,7 @@ public class TestBKSyncLogReader extends TestDistributedLogBase {
         logger.info("Write first 10 records");
 
         // open a reader to read
-        BKSyncLogReaderDLSN reader = (BKSyncLogReaderDLSN) dlm.getInputStream(1L);
+        BKSyncLogReader reader = (BKSyncLogReader) dlm.getInputStream(1L);
         // resume reading from sync reader. so it should be able to read all 10 records
         // and return null to claim it as caughtup
         LogRecord record = reader.readNext(false);
@@ -283,7 +283,7 @@ public class TestBKSyncLogReader extends TestDistributedLogBase {
         }, 0, 400, TimeUnit.MILLISECONDS);
 
         // open a reader to read
-        BKSyncLogReaderDLSN reader = (BKSyncLogReaderDLSN) dlm.getInputStream(1L);
+        BKSyncLogReader reader = (BKSyncLogReader) dlm.getInputStream(1L);
         // resume reading from sync reader. so it should be able to read all 10 records
         // and return null to claim it as caughtup
         LogRecord record = reader.readNext(false);

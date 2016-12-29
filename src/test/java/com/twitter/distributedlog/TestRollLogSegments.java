@@ -312,7 +312,7 @@ public class TestRollLogSegments extends TestDistributedLogBase {
     }
 
     private void checkAndWaitWriterReaderPosition(BKLogSegmentWriter writer, long expectedWriterPosition,
-                                                  BKAsyncLogReaderDLSN reader, long expectedReaderPosition,
+                                                  BKAsyncLogReader reader, long expectedReaderPosition,
                                                   LedgerHandle inspector, long expectedLac) throws Exception {
         while (getLedgerHandle(writer).getLastAddConfirmed() < expectedWriterPosition) {
             Thread.sleep(1000);
@@ -357,7 +357,7 @@ public class TestRollLogSegments extends TestDistributedLogBase {
         }
 
         BKDistributedLogManager readDLM = (BKDistributedLogManager) createNewDLM(confLocal, name);
-        final BKAsyncLogReaderDLSN reader = (BKAsyncLogReaderDLSN) readDLM.getAsyncLogReader(DLSN.InitialDLSN);
+        final BKAsyncLogReader reader = (BKAsyncLogReader) readDLM.getAsyncLogReader(DLSN.InitialDLSN);
 
         // 2) reader should be able to read 5 entries.
         for (long i = 1; i <= numEntries; i++) {

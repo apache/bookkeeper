@@ -98,7 +98,7 @@ import java.util.concurrent.TimeUnit;
  * <li> `log_writer/*`: all asynchronous writer related metrics are exposed under scope `log_writer`.
  * See {@link BKAsyncLogWriter} for detail stats.
  * <li> `async_reader/*`: all asyncrhonous reader related metrics are exposed under scope `async_reader`.
- * See {@link BKAsyncLogReaderDLSN} for detail stats.
+ * See {@link BKAsyncLogReader} for detail stats.
  * <li> `writer_future_pool/*`: metrics about the future pools that used by writers are exposed under
  * scope `writer_future_pool`. See {@link MonitoredFuturePool} for detail stats.
  * <li> `reader_future_pool/*`: metrics about the future pools that used by readers are exposed under
@@ -955,7 +955,7 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
     @Override
     public Future<AsyncLogReader> openAsyncLogReader(DLSN fromDLSN) {
         Optional<String> subscriberId = Optional.absent();
-        AsyncLogReader reader = new BKAsyncLogReaderDLSN(
+        AsyncLogReader reader = new BKAsyncLogReader(
                 this,
                 scheduler,
                 fromDLSN,
@@ -993,7 +993,7 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
         if (!fromDLSN.isPresent() && !subscriberId.isPresent()) {
             return Future.exception(new UnexpectedException("Neither from dlsn nor subscriber id is provided."));
         }
-        final BKAsyncLogReaderDLSN reader = new BKAsyncLogReaderDLSN(
+        final BKAsyncLogReader reader = new BKAsyncLogReader(
                 BKDistributedLogManager.this,
                 scheduler,
                 fromDLSN.isPresent() ? fromDLSN.get() : DLSN.InitialDLSN,
@@ -1077,7 +1077,7 @@ class BKDistributedLogManager extends ZKMetadataAccessor implements DistributedL
             throws IOException {
         LOG.info("Create sync reader starting from {}", fromDLSN);
         checkClosedOrInError("getInputStream");
-        return new BKSyncLogReaderDLSN(
+        return new BKSyncLogReader(
                 conf,
                 this,
                 fromDLSN,

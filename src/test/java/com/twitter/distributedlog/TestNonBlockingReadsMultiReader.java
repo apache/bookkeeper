@@ -99,7 +99,7 @@ public class TestNonBlockingReadsMultiReader extends TestDistributedLogBase {
 
         DistributedLogManager dlmread = createNewDLM(conf, name);
 
-        BKSyncLogReaderDLSN reader0 = (BKSyncLogReaderDLSN) dlmread.getInputStream(0);
+        BKSyncLogReader reader0 = (BKSyncLogReader) dlmread.getInputStream(0);
 
         try {
             ReaderThread[] readerThreads = new ReaderThread[1];

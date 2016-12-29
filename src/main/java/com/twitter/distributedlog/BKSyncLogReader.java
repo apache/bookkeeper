@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Synchronous Log Reader based on {@link AsyncLogReader}
  */
-class BKSyncLogReaderDLSN implements LogReader, AsyncNotification {
+class BKSyncLogReader implements LogReader, AsyncNotification {
 
     private final BKDistributedLogManager bkdlm;
     private final BKLogReadHandler readHandler;
@@ -63,11 +63,11 @@ class BKSyncLogReaderDLSN implements LogReader, AsyncNotification {
     // Stats
     private final Counter idleReaderError;
 
-    BKSyncLogReaderDLSN(DistributedLogConfiguration conf,
-                        BKDistributedLogManager bkdlm,
-                        DLSN startDLSN,
-                        Optional<Long> startTransactionId,
-                        StatsLogger statsLogger) throws IOException {
+    BKSyncLogReader(DistributedLogConfiguration conf,
+                    BKDistributedLogManager bkdlm,
+                    DLSN startDLSN,
+                    Optional<Long> startTransactionId,
+                    StatsLogger statsLogger) throws IOException {
         this.bkdlm = bkdlm;
         this.readHandler = bkdlm.createReadHandler(
                 Optional.<String>absent(),
@@ -104,7 +104,7 @@ class BKSyncLogReaderDLSN implements LogReader, AsyncNotification {
                 .map(new AbstractFunction1<Versioned<List<LogSegmentMetadata>>, BoxedUnit>() {
                     @Override
                     public BoxedUnit apply(Versioned<List<LogSegmentMetadata>> logSegments) {
-                        readAheadReader.addStateChangeNotification(BKSyncLogReaderDLSN.this);
+                        readAheadReader.addStateChangeNotification(BKSyncLogReader.this);
                         readAheadReader.start(logSegments.getValue());
                         return BoxedUnit.UNIT;
                     }

@@ -1397,7 +1397,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
             }, 0, TimeUnit.MILLISECONDS);
 
         latch.await();
-        BKAsyncLogReaderDLSN reader = (BKAsyncLogReaderDLSN) dlm.getAsyncLogReader(DLSN.InitialDLSN);
+        BKAsyncLogReader reader = (BKAsyncLogReader) dlm.getAsyncLogReader(DLSN.InitialDLSN);
         if (simulateReaderStall) {
             reader.disableProcessingReadRequests();
         }
@@ -1538,7 +1538,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                 }, 0, TimeUnit.MILLISECONDS);
 
         latch.await();
-        BKAsyncLogReaderDLSN reader = (BKAsyncLogReaderDLSN)dlm.getAsyncLogReader(DLSN.InitialDLSN);
+        BKAsyncLogReader reader = (BKAsyncLogReader)dlm.getAsyncLogReader(DLSN.InitialDLSN);
         reader.disableReadAheadLogSegmentsNotification();
         boolean exceptionEncountered = false;
         int recordCount = 0;
@@ -1616,7 +1616,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         record.setControl();
         Await.result(writer.write(record));
 
-        BKAsyncLogReaderDLSN reader = (BKAsyncLogReaderDLSN) dlm.getAsyncLogReader(DLSN.InitialDLSN);
+        BKAsyncLogReader reader = (BKAsyncLogReader) dlm.getAsyncLogReader(DLSN.InitialDLSN);
         record = Await.result(reader.readNext());
         LOG.info("Read record {}", record);
         assertEquals(1L, record.getTransactionId());
@@ -1668,7 +1668,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         } catch (EndOfStreamException ex) {
         }
 
-        BKAsyncLogReaderDLSN reader = (BKAsyncLogReaderDLSN) dlm.getAsyncLogReader(DLSN.InitialDLSN);
+        BKAsyncLogReader reader = (BKAsyncLogReader) dlm.getAsyncLogReader(DLSN.InitialDLSN);
         LogRecord record = null;
         for (int j = 0; j < NUM_RECORDS; j++) {
             record = Await.result(reader.readNext());
@@ -1702,7 +1702,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         }
         writer.close();
 
-        BKAsyncLogReaderDLSN reader = (BKAsyncLogReaderDLSN) dlm.getAsyncLogReader(DLSN.InitialDLSN);
+        BKAsyncLogReader reader = (BKAsyncLogReader) dlm.getAsyncLogReader(DLSN.InitialDLSN);
         try {
             LogRecord record = Await.result(reader.readNext());
             fail("Should have thrown");
@@ -1727,7 +1727,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         controlRecord.setControl();
         FutureUtils.result(writer.write(controlRecord));
 
-        BKAsyncLogReaderDLSN reader = (BKAsyncLogReaderDLSN) dlm.getAsyncLogReader(DLSN.InitialDLSN);
+        BKAsyncLogReader reader = (BKAsyncLogReader) dlm.getAsyncLogReader(DLSN.InitialDLSN);
         Future<List<LogRecordWithDLSN>> bulkReadFuture = reader.readBulk(2, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         Future<LogRecordWithDLSN> readFuture = reader.readNext();
 
@@ -1772,7 +1772,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         controlRecord.setControl();
         FutureUtils.result(writer.write(controlRecord));
 
-        BKAsyncLogReaderDLSN reader = (BKAsyncLogReaderDLSN) dlm.getAsyncLogReader(DLSN.InitialDLSN);
+        BKAsyncLogReader reader = (BKAsyncLogReader) dlm.getAsyncLogReader(DLSN.InitialDLSN);
         Future<List<LogRecordWithDLSN>> bulkReadFuture = reader.readBulk(2, 0, TimeUnit.MILLISECONDS);
         Future<LogRecordWithDLSN> readFuture = reader.readNext();
 

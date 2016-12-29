@@ -118,7 +118,7 @@ public class TestReader implements FutureEventListener<LogRecordWithDLSN> {
                 try {
                     AsyncLogReader reader = dlm.getAsyncLogReader(dlsn);
                     if (simulateErrors) {
-                        ((BKAsyncLogReaderDLSN) reader).simulateErrors();
+                        ((BKAsyncLogReader) reader).simulateErrors();
                     }
                     nextDLSN = dlsn;
                     LOG.info("Positioned reader {} at {}", readerName, dlsn);

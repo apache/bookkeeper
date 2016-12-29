@@ -33,7 +33,7 @@
     <Bug pattern="EI_EXPOSE_REP" />
   </Match>
   <Match>
-    <Class name="com.twitter.distributedlog.BKAsyncLogReaderDLSN" />
+    <Class name="com.twitter.distributedlog.BKAsyncLogReader" />
     <Method name="run" />
     <Bug pattern="JLM_JSR166_UTILCONCURRENT_MONITORENTER" />
   </Match>

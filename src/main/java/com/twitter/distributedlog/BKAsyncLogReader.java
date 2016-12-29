@@ -72,8 +72,8 @@ import scala.runtime.BoxedUnit;
  * <li> `async_reader`/idle_reader_error: counter. the number idle reader errors.
  * </ul>
  */
-class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotification {
-    static final Logger LOG = LoggerFactory.getLogger(BKAsyncLogReaderDLSN.class);
+class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
+    static final Logger LOG = LoggerFactory.getLogger(BKAsyncLogReader.class);
 
     private static final Function1<List<LogRecordWithDLSN>, LogRecordWithDLSN> READ_NEXT_MAP_FUNCTION =
             new AbstractFunction1<List<LogRecordWithDLSN>, LogRecordWithDLSN>() {
@@ -207,12 +207,12 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
         }
     }
 
-    BKAsyncLogReaderDLSN(BKDistributedLogManager bkdlm,
-                         ScheduledExecutorService executorService,
-                         DLSN startDLSN,
-                         Optional<String> subscriberId,
-                         boolean returnEndOfStreamRecord,
-                         StatsLogger statsLogger) {
+    BKAsyncLogReader(BKDistributedLogManager bkdlm,
+                     ScheduledExecutorService executorService,
+                     DLSN startDLSN,
+                     Optional<String> subscriberId,
+                     boolean returnEndOfStreamRecord,
+                     StatsLogger statsLogger) {
         this.bkDistributedLogManager = bkdlm;
         this.executorService = executorService;
         this.readHandler = bkDistributedLogManager.createReadHandler(subscriberId,
@@ -428,7 +428,7 @@ class BKAsyncLogReaderDLSN implements AsyncLogReader, Runnable, AsyncNotificatio
                                     .map(new AbstractFunction1<Versioned<List<LogSegmentMetadata>>, BoxedUnit>() {
                                         @Override
                                         public BoxedUnit apply(Versioned<List<LogSegmentMetadata>> logSegments) {
-                                            readAheadEntryReader.addStateChangeNotification(BKAsyncLogReaderDLSN.this);
+                                            readAheadEntryReader.addStateChangeNotification(BKAsyncLogReader.this);
                                             readAheadEntryReader.start(logSegments.getValue());
                                             return BoxedUnit.UNIT;
                                         }

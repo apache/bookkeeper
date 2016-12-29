@@ -75,7 +75,7 @@ public class TestAsyncReaderLock extends TestDistributedLogBase {
         writer.closeAndComplete();
 
         Future<AsyncLogReader> futureReader1 = dlm.getAsyncLogReaderWithLock(DLSN.InitialDLSN);
-        BKAsyncLogReaderDLSN reader1 = (BKAsyncLogReaderDLSN) Await.result(futureReader1);
+        BKAsyncLogReader reader1 = (BKAsyncLogReader) Await.result(futureReader1);
         LogRecordWithDLSN record = Await.result(reader1.readNext());
         assertEquals(1L, record.getTransactionId());
         assertEquals(0L, record.getSequenceId());
@@ -542,7 +542,7 @@ public class TestAsyncReaderLock extends TestDistributedLogBase {
             writer.closeAndComplete();
         }
 
-        BKAsyncLogReaderDLSN reader0 = (BKAsyncLogReaderDLSN) Await.result(dlm.getAsyncLogReaderWithLock(subscriberId));
+        BKAsyncLogReader reader0 = (BKAsyncLogReader) Await.result(dlm.getAsyncLogReaderWithLock(subscriberId));
         assertEquals(DLSN.NonInclusiveLowerBound, reader0.getStartDLSN());
         long numTxns = 0;
         LogRecordWithDLSN record = Await.result(reader0.readNext());
@@ -562,7 +562,7 @@ public class TestAsyncReaderLock extends TestDistributedLogBase {
 
         SubscriptionsStore subscriptionsStore = dlm.getSubscriptionsStore();
         Await.result(subscriptionsStore.advanceCommitPosition(subscriberId, readDLSN));
-        BKAsyncLogReaderDLSN reader1 = (BKAsyncLogReaderDLSN) Await.result(dlm.getAsyncLogReaderWithLock(subscriberId));
+        BKAsyncLogReader reader1 = (BKAsyncLogReader) Await.result(dlm.getAsyncLogReaderWithLock(subscriberId));
         assertEquals(readDLSN, reader1.getStartDLSN());
         numTxns = 0;
         long startTxID =  10L;
