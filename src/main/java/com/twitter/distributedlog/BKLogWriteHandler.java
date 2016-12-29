@@ -707,13 +707,13 @@ class BKLogWriteHandler extends BKLogHandler {
 
     @VisibleForTesting
     LogSegmentMetadata completeAndCloseLogSegment(long logSegmentSeqNo,
-                                                  long ledgerId,
+                                                  long logSegmentId,
                                                   long firstTxId,
                                                   long lastTxId,
                                                   int recordCount)
         throws IOException {
-        return completeAndCloseLogSegment(inprogressZNodeName(ledgerId, firstTxId, logSegmentSeqNo), logSegmentSeqNo,
-            ledgerId, firstTxId, lastTxId, recordCount, -1, -1);
+        return completeAndCloseLogSegment(inprogressZNodeName(logSegmentId, firstTxId, logSegmentSeqNo), logSegmentSeqNo,
+            logSegmentId, firstTxId, lastTxId, recordCount, -1, -1);
     }
 
     /**
@@ -726,7 +726,7 @@ class BKLogWriteHandler extends BKLogHandler {
      * trying to finalize.
      */
     LogSegmentMetadata completeAndCloseLogSegment(String inprogressZnodeName, long logSegmentSeqNo,
-                                                  long ledgerId, long firstTxId, long lastTxId,
+                                                  long logSegmentId, long firstTxId, long lastTxId,
                                                   int recordCount, long lastEntryId, long lastSlotId)
             throws IOException {
         Stopwatch stopwatch = Stopwatch.createStarted();
@@ -734,7 +734,7 @@ class BKLogWriteHandler extends BKLogHandler {
         try {
             LogSegmentMetadata completedLogSegment =
                     doCompleteAndCloseLogSegment(inprogressZnodeName, logSegmentSeqNo,
-                            ledgerId, firstTxId, lastTxId, recordCount,
+                            logSegmentId, firstTxId, lastTxId, recordCount,
                             lastEntryId, lastSlotId);
             success = true;
             return completedLogSegment;
@@ -770,7 +770,7 @@ class BKLogWriteHandler extends BKLogHandler {
      *
      * @param inprogressZnodeName
      * @param logSegmentSeqNo
-     * @param ledgerId
+     * @param logSegmentId
      * @param firstTxId
      * @param lastTxId
      * @param recordCount
@@ -781,7 +781,7 @@ class BKLogWriteHandler extends BKLogHandler {
     protected LogSegmentMetadata doCompleteAndCloseLogSegment(
             String inprogressZnodeName,
             long logSegmentSeqNo,
-            long ledgerId,
+            long logSegmentId,
             long firstTxId,
             long lastTxId,
             int recordCount,
@@ -791,7 +791,7 @@ class BKLogWriteHandler extends BKLogHandler {
         doCompleteAndCloseLogSegment(
                 inprogressZnodeName,
                 logSegmentSeqNo,
-                ledgerId,
+                logSegmentId,
                 firstTxId,
                 lastTxId,
                 recordCount,
@@ -803,7 +803,7 @@ class BKLogWriteHandler extends BKLogHandler {
 
     protected void doCompleteAndCloseLogSegment(final String inprogressZnodeName,
                                                 final long logSegmentSeqNo,
-                                                final long ledgerId,
+                                                final long logSegmentId,
                                                 final long firstTxId,
                                                 final long lastTxId,
                                                 final int recordCount,
@@ -821,7 +821,7 @@ class BKLogWriteHandler extends BKLogHandler {
                 doCompleteAndCloseLogSegmentAfterLogSegmentListFetched(
                         inprogressZnodeName,
                         logSegmentSeqNo,
-                        ledgerId,
+                        logSegmentId,
                         firstTxId,
                         lastTxId,
                         recordCount,
@@ -835,7 +835,7 @@ class BKLogWriteHandler extends BKLogHandler {
     private void doCompleteAndCloseLogSegmentAfterLogSegmentListFetched(
             final String inprogressZnodeName,
             long logSegmentSeqNo,
-            long ledgerId,
+            long logSegmentId,
             long firstTxId,
             long lastTxId,
             int recordCount,
@@ -853,11 +853,11 @@ class BKLogWriteHandler extends BKLogHandler {
         LogSegmentMetadata inprogressLogSegment = readLogSegmentFromCache(inprogressZnodeName);
 
         // validate log segment
-        if (inprogressLogSegment.getLedgerId() != ledgerId) {
+        if (inprogressLogSegment.getLogSegmentId() != logSegmentId) {
             FutureUtils.setException(promise, new IOException(
                 "Active ledger has different ID to inprogress. "
-                    + inprogressLogSegment.getLedgerId() + " found, "
-                    + ledgerId + " expected"));
+                    + inprogressLogSegment.getLogSegmentId() + " found, "
+                    + logSegmentId + " expected"));
             return;
         }
         // validate the transaction id
@@ -1016,7 +1016,7 @@ class BKLogWriteHandler extends BKLogHandler {
             doCompleteAndCloseLogSegment(
                     l.getZNodeName(),
                     l.getLogSegmentSequenceNumber(),
-                    l.getLedgerId(),
+                    l.getLogSegmentId(),
                     l.getFirstTxId(),
                     endTxId,
                     recordCount,
@@ -1223,17 +1223,17 @@ class BKLogWriteHandler extends BKLogHandler {
             }
         });
         try {
-            bookKeeperClient.get().asyncDeleteLedger(ledgerMetadata.getLedgerId(), new AsyncCallback.DeleteCallback() {
+            bookKeeperClient.get().asyncDeleteLedger(ledgerMetadata.getLogSegmentId(), new AsyncCallback.DeleteCallback() {
                 @Override
                 public void deleteComplete(int rc, Object ctx) {
                     if (BKException.Code.NoSuchLedgerExistsException == rc) {
                         LOG.warn("No ledger {} found to delete for {} : {}.",
-                                new Object[]{ledgerMetadata.getLedgerId(), getFullyQualifiedName(),
+                                new Object[]{ledgerMetadata.getLogSegmentId(), getFullyQualifiedName(),
                                         ledgerMetadata});
                     } else if (BKException.Code.OK != rc) {
                         BKException bke = BKException.create(rc);
                         LOG.error("Couldn't delete ledger {} from bookkeeper for {} : ",
-                                new Object[]{ledgerMetadata.getLedgerId(), getFullyQualifiedName(), bke});
+                                new Object[]{ledgerMetadata.getLogSegmentId(), getFullyQualifiedName(), bke});
                         promise.setException(bke);
                         return;
                     }
@@ -1315,7 +1315,7 @@ class BKLogWriteHandler extends BKLogHandler {
      *
      * @return name of the inprogress znode.
      */
-    String inprogressZNodeName(long ledgerId, long firstTxId, long logSegmentSeqNo) {
+    String inprogressZNodeName(long logSegmentId, long firstTxId, long logSegmentSeqNo) {
         if (DistributedLogConstants.LOGSEGMENT_NAME_VERSION == conf.getLogSegmentNameVersion()) {
             // Lots of the problems are introduced due to different inprogress names with same ledger sequence number.
             return String.format("%s_%018d", DistributedLogConstants.INPROGRESS_LOGSEGMENT_PREFIX, logSegmentSeqNo);
@@ -1327,8 +1327,8 @@ class BKLogWriteHandler extends BKLogHandler {
     /**
      * Get the znode path for the inprogressZNode
      */
-    String inprogressZNode(long ledgerId, long firstTxId, long logSegmentSeqNo) {
-        return logMetadata.getLogSegmentsPath() + "/" + inprogressZNodeName(ledgerId, firstTxId, logSegmentSeqNo);
+    String inprogressZNode(long logSegmentId, long firstTxId, long logSegmentSeqNo) {
+        return logMetadata.getLogSegmentsPath() + "/" + inprogressZNodeName(logSegmentId, firstTxId, logSegmentSeqNo);
     }
 
     String inprogressZNode(String inprogressZNodeName) {

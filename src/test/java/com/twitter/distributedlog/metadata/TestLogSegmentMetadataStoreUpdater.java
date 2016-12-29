@@ -131,7 +131,7 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
         assertEquals(6L, segmentChanged.getLogSegmentSequenceNumber());
         assertTrue(segmentChanged.isInProgress());
         assertEquals(5 * 100, segmentChanged.getFirstTxId());
-        assertEquals(3L, segmentChanged.getLedgerId());
+        assertEquals(3L, segmentChanged.getLogSegmentId());
     }
 
     @Test(timeout = 60000)
@@ -214,7 +214,7 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
         assertEquals(updatedCompletedLogSegment, readCompletedLogSegment);
         assertEquals(completedLogSegment.getCompletionTime(), readCompletedLogSegment.getCompletionTime());
         assertEquals(completedLogSegment.getFirstTxId(), readCompletedLogSegment.getFirstTxId());
-        assertEquals(completedLogSegment.getLedgerId(), readCompletedLogSegment.getLedgerId());
+        assertEquals(completedLogSegment.getLogSegmentId(), readCompletedLogSegment.getLogSegmentId());
         assertEquals(completedLogSegment.getLogSegmentSequenceNumber(), readCompletedLogSegment.getLogSegmentSequenceNumber());
         assertEquals(completedLogSegment.getRegionId(), readCompletedLogSegment.getRegionId());
         assertEquals(completedLogSegment.getZkPath(), readCompletedLogSegment.getZkPath());

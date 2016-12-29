@@ -259,15 +259,15 @@ public class TestDLUtils {
         long ledgerId = 123456L;
         byte[] ledgerIdData = Long.toString(ledgerId).getBytes(UTF_8);
         assertEquals("Deserialization should succeed",
-                ledgerId, DLUtils.bytes2LedgerId(ledgerIdData));
+                ledgerId, DLUtils.bytes2LogSegmentId(ledgerIdData));
         assertArrayEquals("Serialization should succeed",
-                ledgerIdData, DLUtils.ledgerId2Bytes(ledgerId));
+                ledgerIdData, DLUtils.logSegmentId2Bytes(ledgerId));
     }
 
     @Test(timeout = 60000, expected = NumberFormatException.class)
     public void testDeserializeInvalidLedgerId() throws Exception {
         byte[] corruptedData = "corrupted-ledger-id".getBytes(UTF_8);
-        DLUtils.bytes2LedgerId(corruptedData);
+        DLUtils.bytes2LogSegmentId(corruptedData);
     }
 
 }

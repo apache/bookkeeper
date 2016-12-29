@@ -212,7 +212,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
         if (null != data && data.length > 0) {
             // delete the allocated ledger since this is left by last allocation.
             try {
-                ledgerIdLeftFromPrevAllocation = DLUtils.bytes2LedgerId(data);
+                ledgerIdLeftFromPrevAllocation = DLUtils.bytes2LogSegmentId(data);
             } catch (NumberFormatException nfe) {
                 LOG.warn("Invalid data found in allocator path {} : ", allocatePath, nfe);
             }
@@ -384,7 +384,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
     }
 
     private void markAsAllocated(final LedgerHandle lh) {
-        byte[] data = DLUtils.ledgerId2Bytes(lh.getId());
+        byte[] data = DLUtils.logSegmentId2Bytes(lh.getId());
         Utils.zkSetData(zkc, allocatePath, data, getVersion())
             .addEventListener(new FutureEventListener<ZkVersion>() {
                 @Override

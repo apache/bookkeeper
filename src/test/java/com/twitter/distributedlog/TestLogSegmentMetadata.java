@@ -23,9 +23,6 @@ import com.twitter.distributedlog.LogSegmentMetadata.TruncationStatus;
 import com.twitter.distributedlog.exceptions.UnsupportedMetadataVersionException;
 
 import com.twitter.distributedlog.util.FutureUtils;
-import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
-import org.apache.zookeeper.KeeperException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,8 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static org.junit.Assert.assertEquals;
@@ -81,7 +76,7 @@ public class TestLogSegmentMetadata extends ZooKeeperClusterTestCase {
         metadata1.write(zkc);
         // synchronous read
         LogSegmentMetadata read1 = FutureUtils.result(LogSegmentMetadata.read(zkc, "/metadata2", true));
-        assertEquals(read1.getLedgerId(), metadata1.getLedgerId());
+        assertEquals(read1.getLogSegmentId(), metadata1.getLogSegmentId());
         assertEquals(read1.getFirstTxId(), metadata1.getFirstTxId());
         assertEquals(read1.getLastTxId(), metadata1.getLastTxId());
         assertEquals(read1.getLogSegmentSequenceNumber(), metadata1.getLogSegmentSequenceNumber());

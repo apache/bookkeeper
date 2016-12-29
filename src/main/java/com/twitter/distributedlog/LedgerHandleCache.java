@@ -141,7 +141,7 @@ public class LedgerHandleCache {
         final Stopwatch stopwatch = Stopwatch.createStarted();
         final OpStatsLogger openStatsLogger = fence ? openStats : openNoRecoveryStats;
         final Promise<LedgerDescriptor> promise = new Promise<LedgerDescriptor>();
-        final LedgerDescriptor ledgerDesc = new LedgerDescriptor(metadata.getLedgerId(), metadata.getLogSegmentSequenceNumber(), fence);
+        final LedgerDescriptor ledgerDesc = new LedgerDescriptor(metadata.getLogSegmentId(), metadata.getLogSegmentSequenceNumber(), fence);
         RefCountedLedgerHandle refhandle = handlesMap.get(ledgerDesc);
         if (null == refhandle) {
             asyncOpenLedger(ledgerDesc, new AsyncCallback.OpenCallback() {

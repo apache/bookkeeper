@@ -204,24 +204,24 @@ public class DLUtils {
     }
 
     /**
-     * Serialize ledger id into bytes.
+     * Serialize log segment id into bytes.
      *
-     * @param ledgerId
-     *          ledger id
-     * @return bytes representation of ledger id
+     * @param logSegmentId
+     *          log segment id
+     * @return bytes representation of log segment id
      */
-    public static byte[] ledgerId2Bytes(long ledgerId) {
-        return Long.toString(ledgerId).getBytes(UTF_8);
+    public static byte[] logSegmentId2Bytes(long logSegmentId) {
+        return Long.toString(logSegmentId).getBytes(UTF_8);
     }
 
     /**
-     * Deserialize bytes into ledger id.
+     * Deserialize bytes into log segment id.
      *
      * @param data
-     *          bytes representation of ledger id
-     * @return ledger id
+     *          bytes representation of log segment id
+     * @return log segment id
      */
-    public static long bytes2LedgerId(byte[] data) {
+    public static long bytes2LogSegmentId(byte[] data) {
         return Long.parseLong(new String(data, UTF_8));
     }
 }

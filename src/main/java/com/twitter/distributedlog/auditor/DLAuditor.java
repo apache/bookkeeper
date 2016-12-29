@@ -325,7 +325,7 @@ public class DLAuditor {
                     byte[] data = getZooKeeperClient(factory).get().getData(allocatorPath, false, new Stat());
                     if (null != data && data.length > 0) {
                         try {
-                            long ledgerId = DLUtils.bytes2LedgerId(data);
+                            long ledgerId = DLUtils.bytes2LogSegmentId(data);
                             synchronized (ledgers) {
                                 ledgers.add(ledgerId);
                             }
@@ -370,9 +370,9 @@ public class DLAuditor {
             List<Long> sLedgers = new ArrayList<Long>();
             for (LogSegmentMetadata segment : segments) {
                 synchronized (ledgers) {
-                    ledgers.add(segment.getLedgerId());
+                    ledgers.add(segment.getLogSegmentId());
                 }
-                sLedgers.add(segment.getLedgerId());
+                sLedgers.add(segment.getLogSegmentId());
             }
             return sLedgers;
         } finally {
@@ -431,17 +431,17 @@ public class DLAuditor {
             List<LogSegmentMetadata> segments = dlm.getLogSegments();
             for (LogSegmentMetadata segment : segments) {
                 try {
-                    LedgerHandle lh = getBookKeeperClient(factory).get().openLedgerNoRecovery(segment.getLedgerId(),
+                    LedgerHandle lh = getBookKeeperClient(factory).get().openLedgerNoRecovery(segment.getLogSegmentId(),
                             BookKeeper.DigestType.CRC32, conf.getBKDigestPW().getBytes(UTF_8));
                     totalBytes += lh.getLength();
                     lh.close();
                 } catch (BKException e) {
-                    logger.error("Failed to open ledger {} : ", segment.getLedgerId(), e);
-                    throw new IOException("Failed to open ledger " + segment.getLedgerId(), e);
+                    logger.error("Failed to open ledger {} : ", segment.getLogSegmentId(), e);
+                    throw new IOException("Failed to open ledger " + segment.getLogSegmentId(), e);
                 } catch (InterruptedException e) {
-                    logger.warn("Interrupted on opening ledger {} : ", segment.getLedgerId(), e);
+                    logger.warn("Interrupted on opening ledger {} : ", segment.getLogSegmentId(), e);
                     Thread.currentThread().interrupt();
-                    throw new DLInterruptedException("Interrupted on opening ledger " + segment.getLedgerId(), e);
+                    throw new DLInterruptedException("Interrupted on opening ledger " + segment.getLogSegmentId(), e);
                 }
             }
         } finally {

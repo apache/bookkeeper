@@ -195,7 +195,7 @@ public class DLMTestUtil {
             ).getValue();
             LogSegmentMetadata lastSegment = ledgerList.get(ledgerList.size() - 1);
             BookKeeperClient bkc = dlm.getWriterBKC();
-            LedgerHandle lh = bkc.get().openLedger(lastSegment.getLedgerId(),
+            LedgerHandle lh = bkc.get().openLedger(lastSegment.getLogSegmentId(),
                     BookKeeper.DigestType.CRC32, conf.getBKDigestPW().getBytes(UTF_8));
             lh.close();
         } finally {

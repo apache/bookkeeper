@@ -87,14 +87,14 @@ public class BKLogSegmentEntryStore implements LogSegmentEntryStore, AsyncCallba
         OpenReaderRequest request = new OpenReaderRequest(segment, startEntryId);
         if (segment.isInProgress()) {
             bk.asyncOpenLedgerNoRecovery(
-                    segment.getLedgerId(),
+                    segment.getLogSegmentId(),
                     BookKeeper.DigestType.CRC32,
                     passwd,
                     this,
                     request);
         } else {
             bk.asyncOpenLedger(
-                    segment.getLedgerId(),
+                    segment.getLogSegmentId(),
                     BookKeeper.DigestType.CRC32,
                     passwd,
                     this,

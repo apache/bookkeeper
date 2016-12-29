@@ -707,7 +707,7 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, AsyncClosea
                                 }
                             }
 
-                            nextReadAheadPosition = new LedgerReadPosition(l.getLedgerId(), l.getLogSegmentSequenceNumber(), startBKEntry);
+                            nextReadAheadPosition = new LedgerReadPosition(l.getLogSegmentId(), l.getLogSegmentSequenceNumber(), startBKEntry);
                             if (conf.getTraceReadAheadMetadataChanges()) {
                                 LOG.info("Moved read position to {} for stream {} at {}.",
                                          new Object[] {nextReadAheadPosition, logMetadata.getFullyQualifiedName(), System.currentTimeMillis() });
@@ -1028,7 +1028,7 @@ public class ReadAheadWorker implements ReadAheadCallback, Runnable, AsyncClosea
                                                     LOG.trace("Moving read position to a new ledger {} for {}.",
                                                         currentMetadata, fullyQualifiedName);
                                                 }
-                                                nextReadAheadPosition.positionOnNewLogSegment(currentMetadata.getLedgerId(), currentMetadata.getLogSegmentSequenceNumber());
+                                                nextReadAheadPosition.positionOnNewLogSegment(currentMetadata.getLogSegmentId(), currentMetadata.getLogSegmentSequenceNumber());
                                             }
                                         }
                                     }

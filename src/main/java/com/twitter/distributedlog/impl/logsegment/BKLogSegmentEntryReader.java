@@ -387,7 +387,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
         }
         // segment is closed from inprogress, then re-open the log segment
         bk.asyncOpenLedger(
-                segment.getLedgerId(),
+                segment.getLogSegmentId(),
                 BookKeeper.DigestType.CRC32,
                 conf.getBKDigestPW().getBytes(UTF_8),
                 this,

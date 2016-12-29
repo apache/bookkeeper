@@ -157,14 +157,14 @@ public class PerStreamLogSegmentCache {
                 LOG.info("{} added log segment ({} : {}) to cache.",
                         new Object[]{ streamName, name, metadata });
             }
-            LogSegmentMetadata oldMetadata = lid2LogSegments.remove(metadata.getLedgerId());
+            LogSegmentMetadata oldMetadata = lid2LogSegments.remove(metadata.getLogSegmentId());
             if (null == oldMetadata) {
-                lid2LogSegments.put(metadata.getLedgerId(), metadata);
+                lid2LogSegments.put(metadata.getLogSegmentId(), metadata);
             } else {
                 if (oldMetadata.isInProgress() && !metadata.isInProgress()) {
-                    lid2LogSegments.put(metadata.getLedgerId(), metadata);
+                    lid2LogSegments.put(metadata.getLogSegmentId(), metadata);
                 } else {
-                    lid2LogSegments.put(oldMetadata.getLedgerId(), oldMetadata);
+                    lid2LogSegments.put(oldMetadata.getLogSegmentId(), oldMetadata);
                 }
             }
         }
@@ -232,7 +232,7 @@ public class PerStreamLogSegmentCache {
         synchronized (logSegments) {
             LogSegmentMetadata metadata = logSegments.remove(name);
             if (null != metadata) {
-                lid2LogSegments.remove(metadata.getLedgerId(), metadata);
+                lid2LogSegments.remove(metadata.getLogSegmentId(), metadata);
                 LOG.debug("Removed log segment ({} : {}) from cache.", name, metadata);
             }
             return metadata;

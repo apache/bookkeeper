@@ -703,7 +703,7 @@ public class DistributedLogTool extends Tool {
                             LogSegmentMetadata segment = seg;
                             List<String> dumpedEntries = new ArrayList<String>();
                             if (segment.isInProgress()) {
-                                LedgerHandle lh = bkc.get().openLedgerNoRecovery(segment.getLedgerId(), BookKeeper.DigestType.CRC32,
+                                LedgerHandle lh = bkc.get().openLedgerNoRecovery(segment.getLogSegmentId(), BookKeeper.DigestType.CRC32,
                                                                                  dlConf.getBKDigestPW().getBytes(UTF_8));
                                 try {
                                     long lac = lh.readLastConfirmed();
@@ -1011,7 +1011,7 @@ public class DistributedLogTool extends Tool {
 
         private Map<BookieSocketAddress, Integer> getBookieStats(LogSegmentMetadata segment) throws Exception {
             Map<BookieSocketAddress, Integer> stats = new HashMap<BookieSocketAddress, Integer>();
-            LedgerHandle lh = bkc.client().get().openLedgerNoRecovery(segment.getLedgerId(), BookKeeper.DigestType.CRC32,
+            LedgerHandle lh = bkc.client().get().openLedgerNoRecovery(segment.getLogSegmentId(), BookKeeper.DigestType.CRC32,
                     getConf().getBKDigestPW().getBytes(UTF_8));
             long eidFirst = 0;
             for (SortedMap.Entry<Long, ArrayList<BookieSocketAddress>> entry : LedgerReader.bookiesForLedger(lh).entrySet()) {
@@ -1601,7 +1601,7 @@ public class DistributedLogTool extends Tool {
                 System.out.println("Skip inprogress log segment " + metadata);
                 return true;
             }
-            long ledgerId = metadata.getLedgerId();
+            long ledgerId = metadata.getLogSegmentId();
             LedgerHandle lh = bkc.get().openLedger(ledgerId, BookKeeper.DigestType.CRC32,
                     getConf().getBKDigestPW().getBytes(UTF_8));
             LedgerHandle readLh = bkc.get().openLedger(ledgerId, BookKeeper.DigestType.CRC32,
@@ -1667,7 +1667,7 @@ public class DistributedLogTool extends Tool {
                 System.out.println("Skip inprogress log segment " + segment);
                 return;
             }
-            LedgerHandle lh = bkAdmin.openLedger(segment.getLedgerId(), true);
+            LedgerHandle lh = bkAdmin.openLedger(segment.getLogSegmentId(), true);
             long lac = lh.getLastAddConfirmed();
             Enumeration<LedgerEntry> entries = lh.readEntries(lac, lac);
             if (!entries.hasMoreElements()) {
@@ -2129,7 +2129,7 @@ public class DistributedLogTool extends Tool {
             try {
                 List<LogSegmentMetadata> segments = dlm.getLogSegments();
                 for (LogSegmentMetadata segment : segments) {
-                    if (getLedgerID() == segment.getLedgerId()) {
+                    if (getLedgerID() == segment.getLogSegmentId()) {
                         System.out.println("Found ledger " + getLedgerID() + " at log segment "
                                 + segment + " for stream '" + logName + "'");
                         return true;

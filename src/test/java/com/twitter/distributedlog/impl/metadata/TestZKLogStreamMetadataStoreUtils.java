@@ -188,7 +188,7 @@ public class TestZKLogStreamMetadataStoreUtils {
         Versioned<byte[]> logSegmentsData =
                 new Versioned<byte[]>(DLUtils.serializeLogSegmentSequenceNumber(1L), new ZkVersion(1));
         Versioned<byte[]> allocationData =
-                new Versioned<byte[]>(DLUtils.ledgerId2Bytes(1L), new ZkVersion(1));
+                new Versioned<byte[]>(DLUtils.logSegmentId2Bytes(1L), new ZkVersion(1));
         List<Versioned<byte[]>> metadatas = Lists.newArrayList(
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),

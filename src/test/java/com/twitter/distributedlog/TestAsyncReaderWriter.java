@@ -1975,7 +1975,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         FutureUtils.result(writer.write(DLMTestUtil.getLogRecordInstance(1L)));
         List<LogSegmentMetadata> segments = dlm.getLogSegments();
         assertEquals(1, segments.size());
-        long ledgerId = segments.get(0).getLedgerId();
+        long ledgerId = segments.get(0).getLogSegmentId();
         LedgerHandle lh = ((BKDistributedLogNamespace) namespace).getReaderBKC()
                 .get().openLedgerNoRecovery(ledgerId, BookKeeper.DigestType.CRC32, confLocal.getBKDigestPW().getBytes(UTF_8));
         LedgerMetadata metadata = BookKeeperAccessor.getLedgerMetadata(lh);
@@ -1994,7 +1994,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         FutureUtils.result(writer.write(DLMTestUtil.getLogRecordInstance(1L)));
         segments = dlm.getLogSegments();
         assertEquals(1, segments.size());
-        ledgerId = segments.get(0).getLedgerId();
+        ledgerId = segments.get(0).getLogSegmentId();
         lh = ((BKDistributedLogNamespace) namespace).getReaderBKC()
                 .get().openLedgerNoRecovery(ledgerId, BookKeeper.DigestType.CRC32, confLocal.getBKDigestPW().getBytes(UTF_8));
         metadata = BookKeeperAccessor.getLedgerMetadata(lh);
