@@ -174,7 +174,7 @@ public class TestZKNamespaceWatcher extends TestDistributedLogBase {
         createLogInNamespace(uri, "test2");
         latches[2].await();
         assertEquals(2, receivedLogs.get().size());
-        ZooKeeperClientUtils.expireSession(zkc, DLUtils.getZKServersFromDLUri(uri), zkSessionTimeoutMs);
+        ZooKeeperClientUtils.expireSession(zkc, BKNamespaceDriver.getZKServersFromDLUri(uri), zkSessionTimeoutMs);
         latches[3].await();
         assertEquals(2, receivedLogs.get().size());
         createLogInNamespace(uri, "test3");

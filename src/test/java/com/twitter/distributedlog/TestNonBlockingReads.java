@@ -54,6 +54,7 @@ public class TestNonBlockingReads extends TestDistributedLogBase {
         confLocal.setReadAheadBatchSize(1);
         confLocal.setReadAheadMaxRecords(1);
         confLocal.setReaderIdleWarnThresholdMillis(100);
+        confLocal.setReadLACLongPollTimeout(49);
         final DistributedLogManager dlm = createNewDLM(confLocal, name);
         ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
         ScheduledFuture writerClosedFuture = null;
@@ -129,6 +130,7 @@ public class TestNonBlockingReads extends TestDistributedLogBase {
         confLocal.loadConf(conf);
         confLocal.setReadAheadBatchSize(1);
         confLocal.setReadAheadMaxRecords(1);
+        confLocal.setReadLACLongPollTimeout(24);
         confLocal.setReaderIdleWarnThresholdMillis(50);
         confLocal.setReaderIdleErrorThresholdMillis(100);
         final DistributedLogManager dlm = createNewDLM(confLocal, name);
@@ -174,6 +176,7 @@ public class TestNonBlockingReads extends TestDistributedLogBase {
         confLocal.loadConf(conf);
         confLocal.setReadAheadBatchSize(1);
         confLocal.setReadAheadMaxRecords(3);
+        confLocal.setReadLACLongPollTimeout(249);
         confLocal.setReaderIdleWarnThresholdMillis(500);
         confLocal.setReaderIdleErrorThresholdMillis(30000);
         final DistributedLogManager dlm = createNewDLM(confLocal, name);

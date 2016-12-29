@@ -30,10 +30,13 @@ import com.twitter.distributedlog.LogRecord;
 import com.twitter.distributedlog.LogRecordWithDLSN;
 import com.twitter.distributedlog.LogSegmentMetadata;
 import com.twitter.distributedlog.TestDistributedLogBase;
+import com.twitter.distributedlog.ZooKeeperClient;
+import com.twitter.distributedlog.ZooKeeperClientBuilder;
 import com.twitter.distributedlog.exceptions.EndOfLogSegmentException;
 import com.twitter.distributedlog.exceptions.ReadCancelledException;
 import com.twitter.distributedlog.injector.AsyncFailureInjector;
 import com.twitter.distributedlog.logsegment.LogSegmentEntryStore;
+import com.twitter.distributedlog.util.ConfUtils;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.OrderedScheduler;
 import com.twitter.distributedlog.util.Utils;
@@ -59,10 +62,17 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
     public TestName runtime = new TestName();
     private OrderedScheduler scheduler;
     private BookKeeperClient bkc;
+    private ZooKeeperClient zkc;
 
     @Before
     public void setup() throws Exception {
         super.setup();
+        zkc = ZooKeeperClientBuilder.newBuilder()
+                .name("test-zk")
+                .zkServers(bkutil.getZkServers())
+                .sessionTimeoutMs(conf.getZKSessionTimeoutMilliseconds())
+                .zkAclId(conf.getZkAclId())
+                .build();
         bkc = BookKeeperClientBuilder.newBuilder()
                 .name("test-bk")
                 .dlConfig(conf)
@@ -83,6 +93,9 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
         if (null != scheduler) {
             scheduler.shutdown();
         }
+        if (null != zkc) {
+            zkc.close();
+        }
         super.teardown();
     }
 
@@ -91,7 +104,14 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
                                               DistributedLogConfiguration conf)
             throws Exception {
         LogSegmentEntryStore store = new BKLogSegmentEntryStore(
-                conf, bkc, scheduler, NullStatsLogger.INSTANCE, AsyncFailureInjector.NULL);
+                conf,
+                ConfUtils.getConstDynConf(conf),
+                zkc,
+                bkc,
+                scheduler,
+                null,
+                NullStatsLogger.INSTANCE,
+                AsyncFailureInjector.NULL);
         return (BKLogSegmentEntryReader) FutureUtils.result(store.openReader(segment, startEntryId));
     }
 

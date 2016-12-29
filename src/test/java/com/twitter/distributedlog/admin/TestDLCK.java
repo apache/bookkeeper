@@ -28,6 +28,8 @@ import com.twitter.distributedlog.TestZooKeeperClientBuilder;
 import com.twitter.distributedlog.ZooKeeperClient;
 import com.twitter.distributedlog.metadata.DryrunLogSegmentMetadataStoreUpdater;
 import com.twitter.distributedlog.metadata.LogSegmentMetadataStoreUpdater;
+import com.twitter.distributedlog.namespace.DistributedLogNamespace;
+import com.twitter.distributedlog.namespace.DistributedLogNamespaceBuilder;
 import com.twitter.distributedlog.util.OrderedScheduler;
 import com.twitter.distributedlog.util.SchedulerUtils;
 import org.apache.zookeeper.CreateMode;
@@ -103,8 +105,10 @@ public class TestDLCK extends TestDistributedLogBase {
         confLocal.setLogSegmentCacheEnabled(false);
         URI uri = createDLMURI("/check-and-repair-dl-namespace");
         zkc.get().create(uri.getPath(), new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        com.twitter.distributedlog.DistributedLogManagerFactory factory =
-                new com.twitter.distributedlog.DistributedLogManagerFactory(confLocal, uri);
+        DistributedLogNamespace namespace = DistributedLogNamespaceBuilder.newBuilder()
+                .conf(confLocal)
+                .uri(uri)
+                .build();
         OrderedScheduler scheduler = OrderedScheduler.newBuilder()
                 .name("dlck-tool")
                 .corePoolSize(1)
@@ -114,17 +118,20 @@ public class TestDLCK extends TestDistributedLogBase {
         String streamName = "check-and-repair-dl-namespace";
 
         // Create completed log segments
-        DistributedLogManager dlm = factory.createDistributedLogManagerWithSharedClients(streamName);
+        DistributedLogManager dlm = namespace.openLog(streamName);
         DLMTestUtil.injectLogSegmentWithLastDLSN(dlm, confLocal, 1L, 1L, 10, false);
         DLMTestUtil.injectLogSegmentWithLastDLSN(dlm, confLocal, 2L, 11L, 10, true);
         DLMTestUtil.injectLogSegmentWithLastDLSN(dlm, confLocal, 3L, 21L, 10, false);
         DLMTestUtil.injectLogSegmentWithLastDLSN(dlm, confLocal, 4L, 31L, 10, true);
 
         // dryrun
-        BookKeeperClient bkc = getBookKeeperClient(factory);
-        DistributedLogAdmin.checkAndRepairDLNamespace(uri, factory,
-                new DryrunLogSegmentMetadataStoreUpdater(confLocal, getLogSegmentMetadataStore(factory)),
-                scheduler, bkc, confLocal.getBKDigestPW(), false, false);
+        DistributedLogAdmin.checkAndRepairDLNamespace(
+                uri,
+                namespace,
+                new DryrunLogSegmentMetadataStoreUpdater(confLocal, getLogSegmentMetadataStore(namespace)),
+                scheduler,
+                false,
+                false);
 
         Map<Long, LogSegmentMetadata> segments = getLogSegments(dlm);
         LOG.info("segments after drynrun {}", segments);
@@ -134,10 +141,13 @@ public class TestDLCK extends TestDistributedLogBase {
         verifyLogSegment(segments, new DLSN(4L, 16L, 0L), 4L, 9, 39L);
 
         // check and repair
-        bkc = getBookKeeperClient(factory);
-        DistributedLogAdmin.checkAndRepairDLNamespace(uri, factory,
-                LogSegmentMetadataStoreUpdater.createMetadataUpdater(confLocal, getLogSegmentMetadataStore(factory)),
-                scheduler, bkc, confLocal.getBKDigestPW(), false, false);
+        DistributedLogAdmin.checkAndRepairDLNamespace(
+                uri,
+                namespace,
+                LogSegmentMetadataStoreUpdater.createMetadataUpdater(confLocal, getLogSegmentMetadataStore(namespace)),
+                scheduler,
+                false,
+                false);
 
         segments = getLogSegments(dlm);
         LOG.info("segments after repair {}", segments);
@@ -148,7 +158,7 @@ public class TestDLCK extends TestDistributedLogBase {
 
         dlm.close();
         SchedulerUtils.shutdownScheduler(executorService, 5, TimeUnit.MINUTES);
-        factory.close();
+        namespace.close();
     }
 
 }

@@ -271,7 +271,7 @@ public class FutureUtils {
      *
      * @param throwable the cause of the exception
      * @return the bk exception return code. if the exception isn't bk exceptions,
-     *         it would return bk exception code.
+     *         it would return {@link BKException.Code#UnexpectedConditionException}.
      */
     public static int bkResultCode(Throwable throwable) {
         if (throwable instanceof BKException) {
@@ -455,13 +455,13 @@ public class FutureUtils {
      * @param key submit key of the ordered scheduler
      */
     public static <T> void setException(final Promise<T> promise,
-                                        final Throwable throwable,
+                                        final Throwable cause,
                                         OrderedScheduler scheduler,
                                         Object key) {
         scheduler.submit(key, new Runnable() {
             @Override
             public void run() {
-                setException(promise, throwable);
+                setException(promise, cause);
             }
         });
     }

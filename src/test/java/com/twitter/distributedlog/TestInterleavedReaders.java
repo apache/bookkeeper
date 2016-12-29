@@ -22,8 +22,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -337,72 +335,4 @@ public class TestInterleavedReaders extends TestDistributedLogBase {
         dlmreader1.close();
     }
 
-    @Test(timeout = 60000)
-    public void testFactorySharedClients() throws Exception {
-        String name = "distrlog-factorysharedclients";
-        testFactory(name, true);
-    }
-
-    @Test(timeout = 60000)
-    public void testFactorySharedZK() throws Exception {
-        String name = "distrlog-factorysharedZK";
-        testFactory(name, false);
-    }
-
-    @SuppressWarnings("deprecation")
-    private void testFactory(String name, boolean shareBK) throws Exception {
-        int count = 3;
-        URI uri = createDLMURI("/" + name);
-        ensureURICreated(uri);
-        BKDistributedLogNamespace namespace = BKDistributedLogNamespace.newBuilder()
-                .conf(conf).uri(uri).build();
-        DistributedLogManager[] dlms = new DistributedLogManager[count];
-        for (int s = 0; s < count; s++) {
-            if (shareBK) {
-                dlms[s] = namespace.createDistributedLogManager(name + String.format("%d", s),
-                        DistributedLogManagerFactory.ClientSharingOption.SharedClients);
-            } else {
-                dlms[s] = namespace.createDistributedLogManager(name + String.format("%d", s),
-                        DistributedLogManagerFactory.ClientSharingOption.SharedZKClientPerStreamBKClient);
-            }
-        }
-
-        int txid = 1;
-        for (long i = 0; i < 3; i++) {
-            BKSyncLogWriter[] writers = new BKSyncLogWriter[count];
-            for (int s = 0; s < count; s++) {
-                writers[s] = (BKSyncLogWriter)(dlms[s].startLogSegmentNonPartitioned());
-            }
-
-            for (long j = 0; j < 1; j++) {
-                final LogRecord record = DLMTestUtil.getLargeLogRecordInstance(txid++);
-                for (int s = 0; s < count; s++) {
-                    writers[s].write(record);
-                }
-            }
-            for (int s = 0; s < count; s++) {
-                writers[s].closeAndComplete();
-            }
-
-            if (i < 2) {
-                // Restart the zeroth stream and make sure that the other streams can
-                // continue without restart
-                dlms[0].close();
-                if (shareBK) {
-                    dlms[0] = namespace.createDistributedLogManager(name + String.format("%d", 0),
-                            DistributedLogManagerFactory.ClientSharingOption.SharedClients);
-                } else {
-                    dlms[0] = namespace.createDistributedLogManager(name + String.format("%d", 0),
-                            DistributedLogManagerFactory.ClientSharingOption.SharedZKClientPerStreamBKClient);
-                }
-            }
-
-        }
-
-        for (int s = 0; s < count; s++) {
-            dlms[s].close();
-        }
-
-        namespace.close();
-    }
 }

@@ -17,12 +17,12 @@
  */
 package com.twitter.distributedlog;
 
+import com.twitter.distributedlog.impl.BKNamespaceDriver;
 import com.twitter.distributedlog.impl.logsegment.BKLogSegmentEntryWriter;
-import com.twitter.distributedlog.logsegment.LogSegmentFilter;
-import com.twitter.distributedlog.metadata.BKDLConfig;
-import com.twitter.distributedlog.metadata.DLMetadata;
+import com.twitter.distributedlog.logsegment.LogSegmentEntryStore;
 import com.twitter.distributedlog.namespace.DistributedLogNamespace;
 import com.twitter.distributedlog.namespace.DistributedLogNamespaceBuilder;
+import com.twitter.distributedlog.namespace.NamespaceDriver;
 import com.twitter.distributedlog.util.ConfUtils;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.PermitLimiter;
@@ -35,11 +35,7 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
-import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.versioning.Version;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,11 +85,6 @@ public class DLMTestUtil {
         return segments;
     }
 
-    static void updateBKDLConfig(URI uri, String zkServers, String ledgersPath, boolean sanityCheckTxnID) throws Exception {
-        BKDLConfig bkdlConfig = new BKDLConfig(zkServers, ledgersPath).setSanityCheckTxnID(sanityCheckTxnID);
-        DLMetadata.create(bkdlConfig).update(uri);
-    }
-
     public static URI createDLMURI(int port, String path) throws Exception {
         return LocalDLMEmulator.createDLMURI("127.0.0.1:" + port, path);
     }
@@ -111,93 +102,18 @@ public class DLMTestUtil {
                                                       URI uri) throws Exception {
         // TODO: Metadata Accessor seems to be a legacy object which only used by kestrel
         //       (we might consider deprecating this)
-        BKDistributedLogNamespace namespace = BKDistributedLogNamespace.newBuilder()
+        DistributedLogNamespace namespace = DistributedLogNamespaceBuilder.newBuilder()
                 .conf(conf).uri(uri).build();
-        return namespace.createMetadataAccessor(name);
-    }
-
-    public static class BKLogPartitionWriteHandlerAndClients {
-        private BKLogWriteHandler writeHandler;
-        private ZooKeeperClient zooKeeperClient;
-        private BookKeeperClient bookKeeperClient;
-
-        public BKLogPartitionWriteHandlerAndClients(BKLogWriteHandler writeHandler, ZooKeeperClient zooKeeperClient, BookKeeperClient bookKeeperClient) {
-            this.writeHandler = writeHandler;
-            this.zooKeeperClient = zooKeeperClient;
-            this.bookKeeperClient = bookKeeperClient;
-        }
-
-        public void close() {
-            bookKeeperClient.close();
-            zooKeeperClient.close();
-            Utils.closeQuietly(writeHandler);
-        }
-
-        public BKLogWriteHandler getWriteHandler() {
-            return writeHandler;
-        }
-    }
-
-    static BKLogPartitionWriteHandlerAndClients createNewBKDLM(DistributedLogConfiguration conf,
-                                                               String logName,
-                                                               int zkPort) throws Exception {
-        URI uri = createDLMURI(zkPort, "/" + logName);
-
-        ZooKeeperClientBuilder zkcBuilder = TestZooKeeperClientBuilder.newBuilder(conf)
-            .name(String.format("dlzk:%s:handler_dedicated", logName))
-            .uri(uri);
-
-        ZooKeeperClient zkClient = zkcBuilder.build();
-
-        try {
-            zkClient.get().create(uri.getPath(), new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        } catch (KeeperException.NodeExistsException nee) {
-            // ignore
-        }
-
-        // resolve uri
-        BKDLConfig bkdlConfig = BKDLConfig.resolveDLConfig(zkClient, uri);
-        BKDLConfig.propagateConfiguration(bkdlConfig, conf);
-        BookKeeperClientBuilder bkcBuilder = BookKeeperClientBuilder.newBuilder()
-            .dlConfig(conf)
-            .name(String.format("bk:%s:handler_dedicated", logName))
-            .zkServers(bkdlConfig.getBkZkServersForWriter())
-            .ledgersPath(bkdlConfig.getBkLedgersPath())
-            .statsLogger(NullStatsLogger.INSTANCE);
-
-        BKDistributedLogManager bkdlm = new BKDistributedLogManager(
-                logName,
-                conf,
-                uri,
-                zkcBuilder,
-                zkcBuilder,
-                zkClient,
-                zkClient,
-                bkcBuilder,
-                bkcBuilder,
-                new SettableFeatureProvider("", 0),
-                PermitLimiter.NULL_PERMIT_LIMITER,
-                NullStatsLogger.INSTANCE);
-
-        BKLogWriteHandler writeHandler = bkdlm.createWriteHandler(true);
-        return new BKLogPartitionWriteHandlerAndClients(writeHandler, zkClient, bkcBuilder.build());
+        return namespace.getNamespaceDriver().getMetadataAccessor(name);
     }
 
     public static void fenceStream(DistributedLogConfiguration conf, URI uri, String name) throws Exception {
-        BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(name, conf, uri);
+        DistributedLogManager dlm = createNewDLM(name, conf, uri);
         try {
-            BKLogReadHandler readHandler = dlm.createReadHandler();
-            List<LogSegmentMetadata> ledgerList = FutureUtils.result(
-                    readHandler.readLogSegmentsFromStore(
-                            LogSegmentMetadata.COMPARATOR,
-                            LogSegmentFilter.DEFAULT_FILTER,
-                            null)
-            ).getValue();
-            LogSegmentMetadata lastSegment = ledgerList.get(ledgerList.size() - 1);
-            BookKeeperClient bkc = dlm.getWriterBKC();
-            LedgerHandle lh = bkc.get().openLedger(lastSegment.getLogSegmentId(),
-                    BookKeeper.DigestType.CRC32, conf.getBKDigestPW().getBytes(UTF_8));
-            lh.close();
+            List<LogSegmentMetadata> logSegmentList = dlm.getLogSegments();
+            LogSegmentMetadata lastSegment = logSegmentList.get(logSegmentList.size() - 1);
+            LogSegmentEntryStore entryStore = dlm.getNamespaceDriver().getLogSegmentEntryStore(NamespaceDriver.Role.READER);
+            Utils.close(FutureUtils.result(entryStore.openRandomAccessReader(lastSegment, true)));
         } finally {
             dlm.close();
         }
@@ -409,6 +325,14 @@ public class DLMTestUtil {
         return txid - startTxid;
     }
 
+    public static ZooKeeperClient getZooKeeperClient(BKDistributedLogManager dlm) {
+        return ((BKNamespaceDriver) dlm.getNamespaceDriver()).getWriterZKC();
+    }
+
+    public static BookKeeperClient getBookKeeperClient(BKDistributedLogManager dlm) {
+        return ((BKNamespaceDriver) dlm.getNamespaceDriver()).getReaderBKC();
+    }
+
     public static void injectLogSegmentWithGivenLogSegmentSeqNo(DistributedLogManager manager, DistributedLogConfiguration conf,
                                                                 long logSegmentSeqNo, long startTxID, boolean writeEntries, long segmentSize,
                                                                 boolean completeLogSegment)
@@ -417,7 +341,7 @@ public class DLMTestUtil {
         BKLogWriteHandler writeHandler = dlm.createWriteHandler(false);
         FutureUtils.result(writeHandler.lockHandler());
         // Start a log segment with a given ledger seq number.
-        BookKeeperClient bkc = dlm.getWriterBKC();
+        BookKeeperClient bkc = getBookKeeperClient(dlm);
         LedgerHandle lh = bkc.get().createLedger(conf.getEnsembleSize(), conf.getWriteQuorumSize(),
                 conf.getAckQuorumSize(), BookKeeper.DigestType.CRC32, conf.getBKDigestPW().getBytes());
         String inprogressZnodeName = writeHandler.inprogressZNodeName(lh.getId(), startTxID, logSegmentSeqNo);
@@ -429,7 +353,7 @@ public class DLMTestUtil {
                 .setLogSegmentSequenceNo(logSegmentSeqNo)
                 .setEnvelopeEntries(LogSegmentMetadata.supportsEnvelopedEntries(logSegmentMetadataVersion))
                 .build();
-        l.write(dlm.writerZKC);
+        l.write(getZooKeeperClient(dlm));
         writeHandler.maxTxId.update(Version.ANY, startTxID);
         writeHandler.addLogSegmentToCache(inprogressZnodeName, l);
         BKLogSegmentWriter writer = new BKLogSegmentWriter(
@@ -468,7 +392,7 @@ public class DLMTestUtil {
         BKLogWriteHandler writeHandler = dlm.createWriteHandler(false);
         FutureUtils.result(writeHandler.lockHandler());
         // Start a log segment with a given ledger seq number.
-        BookKeeperClient bkc = dlm.getReaderBKC();
+        BookKeeperClient bkc = getBookKeeperClient(dlm);
         LedgerHandle lh = bkc.get().createLedger(conf.getEnsembleSize(), conf.getWriteQuorumSize(),
                 conf.getAckQuorumSize(), BookKeeper.DigestType.CRC32, conf.getBKDigestPW().getBytes());
         String inprogressZnodeName = writeHandler.inprogressZNodeName(lh.getId(), startTxID, logSegmentSeqNo);
@@ -479,7 +403,7 @@ public class DLMTestUtil {
             .setLogSegmentSequenceNo(logSegmentSeqNo)
             .setInprogress(false)
             .build();
-        l.write(dlm.writerZKC);
+        l.write(getZooKeeperClient(dlm));
         writeHandler.maxTxId.update(Version.ANY, startTxID);
         writeHandler.addLogSegmentToCache(inprogressZnodeName, l);
         BKLogSegmentWriter writer = new BKLogSegmentWriter(

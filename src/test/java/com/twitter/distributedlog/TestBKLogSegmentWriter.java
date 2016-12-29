@@ -21,14 +21,14 @@ import com.twitter.distributedlog.exceptions.BKTransmitException;
 import com.twitter.distributedlog.exceptions.EndOfStreamException;
 import com.twitter.distributedlog.exceptions.WriteCancelledException;
 import com.twitter.distributedlog.exceptions.WriteException;
+import com.twitter.distributedlog.impl.BKNamespaceDriver;
 import com.twitter.distributedlog.impl.logsegment.BKLogSegmentEntryWriter;
 import com.twitter.distributedlog.io.Abortables;
 import com.twitter.distributedlog.lock.SessionLockFactory;
 import com.twitter.distributedlog.lock.ZKDistributedLock;
 import com.twitter.distributedlog.lock.ZKSessionLockFactory;
-import com.twitter.distributedlog.metadata.BKDLConfig;
+import com.twitter.distributedlog.impl.metadata.BKDLConfig;
 import com.twitter.distributedlog.util.ConfUtils;
-import com.twitter.distributedlog.util.DLUtils;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.OrderedScheduler;
 import com.twitter.distributedlog.util.PermitLimiter;
@@ -96,7 +96,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                 .dlConfig(conf)
                 .name("test-bkc")
                 .ledgersPath(bkdlConfig.getBkLedgersPath())
-                .zkServers(DLUtils.getZKServersFromDLUri(uri))
+                .zkServers(BKNamespaceDriver.getZKServersFromDLUri(uri))
                 .build();
     }
 

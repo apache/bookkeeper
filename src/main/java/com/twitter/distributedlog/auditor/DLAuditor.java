@@ -21,18 +21,20 @@ import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.SettableFuture;
-import com.twitter.distributedlog.BKDistributedLogNamespace;
 import com.twitter.distributedlog.BookKeeperClient;
 import com.twitter.distributedlog.BookKeeperClientBuilder;
 import com.twitter.distributedlog.DistributedLogConfiguration;
 import com.twitter.distributedlog.DistributedLogManager;
 import com.twitter.distributedlog.LogSegmentMetadata;
+import com.twitter.distributedlog.impl.BKNamespaceDriver;
 import com.twitter.distributedlog.namespace.DistributedLogNamespace;
 import com.twitter.distributedlog.ZooKeeperClient;
 import com.twitter.distributedlog.ZooKeeperClientBuilder;
 import com.twitter.distributedlog.exceptions.DLInterruptedException;
 import com.twitter.distributedlog.exceptions.ZKException;
-import com.twitter.distributedlog.metadata.BKDLConfig;
+import com.twitter.distributedlog.impl.metadata.BKDLConfig;
+import com.twitter.distributedlog.namespace.DistributedLogNamespaceBuilder;
+import com.twitter.distributedlog.namespace.NamespaceDriver;
 import com.twitter.distributedlog.util.DLUtils;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -52,8 +54,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -72,7 +74,6 @@ import static com.google.common.base.Charsets.UTF_8;
 /**
  * DL Auditor will audit DL namespace, e.g. find leaked ledger, report disk usage by streams.
  */
-@SuppressWarnings("deprecation")
 public class DLAuditor {
 
     private static final Logger logger = LoggerFactory.getLogger(DLAuditor.class);
@@ -83,23 +84,23 @@ public class DLAuditor {
         this.conf = conf;
     }
 
-    private ZooKeeperClient getZooKeeperClient(com.twitter.distributedlog.DistributedLogManagerFactory factory) {
-        DistributedLogNamespace namespace = factory.getNamespace();
-        assert(namespace instanceof BKDistributedLogNamespace);
-        return ((BKDistributedLogNamespace) namespace).getSharedWriterZKCForDL();
+    private ZooKeeperClient getZooKeeperClient(DistributedLogNamespace namespace) {
+        NamespaceDriver driver = namespace.getNamespaceDriver();
+        assert(driver instanceof BKNamespaceDriver);
+        return ((BKNamespaceDriver) driver).getWriterZKC();
     }
 
-    private BookKeeperClient getBookKeeperClient(com.twitter.distributedlog.DistributedLogManagerFactory factory) {
-        DistributedLogNamespace namespace = factory.getNamespace();
-        assert(namespace instanceof BKDistributedLogNamespace);
-        return ((BKDistributedLogNamespace) namespace).getReaderBKC();
+    private BookKeeperClient getBookKeeperClient(DistributedLogNamespace namespace) {
+        NamespaceDriver driver = namespace.getNamespaceDriver();
+        assert(driver instanceof BKNamespaceDriver);
+        return ((BKNamespaceDriver) driver).getReaderBKC();
     }
 
     private String validateAndGetZKServers(List<URI> uris) {
         URI firstURI = uris.get(0);
-        String zkServers = DLUtils.getZKServersFromDLUri(firstURI);
+        String zkServers = BKNamespaceDriver.getZKServersFromDLUri(firstURI);
         for (URI uri : uris) {
-            if (!zkServers.equalsIgnoreCase(DLUtils.getZKServersFromDLUri(uri))) {
+            if (!zkServers.equalsIgnoreCase(BKNamespaceDriver.getZKServersFromDLUri(uri))) {
                 throw new IllegalArgumentException("Uris don't belong to same zookeeper cluster");
             }
         }
@@ -224,19 +225,23 @@ public class DLAuditor {
     private Set<Long> collectLedgersFromDL(List<URI> uris, List<List<String>> allocationPaths)
             throws IOException {
         final Set<Long> ledgers = new TreeSet<Long>();
-        List<com.twitter.distributedlog.DistributedLogManagerFactory> factories =
-                new ArrayList<com.twitter.distributedlog.DistributedLogManagerFactory>(uris.size());
+        List<DistributedLogNamespace> namespaces =
+                new ArrayList<DistributedLogNamespace>(uris.size());
         try {
             for (URI uri : uris) {
-                factories.add(new com.twitter.distributedlog.DistributedLogManagerFactory(conf, uri));
+                namespaces.add(
+                        DistributedLogNamespaceBuilder.newBuilder()
+                                .conf(conf)
+                                .uri(uri)
+                                .build());
             }
             final CountDownLatch doneLatch = new CountDownLatch(uris.size());
             final AtomicInteger numFailures = new AtomicInteger(0);
             ExecutorService executor = Executors.newFixedThreadPool(uris.size());
             try {
                 int i = 0;
-                for (com.twitter.distributedlog.DistributedLogManagerFactory factory : factories) {
-                    final com.twitter.distributedlog.DistributedLogManagerFactory dlFactory = factory;
+                for (final DistributedLogNamespace namespace : namespaces) {
+                    final DistributedLogNamespace dlNamespace = namespace;
                     final URI uri = uris.get(i);
                     final List<String> aps = allocationPaths.get(i);
                     i++;
@@ -245,12 +250,12 @@ public class DLAuditor {
                         public void run() {
                             try {
                                 logger.info("Collecting ledgers from {} : {}", uri, aps);
-                                collectLedgersFromAllocator(uri, dlFactory, aps, ledgers);
+                                collectLedgersFromAllocator(uri, namespace, aps, ledgers);
                                 synchronized (ledgers) {
                                     logger.info("Collected {} ledgers from allocators for {} : {} ",
                                             new Object[]{ledgers.size(), uri, ledgers});
                                 }
-                                collectLedgersFromDL(uri, dlFactory, ledgers);
+                                collectLedgersFromDL(uri, namespace, ledgers);
                             } catch (IOException e) {
                                 numFailures.incrementAndGet();
                                 logger.info("Error to collect ledgers from DL : ", e);
@@ -273,15 +278,15 @@ public class DLAuditor {
                 executor.shutdown();
             }
         } finally {
-            for (com.twitter.distributedlog.DistributedLogManagerFactory factory : factories) {
-                factory.close();
+            for (DistributedLogNamespace namespace : namespaces) {
+                namespace.close();
             }
         }
         return ledgers;
     }
 
     private void collectLedgersFromAllocator(final URI uri,
-                                             final com.twitter.distributedlog.DistributedLogManagerFactory factory,
+                                             final DistributedLogNamespace namespace,
                                              final List<String> allocationPaths,
                                              final Set<Long> ledgers) throws IOException {
         final LinkedBlockingQueue<String> poolQueue =
@@ -289,7 +294,7 @@ public class DLAuditor {
         for (String allocationPath : allocationPaths) {
             String rootPath = uri.getPath() + "/" + allocationPath;
             try {
-                List<String> pools = getZooKeeperClient(factory).get().getChildren(rootPath, false);
+                List<String> pools = getZooKeeperClient(namespace).get().getChildren(rootPath, false);
                 for (String pool : pools) {
                     poolQueue.add(rootPath + "/" + pool);
                 }
@@ -318,11 +323,11 @@ public class DLAuditor {
 
             private void collectLedgersFromPool(String poolPath)
                     throws InterruptedException, ZooKeeperClient.ZooKeeperConnectionException, KeeperException {
-                List<String> allocators = getZooKeeperClient(factory).get()
+                List<String> allocators = getZooKeeperClient(namespace).get()
                                         .getChildren(poolPath, false);
                 for (String allocator : allocators) {
                     String allocatorPath = poolPath + "/" + allocator;
-                    byte[] data = getZooKeeperClient(factory).get().getData(allocatorPath, false, new Stat());
+                    byte[] data = getZooKeeperClient(namespace).get().getData(allocatorPath, false, new Stat());
                     if (null != data && data.length > 0) {
                         try {
                             long ledgerId = DLUtils.bytes2LogSegmentId(data);
@@ -341,30 +346,31 @@ public class DLAuditor {
     }
 
     private void collectLedgersFromDL(final URI uri,
-                                      final com.twitter.distributedlog.DistributedLogManagerFactory factory,
+                                      final DistributedLogNamespace namespace,
                                       final Set<Long> ledgers) throws IOException {
         logger.info("Enumerating {} to collect streams.", uri);
-        Collection<String> streams = factory.enumerateAllLogsInNamespace();
+        Iterator<String> streams = namespace.getLogs();
         final LinkedBlockingQueue<String> streamQueue = new LinkedBlockingQueue<String>();
-        streamQueue.addAll(streams);
+        while (streams.hasNext()) {
+            streamQueue.add(streams.next());
+        }
 
         logger.info("Collected {} streams from uri {} : {}",
-                    new Object[] { streams.size(), uri, streams });
+                    new Object[] { streamQueue.size(), uri, streams });
 
         executeAction(streamQueue, 10, new Action<String>() {
             @Override
             public void execute(String stream) throws IOException {
-                collectLedgersFromStream(factory, stream, ledgers);
+                collectLedgersFromStream(namespace, stream, ledgers);
             }
         });
     }
 
-    private List<Long> collectLedgersFromStream(com.twitter.distributedlog.DistributedLogManagerFactory factory,
+    private List<Long> collectLedgersFromStream(DistributedLogNamespace namespace,
                                                 String stream,
                                                 Set<Long> ledgers)
             throws IOException {
-        DistributedLogManager dlm = factory.createDistributedLogManager(stream,
-                com.twitter.distributedlog.DistributedLogManagerFactory.ClientSharingOption.SharedClients);
+        DistributedLogManager dlm = namespace.openLog(stream);
         try {
             List<LogSegmentMetadata> segments = dlm.getLogSegments();
             List<Long> sLedgers = new ArrayList<Long>();
@@ -388,21 +394,25 @@ public class DLAuditor {
      */
     public Map<String, Long> calculateStreamSpaceUsage(final URI uri) throws IOException {
         logger.info("Collecting stream space usage for {}.", uri);
-        com.twitter.distributedlog.DistributedLogManagerFactory factory =
-                new com.twitter.distributedlog.DistributedLogManagerFactory(conf, uri);
+        DistributedLogNamespace namespace = DistributedLogNamespaceBuilder.newBuilder()
+                .conf(conf)
+                .uri(uri)
+                .build();
         try {
-            return calculateStreamSpaceUsage(uri, factory);
+            return calculateStreamSpaceUsage(uri, namespace);
         } finally {
-            factory.close();
+            namespace.close();
         }
     }
 
     private Map<String, Long> calculateStreamSpaceUsage(
-            final URI uri, final com.twitter.distributedlog.DistributedLogManagerFactory factory)
+            final URI uri, final DistributedLogNamespace namespace)
         throws IOException {
-        Collection<String> streams = factory.enumerateAllLogsInNamespace();
+        Iterator<String> streams = namespace.getLogs();
         final LinkedBlockingQueue<String> streamQueue = new LinkedBlockingQueue<String>();
-        streamQueue.addAll(streams);
+        while (streams.hasNext()) {
+            streamQueue.add(streams.next());
+        }
 
         final Map<String, Long> streamSpaceUsageMap =
                 new ConcurrentSkipListMap<String, Long>();
@@ -412,7 +422,7 @@ public class DLAuditor {
             @Override
             public void execute(String stream) throws IOException {
                 streamSpaceUsageMap.put(stream,
-                        calculateStreamSpaceUsage(factory, stream));
+                        calculateStreamSpaceUsage(namespace, stream));
                 if (numStreamsCollected.incrementAndGet() % 1000 == 0) {
                     logger.info("Calculated {} streams from uri {}.", numStreamsCollected.get(), uri);
                 }
@@ -422,16 +432,15 @@ public class DLAuditor {
         return streamSpaceUsageMap;
     }
 
-    private long calculateStreamSpaceUsage(final com.twitter.distributedlog.DistributedLogManagerFactory factory,
+    private long calculateStreamSpaceUsage(final DistributedLogNamespace namespace,
                                            final String stream) throws IOException {
-        DistributedLogManager dlm = factory.createDistributedLogManager(stream,
-                com.twitter.distributedlog.DistributedLogManagerFactory.ClientSharingOption.SharedClients);
+        DistributedLogManager dlm = namespace.openLog(stream);
         long totalBytes = 0;
         try {
             List<LogSegmentMetadata> segments = dlm.getLogSegments();
             for (LogSegmentMetadata segment : segments) {
                 try {
-                    LedgerHandle lh = getBookKeeperClient(factory).get().openLedgerNoRecovery(segment.getLogSegmentId(),
+                    LedgerHandle lh = getBookKeeperClient(namespace).get().openLedgerNoRecovery(segment.getLogSegmentId(),
                             BookKeeper.DigestType.CRC32, conf.getBKDigestPW().getBytes(UTF_8));
                     totalBytes += lh.getLength();
                     lh.close();

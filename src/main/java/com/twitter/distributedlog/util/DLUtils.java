@@ -17,33 +17,26 @@
  */
 package com.twitter.distributedlog.util;
 
+import com.google.common.base.Objects;
+import com.twitter.distributedlog.DistributedLogConstants;
 import com.twitter.distributedlog.LogSegmentMetadata;
+import com.twitter.distributedlog.exceptions.InvalidStreamNameException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.lang.StringUtils;
 
+import java.net.InetAddress;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Utilities about DL implementations like uri, log segments, metadata serialization and deserialization.
  */
 public class DLUtils {
-
-    static final Logger logger = LoggerFactory.getLogger(DLUtils.class);
-
-    /**
-     * Extract zk servers fro dl <i>uri</i>.
-     *
-     * @param uri
-     *          dl uri
-     * @return zk servers
-     */
-    public static String getZKServersFromDLUri(URI uri) {
-        return uri.getAuthority().replace(";", ",");
-    }
 
     /**
      * Find the log segment whose transaction ids are not less than provided <code>transactionId</code>.
@@ -223,5 +216,106 @@ public class DLUtils {
      */
     public static long bytes2LogSegmentId(byte[] data) {
         return Long.parseLong(new String(data, UTF_8));
+    }
+
+    /**
+     * Normalize the uri.
+     *
+     * @param uri the distributedlog uri.
+     * @return the normalized uri
+     */
+    public static URI normalizeURI(URI uri) {
+        checkNotNull(uri, "DistributedLog uri is null");
+        String scheme = uri.getScheme();
+        checkNotNull(scheme, "Invalid distributedlog uri : " + uri);
+        scheme = scheme.toLowerCase();
+        String[] schemeParts = StringUtils.split(scheme, '-');
+        checkArgument(Objects.equal(DistributedLogConstants.SCHEME_PREFIX, schemeParts[0].toLowerCase()),
+                "Unknown distributedlog scheme found : " + uri);
+        URI normalizedUri;
+        try {
+            normalizedUri = new URI(
+                    schemeParts[0],     // remove backend info
+                    uri.getAuthority(),
+                    uri.getPath(),
+                    uri.getQuery(),
+                    uri.getFragment());
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid distributedlog uri found : " + uri, e);
+        }
+        return normalizedUri;
+    }
+
+    private static String getHostIpLockClientId() {
+        try {
+            return InetAddress.getLocalHost().toString();
+        } catch(Exception ex) {
+            return DistributedLogConstants.UNKNOWN_CLIENT_ID;
+        }
+    }
+
+    /**
+     * Normalize the client id.
+     *
+     * @return the normalized client id.
+     */
+    public static String normalizeClientId(String clientId) {
+        String normalizedClientId;
+        if (clientId.equals(DistributedLogConstants.UNKNOWN_CLIENT_ID)) {
+            normalizedClientId = getHostIpLockClientId();
+        } else {
+            normalizedClientId = clientId;
+        }
+        return normalizedClientId;
+    }
+
+    /**
+     * Is it a reserved stream name in bkdl namespace?
+     *
+     * @param name
+     *          stream name
+     * @return true if it is reserved name, otherwise false.
+     */
+    public static boolean isReservedStreamName(String name) {
+        return name.startsWith(".");
+    }
+
+    /**
+     * Validate the stream name.
+     *
+     * @param nameOfStream
+     *          name of stream
+     * @throws InvalidStreamNameException
+     */
+    public static void validateName(String nameOfStream)
+            throws InvalidStreamNameException {
+        String reason = null;
+        char chars[] = nameOfStream.toCharArray();
+        char c;
+        // validate the stream to see if meet zookeeper path's requirement
+        for (int i = 0; i < chars.length; i++) {
+            c = chars[i];
+
+            if (c == 0) {
+                reason = "null character not allowed @" + i;
+                break;
+            } else if (c == '/') {
+                reason = "'/' not allowed @" + i;
+                break;
+            } else if (c > '\u0000' && c < '\u001f'
+                    || c > '\u007f' && c < '\u009F'
+                    || c > '\ud800' && c < '\uf8ff'
+                    || c > '\ufff0' && c < '\uffff') {
+                reason = "invalid charater @" + i;
+                break;
+            }
+        }
+        if (null != reason) {
+            throw new InvalidStreamNameException(nameOfStream, reason);
+        }
+        if (isReservedStreamName(nameOfStream)) {
+            throw new InvalidStreamNameException(nameOfStream,
+                    "Stream Name is reserved");
+        }
     }
 }

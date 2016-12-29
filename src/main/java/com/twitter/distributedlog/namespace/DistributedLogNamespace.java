@@ -70,6 +70,13 @@ import org.apache.bookkeeper.stats.StatsLogger;
 @Beta
 public interface DistributedLogNamespace {
 
+    /**
+     * Get the namespace driver used by this namespace.
+     *
+     * @return namespace driver
+     */
+    NamespaceDriver getNamespaceDriver();
+
     //
     // Method to operate logs
     //

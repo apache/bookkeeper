@@ -32,11 +32,36 @@ import java.util.List;
 @Beta
 public interface LogSegmentEntryReader extends AsyncCloseable {
 
+    interface StateChangeListener {
+
+        /**
+         * Notify when caught up on inprogress.
+         */
+        void onCaughtupOnInprogress();
+
+    }
+
     /**
      * Start the reader. The method to signal the implementation
      * to start preparing the data for consumption {@link #readNext(int)}
      */
     void start();
+
+    /**
+     * Register the state change listener
+     *
+     * @param listener register the state change listener
+     * @return entry reader
+     */
+    LogSegmentEntryReader registerListener(StateChangeListener listener);
+
+    /**
+     * Unregister the state change listener
+     *
+     * @param listener register the state change listener
+     * @return entry reader
+     */
+    LogSegmentEntryReader unregisterListener(StateChangeListener listener);
 
     /**
      * Return the log segment metadata for this reader.

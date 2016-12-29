@@ -15,15 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.distributedlog.metadata;
+package com.twitter.distributedlog.impl.metadata;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.twitter.distributedlog.DistributedLogConfiguration;
 import com.twitter.distributedlog.DistributedLogConstants;
 import com.twitter.distributedlog.ZooKeeperClient;
+import com.twitter.distributedlog.impl.BKNamespaceDriver;
+import com.twitter.distributedlog.metadata.DLConfig;
 import com.twitter.distributedlog.thrift.BKDLConfigFormat;
-import com.twitter.distributedlog.util.DLUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.transport.TMemoryBuffer;
@@ -96,9 +97,9 @@ public class BKDLConfig implements DLConfig {
     /**
      * Construct a empty config with given <i>uri</i>.
      */
-    BKDLConfig(URI uri) {
-        this(DLUtils.getZKServersFromDLUri(uri),
-             DLUtils.getZKServersFromDLUri(uri),
+    public BKDLConfig(URI uri) {
+        this(BKNamespaceDriver.getZKServersFromDLUri(uri),
+             BKNamespaceDriver.getZKServersFromDLUri(uri),
              null, null, null);
     }
 

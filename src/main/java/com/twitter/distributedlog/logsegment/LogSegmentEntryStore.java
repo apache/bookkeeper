@@ -19,7 +19,13 @@ package com.twitter.distributedlog.logsegment;
 
 import com.google.common.annotations.Beta;
 import com.twitter.distributedlog.LogSegmentMetadata;
+import com.twitter.distributedlog.config.DynamicDistributedLogConfiguration;
+import com.twitter.distributedlog.metadata.LogMetadataForWriter;
+import com.twitter.distributedlog.util.Allocator;
+import com.twitter.distributedlog.util.Transaction;
 import com.twitter.util.Future;
+
+import java.io.IOException;
 
 /**
  * Log Segment Store to read log segments
@@ -36,12 +42,14 @@ public interface LogSegmentEntryStore {
     Future<LogSegmentMetadata> deleteLogSegment(LogSegmentMetadata segment);
 
     /**
-     * Open the writer for writing data to the log <i>segment</i>.
+     * Create a new log segment allocator for allocating log segment entry writers.
      *
-     * @param segment the log <i>segment</i> to write data to
-     * @return future represent the opened writer
+     * @param metadata the metadata for the log stream
+     * @return future represent the log segment allocator
      */
-    Future<LogSegmentEntryWriter> openWriter(LogSegmentMetadata segment);
+    Allocator<LogSegmentEntryWriter, Object> newLogSegmentAllocator(
+            LogMetadataForWriter metadata,
+            DynamicDistributedLogConfiguration dynConf) throws IOException;
 
     /**
      * Open the reader for reading data to the log <i>segment</i>.

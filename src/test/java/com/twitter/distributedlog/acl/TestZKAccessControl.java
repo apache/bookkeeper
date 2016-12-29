@@ -20,6 +20,7 @@ package com.twitter.distributedlog.acl;
 import com.twitter.distributedlog.TestZooKeeperClientBuilder;
 import com.twitter.distributedlog.ZooKeeperClient;
 import com.twitter.distributedlog.ZooKeeperClusterTestCase;
+import com.twitter.distributedlog.impl.acl.ZKAccessControl;
 import com.twitter.distributedlog.thrift.AccessControlEntry;
 import com.twitter.util.Await;
 import org.apache.zookeeper.CreateMode;
@@ -103,7 +104,7 @@ public class TestZKAccessControl extends ZooKeeperClusterTestCase {
 
         ZKAccessControl readZKAC = Await.result(ZKAccessControl.read(zkc, zkPath, null));
 
-        assertEquals(zkPath, readZKAC.zkPath);
+        assertEquals(zkPath, readZKAC.getZKPath());
         assertEquals(ZKAccessControl.DEFAULT_ACCESS_CONTROL_ENTRY, readZKAC.getAccessControlEntry());
         assertTrue(ZKAccessControl.DEFAULT_ACCESS_CONTROL_ENTRY == readZKAC.getAccessControlEntry());
     }
@@ -145,7 +146,7 @@ public class TestZKAccessControl extends ZooKeeperClusterTestCase {
         } catch (KeeperException.BadVersionException bve) {
             // expected
         }
-        readZKAC2.accessControlEntry.setDenyTruncate(true);
+        readZKAC2.getAccessControlEntry().setDenyTruncate(true);
         Await.result(readZKAC2.update(zkc));
         ZKAccessControl readZKAC3 = Await.result(ZKAccessControl.read(zkc, zkPath, null));
         assertEquals(readZKAC2, readZKAC3);

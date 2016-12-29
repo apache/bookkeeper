@@ -30,6 +30,7 @@ import com.twitter.distributedlog.ZooKeeperClientUtils;
 import com.twitter.distributedlog.callback.NamespaceListener;
 import com.twitter.distributedlog.exceptions.LogExistsException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
+import com.twitter.distributedlog.impl.BKNamespaceDriver;
 import com.twitter.distributedlog.metadata.LogMetadataStore;
 import com.twitter.distributedlog.util.DLUtils;
 import com.twitter.distributedlog.util.FutureUtils;
@@ -422,7 +423,7 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
         TestNamespaceListenerWithExpectedSize listener =
                 new TestNamespaceListenerWithExpectedSize(2 * maxLogsPerSubnamespace + 1);
         metadataStore.registerNamespaceListener(listener);
-        ZooKeeperClientUtils.expireSession(zkc, DLUtils.getZKServersFromDLUri(uri), zkSessionTimeoutMs);
+        ZooKeeperClientUtils.expireSession(zkc, BKNamespaceDriver.getZKServersFromDLUri(uri), zkSessionTimeoutMs);
         String testLogName = "test-log-name";
         allLogs.add(testLogName);
 

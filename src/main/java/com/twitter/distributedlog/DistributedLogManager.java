@@ -18,9 +18,13 @@
 package com.twitter.distributedlog;
 
 import com.twitter.distributedlog.callback.LogSegmentListener;
+import com.twitter.distributedlog.io.AsyncCloseable;
+import com.twitter.distributedlog.namespace.NamespaceDriver;
 import com.twitter.distributedlog.subscription.SubscriptionStateStore;
 import com.twitter.distributedlog.subscription.SubscriptionsStore;
 import com.twitter.util.Future;
+
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 
@@ -31,7 +35,20 @@ import java.util.List;
  * each conceptual place of storage corresponds to exactly one instance of
  * this class, which is created when the EditLog is first opened.
  */
-public interface DistributedLogManager extends MetadataAccessor {
+public interface DistributedLogManager extends AsyncCloseable, Closeable {
+
+    /**
+     * Get the name of the stream managed by this log manager
+     * @return streamName
+     */
+    public String getStreamName();
+
+    /**
+     * Get the namespace driver used by this manager.
+     *
+     * @return the namespace driver
+     */
+    public NamespaceDriver getNamespaceDriver();
 
     /**
      * Get log segments.
@@ -280,15 +297,6 @@ public interface DistributedLogManager extends MetadataAccessor {
      * @throws IOException if purging fails
      */
     public void purgeLogsOlderThan(long minTxIdToKeep) throws IOException;
-
-    /**
-     * Get the subscription state storage provided by the distributed log manager
-     *
-     * @param subscriberId - Application specific Id associated with the subscriber
-     * @return Subscription state store
-     */
-    @Deprecated
-    public SubscriptionStateStore getSubscriptionStateStore(String subscriberId);
 
     /**
      * Get the subscriptions store provided by the distributedlog manager.

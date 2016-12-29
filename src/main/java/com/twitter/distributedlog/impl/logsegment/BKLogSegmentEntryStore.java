@@ -20,12 +20,21 @@ package com.twitter.distributedlog.impl.logsegment;
 import com.twitter.distributedlog.BookKeeperClient;
 import com.twitter.distributedlog.DistributedLogConfiguration;
 import com.twitter.distributedlog.LogSegmentMetadata;
+import com.twitter.distributedlog.ZooKeeperClient;
+import com.twitter.distributedlog.bk.DynamicQuorumConfigProvider;
+import com.twitter.distributedlog.bk.LedgerAllocator;
+import com.twitter.distributedlog.bk.LedgerAllocatorDelegator;
+import com.twitter.distributedlog.bk.QuorumConfigProvider;
+import com.twitter.distributedlog.bk.SimpleLedgerAllocator;
+import com.twitter.distributedlog.config.DynamicDistributedLogConfiguration;
 import com.twitter.distributedlog.exceptions.BKTransmitException;
 import com.twitter.distributedlog.injector.AsyncFailureInjector;
 import com.twitter.distributedlog.logsegment.LogSegmentEntryReader;
 import com.twitter.distributedlog.logsegment.LogSegmentEntryStore;
 import com.twitter.distributedlog.logsegment.LogSegmentEntryWriter;
 import com.twitter.distributedlog.logsegment.LogSegmentRandomAccessEntryReader;
+import com.twitter.distributedlog.metadata.LogMetadataForWriter;
+import com.twitter.distributedlog.util.Allocator;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.OrderedScheduler;
 import com.twitter.util.Future;
@@ -80,21 +89,31 @@ public class BKLogSegmentEntryStore implements
     }
 
     private final byte[] passwd;
+    private final ZooKeeperClient zkc;
     private final BookKeeperClient bkc;
     private final OrderedScheduler scheduler;
     private final DistributedLogConfiguration conf;
+    private final DynamicDistributedLogConfiguration dynConf;
     private final StatsLogger statsLogger;
     private final AsyncFailureInjector failureInjector;
+    // ledger allocator
+    private final LedgerAllocator allocator;
 
     public BKLogSegmentEntryStore(DistributedLogConfiguration conf,
+                                  DynamicDistributedLogConfiguration dynConf,
+                                  ZooKeeperClient zkc,
                                   BookKeeperClient bkc,
                                   OrderedScheduler scheduler,
+                                  LedgerAllocator allocator,
                                   StatsLogger statsLogger,
                                   AsyncFailureInjector failureInjector) {
         this.conf = conf;
+        this.dynConf = dynConf;
+        this.zkc = zkc;
         this.bkc = bkc;
         this.passwd = conf.getBKDigestPW().getBytes(UTF_8);
         this.scheduler = scheduler;
+        this.allocator = allocator;
         this.statsLogger = statsLogger;
         this.failureInjector = failureInjector;
     }
@@ -129,10 +148,42 @@ public class BKLogSegmentEntryStore implements
         FutureUtils.setValue(deleteRequest.deletePromise, deleteRequest.segment);
     }
 
-    @Override
-    public Future<LogSegmentEntryWriter> openWriter(LogSegmentMetadata segment) {
-        throw new UnsupportedOperationException("Not supported yet");
+    //
+    // Writers
+    //
+
+    LedgerAllocator createLedgerAllocator(LogMetadataForWriter logMetadata,
+                                          DynamicDistributedLogConfiguration dynConf)
+            throws IOException {
+        LedgerAllocator ledgerAllocatorDelegator;
+        if (null == allocator || !dynConf.getEnableLedgerAllocatorPool()) {
+            QuorumConfigProvider quorumConfigProvider =
+                    new DynamicQuorumConfigProvider(dynConf);
+            LedgerAllocator allocator = new SimpleLedgerAllocator(
+                    logMetadata.getAllocationPath(),
+                    logMetadata.getAllocationData(),
+                    quorumConfigProvider,
+                    zkc,
+                    bkc);
+            ledgerAllocatorDelegator = new LedgerAllocatorDelegator(allocator, true);
+        } else {
+            ledgerAllocatorDelegator = allocator;
+        }
+        return ledgerAllocatorDelegator;
     }
+
+    @Override
+    public Allocator<LogSegmentEntryWriter, Object> newLogSegmentAllocator(
+            LogMetadataForWriter logMetadata,
+            DynamicDistributedLogConfiguration dynConf) throws IOException {
+        // Build the ledger allocator
+        LedgerAllocator allocator = createLedgerAllocator(logMetadata, dynConf);
+        return new BKLogSegmentAllocator(allocator);
+    }
+
+    //
+    // Readers
+    //
 
     @Override
     public Future<LogSegmentEntryReader> openReader(LogSegmentMetadata segment,
@@ -220,15 +271,15 @@ public class BKLogSegmentEntryStore implements
                     segment.getLogSegmentId(),
                     BookKeeper.DigestType.CRC32,
                     passwd,
-                    this,
-                    openCallback);
+                    openCallback,
+                    null);
         } else {
             bk.asyncOpenLedger(
                     segment.getLogSegmentId(),
                     BookKeeper.DigestType.CRC32,
                     passwd,
-                    this,
-                    openCallback);
+                    openCallback,
+                    null);
         }
         return openPromise;
     }

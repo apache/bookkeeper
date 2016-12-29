@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -209,6 +210,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
                 int numErrors = Math.max(1, numReadErrors.incrementAndGet());
                 int nextReadBackoffTime = Math.min(numErrors * readAheadWaitTime, maxReadBackoffTime);
                 scheduler.schedule(
+                        getSegment().getLogSegmentId(),
                         this,
                         nextReadBackoffTime,
                         TimeUnit.MILLISECONDS);
@@ -284,6 +286,8 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
     private final AtomicReference<Throwable> lastException = new AtomicReference<Throwable>(null);
     private final AtomicLong scheduleCount = new AtomicLong(0);
     private volatile boolean hasCaughtupOnInprogress = false;
+    private final CopyOnWriteArraySet<StateChangeListener> stateChangeListeners =
+            new CopyOnWriteArraySet<StateChangeListener>();
     // read retries
     private int readAheadWaitTime;
     private final int maxReadBackoffTime;
@@ -374,6 +378,24 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
         return hasCaughtupOnInprogress;
     }
 
+    @Override
+    public LogSegmentEntryReader registerListener(StateChangeListener listener) {
+        stateChangeListeners.add(listener);
+        return this;
+    }
+
+    @Override
+    public LogSegmentEntryReader unregisterListener(StateChangeListener listener) {
+        stateChangeListeners.remove(listener);
+        return this;
+    }
+
+    private void notifyCaughtupOnInprogress() {
+        for (StateChangeListener listener : stateChangeListeners) {
+            listener.onCaughtupOnInprogress();
+        }
+    }
+
     //
     // Process on Log Segment Metadata Updates
     //
@@ -440,7 +462,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
             return;
         }
         // the reader is still catching up, retry opening the log segment later
-        scheduler.schedule(new Runnable() {
+        scheduler.schedule(segment.getLogSegmentId(), new Runnable() {
             @Override
             public void run() {
                 onLogSegmentMetadataUpdated(segment);
@@ -583,6 +605,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
 
         if (!hasCaughtupOnInprogress) {
             hasCaughtupOnInprogress = true;
+            notifyCaughtupOnInprogress();
         }
         getLh().asyncReadLastConfirmedAndEntry(
                 cacheEntry.entryId,
@@ -633,7 +656,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
 
         long prevCount = scheduleCount.getAndIncrement();
         if (0 == prevCount) {
-            scheduler.submit(this);
+            scheduler.submit(getSegment().getLogSegmentId(), this);
         }
     }
 

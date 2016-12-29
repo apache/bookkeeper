@@ -65,6 +65,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ReadAheadEntryReader implements
         AsyncCloseable,
         LogSegmentListener,
+        LogSegmentEntryReader.StateChangeListener,
         FutureEventListener<List<Entry.Reader>> {
 
     private static final Logger logger = LoggerFactory.getLogger(ReadAheadEntryReader.class);
@@ -169,6 +170,9 @@ public class ReadAheadEntryReader implements
         @Override
         synchronized public void onSuccess(LogSegmentEntryReader reader) {
             this.reader = reader;
+            if (reader.getSegment().isInProgress()) {
+                reader.registerListener(ReadAheadEntryReader.this);
+            }
         }
 
         @Override
@@ -271,7 +275,7 @@ public class ReadAheadEntryReader implements
     // State of the reader
     //
 
-    private boolean isInitialized;
+    private boolean isInitialized = false;
     private boolean readAheadPaused = false;
     private Promise<Void> closePromise = null;
     // segment readers
@@ -549,8 +553,20 @@ public class ReadAheadEntryReader implements
         }
     }
 
+    void markCaughtup() {
+        if (isCatchingUp) {
+            isCatchingUp = false;
+            logger.info("ReadAhead for {} is caught up", readHandler.getFullyQualifiedName());
+        }
+    }
+
     public boolean isReadAheadCaughtUp() {
         return !isCatchingUp;
+    }
+
+    @Override
+    public void onCaughtupOnInprogress() {
+        markCaughtup();
     }
 
     //

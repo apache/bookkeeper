@@ -19,6 +19,7 @@ package com.twitter.distributedlog;
 
 import com.twitter.distributedlog.bk.LedgerAllocator;
 import com.twitter.distributedlog.bk.LedgerAllocatorPool;
+import com.twitter.distributedlog.impl.BKNamespaceDriver;
 import com.twitter.distributedlog.namespace.DistributedLogNamespaceBuilder;
 import com.twitter.distributedlog.util.FailpointUtils;
 import com.twitter.distributedlog.util.FutureUtils;
@@ -75,7 +76,8 @@ public class TestBKLogWriteHandler extends TestDistributedLogBase {
                     FailpointUtils.FailPointName.FP_StartLogSegmentOnAssignLogSegmentSequenceNumber);
         }
 
-        LedgerAllocator allocator = namespace.getLedgerAllocator();
+        LedgerAllocator allocator = ((BKNamespaceDriver) namespace.getNamespaceDriver())
+                .getLedgerAllocator();
         assertTrue(allocator instanceof LedgerAllocatorPool);
         LedgerAllocatorPool allocatorPool = (LedgerAllocatorPool) allocator;
         assertEquals(0, allocatorPool.obtainMapSize());

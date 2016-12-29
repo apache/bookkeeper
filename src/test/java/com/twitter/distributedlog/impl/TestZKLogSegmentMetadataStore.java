@@ -531,7 +531,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
                 children, firstSegmentList);
 
         ZooKeeperClientUtils.expireSession(zkc,
-                DLUtils.getZKServersFromDLUri(uri), conf.getZKSessionTimeoutMilliseconds());
+                BKNamespaceDriver.getZKServersFromDLUri(uri), conf.getZKSessionTimeoutMilliseconds());
 
         logger.info("Create another {} segments.", numSegments);
 

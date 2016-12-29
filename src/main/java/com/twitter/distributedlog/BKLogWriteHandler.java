@@ -20,7 +20,6 @@ package com.twitter.distributedlog;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
-import com.twitter.distributedlog.bk.LedgerAllocator;
 import com.twitter.distributedlog.config.DynamicDistributedLogConfiguration;
 import com.twitter.distributedlog.exceptions.DLIllegalStateException;
 import com.twitter.distributedlog.exceptions.EndOfStreamException;
@@ -29,8 +28,8 @@ import com.twitter.distributedlog.exceptions.LogSegmentNotFoundException;
 import com.twitter.distributedlog.exceptions.TransactionIdOutOfOrderException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
 import com.twitter.distributedlog.function.GetLastTxIdFunction;
-import com.twitter.distributedlog.impl.logsegment.BKLogSegmentEntryWriter;
 import com.twitter.distributedlog.logsegment.LogSegmentEntryStore;
+import com.twitter.distributedlog.logsegment.LogSegmentEntryWriter;
 import com.twitter.distributedlog.metadata.LogMetadataForWriter;
 import com.twitter.distributedlog.lock.DistributedLock;
 import com.twitter.distributedlog.logsegment.LogSegmentFilter;
@@ -41,6 +40,7 @@ import com.twitter.distributedlog.logsegment.TimeBasedRollingPolicy;
 import com.twitter.distributedlog.metadata.LogStreamMetadataStore;
 import com.twitter.distributedlog.metadata.MetadataUpdater;
 import com.twitter.distributedlog.metadata.LogSegmentMetadataStoreUpdater;
+import com.twitter.distributedlog.util.Allocator;
 import com.twitter.distributedlog.util.DLUtils;
 import com.twitter.distributedlog.util.FailpointUtils;
 import com.twitter.distributedlog.util.FutureUtils;
@@ -53,7 +53,6 @@ import com.twitter.util.Function;
 import com.twitter.util.Future;
 import com.twitter.util.FutureEventListener;
 import com.twitter.util.Promise;
-import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.stats.AlertStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -88,9 +87,22 @@ import static com.twitter.distributedlog.impl.ZKLogSegmentFilters.WRITE_HANDLE_F
 class BKLogWriteHandler extends BKLogHandler {
     static final Logger LOG = LoggerFactory.getLogger(BKLogReadHandler.class);
 
+    private static Transaction.OpListener<LogSegmentEntryWriter> NULL_OP_LISTENER =
+            new Transaction.OpListener<LogSegmentEntryWriter>() {
+        @Override
+        public void onCommit(LogSegmentEntryWriter r) {
+            // no-op
+        }
+
+        @Override
+        public void onAbort(Throwable t) {
+            // no-op
+        }
+    };
+
     protected final LogMetadataForWriter logMetadataForWriter;
+    protected final Allocator<LogSegmentEntryWriter, Object> logSegmentAllocator;
     protected final DistributedLock lock;
-    protected final LedgerAllocator ledgerAllocator;
     protected final MaxTxId maxTxId;
     protected final MaxLogSegmentSequenceNo maxLogSegmentSequenceNo;
     protected final boolean validateLogSegmentSequenceNumber;
@@ -154,7 +166,7 @@ class BKLogWriteHandler extends BKLogHandler {
                       LogSegmentMetadataCache metadataCache,
                       LogSegmentEntryStore entryStore,
                       OrderedScheduler scheduler,
-                      LedgerAllocator allocator,
+                      Allocator<LogSegmentEntryWriter, Object> segmentAllocator,
                       StatsLogger statsLogger,
                       StatsLogger perLogStatsLogger,
                       AlertStatsLogger alertStatsLogger,
@@ -174,11 +186,11 @@ class BKLogWriteHandler extends BKLogHandler {
                 alertStatsLogger,
                 clientId);
         this.logMetadataForWriter = logMetadata;
+        this.logSegmentAllocator = segmentAllocator;
         this.perLogStatsLogger = perLogStatsLogger;
         this.writeLimiter = writeLimiter;
         this.featureProvider = featureProvider;
         this.dynConf = dynConf;
-        this.ledgerAllocator = allocator;
         this.lock = lock;
         this.metadataUpdater = LogSegmentMetadataStoreUpdater.createMetadataUpdater(conf, metadataStore);
 
@@ -523,7 +535,7 @@ class BKLogWriteHandler extends BKLogHandler {
         }
 
         try {
-            ledgerAllocator.allocate();
+            logSegmentAllocator.allocate();
         } catch (IOException e) {
             // failed to issue an allocation request
             failStartLogSegment(promise, bestEffort, e);
@@ -541,25 +553,16 @@ class BKLogWriteHandler extends BKLogHandler {
             return;
         }
 
-        ledgerAllocator.tryObtain(txn, new Transaction.OpListener<LedgerHandle>() {
-            @Override
-            public void onCommit(LedgerHandle lh) {
-                // no-op
-            }
+        logSegmentAllocator.tryObtain(txn, NULL_OP_LISTENER)
+                .addEventListener(new FutureEventListener<LogSegmentEntryWriter>() {
 
             @Override
-            public void onAbort(Throwable t) {
-                // no-op
-            }
-        }).addEventListener(new FutureEventListener<LedgerHandle>() {
-
-            @Override
-            public void onSuccess(LedgerHandle lh) {
+            public void onSuccess(LogSegmentEntryWriter entryWriter) {
                 // try-obtain succeed
                 createInprogressLogSegment(
                         txn,
                         txId,
-                        lh,
+                        entryWriter,
                         bestEffort,
                         promise);
             }
@@ -586,7 +589,7 @@ class BKLogWriteHandler extends BKLogHandler {
     // just leak from the allocation pool - hence cause "No Ledger Allocator"
     private void createInprogressLogSegment(Transaction<Object> txn,
                                             final long txId,
-                                            final LedgerHandle lh,
+                                            final LogSegmentEntryWriter entryWriter,
                                             boolean bestEffort,
                                             final Promise<BKLogSegmentWriter> promise) {
         final long logSegmentSeqNo;
@@ -601,13 +604,15 @@ class BKLogWriteHandler extends BKLogHandler {
             return;
         }
 
-        final String inprogressZnodePath = inprogressZNode(lh.getId(), txId, logSegmentSeqNo);
+        final String inprogressZnodePath = inprogressZNode(
+                entryWriter.getLogSegmentId(), txId, logSegmentSeqNo);
         final LogSegmentMetadata l =
             new LogSegmentMetadata.LogSegmentMetadataBuilder(inprogressZnodePath,
-                conf.getDLLedgerMetadataLayoutVersion(), lh.getId(), txId)
+                conf.getDLLedgerMetadataLayoutVersion(), entryWriter.getLogSegmentId(), txId)
                     .setLogSegmentSequenceNo(logSegmentSeqNo)
                     .setRegionId(regionId)
-                    .setEnvelopeEntries(LogSegmentMetadata.supportsEnvelopedEntries(conf.getDLLedgerMetadataLayoutVersion()))
+                    .setEnvelopeEntries(
+                            LogSegmentMetadata.supportsEnvelopedEntries(conf.getDLLedgerMetadataLayoutVersion()))
                     .build();
 
         // Create an inprogress segment
@@ -631,7 +636,7 @@ class BKLogWriteHandler extends BKLogHandler {
                             l.getSegmentName(),
                             conf,
                             conf.getDLLedgerMetadataLayoutVersion(),
-                            new BKLogSegmentEntryWriter(lh),
+                            entryWriter,
                             lock,
                             txId,
                             logSegmentSeqNo,
@@ -1268,8 +1273,7 @@ class BKLogWriteHandler extends BKLogHandler {
     public Future<Void> asyncClose() {
         return Utils.closeSequence(scheduler,
                 lock,
-                ledgerAllocator
-        );
+                logSegmentAllocator);
     }
 
     @Override

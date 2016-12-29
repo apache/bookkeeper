@@ -19,11 +19,24 @@ package com.twitter.distributedlog;
 
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.base.Optional;
+import com.google.common.base.Ticker;
+import com.twitter.distributedlog.impl.BKNamespaceDriver;
 import com.twitter.distributedlog.impl.logsegment.BKLogSegmentEntryWriter;
+import com.twitter.distributedlog.injector.AsyncFailureInjector;
+import com.twitter.distributedlog.injector.AsyncRandomFailureInjector;
+import com.twitter.distributedlog.io.AsyncCloseable;
 import com.twitter.distributedlog.logsegment.LogSegmentEntryWriter;
+import com.twitter.distributedlog.logsegment.LogSegmentMetadataCache;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataStore;
 import com.twitter.distributedlog.namespace.DistributedLogNamespace;
+import com.twitter.distributedlog.namespace.DistributedLogNamespaceBuilder;
+import com.twitter.distributedlog.namespace.NamespaceDriver;
+import com.twitter.distributedlog.util.ConfUtils;
+import com.twitter.distributedlog.util.OrderedScheduler;
 import com.twitter.distributedlog.util.PermitLimiter;
+import com.twitter.distributedlog.util.SchedulerUtils;
+import com.twitter.util.Future;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
@@ -43,9 +56,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class TestDistributedLogBase {
     static final Logger LOG = LoggerFactory.getLogger(TestDistributedLogBase.class);
@@ -87,6 +102,12 @@ public class TestDistributedLogBase {
                 .build();
         bkutil.start();
         zkServers = "127.0.0.1:" + zkPort;
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                LOG.warn("Uncaught exception at Thread {} : ", t.getName(), e);
+            }
+        });
     }
 
     @AfterClass
@@ -141,22 +162,7 @@ public class TestDistributedLogBase {
 
     public BKDistributedLogManager createNewDLM(DistributedLogConfiguration conf,
                                                 String name) throws Exception {
-        URI uri = createDLMURI("/" + name);
-        ensureURICreated(uri);
-        return new BKDistributedLogManager(
-                name,
-                conf,
-                uri,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                new SettableFeatureProvider("", 0),
-                PermitLimiter.NULL_PERMIT_LIMITER,
-                NullStatsLogger.INSTANCE
-        );
+        return createNewDLM(conf, name, PermitLimiter.NULL_PERMIT_LIMITER);
     }
 
     public BKDistributedLogManager createNewDLM(DistributedLogConfiguration conf,
@@ -165,48 +171,69 @@ public class TestDistributedLogBase {
             throws Exception {
         URI uri = createDLMURI("/" + name);
         ensureURICreated(uri);
+        final DistributedLogNamespace namespace = DistributedLogNamespaceBuilder.newBuilder()
+                .uri(uri)
+                .conf(conf)
+                .build();
+        final OrderedScheduler scheduler = OrderedScheduler.newBuilder()
+                .corePoolSize(1)
+                .name("test-scheduler")
+                .build();
+        AsyncCloseable resourcesCloseable = new AsyncCloseable() {
+            @Override
+            public Future<Void> asyncClose() {
+                LOG.info("Shutting down the scheduler");
+                SchedulerUtils.shutdownScheduler(scheduler, 1, TimeUnit.SECONDS);
+                LOG.info("Shut down the scheduler");
+                LOG.info("Closing the namespace");
+                namespace.close();
+                LOG.info("Closed the namespace");
+                return Future.Void();
+            }
+        };
+        AsyncFailureInjector failureInjector = AsyncRandomFailureInjector.newBuilder()
+                .injectDelays(conf.getEIInjectReadAheadDelay(),
+                        conf.getEIInjectReadAheadDelayPercent(),
+                        conf.getEIInjectMaxReadAheadDelayMs())
+                .injectErrors(false, 10)
+                .injectStops(conf.getEIInjectReadAheadStall(), 10)
+                .injectCorruption(conf.getEIInjectReadAheadBrokenEntries())
+                .build();
         return new BKDistributedLogManager(
                 name,
                 conf,
+                ConfUtils.getConstDynConf(conf),
                 uri,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                new SettableFeatureProvider("", 0),
+                namespace.getNamespaceDriver(),
+                new LogSegmentMetadataCache(conf, Ticker.systemTicker()),
+                scheduler,
+                DistributedLogConstants.UNKNOWN_CLIENT_ID,
+                DistributedLogConstants.LOCAL_REGION_ID,
                 writeLimiter,
-                NullStatsLogger.INSTANCE
-        );
+                new SettableFeatureProvider("", 0),
+                failureInjector,
+                NullStatsLogger.INSTANCE,
+                NullStatsLogger.INSTANCE,
+                Optional.of(resourcesCloseable));
     }
 
-    public DLMTestUtil.BKLogPartitionWriteHandlerAndClients createNewBKDLM(
-            DistributedLogConfiguration conf,
-            String path) throws Exception {
-        return DLMTestUtil.createNewBKDLM(conf, path, zkPort);
-    }
-
-    @SuppressWarnings("deprecation")
-    protected LogSegmentMetadataStore getLogSegmentMetadataStore(DistributedLogManagerFactory factory) {
-        DistributedLogNamespace namespace = factory.getNamespace();
-        assertTrue(namespace instanceof BKDistributedLogNamespace);
-        return ((BKDistributedLogNamespace) namespace).getWriterStreamMetadataStore()
+    protected LogSegmentMetadataStore getLogSegmentMetadataStore(DistributedLogNamespace namespace)
+            throws IOException {
+        return namespace.getNamespaceDriver().getLogStreamMetadataStore(NamespaceDriver.Role.READER)
                 .getLogSegmentMetadataStore();
     }
 
-    @SuppressWarnings("deprecation")
-    protected ZooKeeperClient getZooKeeperClient(DistributedLogManagerFactory factory) throws Exception {
-        DistributedLogNamespace namespace = factory.getNamespace();
-        assertTrue(namespace instanceof BKDistributedLogNamespace);
-        return ((BKDistributedLogNamespace) namespace).getSharedWriterZKCForDL();
+    protected ZooKeeperClient getZooKeeperClient(DistributedLogNamespace namespace) throws Exception {
+        NamespaceDriver driver = namespace.getNamespaceDriver();
+        assertTrue(driver instanceof BKNamespaceDriver);
+        return ((BKNamespaceDriver) driver).getWriterZKC();
     }
 
     @SuppressWarnings("deprecation")
-    protected BookKeeperClient getBookKeeperClient(DistributedLogManagerFactory factory) throws Exception {
-        DistributedLogNamespace namespace = factory.getNamespace();
-        assertTrue(namespace instanceof BKDistributedLogNamespace);
-        return ((BKDistributedLogNamespace) namespace).getReaderBKC();
+    protected BookKeeperClient getBookKeeperClient(DistributedLogNamespace namespace) throws Exception {
+        NamespaceDriver driver = namespace.getNamespaceDriver();
+        assertTrue(driver instanceof BKNamespaceDriver);
+        return ((BKNamespaceDriver) driver).getReaderBKC();
     }
 
     protected LedgerHandle getLedgerHandle(BKLogSegmentWriter segmentWriter) {

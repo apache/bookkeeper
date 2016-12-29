@@ -250,15 +250,22 @@ public class BookKeeperClient {
         return promise;
     }
 
-    public synchronized void close() {
-        if (closed) {
-            return;
+    public void close() {
+        BookKeeper bkcToClose;
+        ZooKeeperClient zkcToClose;
+        synchronized (this) {
+            if (closed) {
+                return;
+            }
+            closed = true;
+            bkcToClose = bkc;
+            zkcToClose = zkc;
         }
 
         LOG.info("BookKeeper Client closed {}", name);
-        if (null != bkc) {
+        if (null != bkcToClose) {
             try {
-                bkc.close();
+                bkcToClose.close();
             } catch (InterruptedException e) {
                 LOG.warn("Interrupted on closing bookkeeper client {} : ", name, e);
                 Thread.currentThread().interrupt();
@@ -266,12 +273,11 @@ public class BookKeeperClient {
                 LOG.warn("Error on closing bookkeeper client {} : ", name, e);
             }
         }
-        if (null != zkc) {
+        if (null != zkcToClose) {
             if (ownZK) {
-                zkc.close();
+                zkcToClose.close();
             }
         }
-        closed = true;
     }
 
     public synchronized void checkClosedOrInError() throws AlreadyClosedException {

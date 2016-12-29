@@ -25,6 +25,7 @@ import com.twitter.distributedlog.exceptions.DLIllegalStateException;
 import com.twitter.distributedlog.impl.logsegment.BKLogSegmentEntryStore;
 import com.twitter.distributedlog.injector.AsyncFailureInjector;
 import com.twitter.distributedlog.logsegment.LogSegmentEntryStore;
+import com.twitter.distributedlog.util.ConfUtils;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.OrderedScheduler;
 import com.twitter.distributedlog.util.Utils;
@@ -38,6 +39,7 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -54,6 +56,7 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
     private DistributedLogConfiguration baseConf;
     private OrderedScheduler scheduler;
     private BookKeeperClient bkc;
+    private ZooKeeperClient zkc;
 
     @Before
     public void setup() throws Exception {
@@ -66,6 +69,12 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
         baseConf.setReadAheadMaxRecords(MAX_CACHED_ENTRIES);
         baseConf.setNumPrefetchEntriesPerLogSegment(NUM_PREFETCH_ENTRIES);
         baseConf.setMaxPrefetchEntriesPerLogSegment(NUM_PREFETCH_ENTRIES);
+        zkc = ZooKeeperClientBuilder.newBuilder()
+                .name("test-zk")
+                .zkServers(bkutil.getZkServers())
+                .sessionTimeoutMs(conf.getZKSessionTimeoutMilliseconds())
+                .zkAclId(conf.getZkAclId())
+                .build();
         bkc = BookKeeperClientBuilder.newBuilder()
                 .name("test-bk")
                 .dlConfig(conf)
@@ -86,6 +95,9 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
         if (null != scheduler) {
             scheduler.shutdown();
         }
+        if (null != zkc) {
+            zkc.close();
+        }
         super.teardown();
     }
 
@@ -99,8 +111,11 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
                 true);
         LogSegmentEntryStore entryStore = new BKLogSegmentEntryStore(
                 conf,
+                ConfUtils.getConstDynConf(conf),
+                zkc,
                 bkc,
                 scheduler,
+                null,
                 NullStatsLogger.INSTANCE,
                 AsyncFailureInjector.NULL);
         return new ReadAheadEntryReader(
@@ -309,7 +324,7 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
         BKDistributedLogManager dlm = createNewDLM(baseConf, streamName);
 
         // generate list of log segments
-        generateCompletedLogSegments(dlm, 3, 2);
+        generateCompletedLogSegments(dlm, 3, 3);
         AsyncLogWriter writer = FutureUtils.result(dlm.openAsyncLogWriter());
         FutureUtils.result(writer.truncate(new DLSN(2L, 1L, 0L)));
 
@@ -321,23 +336,39 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
         readAheadEntryReader.start(segments);
         // ensure initialization to complete
         ensureOrderSchedulerEmpty(streamName);
-        expectAlreadyTruncatedTransactionException(readAheadEntryReader,
-                "should fail on positioning to a truncated log segment");
+        expectNoException(readAheadEntryReader);
+        Entry.Reader entryReader =
+                readAheadEntryReader.getNextReadAheadEntry(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        assertEquals(2L, entryReader.getLSSN());
+        assertEquals(1L, entryReader.getEntryId());
+        Utils.close(readAheadEntryReader);
 
         // positioning on a partially truncated log segment (segment 2) before min active dlsn
         readAheadEntryReader = createEntryReader(streamName, new DLSN(2L, 0L, 0L), dlm, baseConf);
         readAheadEntryReader.start(segments);
         // ensure initialization to complete
         ensureOrderSchedulerEmpty(streamName);
-        expectAlreadyTruncatedTransactionException(readAheadEntryReader,
-                "should fail on positioning to a partially truncated log segment");
+        expectNoException(readAheadEntryReader);
+        entryReader =
+                readAheadEntryReader.getNextReadAheadEntry(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        assertEquals(2L, entryReader.getLSSN());
+        assertEquals(1L, entryReader.getEntryId());
+        Utils.close(readAheadEntryReader);
 
         // positioning on a partially truncated log segment (segment 2) after min active dlsn
-        readAheadEntryReader = createEntryReader(streamName, new DLSN(2L, 1L, 0L), dlm, baseConf);
+        readAheadEntryReader = createEntryReader(streamName, new DLSN(2L, 2L, 0L), dlm, baseConf);
         readAheadEntryReader.start(segments);
         // ensure initialization to complete
         ensureOrderSchedulerEmpty(streamName);
         expectNoException(readAheadEntryReader);
+        entryReader =
+                readAheadEntryReader.getNextReadAheadEntry(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        assertEquals(2L, entryReader.getLSSN());
+        assertEquals(2L, entryReader.getEntryId());
+        Utils.close(readAheadEntryReader);
+
+        Utils.close(writer);
+        dlm.close();
     }
 
     @Test(timeout = 60000)
@@ -363,6 +394,7 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
         // ensure initialization to complete
         ensureOrderSchedulerEmpty(streamName);
         expectNoException(readAheadEntryReader);
+        Utils.close(readAheadEntryReader);
 
         // positioning on a partially truncated log segment (segment 2) before min active dlsn
         readAheadEntryReader = createEntryReader(streamName, new DLSN(2L, 0L, 0L), dlm, confLocal);
@@ -370,6 +402,7 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
         // ensure initialization to complete
         ensureOrderSchedulerEmpty(streamName);
         expectNoException(readAheadEntryReader);
+        Utils.close(readAheadEntryReader);
 
         // positioning on a partially truncated log segment (segment 2) after min active dlsn
         readAheadEntryReader = createEntryReader(streamName, new DLSN(2L, 1L, 0L), dlm, confLocal);
@@ -377,6 +410,10 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
         // ensure initialization to complete
         ensureOrderSchedulerEmpty(streamName);
         expectNoException(readAheadEntryReader);
+        Utils.close(readAheadEntryReader);
+
+        Utils.close(writer);
+        dlm.close();
     }
 
     //
@@ -418,6 +455,9 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
         ensureOrderSchedulerEmpty(streamName);
         expectIllegalStateException(readAheadEntryReader,
                 "inconsistent log segment found");
+
+        Utils.close(readAheadEntryReader);
+        dlm.close();
     }
 
 }

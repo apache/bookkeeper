@@ -15,11 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.distributedlog.subscription;
+package com.twitter.distributedlog.impl.subscription;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.twitter.distributedlog.subscription.SubscriptionStateStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.runtime.BoxedUnit;

@@ -17,16 +17,16 @@
  */
 package com.twitter.distributedlog.impl.metadata;
 
-import com.twitter.distributedlog.TestZooKeeperClientBuilder;
-import com.twitter.distributedlog.metadata.BKDLConfig;
-import com.twitter.distributedlog.metadata.DLMetadata;
 import com.google.common.collect.Lists;
 import com.twitter.distributedlog.DLMTestUtil;
 import com.twitter.distributedlog.DistributedLogConfiguration;
+import com.twitter.distributedlog.MetadataAccessor;
+import com.twitter.distributedlog.TestZooKeeperClientBuilder;
+import com.twitter.distributedlog.impl.metadata.BKDLConfig;
+import com.twitter.distributedlog.metadata.DLMetadata;
 import com.twitter.distributedlog.metadata.LogMetadataForWriter;
 import com.twitter.distributedlog.namespace.DistributedLogNamespace;
 import com.twitter.distributedlog.namespace.DistributedLogNamespaceBuilder;
-import com.twitter.distributedlog.DistributedLogManager;
 import com.twitter.distributedlog.DistributedLogConstants;
 import com.twitter.distributedlog.exceptions.LogNotFoundException;
 import com.twitter.distributedlog.ZooKeeperClient;
@@ -317,9 +317,9 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
             .uri(uri)
             .build();
 
-        DistributedLogManager dlm = namespace.openLog(logName);
-        dlm.createOrUpdateMetadata(logName.getBytes("UTF-8"));
-        dlm.close();
+        MetadataAccessor accessor = namespace.getNamespaceDriver().getMetadataAccessor(logName);
+        accessor.createOrUpdateMetadata(logName.getBytes("UTF-8"));
+        accessor.close();
 
         testCreateLogMetadataWithMissingPaths(uri, logName, logIdentifier, pathsToDelete, true, false);
     }

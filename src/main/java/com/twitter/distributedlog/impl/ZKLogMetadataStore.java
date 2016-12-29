@@ -36,7 +36,7 @@ import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.twitter.distributedlog.impl.BKDLUtils.*;
+import static com.twitter.distributedlog.util.DLUtils.*;
 
 /**
  * ZooKeeper based log metadata store

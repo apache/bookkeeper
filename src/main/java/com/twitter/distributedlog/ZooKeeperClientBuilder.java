@@ -20,7 +20,7 @@ package com.twitter.distributedlog;
 import com.google.common.base.Preconditions;
 import com.twitter.distributedlog.ZooKeeperClient.Credentials;
 import com.twitter.distributedlog.ZooKeeperClient.DigestCredentials;
-import com.twitter.distributedlog.util.DLUtils;
+import com.twitter.distributedlog.impl.BKNamespaceDriver;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.zookeeper.RetryPolicy;
@@ -139,7 +139,7 @@ public class ZooKeeperClientBuilder {
      * @return builder.
      */
     public synchronized ZooKeeperClientBuilder uri(URI uri) {
-        this.zkServers = DLUtils.getZKServersFromDLUri(uri);
+        this.zkServers = BKNamespaceDriver.getZKServersFromDLUri(uri);
         return this;
     }
 

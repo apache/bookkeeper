@@ -18,28 +18,27 @@
 package com.twitter.distributedlog.admin;
 
 import com.google.common.base.Preconditions;
-import com.twitter.distributedlog.BookKeeperClient;
-import com.twitter.distributedlog.DistributedLogConfiguration;
+import com.google.common.collect.Lists;
 import com.twitter.distributedlog.DistributedLogManager;
 import com.twitter.distributedlog.LogRecordWithDLSN;
 import com.twitter.distributedlog.LogSegmentMetadata;
 import com.twitter.distributedlog.ReadUtils;
 import com.twitter.distributedlog.ZooKeeperClient;
 import com.twitter.distributedlog.ZooKeeperClientBuilder;
-import com.twitter.distributedlog.acl.ZKAccessControl;
+import com.twitter.distributedlog.impl.BKNamespaceDriver;
+import com.twitter.distributedlog.impl.acl.ZKAccessControl;
 import com.twitter.distributedlog.exceptions.DLIllegalStateException;
 import com.twitter.distributedlog.impl.federated.FederatedZKLogMetadataStore;
-import com.twitter.distributedlog.impl.logsegment.BKLogSegmentEntryStore;
-import com.twitter.distributedlog.injector.AsyncFailureInjector;
 import com.twitter.distributedlog.logsegment.LogSegmentEntryStore;
-import com.twitter.distributedlog.metadata.BKDLConfig;
+import com.twitter.distributedlog.impl.metadata.BKDLConfig;
 import com.twitter.distributedlog.metadata.DLMetadata;
 import com.twitter.distributedlog.metadata.DryrunLogSegmentMetadataStoreUpdater;
 import com.twitter.distributedlog.metadata.MetadataUpdater;
 import com.twitter.distributedlog.metadata.LogSegmentMetadataStoreUpdater;
+import com.twitter.distributedlog.namespace.DistributedLogNamespace;
+import com.twitter.distributedlog.namespace.NamespaceDriver;
 import com.twitter.distributedlog.thrift.AccessControlEntry;
 import com.twitter.distributedlog.tools.DistributedLogTool;
-import com.twitter.distributedlog.util.DLUtils;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.OrderedScheduler;
 import com.twitter.distributedlog.util.SchedulerUtils;
@@ -61,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -76,7 +76,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Admin Tool for DistributedLog.
  */
-@SuppressWarnings("deprecation")
 public class DistributedLogAdmin extends DistributedLogTool {
 
     static final Logger LOG = LoggerFactory.getLogger(DistributedLogAdmin.class);
@@ -84,8 +83,8 @@ public class DistributedLogAdmin extends DistributedLogTool {
     /**
      * Fix inprogress segment with lower ledger sequence number.
      *
-     * @param factory
-     *          dlm factory.
+     * @param namespace
+     *          dl namespace
      * @param metadataUpdater
      *          metadata updater.
      * @param streamName
@@ -96,12 +95,12 @@ public class DistributedLogAdmin extends DistributedLogTool {
      *          is confirmation needed before executing actual action.
      * @throws IOException
      */
-    public static void fixInprogressSegmentWithLowerSequenceNumber(final com.twitter.distributedlog.DistributedLogManagerFactory factory,
+    public static void fixInprogressSegmentWithLowerSequenceNumber(final DistributedLogNamespace namespace,
                                                                    final MetadataUpdater metadataUpdater,
                                                                    final String streamName,
                                                                    final boolean verbose,
                                                                    final boolean interactive) throws IOException {
-        DistributedLogManager dlm = factory.createDistributedLogManagerWithSharedClients(streamName);
+        DistributedLogManager dlm = namespace.openLog(streamName);
         try {
             List<LogSegmentMetadata> segments = dlm.getLogSegments();
             if (verbose) {
@@ -194,37 +193,37 @@ public class DistributedLogAdmin extends DistributedLogTool {
     }
 
     public static void checkAndRepairDLNamespace(final URI uri,
-                                                 final com.twitter.distributedlog.DistributedLogManagerFactory factory,
+                                                 final DistributedLogNamespace namespace,
                                                  final MetadataUpdater metadataUpdater,
                                                  final OrderedScheduler scheduler,
-                                                 final BookKeeperClient bkc,
-                                                 final String digestpw,
                                                  final boolean verbose,
                                                  final boolean interactive) throws IOException {
-        checkAndRepairDLNamespace(uri, factory, metadataUpdater, scheduler, bkc, digestpw, verbose, interactive, 1);
+        checkAndRepairDLNamespace(uri, namespace, metadataUpdater, scheduler, verbose, interactive, 1);
     }
 
     public static void checkAndRepairDLNamespace(final URI uri,
-                                                 final com.twitter.distributedlog.DistributedLogManagerFactory factory,
+                                                 final DistributedLogNamespace namespace,
                                                  final MetadataUpdater metadataUpdater,
                                                  final OrderedScheduler scheduler,
-                                                 final BookKeeperClient bkc,
-                                                 final String digestpw,
                                                  final boolean verbose,
                                                  final boolean interactive,
                                                  final int concurrency) throws IOException {
         Preconditions.checkArgument(concurrency > 0, "Invalid concurrency " + concurrency + " found.");
         // 0. getting streams under a given uri.
-        Collection<String> streams = factory.enumerateAllLogsInNamespace();
+        Iterator<String> streamsIter = namespace.getLogs();
+        List<String> streams = Lists.newArrayList();
+        while (streamsIter.hasNext()) {
+            streams.add(streamsIter.next());
+        }
         if (verbose) {
-            System.out.println("- 0. checking " + streams.size() + " streams under " + uri);
+            System.out.println("- 0. checking streams under " + uri);
         }
         if (streams.size() == 0) {
             System.out.println("+ 0. nothing to check. quit.");
             return;
         }
         Map<String, StreamCandidate> streamCandidates =
-                checkStreams(factory, streams, scheduler, bkc, digestpw, concurrency);
+                checkStreams(namespace, streams, scheduler, concurrency);
         if (verbose) {
             System.out.println("+ 0. " + streamCandidates.size() + " corrupted streams found.");
         }
@@ -248,11 +247,9 @@ public class DistributedLogAdmin extends DistributedLogTool {
     }
 
     private static Map<String, StreamCandidate> checkStreams(
-            final com.twitter.distributedlog.DistributedLogManagerFactory factory,
+            final DistributedLogNamespace namespace,
             final Collection<String> streams,
             final OrderedScheduler scheduler,
-            final BookKeeperClient bkc,
-            final String digestpw,
             final int concurrency) throws IOException {
         final LinkedBlockingQueue<String> streamQueue =
                 new LinkedBlockingQueue<String>();
@@ -275,7 +272,7 @@ public class DistributedLogAdmin extends DistributedLogTool {
                     StreamCandidate candidate;
                     try {
                         LOG.info("Checking stream {}.", stream);
-                        candidate = checkStream(factory, stream, scheduler, bkc, digestpw);
+                        candidate = checkStream(namespace, stream, scheduler);
                         LOG.info("Checked stream {} - {}.", stream, candidate);
                     } catch (IOException e) {
                         LOG.error("Error on checking stream {} : ", stream, e);
@@ -316,12 +313,10 @@ public class DistributedLogAdmin extends DistributedLogTool {
     }
 
     private static StreamCandidate checkStream(
-            final com.twitter.distributedlog.DistributedLogManagerFactory factory,
+            final DistributedLogNamespace namespace,
             final String streamName,
-            final OrderedScheduler scheduler,
-            final BookKeeperClient bkc,
-            String digestpw) throws IOException {
-        DistributedLogManager dlm = factory.createDistributedLogManagerWithSharedClients(streamName);
+            final OrderedScheduler scheduler) throws IOException {
+        DistributedLogManager dlm = namespace.openLog(streamName);
         try {
             List<LogSegmentMetadata> segments = dlm.getLogSegments();
             if (segments.isEmpty()) {
@@ -330,7 +325,7 @@ public class DistributedLogAdmin extends DistributedLogTool {
             List<Future<LogSegmentCandidate>> futures =
                     new ArrayList<Future<LogSegmentCandidate>>(segments.size());
             for (LogSegmentMetadata segment : segments) {
-                futures.add(checkLogSegment(streamName, segment, scheduler, bkc, digestpw));
+                futures.add(checkLogSegment(namespace, streamName, segment, scheduler));
             }
             List<LogSegmentCandidate> segmentCandidates;
             try {
@@ -354,21 +349,16 @@ public class DistributedLogAdmin extends DistributedLogTool {
     }
 
     private static Future<LogSegmentCandidate> checkLogSegment(
+            final DistributedLogNamespace namespace,
             final String streamName,
             final LogSegmentMetadata metadata,
-            final OrderedScheduler scheduler,
-            final BookKeeperClient bkc,
-            final String digestpw) {
+            final OrderedScheduler scheduler) {
         if (metadata.isInProgress()) {
             return Future.value(null);
         }
 
-        final LogSegmentEntryStore entryStore = new BKLogSegmentEntryStore(
-                new DistributedLogConfiguration().setBKDigestPW(digestpw),
-                bkc,
-                scheduler,
-                NullStatsLogger.INSTANCE,
-                AsyncFailureInjector.NULL);
+        final LogSegmentEntryStore entryStore = namespace.getNamespaceDriver()
+                .getLogSegmentEntryStore(NamespaceDriver.Role.READER);
         return ReadUtils.asyncReadLastRecord(
                 streamName,
                 metadata,
@@ -432,6 +422,8 @@ public class DistributedLogAdmin extends DistributedLogTool {
 
     /**
      * Unbind the bookkeeper environment for a given distributedlog uri.
+     *
+     * TODO: move unbind operation to namespace driver
      */
     class UnbindCommand extends OptsCommand {
 
@@ -491,6 +483,8 @@ public class DistributedLogAdmin extends DistributedLogTool {
 
     /**
      * Bind Command to bind bookkeeper environment for a given distributed uri.
+     *
+     * TODO: move bind to namespace driver
      */
     class BindCommand extends OptsCommand {
 
@@ -559,7 +553,7 @@ public class DistributedLogAdmin extends DistributedLogTool {
             if (cmdline.hasOption("dlzw")) {
                 dlZkServersForWriter = cmdline.getOptionValue("dlzw");
             } else {
-                dlZkServersForWriter = DLUtils.getZKServersFromDLUri(uri);
+                dlZkServersForWriter = BKNamespaceDriver.getZKServersFromDLUri(uri);
             }
             if (cmdline.hasOption("dlzr")) {
                 dlZkServersForReader = cmdline.getOptionValue("dlzr");
@@ -689,7 +683,7 @@ public class DistributedLogAdmin extends DistributedLogTool {
                 return -1;
             }
             for (String stream : streams) {
-                fixInprogressSegmentWithLowerSequenceNumber(getFactory(), metadataUpdater, stream, verbose, !getForce());
+                fixInprogressSegmentWithLowerSequenceNumber(getNamespace(), metadataUpdater, stream, verbose, !getForce());
             }
             return 0;
         }
@@ -739,10 +733,9 @@ public class DistributedLogAdmin extends DistributedLogTool {
                     .corePoolSize(Runtime.getRuntime().availableProcessors())
                     .build();
             ExecutorService executorService = Executors.newCachedThreadPool();
-            BookKeeperClient bkc = getBookKeeperClient();
             try {
-                checkAndRepairDLNamespace(getUri(), getFactory(), metadataUpdater, scheduler,
-                                          bkc, getConf().getBKDigestPW(), verbose, !getForce(), concurrency);
+                checkAndRepairDLNamespace(getUri(), getNamespace(), metadataUpdater, scheduler,
+                                          verbose, !getForce(), concurrency);
             } finally {
                 SchedulerUtils.shutdownScheduler(executorService, 5, TimeUnit.MINUTES);
             }

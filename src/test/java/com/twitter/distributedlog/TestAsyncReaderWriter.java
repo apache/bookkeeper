@@ -36,6 +36,7 @@ import com.twitter.distributedlog.config.ConcurrentConstConfiguration;
 import com.twitter.distributedlog.config.DynamicDistributedLogConfiguration;
 import com.twitter.distributedlog.exceptions.BKTransmitException;
 import com.twitter.distributedlog.exceptions.LockingException;
+import com.twitter.distributedlog.impl.BKNamespaceDriver;
 import com.twitter.distributedlog.io.CompressionCodec;
 import com.twitter.distributedlog.util.Utils;
 import com.twitter.util.Promise;
@@ -1270,8 +1271,9 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
 
         BKLogSegmentWriter logWriter = writer.getCachedLogWriter();
 
+        BKNamespaceDriver driver = (BKNamespaceDriver) dlm.getNamespaceDriver();
         // fence the ledger
-        dlm.getWriterBKC().get().openLedger(logWriter.getLogSegmentId(),
+        driver.getReaderBKC().get().openLedger(logWriter.getLogSegmentId(),
                 BookKeeper.DigestType.CRC32, confLocal.getBKDigestPW().getBytes(UTF_8));
 
         try {
@@ -1313,8 +1315,9 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
 
         BKLogSegmentWriter logWriter = writer.getCachedLogWriter();
 
+        BKNamespaceDriver driver = (BKNamespaceDriver) dlm.getNamespaceDriver();
         // fence the ledger
-        dlm.getWriterBKC().get().openLedger(logWriter.getLogSegmentId(),
+        driver.getReaderBKC().get().openLedger(logWriter.getLogSegmentId(),
                 BookKeeper.DigestType.CRC32, confLocal.getBKDigestPW().getBytes(UTF_8));
 
         try {
@@ -1500,6 +1503,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         confLocal.setImmediateFlushEnabled(true);
         confLocal.setReadAheadBatchSize(1);
         confLocal.setReadAheadMaxRecords(1);
+        confLocal.setReadLACLongPollTimeout(49);
         confLocal.setReaderIdleWarnThresholdMillis(100);
         confLocal.setReaderIdleErrorThresholdMillis(20000);
         final DistributedLogManager dlm = createNewDLM(confLocal, name);
@@ -1976,7 +1980,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         List<LogSegmentMetadata> segments = dlm.getLogSegments();
         assertEquals(1, segments.size());
         long ledgerId = segments.get(0).getLogSegmentId();
-        LedgerHandle lh = ((BKDistributedLogNamespace) namespace).getReaderBKC()
+        LedgerHandle lh = ((BKNamespaceDriver) namespace.getNamespaceDriver()).getReaderBKC()
                 .get().openLedgerNoRecovery(ledgerId, BookKeeper.DigestType.CRC32, confLocal.getBKDigestPW().getBytes(UTF_8));
         LedgerMetadata metadata = BookKeeperAccessor.getLedgerMetadata(lh);
         assertEquals(DistributedLogConfiguration.BKDL_BOOKKEEPER_ENSEMBLE_SIZE_DEFAULT, metadata.getEnsembleSize());
@@ -1995,7 +1999,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         segments = dlm.getLogSegments();
         assertEquals(1, segments.size());
         ledgerId = segments.get(0).getLogSegmentId();
-        lh = ((BKDistributedLogNamespace) namespace).getReaderBKC()
+        lh = ((BKNamespaceDriver) namespace.getNamespaceDriver()).getReaderBKC()
                 .get().openLedgerNoRecovery(ledgerId, BookKeeper.DigestType.CRC32, confLocal.getBKDigestPW().getBytes(UTF_8));
         metadata = BookKeeperAccessor.getLedgerMetadata(lh);
         assertEquals(DistributedLogConfiguration.BKDL_BOOKKEEPER_ENSEMBLE_SIZE_DEFAULT - 1, metadata.getEnsembleSize());
@@ -2147,6 +2151,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         confLocal.setImmediateFlushEnabled(false);
         confLocal.setPeriodicFlushFrequencyMilliSeconds(0);
         confLocal.setPeriodicKeepAliveMilliSeconds(0);
+        confLocal.setReadLACLongPollTimeout(9);
         confLocal.setReaderIdleWarnThresholdMillis(20);
         confLocal.setReaderIdleErrorThresholdMillis(40);
 
@@ -2178,6 +2183,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         confLocal.setImmediateFlushEnabled(false);
         confLocal.setPeriodicFlushFrequencyMilliSeconds(0);
         confLocal.setPeriodicKeepAliveMilliSeconds(1000);
+        confLocal.setReadLACLongPollTimeout(999);
         confLocal.setReaderIdleWarnThresholdMillis(2000);
         confLocal.setReaderIdleErrorThresholdMillis(4000);
 

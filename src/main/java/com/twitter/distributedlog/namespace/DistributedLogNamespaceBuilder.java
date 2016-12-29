@@ -17,22 +17,29 @@
  */
 package com.twitter.distributedlog.namespace;
 
-import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.twitter.distributedlog.BKDistributedLogNamespace;
 import com.twitter.distributedlog.DistributedLogConfiguration;
 import com.twitter.distributedlog.DistributedLogConstants;
+import com.twitter.distributedlog.config.DynamicDistributedLogConfiguration;
+import com.twitter.distributedlog.feature.CoreFeatureKeys;
+import com.twitter.distributedlog.injector.AsyncFailureInjector;
+import com.twitter.distributedlog.injector.AsyncRandomFailureInjector;
+import com.twitter.distributedlog.util.ConfUtils;
+import com.twitter.distributedlog.util.DLUtils;
+import com.twitter.distributedlog.util.OrderedScheduler;
+import com.twitter.distributedlog.util.PermitLimiter;
+import com.twitter.distributedlog.util.SimplePermitLimiter;
+import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * Builder to construct a <code>DistributedLogNamespace</code>.
@@ -50,6 +57,7 @@ public class DistributedLogNamespaceBuilder {
     }
 
     private DistributedLogConfiguration _conf = null;
+    private DynamicDistributedLogConfiguration _dynConf = null;
     private URI _uri = null;
     private StatsLogger _statsLogger = NullStatsLogger.INSTANCE;
     private StatsLogger _perLogStatsLogger = NullStatsLogger.INSTANCE;
@@ -69,6 +77,17 @@ public class DistributedLogNamespaceBuilder {
      */
     public DistributedLogNamespaceBuilder conf(DistributedLogConfiguration conf) {
         this._conf = conf;
+        return this;
+    }
+
+    /**
+     * Dynamic DistributedLog Configuration used for the namespace
+     *
+     * @param dynConf dynamic distributedlog configuration
+     * @return namespace builder
+     */
+    public DistributedLogNamespaceBuilder dynConf(DynamicDistributedLogConfiguration dynConf) {
+        this._dynConf = dynConf;
         return this;
     }
 
@@ -146,6 +165,18 @@ public class DistributedLogNamespaceBuilder {
         return this;
     }
 
+    @SuppressWarnings("deprecation")
+    private static StatsLogger normalizePerLogStatsLogger(StatsLogger statsLogger,
+                                                          StatsLogger perLogStatsLogger,
+                                                          DistributedLogConfiguration conf) {
+        StatsLogger normalizedPerLogStatsLogger = perLogStatsLogger;
+        if (perLogStatsLogger == NullStatsLogger.INSTANCE &&
+                conf.getEnablePerStreamStat()) {
+            normalizedPerLogStatsLogger = statsLogger.scope("stream");
+        }
+        return normalizedPerLogStatsLogger;
+    }
+
     /**
      * Build the namespace.
      *
@@ -160,25 +191,17 @@ public class DistributedLogNamespaceBuilder {
         Preconditions.checkNotNull(_conf, "No DistributedLog Configuration.");
         Preconditions.checkNotNull(_uri, "No DistributedLog URI");
 
-        // Validate the uri and load the backend according to scheme
-        String scheme = _uri.getScheme();
-        Preconditions.checkNotNull(scheme, "Invalid DistributedLog URI : " + _uri);
-        String[] schemeParts = StringUtils.split(scheme, '-');
-        Preconditions.checkArgument(schemeParts.length > 0,
-                "Invalid distributedlog scheme found : " + _uri);
-        Preconditions.checkArgument(Objects.equal(DistributedLogConstants.SCHEME_PREFIX, schemeParts[0].toLowerCase()),
-                "Unknown distributedlog scheme found : " + _uri);
-
-        // both distributedlog: & distributedlog-bk: use bookkeeper as the backend
-        // TODO: we could do reflection to load backend in future.
-        //       if we are going to support other backends : e.g. 'distributedlog-mem:'.
-        if (schemeParts.length > 1) {
-            String backendProvider = schemeParts[1];
-            Preconditions.checkArgument(Objects.equal(DistributedLogConstants.BACKEND_BK, backendProvider.toLowerCase()),
-                    "Backend '" + backendProvider + "' is not supported yet.");
+        // validate the configuration
+        _conf.validate();
+        if (null == _dynConf) {
+            _dynConf = ConfUtils.getConstDynConf(_conf);
         }
 
-        // Built the feature provider
+        // retrieve the namespace driver
+        NamespaceDriver driver = NamespaceDriverManager.getDriver(_uri);
+        URI normalizedUri = DLUtils.normalizeURI(_uri);
+
+        // build the feature provider
         FeatureProvider featureProvider;
         if (null == _featureProvider) {
             featureProvider = new SettableFeatureProvider("", 0);
@@ -187,25 +210,69 @@ public class DistributedLogNamespaceBuilder {
             featureProvider = _featureProvider;
         }
 
-        URI bkUri;
-        try {
-            bkUri = new URI(
-                    schemeParts[0],     // remove backend info from bookkeeper backend
-                    _uri.getAuthority(),
-                    _uri.getPath(),
-                    _uri.getQuery(),
-                    _uri.getFragment());
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Invalid distributedlog uri found : " + _uri, e);
+        // build the failure injector
+        AsyncFailureInjector failureInjector = AsyncRandomFailureInjector.newBuilder()
+                .injectDelays(_conf.getEIInjectReadAheadDelay(),
+                              _conf.getEIInjectReadAheadDelayPercent(),
+                              _conf.getEIInjectMaxReadAheadDelayMs())
+                .injectErrors(false, 10)
+                .injectStops(_conf.getEIInjectReadAheadStall(), 10)
+                .injectCorruption(_conf.getEIInjectReadAheadBrokenEntries())
+                .build();
+
+        // normalize the per log stats logger
+        StatsLogger perLogStatsLogger = normalizePerLogStatsLogger(_statsLogger, _perLogStatsLogger, _conf);
+
+        // build the scheduler
+        StatsLogger schedulerStatsLogger = _statsLogger.scope("factory").scope("thread_pool");
+        OrderedScheduler scheduler = OrderedScheduler.newBuilder()
+                .name("DLM-" + normalizedUri.getPath())
+                .corePoolSize(_conf.getNumWorkerThreads())
+                .statsLogger(schedulerStatsLogger)
+                .perExecutorStatsLogger(schedulerStatsLogger)
+                .traceTaskExecution(_conf.getEnableTaskExecutionStats())
+                .traceTaskExecutionWarnTimeUs(_conf.getTaskExecutionWarnTimeMicros())
+                .build();
+
+        // initialize the namespace driver
+        driver.initialize(
+                _conf,
+                _dynConf,
+                normalizedUri,
+                scheduler,
+                featureProvider,
+                failureInjector,
+                _statsLogger,
+                perLogStatsLogger,
+                DLUtils.normalizeClientId(_clientId),
+                _regionId);
+
+        // initialize the write limiter
+        PermitLimiter writeLimiter;
+        if (_conf.getGlobalOutstandingWriteLimit() < 0) {
+            writeLimiter = PermitLimiter.NULL_PERMIT_LIMITER;
+        } else {
+            Feature disableWriteLimitFeature = featureProvider.getFeature(
+                CoreFeatureKeys.DISABLE_WRITE_LIMIT.name().toLowerCase());
+            writeLimiter = new SimplePermitLimiter(
+                _conf.getOutstandingWriteLimitDarkmode(),
+                _conf.getGlobalOutstandingWriteLimit(),
+                _statsLogger.scope("writeLimiter"),
+                true /* singleton */,
+                disableWriteLimitFeature);
         }
 
-        return BKDistributedLogNamespace.newBuilder()
-                .conf(_conf)
-                .uri(bkUri)
-                .statsLogger(_statsLogger)
-                .featureProvider(featureProvider)
-                .clientId(_clientId)
-                .regionId(_regionId)
-                .build();
+        return new BKDistributedLogNamespace(
+                _conf,
+                normalizedUri,
+                driver,
+                scheduler,
+                featureProvider,
+                writeLimiter,
+                failureInjector,
+                _statsLogger,
+                perLogStatsLogger,
+                DLUtils.normalizeClientId(_clientId),
+                _regionId);
     }
 }

@@ -34,9 +34,10 @@ import com.twitter.distributedlog.exceptions.AlreadyClosedException;
 import com.twitter.distributedlog.exceptions.InvalidStreamNameException;
 import com.twitter.distributedlog.exceptions.LockingException;
 import com.twitter.distributedlog.exceptions.ZKException;
-import com.twitter.distributedlog.impl.BKDLUtils;
+import com.twitter.distributedlog.impl.BKNamespaceDriver;
 import com.twitter.distributedlog.namespace.DistributedLogNamespace;
 import com.twitter.distributedlog.namespace.DistributedLogNamespaceBuilder;
+import com.twitter.distributedlog.util.DLUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
@@ -112,63 +113,13 @@ public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
     }
 
     @Test(timeout = 60000)
-    @SuppressWarnings("deprecation")
-    public void testClientSharingOptions() throws Exception {
-        URI uri = createDLMURI("/clientSharingOptions");
-        BKDistributedLogNamespace namespace = BKDistributedLogNamespace.newBuilder()
-                .conf(conf).uri(uri).build();
-
-        {
-            BKDistributedLogManager bkdlm1 = (BKDistributedLogManager)namespace.createDistributedLogManager("perstream1",
-                                        DistributedLogManagerFactory.ClientSharingOption.PerStreamClients);
-
-            BKDistributedLogManager bkdlm2 = (BKDistributedLogManager)namespace.createDistributedLogManager("perstream2",
-                DistributedLogManagerFactory.ClientSharingOption.PerStreamClients);
-
-            assertThat(bkdlm1.getReaderBKC(), not(bkdlm2.getReaderBKC()));
-            assertThat(bkdlm1.getWriterBKC(), not(bkdlm2.getWriterBKC()));
-            assertThat(bkdlm1.getReaderZKC(), not(bkdlm2.getReaderZKC()));
-            assertThat(bkdlm1.getWriterZKC(), not(bkdlm2.getWriterZKC()));
-
-        }
-
-        {
-            BKDistributedLogManager bkdlm1 = (BKDistributedLogManager)namespace.createDistributedLogManager("sharedZK1",
-                DistributedLogManagerFactory.ClientSharingOption.SharedZKClientPerStreamBKClient);
-
-            BKDistributedLogManager bkdlm2 = (BKDistributedLogManager)namespace.createDistributedLogManager("sharedZK2",
-                DistributedLogManagerFactory.ClientSharingOption.SharedZKClientPerStreamBKClient);
-
-            assertThat(bkdlm1.getReaderBKC(), not(bkdlm2.getReaderBKC()));
-            assertThat(bkdlm1.getWriterBKC(), not(bkdlm2.getWriterBKC()));
-            assertEquals(bkdlm1.getReaderZKC(), bkdlm2.getReaderZKC());
-            assertEquals(bkdlm1.getWriterZKC(), bkdlm2.getWriterZKC());
-        }
-
-        {
-            BKDistributedLogManager bkdlm1 = (BKDistributedLogManager)namespace.createDistributedLogManager("sharedBoth1",
-                DistributedLogManagerFactory.ClientSharingOption.SharedClients);
-
-            BKDistributedLogManager bkdlm2 = (BKDistributedLogManager)namespace.createDistributedLogManager("sharedBoth2",
-                DistributedLogManagerFactory.ClientSharingOption.SharedClients);
-
-            assertEquals(bkdlm1.getReaderBKC(), bkdlm2.getReaderBKC());
-            assertEquals(bkdlm1.getWriterBKC(), bkdlm2.getWriterBKC());
-            assertEquals(bkdlm1.getReaderZKC(), bkdlm2.getReaderZKC());
-            assertEquals(bkdlm1.getWriterZKC(), bkdlm2.getWriterZKC());
-        }
-
-    }
-
-
-    @Test(timeout = 60000)
     public void testInvalidStreamName() throws Exception {
-        assertFalse(BKDLUtils.isReservedStreamName("test"));
-        assertTrue(BKDLUtils.isReservedStreamName(".test"));
+        assertFalse(DLUtils.isReservedStreamName("test"));
+        assertTrue(DLUtils.isReservedStreamName(".test"));
 
         URI uri = createDLMURI("/" + runtime.getMethodName());
 
-        BKDistributedLogNamespace namespace = BKDistributedLogNamespace.newBuilder()
+        DistributedLogNamespace namespace = DistributedLogNamespaceBuilder.newBuilder()
                 .conf(conf).uri(uri).build();
 
         try {
@@ -237,11 +188,6 @@ public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
         assertEquals(2, streamSet.size());
         assertTrue(streamSet.contains("test1"));
         assertTrue(streamSet.contains("test_2-3"));
-
-        Map<String, byte[]> streamMetadatas = namespace.enumerateLogsWithMetadataInNamespace();
-        assertEquals(2, streamMetadatas.size());
-        assertTrue(streamMetadatas.containsKey("test1"));
-        assertTrue(streamMetadatas.containsKey("test_2-3"));
 
         namespace.close();
     }
@@ -385,7 +331,7 @@ public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
 
     static void validateBadAllocatorConfiguration(DistributedLogConfiguration conf, URI uri) throws Exception {
         try {
-            BKDistributedLogNamespace.validateAndGetFullLedgerAllocatorPoolPath(conf, uri);
+            BKNamespaceDriver.validateAndGetFullLedgerAllocatorPoolPath(conf, uri);
             fail("Should throw exception when bad allocator configuration provided");
         } catch (IOException ioe) {
             // expected
@@ -425,7 +371,7 @@ public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
     @Test(timeout = 60000)
     public void testUseNamespaceAfterCloseShouldFailFast() throws Exception {
         URI uri = createDLMURI("/" + runtime.getMethodName());
-        BKDistributedLogNamespace namespace = BKDistributedLogNamespace.newBuilder()
+        DistributedLogNamespace namespace = DistributedLogNamespaceBuilder.newBuilder()
             .conf(conf)
             .uri(uri)
             .build();

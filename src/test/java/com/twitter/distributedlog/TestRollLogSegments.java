@@ -331,6 +331,7 @@ public class TestRollLogSegments extends TestDistributedLogBase {
 
     @FlakyTest
     @Test(timeout = 60000)
+    @SuppressWarnings("deprecation")
     public void testCaughtUpReaderOnLogSegmentRolling() throws Exception {
         String name = "distrlog-caughtup-reader-on-logsegment-rolling";
 
@@ -344,6 +345,8 @@ public class TestRollLogSegments extends TestDistributedLogBase {
         confLocal.setWriteQuorumSize(1);
         confLocal.setAckQuorumSize(1);
         confLocal.setReadLACLongPollTimeout(99999999);
+        confLocal.setReaderIdleWarnThresholdMillis(2 * 99999999 + 1);
+        confLocal.setBKClientReadTimeout(99999999 + 1);
 
         DistributedLogManager dlm = createNewDLM(confLocal, name);
         BKSyncLogWriter writer = (BKSyncLogWriter) dlm.startLogSegmentNonPartitioned();
@@ -368,7 +371,7 @@ public class TestRollLogSegments extends TestDistributedLogBase {
         }
 
         BKLogSegmentWriter perStreamWriter = writer.segmentWriter;
-        BookKeeperClient bkc = readDLM.getReaderBKC();
+        BookKeeperClient bkc = DLMTestUtil.getBookKeeperClient(readDLM);
         LedgerHandle readLh = bkc.get().openLedgerNoRecovery(getLedgerHandle(perStreamWriter).getId(),
                 BookKeeper.DigestType.CRC32, conf.getBKDigestPW().getBytes(UTF_8));
 

@@ -594,8 +594,6 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                 }
                 lastProcessTime.reset().start();
 
-                lastProcessTime.reset().start();
-
                 // If the oldest pending promise is interrupted then we must mark
                 // the reader in error and abort all pending reads since we dont
                 // know the last consumed read

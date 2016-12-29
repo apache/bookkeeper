@@ -22,6 +22,8 @@ import com.twitter.distributedlog.TestZooKeeperClientBuilder;
 import com.twitter.distributedlog.ZooKeeperClient;
 import com.twitter.distributedlog.ZooKeeperClientUtils;
 import com.twitter.distributedlog.ZooKeeperClusterTestCase;
+import com.twitter.distributedlog.impl.acl.ZKAccessControl;
+import com.twitter.distributedlog.impl.acl.ZKAccessControlManager;
 import com.twitter.distributedlog.thrift.AccessControlEntry;
 import com.twitter.util.Await;
 import org.junit.After;

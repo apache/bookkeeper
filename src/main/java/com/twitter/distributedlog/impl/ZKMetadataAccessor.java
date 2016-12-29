@@ -15,16 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.distributedlog;
+package com.twitter.distributedlog.impl;
 
 import java.io.IOException;
 import java.net.URI;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.twitter.distributedlog.DistributedLogConfiguration;
+import com.twitter.distributedlog.MetadataAccessor;
+import com.twitter.distributedlog.ZooKeeperClient;
+import com.twitter.distributedlog.ZooKeeperClientBuilder;
 import com.twitter.distributedlog.exceptions.AlreadyClosedException;
 import com.twitter.distributedlog.exceptions.DLInterruptedException;
-import com.twitter.distributedlog.metadata.BKDLConfig;
-import com.twitter.distributedlog.util.DLUtils;
+import com.twitter.distributedlog.impl.metadata.BKDLConfig;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.Utils;
 import com.twitter.util.Future;
@@ -36,6 +39,8 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.twitter.distributedlog.impl.BKNamespaceDriver.getZKServersFromDLUri;
 
 public class ZKMetadataAccessor implements MetadataAccessor {
     static final Logger LOG = LoggerFactory.getLogger(ZKMetadataAccessor.class);
@@ -87,7 +92,7 @@ public class ZKMetadataAccessor implements MetadataAccessor {
         this.writerZKC = this.writerZKCBuilder.build();
 
         if (null == readerZKCBuilder) {
-            String zkServersForWriter = DLUtils.getZKServersFromDLUri(uri);
+            String zkServersForWriter = getZKServersFromDLUri(uri);
             String zkServersForReader;
             try {
                 BKDLConfig bkdlConfig = BKDLConfig.resolveDLConfig(this.writerZKC, uri);

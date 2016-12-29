@@ -24,6 +24,8 @@ import com.twitter.distributedlog.DistributedLogConfiguration;
 import com.twitter.distributedlog.TestZooKeeperClientBuilder;
 import com.twitter.distributedlog.annotations.DistributedLogAnnotations;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
+import com.twitter.distributedlog.namespace.DistributedLogNamespace;
+import com.twitter.distributedlog.namespace.DistributedLogNamespaceBuilder;
 import com.twitter.distributedlog.util.Utils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
@@ -90,21 +92,25 @@ public class TestDistributedLogAdmin extends TestDistributedLogBase {
 
         URI uri = createDLMURI("/change-sequence-number");
         zooKeeperClient.get().create(uri.getPath(), new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        com.twitter.distributedlog.DistributedLogManagerFactory factory =
-                new com.twitter.distributedlog.DistributedLogManagerFactory(confLocal, uri);
-        com.twitter.distributedlog.DistributedLogManagerFactory readFactory =
-                new com.twitter.distributedlog.DistributedLogManagerFactory(readConf, uri);
+        DistributedLogNamespace namespace = DistributedLogNamespaceBuilder.newBuilder()
+                .conf(confLocal)
+                .uri(uri)
+                .build();
+        DistributedLogNamespace readNamespace = DistributedLogNamespaceBuilder.newBuilder()
+                .conf(readConf)
+                .uri(uri)
+                .build();
 
         String streamName = "change-sequence-number";
 
         // create completed log segments
-        DistributedLogManager dlm = factory.createDistributedLogManagerWithSharedClients(streamName);
+        DistributedLogManager dlm = namespace.openLog(streamName);
         DLMTestUtil.generateCompletedLogSegments(dlm, confLocal, 4, 10);
         DLMTestUtil.injectLogSegmentWithGivenLogSegmentSeqNo(dlm, confLocal, 5, 41, false, 10, true);
         dlm.close();
 
         // create a reader
-        DistributedLogManager readDLM = readFactory.createDistributedLogManagerWithSharedClients(streamName);
+        DistributedLogManager readDLM = readNamespace.openLog(streamName);
         AsyncLogReader reader = readDLM.getAsyncLogReader(DLSN.InitialDLSN);
 
         // read the records
@@ -121,7 +127,7 @@ public class TestDistributedLogAdmin extends TestDistributedLogBase {
 
         LOG.info("Injecting bad log segment '3'");
 
-        dlm = factory.createDistributedLogManagerWithSharedClients(streamName);
+        dlm = namespace.openLog(streamName);
         DLMTestUtil.injectLogSegmentWithGivenLogSegmentSeqNo(dlm, confLocal, 3L, 5 * 10 + 1, true, 10, false);
 
         LOG.info("Injected bad log segment '3'");
@@ -140,8 +146,8 @@ public class TestDistributedLogAdmin extends TestDistributedLogBase {
         LOG.info("Dryrun fix inprogress segment that has lower sequence number");
 
         // Dryrun
-        DistributedLogAdmin.fixInprogressSegmentWithLowerSequenceNumber(factory,
-                new DryrunLogSegmentMetadataStoreUpdater(confLocal, getLogSegmentMetadataStore(factory)), streamName, false, false);
+        DistributedLogAdmin.fixInprogressSegmentWithLowerSequenceNumber(namespace,
+                new DryrunLogSegmentMetadataStoreUpdater(confLocal, getLogSegmentMetadataStore(namespace)), streamName, false, false);
 
         try {
             reader = readDLM.getAsyncLogReader(lastDLSN);
@@ -154,8 +160,8 @@ public class TestDistributedLogAdmin extends TestDistributedLogBase {
         LOG.info("Actual run fix inprogress segment that has lower sequence number");
 
         // Actual run
-        DistributedLogAdmin.fixInprogressSegmentWithLowerSequenceNumber(factory,
-                LogSegmentMetadataStoreUpdater.createMetadataUpdater(confLocal, getLogSegmentMetadataStore(factory)), streamName, false, false);
+        DistributedLogAdmin.fixInprogressSegmentWithLowerSequenceNumber(namespace,
+                LogSegmentMetadataStoreUpdater.createMetadataUpdater(confLocal, getLogSegmentMetadataStore(namespace)), streamName, false, false);
 
         // be able to read more after fix
         reader = readDLM.getAsyncLogReader(lastDLSN);
@@ -182,7 +188,7 @@ public class TestDistributedLogAdmin extends TestDistributedLogBase {
         readDLM.close();
 
         dlm.close();
-        factory.close();
-        readFactory.close();
+        namespace.close();
+        readNamespace.close();
     }
 }

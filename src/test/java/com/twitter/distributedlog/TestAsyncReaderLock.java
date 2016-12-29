@@ -29,9 +29,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.twitter.distributedlog.exceptions.LockCancelledException;
 import com.twitter.distributedlog.exceptions.LockingException;
 import com.twitter.distributedlog.exceptions.OwnershipAcquireFailedException;
+import com.twitter.distributedlog.impl.BKNamespaceDriver;
 import com.twitter.distributedlog.lock.LockClosedException;
 import com.twitter.distributedlog.namespace.DistributedLogNamespace;
 import com.twitter.distributedlog.namespace.DistributedLogNamespaceBuilder;
+import com.twitter.distributedlog.namespace.NamespaceDriver;
 import com.twitter.distributedlog.subscription.SubscriptionsStore;
 import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.Utils;
@@ -85,7 +87,8 @@ public class TestAsyncReaderLock extends TestDistributedLogBase {
         Utils.close(reader1);
 
         // simulate a old stream created without readlock path
-        writer.bkDistributedLogManager.getWriterZKC().get().delete(readLockPath, -1);
+        NamespaceDriver driver = dlm.getNamespaceDriver();
+        ((BKNamespaceDriver) driver).getWriterZKC().get().delete(readLockPath, -1);
         Future<AsyncLogReader> futureReader2 = dlm.getAsyncLogReaderWithLock(DLSN.InitialDLSN);
         AsyncLogReader reader2 = Await.result(futureReader2);
         record = Await.result(reader2.readNext());
@@ -230,7 +233,7 @@ public class TestAsyncReaderLock extends TestDistributedLogBase {
 
         DistributedLogManager dlm1 = createNewDLM(conf, name);
         Future<AsyncLogReader> futureReader1 = dlm1.getAsyncLogReaderWithLock(DLSN.InitialDLSN);
-        Await.result(futureReader1);
+        AsyncLogReader reader1 = Await.result(futureReader1);
 
         BKDistributedLogManager dlm2 = (BKDistributedLogManager) createNewDLM(conf, name);
         Future<AsyncLogReader> futureReader2 = dlm2.getAsyncLogReaderWithLock(DLSN.InitialDLSN);
@@ -243,6 +246,7 @@ public class TestAsyncReaderLock extends TestDistributedLogBase {
         } catch (LockCancelledException ex) {
         }
 
+        Utils.close(reader1);
         dlm0.close();
         dlm1.close();
     }
@@ -250,16 +254,26 @@ public class TestAsyncReaderLock extends TestDistributedLogBase {
     @Test(timeout = 60000)
     public void testReaderLockSessionExpires() throws Exception {
         String name = runtime.getMethodName();
-        DistributedLogManager dlm0 = createNewDLM(conf, name);
+        URI uri = createDLMURI("/" + name);
+        ensureURICreated(uri);
+        DistributedLogNamespace ns0 = DistributedLogNamespaceBuilder.newBuilder()
+                .conf(conf)
+                .uri(uri)
+                .build();
+        DistributedLogManager dlm0 = ns0.openLog(name);
         BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm0.startAsyncLogSegmentNonPartitioned());
         writer.write(DLMTestUtil.getLogRecordInstance(1L));
         writer.write(DLMTestUtil.getLogRecordInstance(2L));
         writer.closeAndComplete();
 
-        DistributedLogManager dlm1 = createNewDLM(conf, name);
+        DistributedLogNamespace ns1 = DistributedLogNamespaceBuilder.newBuilder()
+                .conf(conf)
+                .uri(uri)
+                .build();
+        DistributedLogManager dlm1 = ns1.openLog(name);
         Future<AsyncLogReader> futureReader1 = dlm1.getAsyncLogReaderWithLock(DLSN.InitialDLSN);
         AsyncLogReader reader1 = Await.result(futureReader1);
-        ZooKeeperClientUtils.expireSession(((BKDistributedLogManager)dlm1).getWriterZKC(), zkServers, 1000);
+        ZooKeeperClientUtils.expireSession(((BKNamespaceDriver) ns1.getNamespaceDriver()).getWriterZKC(), zkServers, 1000);
 
         // The result of expireSession is somewhat non-deterministic with this lock.
         // It may fail with LockingException or it may succesfully reacquire, so for
@@ -276,7 +290,9 @@ public class TestAsyncReaderLock extends TestDistributedLogBase {
 
         Utils.close(reader1);
         dlm0.close();
+        ns0.close();
         dlm1.close();
+        ns1.close();
     }
 
     @Test(timeout = 60000)
@@ -511,8 +527,11 @@ public class TestAsyncReaderLock extends TestDistributedLogBase {
         Utils.close(Await.result(futureReader3));
 
         dlm1.close();
+        namespace1.close();
         dlm2.close();
+        namespace2.close();
         dlm3.close();
+        namespace3.close();
 
         executorService.shutdown();
     }

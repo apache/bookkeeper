@@ -15,8 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.distributedlog.acl;
+package com.twitter.distributedlog.impl.acl;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.twitter.distributedlog.ZooKeeperClient;
 import com.twitter.distributedlog.thrift.AccessControlEntry;
@@ -89,10 +90,12 @@ public class ZKAccessControl {
         return sb.toString();
     }
 
+    @VisibleForTesting
     public String getZKPath() {
         return zkPath;
     }
 
+    @VisibleForTesting
     public AccessControlEntry getAccessControlEntry() {
         return accessControlEntry;
     }

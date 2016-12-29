@@ -1301,6 +1301,7 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
      * @return number of dedicated readahead worker threads.
      * @see #getNumWorkerThreads()
      */
+    @Deprecated
     public int getNumReadAheadWorkerThreads() {
         return getInt(BKDL_NUM_READAHEAD_WORKER_THREADS, 0);
     }
@@ -1313,6 +1314,7 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
      * @return configuration
      * @see #getNumReadAheadWorkerThreads()
      */
+    @Deprecated
     public DistributedLogConfiguration setNumReadAheadWorkerThreads(int numWorkerThreads) {
         setProperty(BKDL_NUM_READAHEAD_WORKER_THREADS, numWorkerThreads);
         return this;
@@ -3515,8 +3517,11 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
         Preconditions.checkArgument(getBKClientReadTimeout() * 1000 >= getReadLACLongPollTimeout(),
             "Invalid timeout configuration: bkcReadTimeoutSeconds ("+getBKClientReadTimeout()+
                 ") should be longer than readLACLongPollTimeout ("+getReadLACLongPollTimeout()+")");
-        Preconditions.checkArgument(getReaderIdleWarnThresholdMillis() > 2 * getReadLACLongPollTimeout(),
-            "Invalid configuration: ReaderIdleWarnThreshold should be 2x larget than readLACLongPollTimeout");
+        long readerIdleWarnThresholdMs = getReaderIdleWarnThresholdMillis();
+        if (readerIdleWarnThresholdMs > 0) { // NOTE: some test cases set the idle warn threshold to 0
+            Preconditions.checkArgument(readerIdleWarnThresholdMs > 2 * getReadLACLongPollTimeout(),
+                    "Invalid configuration: ReaderIdleWarnThreshold should be 2x larget than readLACLongPollTimeout");
+        }
     }
 
 

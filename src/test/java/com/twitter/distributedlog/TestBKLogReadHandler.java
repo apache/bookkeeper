@@ -50,27 +50,6 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
     @Rule
     public TestName runtime = new TestName();
 
-    private void prepareLogSegments(String name, int numSegments, int numEntriesPerSegment) throws Exception {
-        DLMTestUtil.BKLogPartitionWriteHandlerAndClients bkdlmAndClients = createNewBKDLM(conf, name);
-        long txid = 1;
-        for (int sid = 0; sid < numSegments; ++sid) {
-            BKLogSegmentWriter out = bkdlmAndClients.getWriteHandler().startLogSegment(txid);
-            for (int eid = 0; eid < numEntriesPerSegment; ++eid) {
-                LogRecord record = DLMTestUtil.getLargeLogRecordInstance(txid);
-                out.write(record);
-                ++txid;
-            }
-            FutureUtils.result(out.asyncClose());
-            bkdlmAndClients.getWriteHandler().completeAndCloseLogSegment(
-                    out.getLogSegmentSequenceNumber(),
-                    out.getLogSegmentId(),
-                    1 + sid * numEntriesPerSegment,
-                    (sid + 1) * numEntriesPerSegment,
-                    numEntriesPerSegment);
-        }
-        bkdlmAndClients.close();
-    }
-
     private void prepareLogSegmentsNonPartitioned(String name, int numSegments, int numEntriesPerSegment) throws Exception {
         DistributedLogManager dlm = createNewDLM(conf, name);
         long txid = 1;
@@ -134,8 +113,8 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
     @Test(timeout = 60000)
     public void testGetFirstDLSNWithLogSegments() throws Exception {
         String dlName = runtime.getMethodName();
-        prepareLogSegments(dlName, 3, 3);
         BKDistributedLogManager dlm = createNewDLM(conf, dlName);
+        DLMTestUtil.generateCompletedLogSegments(dlm, conf, 3, 3);
         BKLogReadHandler readHandler = dlm.createReadHandler();
         Future<LogRecordWithDLSN> futureRecord = readHandler.asyncGetFirstLogRecord();
         try {
