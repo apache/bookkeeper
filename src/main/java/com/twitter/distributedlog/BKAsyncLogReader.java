@@ -28,6 +28,7 @@ import com.twitter.distributedlog.exceptions.IdleReaderException;
 import com.twitter.distributedlog.exceptions.LogNotFoundException;
 import com.twitter.distributedlog.exceptions.ReadCancelledException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
+import com.twitter.distributedlog.util.OrderedScheduler;
 import com.twitter.distributedlog.util.Utils;
 import com.twitter.util.Future;
 import com.twitter.util.FutureEventListener;
@@ -83,10 +84,11 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                 }
             };
 
+    private final String streamName;
     protected final BKDistributedLogManager bkDistributedLogManager;
     protected final BKLogReadHandler readHandler;
     private final AtomicReference<Throwable> lastException = new AtomicReference<Throwable>();
-    private final ScheduledExecutorService executorService;
+    private final OrderedScheduler scheduler;
     private final ConcurrentLinkedQueue<PendingReadRequest> pendingRequests = new ConcurrentLinkedQueue<PendingReadRequest>();
     private final Object scheduleLock = new Object();
     private final AtomicLong scheduleCount = new AtomicLong(0);
@@ -208,13 +210,14 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
     }
 
     BKAsyncLogReader(BKDistributedLogManager bkdlm,
-                     ScheduledExecutorService executorService,
+                     OrderedScheduler scheduler,
                      DLSN startDLSN,
                      Optional<String> subscriberId,
                      boolean returnEndOfStreamRecord,
                      StatsLogger statsLogger) {
+        this.streamName = bkdlm.getStreamName();
         this.bkDistributedLogManager = bkdlm;
-        this.executorService = executorService;
+        this.scheduler = scheduler;
         this.readHandler = bkDistributedLogManager.createReadHandler(subscriberId,
                 this, true);
         LOG.debug("Starting async reader at {}", startDLSN);
@@ -251,7 +254,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
             // Except when idle reader threshold is less than a second (tests?)
             period = Math.min(period, idleErrorThresholdMillis / 5);
 
-            return executorService.scheduleAtFixedRate(new Runnable() {
+            return scheduler.scheduleAtFixedRate(streamName, new Runnable() {
                 @Override
                 public void run() {
                     PendingReadRequest nextRequest = pendingRequests.peek();
@@ -371,7 +374,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
 
     @Override
     public String getStreamName() {
-        return bkDistributedLogManager.getStreamName();
+        return streamName;
     }
 
     /**
@@ -470,7 +473,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
         long prevCount = scheduleCount.getAndIncrement();
         if (0 == prevCount) {
             scheduleDelayStopwatch.reset().start();
-            executorService.submit(this);
+            scheduler.submit(streamName, this);
         }
     }
 
@@ -659,7 +662,11 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                         scheduleDelayStopwatch.reset().start();
                         scheduleCount.set(0);
                         // the request could still wait for more records
-                        backgroundScheduleTask = executorService.schedule(BACKGROUND_READ_SCHEDULER, remainingWaitTime, nextRequest.deadlineTimeUnit);
+                        backgroundScheduleTask = scheduler.schedule(
+                                streamName,
+                                BACKGROUND_READ_SCHEDULER,
+                                remainingWaitTime,
+                                nextRequest.deadlineTimeUnit);
                         return;
                     }
 

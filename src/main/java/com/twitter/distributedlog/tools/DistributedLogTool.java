@@ -188,10 +188,8 @@ public class DistributedLogTool extends Tool {
             try {
                 return runCmd();
             } finally {
-                synchronized (this) {
-                    if (null != namespace) {
-                        namespace.close();
-                    }
+                if (null != namespace) {
+                    namespace.close();
                 }
             }
         }

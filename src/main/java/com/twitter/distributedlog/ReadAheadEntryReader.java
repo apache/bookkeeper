@@ -54,6 +54,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -228,9 +229,12 @@ public class ReadAheadEntryReader implements
                 if (null != closePromise) {
                     return;
                 }
-                safeRun();
             }
-
+            try {
+                safeRun();
+            } catch (Throwable cause) {
+                logger.error("Caught unexpected exception : ", cause);
+            }
         }
 
         abstract void safeRun();
@@ -275,6 +279,7 @@ public class ReadAheadEntryReader implements
     // State of the reader
     //
 
+    private final AtomicBoolean started = new AtomicBoolean(false);
     private boolean isInitialized = false;
     private boolean readAheadPaused = false;
     private Promise<Void> closePromise = null;
@@ -428,6 +433,7 @@ public class ReadAheadEntryReader implements
     public void start(final List<LogSegmentMetadata> segmentList) {
         logger.info("Starting the readahead entry reader for {} : segments = {}",
                 readHandler.getFullyQualifiedName(), segmentList);
+        started.set(true);
         processLogSegments(segmentList);
     }
 
@@ -530,7 +536,7 @@ public class ReadAheadEntryReader implements
 
     void setLastException(IOException cause) {
         if (!lastException.compareAndSet(null, cause)) {
-            return;
+            logger.debug("last exception has already been set to ", lastException.get());
         }
         // the exception is set and notify the state change
         notifyStateChangeOnFailure(cause);
@@ -829,6 +835,7 @@ public class ReadAheadEntryReader implements
             }
             skipTruncatedLogSegments = false;
             if (!isAllowedToPosition(segment, dlsnToStart)) {
+                logger.error("segment {} is not allowed to position at {}", segment, dlsnToStart);
                 return;
             }
 
@@ -969,6 +976,9 @@ public class ReadAheadEntryReader implements
 
     @Override
     public void onSegmentsUpdated(List<LogSegmentMetadata> segments) {
+        if (!started.get()) {
+            return;
+        }
         logger.info("segments is updated with {}", segments);
         processLogSegments(segments);
     }
