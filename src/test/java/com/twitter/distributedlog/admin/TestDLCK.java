@@ -28,6 +28,7 @@ import com.twitter.distributedlog.TestZooKeeperClientBuilder;
 import com.twitter.distributedlog.ZooKeeperClient;
 import com.twitter.distributedlog.metadata.DryrunLogSegmentMetadataStoreUpdater;
 import com.twitter.distributedlog.metadata.LogSegmentMetadataStoreUpdater;
+import com.twitter.distributedlog.util.OrderedScheduler;
 import com.twitter.distributedlog.util.SchedulerUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
@@ -104,6 +105,10 @@ public class TestDLCK extends TestDistributedLogBase {
         zkc.get().create(uri.getPath(), new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         com.twitter.distributedlog.DistributedLogManagerFactory factory =
                 new com.twitter.distributedlog.DistributedLogManagerFactory(confLocal, uri);
+        OrderedScheduler scheduler = OrderedScheduler.newBuilder()
+                .name("dlck-tool")
+                .corePoolSize(1)
+                .build();
         ExecutorService executorService = Executors.newCachedThreadPool();
 
         String streamName = "check-and-repair-dl-namespace";
@@ -119,7 +124,7 @@ public class TestDLCK extends TestDistributedLogBase {
         BookKeeperClient bkc = getBookKeeperClient(factory);
         DistributedLogAdmin.checkAndRepairDLNamespace(uri, factory,
                 new DryrunLogSegmentMetadataStoreUpdater(confLocal, getLogSegmentMetadataStore(factory)),
-                executorService, bkc, confLocal.getBKDigestPW(), false, false);
+                scheduler, bkc, confLocal.getBKDigestPW(), false, false);
 
         Map<Long, LogSegmentMetadata> segments = getLogSegments(dlm);
         LOG.info("segments after drynrun {}", segments);
@@ -132,7 +137,7 @@ public class TestDLCK extends TestDistributedLogBase {
         bkc = getBookKeeperClient(factory);
         DistributedLogAdmin.checkAndRepairDLNamespace(uri, factory,
                 LogSegmentMetadataStoreUpdater.createMetadataUpdater(confLocal, getLogSegmentMetadataStore(factory)),
-                executorService, bkc, confLocal.getBKDigestPW(), false, false);
+                scheduler, bkc, confLocal.getBKDigestPW(), false, false);
 
         segments = getLogSegments(dlm);
         LOG.info("segments after repair {}", segments);

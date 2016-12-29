@@ -34,6 +34,7 @@ import com.twitter.distributedlog.exceptions.LockingException;
 import com.twitter.distributedlog.exceptions.LogNotFoundException;
 import com.twitter.distributedlog.exceptions.LogSegmentNotFoundException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
+import com.twitter.distributedlog.logsegment.LogSegmentEntryStore;
 import com.twitter.distributedlog.metadata.LogMetadataForReader;
 import com.twitter.distributedlog.lock.DistributedLock;
 import com.twitter.distributedlog.logsegment.LogSegmentFilter;
@@ -106,7 +107,6 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
     static final Logger LOG = LoggerFactory.getLogger(BKLogReadHandler.class);
 
     protected final LogMetadataForReader logMetadataForReader;
-    protected final LedgerHandleCache handleCache;
 
     protected final DynamicDistributedLogConfiguration dynConf;
 
@@ -134,9 +134,9 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
                      Optional<String> subscriberId,
                      DistributedLogConfiguration conf,
                      DynamicDistributedLogConfiguration dynConf,
-                     BookKeeperClientBuilder bkcBuilder,
                      LogStreamMetadataStore streamMetadataStore,
                      LogSegmentMetadataCache metadataCache,
+                     LogSegmentEntryStore entryStore,
                      OrderedScheduler scheduler,
                      AlertStatsLogger alertStatsLogger,
                      StatsLogger statsLogger,
@@ -146,9 +146,9 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
                      boolean isHandleForReading) {
         super(logMetadata,
                 conf,
-                bkcBuilder,
                 streamMetadataStore,
                 metadataCache,
+                entryStore,
                 scheduler,
                 statsLogger,
                 alertStatsLogger,
@@ -158,12 +158,6 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
         this.perLogStatsLogger =
                 isHandleForReading ? perLogStatsLogger : NullStatsLogger.INSTANCE;
         this.readerStateNotification = readerStateNotification;
-
-        handleCache = LedgerHandleCache.newBuilder()
-                .bkc(this.bookKeeperClient)
-                .conf(conf)
-                .statsLogger(statsLogger)
-                .build();
         this.subscriberId = subscriberId;
     }
 
@@ -265,9 +259,6 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
                 .flatMap(new AbstractFunction1<Void, Future<Void>>() {
             @Override
             public Future<Void> apply(Void result) {
-                if (null != handleCache) {
-                    handleCache.clear();
-                }
                 // unregister the log segment listener
                 metadataStore.unregisterLogSegmentListener(logMetadata.getLogSegmentsPath(), BKLogReadHandler.this);
                 return Future.Void();

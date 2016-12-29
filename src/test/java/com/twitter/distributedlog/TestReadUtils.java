@@ -34,8 +34,6 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.runtime.AbstractFunction0;
-import scala.runtime.BoxedUnit;
 
 import static org.junit.Assert.*;
 
@@ -52,42 +50,22 @@ public class TestReadUtils extends TestDistributedLogBase {
     private Future<Optional<LogRecordWithDLSN>> getLogRecordNotLessThanTxId(
             BKDistributedLogManager bkdlm, int logsegmentIdx, long transactionId) throws Exception {
         List<LogSegmentMetadata> logSegments = bkdlm.getLogSegments();
-        final LedgerHandleCache handleCache = LedgerHandleCache.newBuilder()
-                .bkc(bkdlm.getWriterBKC())
-                .conf(conf)
-                .build();
         return ReadUtils.getLogRecordNotLessThanTxId(
                 bkdlm.getStreamName(),
                 logSegments.get(logsegmentIdx),
                 transactionId,
                 Executors.newSingleThreadExecutor(),
-                handleCache,
+                bkdlm.getReaderEntryStore(),
                 10
-        ).ensure(new AbstractFunction0<BoxedUnit>() {
-            @Override
-            public BoxedUnit apply() {
-                handleCache.clear();
-                return BoxedUnit.UNIT;
-            }
-        });
+        );
     }
 
     private Future<LogRecordWithDLSN> getFirstGreaterThanRecord(BKDistributedLogManager bkdlm, int ledgerNo, DLSN dlsn) throws Exception {
         List<LogSegmentMetadata> ledgerList = bkdlm.getLogSegments();
-        final LedgerHandleCache handleCache = LedgerHandleCache.newBuilder()
-                .bkc(bkdlm.getWriterBKC())
-                .conf(conf)
-                .build();
         return ReadUtils.asyncReadFirstUserRecord(
                 bkdlm.getStreamName(), ledgerList.get(ledgerNo), 2, 16, new AtomicInteger(0), Executors.newFixedThreadPool(1),
-                handleCache, dlsn
-        ).ensure(new AbstractFunction0<BoxedUnit>() {
-            @Override
-            public BoxedUnit apply() {
-                handleCache.clear();
-                return BoxedUnit.UNIT;
-            }
-        });
+                bkdlm.getReaderEntryStore(), dlsn
+        );
     }
 
     private Future<LogRecordWithDLSN> getLastUserRecord(BKDistributedLogManager bkdlm, int ledgerNo) throws Exception {
@@ -98,20 +76,10 @@ public class TestReadUtils extends TestDistributedLogBase {
                         LogSegmentFilter.DEFAULT_FILTER,
                         null)
         ).getValue();
-        final LedgerHandleCache handleCache = LedgerHandleCache.newBuilder()
-                .bkc(bkdlm.getWriterBKC())
-                .conf(conf)
-                .build();
         return ReadUtils.asyncReadLastRecord(
                 bkdlm.getStreamName(), ledgerList.get(ledgerNo), false, false, false, 2, 16, new AtomicInteger(0), Executors.newFixedThreadPool(1),
-                handleCache
-        ).ensure(new AbstractFunction0<BoxedUnit>() {
-            @Override
-            public BoxedUnit apply() {
-                handleCache.clear();
-                return BoxedUnit.UNIT;
-            }
-        });
+                bkdlm.getReaderEntryStore()
+        );
     }
 
     @Test(timeout = 60000)

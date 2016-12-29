@@ -30,6 +30,7 @@ import com.twitter.distributedlog.exceptions.TransactionIdOutOfOrderException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
 import com.twitter.distributedlog.function.GetLastTxIdFunction;
 import com.twitter.distributedlog.impl.logsegment.BKLogSegmentEntryWriter;
+import com.twitter.distributedlog.logsegment.LogSegmentEntryStore;
 import com.twitter.distributedlog.metadata.LogMetadataForWriter;
 import com.twitter.distributedlog.lock.DistributedLock;
 import com.twitter.distributedlog.logsegment.LogSegmentFilter;
@@ -52,8 +53,6 @@ import com.twitter.util.Function;
 import com.twitter.util.Future;
 import com.twitter.util.FutureEventListener;
 import com.twitter.util.Promise;
-import org.apache.bookkeeper.client.AsyncCallback;
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.stats.AlertStatsLogger;
@@ -151,9 +150,9 @@ class BKLogWriteHandler extends BKLogHandler {
      */
     BKLogWriteHandler(LogMetadataForWriter logMetadata,
                       DistributedLogConfiguration conf,
-                      BookKeeperClientBuilder bkcBuilder,
                       LogStreamMetadataStore streamMetadataStore,
                       LogSegmentMetadataCache metadataCache,
+                      LogSegmentEntryStore entryStore,
                       OrderedScheduler scheduler,
                       LedgerAllocator allocator,
                       StatsLogger statsLogger,
@@ -167,9 +166,9 @@ class BKLogWriteHandler extends BKLogHandler {
                       DistributedLock lock /** owned by handler **/) {
         super(logMetadata,
                 conf,
-                bkcBuilder,
                 streamMetadataStore,
                 metadataCache,
+                entryStore,
                 scheduler,
                 statsLogger,
                 alertStatsLogger,
@@ -1222,33 +1221,18 @@ class BKLogWriteHandler extends BKLogHandler {
                 deleteOpStats.registerFailedEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
             }
         });
-        try {
-            bookKeeperClient.get().asyncDeleteLedger(ledgerMetadata.getLogSegmentId(), new AsyncCallback.DeleteCallback() {
-                @Override
-                public void deleteComplete(int rc, Object ctx) {
-                    if (BKException.Code.NoSuchLedgerExistsException == rc) {
-                        LOG.warn("No ledger {} found to delete for {} : {}.",
-                                new Object[]{ledgerMetadata.getLogSegmentId(), getFullyQualifiedName(),
-                                        ledgerMetadata});
-                    } else if (BKException.Code.OK != rc) {
-                        BKException bke = BKException.create(rc);
-                        LOG.error("Couldn't delete ledger {} from bookkeeper for {} : ",
-                                new Object[]{ledgerMetadata.getLogSegmentId(), getFullyQualifiedName(), bke});
-                        promise.setException(bke);
-                        return;
-                    }
-                    // after the ledger is deleted, we delete the metadata znode
-                    scheduler.submit(new Runnable() {
-                        @Override
-                        public void run() {
-                            deleteLogSegmentMetadata(ledgerMetadata, promise);
-                        }
-                    });
-                }
-            }, null);
-        } catch (IOException e) {
-            promise.setException(BKException.create(BKException.Code.BookieHandleNotAvailableException));
-        }
+        entryStore.deleteLogSegment(ledgerMetadata)
+                .addEventListener(new FutureEventListener<LogSegmentMetadata>() {
+            @Override
+            public void onFailure(Throwable cause) {
+                FutureUtils.setException(promise, cause);
+            }
+
+            @Override
+            public void onSuccess(LogSegmentMetadata segment) {
+                deleteLogSegmentMetadata(segment, promise);
+            }
+        });
         return promise;
     }
 

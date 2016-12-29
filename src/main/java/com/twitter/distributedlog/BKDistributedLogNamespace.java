@@ -43,7 +43,6 @@ import com.twitter.distributedlog.metadata.BKDLConfig;
 import com.twitter.distributedlog.metadata.LogMetadataStore;
 import com.twitter.distributedlog.metadata.LogStreamMetadataStore;
 import com.twitter.distributedlog.namespace.DistributedLogNamespace;
-import com.twitter.distributedlog.stats.ReadAheadExceptionsLogger;
 import com.twitter.distributedlog.util.ConfUtils;
 import com.twitter.distributedlog.util.DLUtils;
 import com.twitter.distributedlog.util.FutureUtils;
@@ -112,10 +111,6 @@ import static com.twitter.distributedlog.impl.BKDLUtils.*;
  * <li> `scope`/writeLimiter/* : stats about the global write limiter used by this namespace.
  * See {@link PermitLimiter}.
  * </ul>
- *
- * <h4>ReadAhead Exceptions</h4>
- * Stats about exceptions that encountered in ReadAhead are exposed under <code>`scope`/exceptions</code>.
- * See {@link ReadAheadExceptionsLogger}.
  *
  * <h4>DistributedLogManager</h4>
  *
@@ -305,7 +300,6 @@ public class BKDistributedLogNamespace implements DistributedLogNamespace {
     // Stats Loggers
     private final StatsLogger statsLogger;
     private final StatsLogger perLogStatsLogger;
-    private final ReadAheadExceptionsLogger readAheadExceptionsLogger;
 
     protected AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -435,9 +429,6 @@ public class BKDistributedLogNamespace implements DistributedLogNamespace {
         } else {
             allocator = null;
         }
-
-        // Stats Loggers
-        this.readAheadExceptionsLogger = new ReadAheadExceptionsLogger(statsLogger);
 
         // log metadata store
         if (bkdlConfig.isFederatedNamespace() || conf.isFederatedNamespaceEnabled()) {
@@ -895,7 +886,6 @@ public class BKDistributedLogNamespace implements DistributedLogNamespace {
                 readAheadExecutor,                  /* Read Aheader Executor */
                 channelFactory,                     /* Netty Channel Factory */
                 requestTimer,                       /* Request Timer */
-                readAheadExceptionsLogger,          /* ReadAhead Exceptions Logger */
                 clientId,                           /* Client Id */
                 regionId,                           /* Region Id */
                 dlmLedgerAlloctor,                  /* Ledger Allocator */

@@ -409,43 +409,39 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
         final PendingReadRequest readRequest = new PendingReadRequest(numEntries, deadlineTime, deadlineTimeUnit);
 
         if (null == readAheadReader) {
-            try {
-                final ReadAheadEntryReader readAheadEntryReader = this.readAheadReader = new ReadAheadEntryReader(
-                        getStreamName(),
-                        getStartDLSN(),
-                        bkDistributedLogManager.getConf(),
-                        readHandler,
-                        bkDistributedLogManager.getReaderEntryStore(),
-                        bkDistributedLogManager.getScheduler(),
-                        Ticker.systemTicker(),
-                        bkDistributedLogManager.alertStatsLogger);
-                readHandler.checkLogStreamExists().addEventListener(new FutureEventListener<Void>() {
-                    @Override
-                    public void onSuccess(Void value) {
-                        try {
-                            readHandler.registerListener(readAheadEntryReader);
-                            readHandler.asyncStartFetchLogSegments()
-                                    .map(new AbstractFunction1<Versioned<List<LogSegmentMetadata>>, BoxedUnit>() {
-                                        @Override
-                                        public BoxedUnit apply(Versioned<List<LogSegmentMetadata>> logSegments) {
-                                            readAheadEntryReader.addStateChangeNotification(BKAsyncLogReader.this);
-                                            readAheadEntryReader.start(logSegments.getValue());
-                                            return BoxedUnit.UNIT;
-                                        }
-                                    });
-                        } catch (Exception exc) {
-                            notifyOnError(exc);
-                        }
+            final ReadAheadEntryReader readAheadEntryReader = this.readAheadReader = new ReadAheadEntryReader(
+                    getStreamName(),
+                    getStartDLSN(),
+                    bkDistributedLogManager.getConf(),
+                    readHandler,
+                    bkDistributedLogManager.getReaderEntryStore(),
+                    bkDistributedLogManager.getScheduler(),
+                    Ticker.systemTicker(),
+                    bkDistributedLogManager.alertStatsLogger);
+            readHandler.checkLogStreamExists().addEventListener(new FutureEventListener<Void>() {
+                @Override
+                public void onSuccess(Void value) {
+                    try {
+                        readHandler.registerListener(readAheadEntryReader);
+                        readHandler.asyncStartFetchLogSegments()
+                                .map(new AbstractFunction1<Versioned<List<LogSegmentMetadata>>, BoxedUnit>() {
+                                    @Override
+                                    public BoxedUnit apply(Versioned<List<LogSegmentMetadata>> logSegments) {
+                                        readAheadEntryReader.addStateChangeNotification(BKAsyncLogReader.this);
+                                        readAheadEntryReader.start(logSegments.getValue());
+                                        return BoxedUnit.UNIT;
+                                    }
+                                });
+                    } catch (Exception exc) {
+                        notifyOnError(exc);
                     }
+                }
 
-                    @Override
-                    public void onFailure(Throwable cause) {
-                        notifyOnError(cause);
-                    }
-                });
-            } catch (IOException ioe) {
-                notifyOnError(ioe);
-            }
+                @Override
+                public void onFailure(Throwable cause) {
+                    notifyOnError(cause);
+                }
+            });
         }
 
         if (checkClosedOrInError("readNext")) {
@@ -596,6 +592,8 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                         return;
                     }
                 }
+                lastProcessTime.reset().start();
+
                 lastProcessTime.reset().start();
 
                 // If the oldest pending promise is interrupted then we must mark

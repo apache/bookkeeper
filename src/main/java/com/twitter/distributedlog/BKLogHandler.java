@@ -17,12 +17,12 @@
  */
 package com.twitter.distributedlog;
 
-import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.twitter.distributedlog.callback.LogSegmentNamesListener;
 import com.twitter.distributedlog.exceptions.LogEmptyException;
 import com.twitter.distributedlog.exceptions.LogSegmentNotFoundException;
 import com.twitter.distributedlog.exceptions.UnexpectedException;
+import com.twitter.distributedlog.logsegment.LogSegmentEntryStore;
 import com.twitter.distributedlog.metadata.LogMetadata;
 import com.twitter.distributedlog.io.AsyncAbortable;
 import com.twitter.distributedlog.io.AsyncCloseable;
@@ -45,8 +45,6 @@ import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.runtime.AbstractFunction0;
-import scala.runtime.BoxedUnit;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -89,10 +87,10 @@ public abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
 
     protected final LogMetadata logMetadata;
     protected final DistributedLogConfiguration conf;
-    protected final BookKeeperClient bookKeeperClient;
     protected final LogStreamMetadataStore streamMetadataStore;
     protected final LogSegmentMetadataStore metadataStore;
     protected final LogSegmentMetadataCache metadataCache;
+    protected final LogSegmentEntryStore entryStore;
     protected final int firstNumEntriesPerReadLastRecordScan;
     protected final int maxNumEntriesPerReadLastRecordScan;
     protected volatile long lastLedgerRollingTimeMillis = -1;
@@ -122,14 +120,13 @@ public abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
      */
     BKLogHandler(LogMetadata metadata,
                  DistributedLogConfiguration conf,
-                 BookKeeperClientBuilder bkcBuilder,
                  LogStreamMetadataStore streamMetadataStore,
                  LogSegmentMetadataCache metadataCache,
+                 LogSegmentEntryStore entryStore,
                  OrderedScheduler scheduler,
                  StatsLogger statsLogger,
                  AlertStatsLogger alertStatsLogger,
                  String lockClientId) {
-        Preconditions.checkNotNull(bkcBuilder);
         this.logMetadata = metadata;
         this.conf = conf;
         this.scheduler = scheduler;
@@ -140,10 +137,10 @@ public abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
                 conf.isLogSegmentSequenceNumberValidationEnabled());
         firstNumEntriesPerReadLastRecordScan = conf.getFirstNumEntriesPerReadLastRecordScan();
         maxNumEntriesPerReadLastRecordScan = conf.getMaxNumEntriesPerReadLastRecordScan();
-        this.bookKeeperClient = bkcBuilder.build();
         this.streamMetadataStore = streamMetadataStore;
         this.metadataStore = streamMetadataStore.getLogSegmentMetadataStore();
         this.metadataCache = metadataCache;
+        this.entryStore = entryStore;
         this.lockClientId = lockClientId;
 
         // Traces
@@ -293,8 +290,6 @@ public abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
     }
 
     private Future<LogRecordWithDLSN> asyncReadFirstUserRecord(LogSegmentMetadata ledger, DLSN beginDLSN) {
-        final LedgerHandleCache handleCache =
-                LedgerHandleCache.newBuilder().bkc(bookKeeperClient).conf(conf).build();
         return ReadUtils.asyncReadFirstUserRecord(
                 getFullyQualifiedName(),
                 ledger,
@@ -302,15 +297,9 @@ public abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
                 maxNumEntriesPerReadLastRecordScan,
                 new AtomicInteger(0),
                 scheduler,
-                handleCache,
+                entryStore,
                 beginDLSN
-        ).ensure(new AbstractFunction0<BoxedUnit>() {
-            @Override
-            public BoxedUnit apply() {
-                handleCache.clear();
-                return BoxedUnit.UNIT;
-            }
-        });
+        );
     }
 
     /**
@@ -422,8 +411,6 @@ public abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
                                                          final boolean includeEndOfStream) {
         final AtomicInteger numRecordsScanned = new AtomicInteger(0);
         final Stopwatch stopwatch = Stopwatch.createStarted();
-        final LedgerHandleCache handleCache =
-                LedgerHandleCache.newBuilder().bkc(bookKeeperClient).conf(conf).build();
         return ReadUtils.asyncReadLastRecord(
                 getFullyQualifiedName(),
                 l,
@@ -434,7 +421,7 @@ public abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
                 maxNumEntriesPerReadLastRecordScan,
                 numRecordsScanned,
                 scheduler,
-                handleCache
+                entryStore
         ).addEventListener(new FutureEventListener<LogRecordWithDLSN>() {
             @Override
             public void onSuccess(LogRecordWithDLSN value) {
@@ -445,12 +432,6 @@ public abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
             @Override
             public void onFailure(Throwable cause) {
                 recoverLastEntryStats.registerFailedEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
-            }
-        }).ensure(new AbstractFunction0<BoxedUnit>() {
-            @Override
-            public BoxedUnit apply() {
-                handleCache.clear();
-                return BoxedUnit.UNIT;
             }
         });
     }

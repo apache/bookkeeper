@@ -18,29 +18,25 @@
 package com.twitter.distributedlog;
 
 import java.io.IOException;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.LedgerEntry;
-import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.twitter.distributedlog.logsegment.LogSegmentEntryStore;
+import com.twitter.distributedlog.logsegment.LogSegmentRandomAccessEntryReader;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.twitter.distributedlog.selector.FirstDLSNNotLessThanSelector;
 import com.twitter.distributedlog.selector.FirstTxIdNotLessThanSelector;
 import com.twitter.distributedlog.selector.LastRecordSelector;
 import com.twitter.distributedlog.selector.LogRecordSelector;
-import com.twitter.distributedlog.util.FutureUtils;
 import com.twitter.distributedlog.util.FutureUtils.FutureEventListenerRunnable;
 import com.twitter.util.Future;
 import com.twitter.util.FutureEventListener;
 import com.twitter.util.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import scala.runtime.AbstractFunction0;
 import scala.runtime.BoxedUnit;
 
@@ -58,14 +54,14 @@ public class ReadUtils {
     //
 
     /**
-     * Read last record from a ledger.
+     * Read last record from a log segment.
      *
      * @param streamName
      *          fully qualified stream name (used for logging)
      * @param l
-     *          ledger descriptor.
+     *          log segment metadata.
      * @param fence
-     *          whether to fence the ledger.
+     *          whether to fence the log segment.
      * @param includeControl
      *          whether to include control record.
      * @param includeEndOfStream
@@ -78,8 +74,8 @@ public class ReadUtils {
      *          num of records scanned to get last record
      * @param executorService
      *          executor service used for processing entries
-     * @param handleCache
-     *          ledger handle cache
+     * @param entryStore
+     *          log segment entry store
      * @return a future with last record.
      */
     public static Future<LogRecordWithDLSN> asyncReadLastRecord(
@@ -92,20 +88,20 @@ public class ReadUtils {
             final int scanMaxBatchSize,
             final AtomicInteger numRecordsScanned,
             final ExecutorService executorService,
-            final LedgerHandleCache handleCache) {
+            final LogSegmentEntryStore entryStore) {
         final LogRecordSelector selector = new LastRecordSelector();
         return asyncReadRecord(streamName, l, fence, includeControl, includeEndOfStream, scanStartBatchSize,
-                               scanMaxBatchSize, numRecordsScanned, executorService, handleCache,
+                               scanMaxBatchSize, numRecordsScanned, executorService, entryStore,
                                selector, true /* backward */, 0L);
     }
 
     /**
-     * Read first record from a ledger with a DLSN larger than that given.
+     * Read first record from a log segment with a DLSN larger than that given.
      *
      * @param streamName
      *          fully qualified stream name (used for logging)
      * @param l
-     *          ledger descriptor.
+     *          log segment metadata.
      * @param scanStartBatchSize
      *          first num entries used for read last record scan
      * @param scanMaxBatchSize
@@ -114,6 +110,8 @@ public class ReadUtils {
      *          num of records scanned to get last record
      * @param executorService
      *          executor service used for processing entries
+     * @param entryStore
+     *          log segment entry store
      * @param dlsn
      *          threshold dlsn
      * @return a future with last record.
@@ -125,7 +123,7 @@ public class ReadUtils {
             final int scanMaxBatchSize,
             final AtomicInteger numRecordsScanned,
             final ExecutorService executorService,
-            final LedgerHandleCache handleCache,
+            final LogSegmentEntryStore entryStore,
             final DLSN dlsn) {
         long startEntryId = 0L;
         if (l.getLogSegmentSequenceNumber() == dlsn.getLogSegmentSequenceNo()) {
@@ -133,7 +131,7 @@ public class ReadUtils {
         }
         final LogRecordSelector selector = new FirstDLSNNotLessThanSelector(dlsn);
         return asyncReadRecord(streamName, l, false, false, false, scanStartBatchSize,
-                               scanMaxBatchSize, numRecordsScanned, executorService, handleCache,
+                               scanMaxBatchSize, numRecordsScanned, executorService, entryStore,
                                selector, false /* backward */, startEntryId);
     }
 
@@ -233,14 +231,12 @@ public class ReadUtils {
     }
 
     /**
-     * Read record from a given range of ledger entries.
+     * Read record from a given range of log segment entries.
      *
      * @param streamName
      *          fully qualified stream name (used for logging)
-     * @param ledgerDescriptor
-     *          ledger descriptor.
-     * @param handleCache
-     *          ledger handle cache.
+     * @param reader
+     *          log segment random access reader
      * @param executorService
      *          executor service used for processing entries
      * @param context
@@ -249,8 +245,7 @@ public class ReadUtils {
      */
     private static Future<LogRecordWithDLSN> asyncReadRecordFromEntries(
             final String streamName,
-            final LedgerDescriptor ledgerDescriptor,
-            LedgerHandleCache handleCache,
+            final LogSegmentRandomAccessEntryReader reader,
             final LogSegmentMetadata metadata,
             final ExecutorService executorService,
             final ScanContext context,
@@ -260,22 +255,19 @@ public class ReadUtils {
         final long endEntryId = context.curEndEntryId.get();
         if (LOG.isDebugEnabled()) {
             LOG.debug("{} reading entries [{} - {}] from {}.",
-                    new Object[] { streamName, startEntryId, endEntryId, ledgerDescriptor });
+                    new Object[] { streamName, startEntryId, endEntryId, metadata});
         }
-        FutureEventListener<Enumeration<LedgerEntry>> readEntriesListener =
-            new FutureEventListener<Enumeration<LedgerEntry>>() {
+        FutureEventListener<List<Entry.Reader>> readEntriesListener =
+            new FutureEventListener<List<Entry.Reader>>() {
                 @Override
-                public void onSuccess(final Enumeration<LedgerEntry> entries) {
+                public void onSuccess(final List<Entry.Reader> entries) {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("{} finished reading entries [{} - {}] from {}",
-                                new Object[]{ streamName, startEntryId, endEntryId, ledgerDescriptor });
+                                new Object[]{ streamName, startEntryId, endEntryId, metadata});
                     }
-                    LogRecordWithDLSN record = null;
-                    while (entries.hasMoreElements()) {
-                        LedgerEntry entry = entries.nextElement();
+                    for (Entry.Reader entry : entries) {
                         try {
-                            visitEntryRecords(
-                                    streamName, metadata, ledgerDescriptor.getLogSegmentSequenceNo(), entry, context, selector);
+                            visitEntryRecords(entry, context, selector);
                         } catch (IOException ioe) {
                             // exception is only thrown due to bad ledger entry, so it might be corrupted
                             // we shouldn't do anything beyond this point. throw the exception to application
@@ -284,24 +276,21 @@ public class ReadUtils {
                         }
                     }
 
-                    record = selector.result();
+                    LogRecordWithDLSN record = selector.result();
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("{} got record from entries [{} - {}] of {} : {}",
                                 new Object[]{streamName, startEntryId, endEntryId,
-                                        ledgerDescriptor, record});
+                                        metadata, record});
                     }
                     promise.setValue(record);
                 }
 
                 @Override
                 public void onFailure(final Throwable cause) {
-                    String errMsg = "Error reading entries [" + startEntryId + "-" + endEntryId
-                                + "] for reading record of " + streamName;
-                    promise.setException(new IOException(errMsg,
-                            BKException.create(FutureUtils.bkResultCode(cause))));
+                    promise.setException(cause);
                 }
             };
-        handleCache.asyncReadEntries(ledgerDescriptor, startEntryId, endEntryId)
+        reader.readEntries(startEntryId, endEntryId)
                 .addEventListener(FutureEventListenerRunnable.of(readEntriesListener, executorService));
         return promise;
     }
@@ -309,10 +298,6 @@ public class ReadUtils {
     /**
      * Process each record using LogRecordSelector.
      *
-     * @param streamName
-     *          fully qualified stream name (used for logging)
-     * @param logSegmentSeqNo
-     *          ledger sequence number
      * @param entry
      *          ledger entry
      * @param context
@@ -321,22 +306,13 @@ public class ReadUtils {
      * @throws IOException
      */
     private static void visitEntryRecords(
-            String streamName,
-            LogSegmentMetadata metadata,
-            long logSegmentSeqNo,
-            LedgerEntry entry,
+            Entry.Reader entry,
             ScanContext context,
             LogRecordSelector selector) throws IOException {
-        Entry.Reader reader = Entry.newBuilder()
-                .setLogSegmentInfo(logSegmentSeqNo, metadata.getStartSequenceId())
-                .setEntryId(entry.getEntryId())
-                .setEnvelopeEntry(metadata.getEnvelopeEntries())
-                .setInputStream(entry.getEntryInputStream())
-                .buildReader();
-        LogRecordWithDLSN nextRecord = reader.nextRecord();
+        LogRecordWithDLSN nextRecord = entry.nextRecord();
         while (nextRecord != null) {
             LogRecordWithDLSN record = nextRecord;
-            nextRecord = reader.nextRecord();
+            nextRecord = entry.nextRecord();
             context.numRecordsScanned.incrementAndGet();
             if (!context.includeControl && record.isControl()) {
                 continue;
@@ -353,10 +329,8 @@ public class ReadUtils {
      *
      * @param streamName
      *          fully qualified stream name (used for logging)
-     * @param ledgerDescriptor
-     *          ledger descriptor.
-     * @param handleCache
-     *          ledger handle cache.
+     * @param reader
+     *          log segment random access reader
      * @param executorService
      *          executor service used for processing entries
      * @param promise
@@ -366,8 +340,7 @@ public class ReadUtils {
      */
     private static void asyncReadRecordFromEntries(
             final String streamName,
-            final LedgerDescriptor ledgerDescriptor,
-            final LedgerHandleCache handleCache,
+            final LogSegmentRandomAccessEntryReader reader,
             final LogSegmentMetadata metadata,
             final ExecutorService executorService,
             final Promise<LogRecordWithDLSN> promise,
@@ -380,7 +353,7 @@ public class ReadUtils {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("{} read record from [{} - {}] of {} : {}",
                                 new Object[]{streamName, context.curStartEntryId.get(), context.curEndEntryId.get(),
-                                        ledgerDescriptor, value});
+                                        metadata, value});
                     }
                     if (null != value) {
                         promise.setValue(value);
@@ -393,8 +366,7 @@ public class ReadUtils {
                     }
                     // scan next range
                     asyncReadRecordFromEntries(streamName,
-                            ledgerDescriptor,
-                            handleCache,
+                            reader,
                             metadata,
                             executorService,
                             promise,
@@ -407,14 +379,13 @@ public class ReadUtils {
                     promise.setException(cause);
                 }
             };
-        asyncReadRecordFromEntries(streamName, ledgerDescriptor, handleCache, metadata, executorService, context, selector)
+        asyncReadRecordFromEntries(streamName, reader, metadata, executorService, context, selector)
                 .addEventListener(FutureEventListenerRunnable.of(readEntriesListener, executorService));
     }
 
     private static void asyncReadRecordFromLogSegment(
             final String streamName,
-            final LedgerDescriptor ledgerDescriptor,
-            final LedgerHandleCache handleCache,
+            final LogSegmentRandomAccessEntryReader reader,
             final LogSegmentMetadata metadata,
             final ExecutorService executorService,
             final int scanStartBatchSize,
@@ -426,16 +397,10 @@ public class ReadUtils {
             final LogRecordSelector selector,
             final boolean backward,
             final long startEntryId) {
-        final long lastAddConfirmed;
-        try {
-            lastAddConfirmed = handleCache.getLastAddConfirmed(ledgerDescriptor);
-        } catch (BKException e) {
-            promise.setException(e);
-            return;
-        }
+        final long lastAddConfirmed = reader.getLastAddConfirmed();
         if (lastAddConfirmed < 0) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Ledger {} is empty for {}.", new Object[] { ledgerDescriptor, streamName });
+                LOG.debug("Log segment {} is empty for {}.", new Object[] { metadata, streamName });
             }
             promise.setValue(null);
             return;
@@ -444,7 +409,7 @@ public class ReadUtils {
                 startEntryId, lastAddConfirmed,
                 scanStartBatchSize, scanMaxBatchSize,
                 includeControl, includeEndOfStream, backward, numRecordsScanned);
-        asyncReadRecordFromEntries(streamName, ledgerDescriptor, handleCache, metadata, executorService,
+        asyncReadRecordFromEntries(streamName, reader, metadata, executorService,
                                    promise, context, selector);
     }
 
@@ -458,25 +423,25 @@ public class ReadUtils {
             final int scanMaxBatchSize,
             final AtomicInteger numRecordsScanned,
             final ExecutorService executorService,
-            final LedgerHandleCache handleCache,
+            final LogSegmentEntryStore entryStore,
             final LogRecordSelector selector,
             final boolean backward,
             final long startEntryId) {
 
         final Promise<LogRecordWithDLSN> promise = new Promise<LogRecordWithDLSN>();
 
-        FutureEventListener<LedgerDescriptor> openLedgerListener =
-            new FutureEventListener<LedgerDescriptor>() {
+        FutureEventListener<LogSegmentRandomAccessEntryReader> openReaderListener =
+            new FutureEventListener<LogSegmentRandomAccessEntryReader>() {
                 @Override
-                public void onSuccess(final LedgerDescriptor ledgerDescriptor) {
+                public void onSuccess(final LogSegmentRandomAccessEntryReader reader) {
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("{} Opened logsegment {} for reading record",
+                        LOG.debug("{} Opened log segment {} for reading record",
                                 streamName, l);
                     }
                     promise.ensure(new AbstractFunction0<BoxedUnit>() {
                         @Override
                         public BoxedUnit apply() {
-                            handleCache.asyncCloseLedger(ledgerDescriptor);
+                            reader.asyncClose();
                             return BoxedUnit.UNIT;
                         }
                     });
@@ -485,7 +450,7 @@ public class ReadUtils {
                                 (backward ? "backward" : "forward"), streamName, l});
                     }
                     asyncReadRecordFromLogSegment(
-                            streamName, ledgerDescriptor, handleCache, l, executorService,
+                            streamName, reader, l, executorService,
                             scanStartBatchSize, scanMaxBatchSize,
                             includeControl, includeEndOfStream,
                             promise, numRecordsScanned, selector, backward, startEntryId);
@@ -493,13 +458,11 @@ public class ReadUtils {
 
                 @Override
                 public void onFailure(final Throwable cause) {
-                    String errMsg = "Error opening log segment [" + l + "] for reading record of " + streamName;
-                    promise.setException(new IOException(errMsg,
-                            BKException.create(FutureUtils.bkResultCode(cause))));
+                    promise.setException(cause);
                 }
             };
-        handleCache.asyncOpenLedger(l, fence)
-                .addEventListener(FutureEventListenerRunnable.of(openLedgerListener, executorService));
+        entryStore.openRandomAccessReader(l, fence)
+                .addEventListener(FutureEventListenerRunnable.of(openReaderListener, executorService));
         return promise;
     }
 
@@ -530,8 +493,8 @@ public class ReadUtils {
      *          transaction id
      * @param executorService
      *          executor service used for processing entries
-     * @param handleCache
-     *          ledger handle cache
+     * @param entryStore
+     *          log segment entry store
      * @param nWays
      *          how many number of entries to search in parallel
      * @return found log record. none if all transaction ids are less than provided <code>transactionId</code>.
@@ -541,7 +504,7 @@ public class ReadUtils {
             final LogSegmentMetadata segment,
             final long transactionId,
             final ExecutorService executorService,
-            final LedgerHandleCache handleCache,
+            final LogSegmentEntryStore entryStore,
             final int nWays) {
         if (!segment.isInProgress()) {
             if (segment.getLastTxId() < transactionId) {
@@ -554,25 +517,19 @@ public class ReadUtils {
 
         final Promise<Optional<LogRecordWithDLSN>> promise =
                 new Promise<Optional<LogRecordWithDLSN>>();
-        final FutureEventListener<LedgerDescriptor> openLedgerListener =
-            new FutureEventListener<LedgerDescriptor>() {
+        final FutureEventListener<LogSegmentRandomAccessEntryReader> openReaderListener =
+            new FutureEventListener<LogSegmentRandomAccessEntryReader>() {
                 @Override
-                public void onSuccess(final LedgerDescriptor ld) {
+                public void onSuccess(final LogSegmentRandomAccessEntryReader reader) {
                     promise.ensure(new AbstractFunction0<BoxedUnit>() {
                         @Override
                         public BoxedUnit apply() {
-                            handleCache.asyncCloseLedger(ld);
+                            reader.asyncClose();
                             return BoxedUnit.UNIT;
                         }
 
                     });
-                    long lastEntryId;
-                    try {
-                        lastEntryId = handleCache.getLastAddConfirmed(ld);
-                    } catch (BKException e) {
-                        promise.setException(e);
-                        return;
-                    }
+                    long lastEntryId = reader.getLastAddConfirmed();
                     if (lastEntryId < 0) {
                         // it means that the log segment is created but not written yet or an empty log segment.
                         // it is equivalent to 'all log records whose transaction id is less than provided transactionId'
@@ -586,8 +543,7 @@ public class ReadUtils {
                                 new FirstTxIdNotLessThanSelector(transactionId);
                         asyncReadRecordFromEntries(
                                 logName,
-                                ld,
-                                handleCache,
+                                reader,
                                 segment,
                                 executorService,
                                 new SingleEntryScanContext(0L),
@@ -608,11 +564,10 @@ public class ReadUtils {
                     }
                     getLogRecordNotLessThanTxIdFromEntries(
                             logName,
-                            ld,
                             segment,
                             transactionId,
                             executorService,
-                            handleCache,
+                            reader,
                             Lists.newArrayList(0L, lastEntryId),
                             nWays,
                             Optional.<LogRecordWithDLSN>absent(),
@@ -621,14 +576,12 @@ public class ReadUtils {
 
                 @Override
                 public void onFailure(final Throwable cause) {
-                    String errMsg = "Error opening log segment [" + segment
-                            + "] for find record from " + logName;
-                    promise.setException(new IOException(errMsg,
-                            BKException.create(FutureUtils.bkResultCode(cause))));
+                    promise.setException(cause);
                 }
             };
-        handleCache.asyncOpenLedger(segment, false)
-                .addEventListener(FutureEventListenerRunnable.of(openLedgerListener, executorService));
+
+        entryStore.openRandomAccessReader(segment, false)
+                .addEventListener(FutureEventListenerRunnable.of(openReaderListener, executorService));
         return promise;
     }
 
@@ -644,8 +597,8 @@ public class ReadUtils {
      *          provided transaction id to search
      * @param executorService
      *          executor service
-     * @param handleCache
-     *          handle cache
+     * @param reader
+     *          log segment random access reader
      * @param entriesToSearch
      *          list of entries to search
      * @param nWays
@@ -657,11 +610,10 @@ public class ReadUtils {
      */
     private static void getLogRecordNotLessThanTxIdFromEntries(
             final String logName,
-            final LedgerDescriptor ld,
             final LogSegmentMetadata segment,
             final long transactionId,
             final ExecutorService executorService,
-            final LedgerHandleCache handleCache,
+            final LogSegmentRandomAccessEntryReader reader,
             final List<Long> entriesToSearch,
             final int nWays,
             final Optional<LogRecordWithDLSN> prevFoundRecord,
@@ -672,8 +624,7 @@ public class ReadUtils {
             LogRecordSelector selector = new FirstTxIdNotLessThanSelector(transactionId);
             Future<LogRecordWithDLSN> searchResult = asyncReadRecordFromEntries(
                     logName,
-                    ld,
-                    handleCache,
+                    reader,
                     segment,
                     executorService,
                     new SingleEntryScanContext(entryId),
@@ -686,11 +637,10 @@ public class ReadUtils {
                     public void onSuccess(List<LogRecordWithDLSN> resultList) {
                         processSearchResults(
                                 logName,
-                                ld,
                                 segment,
                                 transactionId,
                                 executorService,
-                                handleCache,
+                                reader,
                                 resultList,
                                 nWays,
                                 prevFoundRecord,
@@ -711,11 +661,10 @@ public class ReadUtils {
      */
     static void processSearchResults(
             final String logName,
-            final LedgerDescriptor ld,
             final LogSegmentMetadata segment,
             final long transactionId,
             final ExecutorService executorService,
-            final LedgerHandleCache handleCache,
+            final LogSegmentRandomAccessEntryReader reader,
             final List<LogRecordWithDLSN> searchResults,
             final int nWays,
             final Optional<LogRecordWithDLSN> prevFoundRecord,
@@ -758,11 +707,10 @@ public class ReadUtils {
         }
         getLogRecordNotLessThanTxIdFromEntries(
                 logName,
-                ld,
                 segment,
                 transactionId,
                 executorService,
-                handleCache,
+                reader,
                 nextSearchBatch,
                 nWays,
                 Optional.of(foundRecord),

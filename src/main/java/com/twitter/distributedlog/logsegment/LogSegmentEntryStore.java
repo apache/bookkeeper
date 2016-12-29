@@ -28,6 +28,14 @@ import com.twitter.util.Future;
 public interface LogSegmentEntryStore {
 
     /**
+     * Delete the actual log segment from the entry store.
+     *
+     * @param segment log segment metadata
+     * @return future represent the delete result
+     */
+    Future<LogSegmentMetadata> deleteLogSegment(LogSegmentMetadata segment);
+
+    /**
      * Open the writer for writing data to the log <i>segment</i>.
      *
      * @param segment the log <i>segment</i> to write data to
@@ -45,4 +53,13 @@ public interface LogSegmentEntryStore {
     Future<LogSegmentEntryReader> openReader(LogSegmentMetadata segment,
                                              long startEntryId);
 
+    /**
+     * Open the reader for reading entries from a random access log <i>segment</i>.
+     *
+     * @param segment the log <i>segment</i> to read entries from
+     * @param fence the flag to fence log segment
+     * @return future represent the opened random access reader
+     */
+    Future<LogSegmentRandomAccessEntryReader> openRandomAccessReader(LogSegmentMetadata segment,
+                                                                     boolean fence);
 }

@@ -91,7 +91,7 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
                                               DistributedLogConfiguration conf)
             throws Exception {
         LogSegmentEntryStore store = new BKLogSegmentEntryStore(
-                conf, bkc.get(), scheduler, NullStatsLogger.INSTANCE, AsyncFailureInjector.NULL);
+                conf, bkc, scheduler, NullStatsLogger.INSTANCE, AsyncFailureInjector.NULL);
         return (BKLogSegmentEntryReader) FutureUtils.result(store.openReader(segment, startEntryId));
     }
 

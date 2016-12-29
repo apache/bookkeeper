@@ -99,7 +99,7 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
                 true);
         LogSegmentEntryStore entryStore = new BKLogSegmentEntryStore(
                 conf,
-                bkc.get(),
+                bkc,
                 scheduler,
                 NullStatsLogger.INSTANCE,
                 AsyncFailureInjector.NULL);
