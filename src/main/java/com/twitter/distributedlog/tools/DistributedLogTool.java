@@ -55,6 +55,7 @@ import java.util.regex.Pattern;
 
 import com.twitter.distributedlog.BKDistributedLogNamespace;
 import com.twitter.distributedlog.Entry;
+import com.twitter.distributedlog.callback.NamespaceListener;
 import com.twitter.distributedlog.logsegment.LogSegmentMetadataStore;
 import com.twitter.distributedlog.namespace.DistributedLogNamespace;
 import com.twitter.distributedlog.util.Utils;
@@ -486,6 +487,56 @@ public class DistributedLogTool extends Tool {
                 System.out.println(stream);
             }
             System.out.println("--------------------------------");
+        }
+    }
+
+    public static class WatchNamespaceCommand extends PerDLCommand implements NamespaceListener {
+        private Set<String> currentSet = Sets.<String>newHashSet();
+        private CountDownLatch doneLatch = new CountDownLatch(1);
+
+        WatchNamespaceCommand() {
+            super("watch", "watch and report changes for a dl namespace");
+        }
+
+        @Override
+        protected void parseCommandLine(CommandLine cmdline) throws ParseException {
+            super.parseCommandLine(cmdline);
+        }
+
+        @Override
+        protected String getUsage() {
+            return "watch [options]";
+        }
+
+        @Override
+        protected int runCmd() throws Exception {
+            watchAndReportChanges(getNamespace());
+            doneLatch.await();
+            return 0;
+        }
+
+        @Override
+        public synchronized void onStreamsChanged(Iterator<String> streams) {
+            Set<String> updatedSet = Sets.newHashSet(streams);
+            Set<String> oldStreams = Sets.difference(currentSet, updatedSet);
+            Set<String> newStreams = Sets.difference(updatedSet, currentSet);
+            currentSet = updatedSet;
+
+            System.out.println("Old streams : ");
+            for (String stream : oldStreams) {
+                System.out.println(stream);
+            }
+
+            System.out.println("New streams : ");
+            for (String stream : newStreams) {
+                System.out.println(stream);
+            }
+
+            System.out.println("");
+        }
+
+        protected void watchAndReportChanges(DistributedLogNamespace namespace) throws Exception {
+            namespace.registerNamespaceListener(this);
         }
     }
 
@@ -2696,6 +2747,7 @@ public class DistributedLogTool extends Tool {
         addCommand(new TruncateStreamCommand());
         addCommand(new DeserializeDLSNCommand());
         addCommand(new SerializeDLSNCommand());
+        addCommand(new WatchNamespaceCommand());
     }
 
     @Override
