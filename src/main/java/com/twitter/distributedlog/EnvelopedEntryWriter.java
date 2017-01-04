@@ -176,7 +176,7 @@ class EnvelopedEntryWriter implements Writer {
     }
 
     @Override
-    public DLSN finalizeTransmit(long lssn, long entryId) {
+    public synchronized DLSN finalizeTransmit(long lssn, long entryId) {
         return new DLSN(lssn, entryId, count - 1);
     }
 

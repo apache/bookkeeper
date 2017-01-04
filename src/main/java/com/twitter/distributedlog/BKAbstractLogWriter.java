@@ -54,7 +54,7 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
 
     // States
     private Promise<Void> closePromise = null;
-    private boolean forceRolling = false;
+    private volatile boolean forceRolling = false;
     private boolean forceRecovery = false;
 
     // Truncation Related
@@ -531,7 +531,7 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
     }
 
     @VisibleForTesting
-    public synchronized void setForceRolling(boolean forceRolling) {
+    public void setForceRolling(boolean forceRolling) {
         this.forceRolling = forceRolling;
     }
 

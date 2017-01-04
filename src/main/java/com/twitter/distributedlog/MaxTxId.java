@@ -65,7 +65,7 @@ class MaxTxId {
         return currentMax;
     }
 
-    public Versioned<Long> getVersionedData(long txId) {
+    public synchronized Versioned<Long> getVersionedData(long txId) {
         return new Versioned<Long>(Math.max(txId, get()), version);
     }
 

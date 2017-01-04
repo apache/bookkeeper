@@ -420,7 +420,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
      *
      * @return position-within-logsegment of the last written log record.
      */
-    int getPositionWithinLogSegment() {
+    synchronized int getPositionWithinLogSegment() {
         return positionWithinLogSegment;
     }
 

@@ -336,12 +336,12 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
     }
 
     @VisibleForTesting
-    Future<ZKDistributedLock> getLockReacquireFuture() {
+    synchronized Future<ZKDistributedLock> getLockReacquireFuture() {
         return lockReacquireFuture;
     }
 
     @VisibleForTesting
-    Future<ZKDistributedLock> getLockAcquireFuture() {
+    synchronized Future<ZKDistributedLock> getLockAcquireFuture() {
         return lockAcquireFuture;
     }
 
