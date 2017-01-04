@@ -1279,15 +1279,18 @@ public class Bookie extends BookieCriticalThread {
                 // mark bookie as in shutting down progress
                 shuttingdown = true;
 
-                // Shutdown the state service
-                stateService.shutdown();
+                // turn bookie to read only during shutting down process
+                LOG.info("Turning bookie to read only during shut down");
+                this.readOnly.set(true);
+
+                // Shutdown Sync thread
+                syncThread.shutdown();
 
                 // Shutdown journals
                 for (Journal journal : journals) {
                     journal.shutdown();
                 }
                 this.join();
-                syncThread.shutdown();
 
                 // Shutdown the EntryLogger which has the GarbageCollector Thread running
                 ledgerStorage.shutdown();
@@ -1305,6 +1308,9 @@ public class Bookie extends BookieCriticalThread {
                 if (indexDirsManager != ledgerDirsManager) {
                     idxMonitor.shutdown();
                 }
+                
+                // Shutdown the state service
+                stateService.shutdown();
             }
             // Shutdown the ZK client
             if (zk != null) {
