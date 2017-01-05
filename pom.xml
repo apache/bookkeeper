@@ -206,7 +206,7 @@
           <properties>
             <property>
               <name>listener</name>
-              <value>com.twitter.distributedlog.TimedOutTestsListener</value>
+              <value>org.apache.distributedlog.TimedOutTestsListener</value>
             </property>
           </properties>
         </configuration>
