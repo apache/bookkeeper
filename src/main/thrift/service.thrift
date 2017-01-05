@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace java com.twitter.distributedlog.thrift.service
+namespace java org.apache.distributedlog.thrift.service
 
 /* Response stats codes */
 enum StatusCode {
