@@ -189,6 +189,7 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
         assertEquals(0, writer.position());
 
         Await.result(writer.write(byteStream));
+        Thread.sleep(100); // let WriteCompleteListener have time to run
         assertEquals(33, writer.position());
 
         writer.close();
