@@ -20,7 +20,7 @@ package org.apache.distributedlog;
 /**
  * A iterator to iterate records in the stream.
  */
-public interface RecordStream {
+interface RecordStream {
     /**
      * advance <i>numRecords</i> records.
      */
