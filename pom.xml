@@ -170,12 +170,6 @@
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven-compiler-plugin.version}</version>
-        <configuration>
-          <compilerArguments>
-            <Xlint:deprecation />
-            <Xlint:unchecked />
-          </compilerArguments>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
