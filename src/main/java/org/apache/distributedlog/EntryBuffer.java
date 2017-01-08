@@ -27,7 +27,7 @@ import java.io.IOException;
  * Write representation of a {@link Entry}.
  * It is a buffer of log record set, used for transmission.
  */
-public interface EntryBuffer extends TransmitListener {
+interface EntryBuffer extends TransmitListener {
 
     /**
      * Return if this record set contains user records.

@@ -63,7 +63,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * NOTE: all the state changes happen in the same thread. All *unsafe* methods should be submitted to the order
  * scheduler using stream name as the key.
  */
-public class ReadAheadEntryReader implements
+class ReadAheadEntryReader implements
         AsyncCloseable,
         LogSegmentListener,
         LogSegmentEntryReader.StateChangeListener,

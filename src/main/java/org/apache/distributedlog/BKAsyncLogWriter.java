@@ -66,7 +66,7 @@ import java.util.List;
  * </ul>
  * See {@link BKLogSegmentWriter} for segment writer stats.
  */
-public class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
+class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
 
     static final Logger LOG = LoggerFactory.getLogger(BKAsyncLogWriter.class);
 

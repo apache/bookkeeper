@@ -20,7 +20,7 @@ package org.apache.distributedlog;
 import org.apache.distributedlog.exceptions.OverCapacityException;
 import org.apache.distributedlog.util.PermitLimiter;
 
-public class WriteLimiter {
+class WriteLimiter {
 
     String streamName;
     final PermitLimiter streamLimiter;

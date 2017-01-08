@@ -154,11 +154,11 @@ import java.util.List;
  *
  * </pre>
  *
- * @see AsyncLogReader
+ * <p>
+ * NOTE: Extending {@link AsyncCloseable}: BKSyncLogReader is implemented based on BKAsyncLogReader, exposing
+ * the {@link AsyncCloseable} interface so the reader could be closed asynchronously
  *
- * NOTE:
- * 1. Extending {@link AsyncCloseable}: BKSyncLogReader is implemented based on BKAsyncLogReader, exposing
- *    the {@link AsyncCloseable} interface so the reader could be closed asynchronously
+ * @see AsyncLogReader
  */
 public interface LogReader extends Closeable, AsyncCloseable {
 

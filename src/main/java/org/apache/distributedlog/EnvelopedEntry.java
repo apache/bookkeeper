@@ -67,7 +67,7 @@ import org.apache.distributedlog.util.BitMaskUtils;
  *      10      : Unused
  *      11      : Unused
  */
-public class EnvelopedEntry {
+class EnvelopedEntry {
 
     public static final int VERSION_LENGTH = 1; // One byte long
     public static final byte VERSION_ONE = 1;

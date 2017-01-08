@@ -82,7 +82,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @see BKLogWriteHandler
  * @see BKLogReadHandler
  */
-public abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
+abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
     static final Logger LOG = LoggerFactory.getLogger(BKLogHandler.class);
 
     protected final LogMetadata logMetadata;

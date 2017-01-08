@@ -26,6 +26,9 @@ import org.apache.zookeeper.data.ACL;
 
 import static com.google.common.base.Charsets.UTF_8;
 
+/**
+ * Constants used in DistributedLog.
+ */
 public class DistributedLogConstants {
     public static final byte[] EMPTY_BYTES = new byte[0];
     public static final String SCHEME_PREFIX = "distributedlog";
