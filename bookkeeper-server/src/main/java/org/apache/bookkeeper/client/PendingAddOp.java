@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
+import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
@@ -54,7 +54,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
 
     ByteBuf payload;
     ByteBuf toSend;
-    AddCallback cb;
+    AddCallbackWithLatency cb;
     Object ctx;
     long entryId;
     int entryLength;
@@ -65,6 +65,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     LedgerHandle lh;
     boolean isRecoveryAdd = false;
     long requestTimeNanos;
+    long qwcLatency; // Quorum Write Completion Latency after response from quorum bookies.
 
     long timeoutNanos;
 
@@ -74,7 +75,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     boolean callbackTriggered;
     boolean hasRun;
 
-    static PendingAddOp create(LedgerHandle lh, ByteBuf payload, AddCallback cb, Object ctx) {
+    static PendingAddOp create(LedgerHandle lh, ByteBuf payload, AddCallbackWithLatency cb, Object ctx) {
         PendingAddOp op = RECYCLER.get();
         op.lh = lh;
         op.isRecoveryAdd = false;
@@ -93,6 +94,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         op.callbackTriggered = false;
         op.hasRun = false;
         op.requestTimeNanos = Long.MAX_VALUE;
+        op.qwcLatency = 0;
         return op;
     }
 
@@ -322,6 +324,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
 
         if (ackQuorum && !completed) {
             completed = true;
+            this.qwcLatency = MathUtils.elapsedNanos(requestTimeNanos);
 
             sendAddSuccessCallbacks();
         }
@@ -344,7 +347,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         } else {
             addOpLogger.registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
         }
-        cb.addComplete(rc, lh, entryId, ctx);
+        cb.addCompleteWithLatency(rc, lh, entryId, qwcLatency, ctx);
         callbackTriggered = true;
 
         maybeRecycle();
