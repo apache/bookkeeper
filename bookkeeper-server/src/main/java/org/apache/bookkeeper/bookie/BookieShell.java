@@ -76,6 +76,7 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.HexDump;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -870,6 +871,10 @@ public class BookieShell implements Tool {
         ReadLogCmd() {
             super(CMD_READLOG);
             rlOpts.addOption("m", "msg", false, "Print message body");
+            rlOpts.addOption("l", "ledgerid", true, "Ledger ID");
+            rlOpts.addOption("e", "entryid", true, "EntryID");
+            rlOpts.addOption("sp", "startpos", true, "Start Position");
+            rlOpts.addOption("ep", "endpos", true, "End Position");
         }
 
         @Override
@@ -901,8 +906,26 @@ public class BookieShell implements Tool {
                 String idString = name.split("\\.")[0];
                 logId = Long.parseLong(idString, 16);
             }
+
+            final long lId = getOptionLongValue(cmdLine, "ledgerid", -1);
+            final long eId = getOptionLongValue(cmdLine, "entryid", -1);
+            final long startpos = getOptionLongValue(cmdLine, "startpos", -1);
+            final long endpos = getOptionLongValue(cmdLine, "endpos", -1);
+
             // scan entry log
-            scanEntryLog(logId, printMsg);
+            if (startpos != -1) {
+                if ((endpos != -1) && (endpos < startpos)) {
+                    System.err
+                            .println("ERROR: StartPosition of the range should be lesser than or equal to EndPosition");
+                    return -1;
+                }
+                scanEntryLogForPositionRange(logId, startpos, endpos, printMsg);
+            } else if (lId != -1) {
+                scanEntryLogForSpecificEntry(logId, lId, eId, printMsg);
+            } else {
+                scanEntryLog(logId, printMsg);
+            }
+
             return 0;
         }
 
@@ -913,7 +936,8 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "readlog      [-msg] <entry_log_id | entry_log_file_name>";
+            return "readlog      [-msg] <entry_log_id | entry_log_file_name> [-ledgerid <ledgerid> [-entryid <entryid>]] "
+                    + "[-startpos <startEntryLogBytePos> [-endpos <endEntryLogBytePos>]]";
         }
 
         @Override
@@ -1912,6 +1936,105 @@ public class BookieShell implements Tool {
         });
     }
 
+    /**
+     * Scan over an entry log file for a particular entry
+     * 
+     * @param logId
+     *          Entry Log File id.
+     * @param ledgerId
+     *          id of the ledger
+     * @param entryId
+     *          entryId of the ledger we are looking for (-1 for all of the entries of the ledger)
+     * @param printMsg
+     *          Whether printing the entry data.
+     * @throws Exception
+     */
+    protected void scanEntryLogForSpecificEntry(long logId, final long lId, final long eId, final boolean printMsg)
+            throws Exception {
+        System.out.println("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)" + " for LedgerId " + lId
+                + ((eId == -1) ? "" : " for EntryId " + eId));
+        final MutableBoolean entryFound = new MutableBoolean(false);
+        scanEntryLog(logId, new EntryLogScanner() {
+            @Override
+            public boolean accept(long ledgerId) {
+                return ((lId == ledgerId) && ((!entryFound.booleanValue()) || (eId == -1)));
+            }
+
+            @Override
+            public void process(long ledgerId, long startPos, ByteBuffer entry) {
+                long entrysLedgerId = entry.getLong();
+                long entrysEntryId = entry.getLong();
+                entry.rewind();
+                if ((ledgerId == entrysLedgerId) && (ledgerId == lId) && ((entrysEntryId == eId)) || (eId == -1)) {
+                    entryFound.setValue(true);
+                    formatEntry(startPos, entry, printMsg);
+                }
+            }
+        });
+        if (!entryFound.booleanValue()) {
+            System.out.println("LedgerId " + lId + ((eId == -1) ? "" : " EntryId " + eId)
+                    + " is not available in the entry log " + logId + " (" + Long.toHexString(logId) + ".log)");
+        }
+    }
+
+    /**
+     * Scan over an entry log file for entries in the given position range
+     * 
+     * @param logId
+     *          Entry Log File id.
+     * @param rangeStartPos
+     *          Start position of the entry we are looking for
+     * @param rangeEndPos
+     *          End position of the entry we are looking for (-1 for till the end of the entrylog)
+     * @param printMsg
+     *          Whether printing the entry data.
+     * @throws Exception
+     */
+    protected void scanEntryLogForPositionRange(long logId, final long rangeStartPos, final long rangeEndPos, final boolean printMsg)
+ throws Exception {
+        System.out.println("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)" + " for PositionRange: "
+                + rangeStartPos + " - " + rangeEndPos);
+        final MutableBoolean entryFound = new MutableBoolean(false);
+        scanEntryLog(logId, new EntryLogScanner() {
+            private MutableBoolean stopScanning = new MutableBoolean(false);
+
+            @Override
+            public boolean accept(long ledgerId) {
+                return !stopScanning.booleanValue();
+            }
+
+            @Override
+            public void process(long ledgerId, long entryStartPos, ByteBuffer entry) {
+                if (!stopScanning.booleanValue()) {
+                    if ((rangeEndPos != -1) && (entryStartPos > rangeEndPos)) {
+                        stopScanning.setValue(true);
+                    } else {
+                        int entrySize = entry.limit();
+                        /**
+                         * entrySize of an entry (inclusive of payload and
+                         * header) value is stored as int value in log file, but
+                         * it is not counted in the entrySize, hence for calculating
+                         * the end position of the entry we need to add additional
+                         * 4 (intsize of entrySize). Please check
+                         * EntryLogger.scanEntryLog.
+                         */
+                        long entryEndPos = entryStartPos + entrySize + 4 - 1;
+                        if (((rangeEndPos == -1) || (entryStartPos <= rangeEndPos)) && (rangeStartPos <= entryEndPos)) {
+                            formatEntry(entryStartPos, entry, printMsg);
+                            entryFound.setValue(true);
+                        }
+                    }
+                }
+            }
+        });
+        if (!entryFound.booleanValue()) {
+            System.out.println("Entry log " + logId + " (" + Long.toHexString(logId)
+                    + ".log) doesn't has any entry in the range " + rangeStartPos + " - " + rangeEndPos
+                    + ". Probably the position range, you have provided is lesser than the LOGFILE_HEADER_SIZE (1024) "
+                    + "or greater than the current log filesize.");
+        }
+    }
+    
     /**
      * Scan a journal file
      *
