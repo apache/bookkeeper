@@ -21,9 +21,8 @@
 set -e
 
 BASEDIR=$(dirname "$0")
-DLOG_ROOT="${BASEDIR}/../.."
 
-DLOG_HOME="${DLOG_ROOT}/distributedlog-core"
+DLOG_HOME="${BASEDIR}/.."
 
 usage() {
   cat <<EOF
@@ -48,7 +47,7 @@ These variable can also be set in conf/dlogenv.sh
 EOF
 }
 
-source "${DLOG_ROOT}"/scripts/common.sh
+source "${DLOG_HOME}"/bin/common.sh
 
 # get arguments
 COMMAND=$1
