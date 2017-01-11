@@ -24,11 +24,17 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
-import java.util.Arrays;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -73,6 +79,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.HexDump;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang.StringUtils;
@@ -110,6 +117,7 @@ public class BookieShell implements Tool {
     static final String CMD_LASTMARK = "lastmark";
     static final String CMD_AUTORECOVERY = "autorecovery";
     static final String CMD_LISTBOOKIES = "listbookies";
+    static final String CMD_LISTFILESONDISC = "listfilesondisc";
     static final String CMD_UPDATECOOKIE = "updatecookie";
     static final String CMD_EXPANDSTORAGE = "expandstorage";
     static final String CMD_UPDATELEDGER = "updateledgers";
@@ -1107,6 +1115,74 @@ public class BookieShell implements Tool {
         }
     }
 
+    class ListDiskFilesCmd extends MyCommand {
+        Options opts = new Options();
+
+        ListDiskFilesCmd() {
+            super(CMD_LISTFILESONDISC);
+            opts.addOption("txn", "journal", false, "Print list of Journal Files");
+            opts.addOption("log", "entrylog", false, "Print list of EntryLog Files");
+            opts.addOption("idx", "index", false, "Print list of Index files");
+        }
+
+        @Override
+        public int runCmd(CommandLine cmdLine) throws Exception {
+
+            boolean journal = cmdLine.hasOption("txn");
+            boolean entrylog = cmdLine.hasOption("log");
+            boolean index = cmdLine.hasOption("idx");
+            boolean all = false;
+
+            if (!journal && !entrylog && !index && !all) {
+                all = true;
+            }
+
+            if (all || journal) {
+                File journalDir = bkConf.getJournalDir();
+                List<File> journalFiles = listFilesAndSort(new File[] { journalDir }, "txn");
+                System.out.println("--------- Printing the list of Journal Files ---------");
+                for (File journalFile : journalFiles) {
+                    System.out.println(journalFile.getName());
+                }
+                System.out.println();
+            }
+            if (all || entrylog) {
+                File[] ledgerDirs = bkConf.getLedgerDirs();
+                List<File> ledgerFiles = listFilesAndSort(ledgerDirs, "log");
+                System.out.println("--------- Printing the list of EntryLog/Ledger Files ---------");
+                for (File ledgerFile : ledgerFiles) {
+                    System.out.println(ledgerFile.getName());
+                }
+                System.out.println();
+            }
+            if (all || index) {
+                File[] indexDirs = (bkConf.getIndexDirs() == null) ? bkConf.getLedgerDirs() : bkConf.getIndexDirs();
+                List<File> indexFiles = listFilesAndSort(indexDirs, "idx");
+                System.out.println("--------- Printing the list of Index Files ---------");
+                for (File indexFile : indexFiles) {
+                    System.out.println(indexFile.getName());
+                }
+            }
+            return 0;
+        }
+
+        @Override
+        String getDescription() {
+            return "List the files in JournalDirectory/LedgerDirectories/IndexDirectories";
+        }
+
+        @Override
+        String getUsage() {
+            return "listfilesondisc  [-journal|-entrylog|-index]";
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+    }
+    
+    
     /**
      * Command to print help message
      */
@@ -1673,6 +1749,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_LASTMARK, new LastMarkCmd());
         commands.put(CMD_AUTORECOVERY, new AutoRecoveryCmd());
         commands.put(CMD_LISTBOOKIES, new ListBookiesCmd());
+        commands.put(CMD_LISTFILESONDISC, new ListDiskFilesCmd());
         commands.put(CMD_UPDATECOOKIE, new UpdateCookieCmd());
         commands.put(CMD_EXPANDSTORAGE, new ExpandStorageCmd());
         commands.put(CMD_UPDATELEDGER, new UpdateLedgerCmd());
@@ -1727,6 +1804,53 @@ public class BookieShell implements Tool {
         String[] newArgs = new String[args.length - 1];
         System.arraycopy(args, 1, newArgs, 0, newArgs.length);
         return cmd.runCmd(newArgs);
+    }
+
+    /**
+     * Returns the sorted list of the files in the given folders with the given file extensions.
+     * Sorting is done on the basis of CreationTime if the CreationTime is not available or if they are equal
+     * then sorting is done by LastModifiedTime  
+     * @param folderNames - array of folders which we need to look recursively for files with given extensions  
+     * @param extensions - the file extensions, which we are interested in
+     * @return sorted list of files
+     */
+    private static List<File> listFilesAndSort(File[] folderNames, String... extensions) {
+        List<File> completeFilesList = new ArrayList<File>();
+        for (int i = 0; i < folderNames.length; i++) {
+            Collection<File> filesCollection = FileUtils.listFiles(folderNames[i], extensions, true);
+            completeFilesList.addAll(filesCollection);
+        }
+        Collections.sort(completeFilesList, new FilesTimeComparator());
+        return completeFilesList;
+    }
+    
+    private static class FilesTimeComparator implements Comparator<File> {
+        @Override
+        public int compare(File file1, File file2) {
+            Path file1Path = Paths.get(file1.getAbsolutePath());
+            Path file2Path = Paths.get(file2.getAbsolutePath());
+            try {
+                BasicFileAttributes file1Attributes = Files.readAttributes(file1Path, BasicFileAttributes.class);
+                BasicFileAttributes file2Attributes = Files.readAttributes(file2Path, BasicFileAttributes.class);
+                FileTime file1CreationTime = file1Attributes.creationTime();
+                FileTime file2CreationTime = file2Attributes.creationTime();
+                int compareValue = file1CreationTime.compareTo(file2CreationTime);
+                /* 
+                 * please check https://docs.oracle.com/javase/7/docs/api/java/nio/file/attribute/BasicFileAttributes.html#creationTime()
+                 * So not all file system implementation store creation time, in that case creationTime()
+                 * method may return FileTime representing the epoch (1970-01-01T00:00:00Z). So in that case 
+                 * it would be better to compare lastModifiedTime 
+                 */
+                if (compareValue == 0) {
+                    FileTime file1LastModifiedTime = file1Attributes.lastModifiedTime();
+                    FileTime file2LastModifiedTime = file2Attributes.lastModifiedTime();
+                    compareValue = file1LastModifiedTime.compareTo(file2LastModifiedTime);
+                }
+                return compareValue;
+            } catch (IOException e) {                
+                return 0;
+            }
+        }
     }
 
     public static void main(String argv[]) throws Exception {
