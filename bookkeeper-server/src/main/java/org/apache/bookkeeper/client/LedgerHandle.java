@@ -797,7 +797,12 @@ public class LedgerHandle implements WriteHandle {
      */
     public void asyncReadLastEntry(ReadCallback cb, Object ctx) {
         long lastEntryId = getLastAddConfirmed();
-        asyncReadEntriesInternal(lastEntryId, lastEntryId, cb, ctx, true);
+        if (lastEntryId < 0) {
+            // Ledger was empty, so there is no last entry to read
+            cb.readComplete(BKException.Code.NoSuchEntryException, this, null, ctx);
+        } else {
+            asyncReadEntriesInternal(lastEntryId, lastEntryId, cb, ctx, true);
+        }
     }
 
     CompletableFuture<LedgerEntries> readEntriesInternalAsync(long firstEntry,
