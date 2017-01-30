@@ -23,6 +23,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1818,8 +1819,11 @@ public class BookieShell implements Tool {
         Collections.sort(completeFilesList, new FilesTimeComparator());
         return completeFilesList;
     }
-    
-    private static class FilesTimeComparator implements Comparator<File> {
+
+    private static class FilesTimeComparator implements Comparator<File>, Serializable {
+
+        private static final long serialVersionUID = 1L;
+
         @Override
         public int compare(File file1, File file2) {
             Path file1Path = Paths.get(file1.getAbsolutePath());

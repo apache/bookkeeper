@@ -72,6 +72,7 @@ public class TestLedgerDirsManager {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
         conf.setDiskCheckInterval(diskCheckInterval);
+        conf.setIsForceGCAllowWhenNoSpace(true);
 
         mockDiskChecker = new MockDiskChecker(threshold, warnThreshold);
         dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(), NullStatsLogger.INSTANCE, mockDiskChecker);
@@ -85,6 +86,16 @@ public class TestLedgerDirsManager {
             FileUtils.deleteDirectory(dir);
         }
         tempDirs.clear();
+    }
+
+    @Test(timeout=60000)
+    public void testGetWritableDir() throws Exception {
+        try {
+            List<File> writeDirs = dirsManager.getWritableLedgerDirs();
+            assertTrue("Must have a writable ledgerDir", writeDirs.size() > 0);
+        } catch (NoWritableLedgerDirException nwlde) {
+            fail("We should have a writeble ledgerDir");
+        }
     }
 
     @Test(timeout=60000)
@@ -108,6 +119,25 @@ public class TestLedgerDirsManager {
             // expected to fail with no writable ledger dir
             assertEquals("Should got NoWritableLedgerDirException w/ 'All ledger directories are non writable'.",
                          "All ledger directories are non writable", nwlde.getMessage());
+        }
+    }
+
+    @Test(timeout=60000)
+    public void testGetWritableDirForLog() throws Exception {
+        List<File> writeDirs;
+        try {
+            dirsManager.addToFilledDirs(curDir);
+            writeDirs = dirsManager.getWritableLedgerDirs();
+            fail("Should not reach here due to there is no writable ledger dir.");
+        } catch (NoWritableLedgerDirException nwlde) {
+            // expected to fail with no writable ledger dir
+            // Now make sure we can get one for log
+            try {
+                writeDirs = dirsManager.getWritableLedgerDirsForNewLog();
+                assertTrue("Must have a writable ledgerDir", writeDirs.size() > 0);
+            } catch (NoWritableLedgerDirException e) {
+                fail("We should have a writeble ledgerDir");
+            }
         }
     }
 

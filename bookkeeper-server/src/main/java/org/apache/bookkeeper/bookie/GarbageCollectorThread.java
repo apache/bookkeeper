@@ -504,7 +504,7 @@ public class GarbageCollectorThread extends BookieThread {
         // closed and corrupted.
         if (!compacting.compareAndSet(false, true)) {
             // set compacting flag failed, means compacting is true now
-            // indicates another thread wants to interrupt gc thread to exit
+            // indicates that compaction is in progress for this EntryLogId.
             return;
         }
 

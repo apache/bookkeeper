@@ -549,7 +549,7 @@ public class EntryLogger {
          * Allocate a new log file.
          */
         BufferedLogChannel allocateNewLog() throws IOException {
-            List<File> list = ledgerDirsManager.getWritableLedgerDirs();
+            List<File> list = ledgerDirsManager.getWritableLedgerDirsForNewLog();
             Collections.shuffle(list);
             // It would better not to overwrite existing entry log files
             File newLogFile = null;
