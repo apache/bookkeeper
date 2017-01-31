@@ -389,6 +389,34 @@ public class IndexPersistenceMgr {
         }
     }
 
+    void setExplicitLac(long ledgerId, ByteBuffer lac) throws IOException {
+        FileInfo fi = null;
+        try {
+            fi = getFileInfo(ledgerId, null);
+            fi.setExplicitLac(lac);
+            return;
+        } finally {
+            if (null != fi) {
+                fi.release();
+            }
+        }
+    }
+
+    public ByteBuffer getExplicitLac(long ledgerId) {
+        FileInfo fi = null;
+        try {
+            fi = getFileInfo(ledgerId, null);
+            return fi.getExplicitLac();
+        } catch (IOException e) {
+            LOG.error("Exception during getLastAddConfirmed: {}", e);
+            return null;
+        } finally {
+            if (null != fi) {
+                fi.release();
+            }
+        }
+    }
+
     int getOpenFileLimit() {
         return openFileLimit;
     }

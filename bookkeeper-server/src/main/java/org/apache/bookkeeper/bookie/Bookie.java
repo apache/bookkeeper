@@ -57,6 +57,7 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -1325,6 +1326,30 @@ public class Bookie extends BookieCriticalThread {
         }
     }
 
+    public void setExplicitLac(ByteBuffer entry, Object ctx, byte[] masterKey)
+            throws IOException, BookieException {
+        try {
+            long ledgerId = entry.getLong();
+            LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
+            entry.rewind();
+            synchronized (handle) {
+                handle.setExplicitLac(entry);
+            }
+        } catch (NoWritableLedgerDirException e) {
+            transitionToReadOnlyMode();
+            throw new IOException(e);
+        }
+    }
+
+    public ByteBuffer getExplicitLac(long ledgerId) throws IOException, Bookie.NoLedgerException {
+        ByteBuffer lac;
+        LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
+        synchronized (handle) {
+            lac = handle.getExplicitLac();
+        }
+        return lac;
+    }
+
     /**
      * Add entry to a ledger.
      * @throws BookieException.LedgerFencedException if the ledger is fenced
@@ -1566,4 +1591,5 @@ public class Bookie extends BookieCriticalThread {
     public int getExitCode() {
         return exitCode;
     }
+
 }

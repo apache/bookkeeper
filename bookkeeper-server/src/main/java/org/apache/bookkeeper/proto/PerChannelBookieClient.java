@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.auth.ClientAuthProvider;
+import com.google.protobuf.ByteString;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperClientStats;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -39,13 +40,22 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AddResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
+import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadLacRequest;
+import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadLacResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
+import org.apache.bookkeeper.proto.BookkeeperProtocol.WriteLacRequest;
+import org.apache.bookkeeper.proto.BookkeeperProtocol.WriteLacResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -124,7 +134,11 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     private final OpStatsLogger readEntryOpLogger;
     private final OpStatsLogger readTimeoutOpLogger;
     private final OpStatsLogger addEntryOpLogger;
+    private final OpStatsLogger writeLacOpLogger;
+    private final OpStatsLogger readLacOpLogger;
     private final OpStatsLogger addTimeoutOpLogger;
+    private final OpStatsLogger writeLacTimeoutOpLogger;
+    private final OpStatsLogger readLacTimeoutOpLogger;
 
     /**
      * The following member variables do not need to be concurrent, or volatile
@@ -192,8 +206,12 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
         readEntryOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_READ_OP);
         addEntryOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_ADD_OP);
+        writeLacOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_WRITE_LAC_OP);
+        readLacOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_READ_LAC_OP);
         readTimeoutOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_TIMEOUT_READ);
         addTimeoutOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_TIMEOUT_ADD);
+        writeLacTimeoutOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_TIMEOUT_WRITE_LAC);
+        readLacTimeoutOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_TIMEOUT_READ_LAC);
 
         this.pcbcPool = pcbcPool;
 
@@ -238,6 +256,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     }
 
     private void completeOperation(GenericCallback<PerChannelBookieClient> op, int rc) {
+        //Thread.dumpStack();
         closeLock.readLock().lock();
         try {
             if (ConnectionState.CLOSED == state) {
@@ -363,6 +382,60 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             completeOperation(op, opRc);
         }
 
+    }
+
+    void writeLac(final long ledgerId, final byte[] masterKey, final long lac, ChannelBuffer toSend, WriteLacCallback cb, Object ctx) {
+        final long txnId = getTxnId();
+        final int entrySize = toSend.readableBytes();
+        final CompletionKey completionKey = new CompletionKey(txnId, OperationType.WRITE_LAC);
+        // writeLac is mostly like addEntry hence uses addEntryTimeout
+        completionObjects.put(completionKey,
+                new WriteLacCompletion(writeLacOpLogger, cb, ctx, lac, scheduleTimeout(completionKey, addEntryTimeout)));
+
+        // Build the request
+        BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
+                .setVersion(ProtocolVersion.VERSION_THREE)
+                .setOperation(OperationType.WRITE_LAC)
+                .setTxnId(txnId);
+        WriteLacRequest.Builder writeLacBuilder = WriteLacRequest.newBuilder()
+                .setLedgerId(ledgerId)
+                .setLac(lac)
+                .setMasterKey(ByteString.copyFrom(masterKey))
+                .setBody(ByteString.copyFrom(toSend.toByteBuffer()));
+
+        final Request writeLacRequest = Request.newBuilder()
+                .setHeader(headerBuilder)
+                .setWriteLacRequest(writeLacBuilder)
+                .build();
+
+        final Channel c = channel;
+        if (c == null) {
+            errorOutWriteLacKey(completionKey);
+            return;
+        }
+        try {
+            ChannelFuture future = c.write(writeLacRequest);
+            future.addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    if (future.isSuccess()) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Successfully wrote request for writeLac LedgerId: {} bookie: {}",
+                                    ledgerId, c.getRemoteAddress());
+                        }
+                    } else {
+                        if (!(future.getCause() instanceof ClosedChannelException)) {
+                            LOG.warn("Writing Lac(lid={} to channel {} failed : ",
+                                    new Object[] { ledgerId, c, future.getCause() });
+                        }
+                        errorOutWriteLacKey(completionKey);
+                    }
+                }
+            });
+        } catch (Throwable e) {
+            LOG.warn("writeLac operation failed", e);
+            errorOutWriteLacKey(completionKey);
+        }
     }
 
     /**
@@ -499,6 +572,52 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         } catch(Throwable e) {
             LOG.warn("Read entry operation {} failed", completionKey, e);
             errorOutReadKey(completionKey);
+        }
+    }
+
+    public void readLac(final long ledgerId, ReadLacCallback cb, Object ctx) {
+        final long txnId = getTxnId();
+        final CompletionKey completionKey = new CompletionKey(txnId, OperationType.READ_LAC);
+        completionObjects.put(completionKey,
+                new ReadLacCompletion(readLacOpLogger, cb, ctx, ledgerId,
+                        scheduleTimeout(completionKey, readEntryTimeout)));
+        // Build the request and calculate the total size to be included in the packet.
+        BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
+                .setVersion(ProtocolVersion.VERSION_THREE)
+                .setOperation(OperationType.READ_LAC)
+                .setTxnId(txnId);
+        ReadLacRequest.Builder readLacBuilder = ReadLacRequest.newBuilder()
+                .setLedgerId(ledgerId);
+        final Request readLacRequest = Request.newBuilder()
+                .setHeader(headerBuilder)
+                .setReadLacRequest(readLacBuilder)
+                .build();
+        final Channel c = channel;
+        if (c == null) {
+            errorOutReadLacKey(completionKey);
+            return;
+        }
+
+        try {
+            ChannelFuture future = c.write(readLacRequest);
+            future.addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    if (future.isSuccess()) {
+                        LOG.debug("Succssfully wrote request {} to {}",
+                                    readLacRequest, c.getRemoteAddress());
+                    } else {
+                        if (!(future.getCause() instanceof ClosedChannelException)) {
+                            LOG.warn("Writing readLac(lid = {}) to channel {} failed : ",
+                                    new Object[] { ledgerId, c, future.getCause() });
+                        }
+                        errorOutReadLacKey(completionKey);
+                    }
+                }
+            });
+        } catch(Throwable e) {
+            LOG.warn("Read LAC operation {} failed", readLacRequest, e);
+            errorOutReadLacKey(completionKey);
         }
     }
 
@@ -645,6 +764,54 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             @Override
             public String toString() {
                 return String.format("ErrorOutReadKey(%s)", key);
+            }
+        });
+    }
+
+    void errorOutWriteLacKey(final CompletionKey key) {
+        errorOutWriteLacKey(key, BKException.Code.BookieHandleNotAvailableException);
+    }
+
+    void errorOutWriteLacKey(final CompletionKey key, final int rc) {
+        final WriteLacCompletion writeLacCompletion = (WriteLacCompletion)completionObjects.remove(key);
+        if (null == writeLacCompletion) {
+            return;
+        }
+        executor.submitOrdered(writeLacCompletion.ledgerId, new SafeRunnable() {
+            @Override
+            public void safeRun() {
+                String bAddress = "null";
+                Channel c = channel;
+                if (c != null) {
+                    bAddress = c.getRemoteAddress().toString();
+                }
+                LOG.debug("Could not write request writeLac for ledgerId: {} bookie: {}",
+                          new Object[] { writeLacCompletion.ledgerId, bAddress});
+                writeLacCompletion.cb.writeLacComplete(rc, writeLacCompletion.ledgerId, addr, writeLacCompletion.ctx);
+            }
+        });
+    }
+
+    void errorOutReadLacKey(final CompletionKey key) {
+        errorOutReadLacKey(key, BKException.Code.BookieHandleNotAvailableException);
+    }
+
+    void errorOutReadLacKey(final CompletionKey key, final int rc) {
+        final ReadLacCompletion readLacCompletion = (ReadLacCompletion)completionObjects.remove(key);
+        if (null == readLacCompletion) {
+            return;
+        }
+        executor.submitOrdered(readLacCompletion.ledgerId, new SafeRunnable() {
+            @Override
+            public void safeRun() {
+                String bAddress = "null";
+                Channel c = channel;
+                if (c != null) {
+                    bAddress = c.getRemoteAddress().toString();
+                }
+                LOG.debug("Could not write request readLac for ledgerId: {} bookie: {}",
+                          new Object[] { readLacCompletion.ledgerId, bAddress});
+                readLacCompletion.cb.readLacComplete(rc, readLacCompletion.ledgerId, null, null, readLacCompletion.ctx);
             }
         });
     }
@@ -836,6 +1003,12 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                         case READ_ENTRY:
                             handleReadResponse(response, completionValue);
                             break;
+                        case WRITE_LAC:
+                            handleWriteLacResponse(response.getWriteLacResponse(), completionValue);
+                            break;
+                        case READ_LAC:
+                            handleReadLacResponse(response.getReadLacResponse(), completionValue);
+                            break;
                         default:
                             LOG.error("Unexpected response, type:{} received from bookie:{}, ignoring",
                                       type, addr);
@@ -853,7 +1026,26 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         }
     }
 
-    void handleAddResponse(Response response, CompletionValue completionValue) {
+    void handleWriteLacResponse(WriteLacResponse writeLacResponse, CompletionValue completionValue) {
+        // The completion value should always be an instance of an WriteLacCompletion object when we reach here.
+        WriteLacCompletion plc = (WriteLacCompletion)completionValue;
+
+        long ledgerId = writeLacResponse.getLedgerId();
+        StatusCode status = writeLacResponse.getStatus();
+
+        LOG.debug("Got response for writeLac request from bookie: " + addr + " for ledger: " + ledgerId + " rc: " + status);
+
+        // convert to BKException code
+        Integer rcToRet = statusCodeToExceptionCode(status);
+        if (null == rcToRet) {
+            LOG.error("writeLac for ledger: " + ledgerId + " failed on bookie: " + addr
+                        + " with code:" + status);
+            rcToRet = BKException.Code.WriteException;
+        }
+        plc.cb.writeLacComplete(rcToRet, ledgerId, addr, plc.ctx);
+    }
+
+ void handleAddResponse(Response response, CompletionValue completionValue) {
         // The completion value should always be an instance of an AddCompletion object when we reach here.
         AddCompletion ac = (AddCompletion)completionValue;
         AddResponse addResponse = response.getAddResponse();
@@ -866,7 +1058,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             LOG.debug("Got response for add request from bookie: " + addr + " for ledger: " + ledgerId + " entry: "
                     + entryId + " rc: " + status);
         }
-        // convert to BKException code because thats what the uppper
+        // convert to BKException code because thats what the upper
         // layers expect. This is UGLY, there should just be one set of
         // error codes.
         Integer rcToRet = statusCodeToExceptionCode(status);
@@ -878,6 +1070,36 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             rcToRet = BKException.Code.WriteException;
         }
         ac.cb.writeComplete(rcToRet, ledgerId, entryId, addr, ac.ctx);
+    }
+
+    void handleReadLacResponse(ReadLacResponse readLacResponse, CompletionValue completionValue) {
+        // The completion value should always be an instance of an WriteLacCompletion object when we reach here.
+        ReadLacCompletion glac = (ReadLacCompletion)completionValue;
+
+        long ledgerId = readLacResponse.getLedgerId();
+        StatusCode status = readLacResponse.getStatus();
+        ChannelBuffer lacBuffer = ChannelBuffers.buffer(0);
+        ChannelBuffer lastEntryBuffer = ChannelBuffers.buffer(0);
+
+       // Thread.dumpStack();
+
+        if (readLacResponse.hasLacBody()) {
+            lacBuffer = ChannelBuffers.copiedBuffer(readLacResponse.getLacBody().asReadOnlyByteBuffer());
+        }
+
+        if (readLacResponse.hasLastEntryBody()) {
+            lastEntryBuffer = ChannelBuffers.copiedBuffer(readLacResponse.getLastEntryBody().asReadOnlyByteBuffer());
+        }
+
+        LOG.debug("Got response for readLac request from bookie: " + addr + " for ledger: " + ledgerId + " rc: " + status);
+        // convert to BKException code
+        Integer rcToRet = statusCodeToExceptionCode(status);
+        if (null == rcToRet) {
+            LOG.debug("readLac for ledger: " + ledgerId + " failed on bookie: " + addr
+                      + " with code:" + status);
+            rcToRet = BKException.Code.ReadException;
+        }
+        glac.cb.readLacComplete(rcToRet, ledgerId, lacBuffer.slice(), lastEntryBuffer.slice(), glac.ctx);
     }
 
     void handleReadResponse(Response response, CompletionValue completionValue) {
@@ -936,6 +1158,63 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             if (null != timeout) {
                 timeout.cancel();
             }
+        }
+    }
+
+    // visible for testing
+    static class WriteLacCompletion extends CompletionValue {
+        final WriteLacCallback cb;
+
+        public WriteLacCompletion(WriteLacCallback cb, Object ctx, long ledgerId) {
+            this(null, cb, ctx, ledgerId, null);
+        }
+
+        public WriteLacCompletion(final OpStatsLogger writeLacOpLogger, final WriteLacCallback originalCallback,
+                final Object originalCtx, final long ledgerId, final Timeout timeout) {
+            super(originalCtx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, timeout);
+            final long startTime = MathUtils.nowInNano();
+            this.cb = null == writeLacOpLogger ? originalCallback : new WriteLacCallback() {
+                @Override
+                public void writeLacComplete(int rc, long ledgerId, BookieSocketAddress addr, Object ctx) {
+                    cancelTimeout();
+                    long latency = MathUtils.elapsedNanos(startTime);
+                    if (rc != BKException.Code.OK) {
+                        writeLacOpLogger.registerFailedEvent(latency, TimeUnit.NANOSECONDS);
+                    } else {
+                        writeLacOpLogger.registerSuccessfulEvent(latency, TimeUnit.NANOSECONDS);
+                    }
+                    originalCallback.writeLacComplete(rc, ledgerId, addr, originalCtx);
+                }
+            };
+
+        }
+    }
+
+    // visible for testing
+    static class ReadLacCompletion extends CompletionValue {
+        final ReadLacCallback cb;
+
+        public ReadLacCompletion(ReadLacCallback cb, Object ctx, long ledgerId) {
+            this (null, cb, ctx, ledgerId, null);
+        }
+
+        public ReadLacCompletion(final OpStatsLogger readLacOpLogger, final ReadLacCallback originalCallback,
+                final Object ctx, final long ledgerId, final Timeout timeout) {
+            super(ctx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, timeout);
+            final long startTime = MathUtils.nowInNano();
+            this.cb = null == readLacOpLogger ? originalCallback : new ReadLacCallback() {
+                @Override
+                public void readLacComplete(int rc, long ledgerId, ChannelBuffer lacBuffer, ChannelBuffer lastEntryBuffer, Object ctx) {
+                    cancelTimeout();
+                    long latency = MathUtils.elapsedNanos(startTime);
+                    if (rc != BKException.Code.OK) {
+                        readLacOpLogger.registerFailedEvent(latency, TimeUnit.NANOSECONDS);
+                    } else {
+                        readLacOpLogger.registerSuccessfulEvent(latency, TimeUnit.NANOSECONDS);
+                    }
+                    originalCallback.readLacComplete(rc, ledgerId, lacBuffer, lastEntryBuffer, ctx);
+                }
+            };
         }
     }
 
@@ -1070,11 +1349,17 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             if (OperationType.ADD_ENTRY == operationType) {
                 errorOutAddKey(this, BKException.Code.TimeoutException);
                 addTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
-            } else {
+            } else if (OperationType.READ_ENTRY == operationType) {
                 errorOutReadKey(this, BKException.Code.TimeoutException);
                 readTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
+            } else if (OperationType.WRITE_LAC == operationType) {
+                errorOutWriteLacKey(this, BKException.Code.TimeoutException);
+                writeLacTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
+            } else {
+                errorOutReadLacKey(this, BKException.Code.TimeoutException);
+                readLacTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
             }
-        }
+	}
     }
 
 

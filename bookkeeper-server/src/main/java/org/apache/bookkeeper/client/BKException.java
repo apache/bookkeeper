@@ -40,7 +40,7 @@ public abstract class BKException extends Exception {
     /**
      * Create an exception from an error code
      * @param code return error code
-     * @return correponding exception
+     * @return corresponding exception
      */
     public static BKException create(int code) {
         switch (code) {

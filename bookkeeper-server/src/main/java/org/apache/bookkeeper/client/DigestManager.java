@@ -40,6 +40,7 @@ abstract class DigestManager {
     static final Logger logger = LoggerFactory.getLogger(DigestManager.class);
 
     static final int METADATA_LENGTH = 32;
+    static final int LAC_METADATA_LENGTH = 16;
 
     long ledgerId;
 
@@ -102,6 +103,32 @@ abstract class DigestManager {
         return ChannelBuffers.wrappedBuffer(ChannelBuffers.wrappedBuffer(buffer), ChannelBuffers.wrappedBuffer(data, doffset, dlength));
     }
 
+    /**
+     * Computes the digest for writeLac for sending.
+     *
+     * @param lac
+     * @return
+     */
+
+    public ChannelBuffer computeDigestAndPackageForSendingLac(long lac) {
+
+        byte[] bufferArray = new byte[LAC_METADATA_LENGTH + macCodeLength];
+        ByteBuffer buffer = ByteBuffer.wrap(bufferArray);
+        buffer.putLong(ledgerId);
+        buffer.putLong(lac);
+        buffer.flip();
+
+        update(buffer.array(), 0, LAC_METADATA_LENGTH);
+        byte[] digest = getValueAndReset();
+
+        buffer.limit(buffer.capacity());
+        buffer.position(LAC_METADATA_LENGTH);
+        buffer.put(digest);
+        buffer.flip();
+
+        return ChannelBuffers.wrappedBuffer(ChannelBuffers.wrappedBuffer(buffer));
+    }
+
     private void verifyDigest(ChannelBuffer dataReceived) throws BKDigestMatchException {
         verifyDigest(LedgerHandle.INVALID_ENTRY_ID, dataReceived, true);
     }
@@ -151,6 +178,34 @@ abstract class DigestManager {
             throw new BKDigestMatchException();
         }
 
+    }
+
+    long verifyDigestAndReturnLac(ChannelBuffer dataReceived) throws BKDigestMatchException{
+        ByteBuffer dataReceivedBuffer = dataReceived.toByteBuffer();
+        byte[] digest;
+        if ((LAC_METADATA_LENGTH + macCodeLength) > dataReceived.readableBytes()) {
+            logger.error("Data received is smaller than the minimum for this digest type."
+                    + " Either the packet it corrupt, or the wrong digest is configured. "
+                    + " Digest type: {}, Packet Length: {}",
+                    this.getClass().getName(), dataReceived.readableBytes());
+            throw new BKDigestMatchException();
+        }
+        update(dataReceivedBuffer.array(), dataReceivedBuffer.position(), LAC_METADATA_LENGTH);
+        digest = getValueAndReset();
+        for (int i = 0; i < digest.length; i++) {
+            if (digest[i] != dataReceived.getByte(LAC_METADATA_LENGTH + i)) {
+                logger.error("Mac mismatch for ledger-id LAC: " + ledgerId);
+                throw new BKDigestMatchException();
+            }
+        }
+        long actualLedgerId = dataReceived.readLong();
+        long lac = dataReceived.readLong();
+        if (actualLedgerId != ledgerId) {
+            logger.error("Ledger-id mismatch in authenticated message, expected: " + ledgerId + " , actual: "
+                         + actualLedgerId);
+            throw new BKDigestMatchException();
+        }
+        return lac;
     }
 
     /**
