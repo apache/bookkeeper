@@ -65,7 +65,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
     public TestPerChannelBookieClient() throws Exception {
         super(1);
         authProvider = AuthProviderFactoryFactory.newClientAuthProviderFactory(
-                new ClientConfiguration(), extRegistry);
+                new ClientConfiguration());
     }
 
 

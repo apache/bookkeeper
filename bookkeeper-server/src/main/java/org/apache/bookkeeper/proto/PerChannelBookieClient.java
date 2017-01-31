@@ -67,7 +67,6 @@ import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.local.DefaultLocalClientChannelFactory;
-import org.jboss.netty.channel.local.LocalAddress;
 import org.jboss.netty.channel.local.LocalClientChannelFactory;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.CorruptedFrameException;
@@ -85,7 +84,10 @@ import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.ExtensionRegistry;
 import java.net.SocketAddress;
+import java.util.Collection;
+import org.apache.bookkeeper.auth.BookKeeperPrincipal;
 import org.jboss.netty.channel.ChannelFactory;
+import org.apache.bookkeeper.client.ClientConnectionPeer;
 
 /**
  * This class manages all details of connection to a particular bookie. It also
@@ -131,6 +133,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     private volatile Queue<GenericCallback<PerChannelBookieClient>> pendingOps =
             new ArrayDeque<GenericCallback<PerChannelBookieClient>>();
     volatile Channel channel = null;
+    private final ClientConnectionPeer connectionPeer;
+    private volatile BookKeeperPrincipal authorizedId = BookKeeperPrincipal.ANONYMOUS;
 
     enum ConnectionState {
         DISCONNECTED, CONNECTING, CONNECTED, CLOSED
@@ -192,6 +196,45 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         addTimeoutOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_TIMEOUT_ADD);
 
         this.pcbcPool = pcbcPool;
+
+        this.connectionPeer = new ClientConnectionPeer() {
+
+            @Override
+            public SocketAddress getRemoteAddr() {
+                Channel c = channel;
+                if (c != null) {
+                    return c.getRemoteAddress();
+                } else {
+                    return null;
+                }
+            }
+
+            @Override
+            public Collection<Object> getProtocolPrincipals() {
+                return Collections.emptyList();
+            }
+
+            @Override
+            public void disconnect() {
+                Channel c = channel;
+                if (c != null) {
+                    c.close();
+                }
+                LOG.info("authplugin disconnected channel {}", channel);
+            }
+
+            @Override
+            public void setAuthorizedId(BookKeeperPrincipal principal) {
+                authorizedId = principal;
+                LOG.info("connection {} authenticated as {}", channel, principal);
+            }
+
+            @Override
+            public BookKeeperPrincipal getAuthorizedId() {
+                return authorizedId;
+            }
+
+        };
     }
 
     private void completeOperation(GenericCallback<PerChannelBookieClient> op, int rc) {
@@ -687,7 +730,8 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
         pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.RequestEncoder(extRegistry));
         pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.ResponseDecoder(extRegistry));
-        pipeline.addLast("authHandler", new AuthHandler.ClientSideHandler(authProviderFactory, txnIdGenerator));
+        pipeline.addLast("authHandler", new AuthHandler.ClientSideHandler(authProviderFactory, txnIdGenerator,
+            connectionPeer));
         pipeline.addLast("mainhandler", this);
         return pipeline;
     }

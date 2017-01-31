@@ -98,7 +98,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
         this.closeLock = new ReentrantReadWriteLock();
 
         this.registry = ExtensionRegistry.newInstance();
-        this.authProviderFactory = AuthProviderFactoryFactory.newClientAuthProviderFactory(conf, registry);
+        this.authProviderFactory = AuthProviderFactoryFactory.newClientAuthProviderFactory(conf);
 
         this.statsLogger = statsLogger;
         this.numConnectionsPerBookie = conf.getNumChannelsPerBookie();
@@ -295,6 +295,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 pool.close(true);
             }
             channels.clear();
+            authProviderFactory.close();
         } finally {
             closeLock.writeLock().unlock();
         }

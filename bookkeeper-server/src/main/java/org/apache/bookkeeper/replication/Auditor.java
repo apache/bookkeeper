@@ -145,7 +145,10 @@ public class Auditor implements BookiesListener {
             this.ledgerUnderreplicationManager = ledgerManagerFactory
                     .newLedgerUnderreplicationManager();
 
-            this.bkc = new BookKeeper(new ClientConfiguration(conf), zkc);
+            ClientConfiguration clientConfiguration = new ClientConfiguration(conf);
+            clientConfiguration.setClientRole(ClientConfiguration.CLIENT_ROLE_SYSTEM);
+            LOG.info("AuthProvider used by the Auditor is "+clientConfiguration.getClientAuthProviderFactoryClass());
+            this.bkc = new BookKeeper(clientConfiguration, zkc);
             this.admin = new BookKeeperAdmin(bkc, statsLogger);
         } catch (CompatibilityException ce) {
             throw new UnavailableException(
