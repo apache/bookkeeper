@@ -49,6 +49,7 @@ public abstract class MultiLedgerManagerMultiDigestTestCase extends BookKeeperCl
         String[] ledgerManagers = {
             "org.apache.bookkeeper.meta.FlatLedgerManagerFactory",
             "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory",
+            "org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory",
             "org.apache.bookkeeper.meta.MSLedgerManagerFactory",
         };
         ArrayList<Object[]> cfgs = new ArrayList<Object[]>(ledgerManagers.length);

@@ -263,7 +263,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         assertEquals("Should have cleaned first ledger" + first, (long)first, (long)cleaned.poll());
     }
 
-    @Test(timeout=60000)
+    @Test(timeout=120000)
     public void testGcLedgersNotLast() throws Exception {
         final SortedSet<Long> createdLedgers = Collections.synchronizedSortedSet(new TreeSet<Long>());
         final List<Long> cleaned = new ArrayList<Long>();

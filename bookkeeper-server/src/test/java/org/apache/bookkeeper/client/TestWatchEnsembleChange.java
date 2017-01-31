@@ -26,6 +26,7 @@ import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.MSLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
@@ -72,7 +73,8 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         return Arrays.asList(new Object[][] {
                 { FlatLedgerManagerFactory.class },
                 { HierarchicalLedgerManagerFactory.class },
-                { MSLedgerManagerFactory.class }
+                { LongHierarchicalLedgerManagerFactory.class },
+                { MSLedgerManagerFactory.class },
         });
     }
 
