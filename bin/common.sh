@@ -54,13 +54,13 @@ DEFAULT_LOG_CONF="${DLOG_HOME}/conf/log4j.properties"
 [ -f "${DLOG_HOME}/conf/dlogenv.sh" ] && source "${DLOG_HOME}/conf/dlogenv.sh"
 
 # exclude tests jar
-RELEASE_JAR=$(ls ${DLOG_HOME}/distributedlog-*.jar 2> /dev/null | grep -v 'tests|javadoc|sources' | tail -1)
+RELEASE_JAR=$(ls ${DLOG_HOME}/distributedlog-*.jar 2> /dev/null | grep -v 'tests\|javadoc\|sources' | tail -1)
 if [ $? == 0 ]; then
   DLOG_JAR="${RELEASE_JAR}"
 fi
 
 # exclude tests jar
-BUILT_JAR=$(ls ${DLOG_HOME}/target/distributedlog-*.jar 2> /dev/null | grep -v 'tests|javadoc|sources' | tail -1)
+BUILT_JAR=$(ls ${DLOG_HOME}/target/distributedlog-*.jar 2> /dev/null | grep -v 'tests\|javadoc\|sources' | tail -1)
 
 if [ -e "${BUILD_JAR}" ] && [ -e "${DLOG_JAR}" ]; then
   echo "\nCouldn't find dlog jar.";
