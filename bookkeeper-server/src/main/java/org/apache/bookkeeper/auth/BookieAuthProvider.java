@@ -21,13 +21,10 @@
 package org.apache.bookkeeper.auth;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
-
-import com.google.protobuf.ExtensionRegistry;
+import org.apache.bookkeeper.bookie.BookieConnectionPeer;
 
 /**
  * Bookie authentication provider interface.
@@ -43,8 +40,7 @@ public interface BookieAuthProvider {
          * payload, so that the server can decode auth messages
          * it receives from the client.
          */
-        void init(ServerConfiguration conf,
-                  ExtensionRegistry registry) throws IOException;
+        void init(ServerConfiguration conf) throws IOException;
 
         /**
          * Create a new instance of a bookie auth provider.
@@ -58,12 +54,12 @@ public interface BookieAuthProvider {
          * error code should be passed.
          * If authentication fails, the server will close the
          * connection.
-         * @param addr the address of the client being authenticated
+         * @param connection an handle to the connection
          * @param completeCb callback to be notified when authentication
          *                   is complete.
          */
-        BookieAuthProvider newProvider(InetSocketAddress addr,
-                                       GenericCallback<Void> completeCb);
+        BookieAuthProvider newProvider(BookieConnectionPeer connection,
+                                       AuthCallbacks.GenericCallback<Void> completeCb);
 
         /**
          * Get Auth provider plugin name.
@@ -71,6 +67,11 @@ public interface BookieAuthProvider {
          * are using the same auth provider.
          */
         String getPluginName();
+
+        /**
+        * Release resources
+        */
+        default void close() {}
     }
 
     /**
@@ -79,5 +80,10 @@ public interface BookieAuthProvider {
      * to send to the client, cb should not be called, and completeCb
      * must be called instead.
      */
-    void process(AuthMessage m, GenericCallback<AuthMessage> cb);
+    void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb);
+
+    /**
+     * Release resources
+     */
+    default void close() {}
 }
