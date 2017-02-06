@@ -57,6 +57,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String CLIENT_WRITEBUFFER_HIGH_WATER_MARK = "clientWriteBufferHighWaterMark";
     protected final static String CLIENT_CONNECT_TIMEOUT_MILLIS = "clientConnectTimeoutMillis";
     protected final static String NUM_CHANNELS_PER_BOOKIE = "numChannelsPerBookie";
+
     // Read Parameters
     protected final static String READ_TIMEOUT = "readTimeout";
     protected final static String SPECULATIVE_READ_TIMEOUT = "speculativeReadTimeout";
@@ -927,6 +928,15 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setBookieQuarantineTime(int quarantineTime, TimeUnit unit) {
         setProperty(BOOKIE_QUARANTINE_TIME_SECONDS, unit.toSeconds(quarantineTime));
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ClientConfiguration setNettyMaxFrameSizeBytes(int maxSize) {
+        super.setNettyMaxFrameSizeBytes(maxSize);
         return this;
     }
 

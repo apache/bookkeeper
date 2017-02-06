@@ -59,7 +59,7 @@ class BookieNettyServer {
 
     private final static Logger LOG = LoggerFactory.getLogger(BookieNettyServer.class);
 
-    final static int maxMessageSize = 0xfffff;
+    final int maxFrameSize;
     final ServerConfiguration conf;
     final List<ChannelManager> channels = new ArrayList<>();
     final RequestProcessor requestProcessor;
@@ -74,6 +74,7 @@ class BookieNettyServer {
 
     BookieNettyServer(ServerConfiguration conf, RequestProcessor processor)
         throws IOException, KeeperException, InterruptedException, BookieException {
+        this.maxFrameSize = conf.getNettyMaxFrameSizeBytes();
         this.conf = conf;
         this.requestProcessor = processor;
 
@@ -207,7 +208,7 @@ class BookieNettyServer {
             BookieSideConnectionPeerContextHandler contextHandler = new BookieSideConnectionPeerContextHandler();
             ChannelPipeline pipeline = Channels.pipeline();
             pipeline.addLast("lengthbaseddecoder",
-                new LengthFieldBasedFrameDecoder(maxMessageSize, 0, 4, 0, 4));
+                new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));
             pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
 
             pipeline.addLast("bookieProtoDecoder", requestDecoder);

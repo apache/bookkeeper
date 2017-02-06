@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.conf;
 
 import java.net.URL;
-import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDER_FACTORY_CLASS;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
@@ -69,6 +68,10 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
 
     // Client auth provider factory class name. It must be configured on Bookies to for the Auditor
     protected final static String CLIENT_AUTH_PROVIDER_FACTORY_CLASS = "clientAuthProviderFactoryClass";
+
+    //Netty configuration
+    protected final static String NETTY_MAX_FRAME_SIZE = "nettyMaxFrameSizeBytes";
+    protected final static int DEFAULT_NETTY_MAX_FRAME_SIZE = 5 * 1024 * 1024; // 5MB
 
     protected AbstractConfiguration() {
         super();
@@ -283,5 +286,28 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      */
     public String getClientAuthProviderFactoryClass() {
         return getString(CLIENT_AUTH_PROVIDER_FACTORY_CLASS, null);
+    }
+
+    /**
+     * Get the maximum netty frame size in bytes.  Any message received larger
+     * that this will be rejected.
+     *
+     * @return the maximum netty frame size in bytes.
+     */
+    public int getNettyMaxFrameSizeBytes() {
+        return getInt(NETTY_MAX_FRAME_SIZE, DEFAULT_NETTY_MAX_FRAME_SIZE);
+    }
+
+    /**
+     * Set the max number of bytes a single message can be that is read by the bookie.
+     * Any message larger than that size will be rejected.
+     *
+     * @param maxSize
+     *          the max size in bytes
+     * @return server configuration
+     */
+    public AbstractConfiguration setNettyMaxFrameSizeBytes(int maxSize) {
+        setProperty(NETTY_MAX_FRAME_SIZE, String.valueOf(maxSize));
+        return this;
     }
 }
