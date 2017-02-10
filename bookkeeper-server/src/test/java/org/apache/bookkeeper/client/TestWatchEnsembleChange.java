@@ -22,11 +22,11 @@ package org.apache.bookkeeper.client;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.meta.FlatLedgerManagerFactory;
-import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
+import org.apache.bookkeeper.meta.LegacyHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
-import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
+import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.MSLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
@@ -72,8 +72,8 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
     public static Collection<Object[]> configs() {
         return Arrays.asList(new Object[][] {
                 { FlatLedgerManagerFactory.class },
+                { LegacyHierarchicalLedgerManagerFactory.class },
                 { HierarchicalLedgerManagerFactory.class },
-                { LongHierarchicalLedgerManagerFactory.class },
                 { MSLedgerManagerFactory.class },
         });
     }

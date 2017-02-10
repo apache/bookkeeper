@@ -76,7 +76,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         m.uninitialize();
 
         // mismatching conf
-        conf.setLedgerManagerFactoryClass(HierarchicalLedgerManagerFactory.class);
+        conf.setLedgerManagerFactoryClass(LegacyHierarchicalLedgerManagerFactory.class);
         try {
             LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
             fail("Shouldn't reach here");
@@ -127,14 +127,14 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         m.uninitialize();
 
         // v2 setting doesn't effect v1
-        conf.setLedgerManagerFactoryClass(HierarchicalLedgerManagerFactory.class);
+        conf.setLedgerManagerFactoryClass(LegacyHierarchicalLedgerManagerFactory.class);
         m = LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
         assertTrue("Ledger manager is unexpected type",
                    (m instanceof FlatLedgerManagerFactory));
         m.uninitialize();
 
         // mismatching conf
-        conf.setLedgerManagerType(HierarchicalLedgerManagerFactory.NAME);
+        conf.setLedgerManagerType(LegacyHierarchicalLedgerManagerFactory.NAME);
         try {
             LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
             fail("Shouldn't reach here");
@@ -283,7 +283,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         List<CreateLMThread> threadsB = new ArrayList<CreateLMThread>(numThreadsEach);
         for (int i = 0; i < numThreadsEach; i++) {
             CreateLMThread t = new CreateLMThread(zkUtil.getZooKeeperConnectString(),
-                    root0, HierarchicalLedgerManagerFactory.class.getName(), barrier);
+                    root0, LegacyHierarchicalLedgerManagerFactory.class.getName(), barrier);
             t.start();
             threadsB.add(t);
         }

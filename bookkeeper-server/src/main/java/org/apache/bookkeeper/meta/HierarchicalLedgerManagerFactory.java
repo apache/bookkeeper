@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.meta;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,56 +15,11 @@ package org.apache.bookkeeper.meta;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.meta;
 
-import java.io.IOException;
-import java.util.List;
-
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZKUtil;
-import org.apache.bookkeeper.replication.ReplicationException;
-import org.apache.bookkeeper.conf.AbstractConfiguration;
-import org.apache.zookeeper.ZooKeeper;
-
-/**
- * Hierarchical Ledger Manager Factory
- */
-public class HierarchicalLedgerManagerFactory extends LedgerManagerFactory {
+public class HierarchicalLedgerManagerFactory extends LegacyHierarchicalLedgerManagerFactory {
 
     public static final String NAME = "hierarchical";
-    public static final int CUR_VERSION = 1;
-
-    AbstractConfiguration conf;
-    ZooKeeper zk;
-
-    @Override
-    public int getCurrentVersion() {
-        return CUR_VERSION;
-    }
-
-    @Override
-    public LedgerManagerFactory initialize(final AbstractConfiguration conf,
-                                           final ZooKeeper zk,
-                                           final int factoryVersion)
-    throws IOException {
-        if (CUR_VERSION != factoryVersion) {
-            throw new IOException("Incompatible layout version found : "
-                                + factoryVersion);
-        }
-        this.conf = conf;
-        this.zk = zk;
-        return this;
-    }
-
-    @Override
-    public void uninitialize() throws IOException {
-        // since zookeeper instance is passed from outside
-        // we don't need to close it here
-    }
-
-    @Override
-    public LedgerIdGenerator newLedgerIdGenerator() {
-        return new ZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), HierarchicalLedgerManager.IDGEN_ZNODE);
-    }
 
     @Override
     public LedgerManager newLedgerManager() {
@@ -74,29 +27,8 @@ public class HierarchicalLedgerManagerFactory extends LedgerManagerFactory {
     }
 
     @Override
-    public LedgerUnderreplicationManager newLedgerUnderreplicationManager()
-            throws KeeperException, InterruptedException, ReplicationException.CompatibilityException{
-        return new ZkLedgerUnderreplicationManager(conf, zk);
+    public LedgerIdGenerator newLedgerIdGenerator() {
+        ZkLedgerIdGenerator subIdGenerator = new ZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), LegacyHierarchicalLedgerManager.IDGEN_ZNODE);
+        return new LongZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), HierarchicalLedgerManager.IDGEN_ZNODE, subIdGenerator);
     }
-
-    @Override
-    public void format(AbstractConfiguration conf, ZooKeeper zk)
-            throws InterruptedException, KeeperException, IOException {
-        HierarchicalLedgerManager ledgerManager = (HierarchicalLedgerManager) newLedgerManager();
-        try {
-            String ledgersRootPath = conf.getZkLedgersRootPath();
-            List<String> children = zk.getChildren(ledgersRootPath, false);
-            for (String child : children) {
-                if (ledgerManager.isSpecialZnode(child)) {
-                    continue;
-                }
-                ZKUtil.deleteRecursive(zk, ledgersRootPath + "/" + child);
-            }
-        } finally {
-            ledgerManager.close();
-        }
-        // Delete and recreate the LAYOUT information.
-        super.format(conf, zk);
-    }
-
 }

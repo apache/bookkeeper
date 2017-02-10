@@ -77,10 +77,10 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         super(3);
 
         baseConf.setLedgerManagerFactoryClassName(
-                "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
+                "org.apache.bookkeeper.meta.LegacyHierarchicalLedgerManagerFactory");
         baseConf.setOpenLedgerRereplicationGracePeriod(openLedgerRereplicationGracePeriod);
         baseClientConf.setLedgerManagerFactoryClassName(
-                "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
+                "org.apache.bookkeeper.meta.LegacyHierarchicalLedgerManagerFactory");
         this.digestType = DigestType.MAC;
         setAutoRecoveryEnabled(true);
     }

@@ -42,7 +42,7 @@ public class LedgerLayoutTest extends BookKeeperClusterTestCase {
     @Test(timeout=60000)
     public void testLedgerLayout() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setLedgerManagerFactoryClass(HierarchicalLedgerManagerFactory.class);
+        conf.setLedgerManagerFactoryClass(LegacyHierarchicalLedgerManagerFactory.class);
         String ledgerRootPath = "/testLedgerLayout";
 
         zkc.create(ledgerRootPath, new byte[0],

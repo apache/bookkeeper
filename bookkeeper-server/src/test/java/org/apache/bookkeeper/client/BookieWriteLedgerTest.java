@@ -34,7 +34,7 @@ import java.util.HashMap;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
+import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.MultiLedgerManagerMultiDigestTestCase;
 import org.junit.Before;
@@ -288,7 +288,7 @@ public class BookieWriteLedgerTest extends
 
             ledgerId = rng.nextLong();
             ledgerId &= Long.MAX_VALUE;
-            if (!baseConf.getLedgerManagerFactoryClass().equals(LongHierarchicalLedgerManagerFactory.class)) {
+            if (!baseConf.getLedgerManagerFactoryClass().equals(HierarchicalLedgerManagerFactory.class)) {
                 // since LongHierarchicalLedgerManager supports ledgerIds of decimal length upto 19 digits but other
                 // LedgerManagers only upto 10 decimals
                 ledgerId %= 9999999999L;

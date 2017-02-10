@@ -61,7 +61,7 @@ import com.google.protobuf.TextFormat;
 /**
  * ZooKeeper implementation of underreplication manager.
  * This is implemented in a heirarchical fashion, so it'll work with
- * FlatLedgerManagerFactory and HierarchicalLedgerManagerFactory.
+ * FlatLedgerManagerFactory and LegacyHierarchicalLedgerManagerFactory.
  *
  * Layout is:
  * /root/underreplication/ LAYOUT

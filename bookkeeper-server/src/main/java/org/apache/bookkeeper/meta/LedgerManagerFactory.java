@@ -151,8 +151,8 @@ public abstract class LedgerManagerFactory {
             // create the ledger manager
             if (FlatLedgerManagerFactory.NAME.equals(layout.getManagerFactoryClass())) {
                 lmFactory = new FlatLedgerManagerFactory();
-            } else if (HierarchicalLedgerManagerFactory.NAME.equals(layout.getManagerFactoryClass())) {
-                lmFactory = new HierarchicalLedgerManagerFactory();
+            } else if (LegacyHierarchicalLedgerManagerFactory.NAME.equals(layout.getManagerFactoryClass())) {
+                lmFactory = new LegacyHierarchicalLedgerManagerFactory();
             } else {
                 throw new IOException("Unknown ledger manager type: " + lmType);
             }
@@ -205,6 +205,8 @@ public abstract class LedgerManagerFactory {
             } else {
                 if (FlatLedgerManagerFactory.NAME.equals(lmType)) {
                     factoryClass = FlatLedgerManagerFactory.class;
+                } else if (LegacyHierarchicalLedgerManagerFactory.NAME.equals(lmType)) {
+                    factoryClass = LegacyHierarchicalLedgerManagerFactory.class;
                 } else if (HierarchicalLedgerManagerFactory.NAME.equals(lmType)) {
                     factoryClass = HierarchicalLedgerManagerFactory.class;
                 } else {
