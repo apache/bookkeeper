@@ -48,6 +48,7 @@ public abstract class MultiLedgerManagerMultiDigestTestCase extends BookKeeperCl
     public static Collection<Object[]> configs() {
         String[] ledgerManagers = {
             "org.apache.bookkeeper.meta.FlatLedgerManagerFactory",
+            "org.apache.bookkeeper.meta.LegacyHierarchicalLedgerManagerFactory",
             "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory",
             "org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory",
             "org.apache.bookkeeper.meta.MSLedgerManagerFactory",

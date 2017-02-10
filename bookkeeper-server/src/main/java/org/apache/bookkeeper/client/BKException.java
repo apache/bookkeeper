@@ -102,6 +102,8 @@ public abstract class BKException extends Exception {
             return new BKDuplicateEntryIdException();
         case Code.TimeoutException:
             return new BKTimeoutException();
+        case Code.LedgerIdOverflowException:
+            return new BKLedgerIdOverflowException();
         default:
             return new BKUnexpectedConditionException();
         }
@@ -142,6 +144,8 @@ public abstract class BKException extends Exception {
         int UnauthorizedAccessException = -102;
         int UnclosedFragmentException = -103;
         int WriteOnReadOnlyBookieException = -104;
+        //-105 reserved for TooManyRequestsException
+        int LedgerIdOverflowException = -106;
 
         // generic exception code used to propagate in replication pipeline
         int ReplicationException = -200;
@@ -210,6 +214,8 @@ public abstract class BKException extends Exception {
             return "Attempting to use an unclosed fragment; This is not safe";
         case Code.WriteOnReadOnlyBookieException:
             return "Attempting to write on ReadOnly bookie";
+        case Code.LedgerIdOverflowException:
+            return "Next ledgerID is too large.";
         case Code.ReplicationException:
             return "Errors in replication pipeline";
         case Code.ClientClosedException:
@@ -402,6 +408,12 @@ public abstract class BKException extends Exception {
     public static class BKTimeoutException extends BKException {
         public BKTimeoutException() {
             super(Code.TimeoutException);
+        }
+    }
+
+    public static class BKLedgerIdOverflowException extends BKException {
+        public BKLedgerIdOverflowException() {
+            super(Code.LedgerIdOverflowException);
         }
     }
 }

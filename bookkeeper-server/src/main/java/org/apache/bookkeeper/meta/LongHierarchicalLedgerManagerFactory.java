@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.meta;
 
+import org.apache.zookeeper.ZooKeeper;
+
 public class LongHierarchicalLedgerManagerFactory extends HierarchicalLedgerManagerFactory {
 
     public static final String NAME = "longhierarchical";
@@ -25,5 +27,4 @@ public class LongHierarchicalLedgerManagerFactory extends HierarchicalLedgerMana
     public LedgerManager newLedgerManager() {
         return new LongHierarchicalLedgerManager(conf, zk);
     }
-
 }
