@@ -19,6 +19,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import io.netty.buffer.ByteBuf;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
@@ -31,7 +33,6 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +67,7 @@ public class LedgerChecker {
         }
 
         public void readEntryComplete(int rc, long ledgerId, long entryId,
-                ChannelBuffer buffer, Object ctx) {
+                ByteBuf buffer, Object ctx) {
             if (rc == BKException.Code.OK) {
                 if (numEntries.decrementAndGet() == 0
                         && !completed.getAndSet(true)) {
@@ -126,7 +127,7 @@ public class LedgerChecker {
         }
 
         public void readEntryComplete(int rc, long ledgerId, long entryId,
-                                      ChannelBuffer buffer, Object ctx) {
+                                      ByteBuf buffer, Object ctx) {
             if (BKException.Code.NoSuchEntryException != rc &&
                 BKException.Code.NoSuchLedgerExistsException != rc) {
                 entryMayExist.set(true);

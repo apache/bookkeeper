@@ -165,6 +165,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
                     try {
                         while (!finished.get()) {
                             lh.addEntry(entry);
+                            Thread.sleep(1);
                         }
                     } catch (Exception e) {
                         LOG.error("Exception in add entry thread", e);

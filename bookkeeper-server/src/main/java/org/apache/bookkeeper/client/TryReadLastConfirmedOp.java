@@ -21,9 +21,10 @@ import org.apache.bookkeeper.client.DigestManager.RecoveryData;
 import org.apache.bookkeeper.client.ReadLastConfirmedOp.LastConfirmedDataCallback;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.buffer.ByteBuf;
 
 import java.util.List;
 
@@ -60,7 +61,7 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
     }
 
     @Override
-    public void readEntryComplete(int rc, long ledgerId, long entryId, ChannelBuffer buffer, Object ctx) {
+    public void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx) {
         if (LOG.isTraceEnabled()) {
             LOG.trace("TryReadLastConfirmed received response for (lid={}, eid={}) : {}",
                     new Object[] { ledgerId, entryId, rc });

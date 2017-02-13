@@ -194,7 +194,7 @@ public class BookKeeperTest extends BaseTestCase {
     public void testCloseDuringOp() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
             .setZkServers(zkUtil.getZooKeeperConnectString());
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 10; i++) {
             final BookKeeper client = new BookKeeper(conf);
             final CountDownLatch l = new CountDownLatch(1);
             final AtomicBoolean success = new AtomicBoolean(false);

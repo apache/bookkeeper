@@ -51,6 +51,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     // NIO Parameters
     protected final static String CLIENT_TCP_NODELAY = "clientTcpNoDelay";
+    protected final static String CLIENT_SOCK_KEEPALIVE = "clientSockKeepalive";
     protected final static String CLIENT_SENDBUFFER_SIZE = "clientSendBufferSize";
     protected final static String CLIENT_RECEIVEBUFFER_SIZE = "clientReceiveBufferSize";
     protected final static String CLIENT_WRITEBUFFER_LOW_WATER_MARK = "clientWriteBufferLowWaterMark";
@@ -263,6 +264,29 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setClientTcpNoDelay(boolean noDelay) {
         setProperty(CLIENT_TCP_NODELAY, Boolean.toString(noDelay));
+        return this;
+    }
+
+    /**
+     * get socket keepalive
+     * 
+     * @return socket keepalive setting
+     */
+    public boolean getClientSockKeepalive() {
+        return getBoolean(CLIENT_SOCK_KEEPALIVE, true);
+    }
+
+    /**
+     * Set socket keepalive setting.
+     * 
+     * This setting is used to send keep-alive messages on connection-oriented sockets.
+     * 
+     * @param keepalive
+     *            KeepAlive setting
+     * @return client configuration
+     */
+    public ClientConfiguration setClientSockKeepalive(boolean keepalive) {
+        setProperty(CLIENT_SOCK_KEEPALIVE, Boolean.toString(keepalive));
         return this;
     }
 

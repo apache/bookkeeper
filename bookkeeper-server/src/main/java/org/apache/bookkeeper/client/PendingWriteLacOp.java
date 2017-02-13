@@ -25,9 +25,10 @@ import org.apache.bookkeeper.client.AsyncCallback.AddLacCallback;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.buffer.ByteBuf;
 
 /**
  * This represents a pending WriteLac operation. When it has got
@@ -40,7 +41,7 @@ import org.slf4j.LoggerFactory;
  */
 class PendingWriteLacOp implements WriteLacCallback {
     private final static Logger LOG = LoggerFactory.getLogger(PendingWriteLacOp.class);
-    ChannelBuffer toSend;
+    ByteBuf toSend;
     AddLacCallback cb;
     long lac;
     Object ctx;
@@ -74,7 +75,7 @@ class PendingWriteLacOp implements WriteLacCallback {
                 lac, toSend, this, bookieIndex);
     }
 
-    void initiate(ChannelBuffer toSend) {
+    void initiate(ByteBuf toSend) {
         this.toSend = toSend;
         for (int bookieIndex: writeSet) {
             sendWriteLacRequest(bookieIndex);
