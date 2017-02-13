@@ -575,9 +575,12 @@ public class Bookie extends BookieCriticalThread {
             iface = "default";
         }
         InetSocketAddress inetAddr = new InetSocketAddress(DNS.getDefaultHost(iface), conf.getBookiePort());
-        String hostAddress = inetAddr.getAddress().getHostAddress();
-        if (conf.getUseHostNameAsBookieID()) {
-            hostAddress = inetAddr.getAddress().getCanonicalHostName();
+        String hostAddress = "127.0.0.1";
+        if (!inetAddr.isUnresolved()) {
+            hostAddress = inetAddr.getAddress().getHostAddress();
+            if (conf.getUseHostNameAsBookieID()) {
+                hostAddress = inetAddr.getAddress().getCanonicalHostName();
+            }
         }
         BookieSocketAddress addr =
                 new BookieSocketAddress(hostAddress, conf.getBookiePort());

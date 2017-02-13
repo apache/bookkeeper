@@ -42,8 +42,10 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <guava.version>20.0</guava.version>
-    <netty.version>4.1.10.Final</netty.version>
     <protobuf.version>2.6.1</protobuf.version>
+    <motd-plugin.version>1.5.0.Final</motd-plugin.version>
+    <netty.version>4.1.10.Final</netty.version>
+    <netty-boringssl.version>2.0.1.Final</netty-boringssl.version>
     <slf4j.version>1.7.25</slf4j.version>
     <zookeeper.version>3.5.1-alpha</zookeeper.version>
   </properties>
@@ -156,6 +158,17 @@
   </reporting>
   <profiles>
     <profile>
+      <id>m2e</id>
+      <activation>
+        <property>
+          <name>m2e.version</name>
+        </property>
+      </activation>
+      <properties>
+        <os.detected.classifier></os.detected.classifier>
+      </properties>
+    </profile>
+    <profile>
       <!-- Used only when cutting a full release.  Configures the deploy plugin to mark
           each artifact as a release (especially important for the archetype). Signs each
           file deployed (it actually signs way too many files and we have to clean up a bit
@@ -197,7 +210,7 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
-	      <redirectTestOutputToFile>false</redirectTestOutputToFile>
+	      <redirectTestOutputToFile>true</redirectTestOutputToFile>
             </configuration>
 	  </plugin>
 	</plugins>

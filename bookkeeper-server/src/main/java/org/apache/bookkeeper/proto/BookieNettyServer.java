@@ -32,6 +32,10 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.auth.BookieAuthProvider;
 import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.processor.RequestProcessor;
+import org.apache.bookkeeper.ssl.SecurityException;
+import org.apache.bookkeeper.ssl.SecurityHandlerFactory;
+import org.apache.bookkeeper.ssl.SecurityProviderFactoryFactory;
+import org.apache.bookkeeper.ssl.SecurityHandlerFactory.NodeType;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
@@ -62,11 +66,17 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.ssl.SslHandler;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.Collections;
+import java.security.cert.Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import javax.net.ssl.SSLPeerUnverifiedException;
 import org.apache.bookkeeper.auth.BookKeeperPrincipal;
 import org.apache.bookkeeper.bookie.BookieConnectionPeer;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -89,16 +99,25 @@ class BookieNettyServer {
     volatile boolean suspended = false;
     ChannelGroup allChannels;
     final BookieSocketAddress bookieAddress;
+    final SecurityHandlerFactory shFactory;
+    final InetSocketAddress bindAddress;
 
     final BookieAuthProvider.Factory authProviderFactory;
     final ExtensionRegistry registry = ExtensionRegistry.newInstance();
 
     BookieNettyServer(ServerConfiguration conf, RequestProcessor processor)
-        throws IOException, KeeperException, InterruptedException, BookieException {
+        throws IOException, KeeperException, InterruptedException, BookieException, SecurityException {
         this.maxFrameSize = conf.getNettyMaxFrameSizeBytes();
         this.conf = conf;
         this.requestProcessor = processor;
         this.authProviderFactory = AuthProviderFactoryFactory.newBookieAuthProviderFactory(conf);
+
+        LOG.info("Using security settings provided by class: {}", conf.getSSLProviderFactoryClass());
+        this.shFactory = SecurityProviderFactoryFactory
+                .getSecurityProviderFactory(conf.getSSLProviderFactoryClass(), this.conf);
+        if (this.shFactory != null) {
+            this.shFactory.init(NodeType.Server);
+        }
 
         if (!conf.isDisableServerSocketBind()) {
             ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("bookie-io-%s").build();
@@ -130,13 +149,11 @@ class BookieNettyServer {
         }
 
         bookieAddress = Bookie.getBookieAddress(conf);
-        InetSocketAddress bindAddress;
         if (conf.getListeningInterface() == null) {
             bindAddress = new InetSocketAddress(conf.getBookiePort());
         } else {
             bindAddress = bookieAddress.getSocketAddress();
         }
-        listenOn(bindAddress, bookieAddress);
     }
 
     boolean isRunning() {
@@ -171,6 +188,91 @@ class BookieNettyServer {
                 channel.config().setAutoRead(true);
             }
             suspensionLock.notifyAll();
+        }
+    }
+
+    class BookieSideConnectionPeerContextHandler extends ChannelInboundHandlerAdapter {
+
+        final BookieConnectionPeer connectionPeer;
+        volatile Channel channel;
+        volatile BookKeeperPrincipal authorizedId = BookKeeperPrincipal.ANONYMOUS;
+
+        public BookieSideConnectionPeerContextHandler() {
+            this.connectionPeer = new BookieConnectionPeer() {
+                @Override
+                public SocketAddress getRemoteAddr() {
+                    Channel c = channel;
+                    if (c != null) {
+                        return c.remoteAddress();
+                    } else {
+                        return null;
+                    }
+                }
+
+                @Override
+                public Collection<Object> getProtocolPrincipals() {
+                    Channel c = channel;
+                    if (c == null) {
+                        return Collections.emptyList();
+                    } else {
+                        SslHandler ssl = c.pipeline().get(SslHandler.class);
+                        if (ssl == null) {
+                            return Collections.emptyList();
+                        }
+                        try {
+                            Certificate[] certificates = ssl.engine().getSession().getPeerCertificates();
+                            if (certificates == null) {
+                                return Collections.emptyList();
+                            }
+                            List<Object> result = new ArrayList<>();
+                            result.addAll(Arrays.asList(certificates));
+                            return result;
+                        } catch (SSLPeerUnverifiedException err) {
+                            return Collections.emptyList();
+                        }
+
+                    }
+                }
+
+                @Override
+                public void disconnect() {
+                    Channel c = channel;
+                    if (c != null) {
+                        c.close();
+                    }
+                    LOG.info("authplugin disconnected channel {}", channel);
+                }
+
+                @Override
+                public BookKeeperPrincipal getAuthorizedId() {
+                    return authorizedId;
+                }
+
+                @Override
+                public void setAuthorizedId(BookKeeperPrincipal principal) {
+                    LOG.info("connection {} authenticated as {}", channel, principal);
+                    authorizedId = principal;
+                }
+
+                @Override
+                public boolean isSecure() {
+                    Channel c = channel;
+                    if (c == null) {
+                        return false;
+                    } else {
+                        return c.pipeline().get("ssl") != null;
+                    }
+                }
+            };
+        }
+
+        public BookieConnectionPeer getConnectionPeer() {
+            return connectionPeer;
+        }
+
+        @Override
+        public void channelActive(ChannelHandlerContext ctx) throws Exception {
+            channel = ctx.channel();
         }
     }
 
@@ -214,6 +316,7 @@ class BookieNettyServer {
                             ? new BookieRequestHandler(conf, requestProcessor, allChannels) : new RejectRequestHandler();
                     pipeline.addLast("bookieRequestHandler", requestHandler);
 
+                    pipeline.addLast("contextHandler", contextHandler);
                 }
             });
 
@@ -272,7 +375,8 @@ class BookieNettyServer {
         }
     }
 
-    void start() {
+    void start() throws InterruptedException {
+        listenOn(bindAddress, bookieAddress);
         isRunning.set(true);
     }
 
@@ -294,63 +398,6 @@ class BookieNettyServer {
         }
 
         authProviderFactory.close();
-    }
-
-    class BookieSideConnectionPeerContextHandler extends ChannelInboundHandlerAdapter {
-
-        final BookieConnectionPeer connectionPeer;
-        volatile Channel channel;
-        volatile BookKeeperPrincipal authorizedId = BookKeeperPrincipal.ANONYMOUS;
-
-        public BookieSideConnectionPeerContextHandler() {
-            this.connectionPeer = new BookieConnectionPeer() {
-                @Override
-                public SocketAddress getRemoteAddr() {
-                    Channel c = channel;
-                    if (c != null) {
-                        return c.remoteAddress();
-                    } else {
-                        return null;
-                    }
-                }
-
-                @Override
-                public Collection<Object> getProtocolPrincipals() {
-                    return Collections.emptyList();
-                }
-
-                @Override
-                public void disconnect() {
-                    Channel c = channel;
-                    if (c != null) {
-                        c.close();
-                    }
-                    LOG.info("authplugin disconnected channel {}", channel);
-                }
-
-                @Override
-                public BookKeeperPrincipal getAuthorizedId() {
-                    return authorizedId;
-                }
-
-                @Override
-                public void setAuthorizedId(BookKeeperPrincipal principal) {
-                    LOG.info("connection {} authenticated as {}", channel, principal);
-                    authorizedId = principal;
-                }
-
-            };
-        }
-
-        public BookieConnectionPeer getConnectionPeer() {
-            return connectionPeer;
-        }
-
-        @Override
-        public void channelActive(ChannelHandlerContext ctx) throws Exception {
-            channel = ctx.channel();
-        }
-
     }
 
     private static class RejectRequestHandler extends ChannelInboundHandlerAdapter {

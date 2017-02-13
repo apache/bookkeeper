@@ -222,8 +222,21 @@
         <version>2.7.3</version>
         <scope>test</scope>
     </dependency>          
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-tcnative-boringssl-static</artifactId>
+      <version>${netty-boringssl.version}</version>
+      <classifier>${os.detected.classifier}</classifier>
+    </dependency>
   </dependencies>
   <build>
+    <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>${motd-plugin.version}</version>
+      </extension>
+    </extensions>
     <plugins>
       <plugin>
             <!-- for mini-kdc -->

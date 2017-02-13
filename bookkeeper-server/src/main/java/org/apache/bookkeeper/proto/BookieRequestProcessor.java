@@ -23,6 +23,9 @@ package org.apache.bookkeeper.proto;
 import com.google.protobuf.ByteString;
 
 import io.netty.channel.Channel;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 
 import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.AuthToken;
@@ -30,6 +33,8 @@ import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
+import org.apache.bookkeeper.ssl.SecurityException;
+import org.apache.bookkeeper.ssl.SecurityHandlerFactory;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
@@ -40,9 +45,12 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY_REQUEST;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_REQUEST;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAC;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.GET_BOOKIE_INFO;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class BookieRequestProcessor implements RequestProcessor {
 
@@ -68,6 +76,11 @@ public class BookieRequestProcessor implements RequestProcessor {
      */
     private final OrderedSafeExecutor writeThreadPool;
 
+    /**
+     * SSL management
+     */
+    private SecurityHandlerFactory shFactory;
+
     // Expose Stats
     private final BKStats bkStats = BKStats.getInstance();
     private final boolean statsEnabled;
@@ -80,11 +93,16 @@ public class BookieRequestProcessor implements RequestProcessor {
     final OpStatsLogger getBookieInfoStats;
 
     public BookieRequestProcessor(ServerConfiguration serverCfg, Bookie bookie,
-                                  StatsLogger statsLogger) {
+            StatsLogger statsLogger, SecurityHandlerFactory shFactory) {
         this.serverCfg = serverCfg;
         this.bookie = bookie;
-        this.readThreadPool = createExecutor(this.serverCfg.getNumReadWorkerThreads(), "BookieReadThread-" + serverCfg.getBookiePort());
-        this.writeThreadPool = createExecutor(this.serverCfg.getNumAddWorkerThreads(), "BookieWriteThread-" + serverCfg.getBookiePort());
+        this.readThreadPool =
+            createExecutor(this.serverCfg.getNumReadWorkerThreads(),
+                           "BookieReadThread-" + serverCfg.getBookiePort());
+        this.writeThreadPool =
+            createExecutor(this.serverCfg.getNumAddWorkerThreads(),
+                           "BookieWriteThread-" + serverCfg.getBookiePort());
+        this.shFactory = shFactory;
         // Expose Stats
         this.statsEnabled = serverCfg.isStatisticsEnabled();
         this.addEntryStats = statsLogger.getOpStatsLogger(ADD_ENTRY);
@@ -152,6 +170,9 @@ public class BookieRequestProcessor implements RequestProcessor {
                 case GET_BOOKIE_INFO:
                     processGetBookieInfoRequestV3(r,c);
                     break;
+                case STARTTLS:
+                    processStartTLSRequestV3(r, c);
+                    break;
                 default:
                     LOG.info("Unknown operation type {}", header.getOperation());
                     BookkeeperProtocol.Response.Builder response =
@@ -184,6 +205,24 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
+     private void processWriteLacRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+        WriteLacProcessorV3 writeLac = new WriteLacProcessorV3(r, c, this);
+        if (null == writeThreadPool) {
+            writeLac.run();
+        } else {
+            writeThreadPool.submitOrdered(r.getAddRequest().getLedgerId(), writeLac);
+        }
+    }
+
+    private void processReadLacRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+        ReadLacProcessorV3 readLac = new ReadLacProcessorV3(r, c, this);
+        if (null == readThreadPool) {
+            readLac.run();
+        } else {
+            readThreadPool.submitOrdered(r.getAddRequest().getLedgerId(), readLac);
+        }
+    }
+
     private void processAddRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
         WriteEntryProcessorV3 write = new WriteEntryProcessorV3(r, c, this);
         if (null == writeThreadPool) {
@@ -202,21 +241,53 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
-    private void processWriteLacRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
-        WriteLacProcessorV3 writeLac = new WriteLacProcessorV3(r, c, this);
-        if (null == writeThreadPool) {
-            writeLac.run();
+    private void processStartTLSRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+        BookkeeperProtocol.Response.Builder response = BookkeeperProtocol.Response.newBuilder();
+        BookkeeperProtocol.BKPacketHeader.Builder header = BookkeeperProtocol.BKPacketHeader.newBuilder();
+        header.setVersion(BookkeeperProtocol.ProtocolVersion.VERSION_THREE);
+        header.setOperation(r.getHeader().getOperation());
+        header.setTxnId(r.getHeader().getTxnId());
+        response.setHeader(header.build());
+        if (shFactory == null) {
+            LOG.error("Got StartTLS request but SSL not configured");
+            response.setStatus(BookkeeperProtocol.StatusCode.EBADREQ);
+            c.writeAndFlush(response.build());
         } else {
-            writeThreadPool.submit(writeLac);
-        }
-    }
+            LOG.info("Got StartTLS request from {}",c);
+            // there is no need to execute in a different thread as this operation is light
+            try {
+                SslHandler sslHandler = shFactory.getBookieHandler();
+                c.pipeline().addFirst("ssl", sslHandler);
 
-    private void processReadLacRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
-        ReadLacProcessorV3 readLac = new ReadLacProcessorV3(r, c, this);
-        if (null == readThreadPool) {
-            readLac.run();
-        } else {
-            readThreadPool.submit(readLac);
+                response.setStatus(BookkeeperProtocol.StatusCode.EOK);
+                BookkeeperProtocol.StartTLSResponse.Builder builder = BookkeeperProtocol.StartTLSResponse.newBuilder();
+                response.setStartTLSResponse(builder.build());
+                sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
+                    @Override
+                    public void operationComplete(Future<Channel> future) throws Exception {
+                        // notify the AuthPlugin the completion of the handshake, even in case of failure
+                        LOG.info("Bookie STARTTLS handshake complete");
+                        AuthHandler.ServerSideHandler authHandler = c.pipeline()
+                                .get(AuthHandler.ServerSideHandler.class);
+                        authHandler.authProvider.onProtocolUpgrade();
+                        if (future.isSuccess()) {
+                            LOG.info("Session is protected by: {}", sslHandler.engine().getSession().getCipherSuite());
+                        } else {
+                            LOG.info("SSL Handshake failure: {}", future.cause());
+                        }
+                    }
+                });
+                c.writeAndFlush(response.build());
+            } catch (SecurityException se) {
+                se.printStackTrace();
+                LOG.info("Unknown operation type {}", header.getOperation());
+                BookkeeperProtocol.Response.Builder errResponse = BookkeeperProtocol.Response.newBuilder()
+                        .setHeader(r.getHeader()).setStatus(BookkeeperProtocol.StatusCode.EIO);
+                c.writeAndFlush(errResponse.build());
+                if (statsEnabled) {
+                    bkStats.getOpStats(BKStats.STATS_UNKNOWN).incrementFailedOps();
+                }
+            }
         }
     }
 

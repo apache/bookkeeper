@@ -18,16 +18,18 @@
 package org.apache.bookkeeper.conf;
 
 import java.net.URL;
+import javax.net.ssl.SSLEngine;
+
+import org.apache.bookkeeper.feature.Feature;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.util.ReflectionUtils;
+import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDER_FACTORY_CLASS;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
-
-import org.apache.bookkeeper.feature.Feature;
-import org.apache.bookkeeper.meta.LedgerManagerFactory;
-import org.apache.bookkeeper.util.ReflectionUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,8 +68,27 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     protected final static String METASTORE_IMPL_CLASS = "metastoreImplClass";
     protected final static String METASTORE_MAX_ENTRIES_PER_SCAN = "metastoreMaxEntriesPerScan";
 
-    // Client auth provider factory class name. It must be configured on Bookies to for the Auditor
-    protected final static String CLIENT_AUTH_PROVIDER_FACTORY_CLASS = "clientAuthProviderFactoryClass";
+    // Common SSL configuration
+    // SSL Provider (JDK or OpenSSL)
+    protected final static String SSL_PROVIDER = "sslProvider";
+
+    // SSL provider factory class name
+    protected final static String SSL_PROVIDER_FACTORY_CLASS = "sslProviderFactoryClass";
+
+    // Enable authentication of the other connection end point (mutual authentication)
+    protected final static String SSL_CLIENT_AUTHENTICATION = "sslClientAuthentication";
+
+    /**
+     * This list will be passed to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }.
+     * Please refer to official JDK JavaDocs
+    */
+    protected final static String SSL_ENABLED_CIPHER_SUITES = "sslEnabledCipherSuites";
+
+    /**
+     * This list will be passed to {@link SSLEngine#setEnabledProtocols(java.lang.String[]) }.
+     * Please refer to official JDK JavaDocs
+    */
+    protected final static String SSL_ENABLED_PROTOCOLS = "sslEnabledProtocols";
 
     //Netty configuration
     protected final static String NETTY_MAX_FRAME_SIZE = "nettyMaxFrameSizeBytes";
@@ -303,8 +324,8 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     }
 
     /**
-     * Get the client authentication provider factory class name. If this returns null, no authentication will take
-     * place.
+     * Get the client authentication provider factory class name.
+     * If this returns null, no authentication will take place.
      *
      * @return the client authentication provider factory class name or null.
      */
@@ -333,5 +354,119 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     public AbstractConfiguration setNettyMaxFrameSizeBytes(int maxSize) {
         setProperty(NETTY_MAX_FRAME_SIZE, String.valueOf(maxSize));
         return this;
+    }
+
+    /**
+     * Get the security provider factory class name. If this returns null, no security will be enforced on the channel.
+     *
+     * @return the security provider factory class name or null.
+     */
+    public String getSSLProviderFactoryClass() {
+        return getString(SSL_PROVIDER_FACTORY_CLASS, null);
+    }
+
+    /**
+     * Set the client security provider factory class name. If this is not set, no security will be used on the channel.
+     *
+     * @param factoryClass
+     *            the client security provider factory class name
+     * @return client configuration
+     */
+    public AbstractConfiguration setSSLProviderFactoryClass(String factoryClass) {
+        setProperty(SSL_PROVIDER_FACTORY_CLASS, factoryClass);
+        return this;
+    }
+
+    /**
+     * Get SSL Provider (JDK or OpenSSL)
+     * 
+     * @return the SSL provider to use in creating SSL Context
+     */
+    public String getSSLProvider() {
+        return getString(SSL_PROVIDER, "OpenSSL");
+    }
+
+    /**
+     * Set SSL Provider (JDK or OpenSSL)
+     * 
+     * @param provider
+     *            SSL Provider type
+     * @return Client Configuration
+     */
+    public AbstractConfiguration setSSLProvider(String provider) {
+        setProperty(SSL_PROVIDER, provider);
+        return this;
+    }
+
+    /**
+     * Whether the client will send an SSL certificate on TLS-handshake
+     * 
+     * @see #setSSLAuthentication(boolean)
+     * @return whether SSL is enabled on the bookie or not.
+     */
+    public boolean getSSLClientAuthentication() {
+        return getBoolean(SSL_CLIENT_AUTHENTICATION, false);
+    }
+
+    /**
+     * Specify whether the client will send an SSL certificate on TLS-handshake
+     * 
+     * @param enabled
+     *            Whether to send a certificate or not
+     * @return client configuration
+     */
+    public AbstractConfiguration setSSLClientAuthentication(boolean enabled) {
+        setProperty(SSL_CLIENT_AUTHENTICATION, enabled);
+        return this;
+    }
+
+    /**
+     * Set the list of enabled SSL cipher suites. Leave null not to override default JDK list. This list will be passed
+     * to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }. Please refer to official JDK JavaDocs
+     *
+     * @param list
+     *            comma separated list of enabled SSL cipher suites
+     * @return current configuration
+     */
+    public AbstractConfiguration setSslEnabledCipherSuites(
+            String list) {
+        setProperty(SSL_ENABLED_CIPHER_SUITES, list);
+        return this;
+    }
+
+    /**
+     * Get the list of enabled SSL cipher suites
+     *
+     * @return this list of enabled SSL cipher suites
+     *
+     * @see #setSslEnabledCipherSuites(java.lang.String)
+     */
+    public String getSslEnabledCipherSuites() {
+        return getString(SSL_ENABLED_CIPHER_SUITES, null);
+    }
+
+    /**
+     * Set the list of enabled SSL protocols. Leave null not to override default JDK list. This list will be passed to
+     * {@link SSLEngine#setEnabledProtocols(java.lang.String[]) }. Please refer to official JDK JavaDocs
+     *
+     * @param list
+     *            comma separated list of enabled SSL cipher suites
+     * @return current configuration
+     */
+    public AbstractConfiguration setSslEnabledProtocols(
+            String list) {
+        setProperty(SSL_ENABLED_PROTOCOLS, list);
+        return this;
+    }
+
+    /**
+     * Get the list of enabled SSL protocols
+     *
+     * @return the list of enabled SSL protocols.
+     *
+     * @see #setSslEnabledProtocols(java.lang.String)
+     */
+    public String getSslEnabledProtocols() {
+        return getString(SSL_ENABLED_PROTOCOLS, null);
     }
 }

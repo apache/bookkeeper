@@ -38,6 +38,9 @@ import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.ssl.SecurityException;
+import org.apache.bookkeeper.ssl.SecurityHandlerFactory;
+import org.apache.bookkeeper.ssl.SecurityProviderFactoryFactory;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
@@ -85,18 +88,21 @@ public class BookieServer {
 
     public BookieServer(ServerConfiguration conf) throws IOException,
             KeeperException, InterruptedException, BookieException,
-            UnavailableException, CompatibilityException {
+            UnavailableException, CompatibilityException, SecurityException {
         this(conf, NullStatsLogger.INSTANCE);
     }
 
     public BookieServer(ServerConfiguration conf, StatsLogger statsLogger)
             throws IOException, KeeperException, InterruptedException,
-            BookieException, UnavailableException, CompatibilityException {
+            BookieException, UnavailableException, CompatibilityException, SecurityException {
         this.conf = conf;
         this.statsLogger = statsLogger;
         this.bookie = newBookie(conf);
+        final SecurityHandlerFactory shFactory;
+        shFactory = SecurityProviderFactoryFactory
+                .getSecurityProviderFactory(conf.getSSLProviderFactoryClass(), this.conf);
         this.requestProcessor = new BookieRequestProcessor(conf, bookie,
-                statsLogger.scope(SERVER_SCOPE));
+                statsLogger.scope(SERVER_SCOPE), shFactory);
         this.nettyServer = new BookieNettyServer(this.conf, requestProcessor);
         isAutoRecoveryDaemonEnabled = conf.isAutoRecoveryDaemonEnabled();
         if (isAutoRecoveryDaemonEnabled) {
@@ -111,7 +117,7 @@ public class BookieServer {
                 new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE));
     }
 
-    public void start() throws IOException, UnavailableException {
+    public void start() throws IOException, UnavailableException, InterruptedException {
         this.bookie.start();
         // fail fast, when bookie startup is not successful
         if (!this.bookie.isRunning()) {

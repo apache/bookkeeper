@@ -60,4 +60,10 @@ public interface ConnectionPeer {
      * @see #getAuthorizedId()
      */
     public void setAuthorizedId(BookKeeperPrincipal principal);
+
+    /**
+     * This flag returns true if a 'secure' channel in use, like SSL
+     * @return true if the channel is 'secure'
+     */
+    public boolean isSecure();
 }
