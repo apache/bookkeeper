@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.proto;
 
+import io.netty.channel.Channel;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutionException;
@@ -28,7 +30,6 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.proto.BookieProtocol.Request;
 import org.apache.bookkeeper.util.MathUtils;
-import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +53,7 @@ class ReadEntryProcessor extends PacketProcessorBase {
         try {
             Future<Boolean> fenceResult = null;
             if (read.isFencingRequest()) {
-                LOG.warn("Ledger " + request.getLedgerId() + " fenced by " + channel.getRemoteAddress());
+                LOG.warn("Ledger: {}  fenced by: {}", request.getLedgerId(), channel.remoteAddress());
 
                 if (read.hasMasterKey()) {
                     fenceResult = requestProcessor.bookie.fenceLedger(read.getLedgerId(), read.getMasterKey());

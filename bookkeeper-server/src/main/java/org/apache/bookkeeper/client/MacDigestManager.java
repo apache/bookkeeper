@@ -18,6 +18,8 @@ package org.apache.bookkeeper.client;
 * limitations under the License.
 */
 
+import io.netty.buffer.ByteBuf;
+
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -73,13 +75,13 @@ class MacDigestManager extends DigestManager {
 
 
     @Override
-    byte[] getValueAndReset() {
-        return mac.get().doFinal();
+    void populateValueAndReset(ByteBuf buffer) {
+        buffer.writeBytes(mac.get().doFinal());
     }
 
     @Override
-    void update(byte[] data, int offset, int length) {
-        mac.get().update(data, offset, length);
+    void update(ByteBuf data) {
+        mac.get().update(data.nioBuffer());
     }
 
 

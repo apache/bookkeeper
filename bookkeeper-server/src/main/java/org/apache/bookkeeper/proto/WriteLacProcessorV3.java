@@ -31,11 +31,12 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 import org.apache.bookkeeper.util.MathUtils;
-import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class WriteLacProcessorV3 extends PacketProcessorBaseV3 {
+import io.netty.channel.Channel;
+
+class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     private final static Logger logger = LoggerFactory.getLogger(WriteLacProcessorV3.class);
 
     public WriteLacProcessorV3(Request request, Channel channel,
