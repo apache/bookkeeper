@@ -28,17 +28,19 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.RateLimiter;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,12 +48,15 @@ import org.slf4j.LoggerFactory;
  * This is the garbage collector thread that runs in the background to
  * remove any entry log files that no longer contains any active ledger.
  */
-public class GarbageCollectorThread extends BookieThread {
+public class GarbageCollectorThread extends SafeRunnable {
     private static final Logger LOG = LoggerFactory.getLogger(GarbageCollectorThread.class);
     private static final int SECOND = 1000;
 
     // Maps entry log files to the set of ledgers that comprise the file and the size usage per ledger
     private Map<Long, EntryLogMetadata> entryLogMetaMap = new ConcurrentHashMap<Long, EntryLogMetadata>();
+
+    ScheduledExecutorService gcExecutor;
+    Future<?> scheduledFuture = null;
 
     // This is how often we want to run the Garbage Collector Thread (in milliseconds).
     final long gcWaitTime;
@@ -188,7 +193,9 @@ public class GarbageCollectorThread extends BookieThread {
                                   LedgerManager ledgerManager,
                                   final CompactableLedgerStorage ledgerStorage)
         throws IOException {
-        super("GarbageCollectorThread");
+        gcExecutor = Executors.newSingleThreadScheduledExecutor(
+                new ThreadFactoryBuilder().setNameFormat("GarbageCollectorThread-%d").build()
+        );
 
         this.entryLogger = ledgerStorage.getEntryLogger();
         this.ledgerStorage = ledgerStorage;
@@ -266,10 +273,10 @@ public class GarbageCollectorThread extends BookieThread {
         lastMinorCompactionTime = lastMajorCompactionTime = MathUtils.now();
     }
 
-    public synchronized void enableForceGC() {
+    public void enableForceGC() {
         if (forceGarbageCollection.compareAndSet(false, true)) {
             LOG.info("Forced garbage collection triggered by thread: {}", Thread.currentThread().getName());
-            notify();
+            triggerGC();
         }
     }
 
@@ -278,6 +285,13 @@ public class GarbageCollectorThread extends BookieThread {
             LOG.info("{} disabled force garbage collection since bookie has enough space now.", Thread
                     .currentThread().getName());
         }
+    }
+
+    /**
+     * Manually trigger GC (for testing)
+     */
+    Future<?> triggerGC() {
+        return gcExecutor.submit(this);
     }
 
     public void suspendMajorGC() {
@@ -304,64 +318,60 @@ public class GarbageCollectorThread extends BookieThread {
         }
     }
 
-    @Override
-    public void run() {
-        while (running) {
-            synchronized (this) {
-                try {
-                    wait(gcWaitTime);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    continue;
-                }
-            }
-
-            boolean force = forceGarbageCollection.get();
-            if (force) {
-                LOG.info("Garbage collector thread forced to perform GC before expiry of wait time.");
-            }
-
-            // Extract all of the ledger ID's that comprise all of the entry logs
-            // (except for the current new one which is still being written to).
-            entryLogMetaMap = extractMetaFromEntryLogs(entryLogMetaMap);
-
-            // gc inactive/deleted ledgers
-            doGcLedgers();
-
-            // gc entry logs
-            doGcEntryLogs();
-
-            boolean suspendMajor = suspendMajorCompaction.get();
-            boolean suspendMinor = suspendMinorCompaction.get();
-            if (suspendMajor) {
-                LOG.info("Disk almost full, suspend major compaction to slow down filling disk.");
-            }
-            if (suspendMinor) {
-                LOG.info("Disk full, suspend minor compaction to slow down filling disk.");
-            }
-
-            long curTime = MathUtils.now();
-            if (enableMajorCompaction && (!suspendMajor) &&
-                (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
-                // enter major compaction
-                LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
-                doCompactEntryLogs(majorCompactionThreshold);
-                lastMajorCompactionTime = MathUtils.now();
-                // also move minor compaction time
-                lastMinorCompactionTime = lastMajorCompactionTime;
-                continue;
-            }
-
-            if (enableMinorCompaction && (!suspendMinor) &&
-                (force || curTime - lastMinorCompactionTime > minorCompactionInterval)) {
-                // enter minor compaction
-                LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
-                doCompactEntryLogs(minorCompactionThreshold);
-                lastMinorCompactionTime = MathUtils.now();
-            }
-            forceGarbageCollection.set(false);
+    public void start() {
+        if (scheduledFuture != null) {
+            scheduledFuture.cancel(false);
         }
-        LOG.info("GarbageCollectorThread exited loop!");
+        scheduledFuture = gcExecutor.scheduleAtFixedRate(this, gcWaitTime, gcWaitTime, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public void safeRun() {
+        boolean force = forceGarbageCollection.get();
+        if (force) {
+            LOG.info("Garbage collector thread forced to perform GC before expiry of wait time.");
+        }
+
+        // Extract all of the ledger ID's that comprise all of the entry logs
+        // (except for the current new one which is still being written to).
+        entryLogMetaMap = extractMetaFromEntryLogs(entryLogMetaMap);
+
+        // gc inactive/deleted ledgers
+        doGcLedgers();
+
+        // gc entry logs
+        doGcEntryLogs();
+
+        boolean suspendMajor = suspendMajorCompaction.get();
+        boolean suspendMinor = suspendMinorCompaction.get();
+        if (suspendMajor) {
+            LOG.info("Disk almost full, suspend major compaction to slow down filling disk.");
+        }
+        if (suspendMinor) {
+            LOG.info("Disk full, suspend minor compaction to slow down filling disk.");
+        }
+
+        long curTime = MathUtils.now();
+        if (enableMajorCompaction && (!suspendMajor) &&
+            (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
+            // enter major compaction
+            LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
+            doCompactEntryLogs(majorCompactionThreshold);
+            lastMajorCompactionTime = MathUtils.now();
+            // and also move minor compaction time
+            lastMinorCompactionTime = lastMajorCompactionTime;
+            forceGarbageCollection.set(false);
+            return;
+        }
+
+        if (enableMinorCompaction && (!suspendMinor) &&
+            (force || curTime - lastMinorCompactionTime > minorCompactionInterval)) {
+            // enter minor compaction
+            LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
+            doCompactEntryLogs(minorCompactionThreshold);
+            lastMinorCompactionTime = MathUtils.now();
+        }
+        forceGarbageCollection.set(false);
     }
 
     /**
@@ -468,12 +478,16 @@ public class GarbageCollectorThread extends BookieThread {
     public void shutdown() throws InterruptedException {
         this.running = false;
         LOG.info("Shutting down GarbageCollectorThread");
-        if (compacting.compareAndSet(false, true)) {
-            // if setting compacting flag succeed, means gcThread is not compacting now
-            // it is safe to interrupt itself now
-            this.interrupt();
+
+        while (!compacting.compareAndSet(false, true)) {
+            // Wait till the thread stops compacting
+            wait(100);
         }
-        this.join();
+        gcExecutor.shutdown();
+        if (gcExecutor.awaitTermination(60, TimeUnit.SECONDS)) {
+            LOG.warn("GC executor did not shut down in 60 seconds. Killing");
+            gcExecutor.shutdownNow();
+        }
     }
 
     /**
