@@ -28,7 +28,6 @@ import java.nio.ByteBuffer;
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
@@ -471,10 +470,12 @@ public class LedgerCacheTest {
         }
 
         @Override
-        public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
-                LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                final CheckpointSource checkpointSource, StatsLogger statsLogger) throws IOException {
-            super.initialize(conf, ledgerManager, ledgerDirsManager, indexDirsManager, checkpointSource, statsLogger);
+        public void initialize(ServerConfiguration conf,
+                               GarbageCollectorThread.LedgerManagerProvider ledgerManagerProvider,
+                               LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
+                               final CheckpointSource checkpointSource, StatsLogger statsLogger) throws IOException {
+            super.initialize(conf, ledgerManagerProvider, ledgerDirsManager,
+                             indexDirsManager, checkpointSource, statsLogger);
             this.memTable = new EntryMemTable(conf, checkpointSource, statsLogger) {
                 @Override
                 boolean isSizeLimitReached() {
