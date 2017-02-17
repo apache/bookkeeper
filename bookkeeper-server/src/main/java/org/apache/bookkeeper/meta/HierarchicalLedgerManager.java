@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -31,47 +32,59 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.AsyncCallback;
+import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Hierarchical Ledger Manager which manages ledger meta in zookeeper using 2-level hierarchical znodes.
+ * LongHierarchical Ledger Manager which manages ledger meta in zookeeper using 5-level hierarchical znodes.
  *
  * <p>
- * HierarchicalLedgerManager splits the generated id into 3 parts (2-4-4):
- * <pre>&lt;level1 (2 digits)&gt;&lt;level2 (4 digits)&gt;&lt;level3 (4 digits)&gt;</pre>
- * These 3 parts are used to form the actual ledger node path used to store ledger metadata:
- * <pre>(ledgersRootPath)/level1/level2/L(level3)</pre>
- * E.g Ledger 0000000001 is split into 3 parts <i>00</i>, <i>0000</i>, <i>0001</i>, which is stored in
- * <i>(ledgersRootPath)/00/0000/L0001</i>. So each znode could have at most 10000 ledgers, which avoids
- * errors during garbage collection due to lists of children that are too long.
+ * HierarchicalLedgerManager splits the generated id into 5 parts (3-4-4-4-4):
+ *
+ * <pre>
+ * &lt;level0 (3 digits)&gt;&lt;level1 (4 digits)&gt;&lt;level2 (4 digits)&gt;&lt;level3 (4 digits)&gt;
+ * &lt;level4 (4 digits)&gt;
+ * </pre>
+ *
+ * These 5 parts are used to form the actual ledger node path used to store ledger metadata:
+ *
+ * <pre>
+ * (ledgersRootPath) / level0 / level1 / level2 / level3 / L(level4)
+ * </pre>
+ *
+ * E.g Ledger 0000000000000000001 is split into 5 parts <i>000</i>, <i>0000</i>, <i>0000</i>, <i>0000</i>, <i>0001</i>,
+ * which is stored in <i>(ledgersRootPath)/000/0000/0000/0000/L0001</i>. So each znode could have at most 10000 ledgers,
+ * which avoids errors during garbage collection due to lists of children that are too long.
+ *
+ * HierarchicalLedgerManager is backwards-compatible with the LegacyHierarchicalLedgerManager.
+ * In order to achieve this, it forwards requests relating to ledger IDs which are < Integer.MAX_INT to the
+ * LegacyHierarchicalLedgerManager. The new 5-part directory structure will not appear until a ledger with an
+ * ID >= Integer.MAX_INT is created.
  */
-class HierarchicalLedgerManager extends AbstractZkLedgerManager {
+class HierarchicalLedgerManager extends LegacyHierarchicalLedgerManager {
 
     static final Logger LOG = LoggerFactory.getLogger(HierarchicalLedgerManager.class);
 
-    static final String IDGEN_ZNODE = "idgen";
+    static final String IDGEN_ZNODE = "idgen-long";
     private static final String MAX_ID_SUFFIX = "9999";
     private static final String MIN_ID_SUFFIX = "0000";
+    private LegacyHierarchicalLedgerManager hierarchicalLedgerManager;
+
 
     /**
      * Constructor
      *
      * @param conf
-     *          Configuration object
+     *            Configuration object
      * @param zk
-     *          ZooKeeper Client Handle
+     *            ZooKeeper Client Handle
      */
     public HierarchicalLedgerManager(AbstractConfiguration conf, ZooKeeper zk) {
         super(conf, zk);
-    }
-
-    @Override
-    public String getLedgerPath(long ledgerId) {
-        return ledgerRootPath + StringUtils.getHierarchicalLedgerPath(ledgerId);
+        hierarchicalLedgerManager = new LegacyHierarchicalLedgerManager(conf, zk);
     }
 
     @Override
@@ -80,12 +93,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
             throw new IOException("it is not a valid hashed path name : " + pathName);
         }
         String hierarchicalPath = pathName.substring(ledgerRootPath.length() + 1);
-        return StringUtils.stringToHierarchicalLedgerId(hierarchicalPath);
-    }
-
-    // get ledger from all level nodes
-    long getLedgerId(String...levelNodes) throws IOException {
-        return StringUtils.stringToHierarchicalLedgerId(levelNodes);
+        return StringUtils.stringToLongHierarchicalLedgerId(hierarchicalPath);
     }
 
     //
@@ -93,244 +101,229 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
     //
 
     /**
-     * Get the smallest cache id in a specified node /level1/level2
+     * Get the smallest cache id in a specified node /level0/level1/level2/level3
      *
+     * @param level0
+     *            1st level node name
      * @param level1
-     *          1st level node name
+     *            2nd level node name
      * @param level2
-     *          2nd level node name
+     *            3rd level node name
+     * @param level3
+     *            4th level node name
      * @return the smallest ledger id
      */
-    private long getStartLedgerIdByLevel(String level1, String level2) throws IOException {
-        return getLedgerId(level1, level2, MIN_ID_SUFFIX);
+    private long getStartLedgerIdByLevel(String level0, String level1, String level2, String level3)
+            throws IOException {
+        return getLedgerId(level0, level1, level2, level3, MIN_ID_SUFFIX);
     }
 
     /**
-     * Get the largest cache id in a specified node /level1/level2
+     * Get the largest cache id in a specified node /level0/level1/level2/level3
      *
+     * @param level0
+     *            1st level node name
      * @param level1
-     *          1st level node name
+     *            2nd level node name
      * @param level2
-     *          2nd level node name
+     *            3rd level node name
+     * @param level3
+     *            4th level node name
      * @return the largest ledger id
      */
-    private long getEndLedgerIdByLevel(String level1, String level2) throws IOException {
-        return getLedgerId(level1, level2, MAX_ID_SUFFIX);
+    private long getEndLedgerIdByLevel(String level0, String level1, String level2, String level3) throws IOException {
+        return getLedgerId(level0, level1, level2, level3, MAX_ID_SUFFIX);
     }
 
     @Override
-    public void asyncProcessLedgers(final Processor<Long> processor,
-                                    final AsyncCallback.VoidCallback finalCb, final Object context,
-                                    final int successRc, final int failureRc) {
-        // process 1st level nodes
-        asyncProcessLevelNodes(ledgerRootPath, new Processor<String>() {
-            @Override
-            public void process(final String l1Node, final AsyncCallback.VoidCallback cb1) {
-                if (isSpecialZnode(l1Node)) {
-                    cb1.processResult(successRc, null, context);
-                    return;
-                }
-                final String l1NodePath = ledgerRootPath + "/" + l1Node;
-                // process level1 path, after all children of level1 process
-                // it callback to continue processing next level1 node
-                asyncProcessLevelNodes(l1NodePath, new Processor<String>() {
-                    @Override
-                    public void process(String l2Node, AsyncCallback.VoidCallback cb2) {
-                        // process level1/level2 path
-                        String l2NodePath = ledgerRootPath + "/" + l1Node + "/" + l2Node;
-                        // process each ledger
-                        // after all ledger are processed, cb2 will be call to continue processing next level2 node
-                        asyncProcessLedgersInSingleNode(l2NodePath, processor, cb2,
-                                                        context, successRc, failureRc);
-                    }
-                }, cb1, context, successRc, failureRc);
-            }
-        }, finalCb, context, successRc, failureRc);
-    }
+    public void asyncProcessLedgers(final Processor<Long> processor, final AsyncCallback.VoidCallback finalCb,
+            final Object context, final int successRc, final int failureRc) {
 
-    /**
-     * Process hash nodes in a given path
-     */
-    void asyncProcessLevelNodes(
-        final String path, final Processor<String> processor,
-        final AsyncCallback.VoidCallback finalCb, final Object context,
-        final int successRc, final int failureRc) {
-        zk.sync(path, new AsyncCallback.VoidCallback() {
+        // Process the old 31-bit id ledgers first.
+        hierarchicalLedgerManager.asyncProcessLedgers(processor, new VoidCallback(){
+
             @Override
             public void processResult(int rc, String path, Object ctx) {
-                if (rc != Code.OK.intValue()) {
-                    LOG.error("Error syncing path " + path + " when getting its chidren: ",
-                              KeeperException.create(KeeperException.Code.get(rc), path));
-                    finalCb.processResult(failureRc, null, context);
-                    return;
+                if(rc == failureRc) {
+                    // If it fails, return the failure code to the callback
+                    finalCb.processResult(rc, path, ctx);
                 }
-
-                zk.getChildren(path, false, new AsyncCallback.ChildrenCallback() {
-                    @Override
-                    public void processResult(int rc, String path, Object ctx,
-                                              List<String> levelNodes) {
-                        if (rc != Code.OK.intValue()) {
-                            LOG.error("Error polling hash nodes of " + path,
-                                      KeeperException.create(KeeperException.Code.get(rc), path));
-                            finalCb.processResult(failureRc, null, context);
-                            return;
-                        }
-                        AsyncListProcessor<String> listProcessor =
-                                new AsyncListProcessor<String>(scheduler);
-                        // process its children
-                        listProcessor.process(levelNodes, processor, finalCb,
-                                              context, successRc, failureRc);
-                    }
-                }, null);
-            }
-        }, null);
-    }
-
-    /**
-     * Process list one by one in asynchronize way. Process will be stopped immediately
-     * when error occurred.
-     */
-    private static class AsyncListProcessor<T> {
-        // use this to prevent long stack chains from building up in callbacks
-        ScheduledExecutorService scheduler;
-
-        /**
-         * Constructor
-         *
-         * @param scheduler
-         *          Executor used to prevent long stack chains
-         */
-        public AsyncListProcessor(ScheduledExecutorService scheduler) {
-            this.scheduler = scheduler;
-        }
-
-        /**
-         * Process list of items
-         *
-         * @param data
-         *          List of data to process
-         * @param processor
-         *          Callback to process element of list when success
-         * @param finalCb
-         *          Final callback to be called after all elements in the list are processed
-         * @param context
-         *          Context of final callback
-         * @param successRc
-         *          RC passed to final callback on success
-         * @param failureRc
-         *          RC passed to final callback on failure
-         */
-        public void process(final List<T> data, final Processor<T> processor,
-                            final AsyncCallback.VoidCallback finalCb, final Object context,
-                            final int successRc, final int failureRc) {
-            if (data == null || data.size() == 0) {
-                finalCb.processResult(successRc, null, context);
-                return;
-            }
-            final int size = data.size();
-            final AtomicInteger current = new AtomicInteger(0);
-            AsyncCallback.VoidCallback stubCallback = new AsyncCallback.VoidCallback() {
-                @Override
-                public void processResult(int rc, String path, Object ctx) {
-                    if (rc != successRc) {
-                        // terminal immediately
-                        finalCb.processResult(failureRc, null, context);
-                        return;
-                    }
-                    // process next element
-                    int next = current.incrementAndGet();
-                    if (next >= size) { // reach the end of list
-                        finalCb.processResult(successRc, null, context);
-                        return;
-                    }
-                    final T dataToProcess = data.get(next);
-                    final AsyncCallback.VoidCallback stub = this;
-                    scheduler.submit(new Runnable() {
-                        @Override
-                        public final void run() {
-                            processor.process(dataToProcess, stub);
-                        }
-                    });
+                else {
+                    // If it succeeds, proceed with our own recursive ledger processing for the 63-bit id ledgers
+                    asyncProcessLevelNodes(ledgerRootPath,
+                            new RecursiveProcessor(0, ledgerRootPath, processor, context, successRc, failureRc), finalCb, context,
+                            successRc, failureRc);
                 }
-            };
-            T firstElement = data.get(0);
-            processor.process(firstElement, stubCallback);
-        }
+            }
+
+        }, context, successRc, failureRc);
+
     }
 
     @Override
     protected boolean isSpecialZnode(String znode) {
-        return IDGEN_ZNODE.equals(znode) || super.isSpecialZnode(znode);
+        // Check nextnode length. All paths in long hierarchical format (3-4-4-4-4)
+        // are at least 3 characters long. This prevents picking up any old-style
+        // hierarchical paths (2-4-4)
+        return hierarchicalLedgerManager.isSpecialZnode(znode) || znode.length() < 3;
+    }
+    
+    private class RecursiveProcessor implements Processor<String> {
+        private final int level;
+        private final String path;
+        private final Processor<Long> processor;
+        private final Object context;
+        private final int successRc;
+        private final int failureRc;
+
+        private RecursiveProcessor(int level, String path, Processor<Long> processor, Object context, int successRc,
+                int failureRc) {
+            this.level = level;
+            this.path = path;
+            this.processor = processor;
+            this.context = context;
+            this.successRc = successRc;
+            this.failureRc = failureRc;
+        }
+
+        @Override
+        public void process(String lNode, VoidCallback cb) {
+            String nodePath = path + "/" + lNode;
+            if ((level == 0) && isSpecialZnode(lNode)) {
+                cb.processResult(successRc, null, context);
+                return;
+            } else if (level < 3) {
+                asyncProcessLevelNodes(nodePath,
+                        new RecursiveProcessor(level + 1, nodePath, processor, context, successRc, failureRc), cb,
+                        context, successRc, failureRc);
+            } else {
+                // process each ledger after all ledger are processed, cb will be call to continue processing next
+                // level4 node
+                asyncProcessLedgersInSingleNode(nodePath, processor, cb, context, successRc, failureRc);
+            }
+        }
     }
 
     @Override
     public LedgerRangeIterator getLedgerRanges() {
-        return new HierarchicalLedgerRangeIterator();
+        LedgerRangeIterator intLedgerRangeIterator = hierarchicalLedgerManager.getLedgerRanges();
+        return new LongHierarchicalLedgerRangeIterator(intLedgerRangeIterator);
     }
 
     /**
      * Iterator through each metadata bucket with hierarchical mode
      */
-    private class HierarchicalLedgerRangeIterator implements LedgerRangeIterator {
-        private Iterator<String> l1NodesIter = null;
-        private Iterator<String> l2NodesIter = null;
-        private String curL1Nodes = "";
+    private class LongHierarchicalLedgerRangeIterator implements LedgerRangeIterator {
+        private List<Iterator<String>> levelNodesIter;
+        private List<String> curLevelNodes;
+
+        private boolean initialized = false;
         private boolean iteratorDone = false;
         private LedgerRange nextRange = null;
 
-        /**
-         * iterate next level1 znode
-         *
-         * @return false if have visited all level1 nodes
-         * @throws InterruptedException/KeeperException if error occurs reading zookeeper children
-         */
-        private boolean nextL1Node() throws KeeperException, InterruptedException {
-            l2NodesIter = null;
-            while (l2NodesIter == null) {
-                if (l1NodesIter.hasNext()) {
-                    curL1Nodes = l1NodesIter.next();
-                } else {
-                    return false;
-                }
-                if (isSpecialZnode(curL1Nodes)) {
-                    continue;
-                }
-                List<String> l2Nodes = zk.getChildren(ledgerRootPath + "/" + curL1Nodes, null);
-                Collections.sort(l2Nodes);
-                l2NodesIter = l2Nodes.iterator();
-                if (!l2NodesIter.hasNext()) {
-                    l2NodesIter = null;
-                    continue;
-                }
-            }
-            return true;
+        private LedgerRangeIterator intLedgerRangeIterator;
+
+        private LongHierarchicalLedgerRangeIterator(LedgerRangeIterator intLedgerRangeIterator) {
+            levelNodesIter = new ArrayList<Iterator<String>>(Collections.nCopies(4, (Iterator<String>) null));
+            curLevelNodes = new ArrayList<String>(Collections.nCopies(4, (String) null));
+            this.intLedgerRangeIterator = intLedgerRangeIterator;
         }
 
-        synchronized private void preload() throws IOException {
-            while (nextRange == null && !iteratorDone) {
-                boolean hasMoreElements = false;
-                try {
-                    if (l1NodesIter == null) {
-                        List<String> l1Nodes = zk.getChildren(ledgerRootPath, null);
-                        Collections.sort(l1Nodes);
-                        l1NodesIter = l1Nodes.iterator();
-                        hasMoreElements = nextL1Node();
-                    } else if (l2NodesIter == null || !l2NodesIter.hasNext()) {
-                        hasMoreElements = nextL1Node();
-                    } else {
-                        hasMoreElements = true;
+        synchronized private void initialize(String path, int level) throws KeeperException, InterruptedException, IOException {
+            List<String> levelNodes = zk.getChildren(path, null);
+            Collections.sort(levelNodes);
+            if (level == 0) {
+                Iterator<String> l0NodesIter = levelNodes.iterator();
+                levelNodesIter.set(0, l0NodesIter);
+                while (l0NodesIter.hasNext()) {
+                    String curL0Node = l0NodesIter.next();
+                    if (!isSpecialZnode(curL0Node)) {
+                        curLevelNodes.set(0, curL0Node);
+                        break;
                     }
-                } catch (KeeperException ke) {
-                    throw new IOException("Error preloading next range", ke);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new IOException("Interrupted while preloading", ie);
                 }
-                if (hasMoreElements) {
-                    nextRange = getLedgerRangeByLevel(curL1Nodes, l2NodesIter.next());
-                    if (nextRange.size() == 0) {
-                        nextRange = null;
+            } else {
+                Iterator<String> lNodesIter = levelNodes.iterator();
+                levelNodesIter.set(level, lNodesIter);
+                if (lNodesIter.hasNext()) {
+                    String curLNode = lNodesIter.next();
+                    curLevelNodes.set(level, curLNode);
+                }
+            }
+            String curLNode = curLevelNodes.get(level);
+            if (curLNode != null) {
+                // Traverse down through levels 0-3
+                // The nextRange becomes a listing of the children
+                // in the level4 directory.
+                if (level != 3) {
+                    String nextLevelPath = path + "/" + curLNode;
+                    initialize(nextLevelPath, level + 1);
+                } else {
+                    nextRange = getLedgerRangeByLevel(curLevelNodes);
+                    initialized = true;
+                }
+            } else {
+                iteratorDone = true;
+            }
+        }
+
+        private void clearHigherLevels(int level) {
+            for(int i = level+1; i < 4; i++) {
+                curLevelNodes.set(i, null);
+            }
+        }
+
+        synchronized private boolean moveToNext(int level) throws KeeperException, InterruptedException {
+            Iterator<String> curLevelNodesIter = levelNodesIter.get(level);
+            boolean movedToNextNode = false;
+            if (level == 0) {
+                while (curLevelNodesIter.hasNext()) {
+                    String nextNode = curLevelNodesIter.next();
+                    if (isSpecialZnode(nextNode)) {
+                        continue;
+                    } else {
+                        curLevelNodes.set(level, nextNode);
+                        clearHigherLevels(level);
+                        movedToNextNode = true;
+                        break;
                     }
+                }
+            } else {
+                if (curLevelNodesIter.hasNext()) {
+                    String nextNode = curLevelNodesIter.next();
+                    curLevelNodes.set(level, nextNode);
+                    clearHigherLevels(level);
+                    movedToNextNode = true;
+                } else {
+                    movedToNextNode = moveToNext(level - 1);
+                    if (movedToNextNode) {
+                        StringBuilder path = new StringBuilder(ledgerRootPath);
+                        for (int i = 0; i < level; i++) {
+                            path = path.append("/").append(curLevelNodes.get(i));
+                        }
+                        List<String> newCurLevelNodesList = zk.getChildren(path.toString(), null);
+                        Collections.sort(newCurLevelNodesList);
+                        Iterator<String> newCurLevelNodesIter = newCurLevelNodesList.iterator();
+                        levelNodesIter.set(level, newCurLevelNodesIter);
+                        if (newCurLevelNodesIter.hasNext()) {
+                            curLevelNodes.set(level, newCurLevelNodesIter.next());
+                            clearHigherLevels(level);
+                            movedToNextNode = true;
+                        }
+                    }
+                }
+            }
+            return movedToNextNode;
+        }
+
+        synchronized private void preload() throws IOException, KeeperException, InterruptedException {
+            if (!iteratorDone && !initialized) {
+                initialize(ledgerRootPath, 0);
+            }
+            while (((nextRange == null) || (nextRange.size() == 0)) && !iteratorDone) {
+                boolean movedToNextNode = moveToNext(3);
+                if (movedToNextNode) {
+                    nextRange = getLedgerRangeByLevel(curLevelNodes);
                 } else {
                     iteratorDone = true;
                 }
@@ -339,12 +332,31 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
 
         @Override
         synchronized public boolean hasNext() throws IOException {
-            preload();
+            // Try old behavior first.
+            if(intLedgerRangeIterator != null && intLedgerRangeIterator.hasNext()) {
+                return true;
+            }
+
+            try {
+                preload();
+            } catch (KeeperException ke) {
+                throw new IOException("Error preloading next range", ke);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while preloading", ie);
+            }
             return nextRange != null && !iteratorDone;
         }
 
         @Override
         synchronized public LedgerRange next() throws IOException {
+
+            if(intLedgerRangeIterator != null && intLedgerRangeIterator.hasNext()) {
+                // Return the old 31-bit ledger ID ranges until there are no more.
+                LedgerRange ret = intLedgerRangeIterator.next();
+                return ret;
+            }
+
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }
@@ -353,20 +365,15 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
             return r;
         }
 
-        /**
-         * Get a single node level1/level2
-         *
-         * @param level1
-         *          1st level node name
-         * @param level2
-         *          2nd level node name
-         * @throws IOException
-         */
-        LedgerRange getLedgerRangeByLevel(final String level1, final String level2)
-                throws IOException {
+        private LedgerRange getLedgerRangeByLevel(List<String> curLevelNodes) throws IOException {
+            String level0 = curLevelNodes.get(0);
+            String level1 = curLevelNodes.get(1);
+            String level2 = curLevelNodes.get(2);
+            String level3 = curLevelNodes.get(3);
+
             StringBuilder nodeBuilder = new StringBuilder();
-            nodeBuilder.append(ledgerRootPath).append("/")
-                       .append(level1).append("/").append(level2);
+            nodeBuilder.append(ledgerRootPath).append("/").append(level0).append("/").append(level1).append("/")
+                    .append(level2).append("/").append(level3);
             String nodePath = nodeBuilder.toString();
             List<String> ledgerNodes = null;
             try {
@@ -376,12 +383,17 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
             }
             NavigableSet<Long> zkActiveLedgers = ledgerListToSet(ledgerNodes, nodePath);
             if (LOG.isDebugEnabled()) {
-                LOG.debug("All active ledgers from ZK for hash node "
-                          + level1 + "/" + level2 + " : " + zkActiveLedgers);
+                LOG.debug("All active ledgers from ZK for hash node " + level0 + "/" + level1 + "/" + level2 + "/"
+                        + level3 + " : " + zkActiveLedgers);
             }
-
-            return new LedgerRange(zkActiveLedgers.subSet(getStartLedgerIdByLevel(level1, level2), true,
-                                                          getEndLedgerIdByLevel(level1, level2), true));
+            return new LedgerRange(zkActiveLedgers.subSet(getStartLedgerIdByLevel(level0, level1, level2, level3), true,
+                    getEndLedgerIdByLevel(level0, level1, level2, level3), true));
         }
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        hierarchicalLedgerManager.close();
     }
 }
