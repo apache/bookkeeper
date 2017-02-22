@@ -93,7 +93,7 @@ public class ZooKeeperUtil {
         zks = new ZooKeeperServer(ZkTmpDir, ZkTmpDir,
                 ZooKeeperServer.DEFAULT_TICK_TIME);
         serverFactory = new NIOServerCnxnFactory();
-        serverFactory.configure(zkaddr, 100);
+        serverFactory.configure(zkaddr, 1000);
         serverFactory.startup(zks);
 
         boolean b = ClientBase.waitForServerUp(getZooKeeperConnectString(),

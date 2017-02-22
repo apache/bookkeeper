@@ -473,10 +473,9 @@ public abstract class BookKeeperClusterTestCase {
         if (conf.getUseHostNameAsBookieID()) {
             host = InetAddress.getLocalHost().getCanonicalHostName();
         }
-        
-        while ( (!conf.isForceReadOnlyBookie() && (bkc.getZkHandle().exists(
+        while ( (!conf.isForceReadOnlyBookie() && !(bkc.getZkHandle().exists(
                     "/ledgers/available/" + host + ":" + port, false) == null)) ||
-                ( conf.isForceReadOnlyBookie() && ((bkc.getZkHandle().exists(
+                ( conf.isForceReadOnlyBookie() && !((bkc.getZkHandle().exists(
                     "/ledgers/available/readonly/" + host + ":" + port, false) == null)))
               ) {
             Thread.sleep(500);

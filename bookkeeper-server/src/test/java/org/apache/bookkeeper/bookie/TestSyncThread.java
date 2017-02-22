@@ -269,9 +269,10 @@ public class TestSyncThread {
 
     private static class DummyLedgerStorage implements LedgerStorage {
         @Override
-        public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
-                LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                CheckpointSource checkpointSource, StatsLogger statsLogger)
+        public void initialize(ServerConfiguration conf,
+                               GarbageCollectorThread.LedgerManagerProvider ledgerManagerProvider,
+                               LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
+                               CheckpointSource checkpointSource, StatsLogger statsLogger)
                 throws IOException {
         }
 

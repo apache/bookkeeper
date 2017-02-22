@@ -41,10 +41,10 @@ public interface LedgerStorage {
      * Initialize the LedgerStorage implementation
      *
      * @param conf
-     * @param ledgerManager
+     * @param ledgerManagerProvider
      * @param ledgerDirsManager
      */
-    public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
+    public void initialize(ServerConfiguration conf, GarbageCollectorThread.LedgerManagerProvider ledgerManagerProvider,
                            LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
                            CheckpointSource checkpointSource, StatsLogger statsLogger)
             throws IOException;
