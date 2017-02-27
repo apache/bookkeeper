@@ -61,7 +61,7 @@ public class ZkLedgerIdGenerator implements LedgerIdGenerator {
         } else {
             ledgerIdGenPath = ledgersPath + "/" + idGenZnodeName;
         }
-        this.ledgerPrefix = this.ledgerIdGenPath + "/" + LEDGER_ID_GEN_PREFIX;
+        return ledgerIdGenPath + "/" + LEDGER_ID_GEN_PREFIX;
     }
 
     @Override
