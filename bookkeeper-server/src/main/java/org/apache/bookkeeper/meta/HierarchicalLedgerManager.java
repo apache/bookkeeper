@@ -28,7 +28,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.ZooKeeper;
 
-public class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
+/**
+ * HierarchicalLedgerManager makes use of both LongHierarchicalLedgerManager and LegacyHierarchicalLedgerManager
+ * to extend the 31-bit ledger id range of the LegacyHierarchicalLedgerManager to that of the LongHierarchicalLedgerManager
+ * while remaining backwards-compatible with the legacy manager.
+ * 
+ * In order to achieve backwards-compatibility, the HierarchicalLedgerManager forwards requests relating to ledger IDs which 
+ * are < Integer.MAX_INT to the LegacyHierarchicalLedgerManager. The new 5-part directory structure will not appear until a 
+ * ledger with an ID >= Integer.MAX_INT is created.
+ *
+ * @see LongHierarchicalLedgerManager
+ * @see LegacyHierarchicalLedgerManager
+ */
+class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
     static final Logger LOG = LoggerFactory.getLogger(HierarchicalLedgerManager.class);
 
     LegacyHierarchicalLedgerManager legacyLM;

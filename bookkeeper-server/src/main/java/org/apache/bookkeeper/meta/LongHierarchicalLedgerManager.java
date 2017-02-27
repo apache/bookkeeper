@@ -58,10 +58,6 @@ import org.slf4j.LoggerFactory;
  * which is stored in <i>(ledgersRootPath)/000/0000/0000/0000/L0001</i>. So each znode could have at most 10000 ledgers,
  * which avoids errors during garbage collection due to lists of children that are too long.
  *
- * LongHierarchicalLedgerManager is backwards-compatible with the LegacyHierarchicalLedgerManager.
- * In order to achieve this, it forwards requests relating to ledger IDs which are < Integer.MAX_INT to the
- * LegacyHierarchicalLedgerManager. The new 5-part directory structure will not appear until a ledger with an
- * ID >= Integer.MAX_INT is created.
  */
 class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
 
@@ -70,7 +66,6 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
     static final String IDGEN_ZNODE = "idgen-long";
     private static final String MAX_ID_SUFFIX = "9999";
     private static final String MIN_ID_SUFFIX = "0000";
-    //private HierarchicalLedgerManager hierarchicalLedgerManager;
 
 
     /**
@@ -83,7 +78,6 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
      */
     public LongHierarchicalLedgerManager(AbstractConfiguration conf, ZooKeeper zk) {
         super(conf, zk);
-        //hierarchicalLedgerManager = new HierarchicalLedgerManager(conf, zk);
     }
 
     @Override
