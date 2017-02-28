@@ -50,7 +50,9 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +60,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.protobuf.TextFormat;
-import org.apache.zookeeper.data.ACL;
 
 /**
  * ZooKeeper implementation of underreplication manager.
@@ -102,6 +103,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     private final String urLockPath;
     private final String layoutZNode;
     private final AbstractConfiguration conf;
+    private final String lostBookieRecoveryDelayZnode;
     private final ZooKeeper zkc;
     private final SubTreeCache subTreeCache;
 
@@ -113,7 +115,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         urLedgerPath = basePath
                 + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
         urLockPath = basePath + '/' + BookKeeperConstants.UNDER_REPLICATION_LOCK;
-
+        lostBookieRecoveryDelayZnode = basePath + '/' + BookKeeperConstants.LOSTBOOKIERECOVERYDELAY_NODE;
+        
         idExtractionPattern = Pattern.compile("urL(\\d+)$");
         this.zkc = zkc;
         this.subTreeCache = new SubTreeCache(new SubTreeCache.TreeProvider() {
@@ -714,6 +717,85 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             throws InterruptedException, KeeperException {
         if (isLedgerBeingReplicated(zkc, zkLedgersRootPath, ledgerId)) {
             zkc.delete(getUrLedgerLockZnode(getUrLockPath(zkLedgersRootPath), ledgerId), -1);
+        }
+    }
+
+    @Override
+    public boolean initializeLostBookieRecoveryDelay(int lostBookieRecoveryDelay) throws UnavailableException {
+        LOG.debug("initializeLostBookieRecoveryDelay()");
+        try {
+            zkc.create(lostBookieRecoveryDelayZnode, Integer.toString(lostBookieRecoveryDelay).getBytes(UTF_8),
+                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        } catch (KeeperException.NodeExistsException ke) {
+            LOG.info(
+                    "lostBookieRecoveryDelay Znode is already present, so using existing lostBookieRecoveryDelay Znode value");
+            return false;
+        } catch (KeeperException ke) {
+            LOG.error("Error while initializing LostBookieRecoveryDelay", ke);
+            throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
+        }
+        return true;
+    }
+
+    @Override
+    public void setLostBookieRecoveryDelay(int lostBookieRecoveryDelay) throws UnavailableException {
+        LOG.debug("setLostBookieRecoveryDelay()");
+        try {
+            if (zkc.exists(lostBookieRecoveryDelayZnode, false) != null) {
+                zkc.setData(lostBookieRecoveryDelayZnode, Integer.toString(lostBookieRecoveryDelay).getBytes(UTF_8),
+                        -1);
+            } else {
+                zkc.create(lostBookieRecoveryDelayZnode, Integer.toString(lostBookieRecoveryDelay).getBytes(UTF_8),
+                        Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            }
+        } catch (KeeperException ke) {
+            LOG.error("Error while setting LostBookieRecoveryDelay ", ke);
+            throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
+        }
+    }
+
+    @Override
+    public int getLostBookieRecoveryDelay() throws UnavailableException {
+        LOG.debug("getLostBookieRecoveryDelay()");
+        try {
+            byte[] data = zkc.getData(lostBookieRecoveryDelayZnode, false, null);
+            return Integer.parseInt(new String(data, UTF_8));
+        } catch (KeeperException ke) {
+            LOG.error("Error while getting LostBookieRecoveryDelay ", ke);
+            throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
+        }
+    }
+
+    @Override
+    public void notifyLostBookieRecoveryDelayChanged(GenericCallback<Void> cb) throws UnavailableException {
+        LOG.debug("notifyLostBookieRecoveryDelayChanged()");
+        Watcher w = new Watcher() {
+            public void process(WatchedEvent e) {
+                if (e.getType() == Watcher.Event.EventType.NodeDataChanged) {
+                    cb.operationComplete(0, null);
+                }
+            }
+        };
+        try {
+            if (null == zkc.exists(lostBookieRecoveryDelayZnode, w)) {
+                cb.operationComplete(0, null);
+                return;
+            }
+        } catch (KeeperException ke) {
+            LOG.error("Error while checking the state of lostBookieRecoveryDelay", ke);
+            throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
         }
     }
 }

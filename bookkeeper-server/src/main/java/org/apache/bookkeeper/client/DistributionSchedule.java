@@ -32,7 +32,7 @@ import java.util.Map;
  * to.
  */
 
-interface DistributionSchedule {
+public interface DistributionSchedule {
 
     /**
      * return the set of bookie indices to send the message to

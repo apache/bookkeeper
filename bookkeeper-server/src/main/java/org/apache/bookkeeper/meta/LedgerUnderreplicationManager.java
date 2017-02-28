@@ -125,4 +125,41 @@ public interface LedgerUnderreplicationManager {
      */
     void notifyLedgerReplicationEnabled(GenericCallback<Void> cb)
             throws ReplicationException.UnavailableException;
+
+    /**
+     * Creates the zNode for lostBookieRecoveryDelay with the specified value and returns true.
+     * If the node is already existing, then it returns false   
+     * 
+     * @param lostBookieRecoveryDelay
+     * @return
+     *      true if it succeeds in creating zNode for lostBookieRecoveryDelay, false if it is already existing
+     * @throws ReplicationException.UnavailableException
+     */
+    boolean initializeLostBookieRecoveryDelay(int lostBookieRecoveryDelay)
+            throws ReplicationException.UnavailableException;
+
+    /**
+     * Setter for the lostBookieRecoveryDelay znode
+     * 
+     * @param lostBookieRecoveryDelay
+     * @throws ReplicationException.UnavailableException
+     */
+    void setLostBookieRecoveryDelay(int lostBookieRecoveryDelay) throws ReplicationException.UnavailableException;
+
+    /**
+     * Getter for the lostBookieRecoveryDelay
+     * 
+     * @return the int value of lostBookieRecoveryDelay
+     * @throws ReplicationException.UnavailableException
+     */
+    int getLostBookieRecoveryDelay() throws ReplicationException.UnavailableException;
+
+    /**
+     * Receive notification asynchronously when the lostBookieRecoveryDelay value is Changed
+     * 
+     * @param cb
+     * @throws ReplicationException.UnavailableException
+     */
+    void notifyLostBookieRecoveryDelayChanged(GenericCallback<Void> cb)
+            throws ReplicationException.UnavailableException;
 }

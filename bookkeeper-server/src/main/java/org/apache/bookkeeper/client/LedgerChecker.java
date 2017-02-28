@@ -88,6 +88,11 @@ public class LedgerChecker {
         long firstStored = fragment.getFirstStoredEntryId();
         long lastStored = fragment.getLastStoredEntryId();
 
+        // because of this if block, even if the bookie of the fragment is 
+        // down, it considers Fragment is available/not-bad if firstStored
+        // and lastStored are LedgerHandle.INVALID_ENTRY_ID.
+        // So same logic is used in BookieShell.DecommissionBookieCmd.areEntriesOfSegmentStoredInTheBookie
+        // if any change is made here, then the changes should be in BookieShell also
         if (firstStored == LedgerHandle.INVALID_ENTRY_ID) {
             if (lastStored != LedgerHandle.INVALID_ENTRY_ID) {
                 throw new InvalidFragmentException();
