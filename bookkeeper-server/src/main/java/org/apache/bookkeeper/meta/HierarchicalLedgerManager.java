@@ -95,7 +95,7 @@ class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
         return new HierarchicalLedgerRangeIterator(legacyLedgerRangeIterator, longLedgerRangeIterator);
     }
 
-    private class HierarchicalLedgerRangeIterator implements LedgerRangeIterator {
+    private static class HierarchicalLedgerRangeIterator implements LedgerRangeIterator {
 
         LedgerRangeIterator legacyLedgerRangeIterator;
         LedgerRangeIterator longLedgerRangeIterator;
