@@ -219,7 +219,10 @@ public class CompactionTest extends BookKeeperClusterTestCase {
                 // Do nothing.
             }
         };
-        Bookie.checkDirectoryStructure(conf.getJournalDir());
+
+        for (File journalDir : conf.getJournalDirs()) {
+            Bookie.checkDirectoryStructure(journalDir);
+        }
         for (File dir : dirManager.getAllLedgerDirs()) {
             Bookie.checkDirectoryStructure(dir);
         }
@@ -602,7 +605,9 @@ public class CompactionTest extends BookKeeperClusterTestCase {
                 // Do nothing.
             }
         };
-        Bookie.checkDirectoryStructure(conf.getJournalDir());
+        for (File journalDir : conf.getJournalDirs()) {
+            Bookie.checkDirectoryStructure(journalDir);
+        }
         for (File dir : dirManager.getAllLedgerDirs()) {
             Bookie.checkDirectoryStructure(dir);
         }
