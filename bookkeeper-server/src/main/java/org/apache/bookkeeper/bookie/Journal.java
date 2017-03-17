@@ -789,8 +789,8 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
         ZeroBuffer.put(paddingBuff);
         JournalChannel logFile = null;
         forceWriteThread.start();
-        Stopwatch journalCreationWatcher = new Stopwatch();
-        Stopwatch journalFlushWatcher = new Stopwatch();
+        Stopwatch journalCreationWatcher = Stopwatch.createUnstarted();
+        Stopwatch journalFlushWatcher = Stopwatch.createUnstarted();
         long batchSize = 0;
         try {
             List<Long> journalIds = listJournalIds(journalDirectory, null);
@@ -819,7 +819,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                                         removePagesFromCache,
                                         conf.getJournalFormatVersionToWrite());
                     journalCreationStats.registerSuccessfulEvent(
-                            journalCreationWatcher.stop().elapsedTime(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
+                            journalCreationWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
 
                     bc = logFile.getBufferedChannel();
 
@@ -887,7 +887,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                             bc.flush(false);
                             lastFlushPosition = bc.position();
                             journalFlushStats.registerSuccessfulEvent(
-                                    journalFlushWatcher.stop().elapsedTime(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
+                                    journalFlushWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
 
                             // Trace the lifetime of entries through persistence
                             if (LOG.isDebugEnabled()) {
