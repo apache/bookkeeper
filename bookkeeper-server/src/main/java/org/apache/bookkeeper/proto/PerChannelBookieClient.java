@@ -118,7 +118,6 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                         BKException.Code.DuplicateEntryIdException,
                         BKException.Code.WriteOnReadOnlyBookieException));
 
-    public static final int MAX_FRAME_LENGTH = 2 * 1024 * 1024; // 2M
     public static final AtomicLong txnIdGenerator = new AtomicLong(0);
 
     final BookieSocketAddress addr;
@@ -127,6 +126,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     final HashedWheelTimer requestTimer;
     final int addEntryTimeout;
     final int readEntryTimeout;
+    final int maxFrameSize;
 
     private final ConcurrentHashMap<CompletionKey, CompletionValue> completionObjects = new ConcurrentHashMap<CompletionKey, CompletionValue>();
 
@@ -181,6 +181,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                                   ClientAuthProvider.Factory authProviderFactory,
                                   ExtensionRegistry extRegistry,
                                   PerChannelBookieClientPool pcbcPool) {
+        this.maxFrameSize = conf.getNettyMaxFrameSizeBytes();
         this.conf = conf;
         this.addr = addr;
         this.executor = executor;
@@ -893,7 +894,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
     public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = Channels.pipeline();
 
-        pipeline.addLast("lengthbasedframedecoder", new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 0, 4, 0, 4));
+        pipeline.addLast("lengthbasedframedecoder", new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));
         pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
         pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.RequestEncoder(extRegistry));
         pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.ResponseDecoder(extRegistry));

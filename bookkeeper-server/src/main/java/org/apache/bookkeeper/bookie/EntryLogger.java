@@ -174,6 +174,7 @@ public class EntryLogger {
     private final long flushIntervalInBytes;
     private final boolean doRegularFlushes;
     private long bytesWrittenSinceLastFlush = 0;
+    private final int maxSaneEntrySize;
 
     final ServerConfiguration conf;
     /**
@@ -226,6 +227,9 @@ public class EntryLogger {
     public EntryLogger(ServerConfiguration conf,
             LedgerDirsManager ledgerDirsManager, EntryLogListener listener)
                     throws IOException {
+        //We reserve 500 bytes as overhead for the protocol.  This is not 100% accurate
+        // but the protocol varies so an exact value is difficult to determine
+        this.maxSaneEntrySize = conf.getNettyMaxFrameSizeBytes() - 500;
         this.ledgerDirsManager = ledgerDirsManager;
         if (listener != null) {
             addListener(listener);
@@ -826,8 +830,8 @@ public class EntryLogger {
         sizeBuff.flip();
         int entrySize = sizeBuff.getInt();
         // entrySize does not include the ledgerId
-        if (entrySize > MB) {
-            LOG.error("Sanity check failed for entry size of " + entrySize + " at location " + pos + " in " + entryLogId);
+        if (entrySize > maxSaneEntrySize) {
+            LOG.warn("Sanity check failed for entry size of " + entrySize + " at location " + pos + " in " + entryLogId);
 
         }
         if (entrySize < MIN_SANE_ENTRY_SIZE) {
