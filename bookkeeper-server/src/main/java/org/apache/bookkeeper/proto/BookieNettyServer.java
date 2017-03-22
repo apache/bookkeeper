@@ -45,12 +45,16 @@ import org.slf4j.LoggerFactory;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import java.net.SocketAddress;
+import java.security.cert.Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import javax.net.ssl.SSLPeerUnverifiedException;
 import org.apache.bookkeeper.auth.BookKeeperPrincipal;
 import org.apache.bookkeeper.bookie.BookieConnectionPeer;
+import org.jboss.netty.handler.ssl.SslHandler;
 
 /**
  * Netty server for serving bookie requests
@@ -159,7 +163,27 @@ class BookieNettyServer {
 
                 @Override
                 public Collection<Object> getProtocolPrincipals() {
-                    return Collections.emptyList();
+                    Channel c = channel;
+                    if (c == null) {
+                        return Collections.emptyList();
+                    } else {
+                        SslHandler ssl = c.getPipeline().get(SslHandler.class);
+                        if (ssl == null) {
+                            return Collections.emptyList();
+                        }
+                        try {
+                            Certificate[] certificates = ssl.getEngine().getSession().getPeerCertificates();
+                            if (certificates == null) {
+                                return Collections.emptyList();
+                            }
+                            List<Object> result = new ArrayList<>();
+                            result.addAll(Arrays.asList(certificates));
+                            return result;
+                        } catch (SSLPeerUnverifiedException err) {
+                            return Collections.emptyList();
+                        }
+
+                    }
                 }
 
                 @Override
@@ -182,6 +206,15 @@ class BookieNettyServer {
                     authorizedId = principal;
                 }
 
+                @Override
+                public boolean isSecure() {
+                    Channel c = channel;
+                    if (c == null) {
+                        return false;
+                    } else {
+                        return c.getPipeline().get("ssl") != null;
+                    }
+                }
             };
         }
 

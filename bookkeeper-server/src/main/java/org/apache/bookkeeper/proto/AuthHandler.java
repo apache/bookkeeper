@@ -131,6 +131,9 @@ class AuthHandler {
                         .toByteArray();
                     authProvider.process(AuthToken.wrap(payload),
                                          new AuthResponseCallback(req, ctx.getChannel(), authProviderFactory.getPluginName()));
+                } else if (req.getHeader().getOperation() == BookkeeperProtocol.OperationType.STARTTLS
+                        && req.hasStartTLSRequest()) {
+                     super.messageReceived(ctx, e);
                 } else {
                     BookkeeperProtocol.Response.Builder builder
                         = BookkeeperProtocol.Response.newBuilder()
@@ -155,6 +158,7 @@ class AuthHandler {
             }
             return true;
         }
+
 
         static class AuthResponseCallbackLegacy implements AuthCallbacks.GenericCallback<AuthToken> {
             final BookieProtocol.AuthRequest req;
@@ -181,6 +185,7 @@ class AuthHandler {
                                                               message));
             }
         }
+
 
         static class AuthResponseCallback implements AuthCallbacks.GenericCallback<AuthToken> {
             final BookkeeperProtocol.Request req;
@@ -232,13 +237,17 @@ class AuthHandler {
         }
     }
 
-    static class ClientSideHandler extends SimpleChannelHandler {
+    public static class ClientSideHandler extends SimpleChannelHandler {
         volatile boolean authenticated = false;
         final ClientAuthProvider.Factory authProviderFactory;
         ClientAuthProvider authProvider;
         final AtomicLong transactionIdGenerator;
         final Queue<MessageEvent> waitingForAuth = new ConcurrentLinkedQueue<MessageEvent>();
         final ClientConnectionPeer connectionPeer;
+
+        public ClientAuthProvider getAuthProvider() {
+            return authProvider;
+        }
 
         ClientSideHandler(ClientAuthProvider.Factory authProviderFactory,
                           AtomicLong transactionIdGenerator,
@@ -275,33 +284,41 @@ class AuthHandler {
             assert (authProvider != null);
 
             Object event = e.getMessage();
-
             if (authenticated) {
                 super.messageReceived(ctx, e);
             } else if (event instanceof BookkeeperProtocol.Response) {
                 BookkeeperProtocol.Response resp = (BookkeeperProtocol.Response)event;
-                if (resp.getHeader().getOperation() == BookkeeperProtocol.OperationType.AUTH) {
-                    if (resp.getStatus() != BookkeeperProtocol.StatusCode.EOK) {
-                        authenticationError(ctx, resp.getStatus().getNumber());
-                    } else {
-                        assert (resp.hasAuthResponse());
-                        BookkeeperProtocol.AuthMessage am = resp.getAuthResponse();
-                        if (AuthProviderFactoryFactory.authenticationDisabledPluginName.equals(am.getAuthPluginName())){
-                            SocketAddress remote  = ctx.getChannel().getRemoteAddress();
-                            LOG.info("Authentication is not enabled."
-                                + "Considering this client {0} authenticated", remote);
-                            AuthHandshakeCompleteCallback authHandshakeCompleteCallback
-                                = new AuthHandshakeCompleteCallback(ctx);
-                            authHandshakeCompleteCallback.operationComplete(BKException.Code.OK, null);
-                            return;
-                        }
-                        byte[] payload = am.getPayload().toByteArray();
-                        authProvider.process(AuthToken.wrap(payload), new AuthRequestCallback(ctx,
-                            authProviderFactory.getPluginName()));
-                    }
-                } else {
-                    // else just drop the message,
-                    // we're not authenticated so nothing should be coming through
+                if (null == resp.getHeader().getOperation()) {
+                    LOG.info("dropping received malformed message {} from bookie {}",new Object[]{e, ctx.getChannel()});
+                    // drop the message without header
+                } else switch (resp.getHeader().getOperation()) {
+                    case STARTTLS:
+                        super.messageReceived(ctx, e);
+                        break;
+                    case AUTH:
+                        if (resp.getStatus() != BookkeeperProtocol.StatusCode.EOK) {
+                            authenticationError(ctx, resp.getStatus().getNumber());
+                        } else {
+                            assert (resp.hasAuthResponse());
+                            BookkeeperProtocol.AuthMessage am = resp.getAuthResponse();
+                            if (AuthProviderFactoryFactory.authenticationDisabledPluginName.equals(am.getAuthPluginName())){
+                                SocketAddress remote  = ctx.getChannel().getRemoteAddress();
+                                LOG.info("Authentication is not enabled."
+                                    + "Considering this client {0} authenticated", remote);
+                                AuthHandshakeCompleteCallback authHandshakeCompleteCallback
+                                    = new AuthHandshakeCompleteCallback(ctx);
+                                authHandshakeCompleteCallback.operationComplete(BKException.Code.OK, null);
+                                return;
+                            }
+                            byte[] payload = am.getPayload().toByteArray();
+                            authProvider.process(AuthToken.wrap(payload), new AuthRequestCallback(ctx,
+                                authProviderFactory.getPluginName()));
+                        }   break;
+                    default:
+                        LOG.info("dropping received message {} from bookie {}",new Object[]{e, ctx.getChannel()});
+                        // else just drop the message,
+                        // we're not authenticated so nothing should be coming through
+                        break;
                 }
             }
         }
@@ -317,12 +334,15 @@ class AuthHandler {
                     // let auth messages through, queue the rest
                     BookkeeperProtocol.Request req = (BookkeeperProtocol.Request)e.getMessage();
                     if (req.getHeader().getOperation()
-                            == BookkeeperProtocol.OperationType.AUTH) {
+                            == BookkeeperProtocol.OperationType.AUTH
+                        || req.getHeader().getOperation() == BookkeeperProtocol.OperationType.STARTTLS) {
                         super.writeRequested(ctx, e);
                     } else {
                         waitingForAuth.add(e);
                     }
-                } // else just drop
+                } else {
+                    LOG.info("dropping write of message {}", e);
+                }
             }
         }
 

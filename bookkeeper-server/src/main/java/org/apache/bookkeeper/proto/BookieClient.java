@@ -59,6 +59,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.ExtensionRegistry;
+import org.apache.bookkeeper.proto.ssl.SSLConfigurationException;
+import org.apache.bookkeeper.proto.ssl.SSLContextFactory;
 
 /**
  * Implements the client-side part of the BookKeeper protocol.
@@ -82,6 +84,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
     private final ClientConfiguration conf;
     private volatile boolean closed;
     private final ReentrantReadWriteLock closeLock;
+    private final SSLContextFactory sslContextFactory;
     private final StatsLogger statsLogger;
     private final int numConnectionsPerBookie;
 
@@ -110,6 +113,11 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 conf.getPCBCTimeoutTimerTickDurationMs(), TimeUnit.MILLISECONDS,
                 conf.getPCBCTimeoutTimerNumTicks());
         this.bookieErrorThresholdPerInterval = conf.getBookieErrorThresholdPerInterval();
+        if (conf.getUseSSL()) {
+            sslContextFactory = new SSLContextFactory(conf);
+        } else {
+            sslContextFactory = null;
+        }
     }
 
     private int getRc(int rc) {
@@ -140,7 +148,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
     @Override
     public PerChannelBookieClient create(BookieSocketAddress address, PerChannelBookieClientPool pcbcPool) {
         return new PerChannelBookieClient(conf, executor, channelFactory, address, requestTimer, statsLogger,
-                authProviderFactory, registry, pcbcPool);
+                authProviderFactory, registry, pcbcPool, sslContextFactory);
     }
 
     private PerChannelBookieClientPool lookupClient(BookieSocketAddress addr, Object key) {

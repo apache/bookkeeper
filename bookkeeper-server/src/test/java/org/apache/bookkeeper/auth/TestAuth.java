@@ -34,7 +34,6 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -489,7 +488,6 @@ public class TestAuth extends BookKeeperClusterTestCase {
         @Override
         public BookieAuthProvider newProvider(BookieConnectionPeer connection, AuthCallbacks.GenericCallback<Void> completeCb) {
             return new BookieAuthProvider() {
-
                 {
                     completeCb.operationComplete(BKException.Code.OK, null);
                     initCountersOnConnections.incrementAndGet();
@@ -497,7 +495,6 @@ public class TestAuth extends BookKeeperClusterTestCase {
 
                 @Override
                 public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
-
                 }
 
                 @Override
@@ -529,7 +526,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
         public BookieAuthProvider newProvider(BookieConnectionPeer addr,
                                               final AuthCallbacks.GenericCallback<Void> completeCb) {
             return new BookieAuthProvider() {
-                public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
+                public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {                                              
                     addr.disconnect();
                 }
             };
@@ -549,6 +546,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
 
         @Override
         public BookieAuthProvider newProvider(BookieConnectionPeer addr,
+
                                               final AuthCallbacks.GenericCallback<Void> completeCb) {
             return new BookieAuthProvider() {
                 public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
@@ -585,8 +583,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
                 public void close() {
                     closeCountersOnConnections.incrementAndGet();
                 }
-
-                @Override
+                
                 public void init(AuthCallbacks.GenericCallback<AuthToken> cb) {
                     initCountersOnConnections.incrementAndGet();
                     completeCb.operationComplete(BKException.Code.OK, null);
