@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.annotations.Beta;
 
+import com.google.common.collect.Lists;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.util.BookKeeperConstants;
@@ -83,6 +84,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String ALLOW_LOOPBACK = "allowLoopback";
 
     protected final static String JOURNAL_DIR = "journalDirectory";
+    protected final static String JOURNAL_DIRS = "journalDirectories";
     protected final static String LEDGER_DIRS = "ledgerDirectories";
     protected final static String INDEX_DIRS = "indexDirectories";
     protected final static String ALLOW_STORAGE_EXPANSION = "allowStorageExpansion";
@@ -572,10 +574,24 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Get dir names to store journal files
+     *
+     * @return journal dir name
+     */
+    public String[] getJournalDirNames() {
+        String[] journalDirs = this.getStringArray(JOURNAL_DIRS);
+        if (journalDirs == null || journalDirs.length == 0) {
+            return new String[] {getJournalDirName()};
+        }
+        return journalDirs;
+    }
+
+    /**
      * Get dir name to store journal files
      *
      * @return journal dir name
      */
+    @Deprecated
     public String getJournalDirName() {
         return this.getString(JOURNAL_DIR, "/tmp/bk-txn");
     }
@@ -588,21 +604,37 @@ public class ServerConfiguration extends AbstractConfiguration {
      * @return server configuration
      */
     public ServerConfiguration setJournalDirName(String journalDir) {
-        this.setProperty(JOURNAL_DIR, journalDir);
+        this.setProperty(JOURNAL_DIRS, new String[] {journalDir});
         return this;
     }
 
     /**
-     * Get dir to store journal files
+     * Set dir names to store journal files
      *
-     * @return journal dir, if no journal dir provided return null
+     * @param journalDirs
+     *          Dir to store journal files
+     * @return server configuration
      */
-    public File getJournalDir() {
-        String journalDirName = getJournalDirName();
-        if (null == journalDirName) {
+    public ServerConfiguration setJournalDirsName(String[] journalDirs) {
+        this.setProperty(JOURNAL_DIRS, journalDirs);
+        return this;
+    }
+
+    /**
+     * Get dirs to store journal files
+     *
+     * @return journal dirs, if no journal dir provided return null
+     */
+    public File[] getJournalDirs() {
+        String[] journalDirNames = getJournalDirNames();
+        if (null == journalDirNames) {
             return null;
         }
-        return new File(journalDirName);
+        File[] journalDirs = new File[journalDirNames.length];
+        for(int i=0 ;i<journalDirNames.length; i++) {
+            journalDirs[i] = new File(journalDirNames[i]);
+        }
+        return journalDirs;
     }
 
     /**
