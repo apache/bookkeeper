@@ -397,8 +397,20 @@ def get_reviewers(pr_num):
 
     reviewers_emails = []
     for reviewer_id in reviewers_ids:
+        username = None
+        useremail = None
         user = get_json("%s/users/%s" % (GITHUB_API_URL, reviewer_id))
-        reviewers_emails += ['%s <%s>' % (user['name'].strip(), user['email'].strip())]
+        if user['email'] is not None:
+            useremail = user['email'].strip()
+        else:
+            useremail = None
+        if user['name'] is not None:
+            username = user['name'].strip()
+        else:
+            username = useremail
+        if username is None:
+            continue
+        reviewers_emails += ['{0} <{1}>'.format(username, useremail)]
     return ', '.join(reviewers_emails)
 
 def main():
