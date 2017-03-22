@@ -374,7 +374,7 @@ public class BookKeeperTest extends BaseTestCase {
     public void testReadHandleWithExplicitLAC() throws Exception {
         ClientConfiguration confWithExplicitLAC = new ClientConfiguration()
                 .setZkServers(zkUtil.getZooKeeperConnectString());
-        int explictLacInterval = 1;
+        int explictLacInterval = 1000;
         confWithExplicitLAC.setExplictLacInterval(explictLacInterval);
 
         BookKeeper bkcWithExplicitLAC = new BookKeeper(confWithExplicitLAC);

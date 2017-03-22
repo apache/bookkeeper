@@ -611,7 +611,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     /**
      * Set the interval to check the need for sending an explicit LAC.
      * @param interval
-     *        Number of seconds between checking the need for sending an explict LAC.
+     *        Number of milli seconds between checking the need for sending an explict LAC.
      * @return Client configuration.
      */
     public ClientConfiguration setExplictLacInterval(int interval) {
