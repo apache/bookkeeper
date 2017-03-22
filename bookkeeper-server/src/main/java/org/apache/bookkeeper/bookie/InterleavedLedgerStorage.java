@@ -215,6 +215,14 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         return ledgerCache.isFenced(ledgerId);
     }
 
+    public void setExplicitlac(long ledgerId, ByteBuffer lac) throws IOException {
+        ledgerCache.setExplicitLac(ledgerId, lac);
+    }
+
+    public ByteBuffer getExplicitLac(long ledgerId) {
+        return ledgerCache.getExplicitLac(ledgerId);
+    }
+
     @Override
     public void setMasterKey(long ledgerId, byte[] masterKey) throws IOException {
         ledgerCache.setMasterKey(ledgerId, masterKey);

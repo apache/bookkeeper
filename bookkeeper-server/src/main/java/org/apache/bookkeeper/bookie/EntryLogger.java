@@ -171,6 +171,10 @@ public class EntryLogger {
     final static int MIN_SANE_ENTRY_SIZE = 8 + 8;
     final static long MB = 1024 * 1024;
 
+    private final long flushIntervalInBytes;
+    private final boolean doRegularFlushes;
+    private long bytesWrittenSinceLastFlush = 0;
+
     final ServerConfiguration conf;
     /**
      * Scan entries in a entry log file.
@@ -253,6 +257,9 @@ public class EntryLogger {
         this.leastUnflushedLogId = logId + 1;
         this.entryLoggerAllocator = new EntryLoggerAllocator(logId);
         this.conf = conf;
+        flushIntervalInBytes = conf.getFlushIntervalInBytes();
+        doRegularFlushes = flushIntervalInBytes > 0;
+
         initialize();
     }
 
@@ -549,7 +556,7 @@ public class EntryLogger {
          * Allocate a new log file.
          */
         BufferedLogChannel allocateNewLog() throws IOException {
-            List<File> list = ledgerDirsManager.getWritableLedgerDirs();
+            List<File> list = ledgerDirsManager.getWritableLedgerDirsForNewLog();
             Collections.shuffle(list);
             // It would better not to overwrite existing entry log files
             File newLogFile = null;
@@ -737,6 +744,7 @@ public class EntryLogger {
     synchronized void flushCurrentLog() throws IOException {
         if (logChannel != null) {
             logChannel.flush(true);
+            bytesWrittenSinceLastFlush = 0;
             LOG.debug("Flush and sync current entry logger {}.", logChannel.getLogId());
         }
     }
@@ -752,6 +760,9 @@ public class EntryLogger {
         // Create new log if logSizeLimit reached or current disk is full
         boolean createNewLog = shouldCreateNewEntryLog.get();
         if (createNewLog || reachEntryLogLimit) {
+            if (doRegularFlushes) {
+                flushCurrentLog();
+            }
             createNewLog();
             // Reset the flag
             if (createNewLog) {
@@ -766,8 +777,20 @@ public class EntryLogger {
         long pos = logChannel.position();
         logChannel.write(entry);
         logChannel.registerWrittenEntry(ledger, entrySize);
+        
+        incrementBytesWrittenAndMaybeFlush(4L + entrySize);
 
         return (logChannel.getLogId() << 32L) | pos;
+    }
+
+    private void incrementBytesWrittenAndMaybeFlush(long bytesWritten) throws IOException {
+        if (!doRegularFlushes) {
+            return;
+        }
+        bytesWrittenSinceLastFlush += bytesWritten;
+        if (bytesWrittenSinceLastFlush > flushIntervalInBytes) {
+            flushCurrentLog();
+        }
     }
 
     static long logIdForOffset(long offset) {

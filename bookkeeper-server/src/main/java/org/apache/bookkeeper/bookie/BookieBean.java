@@ -45,7 +45,12 @@ public class BookieBean implements BookieMXBean, BKMBeanInfo {
 
     @Override
     public int getQueueLength() {
-        return bk.journal.getJournalQueueLength();
+
+        int totalLength = 0;
+        for (Journal journal : bk.journals) {
+            totalLength += journal.getJournalQueueLength();
+        }
+        return totalLength;
     }
 
 }

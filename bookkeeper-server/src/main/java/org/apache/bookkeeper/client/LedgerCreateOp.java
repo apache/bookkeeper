@@ -48,7 +48,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
     CreateCallback cb;
     LedgerMetadata metadata;
     LedgerHandle lh;
-    Long ledgerId;
+    Long ledgerId = -1L;
     Object ctx;
     byte[] passwd;
     BookKeeper bk;
@@ -56,6 +56,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
     long startTime;
     OpStatsLogger createOpLogger;
     boolean adv = false;
+    boolean generateLedgerId = true;
 
     /**
      * Constructor
@@ -119,12 +120,16 @@ class LedgerCreateOp implements GenericCallback<Void> {
          * Add ensemble to the configuration
          */
         metadata.addEnsemble(0L, ensemble);
-
-        createLedger();
+        if (this.generateLedgerId) {
+            generateLedgerIdAndCreateLedger();
+        } else {
+            // Create ledger with supplied ledgerId
+            bk.getLedgerManager().createLedgerMetadata(ledgerId, metadata, LedgerCreateOp.this);
+        }
     }
 
-    void createLedger() {
-        // generate a ledger id and then create the ledger with metadata
+    void generateLedgerIdAndCreateLedger() {
+        // generate a ledgerId
         final LedgerIdGenerator ledgerIdGenerator = bk.getLedgerIdGenerator();
         ledgerIdGenerator.generateLedgerId(new GenericCallback<Long>() {
             @Override
@@ -133,7 +138,6 @@ class LedgerCreateOp implements GenericCallback<Void> {
                     createComplete(rc, null);
                     return;
                 }
-
                 LedgerCreateOp.this.ledgerId = ledgerId;
                 // create a ledger with metadata
                 bk.getLedgerManager().createLedgerMetadata(ledgerId, metadata, LedgerCreateOp.this);
@@ -144,8 +148,12 @@ class LedgerCreateOp implements GenericCallback<Void> {
     /**
      * Initiates the operation to return LedgerHandleAdv.
      */
-    public void initiateAdv() {
+    public void initiateAdv(final long ledgerId) {
         this.adv = true;
+        this.ledgerId = ledgerId;
+        if (this.ledgerId != -1L) {
+            this.generateLedgerId = false;
+        }
         initiate();
     }
 
@@ -154,9 +162,9 @@ class LedgerCreateOp implements GenericCallback<Void> {
      */
     @Override
     public void operationComplete(int rc, Void result) {
-        if (BKException.Code.LedgerExistException == rc) {
+        if (this.generateLedgerId && (BKException.Code.LedgerExistException == rc)) {
             // retry to generate a new ledger id
-            createLedger();
+            generateLedgerIdAndCreateLedger();
             return;
         } else if (BKException.Code.OK != rc) {
             createComplete(rc, null);

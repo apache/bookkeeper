@@ -62,6 +62,8 @@ class FileInfo {
 
     private FileChannel fc;
     private File lf;
+    private ByteBuffer explicitLac = null;
+
     byte[] masterKey;
 
     /**
@@ -110,6 +112,37 @@ class FileInfo {
 
     public long getSizeSinceLastwrite() {
         return sizeSinceLastwrite;
+    }
+
+    public ByteBuffer getExplicitLac() {
+        LOG.debug("fileInfo:GetLac: {}", explicitLac);
+        ByteBuffer retLac = null;
+        synchronized(this) {
+            if (explicitLac != null) {
+                retLac = ByteBuffer.allocate(explicitLac.capacity());
+                explicitLac.rewind();//copy from the beginning
+                retLac.put(explicitLac);
+                explicitLac.rewind();
+                retLac.flip();
+            }
+        }
+        return retLac;
+    }
+
+    public void setExplicitLac(ByteBuffer lac) {
+        synchronized(this) {
+            if (explicitLac == null) {
+                explicitLac = ByteBuffer.allocate(lac.capacity());
+            }
+            explicitLac.put(lac);
+            explicitLac.rewind();
+            
+            long ledgerId = explicitLac.getLong();            
+            long explicitLacValue = explicitLac.getLong();
+            setLastAddConfirmed(explicitLacValue);
+            explicitLac.rewind();
+        }
+        LOG.debug("fileInfo:SetLac: {}", explicitLac);
     }
 
     synchronized public void readHeader() throws IOException {

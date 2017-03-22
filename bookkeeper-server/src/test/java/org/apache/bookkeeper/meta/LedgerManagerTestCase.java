@@ -89,7 +89,8 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         return Arrays.asList(new Object[][] {
             { FlatLedgerManagerFactory.class },
             { HierarchicalLedgerManagerFactory.class },
-            { MSLedgerManagerFactory.class }
+            { LongHierarchicalLedgerManagerFactory.class },
+            { MSLedgerManagerFactory.class },
         });
     }
 
@@ -204,6 +205,18 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
 
         @Override
         public void flushEntriesLocationsIndex() throws IOException {
+        }
+
+        @Override
+        public void setExplicitlac(long ledgerId, ByteBuffer lac) throws IOException {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public ByteBuffer getExplicitLac(long ledgerId) {
+            // TODO Auto-generated method stub
+            return null;
         }
     }
 }

@@ -37,4 +37,13 @@
     <Method name="getBuffer" />
     <Bug pattern="EI_EXPOSE_REP" />
   </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.auth.AuthToken" />
+    <Method name="getData" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <And>
+    <Bug category="MT_CORRECTNESS"/>
+    <Class name="~org.apache.bookkeeper.util.collections\.[^.]+"/>
+  </And>
 </FindBugsFilter>

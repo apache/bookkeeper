@@ -21,13 +21,9 @@
 package org.apache.bookkeeper.auth;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
-
-import com.google.protobuf.ExtensionRegistry;
+import org.apache.bookkeeper.client.ClientConnectionPeer;
 
 /**
  * Client authentication provider interface.
@@ -43,8 +39,7 @@ public interface ClientAuthProvider {
          * payload, so that the client can decode auth messages
          * it receives from the server.
          */
-        void init(ClientConfiguration conf,
-                  ExtensionRegistry registry) throws IOException;
+        void init(ClientConfiguration conf) throws IOException;
 
         /**
          * Create a new instance of a client auth provider.
@@ -56,12 +51,12 @@ public interface ClientAuthProvider {
          * If the authentication was successful, BKException.Code.OK
          * should be passed as the return code. Otherwise, another
          * error code should be passed.
-         * @param addr the address of the socket being authenticated
+         * @param connection an handle to the connection
          * @param completeCb callback to be notified when authentication
          *                   is complete.
          */
-        ClientAuthProvider newProvider(InetSocketAddress addr,
-                                       GenericCallback<Void> completeCb);
+        ClientAuthProvider newProvider(ClientConnectionPeer connection,
+                                       AuthCallbacks.GenericCallback<Void> completeCb);
 
         /**
          * Get Auth provider plugin name.
@@ -69,6 +64,11 @@ public interface ClientAuthProvider {
          * are using the same auth provider.
          */
         String getPluginName();
+
+        /**
+        * Release resources
+        */
+        default void close() {}
     }
 
     /**
@@ -77,7 +77,7 @@ public interface ClientAuthProvider {
      * cb may not be called if authentication is not requires. In
      * this case, completeCb should be called.
      */
-    void init(GenericCallback<AuthMessage> cb);
+    void init(AuthCallbacks.GenericCallback<AuthToken> cb);
 
     /**
      * Process a response from the server. cb will receive the next
@@ -85,5 +85,10 @@ public interface ClientAuthProvider {
      * to send to the server, cb should not be called, and completeCb
      * must be called instead.
      */
-    void process(AuthMessage m, GenericCallback<AuthMessage> cb);
+    void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb);
+
+    /**
+     * Release resources
+     */
+    default void close() {}
 }

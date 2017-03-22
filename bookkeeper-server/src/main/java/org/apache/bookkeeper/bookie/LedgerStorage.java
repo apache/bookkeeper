@@ -149,4 +149,8 @@ public interface LedgerStorage {
      * Get the JMX management bean for this LedgerStorage
      */
     BKMBeanInfo getJMXBean();
+
+    void setExplicitlac(long ledgerId, ByteBuffer lac) throws IOException;
+
+    ByteBuffer getExplicitLac(long ledgerId);
 }

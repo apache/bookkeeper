@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy;
+import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
@@ -64,6 +65,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String ADD_ENTRY_QUORUM_TIMEOUT_SEC = "addEntryQuorumTimeoutSec";
     protected final static String READ_ENTRY_TIMEOUT_SEC = "readEntryTimeoutSec";
     protected final static String TIMEOUT_TASK_INTERVAL_MILLIS = "timeoutTaskIntervalMillis";
+    protected final static String EXPLICIT_LAC_INTERVAL = "explicitLacInterval";
     protected final static String PCBC_TIMEOUT_TIMER_TICK_DURATION_MS = "pcbcTimeoutTimerTickDurationMs";
     protected final static String PCBC_TIMEOUT_TIMER_NUM_TICKS = "pcbcTimeoutTimerNumTicks";
     protected final static String TIMEOUT_TIMER_TICK_DURATION_MS = "timeoutTimerTickDurationMs";
@@ -75,7 +77,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String BOOKIE_ERROR_THRESHOLD_PER_INTERVAL = "bookieErrorThresholdPerInterval";
     protected final static String BOOKIE_QUARANTINE_TIME_SECONDS = "bookieQuarantineTimeSeconds";
 
-    // Number Woker Threads
+    // Number Worker Threads
     protected final static String NUM_WORKER_THREADS = "numWorkerThreads";
 
     // Ensemble Placement Policy
@@ -86,8 +88,18 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
     protected final static String TASK_EXECUTION_WARN_TIME_MICROS = "taskExecutionWarnTimeMicros";
 
-    // Client auth provider factory class name
-    protected final static String CLIENT_AUTH_PROVIDER_FACTORY_CLASS = "clientAuthProviderFactoryClass";
+    // Role of the client
+    protected final static String CLIENT_ROLE = "clientRole";
+
+    /**
+     * This client will act as a standard client
+     */
+    public final static String CLIENT_ROLE_STANDARD = "standard";
+
+    /**
+     * This client will act as a system client, like the {@link Auditor}
+     */
+    public final static String CLIENT_ROLE_SYSTEM = "system";
 
     /**
      * Construct a default client-side configuration
@@ -584,6 +596,29 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Get the configured interval between  explicit LACs to bookies.
+     * Generally LACs are piggy-backed on writes, and user can configure
+     * the interval between these protocol messages. A value of '0' disables
+     * sending any explicit LACs.
+     *
+     * @return interval between explicit LACs
+     */
+    public int getExplictLacInterval() {
+        return getInt(EXPLICIT_LAC_INTERVAL, 0);
+    }
+
+    /**
+     * Set the interval to check the need for sending an explicit LAC.
+     * @param interval
+     *        Number of seconds between checking the need for sending an explict LAC.
+     * @return Client configuration.
+     */
+    public ClientConfiguration setExplictLacInterval(int interval) {
+        setProperty(EXPLICIT_LAC_INTERVAL, interval);
+        return this;
+    }
+
+    /**
      * Get the tick duration in milliseconds that used for the
      * {@link org.jboss.netty.util.HashedWheelTimer} that used by PCBC to timeout
      * requests.
@@ -896,26 +931,32 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the client authentication provider factory class name.
-     * If this is not set, no authentication will be used
+     * Set the client role
      *
-     * @param factoryClass
-     *          the client authentication provider factory class name
+     * @param role defines how the client will act
      * @return client configuration
      */
-    public ClientConfiguration setClientAuthProviderFactoryClass(
-            String factoryClass) {
-        setProperty(CLIENT_AUTH_PROVIDER_FACTORY_CLASS, factoryClass);
+    public ClientConfiguration setClientRole(String role) {
+        if (role == null) {
+            throw new NullPointerException();
+        }
+        switch (role) {
+            case CLIENT_ROLE_STANDARD:
+            case CLIENT_ROLE_SYSTEM:
+                break;
+            default:
+                throw new IllegalArgumentException("invalid role "+role);
+        }
+        setProperty(CLIENT_ROLE, role);
         return this;
     }
 
     /**
-     * Get the client authentication provider factory class name. If this returns null, no authentication will take
-     * place.
+     * Get the role of the client
      *
-     * @return the client authentication provider factory class name or null.
+     * @return the type of client
      */
-    public String getClientAuthProviderFactoryClass() {
-        return getString(CLIENT_AUTH_PROVIDER_FACTORY_CLASS, null);
+    public String getClientRole() {
+        return getString(CLIENT_ROLE, CLIENT_ROLE_STANDARD);
     }
 }

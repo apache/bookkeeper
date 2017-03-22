@@ -20,6 +20,13 @@
  */
 package org.apache.bookkeeper.proto;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.protobuf.ByteString;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
+import org.apache.bookkeeper.auth.AuthToken;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
@@ -34,6 +41,9 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY_REQUEST;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_REQUEST;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAC;
+
 
 public class BookieRequestProcessor implements RequestProcessor {
 
@@ -66,6 +76,8 @@ public class BookieRequestProcessor implements RequestProcessor {
     final OpStatsLogger addEntryStats;
     final OpStatsLogger readRequestStats;
     final OpStatsLogger readEntryStats;
+    final OpStatsLogger writeLacStats;
+    final OpStatsLogger readLacStats;
 
     public BookieRequestProcessor(ServerConfiguration serverCfg, Bookie bookie,
                                   StatsLogger statsLogger) {
@@ -79,6 +91,8 @@ public class BookieRequestProcessor implements RequestProcessor {
         this.addRequestStats = statsLogger.getOpStatsLogger(ADD_ENTRY_REQUEST);
         this.readEntryStats = statsLogger.getOpStatsLogger(READ_ENTRY);
         this.readRequestStats = statsLogger.getOpStatsLogger(READ_ENTRY_REQUEST);
+        this.writeLacStats = statsLogger.getOpStatsLogger(WRITE_LAC);
+        this.readLacStats = statsLogger.getOpStatsLogger(READ_LAC);
     }
 
     @Override
@@ -114,6 +128,25 @@ public class BookieRequestProcessor implements RequestProcessor {
                     break;
                 case READ_ENTRY:
                     processReadRequestV3(r, c);
+                    break;
+                case AUTH:
+                    LOG.info("Ignoring auth operation from client {}",c.getRemoteAddress());
+                    BookkeeperProtocol.AuthMessage message = BookkeeperProtocol.AuthMessage
+                        .newBuilder()
+                        .setAuthPluginName(AuthProviderFactoryFactory.authenticationDisabledPluginName)
+                        .setPayload(ByteString.copyFrom(AuthToken.NULL.getData()))
+                        .build();
+                    BookkeeperProtocol.Response.Builder authResponse =
+                            BookkeeperProtocol.Response.newBuilder().setHeader(r.getHeader())
+                            .setStatus(BookkeeperProtocol.StatusCode.EOK)
+                            .setAuthResponse(message);
+                    c.write(authResponse.build());
+                    break;
+                case WRITE_LAC:
+                    processWriteLacRequestV3(r,c);
+                    break;
+                case READ_LAC:
+                    processReadLacRequestV3(r,c);
                     break;
                 default:
                     LOG.info("Unknown operation type {}", header.getOperation());
@@ -162,6 +195,24 @@ public class BookieRequestProcessor implements RequestProcessor {
             read.run();
         } else {
             readThreadPool.submitOrdered(r.getReadRequest().getLedgerId(), read);
+        }
+    }
+
+    private void processWriteLacRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+        WriteLacProcessorV3 writeLac = new WriteLacProcessorV3(r, c, this);
+        if (null == writeThreadPool) {
+            writeLac.run();
+        } else {
+            writeThreadPool.submit(writeLac);
+        }
+    }
+
+    private void processReadLacRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+        ReadLacProcessorV3 readLac = new ReadLacProcessorV3(r, c, this);
+        if (null == readThreadPool) {
+            readLac.run();
+        } else {
+            readThreadPool.submit(readLac);
         }
     }
 

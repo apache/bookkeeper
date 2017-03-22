@@ -28,6 +28,8 @@ public interface BookKeeperClientStats {
     public final static String OPEN_OP = "LEDGER_OPEN";
     public final static String ADD_OP = "ADD_ENTRY";
     public final static String READ_OP = "READ_ENTRY";
+    public final static String WRITE_LAC_OP = "WRITE_LAC";
+    public final static String READ_LAC_OP = "READ_LAC";
     public final static String PENDING_ADDS = "NUM_PENDING_ADD";
     public final static String ENSEMBLE_CHANGES = "NUM_ENSEMBLE_CHANGE";
     public final static String LAC_UPDATE_HITS = "LAC_UPDATE_HITS";
@@ -40,4 +42,8 @@ public interface BookKeeperClientStats {
     public final static String CHANNEL_TIMEOUT_READ = "TIMEOUT_READ_ENTRY";
     public final static String CHANNEL_ADD_OP = "ADD_ENTRY";
     public final static String CHANNEL_TIMEOUT_ADD = "TIMEOUT_ADD_ENTRY";
+    public final static String CHANNEL_WRITE_LAC_OP = "WRITE_LAC";
+    public final static String CHANNEL_TIMEOUT_WRITE_LAC = "TIMEOUT_WRITE_LAC";
+    public final static String CHANNEL_READ_LAC_OP = "READ_LAC";
+    public final static String CHANNEL_TIMEOUT_READ_LAC = "TIMEOUT_READ_LAC";
 }

@@ -334,6 +334,15 @@ public class TestSyncThread {
         }
 
         @Override
+        public void setExplicitlac(long ledgerId, ByteBuffer lac) {
+        }
+
+        @Override
+        public ByteBuffer getExplicitLac(long ledgerId) {
+            return null;
+        }
+
+        @Override
         public Checkpoint checkpoint(Checkpoint checkpoint)
                 throws IOException {
             return checkpoint;
