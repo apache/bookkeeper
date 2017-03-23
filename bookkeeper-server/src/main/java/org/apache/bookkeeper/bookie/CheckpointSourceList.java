@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.io.IOException;
 import java.util.List;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
 public class CheckpointSourceList implements CheckpointSource {
@@ -66,6 +67,20 @@ public class CheckpointSourceList implements CheckpointSource {
             for (int i = 0; i < source.checkpointSourcesList.size(); i++) {
                 source.checkpointSourcesList.get(i).checkpointComplete(checkpoints.get(i), compact);
             }
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(source, checkpoints);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof CheckpointList)) {
+                return false;
+            }
+            Checkpoint other = (Checkpoint) o;
+            return 0 == compareTo(other);
         }
 
         @Override

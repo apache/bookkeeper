@@ -387,7 +387,6 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
     void writeLac(final long ledgerId, final byte[] masterKey, final long lac, ChannelBuffer toSend, WriteLacCallback cb, Object ctx) {
         final long txnId = getTxnId();
-        final int entrySize = toSend.readableBytes();
         final CompletionKey completionKey = new CompletionKey(txnId, OperationType.WRITE_LAC);
         // writeLac is mostly like addEntry hence uses addEntryTimeout
         completionObjects.put(completionKey,

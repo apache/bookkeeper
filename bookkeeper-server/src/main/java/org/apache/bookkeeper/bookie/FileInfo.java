@@ -115,9 +115,9 @@ class FileInfo {
     }
 
     public ByteBuffer getExplicitLac() {
-        LOG.debug("fileInfo:GetLac: {}", explicitLac);
         ByteBuffer retLac = null;
         synchronized(this) {
+            LOG.debug("fileInfo:GetLac: {}", explicitLac);
             if (explicitLac != null) {
                 retLac = ByteBuffer.allocate(explicitLac.capacity());
                 explicitLac.rewind();//copy from the beginning
@@ -137,12 +137,13 @@ class FileInfo {
             explicitLac.put(lac);
             explicitLac.rewind();
             
-            long ledgerId = explicitLac.getLong();            
+            // skip the ledger id
+            explicitLac.getLong();            
             long explicitLacValue = explicitLac.getLong();
             setLastAddConfirmed(explicitLacValue);
             explicitLac.rewind();
+            LOG.debug("fileInfo:SetLac: {}", explicitLac);
         }
-        LOG.debug("fileInfo:SetLac: {}", explicitLac);
     }
 
     synchronized public void readHeader() throws IOException {
