@@ -628,9 +628,6 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public File[] getJournalDirs() {
         String[] journalDirNames = getJournalDirNames();
-        if (null == journalDirNames) {
-            return null;
-        }
         File[] journalDirs = new File[journalDirNames.length];
         for(int i=0 ;i<journalDirNames.length; i++) {
             journalDirs[i] = new File(journalDirNames[i]);
