@@ -65,6 +65,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
@@ -141,7 +142,7 @@ public class Bookie extends BookieCriticalThread {
     BookieBean jmxBookieBean;
     BKMBeanInfo jmxLedgerStorageBean;
 
-    final ConcurrentMap<Long, byte[]> masterKeyCache = new ConcurrentHashMap<Long, byte[]>();
+    final ConcurrentLongHashMap<byte[]> masterKeyCache = new ConcurrentLongHashMap<byte[]>();
 
     final protected String zkBookieRegPath;
     final protected String zkBookieReadOnlyPath;
@@ -1337,20 +1338,21 @@ public class Bookie extends BookieCriticalThread {
      *
      * @throws BookieException if masterKey does not match the master key of the ledger
      */
-    private LedgerDescriptor getLedgerForEntry(ByteBuffer entry, byte[] masterKey)
+    private LedgerDescriptor getLedgerForEntry(ByteBuffer entry, final byte[] masterKey)
             throws IOException, BookieException {
-        long ledgerId = entry.getLong();
+        final long ledgerId = entry.getLong();
         LedgerDescriptor l = handles.getHandle(ledgerId, masterKey);
-        if (!masterKeyCache.containsKey(ledgerId)) {
-            // new handle, we should add the key to journal ensure we can rebuild
-            ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
-            bb.putLong(ledgerId);
-            bb.putLong(METAENTRY_ID_LEDGER_KEY);
-            bb.putInt(masterKey.length);
-            bb.put(masterKey);
-            bb.flip();
-
-            if (null == masterKeyCache.putIfAbsent(ledgerId, masterKey)) {
+        if (null == masterKeyCache.get(ledgerId)) {
+            // Force the load into masterKey cache
+            byte[] oldValue = masterKeyCache.putIfAbsent(ledgerId, masterKey);
+            if (oldValue == null) {
+                // new handle, we should add the key to journal ensure we can rebuild
+                ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
+                bb.putLong(ledgerId);
+                bb.putLong(METAENTRY_ID_LEDGER_KEY);
+                bb.putInt(masterKey.length);
+                bb.put(masterKey);
+                bb.flip();
                 getJournal(ledgerId).logAddEntry(bb, new NopWriteCallback(), null);
             }
         }

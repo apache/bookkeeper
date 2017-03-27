@@ -28,13 +28,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.NavigableMap;
 
-import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.bookie.CheckpointSource;
+import org.apache.bookkeeper.bookie.*;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
-import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
-import org.apache.bookkeeper.bookie.EntryLocation;
-import org.apache.bookkeeper.bookie.EntryLogger;
-import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -178,6 +173,11 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         @Override
         public void deleteLedger(long ledgerId) throws IOException {
             activeLedgers.remove(ledgerId);
+        }
+
+        @Override
+        public void registerLedgerDeletionListener(LedgerDeletionListener listener) {
+            
         }
 
         @Override
