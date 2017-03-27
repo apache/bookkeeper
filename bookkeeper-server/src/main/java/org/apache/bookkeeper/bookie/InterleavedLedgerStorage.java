@@ -25,11 +25,14 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import com.google.common.collect.Lists;
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 
 import java.util.Map;
@@ -82,6 +85,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     LedgerCache ledgerCache;
     private CheckpointSource checkpointSource;
     protected final CheckpointHolder checkpointHolder = new CheckpointHolder();
+    private final CopyOnWriteArrayList<LedgerDeletionListener> ledgerDeletionListeners = Lists.newCopyOnWriteArrayList();
 
     // A sorted map to stored all active ledger ids
     protected final SnapshotMap<Long, Boolean> activeLedgers;
@@ -374,6 +378,10 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     public void deleteLedger(long ledgerId) throws IOException {
         activeLedgers.remove(ledgerId);
         ledgerCache.deleteLedger(ledgerId);
+
+        for(LedgerDeletionListener ledgerDeletionListener : ledgerDeletionListeners) {
+            ledgerDeletionListener.ledgerDeleted(ledgerId);
+        }
     }
 
     @Override
@@ -416,6 +424,11 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
 
     protected void processEntry(long ledgerId, long entryId, ByteBuffer entry) throws IOException {
         processEntry(ledgerId, entryId, entry, true);
+    }
+
+    @Override
+    public void registerLedgerDeletionListener(LedgerDeletionListener listener) {
+        ledgerDeletionListeners.add(listener);
     }
 
     synchronized protected void processEntry(long ledgerId, long entryId, ByteBuffer entry, boolean rollLog)

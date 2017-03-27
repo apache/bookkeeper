@@ -280,6 +280,10 @@ public class TestSyncThread {
         }
 
         @Override
+        public void registerLedgerDeletionListener(LedgerDeletionListener listener) {
+        }
+
+        @Override
         public void start() {
         }
 
