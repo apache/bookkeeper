@@ -59,6 +59,7 @@ enum OperationType {
     AUTH = 5;
     WRITE_LAC = 6;
     READ_LAC = 7;
+    GET_BOOKIE_INFO = 8;
 }
 
 /**
@@ -78,6 +79,7 @@ message Request {
     optional AuthMessage authRequest = 102;
     optional WriteLacRequest writeLacRequest = 103;
     optional ReadLacRequest readLacRequest = 104;
+    optional GetBookieInfoRequest getBookieInfoRequest = 105;
 }
 
 message ReadRequest {
@@ -114,6 +116,15 @@ message ReadLacRequest {
     required int64 ledgerId = 1;
 }
 
+message GetBookieInfoRequest {
+    enum Flags {
+        TOTAL_DISK_CAPACITY = 0x01;
+        FREE_DISK_SPACE = 0x02;
+    }
+    // bitwise OR of Flags
+    optional int64 requested = 1;
+}
+
 message Response {
 
     required BKPacketHeader header = 1;
@@ -126,6 +137,7 @@ message Response {
     optional AuthMessage authResponse = 102;
     optional WriteLacResponse writeLacResponse = 103;
     optional ReadLacResponse readLacResponse = 104;
+    optional GetBookieInfoResponse getBookieInfoResponse = 105;
 }
 
 message ReadResponse {
@@ -156,4 +168,10 @@ message ReadLacResponse {
     required int64 ledgerId = 2;
     optional bytes lacBody = 3; // lac sent by PutLacRequest
     optional bytes lastEntryBody = 4; // Actual last entry on the disk
+}
+
+message GetBookieInfoResponse {
+    required StatusCode status = 1;
+    optional int64 totalDiskCapacity = 2;
+    optional int64 freeDiskSpace = 3;
 }

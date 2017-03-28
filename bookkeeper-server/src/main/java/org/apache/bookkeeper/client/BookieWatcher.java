@@ -184,6 +184,10 @@ class BookieWatcher implements Watcher, ChildrenCallback {
         synchronized (this) {
             Set<BookieSocketAddress> readonlyBookies = readOnlyBookieWatcher.getReadOnlyBookies();
             placementPolicy.onClusterChanged(newBookieAddrs, readonlyBookies);
+            if (bk.conf.getDiskWeightBasedPlacementEnabled()) {
+                // start collecting bookieInfo for the newly joined bookies, if any
+                bk.bookieInfoReader.availableBookiesChanged(newBookieAddrs);
+            }
         }
 
         // we don't need to close clients here, because:

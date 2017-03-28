@@ -34,6 +34,7 @@ public interface BookKeeperClientStats {
     public final static String ENSEMBLE_CHANGES = "NUM_ENSEMBLE_CHANGE";
     public final static String LAC_UPDATE_HITS = "LAC_UPDATE_HITS";
     public final static String LAC_UPDATE_MISSES = "LAC_UPDATE_MISSES";
+    public final static String GET_BOOKIE_INFO_OP = "GET_BOOKIE_INFO";
 
     // per channel stats
     public final static String CHANNEL_SCOPE = "per_channel_bookie_client";
@@ -46,4 +47,5 @@ public interface BookKeeperClientStats {
     public final static String CHANNEL_TIMEOUT_WRITE_LAC = "TIMEOUT_WRITE_LAC";
     public final static String CHANNEL_READ_LAC_OP = "READ_LAC";
     public final static String CHANNEL_TIMEOUT_READ_LAC = "TIMEOUT_READ_LAC";
+    public final static String TIMEOUT_GET_BOOKIE_INFO = "TIMEOUT_GET_BOOKIE_INFO";
 }

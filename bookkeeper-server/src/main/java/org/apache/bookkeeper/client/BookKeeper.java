@@ -36,6 +36,7 @@ import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
+import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
@@ -65,6 +66,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -114,6 +116,7 @@ public class BookKeeper implements AutoCloseable {
     final HashedWheelTimer requestTimer;
     final boolean ownTimer;
     final FeatureProvider featureProvider;
+    ScheduledExecutorService bookieInfoScheduler;
 
     // Ledger manager responsible for how to store ledger meta data
     final LedgerManagerFactory ledgerManagerFactory;
@@ -122,6 +125,7 @@ public class BookKeeper implements AutoCloseable {
 
     // Ensemble Placement Policy
     final EnsemblePlacementPolicy placementPolicy;
+    BookieInfoReader bookieInfoReader;
 
     final ClientConfiguration conf;
     final int explicitLacInterval;
@@ -363,7 +367,19 @@ public class BookKeeper implements AutoCloseable {
         // initialize bookie client
         this.bookieClient = new BookieClient(conf, this.channelFactory, this.mainWorkerPool, statsLogger);
         this.bookieWatcher = new BookieWatcher(conf, this.scheduler, this.placementPolicy, this);
-        this.bookieWatcher.readBookiesBlocking();
+        if (conf.getDiskWeightBasedPlacementEnabled()) {
+            LOG.info("Weighted ledger placement enabled");
+            ThreadFactoryBuilder tFBuilder = new ThreadFactoryBuilder()
+                    .setNameFormat("BKClientMetaDataPollScheduler-%d");
+            this.bookieInfoScheduler = Executors.newSingleThreadScheduledExecutor(tFBuilder.build());
+            this.bookieInfoReader = new BookieInfoReader(this, conf, this.bookieInfoScheduler);
+            this.bookieWatcher.readBookiesBlocking();
+            this.bookieInfoReader.start();
+        } else {
+            LOG.info("Weighted ledger placement is not enabled");
+            this.bookieInfoReader = new BookieInfoReader(this, conf, null);
+            this.bookieWatcher.readBookiesBlocking();
+        }
 
         // initialize ledger manager
         this.ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, this.zk);
@@ -464,6 +480,20 @@ public class BookKeeper implements AutoCloseable {
      */
     BookieClient getBookieClient() {
         return bookieClient;
+    }
+
+    /**
+     * Retrieves BookieInfo from all the bookies in the cluster. It sends requests
+     * to all the bookies in parallel and returns the info from the bookies that responded.
+     * If there was an error in reading from any bookie, nothing will be returned for
+     * that bookie in the map.
+     * @return map
+     *             A map of bookieSocketAddress to its BookiInfo
+     * @throws BKException
+     * @throws InterruptedException
+     */
+    public Map<BookieSocketAddress, BookieInfo> getBookieInfo() throws BKException, InterruptedException {
+        return bookieInfoReader.getBookieInfo();
     }
 
     /**
@@ -1137,6 +1167,12 @@ public class BookKeeper implements AutoCloseable {
         mainWorkerPool.shutdown();
         if (!mainWorkerPool.awaitTermination(10, TimeUnit.SECONDS)) {
             LOG.warn("The mainWorkerPool did not shutdown cleanly");
+        }
+        if (this.bookieInfoScheduler != null) {
+            this.bookieInfoScheduler.shutdown();
+            if (!bookieInfoScheduler.awaitTermination(10, TimeUnit.SECONDS)) {
+                LOG.warn("The bookieInfoScheduler did not shutdown cleanly");
+            }
         }
 
         if (ownTimer) {

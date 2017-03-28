@@ -25,6 +25,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.zookeeper.AsyncCallback;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -86,6 +87,10 @@ public class BookkeeperInternalCallbacks {
 
     public interface ReadEntryCallback {
         void readEntryComplete(int rc, long ledgerId, long entryId, ChannelBuffer buffer, Object ctx);
+    }
+
+    public interface GetBookieInfoCallback {
+        void getBookieInfoComplete(int rc, BookieInfo bInfo, Object ctx);
     }
 
     /**
