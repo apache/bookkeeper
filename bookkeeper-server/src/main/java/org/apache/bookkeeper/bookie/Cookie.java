@@ -47,14 +47,16 @@ import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 import com.google.protobuf.TextFormat;
+import java.util.List;
+import org.apache.bookkeeper.util.ZkUtils;
 
 /**
  * When a bookie starts for the first time it generates  a cookie, and stores
@@ -249,6 +251,7 @@ class Cookie {
      */
     void writeToZooKeeper(ZooKeeper zk, ServerConfiguration conf, Version version)
             throws KeeperException, InterruptedException, UnknownHostException {
+        List<ACL> zkAcls = ZkUtils.getACLs(conf);
         String bookieCookiePath = conf.getZkLedgersRootPath() + "/"
                 + BookKeeperConstants.COOKIE_NODE;
         String zkPath = getZkPath(conf);
@@ -257,14 +260,14 @@ class Cookie {
             if (zk.exists(bookieCookiePath, false) == null) {
                 try {
                     zk.create(bookieCookiePath, new byte[0],
-                            Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                            zkAcls, CreateMode.PERSISTENT);
                 } catch (KeeperException.NodeExistsException nne) {
                     LOG.info("More than one bookie tried to create {} at once. Safe to ignore",
                             bookieCookiePath);
                 }
             }
             zk.create(zkPath, data,
-                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                    zkAcls, CreateMode.PERSISTENT);
         } else {
             if (!(version instanceof ZkVersion)) {
                 throw new IllegalArgumentException("Invalid version type, expected ZkVersion type");

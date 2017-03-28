@@ -29,6 +29,7 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
+import org.apache.zookeeper.ZooDefs;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -55,7 +56,7 @@ public class LedgerLayoutTest extends BookKeeperClusterTestCase {
         int testVersion = 0xdeadbeef;
         // use layout defined in configuration also create it in zookeeper
         LedgerLayout layout2 = new LedgerLayout(testName, testVersion);
-        layout2.store(zkc, ledgerRootPath);
+        layout2.store(zkc, ledgerRootPath, ZooDefs.Ids.OPEN_ACL_UNSAFE);
 
         layout = LedgerLayout.readLayout(zkc, ledgerRootPath);
         assertEquals(testName, layout.getManagerFactoryClass());
@@ -73,7 +74,7 @@ public class LedgerLayoutTest extends BookKeeperClusterTestCase {
         f.setAccessible(true);
         f.set(layout, layoutVersion);
 
-        layout.store(zkc, ledgersRootPath);
+        layout.store(zkc, ledgersRootPath, ZooDefs.Ids.OPEN_ACL_UNSAFE);
     }
 
     @Test(timeout=60000)

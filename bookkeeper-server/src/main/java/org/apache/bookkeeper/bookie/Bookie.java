@@ -75,7 +75,6 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
@@ -95,6 +94,8 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_STATUS;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
+import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.zookeeper.data.ACL;
 
 /**
  * Implements a bookie.
@@ -143,6 +144,7 @@ public class Bookie extends BookieCriticalThread {
 
     final protected String zkBookieRegPath;
     final protected String zkBookieReadOnlyPath;
+    final protected List<ACL> zkAcls;
 
     final private AtomicBoolean zkRegistered = new AtomicBoolean(false);
     final protected AtomicBoolean readOnly = new AtomicBoolean(false);
@@ -648,6 +650,7 @@ public class Bookie extends BookieCriticalThread {
     public Bookie(ServerConfiguration conf, StatsLogger statsLogger)
             throws IOException, KeeperException, InterruptedException, BookieException {
         super("Bookie-" + conf.getBookiePort());
+        this.zkAcls = ZkUtils.getACLs(conf);
         this.bookieRegistrationPath = conf.getZkAvailableBookiesPath() + "/";
         this.bookieReadonlyRegistrationPath =
             this.bookieRegistrationPath + BookKeeperConstants.READONLY;
@@ -1033,7 +1036,7 @@ public class Bookie extends BookieCriticalThread {
         try{
             if (!checkRegNodeAndWaitExpired(regPath)) {
                 // Create the ZK ephemeral node for this Bookie.
-                zk.create(regPath, new byte[0], Ids.OPEN_ACL_UNSAFE,
+                zk.create(regPath, new byte[0], zkAcls,
                         CreateMode.EPHEMERAL);
                 LOG.info("Registered myself in ZooKeeper at {}.", regPath);
             }
@@ -1141,7 +1144,7 @@ public class Bookie extends BookieCriticalThread {
             if (null == zk.exists(this.bookieReadonlyRegistrationPath, false)) {
                 try {
                     zk.create(this.bookieReadonlyRegistrationPath, new byte[0],
-                              Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                              zkAcls, CreateMode.PERSISTENT);
                 } catch (NodeExistsException e) {
                     // this node is just now created by someone.
                 }
