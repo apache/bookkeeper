@@ -322,6 +322,14 @@ class AuthHandler {
                     } else {
                         waitingForAuth.add(e);
                     }
+                } else if (e.getMessage() instanceof BookieProtocol.Request) {
+                    // let auth messages through, queue the rest
+                    BookieProtocol.Request req = (BookieProtocol.Request)e.getMessage();
+                    if (BookkeeperProtocol.OperationType.AUTH.getNumber() == req.getOpCode()) {
+                        super.writeRequested(ctx, e);
+                    } else {
+                        waitingForAuth.add(e);
+                    }
                 } // else just drop
             }
         }
