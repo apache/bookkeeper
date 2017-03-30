@@ -177,7 +177,7 @@ public class IndexPersistenceMgr {
      */
     private File getNewLedgerIndexFile(Long ledger, File excludedDir)
                     throws NoWritableLedgerDirException {
-        File dir = ledgerDirsManager.pickRandomWritableDir(excludedDir);
+        File dir = ledgerDirsManager.pickRandomWritableDirForNewIndexFile(excludedDir);
         String ledgerName = getLedgerName(ledger);
         return new File(dir, ledgerName);
     }
