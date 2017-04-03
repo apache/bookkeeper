@@ -396,7 +396,7 @@ def get_reviewers(pr_num):
                 reviewers_ids.add(comment['user']['login'])
 
     approval_review_states = ['approved']
-    pr_reviews = get_json('{0}'/pulls/{1}/reviews'.format(GITHUB_API_BASE, pr_num), True)
+    pr_reviews = get_json('{0}/pulls/{1}/reviews'.format(GITHUB_API_BASE, pr_num), True)
     for review in pr_reviews:
         for approval_state in approval_review_states:
             if approval_state in review['state'].lower():
