@@ -20,10 +20,9 @@
  */
 package org.apache.bookkeeper.client;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.LedgerHandle.LastAddConfirmedCallback;
 import org.apache.bookkeeper.util.SafeRunnable;
@@ -79,7 +78,7 @@ interface ExplicitLacFlushPolicy {
         }
 
         private void scheduleExplictLacFlush() {
-            int explicitLacIntervalInSec = lh.bk.getExplicitLacInterval();
+            int explicitLacIntervalInMs = lh.bk.getExplicitLacInterval();
             final SafeRunnable updateLacTask = new SafeRunnable() {
                 @Override
                 public void safeRun() {
@@ -111,7 +110,7 @@ interface ExplicitLacFlushPolicy {
             };
             try {
                 scheduledFuture = lh.bk.mainWorkerPool.scheduleAtFixedRateOrdered(lh.getId(), updateLacTask,
-                        explicitLacIntervalInSec, explicitLacIntervalInSec, SECONDS);
+                        explicitLacIntervalInMs, explicitLacIntervalInMs, TimeUnit.MILLISECONDS);
             } catch (RejectedExecutionException re) {
                 LOG.error("Scheduling of ExplictLastAddConfirmedFlush for ledger: {} has failed because of {}",
                         lh.getId(), re);

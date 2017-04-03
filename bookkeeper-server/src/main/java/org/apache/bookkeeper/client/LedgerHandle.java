@@ -245,7 +245,7 @@ public class LedgerHandle implements AutoCloseable {
      * @param delta
      * @return the length of the ledger after the addition
      */
-    long addToLength(long delta) {
+    synchronized long addToLength(long delta) {
         this.length += delta;
         return this.length;
     }

@@ -90,6 +90,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String ALLOW_STORAGE_EXPANSION = "allowStorageExpansion";
     // NIO Parameters
     protected final static String SERVER_TCP_NODELAY = "serverTcpNoDelay";
+
     // Zookeeper Parameters
     protected final static String ZK_TIMEOUT = "zkTimeout";
     protected final static String ZK_SERVERS = "zkServers";
@@ -627,9 +628,6 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public File[] getJournalDirs() {
         String[] journalDirNames = getJournalDirNames();
-        if (null == journalDirNames) {
-            return null;
-        }
         File[] journalDirs = new File[journalDirNames.length];
         for(int i=0 ;i<journalDirNames.length; i++) {
             journalDirs[i] = new File(journalDirNames[i]);
@@ -1771,5 +1769,14 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public String getBookieAuthProviderFactoryClass() {
         return getString(BOOKIE_AUTH_PROVIDER_FACTORY_CLASS, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ServerConfiguration setNettyMaxFrameSizeBytes(int maxSize) {
+        super.setNettyMaxFrameSizeBytes(maxSize);
+        return this;
     }
 }

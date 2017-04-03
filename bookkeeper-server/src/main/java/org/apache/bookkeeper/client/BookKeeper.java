@@ -248,11 +248,7 @@ public class BookKeeper implements AutoCloseable {
     public BookKeeper(ClientConfiguration conf, ZooKeeper zk)
             throws IOException, InterruptedException, KeeperException {
 
-        this(conf, validateZooKeeper(zk), new NioClientSocketChannelFactory(
-                Executors.newCachedThreadPool(new ThreadFactoryBuilder()
-                        .setNameFormat("BookKeeper-NIOBoss-%d").build()),
-                Executors.newCachedThreadPool(new ThreadFactoryBuilder()
-                        .setNameFormat("BookKeeper-NIOWorker-%d").build())));
+        this(conf, validateZooKeeper(zk), null, NullStatsLogger.INSTANCE, null, null, null);
     }
 
     /**
