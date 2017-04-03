@@ -395,6 +395,16 @@ def get_reviewers(pr_num):
             if approval_msg in comment['body'].lower():
                 reviewers_ids.add(comment['user']['login'])
 
+    approval_review_states = ['approved']
+    pr_reviews = get_json('{0}'/pulls/{1}/reviews'.format(GITHUB_API_BASE, pr_num), True)
+    for review in pr_reviews:
+        for approval_state in approval_review_states:
+            if approval_state in review['state'].lower():
+                reviewers_ids.add(review['user']['login'])
+
+    if len(reviewer_ids) == 0:
+        fail("No approvals found in this pull request")
+
     reviewers_emails = []
     for reviewer_id in reviewers_ids:
         username = None
