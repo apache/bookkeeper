@@ -74,11 +74,13 @@ DEV_BRANCH_NAME = "master"
 
 DEFAULT_FIX_VERSION = os.environ.get("DEFAULT_FIX_VERSION", "0.9.1.0")
 
-def get_json(url):
+def get_json(url, preview_api = False):
     try:
         request = urllib2.Request(url)
         if GITHUB_OAUTH_KEY:
             request.add_header('Authorization', 'token %s' % GITHUB_OAUTH_KEY)
+        if preview_api:
+            request.add_header('Accept', 'application/vnd.github.black-cat-preview+json')
         return json.load(urllib2.urlopen(request))
     except urllib2.HTTPError as e:
         if "X-RateLimit-Remaining" in e.headers and e.headers["X-RateLimit-Remaining"] == '0':
@@ -402,7 +404,7 @@ def get_reviewers(pr_num):
             if approval_state in review['state'].lower():
                 reviewers_ids.add(review['user']['login'])
 
-    if len(reviewer_ids) == 0:
+    if len(reviewers_ids) == 0:
         fail("No approvals found in this pull request")
 
     reviewers_emails = []
