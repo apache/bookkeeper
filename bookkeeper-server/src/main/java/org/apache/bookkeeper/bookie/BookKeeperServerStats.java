@@ -37,6 +37,7 @@ public interface BookKeeperServerStats {
     public final static String READ_ENTRY_FENCE_READ = "READ_ENTRY_FENCE_READ";
     public final static String WRITE_LAC = "WRITE_LAC";
     public final static String READ_LAC = "READ_LAC";
+    public final static String GET_BOOKIE_INFO = "GET_BOOKIE_INFO";
 
     // Bookie Operations
     public final static String BOOKIE_ADD_ENTRY_BYTES = "BOOKIE_ADD_ENTRY_BYTES";

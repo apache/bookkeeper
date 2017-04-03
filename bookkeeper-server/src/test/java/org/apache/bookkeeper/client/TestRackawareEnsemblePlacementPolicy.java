@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -33,6 +34,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import junit.framework.TestCase;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
+import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
@@ -418,6 +420,252 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         addrs.remove(addr1);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
+    }
+
+    @Test(timeout = 60000)
+    public void testWeightedPlacementAndReplaceBookieWithEnoughBookiesInSameRack() throws Exception {
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr3.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
+        // Update cluster
+        Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
+        addrs.add(addr1);
+        addrs.add(addr2);
+        addrs.add(addr3);
+        addrs.add(addr4);
+
+        int multiple = 10;
+        conf.setDiskWeightBasedPlacementEnabled(true);
+        conf.setBookieMaxWeightMultipleForWeightBasedPlacement(-1); // no max cap on weight
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>absent(), timer, DISABLE_ALL, null);
+
+        repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
+        Map<BookieSocketAddress, BookieInfo> bookieInfoMap = new HashMap<BookieSocketAddress, BookieInfo>();
+        bookieInfoMap.put(addr1, new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr2, new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr3, new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr4, new BookieInfo(multiple*100L, multiple*100L));
+        repp.updateBookieInfo(bookieInfoMap);
+
+        Map<BookieSocketAddress, Long> selectionCounts = new HashMap<BookieSocketAddress, Long>();
+        selectionCounts.put(addr3, 0L);
+        selectionCounts.put(addr4, 0L);
+        int numTries = 50000;
+        BookieSocketAddress replacedBookie;
+        for (int i = 0; i < numTries; i++) {
+            // replace node under r2
+            replacedBookie = repp.replaceBookie(1, 1, 1, null, new HashSet<BookieSocketAddress>(), addr2, new HashSet<BookieSocketAddress>());
+            assertTrue(addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
+            selectionCounts.put(replacedBookie, selectionCounts.get(replacedBookie)+1);
+        }
+        double observedMultiple = ((double)selectionCounts.get(addr4)/(double)selectionCounts.get(addr3));
+        assertTrue("Weights not being honored " + observedMultiple, Math.abs(observedMultiple-multiple) < 1);
+    }
+
+    @Test(timeout = 60000)
+    public void testWeightedPlacementAndReplaceBookieWithoutEnoughBookiesInSameRack() throws Exception {
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
+        // update dns mapping
+        StaticDNSResolver.reset();
+        StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr3.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r3");
+        StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r4");
+        // Update cluster
+        Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
+        addrs.add(addr1);
+        addrs.add(addr2);
+        addrs.add(addr3);
+        addrs.add(addr4);
+
+        int multiple = 10, maxMultiple = 4;
+        conf.setDiskWeightBasedPlacementEnabled(true);
+        conf.setBookieMaxWeightMultipleForWeightBasedPlacement(maxMultiple);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>absent(), timer, DISABLE_ALL, null);
+
+        repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
+        Map<BookieSocketAddress, BookieInfo> bookieInfoMap = new HashMap<BookieSocketAddress, BookieInfo>();
+        bookieInfoMap.put(addr1, new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr2, new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr3, new BookieInfo(200L, 200L));
+        bookieInfoMap.put(addr4, new BookieInfo(multiple*100L, multiple*100L));
+        repp.updateBookieInfo(bookieInfoMap);
+
+        Map<BookieSocketAddress, Long> selectionCounts = new HashMap<BookieSocketAddress, Long>();
+        selectionCounts.put(addr1, 0L);
+        selectionCounts.put(addr2, 0L);
+        selectionCounts.put(addr3, 0L);
+        selectionCounts.put(addr4, 0L);
+        int numTries = 50000;
+        BookieSocketAddress replacedBookie;
+        for (int i = 0; i < numTries; i++) {
+            // addr2 is on /r2 and this is the only one on this rack. So the replacement
+            // will come from other racks. However, the weight should be honored in such
+            // selections as well
+            replacedBookie = repp.replaceBookie(1, 1, 1, null, new HashSet<BookieSocketAddress>(), addr2, new HashSet<BookieSocketAddress>());
+            assertTrue(addr1.equals(replacedBookie) || addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
+            selectionCounts.put(replacedBookie, selectionCounts.get(replacedBookie)+1);
+        }
+
+        double medianWeight = 150;
+        double medianSelectionCounts = (double)(medianWeight/bookieInfoMap.get(addr1).getWeight())*selectionCounts.get(addr1);
+        double observedMultiple1 = ((double)selectionCounts.get(addr4)/(double)medianSelectionCounts);
+        double observedMultiple2 = ((double)selectionCounts.get(addr4)/(double)selectionCounts.get(addr3));
+        LOG.info("oM1 " + observedMultiple1 + " oM2 " + observedMultiple2);
+        assertTrue("Weights not being honored expected " + maxMultiple + " observed " + observedMultiple1,
+                Math.abs(observedMultiple1-maxMultiple) < 1);
+        double expected = (medianWeight*maxMultiple)/bookieInfoMap.get(addr3).getWeight();// expected multiple for addr3
+        assertTrue("Weights not being honored expected " + expected + " observed " + observedMultiple2,
+                Math.abs(observedMultiple2-expected) < 1);
+    }
+
+    @Test(timeout = 60000)
+    public void testWeightedPlacementAndNewEnsembleWithEnoughBookiesInSameRack() throws Exception {
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.5", 3181);
+        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.7", 3181);
+        BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.8", 3181);
+        BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.9", 3181);
+
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr3.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr5.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr6.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r3");
+        StaticDNSResolver.addNodeToRack(addr7.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r3");
+        StaticDNSResolver.addNodeToRack(addr8.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r3");
+        StaticDNSResolver.addNodeToRack(addr9.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r3");
+
+        // Update cluster
+        Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
+        addrs.add(addr1);
+        addrs.add(addr2);
+        addrs.add(addr3);
+        addrs.add(addr4);
+        addrs.add(addr5);
+        addrs.add(addr6);
+        addrs.add(addr7);
+        addrs.add(addr8);
+        addrs.add(addr9);
+
+        int maxMultiple = 4;
+        conf.setDiskWeightBasedPlacementEnabled(true);
+        conf.setBookieMaxWeightMultipleForWeightBasedPlacement(maxMultiple);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>absent(), timer, DISABLE_ALL, null);
+
+        repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
+        Map<BookieSocketAddress, BookieInfo> bookieInfoMap = new HashMap<BookieSocketAddress, BookieInfo>();
+        bookieInfoMap.put(addr1, new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr2, new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr3, new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr4, new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr5, new BookieInfo(1000L, 1000L));
+        bookieInfoMap.put(addr6, new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr7, new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr8, new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr9, new BookieInfo(1000L, 1000L));
+
+        repp.updateBookieInfo(bookieInfoMap);
+
+        Map<BookieSocketAddress, Long> selectionCounts = new HashMap<BookieSocketAddress, Long>();
+        for (BookieSocketAddress b : addrs) {
+            selectionCounts.put(b, 0L);
+        }
+        int numTries = 10000;
+
+        Set<BookieSocketAddress> excludeList = new HashSet<BookieSocketAddress>();
+        ArrayList<BookieSocketAddress> ensemble;
+        for (int i = 0; i < numTries; i++) {
+            // addr2 is on /r2 and this is the only one on this rack. So the replacement
+            // will come from other racks. However, the weight should be honored in such
+            // selections as well
+            ensemble = repp.newEnsemble(3, 2, 2, null, excludeList);
+            assertTrue("Rackaware selection not happening " + getNumCoveredWriteQuorums(ensemble, 2), getNumCoveredWriteQuorums(ensemble, 2) >= 2);
+            for (BookieSocketAddress b : ensemble) {
+                selectionCounts.put(b, selectionCounts.get(b)+1);
+            }
+        }
+
+        // the median weight used is 100 since addr2 and addr6 have the same weight, we use their
+        // selection counts as the same as median
+        double observedMultiple1 = ((double)selectionCounts.get(addr5)/(double)selectionCounts.get(addr2));
+        double observedMultiple2 = ((double)selectionCounts.get(addr9)/(double)selectionCounts.get(addr6));
+        assertTrue("Weights not being honored expected 2 observed " + observedMultiple1,
+                Math.abs(observedMultiple1-maxMultiple) < 0.5);
+        assertTrue("Weights not being honored expected 4 observed " + observedMultiple2,
+                Math.abs(observedMultiple2-maxMultiple) < 0.5);
+    }
+
+    @Test(timeout = 60000)
+    public void testWeightedPlacementAndNewEnsembleWithoutEnoughBookies() throws Exception {
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.5", 3181);
+
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr3.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r3");
+        StaticDNSResolver.addNodeToRack(addr5.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r3");
+        // Update cluster
+        Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
+        addrs.add(addr1);
+        addrs.add(addr2);
+        addrs.add(addr3);
+        addrs.add(addr4);
+        addrs.add(addr5);
+
+        int maxMultiple = 4;
+        conf.setDiskWeightBasedPlacementEnabled(true);
+        conf.setBookieMaxWeightMultipleForWeightBasedPlacement(maxMultiple);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>absent(), timer, DISABLE_ALL, null);
+
+        repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
+        Map<BookieSocketAddress, BookieInfo> bookieInfoMap = new HashMap<BookieSocketAddress, BookieInfo>();
+        bookieInfoMap.put(addr1, new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr2, new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr3, new BookieInfo(1000L, 1000L));
+        bookieInfoMap.put(addr4, new BookieInfo(100L, 100L));
+        bookieInfoMap.put(addr5, new BookieInfo(1000L, 1000L));
+
+        repp.updateBookieInfo(bookieInfoMap);
+
+        ArrayList<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
+        Set<BookieSocketAddress> excludeList = new HashSet<BookieSocketAddress>();
+        try {
+            excludeList.add(addr1);
+            excludeList.add(addr2);
+            excludeList.add(addr3);
+            excludeList.add(addr4);
+            ensemble = repp.newEnsemble(3, 2, 2, null, excludeList);
+            fail("Should throw BKNotEnoughBookiesException when there is not enough bookies" + ensemble);
+        } catch (BKNotEnoughBookiesException e) {
+            // this is expected
+        }
+        try {
+            ensemble = repp.newEnsemble(1, 1, 1, null, excludeList);
+        } catch (BKNotEnoughBookiesException e) {
+            fail("Should not throw BKNotEnoughBookiesException when there are enough bookies for the ensemble");
+        }
     }
 
     private int getNumCoveredWriteQuorums(ArrayList<BookieSocketAddress> ensemble, int writeQuorumSize)

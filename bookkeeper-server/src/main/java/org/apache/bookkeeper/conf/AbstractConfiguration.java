@@ -73,6 +73,9 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     protected final static String NETTY_MAX_FRAME_SIZE = "nettyMaxFrameSizeBytes";
     protected final static int DEFAULT_NETTY_MAX_FRAME_SIZE = 5 * 1024 * 1024; // 5MB
 
+    // Zookeeper ACL settings
+    protected final static String ZK_ENABLE_SECURITY = "zkEnableSecurity";
+
     protected AbstractConfiguration() {
         super();
         if (READ_SYSTEM_PROPERTIES) {
@@ -185,6 +188,24 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      */
     public String getZkLedgersRootPath() {
         return getString(ZK_LEDGERS_ROOT_PATH, "/ledgers");
+    }
+
+    /**
+     * Are z-node created with strict ACLs
+     *
+     * @return usage of secure ZooKeeper ACLs
+     */
+    public boolean isZkEnableSecurity() {
+        return getBoolean(ZK_ENABLE_SECURITY, false);
+    }
+
+    /**
+     * Set the usage of ACLs of new z-nodes
+     *
+     * @param zkEnableSecurity
+     */
+    public void setZkEnableSecurity(boolean zkEnableSecurity) {
+        setProperty(ZK_ENABLE_SECURITY, zkEnableSecurity);
     }
 
     /**

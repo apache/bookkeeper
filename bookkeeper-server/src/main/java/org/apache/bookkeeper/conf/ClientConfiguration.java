@@ -57,7 +57,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String CLIENT_WRITEBUFFER_HIGH_WATER_MARK = "clientWriteBufferHighWaterMark";
     protected final static String CLIENT_CONNECT_TIMEOUT_MILLIS = "clientConnectTimeoutMillis";
     protected final static String NUM_CHANNELS_PER_BOOKIE = "numChannelsPerBookie";
-
+    protected final static String USE_V2_WIRE_PROTOCOL = "useV2WireProtocol";
     // Read Parameters
     protected final static String READ_TIMEOUT = "readTimeout";
     protected final static String SPECULATIVE_READ_TIMEOUT = "speculativeReadTimeout";
@@ -78,7 +78,13 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String BOOKIE_ERROR_THRESHOLD_PER_INTERVAL = "bookieErrorThresholdPerInterval";
     protected final static String BOOKIE_QUARANTINE_TIME_SECONDS = "bookieQuarantineTimeSeconds";
 
-    // Number Worker Threads
+    // Bookie info poll interval
+    protected final static String DISK_WEIGHT_BASED_PLACEMENT_ENABLED = "diskWeightBasedPlacementEnabled";
+    protected final static String GET_BOOKIE_INFO_INTERVAL_SECONDS = "getBookieInfoIntervalSeconds";
+    protected final static String BOOKIE_MAX_MULTIPLE_FOR_WEIGHTED_PLACEMENT = "bookieMaxMultipleForWeightBasedPlacement";
+    protected final static String GET_BOOKIE_INFO_TIMEOUT_SECS = "getBookieInfoTimeoutSecs";
+
+    // Number Woker Threads
     protected final static String NUM_WORKER_THREADS = "numWorkerThreads";
 
     // Ensemble Placement Policy
@@ -426,6 +432,27 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setNumChannelsPerBookie(int numChannelsPerBookie) {
         setProperty(NUM_CHANNELS_PER_BOOKIE, numChannelsPerBookie);
+        return this;
+    }
+
+    /**
+     * Use older Bookkeeper wire protocol (no protobuf)
+     *
+     * @return whether or not to use older Bookkeeper wire protocol (no protobuf)
+     */
+    public boolean getUseV2WireProtocol() {
+        return getBoolean(USE_V2_WIRE_PROTOCOL, false);
+    }
+
+    /**
+     * Set whether or not to use older Bookkeeper wire protocol (no protobuf)
+     *
+     * @param useV2WireProtocol
+     *          whether or not to use older Bookkeeper wire protocol (no protobuf)
+     * @return client configuration.
+     */
+    public ClientConfiguration setUseV2WireProtocol(boolean useV2WireProtocol) {
+        setProperty(USE_V2_WIRE_PROTOCOL, useV2WireProtocol);
         return this;
     }
 
@@ -937,6 +964,82 @@ public class ClientConfiguration extends AbstractConfiguration {
     @Override
     public ClientConfiguration setNettyMaxFrameSizeBytes(int maxSize) {
         super.setNettyMaxFrameSizeBytes(maxSize);
+        return this;
+    }
+ 
+    /**
+     * Get the time interval between successive calls for bookie get info. Default is 24 hours.
+     *
+     * @return
+     */
+    public int getGetBookieInfoIntervalSeconds() {
+        return getInt(GET_BOOKIE_INFO_INTERVAL_SECONDS, 24*60*60);
+    }
+
+    /**
+     * Return whether disk weight based placement policy is enabled
+     * @return
+     */
+    public boolean getDiskWeightBasedPlacementEnabled() {
+        return getBoolean(DISK_WEIGHT_BASED_PLACEMENT_ENABLED, false);
+    }
+
+    /**
+     * Returns the max multiple to use for nodes with very high weight
+     * @return max multiple
+     */
+    public int getBookieMaxWeightMultipleForWeightBasedPlacement() {
+        return getInt(BOOKIE_MAX_MULTIPLE_FOR_WEIGHTED_PLACEMENT, 3);
+    }
+
+    /**
+     * Return the timeout value for getBookieInfo request
+     * @return
+     */
+    public int getBookieInfoTimeout() {
+        return getInteger(GET_BOOKIE_INFO_TIMEOUT_SECS, 5);
+    }
+
+    /**
+     * Set whether or not disk weight based placement is enabled.
+     *
+     * @param isEnabled - boolean indicating enabled or not
+     * @return client configuration
+     */
+    public ClientConfiguration setDiskWeightBasedPlacementEnabled(boolean isEnabled) {
+        setProperty(DISK_WEIGHT_BASED_PLACEMENT_ENABLED, isEnabled);
+        return this;
+    }
+
+    /**
+     * Set the time interval between successive polls for bookie get info.
+     *
+     * @param pollInterval
+     * @param unit
+     * @return client configuration
+     */
+    public ClientConfiguration setGetBookieInfoIntervalSeconds(int pollInterval, TimeUnit unit) {
+        setProperty(GET_BOOKIE_INFO_INTERVAL_SECONDS, unit.toSeconds(pollInterval));
+        return this;
+    }
+
+    /**
+     * Set the max multiple to use for nodes with very high weight
+     * @param multiple
+     * @return client configuration
+     */
+    public ClientConfiguration setBookieMaxWeightMultipleForWeightBasedPlacement(int multiple) {
+        setProperty(BOOKIE_MAX_MULTIPLE_FOR_WEIGHTED_PLACEMENT, multiple);
+        return this;
+    }
+
+    /**
+     * Set the timeout value in secs for the GET_BOOKIE_INFO request
+     * @param timeout
+     * @return client configuration
+     */
+    public ClientConfiguration setGetBookieInfoTimeout(int timeoutSecs) {
+        setProperty(GET_BOOKIE_INFO_TIMEOUT_SECS, timeoutSecs);
         return this;
     }
 

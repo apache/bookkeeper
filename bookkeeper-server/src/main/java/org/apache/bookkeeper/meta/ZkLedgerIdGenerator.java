@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -29,6 +30,7 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,11 +49,14 @@ public class ZkLedgerIdGenerator implements LedgerIdGenerator {
     final ZooKeeper zk;
     final String ledgerIdGenPath;
     final String ledgerPrefix;
+    final List<ACL> zkAcls;
 
     public ZkLedgerIdGenerator(ZooKeeper zk,
                                String ledgersPath,
-                               String idGenZnodeName) {
+                               String idGenZnodeName,
+                               List<ACL> zkAcls) {
         this.zk = zk;
+        this.zkAcls = zkAcls;
         if (StringUtils.isBlank(idGenZnodeName)) {
             this.ledgerIdGenPath = ledgersPath;
         } else {
@@ -62,7 +67,7 @@ public class ZkLedgerIdGenerator implements LedgerIdGenerator {
 
     @Override
     public void generateLedgerId(final GenericCallback<Long> cb) {
-        ZkUtils.asyncCreateFullPathOptimistic(zk, ledgerPrefix, new byte[0], Ids.OPEN_ACL_UNSAFE,
+        ZkUtils.asyncCreateFullPathOptimistic(zk, ledgerPrefix, new byte[0], zkAcls,
                 CreateMode.EPHEMERAL_SEQUENTIAL,
                 new StringCallback() {
                     @Override
