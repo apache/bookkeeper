@@ -140,9 +140,6 @@ public interface BookieProtocol {
      * by the auth providers themselves.
      */
     public static final byte AUTH = 3;
-    public static final byte READ_LAC = 4;
-    public static final byte WRITE_LAC = 5;
-    public static final byte GET_BOOKIE_INFO = 6;
 
     /**
      * The error code that indicates success
