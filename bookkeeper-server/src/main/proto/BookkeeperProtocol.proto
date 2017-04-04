@@ -85,6 +85,7 @@ message Request {
 message ReadRequest {
     enum Flag {
         FENCE_LEDGER = 1;
+        ENTRY_PIGGYBACK = 2;
     }
     optional Flag flag = 100;
     required int64 ledgerId = 1;
@@ -92,6 +93,10 @@ message ReadRequest {
     required int64 entryId = 2;
     // Used while fencing a ledger.
     optional bytes masterKey = 3;
+    // Used for waiting on last add confirmed update
+    optional int64 previousLAC = 4;
+    // Used as a timeout for the long polling request
+    optional int64 timeOut = 5;
 }
 
 message AddRequest {
@@ -145,6 +150,9 @@ message ReadResponse {
     required int64 ledgerId = 2;
     required int64 entryId = 3;
     optional bytes body = 4;
+    // Piggyback LAC
+    optional int64 maxLAC = 5;
+    optional int64 lacUpdateTimestamp = 6;
 }
 
 message AddResponse {
