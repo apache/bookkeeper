@@ -95,7 +95,7 @@ message ReadRequest {
     optional bytes masterKey = 3;
     // Used for waiting on last add confirmed update
     optional int64 previousLAC = 4;
-    // Used as a timeout for the long polling request
+    // Used as a timeout (in milliseconds) for the long polling request
     optional int64 timeOut = 5;
 }
 
