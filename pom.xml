@@ -44,7 +44,7 @@
     <protobuf.version>2.6.1</protobuf.version>
     <guava.version>20.0</guava.version>
     <netty.version>3.9.4.Final</netty.version>
-    <zookeeper.version>3.4.6</zookeeper.version>
+    <zookeeper.version>3.5.1-alpha</zookeeper.version>
   </properties>
   <url>http://zookeeper.apache.org/bookkeeper</url>
   <build>

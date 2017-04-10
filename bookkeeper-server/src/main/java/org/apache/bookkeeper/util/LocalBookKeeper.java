@@ -45,6 +45,7 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
 
 import static com.google.common.base.Charsets.UTF_8;
+import org.apache.zookeeper.data.ACL;
 
 public class LocalBookKeeper {
     protected static final Logger LOG = LoggerFactory.getLogger(LocalBookKeeper.class);

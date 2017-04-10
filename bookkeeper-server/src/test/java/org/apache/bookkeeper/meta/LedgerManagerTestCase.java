@@ -35,6 +35,7 @@ import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.EntryLogger;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
+import org.apache.bookkeeper.bookie.LedgerStorage.LedgerDeletionListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -173,6 +174,10 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         @Override
         public Checkpoint checkpoint(Checkpoint checkpoint) throws IOException {
             return null;
+        }
+
+        @Override
+        public void registerLedgerDeletionListener(LedgerDeletionListener listener) {
         }
 
         @Override

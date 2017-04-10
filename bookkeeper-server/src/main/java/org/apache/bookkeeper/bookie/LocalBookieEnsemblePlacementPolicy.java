@@ -23,20 +23,22 @@ import java.net.UnknownHostException;
 import java.util.*;
 
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
-import org.jboss.netty.util.HashedWheelTimer;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.commons.configuration.Configuration;
+import com.google.common.collect.Lists;
+import org.jboss.netty.util.HashedWheelTimer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
 
 /**
  * Special ensemble placement policy that always return local bookie. Only works with ledgers with ensemble=1.
@@ -100,4 +102,8 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
         return Lists.newArrayList(bookieAddress);
     }
 
+    @Override
+    public void updateBookieInfo(Map<BookieSocketAddress, BookieInfo> bookieToFreeSpaceMap) {
+        return;
+    }
 }

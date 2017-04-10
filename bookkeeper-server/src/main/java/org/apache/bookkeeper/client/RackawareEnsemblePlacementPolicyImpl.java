@@ -24,12 +24,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
+import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.Configurable;
 import org.apache.bookkeeper.feature.FeatureProvider;
@@ -44,6 +47,7 @@ import org.apache.bookkeeper.net.ScriptBasedMapping;
 import org.apache.bookkeeper.net.StabilizeNetworkTopology;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ReflectionUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +64,10 @@ import com.google.common.collect.Sets;
 class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacementPolicy {
 
     static final Logger LOG = LoggerFactory.getLogger(RackawareEnsemblePlacementPolicyImpl.class);
+    boolean isWeighted;
+    int maxWeightMultiple;
+    private Map<BookieNode, WeightedObject> bookieInfoMap = new HashMap<BookieNode, WeightedObject>();
+    private WeightedRandomSelection<BookieNode> weightedSelection;
 
     public static final String REPP_DNS_RESOLVER_CLASS = "reppDnsResolverClass";
     public static final String REPP_RANDOM_READ_REORDERING = "ensembleRandomReadReordering";
@@ -123,6 +131,8 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                                                               HashedWheelTimer timer,
                                                               boolean reorderReadsRandom,
                                                               int stabilizePeriodSeconds,
+                                                              boolean isWeighted,
+                                                              int maxWeightMultiple,
                                                               StatsLogger statsLogger) {
         this.statsLogger = statsLogger;
         this.reorderReadsRandom = reorderReadsRandom;
@@ -148,6 +158,15 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         LOG.info("Initialize rackaware ensemble placement policy @ {} @ {} : {}.",
             new Object[] { localNode, null == localNode ? "Unknown" : localNode.getNetworkLocation(),
                 dnsResolver.getClass().getName() });
+
+        this.isWeighted = isWeighted;
+        if (this.isWeighted) {
+            this.maxWeightMultiple = maxWeightMultiple;
+            this.weightedSelection = new WeightedRandomSelection<BookieNode>(this.maxWeightMultiple);
+            LOG.info("Weight based placement with max multiple of " + this.maxWeightMultiple);
+        } else {
+            LOG.info("Not weighted");
+        }
         return this;
     }
 
@@ -177,6 +196,8 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                 timer,
                 conf.getBoolean(REPP_RANDOM_READ_REORDERING, false),
                 conf.getNetworkTopologyStabilizePeriodSeconds(),
+                conf.getDiskWeightBasedPlacementEnabled(),
+                conf.getBookieMaxWeightMultipleForWeightBasedPlacement(),
                 statsLogger);
     }
 
@@ -209,7 +230,9 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
             }
             handleBookiesThatLeft(leftBookies);
             handleBookiesThatJoined(joinedBookies);
-
+            if (this.isWeighted && (leftBookies.size() > 0 || joinedBookies.size() > 0)) {
+                this.weightedSelection.updateMap(this.bookieInfoMap);
+            }
             if (!readOnlyBookies.isEmpty()) {
                 this.readOnlyBookies = ImmutableSet.copyOf(readOnlyBookies);
             }
@@ -226,6 +249,9 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
             BookieNode node = knownBookies.remove(addr);
             if(null != node) {
                 topology.remove(node);
+                if (this.isWeighted) {
+                    this.bookieInfoMap.remove(node);
+                }
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Cluster changed : bookie {} left from cluster.", addr);
                 }
@@ -240,6 +266,9 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
             BookieNode node = createBookieNode(addr);
             topology.add(node);
             knownBookies.put(addr, node);
+            if (this.isWeighted) {
+                this.bookieInfoMap.putIfAbsent(node, new BookieInfo());
+            }
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Cluster changed : bookie {} joined the cluster.", addr);
             }
@@ -387,6 +416,32 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
     }
 
     @Override
+    public void updateBookieInfo(Map<BookieSocketAddress, BookieInfo> bookieInfoMap) {
+        if (!isWeighted) {
+            LOG.info("bookieFreeDiskInfo callback called even without weighted placement policy being used.");
+            return;
+        }
+         List<BookieNode> allBookies = new ArrayList<BookieNode>(knownBookies.values());
+
+         // create a new map to reflect the new mapping
+        Map<BookieNode, WeightedObject> map = new HashMap<BookieNode, WeightedObject>();
+        for (BookieNode bookie : allBookies) {
+            if (bookieInfoMap.containsKey(bookie.getAddr())) {
+                map.put(bookie, bookieInfoMap.get(bookie.getAddr()));
+            } else {
+                map.put(bookie, new BookieInfo());
+            }
+        }
+        rwLock.writeLock().lock();
+        try {
+            this.bookieInfoMap = map;
+            this.weightedSelection.updateMap(this.bookieInfoMap);
+        } finally {
+            rwLock.writeLock().unlock();
+        }
+    }
+
+    @Override
     public BookieNode selectFromNetworkLocation(
             String networkLoc,
             Set<Node> excludeBookies,
@@ -409,6 +464,31 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         return "~" + node.getNetworkLocation();
     }
 
+    private WeightedRandomSelection<BookieNode> prepareForWeightedSelection(List<Node> leaves) {
+        // create a map of bookieNode->freeDiskSpace for this rack. The assumption is that
+        // the number of nodes in a rack is of the order of 40, so it shouldn't be too bad
+        // to build it every time during a ledger creation
+        Map<BookieNode, WeightedObject> rackMap = new HashMap<BookieNode, WeightedObject>();
+        for (Node n : leaves) {
+            if (!(n instanceof BookieNode)) {
+                continue;
+            }
+            BookieNode bookie = (BookieNode) n;
+            if (this.bookieInfoMap.containsKey(bookie)) {
+                rackMap.put(bookie, this.bookieInfoMap.get(bookie));
+            } else {
+                rackMap.put(bookie, new BookieInfo());
+            }
+        }
+        if (rackMap.size() == 0) {
+            return null;
+        }
+
+        WeightedRandomSelection<BookieNode> wRSelection = new WeightedRandomSelection<BookieNode>(this.maxWeightMultiple);
+        wRSelection.updateMap(rackMap);
+        return wRSelection;
+    }
+
     /**
      * Choose random node under a given network path.
      *
@@ -424,9 +504,38 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
      */
     protected BookieNode selectRandomFromRack(String netPath, Set<Node> excludeBookies, Predicate<BookieNode> predicate,
             Ensemble<BookieNode> ensemble) throws BKNotEnoughBookiesException {
+        WeightedRandomSelection<BookieNode> wRSelection = null;
         List<Node> leaves = new ArrayList<Node>(topology.getLeaves(netPath));
-        Collections.shuffle(leaves);
-        for (Node n : leaves) {
+        if (!this.isWeighted) {
+            Collections.shuffle(leaves);
+        } else {
+            if (CollectionUtils.subtract(leaves, excludeBookies).size() < 1) {
+                throw new BKNotEnoughBookiesException();
+            }
+            wRSelection = prepareForWeightedSelection(leaves);
+            if (wRSelection == null) {
+                throw new BKNotEnoughBookiesException();
+            }
+        }
+
+        Iterator<Node> it = leaves.iterator();
+        Set<Node> bookiesSeenSoFar = new HashSet<Node>();
+        while (true) {
+            Node n;
+            if (isWeighted) {
+                if (bookiesSeenSoFar.size() == leaves.size()) {
+                    // Don't loop infinitely.
+                    break;
+                }
+                n = wRSelection.getNextRandom();
+                bookiesSeenSoFar.add(n);
+            } else {
+                if (it.hasNext()) {
+                    n = it.next();
+                } else {
+                    break;
+                }
+            }
             if (excludeBookies.contains(n)) {
                 continue;
             }
@@ -461,7 +570,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                                             Predicate<BookieNode> predicate,
                                             Ensemble<BookieNode> ensemble)
             throws BKNotEnoughBookiesException {
-        return selectRandomInternal(new ArrayList<BookieNode>(knownBookies.values()),  numBookies, excludeBookies, predicate, ensemble);
+        return selectRandomInternal(null,  numBookies, excludeBookies, predicate, ensemble);
     }
 
     protected List<BookieNode> selectRandomInternal(List<BookieNode> bookiesToSelectFrom,
@@ -470,9 +579,56 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                                                     Predicate<BookieNode> predicate,
                                                     Ensemble<BookieNode> ensemble)
         throws BKNotEnoughBookiesException {
-        Collections.shuffle(bookiesToSelectFrom);
+        WeightedRandomSelection<BookieNode> wRSelection = null;
+        if (bookiesToSelectFrom == null) {
+            // If the list is null, we need to select from the entire knownBookies set
+            wRSelection = this.weightedSelection;
+            bookiesToSelectFrom = new ArrayList<BookieNode>(knownBookies.values());
+        }
+        if (isWeighted) {
+            if (CollectionUtils.subtract(bookiesToSelectFrom, excludeBookies).size() < numBookies) {
+                throw new BKNotEnoughBookiesException();
+            }
+            if (wRSelection == null) {
+                Map<BookieNode, WeightedObject> rackMap = new HashMap<BookieNode, WeightedObject>();
+                for (BookieNode n : bookiesToSelectFrom) {
+                    if (excludeBookies.contains(n)) {
+                        continue;
+                    }
+                    if (this.bookieInfoMap.containsKey(n)) {
+                        rackMap.put(n, this.bookieInfoMap.get(n));
+                    } else {
+                        rackMap.put(n, new BookieInfo());
+                    }
+                }
+                wRSelection = new WeightedRandomSelection<BookieNode>(this.maxWeightMultiple);
+                wRSelection.updateMap(rackMap);
+            }
+        } else {
+            Collections.shuffle(bookiesToSelectFrom);
+        }
+
+        BookieNode bookie;
         List<BookieNode> newBookies = new ArrayList<BookieNode>(numBookies);
-        for (BookieNode bookie : bookiesToSelectFrom) {
+        Iterator<BookieNode> it = bookiesToSelectFrom.iterator();
+        Set<BookieNode> bookiesSeenSoFar = new HashSet<BookieNode>();
+        while (numBookies > 0) {
+            if (isWeighted) {
+                if (bookiesSeenSoFar.size() == bookiesToSelectFrom.size()) {
+                    // If we have gone through the whole available list of bookies,
+                    // and yet haven't been able to satisfy the ensemble request, bail out.
+                    // We don't want to loop infinitely.
+                    break;
+                }
+                bookie = wRSelection.getNextRandom();
+                bookiesSeenSoFar.add(bookie);
+            } else {
+                if (it.hasNext()) {
+                    bookie = it.next();
+                } else {
+                    break;
+                }
+            }
             if (excludeBookies.contains(bookie)) {
                 continue;
             }
@@ -489,10 +645,9 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                 newBookies.add(bookie);
                 --numBookies;
             }
-
-            if (numBookies == 0) {
-                return newBookies;
-            }
+        }
+        if (numBookies == 0) {
+            return newBookies;
         }
         if (LOG.isDebugEnabled()) {
             LOG.debug("Failed to find {} bookies : excludeBookies {}, allBookies {}.", new Object[] {
@@ -500,8 +655,6 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         }
         throw new BKNotEnoughBookiesException();
     }
-
-
 
     @Override
     public List<Integer> reorderReadSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {

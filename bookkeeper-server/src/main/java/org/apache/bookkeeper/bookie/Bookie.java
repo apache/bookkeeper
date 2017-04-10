@@ -30,13 +30,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,7 +39,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
@@ -57,7 +54,6 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -66,6 +62,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
@@ -78,7 +75,6 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
@@ -98,6 +94,8 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_STATUS;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
+import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.zookeeper.data.ACL;
 
 /**
  * Implements a bookie.
@@ -107,14 +105,14 @@ public class Bookie extends BookieCriticalThread {
 
     private final static Logger LOG = LoggerFactory.getLogger(Bookie.class);
 
-    final File journalDirectory;
+    final List<File> journalDirectories;
     final ServerConfiguration conf;
 
     final SyncThread syncThread;
     final LedgerManagerFactory ledgerManagerFactory;
     final LedgerManager ledgerManager;
     final LedgerStorage ledgerStorage;
-    final Journal journal;
+    final List<Journal> journals;
 
     final HandleFactory handles;
 
@@ -142,10 +140,11 @@ public class Bookie extends BookieCriticalThread {
     BookieBean jmxBookieBean;
     BKMBeanInfo jmxLedgerStorageBean;
 
-    final ConcurrentMap<Long, byte[]> masterKeyCache = new ConcurrentHashMap<Long, byte[]>();
+    private final ConcurrentLongHashMap<byte[]> masterKeyCache = new ConcurrentLongHashMap<>();
 
     final protected String zkBookieRegPath;
     final protected String zkBookieReadOnlyPath;
+    final protected List<ACL> zkAcls;
 
     final private AtomicBoolean zkRegistered = new AtomicBoolean(false);
     final protected AtomicBoolean readOnly = new AtomicBoolean(false);
@@ -323,51 +322,70 @@ public class Bookie extends BookieCriticalThread {
             allLedgerDirs.addAll(indexDirsManager.getAllLedgerDirs());
         }
         if (zk == null) { // exists only for testing, just make sure directories are correct
-            checkDirectoryStructure(journalDirectory);
+
+            for (File journalDirectory : journalDirectories) {
+                checkDirectoryStructure(journalDirectory);
+            }
+
             for (File dir : allLedgerDirs) {
                 checkDirectoryStructure(dir);
             }
             return;
         }
+
         if (conf.getAllowStorageExpansion()) {
-            checkEnvironmentWithStorageExpansion(conf, zk, journalDirectory, allLedgerDirs);
+            checkEnvironmentWithStorageExpansion(conf, zk, journalDirectories, allLedgerDirs);
             return;
         }
+
         try {
             boolean newEnv = false;
             List<File> missedCookieDirs = new ArrayList<File>();
-            Cookie journalCookie = null;
+            List<Cookie> journalCookies = Lists.newArrayList();
             // try to read cookie from journal directory.
-            try {
-                journalCookie = Cookie.readFromDirectory(journalDirectory);
-                if (journalCookie.isBookieHostCreatedFromIp()) {
-                    conf.setUseHostNameAsBookieID(false);
-                } else {
-                    conf.setUseHostNameAsBookieID(true);
+            for (File journalDirectory : journalDirectories) {
+                try {
+                    Cookie journalCookie = Cookie.readFromDirectory(journalDirectory);
+                    journalCookies.add(journalCookie);
+                    if (journalCookie.isBookieHostCreatedFromIp()) {
+                        conf.setUseHostNameAsBookieID(false);
+                    } else {
+                        conf.setUseHostNameAsBookieID(true);
+                    }
+                } catch (FileNotFoundException fnf) {
+                    newEnv = true;
+                    missedCookieDirs.add(journalDirectory);
                 }
-            } catch (FileNotFoundException fnf) {
-                newEnv = true;
-                missedCookieDirs.add(journalDirectory);
             }
+
             String instanceId = getInstanceId(conf, zk);
             Cookie.Builder builder = Cookie.generateCookie(conf);
             if (null != instanceId) {
                 builder.setInstanceId(instanceId);
             }
             Cookie masterCookie = builder.build();
+            Versioned<Cookie> zkCookie = null;
             try {
-                Versioned<Cookie> zkCookie = Cookie.readFromZooKeeper(zk, conf);
-                masterCookie.verify(zkCookie.getValue());
+                zkCookie = Cookie.readFromZooKeeper(zk, conf);
+                // If allowStorageExpansion option is set, we should
+                // make sure that the new set of ledger/index dirs
+                // is a super set of the old; else, we fail the cookie check
+                masterCookie.verifyIsSuperSet(zkCookie.getValue());
             } catch (KeeperException.NoNodeException nne) {
                 // can occur in cases:
                 // 1) new environment or
                 // 2) done only metadata format and started bookie server.
             }
-            checkDirectoryStructure(journalDirectory);
-
-            if(!newEnv){
-                masterCookie.verify(journalCookie);
+            for (File journalDirectory : journalDirectories) {
+                checkDirectoryStructure(journalDirectory);
             }
+            if(!newEnv){
+                for(Cookie journalCookie: journalCookies) {
+                    masterCookie.verify(journalCookie);
+                }
+            }
+
+
             for (File dir : allLedgerDirs) {
                 checkDirectoryStructure(dir);
                 try {
@@ -379,94 +397,14 @@ public class Bookie extends BookieCriticalThread {
             }
 
             if (!newEnv && missedCookieDirs.size() > 0) {
-                LOG.error("Cookie exists in zookeeper, but not in all local directories. "
-                          + " Directories missing cookie file are " + missedCookieDirs);
-                throw new BookieException.InvalidCookieException();
-            }
-
-            if (newEnv) {
-                if (missedCookieDirs.size() > 0) {
-                    LOG.info("Directories missing cookie file are {}", missedCookieDirs);
-                    masterCookie.writeToDirectory(journalDirectory);
-                    for (File dir : allLedgerDirs) {
-                        masterCookie.writeToDirectory(dir);
-                    }
-                }
-                masterCookie.writeToZooKeeper(zk, conf, Version.NEW);
-            }
-        } catch (KeeperException ke) {
-            LOG.error("Couldn't access cookie in zookeeper", ke);
-            throw new BookieException.InvalidCookieException(ke);
-        } catch (UnknownHostException uhe) {
-            LOG.error("Couldn't check cookies, networking is broken", uhe);
-            throw new BookieException.InvalidCookieException(uhe);
-        } catch (IOException ioe) {
-            LOG.error("Error accessing cookie on disks", ioe);
-            throw new BookieException.InvalidCookieException(ioe);
-        } catch (InterruptedException ie) {
-            LOG.error("Thread interrupted while checking cookies, exiting", ie);
-            throw new BookieException.InvalidCookieException(ie);
-        }
-    }
-
-    public static void checkEnvironmentWithStorageExpansion(ServerConfiguration conf,
-            ZooKeeper zk, File journalDirectory, List<File> allLedgerDirs) throws BookieException, IOException {
-        try {
-            boolean newEnv = false;
-            List<File> missedCookieDirs = new ArrayList<File>();
-            Cookie journalCookie = null;
-            // try to read cookie from journal directory.
-            try {
-                journalCookie = Cookie.readFromDirectory(journalDirectory);
-                if (journalCookie.isBookieHostCreatedFromIp()) {
-                    conf.setUseHostNameAsBookieID(false);
-                } else {
-                    conf.setUseHostNameAsBookieID(true);
-                }
-            } catch (FileNotFoundException fnf) {
-                newEnv = true;
-                missedCookieDirs.add(journalDirectory);
-            }
-            String instanceId = getInstanceId(conf, zk);
-            Cookie.Builder builder = Cookie.generateCookie(conf);
-            if (null != instanceId) {
-                builder.setInstanceId(instanceId);
-            }
-            Cookie masterCookie = builder.build();
-            Versioned<Cookie> zkCookie = null;
-            try {
-                zkCookie = Cookie.readFromZooKeeper(zk, conf);
-                // If allowStorageExpansion option is set, we should 
-                // make sure that the new set of ledger/index dirs
-                // is a super set of the old; else, we fail the cookie check
-                masterCookie.verifyIsSuperSet(zkCookie.getValue());
-            } catch (KeeperException.NoNodeException nne) {
-                // can occur in cases:
-                // 1) new environment or
-                // 2) done only metadata format and started bookie server.
-            }
-            checkDirectoryStructure(journalDirectory);
-
-            if(!newEnv){
-                masterCookie.verifyIsSuperSet(journalCookie);
-            }
-
-            for (File dir : allLedgerDirs) {
-                checkDirectoryStructure(dir);
-                try {
-                    Cookie c = Cookie.readFromDirectory(dir);
-                    masterCookie.verifyIsSuperSet(c);
-                } catch (FileNotFoundException fnf) {
-                    missedCookieDirs.add(dir);
-                }
-            }
-
-            if (!newEnv && missedCookieDirs.size() > 0) {
                 // If we find that any of the dirs in missedCookieDirs, existed
                 // previously, we stop because we could be missing data
                 // Also, if a new ledger dir is being added, we make sure that
                 // that dir is empty. Else, we reject the request
-                Set<String> existingLedgerDirs = Sets.newHashSet(journalCookie.getLedgerDirPathsFromCookie());
+                Set<String> existingLedgerDirs = Sets.newHashSet();
+                for(Cookie journalCookie : journalCookies) {
+                    Collections.addAll(existingLedgerDirs, journalCookie.getLedgerDirPathsFromCookie());
+                }
                 List<File> dirsMissingData = new ArrayList<File>();
                 List<File> nonEmptyDirs = new ArrayList<File>();
                 for (File dir : missedCookieDirs) {
@@ -492,7 +430,126 @@ public class Bookie extends BookieCriticalThread {
 
             if (missedCookieDirs.size() > 0) {
                 LOG.info("Stamping new cookies on all dirs {}", missedCookieDirs);
-                masterCookie.writeToDirectory(journalDirectory);
+                for (File journalDirectory : journalDirectories) {
+                    masterCookie.writeToDirectory(journalDirectory);
+                }
+                for (File dir : allLedgerDirs) {
+                    masterCookie.writeToDirectory(dir);
+                }
+                masterCookie.writeToZooKeeper(zk, conf, zkCookie != null ? zkCookie.getVersion() : Version.NEW);
+            }
+        } catch (KeeperException ke) {
+            LOG.error("Couldn't access cookie in zookeeper", ke);
+            throw new BookieException.InvalidCookieException(ke);
+        } catch (UnknownHostException uhe) {
+            LOG.error("Couldn't check cookies, networking is broken", uhe);
+            throw new BookieException.InvalidCookieException(uhe);
+        } catch (IOException ioe) {
+            LOG.error("Error accessing cookie on disks", ioe);
+            throw new BookieException.InvalidCookieException(ioe);
+        } catch (InterruptedException ie) {
+            LOG.error("Thread interrupted while checking cookies, exiting", ie);
+            throw new BookieException.InvalidCookieException(ie);
+        }
+    }
+
+    public static void checkEnvironmentWithStorageExpansion(ServerConfiguration conf,
+            ZooKeeper zk, List<File> journalDirectories, List<File> allLedgerDirs) throws BookieException, IOException {
+        try {
+            boolean newEnv = false;
+            List<File> missedCookieDirs = new ArrayList<File>();
+            List<Cookie> journalCookies = Lists.newArrayList();
+            // try to read cookie from journal directory.
+            for (File journalDirectory : journalDirectories) {
+                try {
+                    Cookie journalCookie = Cookie.readFromDirectory(journalDirectory);
+                    journalCookies.add(journalCookie);
+                    if (journalCookie.isBookieHostCreatedFromIp()) {
+                        conf.setUseHostNameAsBookieID(false);
+                    } else {
+                        conf.setUseHostNameAsBookieID(true);
+                    }
+                } catch (FileNotFoundException fnf) {
+                    newEnv = true;
+                    missedCookieDirs.add(journalDirectory);
+                }
+            }
+
+            String instanceId = getInstanceId(conf, zk);
+            Cookie.Builder builder = Cookie.generateCookie(conf);
+            if (null != instanceId) {
+                builder.setInstanceId(instanceId);
+            }
+            Cookie masterCookie = builder.build();
+            Versioned<Cookie> zkCookie = null;
+            try {
+                zkCookie = Cookie.readFromZooKeeper(zk, conf);
+                // If allowStorageExpansion option is set, we should 
+                // make sure that the new set of ledger/index dirs
+                // is a super set of the old; else, we fail the cookie check
+                masterCookie.verifyIsSuperSet(zkCookie.getValue());
+            } catch (KeeperException.NoNodeException nne) {
+                // can occur in cases:
+                // 1) new environment or
+                // 2) done only metadata format and started bookie server.
+            }
+            for (File journalDirectory : journalDirectories) {
+                checkDirectoryStructure(journalDirectory);
+            }
+            if(!newEnv){
+                for(Cookie journalCookie: journalCookies) {
+                    masterCookie.verifyIsSuperSet(journalCookie);
+                }
+            }
+
+
+            for (File dir : allLedgerDirs) {
+                checkDirectoryStructure(dir);
+                try {
+                    Cookie c = Cookie.readFromDirectory(dir);
+                    masterCookie.verifyIsSuperSet(c);
+                } catch (FileNotFoundException fnf) {
+                    missedCookieDirs.add(dir);
+                }
+            }
+
+            if (!newEnv && missedCookieDirs.size() > 0) {
+                // If we find that any of the dirs in missedCookieDirs, existed
+                // previously, we stop because we could be missing data
+                // Also, if a new ledger dir is being added, we make sure that
+                // that dir is empty. Else, we reject the request
+                Set<String> existingLedgerDirs = Sets.newHashSet();
+                for(Cookie journalCookie : journalCookies) {
+                    Collections.addAll(existingLedgerDirs, journalCookie.getLedgerDirPathsFromCookie());
+                }
+                List<File> dirsMissingData = new ArrayList<File>();
+                List<File> nonEmptyDirs = new ArrayList<File>();
+                for (File dir : missedCookieDirs) {
+                    if (existingLedgerDirs.contains(dir.getParent())) {
+                        // if one of the existing ledger dirs doesn't have cookie,
+                        // let us not proceed further
+                        dirsMissingData.add(dir);
+                        continue;
+                    }
+                    String[] content = dir.list();
+                    if (content != null && content.length != 0) {
+                        nonEmptyDirs.add(dir);
+                    }
+                }
+                if (dirsMissingData.size() > 0 || nonEmptyDirs.size() > 0) {
+                    LOG.error("Either not all local directories have cookies or directories being added "
+                            + " newly are not empty. "
+                            + "Directories missing cookie file are: " + dirsMissingData
+                            + " New directories that are not empty are: " + nonEmptyDirs);
+                    throw new BookieException.InvalidCookieException();
+                }
+            }
+
+            if (missedCookieDirs.size() > 0) {
+                LOG.info("Stamping new cookies on all dirs {}", missedCookieDirs);
+                for (File journalDirectory : journalDirectories) {
+                    masterCookie.writeToDirectory(journalDirectory);
+                }
                 for (File dir : allLedgerDirs) {
                     masterCookie.writeToDirectory(dir);
                 }
@@ -565,6 +622,14 @@ public class Bookie extends BookieCriticalThread {
         return indexDirsManager;
     }
 
+    public long getTotalDiskSpace() {
+        return getLedgerDirsManager().getTotalDiskSpace();
+    }
+
+    public long getTotalFreeSpace() {
+        return getLedgerDirsManager().getTotalFreeSpace();
+    }
+
     public static File getCurrentDirectory(File dir) {
         return new File(dir, BookKeeperConstants.CURRENT_DIR);
     }
@@ -585,11 +650,16 @@ public class Bookie extends BookieCriticalThread {
     public Bookie(ServerConfiguration conf, StatsLogger statsLogger)
             throws IOException, KeeperException, InterruptedException, BookieException {
         super("Bookie-" + conf.getBookiePort());
+        this.zkAcls = ZkUtils.getACLs(conf);
         this.bookieRegistrationPath = conf.getZkAvailableBookiesPath() + "/";
         this.bookieReadonlyRegistrationPath =
             this.bookieRegistrationPath + BookKeeperConstants.READONLY;
         this.conf = conf;
-        this.journalDirectory = getCurrentDirectory(conf.getJournalDir());
+        this.journalDirectories = Lists.newArrayList();
+        for (File journalDirectory : conf.getJournalDirs()) {
+            this.journalDirectories.add(getCurrentDirectory(journalDirectory));
+        }
+
         this.ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 statsLogger.scope(LD_LEDGER_SCOPE));
         File[] idxDirs = conf.getIndexDirs();
@@ -611,16 +681,22 @@ public class Bookie extends BookieCriticalThread {
         // configured directories. When disk errors or all the ledger
         // directories are full, would throws exception and fail bookie startup.
         this.ledgerDirsManager.init();
-        // instantiate the journal
-        journal = new Journal(conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE));
+        // instantiate the journals
+        journals = Lists.newArrayList();
+        for(int i=0 ;i<journalDirectories.size();i++) {
+            journals.add(new Journal(journalDirectories.get(i),
+                         conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE + "_" + i)));
+        }
+
+        CheckpointSource checkpointSource = new CheckpointSourceList(journals);
 
         // Instantiate the ledger storage implementation
         String ledgerStorageClass = conf.getLedgerStorageClass();
         LOG.info("Using ledger storage: {}", ledgerStorageClass);
         ledgerStorage = LedgerStorageFactory.createLedgerStorage(ledgerStorageClass);
-        ledgerStorage.initialize(conf, ledgerManager, ledgerDirsManager, indexDirsManager, journal, statsLogger);
+        ledgerStorage.initialize(conf, ledgerManager, ledgerDirsManager, indexDirsManager, checkpointSource, statsLogger);
         syncThread = new SyncThread(conf, getLedgerDirsListener(),
-                                    ledgerStorage, journal);
+                                    ledgerStorage, checkpointSource);
 
         handles = new HandleFactoryImpl(ledgerStorage);
 
@@ -657,7 +733,7 @@ public class Bookie extends BookieCriticalThread {
 
     void readJournal() throws IOException, BookieException {
         long startTs = MathUtils.now();
-        journal.replay(new JournalScanner() {
+        JournalScanner scanner = new JournalScanner() {
             @Override
             public void process(int journalVersion, long offset, ByteBuffer recBuff) throws IOException {
                 long ledgerId = recBuff.getLong();
@@ -705,7 +781,11 @@ public class Bookie extends BookieCriticalThread {
                     throw new IOException(be);
                 }
             }
-        });
+        };
+
+        for (Journal journal : journals) {
+            journal.replay(scanner);
+        }
         long elapsedTs = MathUtils.now() - startTs;
         LOG.info("Finished replaying journal in {} ms.", elapsedTs);
     }
@@ -713,7 +793,8 @@ public class Bookie extends BookieCriticalThread {
     @Override
     synchronized public void start() {
         setDaemon(true);
-        LOG.debug("I'm starting a bookie with journal directory {}", journalDirectory.getName());
+        LOG.debug("I'm starting a bookie with journal directories {}",
+                  journalDirectories.stream().map(File::getName).collect(Collectors.joining(", ")));
         //Start DiskChecker thread
         ledgerDirsManager.start();
         if (indexDirsManager != ledgerDirsManager) {
@@ -955,7 +1036,7 @@ public class Bookie extends BookieCriticalThread {
         try{
             if (!checkRegNodeAndWaitExpired(regPath)) {
                 // Create the ZK ephemeral node for this Bookie.
-                zk.create(regPath, new byte[0], Ids.OPEN_ACL_UNSAFE,
+                zk.create(regPath, new byte[0], zkAcls,
                         CreateMode.EPHEMERAL);
                 LOG.info("Registered myself in ZooKeeper at {}.", regPath);
             }
@@ -1063,7 +1144,7 @@ public class Bookie extends BookieCriticalThread {
             if (null == zk.exists(this.bookieReadonlyRegistrationPath, false)) {
                 try {
                     zk.create(this.bookieReadonlyRegistrationPath, new byte[0],
-                              Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                              zkAcls, CreateMode.PERSISTENT);
                 } catch (NodeExistsException e) {
                     // this node is just now created by someone.
                 }
@@ -1155,11 +1236,17 @@ public class Bookie extends BookieCriticalThread {
     public void run() {
         // bookie thread wait for journal thread
         try {
-            // start journal
-            journal.start();
+            // start journals
+            for (Journal journal: journals) {
+                journal.start();
+            }
+
             // wait until journal quits
-            journal.join();
-            LOG.info("Journal thread quits.");
+            for (Journal journal: journals) {
+
+                journal.join();
+            }
+            LOG.info("Journal thread(s) quit.");
         } catch (InterruptedException ie) {
             LOG.warn("Interrupted on running journal thread : ", ie);
         }
@@ -1215,8 +1302,10 @@ public class Bookie extends BookieCriticalThread {
                 // Shutdown the state service
                 stateService.shutdown();
 
-                // Shutdown journal
-                journal.shutdown();
+                // Shutdown journals
+                for (Journal journal : journals) {
+                    journal.shutdown();
+                }
                 this.join();
                 syncThread.shutdown();
 
@@ -1257,24 +1346,31 @@ public class Bookie extends BookieCriticalThread {
      *
      * @throws BookieException if masterKey does not match the master key of the ledger
      */
-    private LedgerDescriptor getLedgerForEntry(ByteBuffer entry, byte[] masterKey)
+    private LedgerDescriptor getLedgerForEntry(ByteBuffer entry, final byte[] masterKey)
             throws IOException, BookieException {
-        long ledgerId = entry.getLong();
+        final long ledgerId = entry.getLong();
         LedgerDescriptor l = handles.getHandle(ledgerId, masterKey);
-        if (!masterKeyCache.containsKey(ledgerId)) {
-            // new handle, we should add the key to journal ensure we can rebuild
-            ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
-            bb.putLong(ledgerId);
-            bb.putLong(METAENTRY_ID_LEDGER_KEY);
-            bb.putInt(masterKey.length);
-            bb.put(masterKey);
-            bb.flip();
+        if (masterKeyCache.get(ledgerId) == null) {
+            // Force the load into masterKey cache
+            byte[] oldValue = masterKeyCache.putIfAbsent(ledgerId, masterKey);
+            if (oldValue == null) {
+                // new handle, we should add the key to journal ensure we can rebuild
+                ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
+                bb.putLong(ledgerId);
+                bb.putLong(METAENTRY_ID_LEDGER_KEY);
+                bb.putInt(masterKey.length);
+                bb.put(masterKey);
+                bb.flip();
 
-            if (null == masterKeyCache.putIfAbsent(ledgerId, masterKey)) {
-                journal.logAddEntry(bb, new NopWriteCallback(), null);
+                getJournal(ledgerId).logAddEntry(bb, new NopWriteCallback(), null);
             }
         }
+
         return l;
+    }
+
+    private Journal getJournal(long ledgerId) {
+        return journals.get(MathUtils.signSafeMod(ledgerId, journals.size()));
     }
 
     /**
@@ -1290,7 +1386,7 @@ public class Bookie extends BookieCriticalThread {
         writeBytes.add(entry.remaining());
 
         LOG.trace("Adding {}@{}", entryId, ledgerId);
-        journal.logAddEntry(entry, cb, ctx);
+        getJournal(ledgerId).logAddEntry(entry, cb, ctx);
     }
 
     /**
@@ -1407,7 +1503,7 @@ public class Bookie extends BookieCriticalThread {
 
             FutureWriteCallback fwc = new FutureWriteCallback();
             LOG.debug("record fenced state for ledger {} in journal.", ledgerId);
-            journal.logAddEntry(bb, fwc, null);
+            getJournal(ledgerId).logAddEntry(bb, fwc, null);
             return fwc.getResult();
         } else {
             // already fenced
@@ -1483,54 +1579,55 @@ public class Bookie extends BookieCriticalThread {
      */
     public static boolean format(ServerConfiguration conf,
             boolean isInteractive, boolean force) {
-        File journalDir = conf.getJournalDir();
-        String[] journalDirFiles =
-                journalDir.exists() && journalDir.isDirectory() ? journalDir.list() : null;
-        if (journalDirFiles != null && journalDirFiles.length != 0) {
-            try {
-                boolean confirm = false;
-                if (!isInteractive) {
-                    // If non interactive and force is set, then delete old
-                    // data.
-                    if (force) {
-                        confirm = true;
+        for (File journalDir : conf.getJournalDirs()) {
+            String[] journalDirFiles =
+                    journalDir.exists() && journalDir.isDirectory() ? journalDir.list() : null;
+            if (journalDirFiles != null && journalDirFiles.length != 0) {
+                try {
+                    boolean confirm = false;
+                    if (!isInteractive) {
+                        // If non interactive and force is set, then delete old
+                        // data.
+                        if (force) {
+                            confirm = true;
+                        } else {
+                            confirm = false;
+                        }
                     } else {
-                        confirm = false;
+                        confirm = IOUtils
+                                .confirmPrompt("Are you sure to format Bookie data..?");
                     }
-                } else {
-                    confirm = IOUtils
-                            .confirmPrompt("Are you sure to format Bookie data..?");
-                }
 
-                if (!confirm) {
-                    LOG.error("Bookie format aborted!!");
+                    if (!confirm) {
+                        LOG.error("Bookie format aborted!!");
+                        return false;
+                    }
+                } catch (IOException e) {
+                    LOG.error("Error during bookie format", e);
                     return false;
                 }
-            } catch (IOException e) {
-                LOG.error("Error during bookie format", e);
+            }
+            if (!cleanDir(journalDir)) {
+                LOG.error("Formatting journal directory failed");
                 return false;
             }
-        }
-        if (!cleanDir(journalDir)) {
-            LOG.error("Formatting journal directory failed");
-            return false;
-        }
 
-        File[] ledgerDirs = conf.getLedgerDirs();
-        for (File dir : ledgerDirs) {
-            if (!cleanDir(dir)) {
-                LOG.error("Formatting ledger directory " + dir + " failed");
-                return false;
-            }
-        }
-
-        // Clean up index directories if they are separate from the ledger dirs
-        File[] indexDirs = conf.getIndexDirs();
-        if (null != indexDirs) {
-            for (File dir : indexDirs) {
+            File[] ledgerDirs = conf.getLedgerDirs();
+            for (File dir : ledgerDirs) {
                 if (!cleanDir(dir)) {
                     LOG.error("Formatting ledger directory " + dir + " failed");
                     return false;
+                }
+            }
+
+            // Clean up index directories if they are separate from the ledger dirs
+            File[] indexDirs = conf.getIndexDirs();
+            if (null != indexDirs) {
+                for (File dir : indexDirs) {
+                    if (!cleanDir(dir)) {
+                        LOG.error("Formatting ledger directory " + dir + " failed");
+                        return false;
+                    }
                 }
             }
         }

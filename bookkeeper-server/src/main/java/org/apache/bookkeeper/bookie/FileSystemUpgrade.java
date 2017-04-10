@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.collect.Lists;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.HardLink;
@@ -98,7 +99,7 @@ public class FileSystemUpgrade {
 
     private static List<File> getAllDirectories(ServerConfiguration conf) {
         List<File> dirs = new ArrayList<File>();
-        dirs.add(conf.getJournalDir());
+        dirs.addAll(Lists.newArrayList(conf.getJournalDirs()));
         for (File d: conf.getLedgerDirs()) {
             dirs.add(d);
         }

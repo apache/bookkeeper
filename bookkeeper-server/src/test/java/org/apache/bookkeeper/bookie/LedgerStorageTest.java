@@ -20,22 +20,34 @@
  */
 package org.apache.bookkeeper.bookie;
 
-import java.io.IOException;
-import java.util.concurrent.Future;
+import java.util.concurrent.CountDownLatch;
 
-import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.junit.Assert;
+import org.junit.Test;
 
-/**
- * Accessor class to avoid making Bookie internals public
- */
-public class BookieAccessor {
-    /**
-     * Force a bookie to flush its ledger storage
-     */
-    public static void forceFlush(Bookie b) throws IOException {
-        CheckpointSourceList source = new CheckpointSourceList(b.journals);
-        Checkpoint cp = source.newCheckpoint();
-        b.ledgerStorage.flush();
-        source.checkpointComplete(cp, true);
+public class LedgerStorageTest extends BookKeeperClusterTestCase {
+    public LedgerStorageTest() {
+        super(1);
+    }
+
+    @Test(timeout = 20000)
+    public void testLedgerDeleteNotification() throws Exception {
+        LedgerStorage ledgerStorage = bs.get(0).getBookie().ledgerStorage;
+
+        long deletedLedgerId = 5;
+        ledgerStorage.setMasterKey(deletedLedgerId, new byte[0]);
+
+        CountDownLatch counter = new CountDownLatch(1);
+
+        ledgerStorage.registerLedgerDeletionListener(ledgerId -> {
+            Assert.assertEquals(deletedLedgerId, ledgerId);
+
+            counter.countDown();
+        });
+
+        ledgerStorage.deleteLedger(deletedLedgerId);
+
+        counter.await();
     }
 }
