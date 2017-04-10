@@ -67,7 +67,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Admin client for BookKeeper clusters
  */
-public class BookKeeperAdmin {
+public class BookKeeperAdmin implements AutoCloseable {
     private final static Logger LOG = LoggerFactory.getLogger(BookKeeperAdmin.class);
     // ZK client instance
     private ZooKeeper zk;
@@ -175,6 +175,7 @@ public class BookKeeperAdmin {
      *             if there is an error shutting down the clients that this
      *             class uses.
      */
+    @Override
     public void close() throws InterruptedException, BKException {
         if (ownsBK) {
             bkc.close();
