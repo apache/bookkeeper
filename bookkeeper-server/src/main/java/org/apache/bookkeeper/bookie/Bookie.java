@@ -41,10 +41,14 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.file.FileStore;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
@@ -57,6 +61,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import org.apache.bookkeeper.bookie.BookieException.DirsPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
@@ -82,6 +87,7 @@ import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.NodeExistsException;
@@ -372,6 +378,11 @@ public class Bookie extends BookieCriticalThread {
                 }
                 masterCookie.writeToZooKeeper(zk, conf, zkCookie != null ? zkCookie.getVersion() : Version.NEW);
             }
+            
+            List<File> ledgerDirs = ledgerDirsManager.getAllLedgerDirs();
+            checkIfDirsOnSamePartition(ledgerDirs);
+            List<File> indexDirs = indexDirsManager.getAllLedgerDirs();
+            checkIfDirsOnSamePartition(indexDirs);
         } catch (KeeperException ke) {
             LOG.error("Couldn't access cookie in zookeeper", ke);
             throw new BookieException.InvalidCookieException(ke);
@@ -387,6 +398,52 @@ public class Bookie extends BookieCriticalThread {
         }
     }
 
+    /**
+     * Checks if multiple directories are in same partition/filesystem/device.
+     * If ALLOW_DIRS_PARTITION_DUPLICATION config parameter is not enabled, and
+     * if it is found that there are multiple directories in the same Partition then
+     * it will throw DirsPartitionDuplicationException.
+     * 
+     * @param dirs dirs to validate
+     * 
+     * @throws IOException
+     */
+    private void checkIfDirsOnSamePartition(List<File> dirs) throws DirsPartitionDuplicationException {
+        boolean allowPartitionDuplication = conf.isAllowMultipleDirsUnderSamePartition();
+        final MutableBoolean isDuplicationFoundAndNotAllowed = new MutableBoolean(false);
+        Map<FileStore, List<File>> fileStoreDirsMap = new HashMap<FileStore, List<File>>();
+        for (File dir : dirs) {
+            FileStore fileStore;
+            try {
+                fileStore = Files.getFileStore(dir.toPath());
+            } catch (IOException e) {
+                LOG.error("Got IOException while trying to FileStore of {}", dir);
+                throw new BookieException.DirsPartitionDuplicationException(e);
+            }
+            if (fileStoreDirsMap.containsKey(fileStore)) {
+                fileStoreDirsMap.get(fileStore).add(dir);
+            } else {
+                List<File> dirsList = new ArrayList<File>();
+                dirsList.add(dir);
+                fileStoreDirsMap.put(fileStore, dirsList);
+            }
+        }
+
+        fileStoreDirsMap.forEach((fileStore, dirsList) -> {
+            if (dirsList.size() > 1) {
+                if (allowPartitionDuplication) {
+                    LOG.warn("Dirs: {} are in same Partition/FileSystem: {}", dirsList, fileStore);
+                } else {
+                    LOG.error("Dirs: {} are in same Partition/FileSystem: {}", dirsList, fileStore);
+                    isDuplicationFoundAndNotAllowed.setValue(true);
+                }
+            }
+        });
+        if (isDuplicationFoundAndNotAllowed.getValue()) {
+            throw new BookieException.DirsPartitionDuplicationException();
+        }
+    }
+    
     public static void checkEnvironmentWithStorageExpansion(ServerConfiguration conf,
             ZooKeeper zk, List<File> journalDirectories, List<File> allLedgerDirs) throws BookieException, IOException {
         try {
@@ -556,12 +613,12 @@ public class Bookie extends BookieCriticalThread {
         return indexDirsManager;
     }
 
-    public long getTotalDiskSpace() {
-        return getLedgerDirsManager().getTotalDiskSpace();
+    public long getTotalDiskSpace() throws IOException {
+        return getLedgerDirsManager().getTotalDiskSpace(ledgerDirsManager.getAllLedgerDirs());
     }
 
-    public long getTotalFreeSpace() {
-        return getLedgerDirsManager().getTotalFreeSpace();
+    public long getTotalFreeSpace() throws IOException {
+        return getLedgerDirsManager().getTotalFreeSpace(ledgerDirsManager.getAllLedgerDirs());
     }
 
     public static File getCurrentDirectory(File dir) {
@@ -593,15 +650,15 @@ public class Bookie extends BookieCriticalThread {
         for (File journalDirectory : conf.getJournalDirs()) {
             this.journalDirectories.add(getCurrentDirectory(journalDirectory));
         }
-
-        this.ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+        DiskChecker diskChecker = new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold());
+        this.ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(), diskChecker,
                 statsLogger.scope(LD_LEDGER_SCOPE));
 
         File[] idxDirs = conf.getIndexDirs();
         if (null == idxDirs) {
             this.indexDirsManager = this.ledgerDirsManager;
         } else {
-            this.indexDirsManager = new LedgerDirsManager(conf, idxDirs,
+            this.indexDirsManager = new LedgerDirsManager(conf, idxDirs, diskChecker,
                     statsLogger.scope(LD_INDEX_SCOPE));
         }
 
@@ -615,9 +672,7 @@ public class Bookie extends BookieCriticalThread {
         // Initialise ledgerDirMonitor. This would look through all the
         // configured directories. When disk errors or all the ledger
         // directories are full, would throws exception and fail bookie startup.
-        this.ledgerMonitor = new LedgerDirsMonitor(conf, 
-                                    new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), 
-                                    ledgerDirsManager);
+        this.ledgerMonitor = new LedgerDirsMonitor(conf, diskChecker, ledgerDirsManager);
         try {
             this.ledgerMonitor.init();
         } catch (NoWritableLedgerDirException nle) {
@@ -632,9 +687,7 @@ public class Bookie extends BookieCriticalThread {
         if (null == idxDirs) {
             this.idxMonitor = this.ledgerMonitor;
         } else {
-            this.idxMonitor = new LedgerDirsMonitor(conf, 
-                                        new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), 
-                                        indexDirsManager);
+            this.idxMonitor = new LedgerDirsMonitor(conf, diskChecker, indexDirsManager);
             try {
                 this.idxMonitor.init();
             } catch (NoWritableLedgerDirException nle) {

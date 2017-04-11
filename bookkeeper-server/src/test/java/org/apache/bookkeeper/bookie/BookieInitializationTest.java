@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.InetAddress;
 
+import org.apache.bookkeeper.bookie.BookieException.DirsPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -42,6 +43,7 @@ import org.apache.bookkeeper.replication.ReplicationException.UnavailableExcepti
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
@@ -265,7 +267,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         File tmpDir = createTempDir("bookie", "test");
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        int port = 12555;
+        int port = PortManager.nextFreePort();
         conf.setZkServers(null).setBookiePort(port).setJournalDirName(
                 tmpDir.getPath()).setLedgerDirNames(
                 new String[] { tmpDir.getPath() });
@@ -515,7 +517,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         try {
             // LedgerDirsManager#init() is used in Bookie instantiation.
             // Simulating disk errors by directly calling #init
-            LedgerDirsManager ldm = new LedgerDirsManager(conf, conf.getLedgerDirs());
+            LedgerDirsManager ldm = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                    new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
             LedgerDirsMonitor ledgerMonitor = new LedgerDirsMonitor(conf, 
                     new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), ldm);
             ledgerMonitor.init();
@@ -524,7 +527,62 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             // expected
         }
     }
+    
+    /**
+     * if ALLOW_DIRS_PARTITION_DUPLICATION is disabled then Bookie initialization
+     * will fail if there are multiple ledger/index dirs are in same partition/filesystem.
+     */
+    @Test(timeout = 2000000)
+    public void testAllowDirsPartitionDuplicationDisabled() throws Exception {
+        File tmpDir1 = createTempDir("bookie", "test");
+        File tmpDir2 = createTempDir("bookie", "test");
 
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        int port = 12555;
+        conf.setZkServers(zkUtil.getZooKeeperConnectString()).setZkTimeout(5000).setBookiePort(port)
+                .setJournalDirName(tmpDir1.getPath())
+                .setLedgerDirNames(new String[] { tmpDir1.getPath(), tmpDir2.getPath() });
+        conf.setAllowMultipleDirsUnderSamePartition(false);
+        BookieServer bs1 = null;
+        try {
+            bs1 = new BookieServer(conf);
+            Assert.fail("Bookkeeper should not have started since AllowDirsPartitionDuplication is not enabled");
+        } catch (DirsPartitionDuplicationException dpde) {
+            // Expected
+        } finally {
+            if (bs1 != null) {
+                bs1.shutdown();
+            }
+        }
+    }
+    
+    /**
+     * if ALLOW_DIRS_PARTITION_DUPLICATION is enabled then Bookie initialization
+     * should succeed even if there are multiple ledger/index dirs in the same partition/filesystem.
+     */
+    @Test(timeout = 2000000)
+    public void testAllowDirsPartitionDuplicationAllowed() throws Exception {
+        File tmpDir1 = createTempDir("bookie", "test");
+        File tmpDir2 = createTempDir("bookie", "test");
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        int port = 12555;
+        conf.setZkServers(zkUtil.getZooKeeperConnectString()).setZkTimeout(5000).setBookiePort(port)
+                .setJournalDirName(tmpDir1.getPath())
+                .setLedgerDirNames(new String[] { tmpDir1.getPath(), tmpDir2.getPath() });
+        conf.setAllowMultipleDirsUnderSamePartition(true);
+        BookieServer bs1 = null;
+        try {
+            bs1 = new BookieServer(conf);          
+        } catch (DirsPartitionDuplicationException dpde) {
+            Assert.fail("Bookkeeper should have started since AllowDirsPartitionDuplication is enabled");
+        } finally {
+            if (bs1 != null) {
+                bs1.shutdown();
+            }
+        }
+    }
+    
     private void createNewZKClient() throws Exception {
         // create a zookeeper client
         LOG.debug("Instantiate ZK Client");

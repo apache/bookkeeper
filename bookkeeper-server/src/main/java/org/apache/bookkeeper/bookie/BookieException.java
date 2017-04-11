@@ -50,6 +50,8 @@ public abstract class BookieException extends Exception {
             return new InvalidCookieException();
         case Code.UpgradeException:
             return new UpgradeException();
+        case Code.DirsPartitionDuplicationException:
+            return new DirsPartitionDuplicationException();
         default:
             return new BookieIllegalOpException();
         }
@@ -64,6 +66,7 @@ public abstract class BookieException extends Exception {
 
         int InvalidCookieException = -102;
         int UpgradeException = -103;
+        int DirsPartitionDuplicationException = -104;
     }
 
     public void setCode(int code) {
@@ -91,6 +94,9 @@ public abstract class BookieException extends Exception {
             break;
         case Code.UpgradeException:
             err = "Error performing an upgrade operation ";
+            break;
+        case Code.DirsPartitionDuplicationException:
+            err = "Dirs Partition Duplication is not allowed";
             break;
         default:
             err = "Invalid operation";
@@ -152,6 +158,20 @@ public abstract class BookieException extends Exception {
 
         public UpgradeException(String reason) {
             super(Code.UpgradeException, reason);
+        }
+    }
+    
+    public static class DirsPartitionDuplicationException extends BookieException {
+        public DirsPartitionDuplicationException() {
+            super(Code.DirsPartitionDuplicationException);
+        }
+
+        public DirsPartitionDuplicationException(Throwable cause) {
+            super(Code.DirsPartitionDuplicationException, cause);
+        }
+
+        public DirsPartitionDuplicationException(String reason) {
+            super(Code.DirsPartitionDuplicationException, reason);
         }
     }
 }
