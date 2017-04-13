@@ -335,7 +335,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
         // Note re. persistent lock state initialization: the read lock persistent state (path) is
         // initialized here but only used in the read handler. The reason is its more convenient and
         // less error prone to manage all stream structure in one place.
-        final String logRootParentPath = new File(logRootPath).getParent();
+        final String logRootParentPath = Utils.getParent(logRootPath);
         final String logSegmentsPath = logRootPath + LOGSEGMENTS_PATH;
         final String maxTxIdPath = logRootPath + MAX_TXID_PATH;
         final String lockPath = logRootPath + LOCK_PATH;
@@ -383,7 +383,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
         if (pathExists(metadatas.get(MetadataIndex.LOG_ROOT_PARENT))) {
             pathsToCreate.add(null);
         } else {
-            String logRootParentPath = new File(logRootPath).getParent();
+            String logRootParentPath = Utils.getParent(logRootPath);
             pathsToCreate.add(DistributedLogConstants.EMPTY_BYTES);
             zkOps.add(Op.create(logRootParentPath, DistributedLogConstants.EMPTY_BYTES, acl, createMode));
         }

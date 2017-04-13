@@ -604,4 +604,35 @@ public class Utils {
                 executorService).map(VoidFunctions.LIST_TO_VOID_FUNC);
     }
 
+    /**
+     * Gets the parent of a path.
+     *
+     * @param path
+     *            path to get the parent of
+     * @return parent of the path or null if no parent exists.
+     */
+    public static String getParent(final String path) {
+        if (path == null) {
+            return null;
+        }
+        if (path.length() < 2) {
+            return null;
+        }
+        int firstIndex = path.indexOf("/");
+        if (firstIndex == -1) {
+            return null;
+        }
+        int lastIndex = path.lastIndexOf("/");
+        if (lastIndex == path.length() - 1) {
+            lastIndex = path.substring(0, path.length() - 1).lastIndexOf("/");
+        }
+        if (lastIndex == -1) {
+            return null;
+        }
+        if (lastIndex == 0) {
+            return "/";
+        }
+        return path.substring(0, lastIndex);
+    }
+
 }

@@ -122,4 +122,32 @@ public class TestUtils extends ZooKeeperClusterTestCase {
         assertEquals("Version should be zero",
                 0, ((ZkVersion) data.getVersion()).getZnodeVersion());
     }
+
+    @Test(timeout = 60000)
+    public void testGetParent() throws Exception {
+        String path1 = null;
+        assertNull("parent of a null path is null", Utils.getParent(path1));
+
+        String path2 = "";
+        assertNull("parent of an empty string is null", Utils.getParent(path2));
+
+        String path3 = "abcdef";
+        assertNull("parent of a string with no / is null", Utils.getParent(path3));
+
+        String path4 = "/test/test2";
+        assertEquals("parent of a /test/test2 is /test", "/test", Utils.getParent(path4));
+
+        String path5 = "/test/test2/";
+        assertEquals("parent of a " + path5 + " is /test", "/test", Utils.getParent(path5));
+
+        String path6 = "/test";
+        assertEquals("parent of " + path6 + " is /", "/", Utils.getParent(path6));
+
+        String path7 = "//";
+        assertEquals("parent of " + path7 + " is /", "/", Utils.getParent(path7));
+
+        String path8 = "/";
+        assertNull("parent of " + path8 + " is null", Utils.getParent(path8));
+    }
+
 }
