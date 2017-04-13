@@ -47,7 +47,7 @@ public class ZooKeeperClusterTestCase {
     public static void shutdownZooKeeper() throws Exception {
         zks.stop();
         if (null != zkDir) {
-            FileUtils.deleteDirectory(zkDir);
+            FileUtils.forceDeleteOnExit(zkDir);
         }
     }
 }

@@ -168,7 +168,7 @@ public class LocalDLMEmulator {
             bkStartupThread.join();
         }
         for (File dir : tmpDirs) {
-            FileUtils.deleteDirectory(dir);
+            FileUtils.forceDeleteOnExit(dir);
         }
     }
 
@@ -344,7 +344,7 @@ public class LocalDLMEmulator {
                 public void run() {
                     try {
                         localDlm.teardown();
-                        FileUtils.deleteDirectory(zkDir);
+                        FileUtils.forceDeleteOnExit(zkDir);
                         System.out.println("ByeBye!");
                     } catch (Exception e) {
                         // do nothing

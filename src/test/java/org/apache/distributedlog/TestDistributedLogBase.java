@@ -115,7 +115,7 @@ public class TestDistributedLogBase {
         bkutil.teardown();
         zks.stop();
         for (File dir : tmpDirs) {
-            FileUtils.deleteDirectory(dir);
+            FileUtils.forceDeleteOnExit(dir);
         }
     }
 
