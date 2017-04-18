@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
+import java.util.concurrent.Future;
 
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 
@@ -32,8 +33,9 @@ public class BookieAccessor {
      * Force a bookie to flush its ledger storage
      */
     public static void forceFlush(Bookie b) throws IOException {
-        Checkpoint cp = b.journal.newCheckpoint();
+        CheckpointSourceList source = new CheckpointSourceList(b.journals);
+        Checkpoint cp = source.newCheckpoint();
         b.ledgerStorage.flush();
-        b.journal.checkpointComplete(cp, true);
+        source.checkpointComplete(cp, true);
     }
 }

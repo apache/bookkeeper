@@ -225,9 +225,60 @@ public class ReplicationWorker implements Runnable {
     private boolean rereplicate(long ledgerIdToReplicate) throws InterruptedException, BKException,
             UnavailableException {
         LOG.debug("Going to replicate the fragments of the ledger: {}", ledgerIdToReplicate);
-        LedgerHandle lh;
-        try {
-            lh = admin.openLedgerNoRecovery(ledgerIdToReplicate);
+        try (LedgerHandle lh = admin.openLedgerNoRecovery(ledgerIdToReplicate)) {
+            Set<LedgerFragment> fragments = getUnderreplicatedFragments(lh);
+            LOG.debug("Founds fragments {} for replication from ledger: {}", fragments, ledgerIdToReplicate);
+
+            boolean foundOpenFragments = false;
+            long numFragsReplicated = 0;
+            for (LedgerFragment ledgerFragment : fragments) {
+                if (!ledgerFragment.isClosed()) {
+                    foundOpenFragments = true;
+                    continue;
+                } else if (isTargetBookieExistsInFragmentEnsemble(lh,
+                        ledgerFragment)) {
+                    LOG.debug("Target Bookie[{}] found in the fragment ensemble: {}", targetBookie,
+                            ledgerFragment.getEnsemble());
+                    continue;
+                }
+                try {
+                    admin.replicateLedgerFragment(lh, ledgerFragment, targetBookie);
+                    numFragsReplicated++;
+                } catch (BKException.BKBookieHandleNotAvailableException e) {
+                    LOG.warn("BKBookieHandleNotAvailableException "
+                            + "while replicating the fragment", e);
+                } catch (BKException.BKLedgerRecoveryException e) {
+                    LOG.warn("BKLedgerRecoveryException "
+                            + "while replicating the fragment", e);
+                    if (admin.getReadOnlyBookies().contains(targetBookie)) {
+                        underreplicationManager.releaseUnderreplicatedLedger(ledgerIdToReplicate);
+                        throw new BKException.BKWriteOnReadOnlyBookieException();
+                    }
+                }
+            }
+
+            if (numFragsReplicated > 0) {
+                numLedgersReplicated.inc();
+            }
+
+            if (foundOpenFragments || isLastSegmentOpenAndMissingBookies(lh)) {
+                deferLedgerLockRelease(ledgerIdToReplicate);
+                return false;
+            }
+
+            fragments = getUnderreplicatedFragments(lh);
+            if (fragments.size() == 0) {
+                LOG.info("Ledger replicated successfully. ledger id is: "
+                        + ledgerIdToReplicate);
+                underreplicationManager.markLedgerReplicated(ledgerIdToReplicate);
+                return true;
+            } else {
+                // Releasing the underReplication ledger lock and compete
+                // for the replication again for the pending fragments
+                underreplicationManager
+                        .releaseUnderreplicatedLedger(ledgerIdToReplicate);
+                return false;
+            }
         } catch (BKNoSuchLedgerExistsException e) {
             // Ledger might have been deleted by user
             LOG.info("BKNoSuchLedgerExistsException while opening "
@@ -249,59 +300,6 @@ public class ReplicationWorker implements Runnable {
                     + " opening ledger for replication."
                     + " Enough Bookies might not have available"
                     + "So, no harm to continue");
-            underreplicationManager
-                    .releaseUnderreplicatedLedger(ledgerIdToReplicate);
-            return false;
-        }
-        Set<LedgerFragment> fragments = getUnderreplicatedFragments(lh);
-        LOG.debug("Founds fragments {} for replication from ledger: {}", fragments, ledgerIdToReplicate);
-
-        boolean foundOpenFragments = false;
-        long numFragsReplicated = 0;
-        for (LedgerFragment ledgerFragment : fragments) {
-            if (!ledgerFragment.isClosed()) {
-                foundOpenFragments = true;
-                continue;
-            } else if (isTargetBookieExistsInFragmentEnsemble(lh,
-                    ledgerFragment)) {
-                LOG.debug("Target Bookie[{}] found in the fragment ensemble: {}", targetBookie,
-                        ledgerFragment.getEnsemble());
-                continue;
-            }
-            try {
-                admin.replicateLedgerFragment(lh, ledgerFragment, targetBookie);
-                numFragsReplicated++;
-            } catch (BKException.BKBookieHandleNotAvailableException e) {
-                LOG.warn("BKBookieHandleNotAvailableException "
-                        + "while replicating the fragment", e);
-            } catch (BKException.BKLedgerRecoveryException e) {
-                LOG.warn("BKLedgerRecoveryException "
-                        + "while replicating the fragment", e);
-                if (admin.getReadOnlyBookies().contains(targetBookie)) {
-                    underreplicationManager.releaseUnderreplicatedLedger(ledgerIdToReplicate);
-                    throw new BKException.BKWriteOnReadOnlyBookieException();
-                }
-            }
-        }
-
-        if (numFragsReplicated > 0) {
-            numLedgersReplicated.inc();
-        }
-
-        if (foundOpenFragments || isLastSegmentOpenAndMissingBookies(lh)) {
-            deferLedgerLockRelease(ledgerIdToReplicate);
-            return false;
-        }
-
-        fragments = getUnderreplicatedFragments(lh);
-        if (fragments.size() == 0) {
-            LOG.info("Ledger replicated successfully. ledger id is: "
-                    + ledgerIdToReplicate);
-            underreplicationManager.markLedgerReplicated(ledgerIdToReplicate);
-            return true;
-        } else {
-            // Releasing the underReplication ledger lock and compete
-            // for the replication again for the pending fragments
             underreplicationManager
                     .releaseUnderreplicatedLedger(ledgerIdToReplicate);
             return false;

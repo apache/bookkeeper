@@ -21,40 +21,34 @@
 package org.apache.bookkeeper.auth;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.protobuf.ExtensionRegistry;
-
+import org.apache.bookkeeper.client.ClientConnectionPeer;
+import org.apache.bookkeeper.bookie.BookieConnectionPeer;
 
 
 public class AuthProviderFactoryFactory {
     static Logger LOG = LoggerFactory.getLogger(AuthProviderFactoryFactory.class);
 
-    public static BookieAuthProvider.Factory newBookieAuthProviderFactory(ServerConfiguration conf,
-                                                                          ExtensionRegistry registry) throws IOException {
+    public static BookieAuthProvider.Factory newBookieAuthProviderFactory(ServerConfiguration conf) throws IOException {
         String factoryClassName = conf.getBookieAuthProviderFactoryClass();
 
         if (factoryClassName == null || factoryClassName.length() == 0) {
-            return new NullBookieAuthProviderFactory();
+            return new AuthenticationDisabledAuthProviderFactory();
         }
 
         BookieAuthProvider.Factory factory = ReflectionUtils.newInstance(factoryClassName,
                                                                          BookieAuthProvider.Factory.class);
-        factory.init(conf, registry);
+        factory.init(conf);
         return factory;
     }
 
-    public static ClientAuthProvider.Factory newClientAuthProviderFactory(ClientConfiguration conf,
-                                                                          ExtensionRegistry registry) throws IOException {
+    public static ClientAuthProvider.Factory newClientAuthProviderFactory(ClientConfiguration conf) throws IOException {
         String factoryClassName = conf.getClientAuthProviderFactoryClass();
 
         if (factoryClassName == null || factoryClassName.length() == 0) {
@@ -63,27 +57,32 @@ public class AuthProviderFactoryFactory {
 
         ClientAuthProvider.Factory factory = ReflectionUtils.newInstance(factoryClassName,
                                                                          ClientAuthProvider.Factory.class);
-        factory.init(conf, registry);
+        factory.init(conf);
         return factory;
     }
 
-    private final static String nullPluginName = "NULLPlugin";
+    public final static String authenticationDisabledPluginName = "AuthDisabledPlugin";
 
-    private static class NullBookieAuthProviderFactory implements BookieAuthProvider.Factory {
+    private static class AuthenticationDisabledAuthProviderFactory implements BookieAuthProvider.Factory {
         @Override
         public String getPluginName() {
-            return nullPluginName;
+            return authenticationDisabledPluginName;
         }
 
         @Override
-        public void init(ServerConfiguration conf, ExtensionRegistry registry) {}
+        public void init(ServerConfiguration conf) {}
 
         @Override
-        public BookieAuthProvider newProvider(InetSocketAddress addr,
-                                              GenericCallback<Void> completeCb) {
+        public BookieAuthProvider newProvider(BookieConnectionPeer addr,
+                                              AuthCallbacks.GenericCallback<Void> completeCb) {
             completeCb.operationComplete(BKException.Code.OK, null);
             return new BookieAuthProvider() {
-                public void process(AuthMessage m, GenericCallback<AuthMessage> cb) {}
+                public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
+                    // any request of authentication for clients is going to be answered with a standard response
+                    // the client will d
+                    addr.setAuthorizedId(BookKeeperPrincipal.ANONYMOUS);
+                    cb.operationComplete(BKException.Code.OK, AuthToken.NULL);
+                }
             };
         }
     }
@@ -91,19 +90,20 @@ public class AuthProviderFactoryFactory {
     private static class NullClientAuthProviderFactory implements ClientAuthProvider.Factory {
         @Override
         public String getPluginName() {
-            return nullPluginName;
+            return authenticationDisabledPluginName;
         }
 
         @Override
-        public void init(ClientConfiguration conf, ExtensionRegistry registry) {}
+        public void init(ClientConfiguration conf) {}
 
         @Override
-        public ClientAuthProvider newProvider(InetSocketAddress addr,
-                                              GenericCallback<Void> completeCb) {
+        public ClientAuthProvider newProvider(ClientConnectionPeer addr,
+                                              AuthCallbacks.GenericCallback<Void> completeCb) {
+            addr.setAuthorizedId(BookKeeperPrincipal.ANONYMOUS);
             completeCb.operationComplete(BKException.Code.OK, null);
             return new ClientAuthProvider() {
-                public void init(GenericCallback<AuthMessage> cb) {}
-                public void process(AuthMessage m, GenericCallback<AuthMessage> cb) {}
+                public void init(AuthCallbacks.GenericCallback<AuthToken> cb) {}
+                public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {}
             };
         }
     }

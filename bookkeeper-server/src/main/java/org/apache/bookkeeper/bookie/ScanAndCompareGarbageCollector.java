@@ -46,6 +46,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
+import java.util.List;
+import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.zookeeper.data.ACL;
 
 /**
  * Garbage collector implementation using scan and compare.
@@ -165,6 +168,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
 
     private Set<Long> removeOverReplicatedledgers(Set<Long> bkActiveledgers, final GarbageCleaner garbageCleaner)
             throws InterruptedException, KeeperException {
+        final List<ACL> zkAcls = ZkUtils.getACLs(conf);
         final Set<Long> overReplicatedLedgers = Sets.newHashSet();
         final Semaphore semaphore = new Semaphore(MAX_CONCURRENT_ZK_REQUESTS);
         final CountDownLatch latch = new CountDownLatch(bkActiveledgers.size());
@@ -178,7 +182,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
                 // we try to acquire the underreplicated ledger lock to not let the bookie replicate the ledger that is
                 // already being checked for deletion, since that might change the ledger ensemble to include the
                 // current bookie again and, in that case, we cannot remove the ledger from local storage
-                ZkLedgerUnderreplicationManager.acquireUnderreplicatedLedgerLock(zk, zkLedgersRootPath, ledgerId);
+                ZkLedgerUnderreplicationManager.acquireUnderreplicatedLedgerLock(zk, zkLedgersRootPath, ledgerId, zkAcls);
                 semaphore.acquire();
                 ledgerManager.readLedgerMetadata(ledgerId, new GenericCallback<LedgerMetadata>() {
 

@@ -98,6 +98,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         LOG.info("Using ledger manager " + ledgerManagerFactory);
         // set ledger manager
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
+        baseConf.setOpenFileLimit(200); // Limit the number of open files to avoid reaching the proc max
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
     }
 

@@ -41,6 +41,16 @@ public class StringUtils {
     }
 
     /**
+     * Formats ledger ID according to ZooKeeper rules
+     *
+     * @param id
+     *            znode id
+     */
+    public static String getZKStringIdForLongHierarchical(long id) {
+        return String.format("%019d", id);
+    }
+    
+    /**
      * Get the hierarchical ledger path according to the ledger id
      *
      * @param ledgerId
@@ -60,6 +70,27 @@ public class StringUtils {
     }
 
     /**
+     * Get the long hierarchical ledger path according to the ledger id
+     *
+     * @param ledgerId
+     *          ledger id
+     * @return the long hierarchical path
+     */
+    public static String getLongHierarchicalLedgerPath(long ledgerId) {
+        String ledgerIdStr = getZKStringIdForLongHierarchical(ledgerId);
+        // do 3-4-4-4-4 split
+        StringBuilder sb = new StringBuilder();
+        sb.append("/")
+          .append(ledgerIdStr.substring(0, 3)).append("/")
+          .append(ledgerIdStr.substring(3, 7)).append("/")
+          .append(ledgerIdStr.substring(7, 11)).append("/")
+          .append(ledgerIdStr.substring(11, 15)).append("/")
+          .append(LEDGER_NODE_PREFIX)
+          .append(ledgerIdStr.substring(15, 19));
+        return sb.toString();
+    }
+    
+    /**
      * Parse the hierarchical ledger path to its ledger id
      *
      * @param hierarchicalLedgerPath
@@ -77,6 +108,24 @@ public class StringUtils {
         return stringToHierarchicalLedgerId(hierarchicalParts);
     }
 
+    /**
+     * Parse the long hierarchical ledger path to its ledger id
+     *
+     * @param longHierarchicalLedgerPaths
+     * @return the ledger id
+     * @throws IOException
+     */
+    public static long stringToLongHierarchicalLedgerId(String longHierarchicalLedgerPath)
+            throws IOException {
+        String[] longHierarchicalParts = longHierarchicalLedgerPath.split("/");
+        if (longHierarchicalParts.length != 5) {
+            throw new IOException("it is not a valid hierarchical path name : " + longHierarchicalLedgerPath);
+        }
+        longHierarchicalParts[4] =
+                longHierarchicalParts[4].substring(LEDGER_NODE_PREFIX.length());
+        return stringToHierarchicalLedgerId(longHierarchicalParts);
+    }
+    
     /**
      * Get ledger id
      *

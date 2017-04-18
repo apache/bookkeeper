@@ -26,6 +26,7 @@ import java.util.Set;
 import com.google.common.base.Optional;
 
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
+import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -135,4 +136,13 @@ public interface EnsemblePlacementPolicy {
      */
     public List<Integer> reorderReadLACSequence(ArrayList<BookieSocketAddress> ensemble,
                                                 List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory);
+
+    /**
+     * Send the bookie info details.
+     * 
+     * @param bookieInfoMap
+     *          A map that has the bookie to BookieInfo
+     */
+    default public void updateBookieInfo(Map<BookieSocketAddress, BookieInfo> bookieInfoMap) {
+    }
 }

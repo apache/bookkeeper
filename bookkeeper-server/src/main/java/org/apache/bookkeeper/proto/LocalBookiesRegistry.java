@@ -26,7 +26,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 /**
  * Local registry for embedded Bookies
  */
-class LocalBookiesRegistry {
+public class LocalBookiesRegistry {
     
     private final static ConcurrentHashMap<BookieSocketAddress,Boolean> localBookiesRegistry
             = new ConcurrentHashMap<>();
@@ -39,7 +39,7 @@ class LocalBookiesRegistry {
             localBookiesRegistry.remove(address);
         }
     }
-    static boolean isLocalBookie(BookieSocketAddress address) {        
+    public static boolean isLocalBookie(BookieSocketAddress address) {        
         return localBookiesRegistry.containsKey(address);
     }
     

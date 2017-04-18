@@ -57,6 +57,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.zookeeper.data.ACL;
 
 /**
  * Abstract ledger manager based on zookeeper, which provides common methods such as query zk nodes.
@@ -241,7 +242,8 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
                 }
             }
         };
-        ZkUtils.asyncCreateFullPathOptimistic(zk, ledgerPath, metadata.serialize(), Ids.OPEN_ACL_UNSAFE,
+        List<ACL> zkAcls = ZkUtils.getACLs(conf);
+        ZkUtils.asyncCreateFullPathOptimistic(zk, ledgerPath, metadata.serialize(), zkAcls,
                 CreateMode.PERSISTENT, scb, null);
     }
 
@@ -299,7 +301,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
     @Override
     public void registerLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener) {
         if (null != listener) {
-            LOG.info("Registered ledger metadata listener {} on ledger {}.", listener, ledgerId);
+            LOG.debug("Registered ledger metadata listener {} on ledger {}.", listener, ledgerId);
             Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
             if (listenerSet == null) {
                 Set<LedgerMetadataListener> newListenerSet = new HashSet<LedgerMetadataListener>();
@@ -323,7 +325,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
         if (listenerSet != null) {
             synchronized (listenerSet) {
                 if (listenerSet.remove(listener)) {
-                    LOG.info("Unregistered ledger metadata listener {} on ledger {}.", listener, ledgerId);
+                    LOG.debug("Unregistered ledger metadata listener {} on ledger {}.", listener, ledgerId);
                 }
                 if (listenerSet.isEmpty()) {
                     listeners.remove(ledgerId, listenerSet);

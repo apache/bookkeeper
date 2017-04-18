@@ -36,6 +36,7 @@ import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
+import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
@@ -65,6 +66,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -95,6 +97,9 @@ public class BookKeeper implements AutoCloseable {
     private OpStatsLogger deleteOpLogger;
     private OpStatsLogger readOpLogger;
     private OpStatsLogger addOpLogger;
+    private OpStatsLogger writeLacOpLogger;
+    private OpStatsLogger readLacOpLogger;
+
 
     // whether the socket factory is one we created, or is owned by whoever
     // instantiated us
@@ -111,6 +116,7 @@ public class BookKeeper implements AutoCloseable {
     final HashedWheelTimer requestTimer;
     final boolean ownTimer;
     final FeatureProvider featureProvider;
+    ScheduledExecutorService bookieInfoScheduler;
 
     // Ledger manager responsible for how to store ledger meta data
     final LedgerManagerFactory ledgerManagerFactory;
@@ -119,8 +125,10 @@ public class BookKeeper implements AutoCloseable {
 
     // Ensemble Placement Policy
     final EnsemblePlacementPolicy placementPolicy;
+    BookieInfoReader bookieInfoReader;
 
     final ClientConfiguration conf;
+    final int explicitLacInterval;
 
     // Close State
     boolean closed = false;
@@ -244,11 +252,7 @@ public class BookKeeper implements AutoCloseable {
     public BookKeeper(ClientConfiguration conf, ZooKeeper zk)
             throws IOException, InterruptedException, KeeperException {
 
-        this(conf, validateZooKeeper(zk), new NioClientSocketChannelFactory(
-                Executors.newCachedThreadPool(new ThreadFactoryBuilder()
-                        .setNameFormat("BookKeeper-NIOBoss-%d").build()),
-                Executors.newCachedThreadPool(new ThreadFactoryBuilder()
-                        .setNameFormat("BookKeeper-NIOWorker-%d").build())));
+        this(conf, validateZooKeeper(zk), null, NullStatsLogger.INSTANCE, null, null, null);
     }
 
     /**
@@ -275,7 +279,7 @@ public class BookKeeper implements AutoCloseable {
     }
 
     /**
-     * Contructor for use with the builder. Other constructors also use it.
+     * Constructor for use with the builder. Other constructors also use it.
      */
     private BookKeeper(ClientConfiguration conf,
                        ZooKeeper zkc,
@@ -363,14 +367,32 @@ public class BookKeeper implements AutoCloseable {
         // initialize bookie client
         this.bookieClient = new BookieClient(conf, this.channelFactory, this.mainWorkerPool, statsLogger);
         this.bookieWatcher = new BookieWatcher(conf, this.scheduler, this.placementPolicy, this);
-        this.bookieWatcher.readBookiesBlocking();
+        if (conf.getDiskWeightBasedPlacementEnabled()) {
+            LOG.info("Weighted ledger placement enabled");
+            ThreadFactoryBuilder tFBuilder = new ThreadFactoryBuilder()
+                    .setNameFormat("BKClientMetaDataPollScheduler-%d");
+            this.bookieInfoScheduler = Executors.newSingleThreadScheduledExecutor(tFBuilder.build());
+            this.bookieInfoReader = new BookieInfoReader(this, conf, this.bookieInfoScheduler);
+            this.bookieWatcher.readBookiesBlocking();
+            this.bookieInfoReader.start();
+        } else {
+            LOG.info("Weighted ledger placement is not enabled");
+            this.bookieInfoReader = new BookieInfoReader(this, conf, null);
+            this.bookieWatcher.readBookiesBlocking();
+        }
 
         // initialize ledger manager
         this.ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, this.zk);
         this.ledgerManager = new CleanupLedgerManager(ledgerManagerFactory.newLedgerManager());
         this.ledgerIdGenerator = ledgerManagerFactory.newLedgerIdGenerator();
+        this.explicitLacInterval = conf.getExplictLacInterval();
+        LOG.debug("Explicit LAC Interval : {}", this.explicitLacInterval);
 
         scheduleBookieHealthCheckIfEnabled();
+    }
+
+    public int getExplicitLacInterval() {
+        return explicitLacInterval;
     }
 
     private EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf,
@@ -458,6 +480,20 @@ public class BookKeeper implements AutoCloseable {
      */
     BookieClient getBookieClient() {
         return bookieClient;
+    }
+
+    /**
+     * Retrieves BookieInfo from all the bookies in the cluster. It sends requests
+     * to all the bookies in parallel and returns the info from the bookies that responded.
+     * If there was an error in reading from any bookie, nothing will be returned for
+     * that bookie in the map.
+     * @return map
+     *             A map of bookieSocketAddress to its BookiInfo
+     * @throws BKException
+     * @throws InterruptedException
+     */
+    public Map<BookieSocketAddress, BookieInfo> getBookieInfo() throws BKException, InterruptedException {
+        return bookieInfoReader.getBookieInfo();
     }
 
     /**
@@ -738,7 +774,114 @@ public class BookKeeper implements AutoCloseable {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv();
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv((long)(-1));
+        } finally {
+            closeLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Synchronously creates a new ledger using the interface which accepts a ledgerId as input.
+     * This method returns {@link LedgerHandleAdv} which can accept entryId.
+     * Parameters must match those of
+     * {@link #asyncCreateLedgerAdvWithLedgerId(byte[], long, int, int, int, DigestType, byte[],
+     *                           AsyncCallback.CreateCallback, Object)}
+     * @param ledgerId
+     * @param ensSize
+     * @param writeQuorumSize
+     * @param ackQuorumSize
+     * @param digestType
+     * @param passwd
+     * @param customMetadata
+     * @return a handle to the newly created ledger
+     * @throws InterruptedException
+     * @throws BKException
+     */
+    public LedgerHandle createLedgerAdv(final long ledgerId,
+                                        int ensSize,
+                                        int writeQuorumSize,
+                                        int ackQuorumSize,
+                                        DigestType digestType,
+                                        byte passwd[],
+                                        final Map<String, byte[]> customMetadata) throws InterruptedException, BKException{
+        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
+
+        /*
+         * Calls asynchronous version
+         */
+        asyncCreateLedgerAdv(ledgerId, ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
+                             new SyncCreateCallback(), counter, customMetadata);
+
+        LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
+        if (lh == null) {
+            LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
+            throw BKException.create(BKException.Code.UnexpectedConditionException);
+        } else if (ledgerId != lh.getId()) {
+            LOG.error("Unexpected condition : Expected ledgerId: {} but got: {}", ledgerId, lh.getId());
+            throw BKException.create(BKException.Code.UnexpectedConditionException);
+        }
+
+        LOG.info("Ensemble: {} for ledger: {}", lh.getLedgerMetadata().getEnsemble(0L),
+                lh.getId());
+
+        return lh;
+    }
+
+    /**
+     * Asynchronously creates a new ledger using the interface which accepts a ledgerId as input.
+     * This method returns {@link LedgerHandleAdv} which can accept entryId.
+     * Ledgers created with this call have ability to accept
+     * a separate write quorum and ack quorum size. The write quorum must be larger than
+     * the ack quorum.
+     *
+     * Separating the write and the ack quorum allows the BookKeeper client to continue
+     * writing when a bookie has failed but the failure has not yet been detected. Detecting
+     * a bookie has failed can take a number of seconds, as configured by the read timeout
+     * {@link ClientConfiguration#getReadTimeout()}. Once the bookie failure is detected,
+     * that bookie will be removed from the ensemble.
+     *
+     * The other parameters match those of {@link #asyncCreateLedger(long, int, int, DigestType, byte[],
+     *                                      AsyncCallback.CreateCallback, Object)}
+     *
+     * @param ledgerId
+     *          ledger Id to use for the newly created ledger
+     * @param ensSize
+     *          number of bookies over which to stripe entries
+     * @param writeQuorumSize
+     *          number of bookies each entry will be written to
+     * @param ackQuorumSize
+     *          number of bookies which must acknowledge an entry before the call is completed
+     * @param digestType
+     *          digest type, either MAC or CRC32
+     * @param passwd
+     *          password
+     * @param cb
+     *          createCallback implementation
+     * @param ctx
+     *          optional control object
+     * @param customMetadata
+     *          optional customMetadata that holds user specified metadata
+     */
+    public void asyncCreateLedgerAdv(final long ledgerId,
+                                     final int ensSize,
+                                     final int writeQuorumSize,
+                                     final int ackQuorumSize,
+                                     final DigestType digestType,
+                                     final byte[] passwd,
+                                     final CreateCallback cb,
+                                     final Object ctx,
+                                     final Map<String, byte[]> customMetadata) {
+        if (writeQuorumSize < ackQuorumSize) {
+            throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
+        }
+        closeLock.readLock().lock();
+        try {
+            if (closed) {
+                cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
+                return;
+            }
+            new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv(ledgerId);
         } finally {
             closeLock.readLock().unlock();
         }
@@ -799,8 +942,11 @@ public class BookKeeper implements AutoCloseable {
      * to add entries to the ledger. Any attempt to add entries will throw an
      * exception.
      *
-     * Reads from the returned ledger will only be able to read entries up until
+     * Reads from the returned ledger will be able to read entries up until
      * the lastConfirmedEntry at the point in time at which the ledger was opened.
+     * If an attempt is made to read beyond the ledger handle's LAC, an attempt is made
+     * to get the latest LAC from bookies or metadata, and if the entry_id of the read request
+     * is less than or equal to the new LAC, read will be allowed to proceed.
      *
      * @param lId
      *          ledger identifier
@@ -1022,6 +1168,12 @@ public class BookKeeper implements AutoCloseable {
         if (!mainWorkerPool.awaitTermination(10, TimeUnit.SECONDS)) {
             LOG.warn("The mainWorkerPool did not shutdown cleanly");
         }
+        if (this.bookieInfoScheduler != null) {
+            this.bookieInfoScheduler.shutdown();
+            if (!bookieInfoScheduler.awaitTermination(10, TimeUnit.SECONDS)) {
+                LOG.warn("The bookieInfoScheduler did not shutdown cleanly");
+            }
+        }
 
         if (ownTimer) {
             requestTimer.stop();
@@ -1092,6 +1244,8 @@ public class BookKeeper implements AutoCloseable {
         openOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.OPEN_OP);
         readOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_OP);
         addOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP);
+        writeLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.WRITE_LAC_OP);
+        readLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAC_OP);
     }
 
     OpStatsLogger getCreateOpLogger() { return createOpLogger; }
@@ -1099,4 +1253,6 @@ public class BookKeeper implements AutoCloseable {
     OpStatsLogger getDeleteOpLogger() { return deleteOpLogger; }
     OpStatsLogger getReadOpLogger() { return readOpLogger; }
     OpStatsLogger getAddOpLogger() { return addOpLogger; }
+    OpStatsLogger getWriteLacOpLogger() { return writeLacOpLogger; }
+    OpStatsLogger getReadLacOpLogger() { return readLacOpLogger; }
 }

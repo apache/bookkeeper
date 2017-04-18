@@ -334,6 +334,15 @@ public class TestSyncThread {
         }
 
         @Override
+        public void setExplicitlac(long ledgerId, ByteBuffer lac) {
+        }
+
+        @Override
+        public ByteBuffer getExplicitLac(long ledgerId) {
+            return null;
+        }
+
+        @Override
         public Checkpoint checkpoint(Checkpoint checkpoint)
                 throws IOException {
             return checkpoint;
@@ -341,6 +350,10 @@ public class TestSyncThread {
 
         @Override
         public BKMBeanInfo getJMXBean() { return null; }
+
+        @Override
+        public void registerLedgerDeletionListener(LedgerDeletionListener listener) {
+        }
     }
 
     private static class DummyLedgerDirsListener

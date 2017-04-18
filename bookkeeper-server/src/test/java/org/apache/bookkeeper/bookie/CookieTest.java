@@ -34,9 +34,11 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.junit.Assert;
-
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -46,6 +48,9 @@ import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
+
+
+import com.google.common.collect.Sets;
 
 public class CookieTest extends BookKeeperClusterTestCase {
     final int bookiePort = PortManager.nextFreePort();
@@ -192,6 +197,144 @@ public class CookieTest extends BookKeeperClusterTestCase {
         b = new Bookie(conf);
         b.start();
         b.shutdown();
+    }
+
+    /**
+     * Test that if a directory is added to an existing bookie, and
+     * allowStorageExpansion option is true, the bookie should come online.
+     */
+    @Test(timeout=60000)
+    public void testStorageExpansionOption() throws Exception {
+        String ledgerDir0 = newDirectory();
+        String indexDir0 = newDirectory();
+        String journalDir = newDirectory();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString())
+            .setJournalDirName(journalDir)
+            .setLedgerDirNames(new String[] { ledgerDir0 })
+            .setIndexDirName(new String[] { indexDir0 })
+            .setBookiePort(bookiePort)
+            .setAllowStorageExpansion(true);
+
+        Bookie b = new Bookie(conf); // should work fine
+        b.start();
+        b.shutdown();
+        b = null;
+
+        // add a few additional ledger dirs
+        String[] lPaths = new String[] {ledgerDir0, newDirectory(), newDirectory()};
+        Set<String> configuredLedgerDirs =  Sets.newHashSet(lPaths);
+        conf.setLedgerDirNames(lPaths);
+
+        // add an extra index dir
+        String[] iPaths = new String[] {indexDir0, newDirectory()};
+        Set<String> configuredIndexDirs =  Sets.newHashSet(iPaths);
+        conf.setIndexDirName(iPaths);
+
+        try {
+            b = new Bookie(conf);
+        } catch (BookieException.InvalidCookieException ice) {
+            fail("Should have been able to start the bookie");
+        }
+
+        List<File> l = b.getLedgerDirsManager().getAllLedgerDirs();
+        HashSet<String> bookieLedgerDirs = Sets.newHashSet();
+        for (File f : l) {
+            // Using the parent path because the bookie creates a 'current'
+            // dir under the ledger dir user provides
+            bookieLedgerDirs.add(f.getParent());
+        }
+        assertTrue("Configured ledger dirs: " + configuredLedgerDirs + " doesn't match bookie's ledger dirs: "
+                   + bookieLedgerDirs,
+                   configuredLedgerDirs.equals(bookieLedgerDirs));
+
+        l = b.getIndexDirsManager().getAllLedgerDirs();
+        HashSet<String> bookieIndexDirs = Sets.newHashSet();
+        for (File f : l) {
+            bookieIndexDirs.add(f.getParent());
+        }
+        assertTrue("Configured Index dirs: " + configuredIndexDirs + " doesn't match bookie's index dirs: "
+                   + bookieIndexDirs,
+                   configuredIndexDirs.equals(bookieIndexDirs));
+
+        b.shutdown();
+
+        // Make sure that substituting an older ledger directory
+        // is not allowed.
+        String[] lPaths2 = new String[] { lPaths[0], lPaths[1], newDirectory() };
+        conf.setLedgerDirNames(lPaths2);
+        try {
+            b = new Bookie(conf);
+            fail("Should not have been able to start the bookie");
+        } catch (BookieException.InvalidCookieException ice) {
+            // correct behavior
+        }
+
+        // Finally make sure that not including the older ledger directories
+        // is not allowed. Remove one of the older ledger dirs
+        lPaths2 = new String[] { lPaths[0], lPaths[1] };
+        conf.setLedgerDirNames(lPaths2);
+        try {
+            b = new Bookie(conf);
+            fail("Should not have been able to start the bookie");
+        } catch (BookieException.InvalidCookieException ice) {
+            // correct behavior
+        }
+    }
+
+    /**
+     * Test that adding of a non-empty directory is not allowed
+     * even when allowStorageExpansion option is true
+     */
+    @Test(timeout=60000)
+    public void testNonEmptyDirAddWithStorageExpansionOption() throws Exception {
+        String ledgerDir0 = newDirectory();
+        String indexDir0 = newDirectory();
+        String journalDir = newDirectory();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString())
+            .setJournalDirName(journalDir)
+            .setLedgerDirNames(new String[] { ledgerDir0 })
+            .setIndexDirName(new String[] { indexDir0 })
+            .setBookiePort(bookiePort)
+            .setAllowStorageExpansion(true);
+
+        Bookie b = new Bookie(conf); // should work fine
+        b.start();
+        b.shutdown();
+        b = null;
+
+        // add an additional ledger dir
+        String[] lPaths = new String[] {ledgerDir0, newDirectory()};
+        conf.setLedgerDirNames(lPaths);
+
+        // create a file to make the dir non-empty
+        File currentDir = Bookie.getCurrentDirectory(new File(lPaths[1]));
+        new File(currentDir, "foo").createNewFile();
+        assertTrue(currentDir.list().length == 1);
+
+        try {
+            b = new Bookie(conf);
+            fail("Shouldn't have been able to start");
+        } catch (BookieException.InvalidCookieException ice) {
+            // correct behavior
+        }
+
+        // Now test with a non-empty index dir
+        String[] iPaths = new String[] {indexDir0, newDirectory()};
+        conf.setIndexDirName(iPaths);
+
+        // create a dir to make it non-empty
+        currentDir = Bookie.getCurrentDirectory(new File(iPaths[1]));
+        new File(currentDir, "bar").mkdirs();
+        assertTrue(currentDir.list().length == 1);
+
+        try {
+            b = new Bookie(conf);
+            fail("Shouldn't have been able to start");
+        } catch (BookieException.InvalidCookieException ice) {
+            // correct behavior
+        }
     }
 
     /**

@@ -364,6 +364,9 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
      */
     @Test(timeout=60000)
     public void testDelayedAuditOfLostBookies() throws Exception {
+        // wait for a second so that the initial periodic check finishes
+        Thread.sleep(1000);
+
         _testDelayedAuditOfLostBookies();
     }
 

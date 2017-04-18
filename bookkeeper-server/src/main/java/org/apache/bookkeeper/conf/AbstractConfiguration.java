@@ -66,6 +66,16 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     protected final static String METASTORE_IMPL_CLASS = "metastoreImplClass";
     protected final static String METASTORE_MAX_ENTRIES_PER_SCAN = "metastoreMaxEntriesPerScan";
 
+    // Client auth provider factory class name. It must be configured on Bookies to for the Auditor
+    protected final static String CLIENT_AUTH_PROVIDER_FACTORY_CLASS = "clientAuthProviderFactoryClass";
+
+    //Netty configuration
+    protected final static String NETTY_MAX_FRAME_SIZE = "nettyMaxFrameSizeBytes";
+    protected final static int DEFAULT_NETTY_MAX_FRAME_SIZE = 5 * 1024 * 1024; // 5MB
+
+    // Zookeeper ACL settings
+    protected final static String ZK_ENABLE_SECURITY = "zkEnableSecurity";
+
     protected AbstractConfiguration() {
         super();
         if (READ_SYSTEM_PROPERTIES) {
@@ -181,6 +191,24 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     }
 
     /**
+     * Are z-node created with strict ACLs
+     *
+     * @return usage of secure ZooKeeper ACLs
+     */
+    public boolean isZkEnableSecurity() {
+        return getBoolean(ZK_ENABLE_SECURITY, false);
+    }
+
+    /**
+     * Set the usage of ACLs of new z-nodes
+     *
+     * @param zkEnableSecurity
+     */
+    public void setZkEnableSecurity(boolean zkEnableSecurity) {
+        setProperty(ZK_ENABLE_SECURITY, zkEnableSecurity);
+    }
+
+    /**
      * Get the node under which available bookies are stored
      *
      * @return Node under which available bookies are stored.
@@ -255,5 +283,52 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
         } else {
             return (Feature)getProperty(configProperty);
         }
+    }
+
+    /**
+     * Set the client authentication provider factory class name.
+     * If this is not set, no authentication will be used
+     *
+     * @param factoryClass
+     *          the client authentication provider factory class name
+     * @return client configuration
+     */
+    public AbstractConfiguration setClientAuthProviderFactoryClass(
+            String factoryClass) {
+        setProperty(CLIENT_AUTH_PROVIDER_FACTORY_CLASS, factoryClass);
+        return this;
+    }
+
+    /**
+     * Get the client authentication provider factory class name. If this returns null, no authentication will take
+     * place.
+     *
+     * @return the client authentication provider factory class name or null.
+     */
+    public String getClientAuthProviderFactoryClass() {
+        return getString(CLIENT_AUTH_PROVIDER_FACTORY_CLASS, null);
+    }
+
+    /**
+     * Get the maximum netty frame size in bytes.  Any message received larger
+     * that this will be rejected.
+     *
+     * @return the maximum netty frame size in bytes.
+     */
+    public int getNettyMaxFrameSizeBytes() {
+        return getInt(NETTY_MAX_FRAME_SIZE, DEFAULT_NETTY_MAX_FRAME_SIZE);
+    }
+
+    /**
+     * Set the max number of bytes a single message can be that is read by the bookie.
+     * Any message larger than that size will be rejected.
+     *
+     * @param maxSize
+     *          the max size in bytes
+     * @return server configuration
+     */
+    public AbstractConfiguration setNettyMaxFrameSizeBytes(int maxSize) {
+        setProperty(NETTY_MAX_FRAME_SIZE, String.valueOf(maxSize));
+        return this;
     }
 }

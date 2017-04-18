@@ -35,6 +35,7 @@ import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.EntryLogger;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
+import org.apache.bookkeeper.bookie.LedgerStorage.LedgerDeletionListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -89,7 +90,8 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         return Arrays.asList(new Object[][] {
             { FlatLedgerManagerFactory.class },
             { HierarchicalLedgerManagerFactory.class },
-            { MSLedgerManagerFactory.class }
+            { LongHierarchicalLedgerManagerFactory.class },
+            { MSLedgerManagerFactory.class },
         });
     }
 
@@ -175,6 +177,10 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         }
 
         @Override
+        public void registerLedgerDeletionListener(LedgerDeletionListener listener) {
+        }
+
+        @Override
         public void deleteLedger(long ledgerId) throws IOException {
             activeLedgers.remove(ledgerId);
         }
@@ -204,6 +210,18 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
 
         @Override
         public void flushEntriesLocationsIndex() throws IOException {
+        }
+
+        @Override
+        public void setExplicitlac(long ledgerId, ByteBuffer lac) throws IOException {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public ByteBuffer getExplicitLac(long ledgerId) {
+            // TODO Auto-generated method stub
+            return null;
         }
     }
 }

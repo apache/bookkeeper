@@ -39,7 +39,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         implements LedgerStorage, CacheCallback, SkipListFlusher {
     private final static Logger LOG = LoggerFactory.getLogger(SortedLedgerStorage.class);
 
-    private EntryMemTable memTable;
+    EntryMemTable memTable;
     private ScheduledExecutorService scheduler;
 
     public SortedLedgerStorage() {

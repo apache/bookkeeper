@@ -60,6 +60,8 @@ public class LedgerDirsManager {
     private final Random rand = new Random();
     private final ConcurrentMap<File, Float> diskUsages =
             new ConcurrentHashMap<File, Float>();
+    private final long entryLogSize;
+    private boolean forceGCAllowWhenNoSpace;
 
     public LedgerDirsManager(ServerConfiguration conf, File[] dirs) {
         this(conf, dirs, NullStatsLogger.INSTANCE);
@@ -78,6 +80,8 @@ public class LedgerDirsManager {
         this.listeners = new ArrayList<LedgerDirsListener>();
         this.diskChecker = diskChecker;
         this.monitor = new LedgerDirsMonitor(conf.getDiskCheckInterval());
+        this.forceGCAllowWhenNoSpace = conf.getIsForceGCAllowWhenNoSpace();
+        this.entryLogSize = conf.getEntryLogSizeLimit();
         for (File dir : dirs) {
             diskUsages.put(dir, 0f);
             String statName = "dir_" + dir.getPath().replace('/', '_') + "_usage";
@@ -115,6 +119,34 @@ public class LedgerDirsManager {
     }
 
     /**
+     * Calculate the total amount of free space available
+     * in all of the ledger directories put together.
+     *
+     * @return totalDiskSpace in bytes
+     */
+    public long getTotalFreeSpace() {
+        long totalFreeSpace = 0;
+        for (File dir: this.ledgerDirectories) {
+            totalFreeSpace += dir.getFreeSpace();
+        }
+        return totalFreeSpace;
+    }
+
+    /**
+     * Calculate the total amount of free space available
+     * in all of the ledger directories put together.
+     *
+     * @return freeDiskSpace in bytes
+     */
+    public long getTotalDiskSpace() {
+        long totalDiskSpace = 0;
+        for (File dir: this.ledgerDirectories) {
+            totalDiskSpace += dir.getTotalSpace();
+        }
+        return totalDiskSpace;
+    }
+
+    /**
      * Get only writable ledger dirs.
      */
     public List<File> getWritableLedgerDirs()
@@ -127,6 +159,46 @@ public class LedgerDirsManager {
             throw e;
         }
         return writableLedgerDirectories;
+    }
+
+    public List<File> getWritableLedgerDirsForNewLog()
+        throws NoWritableLedgerDirException {
+
+        if (!writableLedgerDirectories.isEmpty()) {
+            return writableLedgerDirectories;
+        }
+
+        // If Force GC is not allowed under no space
+        if (!forceGCAllowWhenNoSpace) {
+            String errMsg = "All ledger directories are non writable and force GC is not enabled.";
+            NoWritableLedgerDirException e = new NoWritableLedgerDirException(errMsg);
+            LOG.error(errMsg, e);
+            throw e;
+        }
+
+        // We don't have writable Ledger Dirs.
+        // That means we must have turned readonly but the compaction
+        // must have started running and it needs to allocate
+        // a new log file to move forward with the compaction.
+        List<File> fullLedgerDirsToAccomodateNewEntryLog = new ArrayList<File>();
+        for (File dir: this.ledgerDirectories) {
+            // Pick dirs which can accommodate little more than an entry log.
+            if (dir.getUsableSpace() > (this.entryLogSize * 1.2) ) {
+                fullLedgerDirsToAccomodateNewEntryLog.add(dir);
+            }
+        }
+
+        if (!fullLedgerDirsToAccomodateNewEntryLog.isEmpty()) {
+            LOG.info("No writable ledger dirs. Trying to go beyond to accomodate compaction."
+                    + "Dirs that can accomodate new entryLog are: {}", fullLedgerDirsToAccomodateNewEntryLog);
+            return fullLedgerDirsToAccomodateNewEntryLog;
+        }
+
+        // We will reach here when we have no option of creating a new log file for compaction
+        String errMsg = "All ledger directories are non writable and no reserved space left for creating entry log file.";
+        NoWritableLedgerDirException e = new NoWritableLedgerDirException(errMsg);
+        LOG.error(errMsg, e);
+        throw e;
     }
 
     /**

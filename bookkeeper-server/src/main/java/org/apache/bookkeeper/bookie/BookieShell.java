@@ -23,22 +23,36 @@ import static com.google.common.base.Charsets.UTF_8;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Serializable;
+import java.math.RoundingMode;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
+import org.apache.bookkeeper.bookie.Journal;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookieInfoReader;
+import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -54,9 +68,13 @@ import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookkeeperProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.util.EntryFormatter;
+import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.Tool;
 import org.apache.bookkeeper.versioning.Version;
@@ -68,18 +86,24 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.HexDump;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AbstractFuture;
+
+import javax.sql.rowset.serial.SerialRef;
 
 /**
  * Bookie Shell is to provide utilities for users to administer a bookkeeper cluster.
@@ -106,17 +130,21 @@ public class BookieShell implements Tool {
     static final String CMD_LASTMARK = "lastmark";
     static final String CMD_AUTORECOVERY = "autorecovery";
     static final String CMD_LISTBOOKIES = "listbookies";
+    static final String CMD_LISTFILESONDISC = "listfilesondisc";
     static final String CMD_UPDATECOOKIE = "updatecookie";
+    static final String CMD_EXPANDSTORAGE = "expandstorage";
     static final String CMD_UPDATELEDGER = "updateledgers";
+    static final String CMD_DELETELEDGER = "deleteledger";
+    static final String CMD_BOOKIEINFO = "bookieinfo";
     static final String CMD_HELP = "help";
 
     final ServerConfiguration bkConf = new ServerConfiguration();
     File[] indexDirectories;
     File[] ledgerDirectories;
-    File journalDirectory;
+    File[] journalDirectories;
 
     EntryLogger entryLogger = null;
-    Journal journal = null;
+    List<Journal> journals = null;
     EntryFormatter formatter;
 
     int pageSize;
@@ -451,22 +479,17 @@ public class BookieShell implements Tool {
             conf.addConfiguration(bkConf);
 
             BookKeeperAdmin bk = null;
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
             try {
                 bk = new BookKeeperAdmin(conf);
                 Iterator<LedgerEntry> entries = bk.readEntries(ledgerId, firstEntry, lastEntry).iterator();
                 while (entries.hasNext()) {
                     LedgerEntry entry = entries.next();
-                    HexDump.dump(entry.getEntry(), 0, out, 0);
-                    System.out.println(
-                            "Entry Id: " + entry.getEntryId() + ", Data: " + new String(out.toByteArray(), UTF_8));
-                    out.reset();
+                    formatEntry(entry, true);
                 }
             } catch (Exception e) {
                 LOG.error("Error reading entries from ledger {}", ledgerId, e.getCause());
                 return -1;
             } finally {
-                out.close();
                 if (bk != null) {
                     bk.close();
                 }
@@ -865,6 +888,10 @@ public class BookieShell implements Tool {
         ReadLogCmd() {
             super(CMD_READLOG);
             rlOpts.addOption("m", "msg", false, "Print message body");
+            rlOpts.addOption("l", "ledgerid", true, "Ledger ID");
+            rlOpts.addOption("e", "entryid", true, "EntryID");
+            rlOpts.addOption("sp", "startpos", true, "Start Position");
+            rlOpts.addOption("ep", "endpos", true, "End Position");
         }
 
         @Override
@@ -896,8 +923,26 @@ public class BookieShell implements Tool {
                 String idString = name.split("\\.")[0];
                 logId = Long.parseLong(idString, 16);
             }
+
+            final long lId = getOptionLongValue(cmdLine, "ledgerid", -1);
+            final long eId = getOptionLongValue(cmdLine, "entryid", -1);
+            final long startpos = getOptionLongValue(cmdLine, "startpos", -1);
+            final long endpos = getOptionLongValue(cmdLine, "endpos", -1);
+
             // scan entry log
-            scanEntryLog(logId, printMsg);
+            if (startpos != -1) {
+                if ((endpos != -1) && (endpos < startpos)) {
+                    System.err
+                            .println("ERROR: StartPosition of the range should be lesser than or equal to EndPosition");
+                    return -1;
+                }
+                scanEntryLogForPositionRange(logId, startpos, endpos, printMsg);
+            } else if (lId != -1) {
+                scanEntryLogForSpecificEntry(logId, lId, eId, printMsg);
+            } else {
+                scanEntryLog(logId, printMsg);
+            }
+
             return 0;
         }
 
@@ -908,7 +953,8 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "readlog      [-msg] <entry_log_id | entry_log_file_name>";
+            return "readlog      [-msg] <entry_log_id | entry_log_file_name> [-ledgerid <ledgerid> [-entryid <entryid>]] "
+                    + "[-startpos <startEntryLogBytePos> [-endpos <endEntryLogBytePos>]]";
         }
 
         @Override
@@ -925,6 +971,7 @@ public class BookieShell implements Tool {
 
         ReadJournalCmd() {
             super(CMD_READJOURNAL);
+            rjOpts.addOption("dir", false, "Journal directory (needed if more than one journal configured)");
             rjOpts.addOption("m", "msg", false, "Print message body");
         }
 
@@ -941,6 +988,32 @@ public class BookieShell implements Tool {
             if (cmdLine.hasOption("m")) {
                 printMsg = true;
             }
+
+            Journal journal = null;
+            if (getJournals().size() > 1) {
+                if (!cmdLine.hasOption("dir")) {
+                    System.err.println("ERROR: invalid or missing journal directory");
+                    printUsage();
+                    return -1;
+                }
+
+                File journalDirectory = new File(cmdLine.getOptionValue("dir"));
+                for (Journal j : getJournals()) {
+                    if (j.getJournalDirectory().equals(journalDirectory)) {
+                        journal = j;
+                        break;
+                    }
+                }
+
+                if (journal == null) {
+                    System.err.println("ERROR: journal directory not found");
+                    printUsage();
+                    return -1;
+                }
+            } else {
+                journal = getJournals().get(0);
+            }
+
             long journalId;
             try {
                 journalId = Long.parseLong(leftArgs[0]);
@@ -958,7 +1031,7 @@ public class BookieShell implements Tool {
                 journalId = Long.parseLong(idString, 16);
             }
             // scan journal
-            scanJournal(journalId, printMsg);
+            scanJournal(journal, journalId, printMsg);
             return 0;
         }
 
@@ -969,7 +1042,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "readjournal  [-msg] <journal_id | journal_file_name>";
+            return "readjournal [-dir] [-msg] <journal_id | journal_file_name>";
         }
 
         @Override
@@ -1078,6 +1151,74 @@ public class BookieShell implements Tool {
         }
     }
 
+    class ListDiskFilesCmd extends MyCommand {
+        Options opts = new Options();
+
+        ListDiskFilesCmd() {
+            super(CMD_LISTFILESONDISC);
+            opts.addOption("txn", "journal", false, "Print list of Journal Files");
+            opts.addOption("log", "entrylog", false, "Print list of EntryLog Files");
+            opts.addOption("idx", "index", false, "Print list of Index files");
+        }
+
+        @Override
+        public int runCmd(CommandLine cmdLine) throws Exception {
+
+            boolean journal = cmdLine.hasOption("txn");
+            boolean entrylog = cmdLine.hasOption("log");
+            boolean index = cmdLine.hasOption("idx");
+            boolean all = false;
+
+            if (!journal && !entrylog && !index && !all) {
+                all = true;
+            }
+
+            if (all || journal) {
+                File[] journalDirs = bkConf.getJournalDirs();
+                List<File> journalFiles = listFilesAndSort(journalDirs, "txn");
+                System.out.println("--------- Printing the list of Journal Files ---------");
+                for (File journalFile : journalFiles) {
+                    System.out.println(journalFile.getName());
+                }
+                System.out.println();
+            }
+            if (all || entrylog) {
+                File[] ledgerDirs = bkConf.getLedgerDirs();
+                List<File> ledgerFiles = listFilesAndSort(ledgerDirs, "log");
+                System.out.println("--------- Printing the list of EntryLog/Ledger Files ---------");
+                for (File ledgerFile : ledgerFiles) {
+                    System.out.println(ledgerFile.getName());
+                }
+                System.out.println();
+            }
+            if (all || index) {
+                File[] indexDirs = (bkConf.getIndexDirs() == null) ? bkConf.getLedgerDirs() : bkConf.getIndexDirs();
+                List<File> indexFiles = listFilesAndSort(indexDirs, "idx");
+                System.out.println("--------- Printing the list of Index Files ---------");
+                for (File indexFile : indexFiles) {
+                    System.out.println(indexFile.getName());
+                }
+            }
+            return 0;
+        }
+
+        @Override
+        String getDescription() {
+            return "List the files in JournalDirectory/LedgerDirectories/IndexDirectories";
+        }
+
+        @Override
+        String getUsage() {
+            return "listfilesondisc  [-journal|-entrylog|-index]";
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+    }
+    
+    
     /**
      * Command to print help message
      */
@@ -1317,7 +1458,7 @@ public class BookieShell implements Tool {
                     return -1;
                 }
                 Cookie newCookie = Cookie.newBuilder(oldCookie.getValue()).setBookieHost(newBookieId).build();
-                boolean hasCookieUpdatedInDirs = verifyCookie(newCookie, journalDirectory);
+                boolean hasCookieUpdatedInDirs = verifyCookie(newCookie, journalDirectories[0]);
                 for (File dir : ledgerDirectories) {
                     hasCookieUpdatedInDirs &= verifyCookie(newCookie, dir);
                 }
@@ -1340,8 +1481,10 @@ public class BookieShell implements Tool {
                     }
                 } else {
                     // writes newcookie to local dirs
-                    newCookie.writeToDirectory(journalDirectory);
-                    LOG.info("Updated cookie file present in journalDirectory {}", journalDirectory);
+                    for (File journalDirectory : journalDirectories) {
+                        newCookie.writeToDirectory(journalDirectory);
+                        LOG.info("Updated cookie file present in journalDirectory {}", journalDirectory);
+                    }
                     for (File dir : ledgerDirectories) {
                         newCookie.writeToDirectory(dir);
                     }
@@ -1382,6 +1525,63 @@ public class BookieShell implements Tool {
                 return false;
             }
             return true;
+        }
+    }
+
+    /**
+     * Expand the storage directories owned by a bookie
+     */
+    class ExpandStorageCmd extends MyCommand {
+        Options opts = new Options();
+
+        ExpandStorageCmd() {
+            super(CMD_EXPANDSTORAGE);
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Add new empty ledger/index directories. Update the directories"
+                   + "info in the conf file before running the command.";
+        }
+
+        @Override
+        String getUsage() {
+            return "expandstorage";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) {
+            ServerConfiguration conf = new ServerConfiguration(bkConf);
+            ZooKeeper zk;
+            try {
+                zk = ZooKeeperClient.newBuilder()
+                        .connectString(bkConf.getZkServers())
+                        .sessionTimeoutMs(bkConf.getZkTimeout()).build();
+            } catch (KeeperException | InterruptedException | IOException e) {
+                LOG.error("Exception while establishing zookeeper connection.", e);
+                return -1;
+            }
+
+            List<File> allLedgerDirs = Lists.newArrayList();
+            allLedgerDirs.addAll(Arrays.asList(ledgerDirectories));
+            if (indexDirectories != ledgerDirectories) {
+                allLedgerDirs.addAll(Arrays.asList(indexDirectories));
+            }
+
+            try {
+                Bookie.checkEnvironmentWithStorageExpansion(conf, zk,
+                        Lists.newArrayList(journalDirectories), allLedgerDirs);
+            } catch (BookieException | IOException e) {
+                LOG.error(
+                        "Exception while updating cookie for storage expansion", e);
+                return -1;
+            }
+            return 0;
         }
     }
 
@@ -1494,6 +1694,143 @@ public class BookieShell implements Tool {
     }
 
     /**
+     * Command to delete a given ledger.
+     */
+    class DeleteLedgerCmd extends MyCommand {
+        Options lOpts = new Options();
+
+        DeleteLedgerCmd() {
+            super(CMD_DELETELEDGER);
+            lOpts.addOption("l", "ledgerid", true, "Ledger ID");
+            lOpts.addOption("f", "force", false, "Whether to force delete the Ledger without prompt..?");
+        }
+
+        @Override
+        public int runCmd(CommandLine cmdLine) throws Exception {
+            final String lidStr = cmdLine.getOptionValue("ledgerid");
+            if (StringUtils.isBlank(lidStr)) {
+                LOG.error("Invalid argument list!");
+                this.printUsage();
+                return -1;
+            }
+
+            final long lid;
+            try {
+                lid = Long.parseLong(lidStr);
+            } catch (NumberFormatException nfe) {
+                System.err.println("ERROR: invalid ledger id " + lidStr);
+                printUsage();
+                return -1;
+            }
+
+            boolean force = cmdLine.hasOption("f");
+            boolean confirm = false;
+            if (!force) {
+                confirm = IOUtils.confirmPrompt("Are you sure to delete Ledger : " + lid + "?");
+            }
+
+            BookKeeper bk = null;
+            try {
+                if (force || confirm) {
+                    ClientConfiguration conf = new ClientConfiguration();
+                    conf.addConfiguration(bkConf);
+                    bk = new BookKeeper(conf);
+                    bk.deleteLedger(lid);
+                }
+            } finally {
+                if (bk != null) {
+                    bk.close();
+                }
+            }
+
+            return 0;
+        }
+
+        @Override
+        String getDescription() {
+            return "Delete a ledger";
+        }
+
+        @Override
+        String getUsage() {
+            return "deleteledger -ledgerid <ledgerid> [-force]";
+        }
+
+        @Override
+        Options getOptions() {
+            return lOpts;
+        }
+    }
+
+    /*
+     * Command to retrieve bookie information like free disk space, etc from all
+     * the bookies in the cluster.
+     */
+    class BookieInfoCmd extends MyCommand {
+        Options lOpts = new Options();
+
+        BookieInfoCmd() {
+            super(CMD_BOOKIEINFO);
+        }
+
+        @Override
+        String getDescription() {
+            return "Retrieve bookie info such as free and total disk space";
+        }
+
+        @Override
+        String getUsage() {
+            return "bookieinfo";
+        }
+
+        @Override
+        Options getOptions() {
+            return lOpts;
+        }
+
+        String getReadable(long val) {
+            String unit[] = {"", "KB", "MB", "GB", "TB" };
+            int cnt = 0;
+            double d = val;
+            while (d >= 1000 && cnt < unit.length-1) {
+                d = d/1000;
+                cnt++;
+            }
+            DecimalFormat df = new DecimalFormat("#.###");
+            df.setRoundingMode(RoundingMode.DOWN);
+            return cnt > 0 ? "(" + df.format(d) + unit[cnt] + ")" : unit[cnt];
+        }
+
+        @Override
+        public int runCmd(CommandLine cmdLine) throws Exception {
+            ClientConfiguration clientConf = new ClientConfiguration(bkConf);
+            clientConf.setDiskWeightBasedPlacementEnabled(true);
+            BookKeeper bk = new BookKeeper(clientConf);
+
+            Map<BookieSocketAddress, BookieInfo> map = bk.getBookieInfo();
+            if (map.size() == 0) {
+                System.out.println("Failed to retrieve bookie information from any of the bookies");
+                bk.close();
+                return 0;
+            }
+
+            System.out.println("Free disk space info:");
+            long totalFree = 0, total=0;
+            for (Map.Entry<BookieSocketAddress, BookieInfo> e : map.entrySet()) {
+                BookieInfo bInfo = e.getValue();
+                System.out.println(e.getKey() + ":\tFree: " + bInfo.getFreeDiskSpace() +  getReadable(bInfo.getFreeDiskSpace()) +
+                        "\tTotal: " + bInfo.getTotalDiskSpace() +  getReadable(bInfo.getTotalDiskSpace()));
+                totalFree += bInfo.getFreeDiskSpace();
+                total += bInfo.getTotalDiskSpace();
+            }
+            System.out.println("Total free disk space in the cluster:\t" + totalFree + getReadable(totalFree));
+            System.out.println("Total disk capacity in the cluster:\t" + total + getReadable(total));
+            bk.close();
+            return 0;
+        }
+    }
+
+    /**
      * A facility for reporting update ledger progress.
      */
     public interface UpdateLedgerNotifier {
@@ -1518,15 +1855,19 @@ public class BookieShell implements Tool {
         commands.put(CMD_LASTMARK, new LastMarkCmd());
         commands.put(CMD_AUTORECOVERY, new AutoRecoveryCmd());
         commands.put(CMD_LISTBOOKIES, new ListBookiesCmd());
+        commands.put(CMD_LISTFILESONDISC, new ListDiskFilesCmd());
         commands.put(CMD_UPDATECOOKIE, new UpdateCookieCmd());
+        commands.put(CMD_EXPANDSTORAGE, new ExpandStorageCmd());
         commands.put(CMD_UPDATELEDGER, new UpdateLedgerCmd());
+        commands.put(CMD_DELETELEDGER, new DeleteLedgerCmd());
+        commands.put(CMD_BOOKIEINFO, new BookieInfoCmd());
         commands.put(CMD_HELP, new HelpCmd());
     }
 
     @Override
     public void setConf(Configuration conf) throws Exception {
         bkConf.loadConf(conf);
-        journalDirectory = Bookie.getCurrentDirectory(bkConf.getJournalDir());
+        journalDirectories = Bookie.getCurrentDirectories(bkConf.getJournalDirs());
         ledgerDirectories = Bookie.getCurrentDirectories(bkConf.getLedgerDirs());
         if (null == bkConf.getIndexDirs()) {
             indexDirectories = ledgerDirectories;
@@ -1540,7 +1881,8 @@ public class BookieShell implements Tool {
     }
 
     private void printShellUsage() {
-        System.err.println("Usage: BookieShell [-conf configuration] <command>");
+        System.err.println(
+                "Usage: BookieShell [-conf configuration] <command>");
         System.err.println();
         List<String> commandNames = new ArrayList<String>();
         for (MyCommand c : commands.values()) {
@@ -1569,6 +1911,56 @@ public class BookieShell implements Tool {
         String[] newArgs = new String[args.length - 1];
         System.arraycopy(args, 1, newArgs, 0, newArgs.length);
         return cmd.runCmd(newArgs);
+    }
+
+    /**
+     * Returns the sorted list of the files in the given folders with the given file extensions.
+     * Sorting is done on the basis of CreationTime if the CreationTime is not available or if they are equal
+     * then sorting is done by LastModifiedTime  
+     * @param folderNames - array of folders which we need to look recursively for files with given extensions  
+     * @param extensions - the file extensions, which we are interested in
+     * @return sorted list of files
+     */
+    private static List<File> listFilesAndSort(File[] folderNames, String... extensions) {
+        List<File> completeFilesList = new ArrayList<File>();
+        for (int i = 0; i < folderNames.length; i++) {
+            Collection<File> filesCollection = FileUtils.listFiles(folderNames[i], extensions, true);
+            completeFilesList.addAll(filesCollection);
+        }
+        Collections.sort(completeFilesList, new FilesTimeComparator());
+        return completeFilesList;
+    }
+
+    private static class FilesTimeComparator implements Comparator<File>, Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public int compare(File file1, File file2) {
+            Path file1Path = Paths.get(file1.getAbsolutePath());
+            Path file2Path = Paths.get(file2.getAbsolutePath());
+            try {
+                BasicFileAttributes file1Attributes = Files.readAttributes(file1Path, BasicFileAttributes.class);
+                BasicFileAttributes file2Attributes = Files.readAttributes(file2Path, BasicFileAttributes.class);
+                FileTime file1CreationTime = file1Attributes.creationTime();
+                FileTime file2CreationTime = file2Attributes.creationTime();
+                int compareValue = file1CreationTime.compareTo(file2CreationTime);
+                /* 
+                 * please check https://docs.oracle.com/javase/7/docs/api/java/nio/file/attribute/BasicFileAttributes.html#creationTime()
+                 * So not all file system implementation store creation time, in that case creationTime()
+                 * method may return FileTime representing the epoch (1970-01-01T00:00:00Z). So in that case 
+                 * it would be better to compare lastModifiedTime 
+                 */
+                if (compareValue == 0) {
+                    FileTime file1LastModifiedTime = file1Attributes.lastModifiedTime();
+                    FileTime file2LastModifiedTime = file2Attributes.lastModifiedTime();
+                    compareValue = file1LastModifiedTime.compareTo(file2LastModifiedTime);
+                }
+                return compareValue;
+            } catch (IOException e) {                
+                return 0;
+            }
+        }
     }
 
     public static void main(String argv[]) throws Exception {
@@ -1661,11 +2053,14 @@ public class BookieShell implements Tool {
         entryLogger.scanEntryLog(logId, scanner);
     }
 
-    private synchronized Journal getJournal() throws IOException {
-        if (null == journal) {
-            journal = new Journal(bkConf, new LedgerDirsManager(bkConf, bkConf.getLedgerDirs()));
+    private synchronized List<Journal> getJournals() throws IOException {
+        if (null == journals) {
+            journals = Lists.newArrayListWithCapacity(bkConf.getJournalDirs().length);
+            for (File journalDir : bkConf.getJournalDirs()) {
+                journals.add(new Journal(journalDir, bkConf, new LedgerDirsManager(bkConf, bkConf.getLedgerDirs())));
+            }
         }
-        return journal;
+        return journals;
     }
 
     /**
@@ -1676,8 +2071,8 @@ public class BookieShell implements Tool {
      * @param scanner
      *          Journal File Scanner
      */
-    protected void scanJournal(long journalId, JournalScanner scanner) throws IOException {
-        getJournal().scanJournal(journalId, 0L, scanner);
+    protected void scanJournal(Journal journal, long journalId, JournalScanner scanner) throws IOException {
+        journal.scanJournal(journalId, 0L, scanner);
     }
 
     ///
@@ -1779,6 +2174,105 @@ public class BookieShell implements Tool {
     }
 
     /**
+     * Scan over an entry log file for a particular entry
+     * 
+     * @param logId
+     *          Entry Log File id.
+     * @param ledgerId
+     *          id of the ledger
+     * @param entryId
+     *          entryId of the ledger we are looking for (-1 for all of the entries of the ledger)
+     * @param printMsg
+     *          Whether printing the entry data.
+     * @throws Exception
+     */
+    protected void scanEntryLogForSpecificEntry(long logId, final long lId, final long eId, final boolean printMsg)
+            throws Exception {
+        System.out.println("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)" + " for LedgerId " + lId
+                + ((eId == -1) ? "" : " for EntryId " + eId));
+        final MutableBoolean entryFound = new MutableBoolean(false);
+        scanEntryLog(logId, new EntryLogScanner() {
+            @Override
+            public boolean accept(long ledgerId) {
+                return ((lId == ledgerId) && ((!entryFound.booleanValue()) || (eId == -1)));
+            }
+
+            @Override
+            public void process(long ledgerId, long startPos, ByteBuffer entry) {
+                long entrysLedgerId = entry.getLong();
+                long entrysEntryId = entry.getLong();
+                entry.rewind();
+                if ((ledgerId == entrysLedgerId) && (ledgerId == lId) && ((entrysEntryId == eId)) || (eId == -1)) {
+                    entryFound.setValue(true);
+                    formatEntry(startPos, entry, printMsg);
+                }
+            }
+        });
+        if (!entryFound.booleanValue()) {
+            System.out.println("LedgerId " + lId + ((eId == -1) ? "" : " EntryId " + eId)
+                    + " is not available in the entry log " + logId + " (" + Long.toHexString(logId) + ".log)");
+        }
+    }
+
+    /**
+     * Scan over an entry log file for entries in the given position range
+     * 
+     * @param logId
+     *          Entry Log File id.
+     * @param rangeStartPos
+     *          Start position of the entry we are looking for
+     * @param rangeEndPos
+     *          End position of the entry we are looking for (-1 for till the end of the entrylog)
+     * @param printMsg
+     *          Whether printing the entry data.
+     * @throws Exception
+     */
+    protected void scanEntryLogForPositionRange(long logId, final long rangeStartPos, final long rangeEndPos, final boolean printMsg)
+ throws Exception {
+        System.out.println("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)" + " for PositionRange: "
+                + rangeStartPos + " - " + rangeEndPos);
+        final MutableBoolean entryFound = new MutableBoolean(false);
+        scanEntryLog(logId, new EntryLogScanner() {
+            private MutableBoolean stopScanning = new MutableBoolean(false);
+
+            @Override
+            public boolean accept(long ledgerId) {
+                return !stopScanning.booleanValue();
+            }
+
+            @Override
+            public void process(long ledgerId, long entryStartPos, ByteBuffer entry) {
+                if (!stopScanning.booleanValue()) {
+                    if ((rangeEndPos != -1) && (entryStartPos > rangeEndPos)) {
+                        stopScanning.setValue(true);
+                    } else {
+                        int entrySize = entry.limit();
+                        /**
+                         * entrySize of an entry (inclusive of payload and
+                         * header) value is stored as int value in log file, but
+                         * it is not counted in the entrySize, hence for calculating
+                         * the end position of the entry we need to add additional
+                         * 4 (intsize of entrySize). Please check
+                         * EntryLogger.scanEntryLog.
+                         */
+                        long entryEndPos = entryStartPos + entrySize + 4 - 1;
+                        if (((rangeEndPos == -1) || (entryStartPos <= rangeEndPos)) && (rangeStartPos <= entryEndPos)) {
+                            formatEntry(entryStartPos, entry, printMsg);
+                            entryFound.setValue(true);
+                        }
+                    }
+                }
+            }
+        });
+        if (!entryFound.booleanValue()) {
+            System.out.println("Entry log " + logId + " (" + Long.toHexString(logId)
+                    + ".log) doesn't has any entry in the range " + rangeStartPos + " - " + rangeEndPos
+                    + ". Probably the position range, you have provided is lesser than the LOGFILE_HEADER_SIZE (1024) "
+                    + "or greater than the current log filesize.");
+        }
+    }
+    
+    /**
      * Scan a journal file
      *
      * @param journalId
@@ -1786,9 +2280,9 @@ public class BookieShell implements Tool {
      * @param printMsg
      *          Whether printing the entry data.
      */
-    protected void scanJournal(long journalId, final boolean printMsg) throws Exception {
+    protected void scanJournal(Journal journal, long journalId, final boolean printMsg) throws Exception {
         System.out.println("Scan journal " + journalId + " (" + Long.toHexString(journalId) + ".txn)");
-        scanJournal(journalId, new JournalScanner() {
+        scanJournal(journal, journalId, new JournalScanner() {
             boolean printJournalVersion = false;
             @Override
             public void process(int journalVersion, long offset, ByteBuffer entry) throws IOException {
@@ -1805,12 +2299,33 @@ public class BookieShell implements Tool {
      * Print last log mark
      */
     protected void printLastLogMark() throws IOException {
-        LogMark lastLogMark = getJournal().getLastLogMark().getCurMark();
-        System.out.println("LastLogMark: Journal Id - " + lastLogMark.getLogFileId() + "("
-                + Long.toHexString(lastLogMark.getLogFileId()) + ".txn), Pos - "
-                + lastLogMark.getLogFileOffset());
+        for (Journal journal : journals) {
+            LogMark lastLogMark = journal.getLastLogMark().getCurMark();
+            System.out.println("LastLogMark: Journal Id - " + lastLogMark.getLogFileId() + "("
+                    + Long.toHexString(lastLogMark.getLogFileId()) + ".txn), Pos - "
+                    + lastLogMark.getLogFileOffset());
+        }
     }
 
+    /**
+     * Format the entry into a readable format.
+     * 
+     * @param entry 
+     *          ledgerentry to print
+     * @param printMsg 
+     *          Whether printing the message body
+     */
+    private void formatEntry(LedgerEntry entry, boolean printMsg) {
+        long ledgerId = entry.getLedgerId();
+        long entryId = entry.getEntryId();
+        long entrySize = entry.getLength();
+        System.out
+                .println("--------- Lid=" + ledgerId + ", Eid=" + entryId + ", EntrySize=" + entrySize + " ---------");
+        if (printMsg) {
+            formatter.formatEntry(entry.getEntry());
+        }
+    }
+    
     /**
      * Format the message into a readable format.
      *

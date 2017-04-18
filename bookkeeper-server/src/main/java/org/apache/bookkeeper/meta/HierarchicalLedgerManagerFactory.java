@@ -25,7 +25,9 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZKUtil;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.ACL;
 
 /**
  * Hierarchical Ledger Manager Factory
@@ -65,7 +67,8 @@ public class HierarchicalLedgerManagerFactory extends LedgerManagerFactory {
 
     @Override
     public LedgerIdGenerator newLedgerIdGenerator() {
-        return new ZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), HierarchicalLedgerManager.IDGEN_ZNODE);
+        List<ACL> zkAcls = ZkUtils.getACLs(conf);
+        return new ZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), HierarchicalLedgerManager.IDGEN_ZNODE, zkAcls);
     }
 
     @Override
