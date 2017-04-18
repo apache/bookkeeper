@@ -152,6 +152,15 @@ def merge_pr(pr_num, target_ref, title, body, default_pr_reviewers, pr_repo_desc
         else:
             continue_maybe("Unit tests execution FAILED. Do you want to continue with the merge anyway?")
 
+    # Offer to run findbugs and rat before committing
+    result = raw_input('Do you want to validate findbugs and rat after the merge? (y/n): ')
+    if result.lower() == 'y':
+        test_res = subprocess.call('mvn clean install -DskipTests findbugs:check rat:rat'.split())
+        if test_res == 0:
+            print('QA tests execution succeeded')
+        else:
+            continue_maybe("QA tests execution FAILED. Do you want to continue with the merge anyway?")
+
     commit_authors = run_cmd(['git', 'log', 'HEAD..%s' % pr_branch_name,
                              '--pretty=format:%an <%ae>']).split("\n")
     distinct_authors = sorted(set(commit_authors),
@@ -412,8 +421,10 @@ def get_reviewers(pr_num):
         username = None
         useremail = None
         user = get_json("%s/users/%s" % (GITHUB_API_URL, reviewer_id))
-        useremail = user['email'].strip() if user['email'] or None
-        username = user['name'].strip() if user['name'] or useremail
+        if user['email']:
+            useremail = user['email'].strip()
+        if user['name']:
+            username = user['name'].strip()
         if username is None:
             continue
         reviewers_emails.append('{0} <{1}>'.format(username, useremail))
