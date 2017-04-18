@@ -30,7 +30,6 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -44,7 +43,6 @@ import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.*;
-import static org.apache.bookkeeper.util.NativeIO.*;
 
 /**
  * Simple wrapper around FileChannel to add versioning
@@ -192,9 +190,6 @@ class JournalChannel implements Closeable {
             fc.write(bb);
 
             bc = new BufferedChannel(fc, writeBufferSize);
-
-            // sync the file
-            // syncRangeOrForceWrite(0, HEADER_SIZE);
         } else {  // open an existing file
             randomAccessFile = new RandomAccessFile(fn, "r");
             fd = NativeIO.getSysFileDescriptor(randomAccessFile.getFD());
@@ -302,20 +297,6 @@ class JournalChannel implements Closeable {
         fc.close();
     }
 
-    public void startSyncRange(long offset, long bytes) throws IOException {
-        NativeIO.syncFileRangeIfPossible(fd, offset, bytes, SYNC_FILE_RANGE_WRITE);
-    }
-
-    public boolean syncRangeIfPossible(long offset, long bytes) throws IOException {
-        if (NativeIO.syncFileRangeIfPossible(fd, offset, bytes,
-                SYNC_FILE_RANGE_WAIT_BEFORE | SYNC_FILE_RANGE_WRITE | SYNC_FILE_RANGE_WAIT_AFTER)) {
-            removeFromPageCacheIfPossible(offset + bytes);
-            return false;
-        } else {
-            return false;
-        }
-    }
-
     public void forceWrite(boolean forceMetadata) throws IOException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Journal ForceWrite");
@@ -356,15 +337,4 @@ class JournalChannel implements Closeable {
         removeFromPageCacheIfPossible(newForceWritePosition);
     }
 
-    public void syncRangeOrForceWrite(long offset, long bytes) throws IOException {
-        long startTimeNanos = MathUtils.nowInNano();
-        if (!syncRangeIfPossible(offset, bytes)) {
-            forceWriteImpl(false);
-        }
-        // collect stats
-        journalForceWriteCounter.inc();
-        journalForceWriteStats.registerSuccessfulEvent(
-                MathUtils.elapsedMicroSec(startTimeNanos),
-                TimeUnit.MICROSECONDS);
-    }
 }

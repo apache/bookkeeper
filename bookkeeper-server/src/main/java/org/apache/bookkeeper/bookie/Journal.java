@@ -335,12 +335,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
             try {
                 if (shouldForceWrite) {
                     long startTime = MathUtils.nowInNano();
-                    if (enableGroupForceWrites) {
-                        this.logFile.forceWrite(false);
-                    } else {
-                        this.logFile.syncRangeOrForceWrite(this.startFlushPosition,
-                            this.endFlushPosition - this.startFlushPosition);
-                    }
+                    this.logFile.forceWrite(false);
                     journalSyncStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
                 }
                 lastLogMark.setCurLogMark(this.logId, this.endFlushPosition);
@@ -932,10 +927,6 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                             bc.flush(false);
                             lastFlushPosition = bc.position();
 
-                            // start sync the range
-                            if (!enableGroupForceWrites) {
-                                logFile.startSyncRange(prevFlushPosition, lastFlushPosition);
-                            }
                             journalFlushStats.registerSuccessfulEvent(
                                     journalFlushWatcher.stop().elapsedTime(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
 

@@ -29,25 +29,10 @@ public final class NativeIO {
 
     private static final int POSIX_FADV_DONTNEED = 4; /* fadvise.h */
 
-    /**
-     *  Wait upon writeout of all pages in the range before performing the write.
-     */
-    public static final int SYNC_FILE_RANGE_WAIT_BEFORE = 1;
-    /**
-     * Initiate writeout of all those dirty pages in the range which are not presently
-     * under writeback.
-     */
-    public static final int SYNC_FILE_RANGE_WRITE = 2;
-    /**
-     * Wait upon writeout of all pages in the range after performing the write.
-     */
-    public static final int SYNC_FILE_RANGE_WAIT_AFTER = 4;
-
     private static final int FALLOC_FL_KEEP_SIZE = 1;
 
     private static boolean initialized = false;
     private static boolean fadvisePossible = true;
-    private static boolean syncFileRangePossible = true;
     private static boolean sysFallocatePossible = true;
     private static boolean posixFallocatePossible = true;
 
@@ -68,8 +53,6 @@ public final class NativeIO {
     public static native int posix_fallocate(int fd, long offset, long len);
     // fallocate
     public static native int fallocate(int fd, int mode, long offset, long len);
-    // sync_file_range(2)
-    public static native int sync_file_range(int fd, long offset, long len, int flags);
 
     private NativeIO() {}
 
@@ -163,32 +146,6 @@ public final class NativeIO {
             return false;
         }
         return posixFallocatePossible;
-    }
-
-    public static boolean syncFileRangeIfPossible(int fd, long offset, long nbytes, int flags) {
-        if (!initialized || !syncFileRangePossible || fd < 0) {
-            return false;
-        }
-        try {
-            int rc = sync_file_range(fd, offset, nbytes, flags);
-            if (rc != 0) {
-                LOG.error("Failed on syncing file descriptor {}, offset {}, bytes {}, rc {} : {}",
-                        new Object[] { fd, offset, nbytes, rc, Errno.strerror() });
-                return false;
-            }
-        } catch (UnsupportedOperationException uoe) {
-            LOG.warn("sync_file_range isn't supported : ", uoe);
-            syncFileRangePossible = false;
-        }  catch (UnsatisfiedLinkError nle) {
-            LOG.warn("Unsatisfied Link error: sync_file_range failed on file descriptor {}, offset {}, bytes {} : ",
-                    new Object[] { fd, offset, nbytes, nle });
-            syncFileRangePossible = false;
-        } catch (Exception e) {
-            LOG.error("Unknown exception: sync_file_range failed on file descriptor {}, offset {}, bytes {} : ",
-                    new Object[] { fd, offset, nbytes, e });
-            return false;
-        }
-        return syncFileRangePossible;
     }
 
     /**
