@@ -404,7 +404,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
     void writeLac(final long ledgerId, final byte[] masterKey, final long lac, ChannelBuffer toSend, WriteLacCallback cb, Object ctx) {
         final long txnId = getTxnId();
-        final CompletionKey completionKey = new CompletionKey(txnId, OperationType.WRITE_LAC);
+        final CompletionKey completionKey = new V3CompletionKey(txnId, OperationType.WRITE_LAC);
         // writeLac is mostly like addEntry hence uses addEntryTimeout
         completionObjects.put(completionKey,
                 new WriteLacCompletion(writeLacOpLogger, cb, ctx, lac, scheduleTimeout(completionKey, addEntryTimeout)));
@@ -486,7 +486,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
         } else {
             final long txnId = getTxnId();
-            completion = new CompletionKey(txnId, OperationType.ADD_ENTRY);
+            completion = new V3CompletionKey(txnId, OperationType.ADD_ENTRY);
             // Build the request and calculate the total size to be included in the packet.
             BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
                     .setVersion(ProtocolVersion.VERSION_THREE)
@@ -558,7 +558,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
                     BookieProtocol.FLAG_DO_FENCING, masterKey);
         } else {
             final long txnId = getTxnId();
-            completion = new CompletionKey(txnId, OperationType.READ_ENTRY);
+            completion = new V3CompletionKey(txnId, OperationType.READ_ENTRY);
 
             // Build the request and calculate the total size to be included in the packet.
             BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
@@ -627,7 +627,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             completion = new V2CompletionKey(ledgerId, (long) 0, OperationType.READ_LAC);
         } else {
             final long txnId = getTxnId();
-            completion = new CompletionKey(txnId, OperationType.READ_LAC);
+            completion = new V3CompletionKey(txnId, OperationType.READ_LAC);
 
             // Build the request and calculate the total size to be included in the packet.
             BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
@@ -685,7 +685,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
             completion = new V2CompletionKey(ledgerId, entryId, OperationType.READ_ENTRY);
         } else {
             final long txnId = getTxnId();
-            completion = new CompletionKey(txnId, OperationType.READ_ENTRY);
+            completion = new V3CompletionKey(txnId, OperationType.READ_ENTRY);
 
             // Build the request and calculate the total size to be included in the packet.
             BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
@@ -741,7 +741,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
     public void getBookieInfo(final long requested, GetBookieInfoCallback cb, Object ctx) {
         final long txnId = getTxnId();
-        final CompletionKey completionKey = new CompletionKey(txnId, OperationType.GET_BOOKIE_INFO);
+        final CompletionKey completionKey = new V3CompletionKey(txnId, OperationType.GET_BOOKIE_INFO);
         completionObjects.put(completionKey,
                 new GetBookieInfoCompletion(this, getBookieInfoOpLogger, cb, ctx,
                                    scheduleTimeout(completionKey, getBookieInfoTimeout)));
@@ -1594,7 +1594,7 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
 
     // visable for testing
     CompletionKey newCompletionKey(long txnId, OperationType operationType) {
-        return new CompletionKey(txnId, operationType);
+        return new V3CompletionKey(txnId, operationType);
     }
 
     Timeout scheduleTimeout(CompletionKey key, long timeout) {
@@ -1605,23 +1605,18 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         }
     }
 
-    class CompletionKey implements TimerTask {
-        final long txnId;
-        final OperationType operationType;
-        final long requestAt;
+    class V3CompletionKey extends CompletionKey {
 
-        CompletionKey(long txnId, OperationType operationType) {
-            this.txnId = txnId;
-            this.operationType = operationType;
-            this.requestAt = MathUtils.nowInNano();
+        public V3CompletionKey(long txnId, OperationType operationType) {
+            super(txnId, operationType);
         }
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof CompletionKey)) {
+            if (!(obj instanceof V3CompletionKey)) {
                 return false;
             }
-            CompletionKey that = (CompletionKey) obj;
+            V3CompletionKey that = (V3CompletionKey) obj;
             return this.txnId == that.txnId && this.operationType == that.operationType;
         }
 
@@ -1633,6 +1628,19 @@ public class PerChannelBookieClient extends SimpleChannelHandler implements Chan
         @Override
         public String toString() {
             return String.format("TxnId(%d), OperationType(%s)", txnId, operationType);
+        }
+
+    }
+
+    abstract class CompletionKey implements TimerTask {
+        final long txnId;
+        final OperationType operationType;
+        final long requestAt;
+
+        CompletionKey(long txnId, OperationType operationType) {
+            this.txnId = txnId;
+            this.operationType = operationType;
+            this.requestAt = MathUtils.nowInNano();
         }
 
         private long elapsedTime() {
