@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.base.Stopwatch;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -332,6 +333,9 @@ public class GarbageCollectorThread extends SafeRunnable {
         // gc inactive/deleted ledgers
         doGcLedgers();
 
+        Stopwatch scanStopwatch = new Stopwatch();
+        scanStopwatch.start();
+
         LOG.debug("Scanning entry log files to extract metadata and delete empty entry logs if possible.");
         // Extract all of the ledger ID's that comprise all of the entry logs
         // (except for the current new one which is still being written to).
@@ -342,11 +346,13 @@ public class GarbageCollectorThread extends SafeRunnable {
             return;
         }
 
+        long elapsedTimeOnScan = scanStopwatch.elapsedMillis();
 
-
-        LOG.debug("Garbage collecting deleted ledgers' index files again just in case ledgers deleted during scanning.");
-        // gc inactive/deleted ledgers again, just in case ledgers are deleted during scanning entry logs
-        doGcLedgers();
+        if (elapsedTimeOnScan >= gcWaitTime) {
+            LOG.debug("Garbage collecting deleted ledgers' index files again just in case ledgers deleted during scanning.");
+            // gc inactive/deleted ledgers again, just in case ledgers are deleted during scanning entry logs
+            doGcLedgers();
+        }
 
         LOG.debug("Garbage collecting empty entry log files.");
         // gc entry logs
