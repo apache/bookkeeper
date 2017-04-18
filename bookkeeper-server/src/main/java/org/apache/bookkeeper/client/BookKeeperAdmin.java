@@ -37,7 +37,6 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
@@ -58,16 +57,17 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.ZKUtil;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Admin client for BookKeeper clusters
  */
-public class BookKeeperAdmin {
+public class BookKeeperAdmin implements AutoCloseable {
     private final static Logger LOG = LoggerFactory.getLogger(BookKeeperAdmin.class);
     // ZK client instance
     private ZooKeeper zk;
@@ -175,6 +175,7 @@ public class BookKeeperAdmin {
      *             if there is an error shutting down the clients that this
      *             class uses.
      */
+    @Override
     public void close() throws InterruptedException, BKException {
         if (ownsBK) {
             bkc.close();
@@ -902,16 +903,16 @@ public class BookKeeperAdmin {
                     conf.getZkLedgersRootPath(), false);
             boolean availableNodeExists = null != zkc.exists(
                     conf.getZkAvailableBookiesPath(), false);
-
+            List<ACL> zkAcls = ZkUtils.getACLs(conf);
             // Create ledgers root node if not exists
             if (!ledgerRootExists) {
                 zkc.create(conf.getZkLedgersRootPath(), "".getBytes(UTF_8),
-                        Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                        zkAcls, CreateMode.PERSISTENT);
             }
             // create available bookies node if not exists
             if (!availableNodeExists) {
                 zkc.create(conf.getZkAvailableBookiesPath(), "".getBytes(UTF_8),
-                        Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                        zkAcls, CreateMode.PERSISTENT);
             }
 
             // If old data was there then confirm with admin.
@@ -977,7 +978,7 @@ public class BookKeeperAdmin {
             String instanceId = UUID.randomUUID().toString();
             zkc.create(conf.getZkLedgersRootPath() + "/"
                     + BookKeeperConstants.INSTANCEID, instanceId.getBytes(UTF_8),
-                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                    zkAcls, CreateMode.PERSISTENT);
 
             LOG.info("Successfully formatted BookKeeper metadata");
         } finally {
@@ -1025,10 +1026,9 @@ public class BookKeeperAdmin {
                     }
 
                     @Override
-                    public Long next()
-                    throws NoSuchElementException {
-                        try{
-                            if (currentRange == null) {
+                    public Long next() throws NoSuchElementException {
+                        try {
+                            if ((currentRange == null) || (!currentRange.hasNext())) {
                                 currentRange = iterator.next().getLedgers().iterator();
                             }
                         } catch (IOException e) {

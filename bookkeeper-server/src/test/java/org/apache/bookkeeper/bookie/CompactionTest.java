@@ -219,7 +219,10 @@ public class CompactionTest extends BookKeeperClusterTestCase {
                 // Do nothing.
             }
         };
-        Bookie.checkDirectoryStructure(conf.getJournalDir());
+
+        for (File journalDir : conf.getJournalDirs()) {
+            Bookie.checkDirectoryStructure(journalDir);
+        }
         for (File dir : dirManager.getAllLedgerDirs()) {
             Bookie.checkDirectoryStructure(dir);
         }
@@ -229,9 +232,9 @@ public class CompactionTest extends BookKeeperClusterTestCase {
                 dirManager, dirManager, cp, NullStatsLogger.INSTANCE);
         storage.start();
         long startTime = MathUtils.now();
-        Thread.sleep(2000);
         storage.gcThread.enableForceGC();
-        Thread.sleep(1000);
+        storage.gcThread.triggerGC().get(); //major
+        storage.gcThread.triggerGC().get(); //minor
         // Minor and Major compaction times should be larger than when we started
         // this test.
         assertTrue("Minor or major compaction did not trigger even on forcing.",
@@ -602,7 +605,9 @@ public class CompactionTest extends BookKeeperClusterTestCase {
                 // Do nothing.
             }
         };
-        Bookie.checkDirectoryStructure(conf.getJournalDir());
+        for (File journalDir : conf.getJournalDirs()) {
+            Bookie.checkDirectoryStructure(journalDir);
+        }
         for (File dir : dirManager.getAllLedgerDirs()) {
             Bookie.checkDirectoryStructure(dir);
         }

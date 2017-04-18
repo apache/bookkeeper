@@ -30,6 +30,7 @@ import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import java.util.Map;
@@ -45,6 +46,8 @@ import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SnapshotMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Lists;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFFSET;
@@ -82,6 +85,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     LedgerCache ledgerCache;
     private CheckpointSource checkpointSource;
     protected final CheckpointHolder checkpointHolder = new CheckpointHolder();
+    private final CopyOnWriteArrayList<LedgerDeletionListener> ledgerDeletionListeners = Lists.newCopyOnWriteArrayList();
 
     // A sorted map to stored all active ledger ids
     protected final SnapshotMap<Long, Boolean> activeLedgers;
@@ -226,6 +230,14 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     @Override
     public boolean isFenced(long ledgerId) throws IOException {
         return ledgerCache.isFenced(ledgerId);
+    }
+
+    public void setExplicitlac(long ledgerId, ByteBuffer lac) throws IOException {
+        ledgerCache.setExplicitLac(ledgerId, lac);
+    }
+
+    public ByteBuffer getExplicitLac(long ledgerId) {
+        return ledgerCache.getExplicitLac(ledgerId);
     }
 
     @Override
@@ -379,6 +391,10 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     public void deleteLedger(long ledgerId) throws IOException {
         activeLedgers.remove(ledgerId);
         ledgerCache.deleteLedger(ledgerId);
+
+        for (LedgerDeletionListener listener : ledgerDeletionListeners) {
+            listener.ledgerDeleted(ledgerId);
+        }
     }
 
     @Override
@@ -417,6 +433,11 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     @Override
     public BKMBeanInfo getJMXBean() {
         return ledgerCache.getJMXBean();
+    }
+
+    @Override
+    public void registerLedgerDeletionListener(LedgerDeletionListener listener) {
+        ledgerDeletionListeners.add(listener);
     }
 
     protected void processEntry(long ledgerId, long entryId, ByteBuffer entry) throws IOException {

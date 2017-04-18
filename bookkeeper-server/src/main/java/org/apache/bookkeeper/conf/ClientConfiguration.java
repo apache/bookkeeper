@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy;
+import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
@@ -56,6 +57,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String CLIENT_WRITEBUFFER_HIGH_WATER_MARK = "clientWriteBufferHighWaterMark";
     protected final static String CLIENT_CONNECT_TIMEOUT_MILLIS = "clientConnectTimeoutMillis";
     protected final static String NUM_CHANNELS_PER_BOOKIE = "numChannelsPerBookie";
+    protected final static String USE_V2_WIRE_PROTOCOL = "useV2WireProtocol";
     // Read Parameters
     protected final static String READ_TIMEOUT = "readTimeout";
     protected final static String SPECULATIVE_READ_TIMEOUT = "speculativeReadTimeout";
@@ -64,6 +66,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String ADD_ENTRY_QUORUM_TIMEOUT_SEC = "addEntryQuorumTimeoutSec";
     protected final static String READ_ENTRY_TIMEOUT_SEC = "readEntryTimeoutSec";
     protected final static String TIMEOUT_TASK_INTERVAL_MILLIS = "timeoutTaskIntervalMillis";
+    protected final static String EXPLICIT_LAC_INTERVAL = "explicitLacInterval";
     protected final static String PCBC_TIMEOUT_TIMER_TICK_DURATION_MS = "pcbcTimeoutTimerTickDurationMs";
     protected final static String PCBC_TIMEOUT_TIMER_NUM_TICKS = "pcbcTimeoutTimerNumTicks";
     protected final static String TIMEOUT_TIMER_TICK_DURATION_MS = "timeoutTimerTickDurationMs";
@@ -74,6 +77,12 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String BOOKIE_HEALTH_CHECK_INTERVAL_SECONDS = "bookieHealthCheckIntervalSeconds";
     protected final static String BOOKIE_ERROR_THRESHOLD_PER_INTERVAL = "bookieErrorThresholdPerInterval";
     protected final static String BOOKIE_QUARANTINE_TIME_SECONDS = "bookieQuarantineTimeSeconds";
+
+    // Bookie info poll interval
+    protected final static String DISK_WEIGHT_BASED_PLACEMENT_ENABLED = "diskWeightBasedPlacementEnabled";
+    protected final static String GET_BOOKIE_INFO_INTERVAL_SECONDS = "getBookieInfoIntervalSeconds";
+    protected final static String BOOKIE_MAX_MULTIPLE_FOR_WEIGHTED_PLACEMENT = "bookieMaxMultipleForWeightBasedPlacement";
+    protected final static String GET_BOOKIE_INFO_TIMEOUT_SECS = "getBookieInfoTimeoutSecs";
 
     // Number Woker Threads
     protected final static String NUM_WORKER_THREADS = "numWorkerThreads";
@@ -86,8 +95,18 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
     protected final static String TASK_EXECUTION_WARN_TIME_MICROS = "taskExecutionWarnTimeMicros";
 
-    // Client auth provider factory class name
-    protected final static String CLIENT_AUTH_PROVIDER_FACTORY_CLASS = "clientAuthProviderFactoryClass";
+    // Role of the client
+    protected final static String CLIENT_ROLE = "clientRole";
+
+    /**
+     * This client will act as a standard client
+     */
+    public final static String CLIENT_ROLE_STANDARD = "standard";
+
+    /**
+     * This client will act as a system client, like the {@link Auditor}
+     */
+    public final static String CLIENT_ROLE_SYSTEM = "system";
 
     /**
      * Construct a default client-side configuration
@@ -417,6 +436,27 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Use older Bookkeeper wire protocol (no protobuf)
+     *
+     * @return whether or not to use older Bookkeeper wire protocol (no protobuf)
+     */
+    public boolean getUseV2WireProtocol() {
+        return getBoolean(USE_V2_WIRE_PROTOCOL, false);
+    }
+
+    /**
+     * Set whether or not to use older Bookkeeper wire protocol (no protobuf)
+     *
+     * @param useV2WireProtocol
+     *          whether or not to use older Bookkeeper wire protocol (no protobuf)
+     * @return client configuration.
+     */
+    public ClientConfiguration setUseV2WireProtocol(boolean useV2WireProtocol) {
+        setProperty(USE_V2_WIRE_PROTOCOL, useV2WireProtocol);
+        return this;
+    }
+
+    /**
      * Get zookeeper servers to connect
      *
      * @return zookeeper servers
@@ -580,6 +620,29 @@ public class ClientConfiguration extends AbstractConfiguration {
     @Deprecated
     public ClientConfiguration setTimeoutTaskIntervalMillis(long timeoutMillis) {
         setProperty(TIMEOUT_TASK_INTERVAL_MILLIS, Long.toString(timeoutMillis));
+        return this;
+    }
+
+    /**
+     * Get the configured interval between  explicit LACs to bookies.
+     * Generally LACs are piggy-backed on writes, and user can configure
+     * the interval between these protocol messages. A value of '0' disables
+     * sending any explicit LACs.
+     *
+     * @return interval between explicit LACs
+     */
+    public int getExplictLacInterval() {
+        return getInt(EXPLICIT_LAC_INTERVAL, 0);
+    }
+
+    /**
+     * Set the interval to check the need for sending an explicit LAC.
+     * @param interval
+     *        Number of milli seconds between checking the need for sending an explict LAC.
+     * @return Client configuration.
+     */
+    public ClientConfiguration setExplictLacInterval(int interval) {
+        setProperty(EXPLICIT_LAC_INTERVAL, interval);
         return this;
     }
 
@@ -896,26 +959,117 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the client authentication provider factory class name.
-     * If this is not set, no authentication will be used
+     * {@inheritDoc}
+     */
+    @Override
+    public ClientConfiguration setNettyMaxFrameSizeBytes(int maxSize) {
+        super.setNettyMaxFrameSizeBytes(maxSize);
+        return this;
+    }
+ 
+    /**
+     * Get the time interval between successive calls for bookie get info. Default is 24 hours.
      *
-     * @param factoryClass
-     *          the client authentication provider factory class name
+     * @return
+     */
+    public int getGetBookieInfoIntervalSeconds() {
+        return getInt(GET_BOOKIE_INFO_INTERVAL_SECONDS, 24*60*60);
+    }
+
+    /**
+     * Return whether disk weight based placement policy is enabled
+     * @return
+     */
+    public boolean getDiskWeightBasedPlacementEnabled() {
+        return getBoolean(DISK_WEIGHT_BASED_PLACEMENT_ENABLED, false);
+    }
+
+    /**
+     * Returns the max multiple to use for nodes with very high weight
+     * @return max multiple
+     */
+    public int getBookieMaxWeightMultipleForWeightBasedPlacement() {
+        return getInt(BOOKIE_MAX_MULTIPLE_FOR_WEIGHTED_PLACEMENT, 3);
+    }
+
+    /**
+     * Return the timeout value for getBookieInfo request
+     * @return
+     */
+    public int getBookieInfoTimeout() {
+        return getInteger(GET_BOOKIE_INFO_TIMEOUT_SECS, 5);
+    }
+
+    /**
+     * Set whether or not disk weight based placement is enabled.
+     *
+     * @param isEnabled - boolean indicating enabled or not
      * @return client configuration
      */
-    public ClientConfiguration setClientAuthProviderFactoryClass(
-            String factoryClass) {
-        setProperty(CLIENT_AUTH_PROVIDER_FACTORY_CLASS, factoryClass);
+    public ClientConfiguration setDiskWeightBasedPlacementEnabled(boolean isEnabled) {
+        setProperty(DISK_WEIGHT_BASED_PLACEMENT_ENABLED, isEnabled);
         return this;
     }
 
     /**
-     * Get the client authentication provider factory class name. If this returns null, no authentication will take
-     * place.
+     * Set the time interval between successive polls for bookie get info.
      *
-     * @return the client authentication provider factory class name or null.
+     * @param pollInterval
+     * @param unit
+     * @return client configuration
      */
-    public String getClientAuthProviderFactoryClass() {
-        return getString(CLIENT_AUTH_PROVIDER_FACTORY_CLASS, null);
+    public ClientConfiguration setGetBookieInfoIntervalSeconds(int pollInterval, TimeUnit unit) {
+        setProperty(GET_BOOKIE_INFO_INTERVAL_SECONDS, unit.toSeconds(pollInterval));
+        return this;
+    }
+
+    /**
+     * Set the max multiple to use for nodes with very high weight
+     * @param multiple
+     * @return client configuration
+     */
+    public ClientConfiguration setBookieMaxWeightMultipleForWeightBasedPlacement(int multiple) {
+        setProperty(BOOKIE_MAX_MULTIPLE_FOR_WEIGHTED_PLACEMENT, multiple);
+        return this;
+    }
+
+    /**
+     * Set the timeout value in secs for the GET_BOOKIE_INFO request
+     * @param timeout
+     * @return client configuration
+     */
+    public ClientConfiguration setGetBookieInfoTimeout(int timeoutSecs) {
+        setProperty(GET_BOOKIE_INFO_TIMEOUT_SECS, timeoutSecs);
+        return this;
+    }
+
+    /**
+     * Set the client role
+     *
+     * @param role defines how the client will act
+     * @return client configuration
+     */
+    public ClientConfiguration setClientRole(String role) {
+        if (role == null) {
+            throw new NullPointerException();
+        }
+        switch (role) {
+            case CLIENT_ROLE_STANDARD:
+            case CLIENT_ROLE_SYSTEM:
+                break;
+            default:
+                throw new IllegalArgumentException("invalid role "+role);
+        }
+        setProperty(CLIENT_ROLE, role);
+        return this;
+    }
+
+    /**
+     * Get the role of the client
+     *
+     * @return the type of client
+     */
+    public String getClientRole() {
+        return getString(CLIENT_ROLE, CLIENT_ROLE_STANDARD);
     }
 }

@@ -535,15 +535,15 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
     private final Counter flushEmptyQueueCounter;
     private final Counter journalWriteBytes;
 
-    public Journal(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager) {
-        this(conf, ledgerDirsManager, NullStatsLogger.INSTANCE);
+    public Journal(File journalDirectory, ServerConfiguration conf, LedgerDirsManager ledgerDirsManager) {
+        this(journalDirectory, conf, ledgerDirsManager, NullStatsLogger.INSTANCE);
     }
 
-    public Journal(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager, StatsLogger statsLogger) {
+    public Journal(File journalDirectory, ServerConfiguration conf, LedgerDirsManager ledgerDirsManager, StatsLogger statsLogger) {
         super("BookieJournal-" + conf.getBookiePort());
         this.ledgerDirsManager = ledgerDirsManager;
         this.conf = conf;
-        this.journalDirectory = Bookie.getCurrentDirectory(conf.getJournalDir());
+        this.journalDirectory = journalDirectory;
         this.maxJournalSize = conf.getMaxJournalSizeMB() * MB;
         this.journalPreAllocSize = conf.getJournalPreAllocSizeMB() * MB;
         this.journalWriteBufferSize = conf.getJournalWriteBufferSizeKB() * KB;
@@ -580,6 +580,10 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
         flushMaxOutstandingBytesCounter = statsLogger.getCounter(JOURNAL_NUM_FLUSH_MAX_OUTSTANDING_BYTES);
         flushEmptyQueueCounter = statsLogger.getCounter(JOURNAL_NUM_FLUSH_EMPTY_QUEUE);
         journalWriteBytes = statsLogger.getCounter(JOURNAL_WRITE_BYTES);
+    }
+
+    public File getJournalDirectory() {
+        return journalDirectory;
     }
 
     LastLogMark getLastLogMark() {
@@ -783,6 +787,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
      */
     @Override
     public void run() {
+        LOG.info("Starting journal on {}", journalDirectory);
         LinkedList<QueueEntry> toFlush = new LinkedList<QueueEntry>();
         ByteBuffer lenBuff = ByteBuffer.allocate(4);
         ByteBuffer paddingBuff = ByteBuffer.allocate(2 * conf.getJournalAlignmentSize());

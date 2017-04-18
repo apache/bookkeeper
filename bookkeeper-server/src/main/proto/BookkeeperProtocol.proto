@@ -57,6 +57,9 @@ enum OperationType {
     RANGE_ADD_ENTRY = 4;
 
     AUTH = 5;
+    WRITE_LAC = 6;
+    READ_LAC = 7;
+    GET_BOOKIE_INFO = 8;
 }
 
 /**
@@ -74,11 +77,15 @@ message Request {
     optional ReadRequest readRequest = 100;
     optional AddRequest addRequest = 101;
     optional AuthMessage authRequest = 102;
+    optional WriteLacRequest writeLacRequest = 103;
+    optional ReadLacRequest readLacRequest = 104;
+    optional GetBookieInfoRequest getBookieInfoRequest = 105;
 }
 
 message ReadRequest {
     enum Flag {
         FENCE_LEDGER = 1;
+        ENTRY_PIGGYBACK = 2;
     }
     optional Flag flag = 100;
     required int64 ledgerId = 1;
@@ -86,6 +93,10 @@ message ReadRequest {
     required int64 entryId = 2;
     // Used while fencing a ledger.
     optional bytes masterKey = 3;
+    // Used for waiting on last add confirmed update
+    optional int64 previousLAC = 4;
+    // Used as a timeout (in milliseconds) for the long polling request
+    optional int64 timeOut = 5;
 }
 
 message AddRequest {
@@ -99,6 +110,26 @@ message AddRequest {
     required bytes body = 4;
 }
 
+message WriteLacRequest {
+    required int64 ledgerId = 1;
+    required int64 lac = 2;
+    required bytes masterKey = 3;
+    required bytes body = 4;
+}
+
+message ReadLacRequest {
+    required int64 ledgerId = 1;
+}
+
+message GetBookieInfoRequest {
+    enum Flags {
+        TOTAL_DISK_CAPACITY = 0x01;
+        FREE_DISK_SPACE = 0x02;
+    }
+    // bitwise OR of Flags
+    optional int64 requested = 1;
+}
+
 message Response {
 
     required BKPacketHeader header = 1;
@@ -109,6 +140,9 @@ message Response {
     optional ReadResponse readResponse = 100;
     optional AddResponse addResponse = 101;
     optional AuthMessage authResponse = 102;
+    optional WriteLacResponse writeLacResponse = 103;
+    optional ReadLacResponse readLacResponse = 104;
+    optional GetBookieInfoResponse getBookieInfoResponse = 105;
 }
 
 message ReadResponse {
@@ -116,6 +150,9 @@ message ReadResponse {
     required int64 ledgerId = 2;
     required int64 entryId = 3;
     optional bytes body = 4;
+    // Piggyback LAC
+    optional int64 maxLAC = 5;
+    optional int64 lacUpdateTimestamp = 6;
 }
 
 message AddResponse {
@@ -124,11 +161,25 @@ message AddResponse {
     required int64 entryId = 3;
 }
 
-/**
- * Extendible message which auth mechanisms
- * can use to carry their payload.
- */
 message AuthMessage {
     required string authPluginName = 1;
-    extensions 1000 to max;
+    required bytes payload = 2;
+}
+
+message WriteLacResponse {
+    required StatusCode status = 1;
+    required int64 ledgerId = 2;
+}
+
+message ReadLacResponse {
+    required StatusCode status = 1;
+    required int64 ledgerId = 2;
+    optional bytes lacBody = 3; // lac sent by PutLacRequest
+    optional bytes lastEntryBody = 4; // Actual last entry on the disk
+}
+
+message GetBookieInfoResponse {
+    required StatusCode status = 1;
+    optional int64 totalDiskCapacity = 2;
+    optional int64 freeDiskSpace = 3;
 }

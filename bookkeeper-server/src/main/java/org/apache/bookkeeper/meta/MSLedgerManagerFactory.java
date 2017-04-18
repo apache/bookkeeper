@@ -65,6 +65,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.List;
+import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.zookeeper.data.ACL;
 
 /**
  * MetaStore Based Ledger Manager Factory
@@ -179,7 +182,8 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
 
     @Override
     public LedgerIdGenerator newLedgerIdGenerator() {
-        return new ZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), MsLedgerManager.IDGEN_ZNODE);
+        List<ACL> zkAcls = ZkUtils.getACLs(conf);
+        return new ZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), MsLedgerManager.IDGEN_ZNODE, zkAcls);
     }
 
     static class MsLedgerManager implements LedgerManager, MetastoreWatcher {

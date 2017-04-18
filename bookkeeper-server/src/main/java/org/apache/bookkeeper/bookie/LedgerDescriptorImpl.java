@@ -69,6 +69,15 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
     }
 
     @Override
+    void setExplicitLac(ByteBuffer lac) throws IOException {
+        ledgerStorage.setExplicitlac(ledgerId, lac);
+    }
+
+    @Override
+    ByteBuffer getExplicitLac() {
+        return ledgerStorage.getExplicitLac(ledgerId);
+    }
+    @Override
     long addEntry(ByteBuffer entry) throws IOException {
         long ledgerId = entry.getLong();
 

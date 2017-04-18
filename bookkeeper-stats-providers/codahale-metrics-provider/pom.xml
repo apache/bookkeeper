@@ -38,20 +38,24 @@
       <artifactId>bookkeeper-stats-api</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
+
+    <!-- https://mvnrepository.com/artifact/io.dropwizard.metrics/metrics-core -->
     <dependency>
-      <groupId>com.codahale.metrics</groupId>
+      <groupId>io.dropwizard.metrics</groupId>
       <artifactId>metrics-core</artifactId>
-      <version>3.0.1</version>
+      <version>3.1.0</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/io.dropwizard.metrics/metrics-jvm -->
     <dependency>
-      <groupId>com.codahale.metrics</groupId>
+      <groupId>io.dropwizard.metrics</groupId>
       <artifactId>metrics-jvm</artifactId>
-      <version>3.0.1</version>
+      <version>3.1.0</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/io.dropwizard.metrics/metrics-graphite -->
     <dependency>
-      <groupId>com.codahale.metrics</groupId>
+      <groupId>io.dropwizard.metrics</groupId>
       <artifactId>metrics-graphite</artifactId>
-      <version>3.0.1</version>
+      <version>3.1.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>

@@ -28,11 +28,14 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
@@ -42,15 +45,24 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.CheckpointSource;
+import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
+import org.apache.bookkeeper.bookie.EntryLocation;
+import org.apache.bookkeeper.bookie.EntryLogger;
 import org.apache.bookkeeper.bookie.GarbageCollector;
+import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.ScanAndCompareGarbageCollector;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.versioning.Version;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -263,7 +275,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         assertEquals("Should have cleaned first ledger" + first, (long)first, (long)cleaned.poll());
     }
 
-    @Test(timeout=60000)
+    @Test(timeout=120000)
     public void testGcLedgersNotLast() throws Exception {
         final SortedSet<Long> createdLedgers = Collections.synchronizedSortedSet(new TreeSet<Long>());
         final List<Long> cleaned = new ArrayList<Long>();
@@ -299,6 +311,116 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         removeLedger(first);
         garbageCollector.gc(cleaner);
         assertEquals("Should have cleaned something", 1, cleaned.size());
-        assertEquals("Should have cleaned first ledger" + first, (long)first, (long)cleaned.get(0));
+        assertEquals("Should have cleaned first ledger" + first, (long) first, (long) cleaned.get(0));
+    }
+
+    class MockLedgerStorage implements CompactableLedgerStorage {
+
+        @Override
+        public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
+                LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
+                CheckpointSource checkpointSource, StatsLogger statsLogger) throws IOException {
+        }
+
+        @Override
+        public void start() {
+        }
+
+        @Override
+        public void shutdown() throws InterruptedException {
+        }
+
+        @Override
+        public long getLastAddConfirmed(long ledgerId) throws IOException {
+            return 0;
+        }
+
+        @Override
+        public void setExplicitlac(long ledgerId, ByteBuffer lac) throws IOException {
+        }
+
+        @Override
+        public ByteBuffer getExplicitLac(long ledgerId) {
+            return null;
+        }
+
+        @Override
+        public boolean ledgerExists(long ledgerId) throws IOException {
+            return false;
+        }
+
+        @Override
+        public boolean setFenced(long ledgerId) throws IOException {
+            return false;
+        }
+
+        @Override
+        public boolean isFenced(long ledgerId) throws IOException {
+            return false;
+        }
+
+        @Override
+        public void setMasterKey(long ledgerId, byte[] masterKey) throws IOException {
+        }
+
+        @Override
+        public byte[] readMasterKey(long ledgerId) throws IOException, BookieException {
+            return null;
+        }
+
+        @Override
+        public long addEntry(ByteBuffer entry) throws IOException {
+            return 0;
+        }
+
+        @Override
+        public ByteBuffer getEntry(long ledgerId, long entryId) throws IOException {
+            return null;
+        }
+
+        @Override
+        public void flush() throws IOException {
+        }
+
+        @Override
+        public Checkpoint checkpoint(Checkpoint checkpoint) throws IOException {
+            return null;
+        }
+
+        @Override
+        public void deleteLedger(long ledgerId) throws IOException {
+            activeLedgers.remove(ledgerId);
+        }
+
+        @Override
+        public Iterable<Long> getActiveLedgersInRange(long firstLedgerId, long lastLedgerId) {
+            NavigableMap<Long, Boolean> bkActiveLedgersSnapshot = activeLedgers.snapshot();
+            Map<Long, Boolean> subBkActiveLedgers = bkActiveLedgersSnapshot
+                    .subMap(firstLedgerId, true, lastLedgerId, false);
+
+            return subBkActiveLedgers.keySet();
+        }
+
+        @Override
+        public BKMBeanInfo getJMXBean() {
+            return null;
+        }
+
+        @Override
+        public EntryLogger getEntryLogger() {
+            return null;
+        }
+
+        @Override
+        public void updateEntriesLocations(Iterable<EntryLocation> locations) throws IOException {
+        }
+
+        @Override
+        public void registerLedgerDeletionListener(LedgerDeletionListener listener) {
+        }
+
+        @Override
+        public void flushEntriesLocationsIndex() throws IOException {
+        }
     }
 }

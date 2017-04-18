@@ -152,8 +152,24 @@ public interface LedgerStorage {
      */
     void deleteLedger(long ledgerId) throws IOException;
 
+    public static interface LedgerDeletionListener {
+        void ledgerDeleted(long ledgerId);
+    }
+
+    /**
+     * Register a listener for ledgers deletion notifications
+     *
+     * @param listener
+     *            object that will be notified every time a ledger is deleted
+     */
+    void registerLedgerDeletionListener(LedgerDeletionListener listener);
+
     /**
      * Get the JMX management bean for this LedgerStorage
      */
     BKMBeanInfo getJMXBean();
+
+    void setExplicitlac(long ledgerId, ByteBuffer lac) throws IOException;
+
+    ByteBuffer getExplicitLac(long ledgerId);
 }

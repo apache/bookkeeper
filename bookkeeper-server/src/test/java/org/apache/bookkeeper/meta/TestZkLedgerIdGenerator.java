@@ -29,6 +29,7 @@ import junit.framework.TestCase;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.zookeeper.KeeperException.Code;
+import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
 import org.junit.Before;
@@ -55,7 +56,7 @@ public class TestZkLedgerIdGenerator extends TestCase {
         zk = zkutil.getZooKeeperClient();
 
         ledgerIdGenerator = new ZkLedgerIdGenerator(zk,
-                "/test-zk-ledger-id-generator", "idgen");
+                "/test-zk-ledger-id-generator", "idgen", ZooDefs.Ids.OPEN_ACL_UNSAFE);
     }
 
     @Override

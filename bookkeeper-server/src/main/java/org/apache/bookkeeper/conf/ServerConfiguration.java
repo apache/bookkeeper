@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.annotations.Beta;
 
+import com.google.common.collect.Lists;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.util.BookKeeperConstants;
@@ -56,6 +57,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
     // Sync Parameters
     protected final static String FLUSH_INTERVAL = "flushInterval";
+    protected final static String FLUSH_ENTRYLOG_INTERVAL_BYTES = "flushEntrylogBytes";
     // Bookie death watch interval
     protected final static String DEATH_WATCH_INTERVAL = "bookieDeathWatchInterval";
     // Ledger Cache Parameters
@@ -82,10 +84,13 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String ALLOW_LOOPBACK = "allowLoopback";
 
     protected final static String JOURNAL_DIR = "journalDirectory";
+    protected final static String JOURNAL_DIRS = "journalDirectories";
     protected final static String LEDGER_DIRS = "ledgerDirectories";
     protected final static String INDEX_DIRS = "indexDirectories";
+    protected final static String ALLOW_STORAGE_EXPANSION = "allowStorageExpansion";
     // NIO Parameters
     protected final static String SERVER_TCP_NODELAY = "serverTcpNoDelay";
+
     // Zookeeper Parameters
     protected final static String ZK_TIMEOUT = "zkTimeout";
     protected final static String ZK_SERVERS = "zkServers";
@@ -264,6 +269,33 @@ public class ServerConfiguration extends AbstractConfiguration {
         return this;
     }
 
+    /**
+     * Set entry log flush interval in bytes.
+     * 
+     * Default is 0. 0 or less disables this feature and effectively flush
+     * happens on log rotation.
+     *
+     * Flushing in smaller chunks but more frequently reduces spikes in disk
+     * I/O. Flushing too frequently may also affect performance negatively.
+     * 
+     * @return Entry log flush interval in bytes
+     */
+    public long getFlushIntervalInBytes() {
+        return this.getLong(FLUSH_ENTRYLOG_INTERVAL_BYTES, 0);
+    }
+
+    /**
+     * Set entry log flush interval in bytes
+     *
+     * @param flushInterval in bytes
+     * @return server configuration
+     */
+    public ServerConfiguration setFlushIntervalInBytes(long flushInterval) {
+        this.setProperty(FLUSH_ENTRYLOG_INTERVAL_BYTES, Long.toString(flushInterval));
+        return this;
+    }
+    
+    
     /**
      * Get bookie death watch interval
      *
@@ -521,10 +553,46 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Return whether we should allow addition of ledger/index dirs to an existing bookie.
+     *
+     * @return true if the addition is allowed; false otherwise
+     */
+    public boolean getAllowStorageExpansion() {
+        return this.getBoolean(ALLOW_STORAGE_EXPANSION, false);
+    }
+
+    /**
+     * Change the setting of whether or not we should allow ledger/index
+     * dirs to be added to the current set of dirs.
+     *
+     * @param val - true if new ledger/index dirs can be added; false otherwise.
+     *
+     * @return server configuration
+     */
+    public ServerConfiguration setAllowStorageExpansion(boolean val) {
+        this.setProperty(ALLOW_STORAGE_EXPANSION, val);
+        return this;
+    }
+
+    /**
+     * Get dir names to store journal files
+     *
+     * @return journal dir name
+     */
+    public String[] getJournalDirNames() {
+        String[] journalDirs = this.getStringArray(JOURNAL_DIRS);
+        if (journalDirs == null || journalDirs.length == 0) {
+            return new String[] {getJournalDirName()};
+        }
+        return journalDirs;
+    }
+
+    /**
      * Get dir name to store journal files
      *
      * @return journal dir name
      */
+    @Deprecated
     public String getJournalDirName() {
         return this.getString(JOURNAL_DIR, "/tmp/bk-txn");
     }
@@ -537,21 +605,34 @@ public class ServerConfiguration extends AbstractConfiguration {
      * @return server configuration
      */
     public ServerConfiguration setJournalDirName(String journalDir) {
-        this.setProperty(JOURNAL_DIR, journalDir);
+        this.setProperty(JOURNAL_DIRS, new String[] {journalDir});
         return this;
     }
 
     /**
-     * Get dir to store journal files
+     * Set dir names to store journal files
      *
-     * @return journal dir, if no journal dir provided return null
+     * @param journalDirs
+     *          Dir to store journal files
+     * @return server configuration
      */
-    public File getJournalDir() {
-        String journalDirName = getJournalDirName();
-        if (null == journalDirName) {
-            return null;
+    public ServerConfiguration setJournalDirsName(String[] journalDirs) {
+        this.setProperty(JOURNAL_DIRS, journalDirs);
+        return this;
+    }
+
+    /**
+     * Get dirs to store journal files
+     *
+     * @return journal dirs, if no journal dir provided return null
+     */
+    public File[] getJournalDirs() {
+        String[] journalDirNames = getJournalDirNames();
+        File[] journalDirs = new File[journalDirNames.length];
+        for(int i=0 ;i<journalDirNames.length; i++) {
+            journalDirs[i] = new File(journalDirNames[i]);
         }
-        return new File(journalDirName);
+        return journalDirs;
     }
 
     /**
@@ -1688,5 +1769,14 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public String getBookieAuthProviderFactoryClass() {
         return getString(BOOKIE_AUTH_PROVIDER_FACTORY_CLASS, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ServerConfiguration setNettyMaxFrameSizeBytes(int maxSize) {
+        super.setNettyMaxFrameSizeBytes(maxSize);
+        return this;
     }
 }

@@ -84,7 +84,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
     }
 
     // get ledger from all level nodes
-    private long getLedgerId(String...levelNodes) throws IOException {
+    long getLedgerId(String...levelNodes) throws IOException {
         return StringUtils.stringToHierarchicalLedgerId(levelNodes);
     }
 
@@ -151,7 +151,7 @@ class HierarchicalLedgerManager extends AbstractZkLedgerManager {
     /**
      * Process hash nodes in a given path
      */
-    private void asyncProcessLevelNodes(
+    void asyncProcessLevelNodes(
         final String path, final Processor<String> processor,
         final AsyncCallback.VoidCallback finalCb, final Object context,
         final int successRc, final int failureRc) {

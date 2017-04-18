@@ -30,6 +30,7 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.List;
 import java.util.ArrayList;
 import java.lang.reflect.Field;
+import org.apache.zookeeper.ZooDefs;
 
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -54,7 +55,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         f.setAccessible(true);
         f.set(layout, layoutVersion);
 
-        layout.store(zkc, ledgersRootPath);
+        layout.store(zkc, ledgersRootPath, ZooDefs.Ids.OPEN_ACL_UNSAFE);
     }
 
     /**
@@ -159,7 +160,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         conf.setZkLedgersRootPath(root0);
 
         new LedgerLayout("DoesNotExist",
-                         0xdeadbeef).store(zkc, root0);
+                         0xdeadbeef).store(zkc, root0, ZooDefs.Ids.OPEN_ACL_UNSAFE);
 
         try {
             LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
@@ -177,7 +178,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         conf.setZkLedgersRootPath(root1);
 
         new LedgerLayout(FlatLedgerManagerFactory.class.getName(),
-                         0xdeadbeef).store(zkc, root1);
+                         0xdeadbeef).store(zkc, root1, ZooDefs.Ids.OPEN_ACL_UNSAFE);
 
         try {
             LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
