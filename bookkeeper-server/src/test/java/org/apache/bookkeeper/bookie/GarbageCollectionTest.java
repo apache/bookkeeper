@@ -129,7 +129,7 @@ public class GarbageCollectionTest extends BookKeeperClusterTestCase {
         ServerConfiguration newConf = new ServerConfiguration(baseConf);
         newConf.setBookiePort(killConf.getBookiePort());
         newConf.setZkServers(killConf.getZkServers());
-        newConf.setJournalDirName(killConf.getJournalDirName());
+        newConf.setJournalDirsName(killConf.getJournalDirNames());
         newConf.setLedgerDirNames(killConf.getLedgerDirNames());
         newConf.setDiskUsageThreshold(0.95f);
         newConf.setDiskUsageWarnThreshold(0.90f);

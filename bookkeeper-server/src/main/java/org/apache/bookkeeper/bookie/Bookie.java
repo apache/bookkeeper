@@ -748,7 +748,7 @@ public class Bookie extends BookieCriticalThread {
 
         // start sync thread
         syncThread = new SyncThread(conf, getLedgerDirsListener(),
-                                    ledgerStorage, journal);
+                                    ledgerStorage, checkpointSource);
 
         handles = new HandleFactoryImpl(ledgerStorage);
 
