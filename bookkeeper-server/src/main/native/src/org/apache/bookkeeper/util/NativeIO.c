@@ -22,8 +22,16 @@
 #include <fcntl.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
-#include <asm-x86_64/unistd.h>
+#if !defined(_WIN32) && (defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__)))
+  /* UNIX-style OS. ------------------------------------------- */
+  #include <unistd.h>
+  #if (defined(__unit__) || defined(__unix)) && defined(__x86_64__)
+    #include <asm-x86_64/unistd.h>
+  #endif
+#endif
 #include "config.h"
+
+
 
 #if defined(HAVE_FALLOCATE)
 #  define my_fallocate fallocate
