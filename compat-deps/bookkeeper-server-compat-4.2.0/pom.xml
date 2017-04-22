@@ -93,6 +93,10 @@
                   <pattern>org.jboss</pattern>
                   <shadedPattern>org.jboss.bk_v4_2_0</shadedPattern>
                 </relocation>
+                <relocation>
+                  <pattern>com.google.common.base</pattern>
+                  <shadedPattern>com.google.common.base.bk_v4_2_0</shadedPattern>
+                </relocation>
               </relocations>
             </configuration>
           </execution>
