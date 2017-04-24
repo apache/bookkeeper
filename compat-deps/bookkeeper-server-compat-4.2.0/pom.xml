@@ -61,6 +61,7 @@
                   <include>com.google.protobuf:protobuf-java</include>
                   <include>org.apache.*:*</include>
                   <include>org.jboss.*:*</include>
+                  <include>com.google.guava:guava</include>
                   <include>commons-*:*</include>
                 </includes>
                 <excludes>
@@ -93,12 +94,8 @@
                   <shadedPattern>org.jboss.bk_v4_2_0</shadedPattern>
                 </relocation>
                 <relocation>
-                  <pattern>com.google.common.base</pattern>
-                  <shadedPattern>com.google.common.base.bk_v4_2_0</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>com.google.common.util.concurrent</pattern>
-                  <shadedPattern>com.google.common.util.concurrent.bk_v4_2_0</shadedPattern>
+                  <pattern>com.google</pattern>
+                  <shadedPattern>com.google.bk_v4_2_0</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>
