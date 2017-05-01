@@ -142,8 +142,8 @@ public class BenchBookie {
         if (SystemUtils.IS_OS_LINUX) {
             try {
                 eventLoop = new EpollEventLoopGroup();
-            } catch (Exception e) {
-                LOG.warn("Could not use Netty Epoll event loop for benchmark");
+            } catch (Throwable t) {
+                LOG.warn("Could not use Netty Epoll event loop for benchmark {}", t.getMessage());
                 eventLoop = new NioEventLoopGroup();
             }
         } else {
