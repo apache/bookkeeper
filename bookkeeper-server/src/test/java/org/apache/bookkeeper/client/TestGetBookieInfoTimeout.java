@@ -66,16 +66,16 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
     public void setUp() throws Exception {
         super.setUp();
         if (SystemUtils.IS_OS_LINUX) {
-        	try {
-        		eventLoopGroup = new EpollEventLoopGroup();
-        	} catch (Exception e) {
-        		LOG.warn("Could not use Netty Epoll event loop");
-        		eventLoopGroup = new NioEventLoopGroup();
-        	}
+            try {
+                eventLoopGroup = new EpollEventLoopGroup();
+            } catch (Throwable t) {
+                LOG.warn("Could not use Netty Epoll event loop {}", t.getMessage());
+                eventLoopGroup = new NioEventLoopGroup();
+            }
         } else {
-        	eventLoopGroup = new NioEventLoopGroup();
+            eventLoopGroup = new NioEventLoopGroup();
         }
-        
+
         executor = OrderedSafeExecutor.newBuilder()
                 .name("BKClientOrderedSafeExecutor")
                 .numThreads(2)

@@ -234,6 +234,7 @@ public class BookieClientTest {
         ByteBuf bb = Unpooled.buffer(4 + 16);
         bb.writeLong(lid);
         bb.writeLong(eid);
+        bb.writeLong(eid - 1);
         bb.writeInt(i);
         return bb;
     }

@@ -43,7 +43,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <protobuf.version>2.6.1</protobuf.version>
     <guava.version>13.0.1</guava.version>
-    <netty.version>4.1.7.Final</netty.version>
+    <netty.version>4.1.9.Final</netty.version>
     <netty-tcnative.version>2.0.0.Final</netty-tcnative.version>
     <motd-plugin.version>1.4.0.Final</motd-plugin.version>
     <zookeeper.version>3.5.1-alpha</zookeeper.version>
