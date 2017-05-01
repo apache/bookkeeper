@@ -71,10 +71,10 @@ public class ZkLedgerIdGenerator implements LedgerIdGenerator {
 
     @Override
     public void generateLedgerId(final GenericCallback<Long> cb) {
-        generateLedgerIdImpl(cb, zk, ledgerPrefix);
+        generateLedgerIdImpl(cb, zk, ledgerPrefix, zkAcls);
     }
 
-    public static void generateLedgerIdImpl(final GenericCallback<Long> cb, ZooKeeper zk, String ledgerPrefix) {
+    public static void generateLedgerIdImpl(final GenericCallback<Long> cb, ZooKeeper zk, String ledgerPrefix, List<ACL> zkAcls) {
         ZkUtils.asyncCreateFullPathOptimistic(zk, ledgerPrefix, new byte[0], zkAcls,
                 CreateMode.EPHEMERAL_SEQUENTIAL,
                 new StringCallback() {

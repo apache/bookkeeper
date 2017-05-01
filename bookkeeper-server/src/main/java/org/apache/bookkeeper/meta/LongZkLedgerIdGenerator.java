@@ -33,6 +33,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.AsyncCallback.StringCallback;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +64,7 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
     private ZkLedgerIdGenerator shortIdGen;
     private List<String> highOrderDirectories;
     private HighOrderLedgerIdGenPathStatus ledgerIdGenPathStatus;
+    private final List<ACL> zkAcls;
 
     private enum HighOrderLedgerIdGenPathStatus {
         UNKNOWN,
@@ -70,7 +72,7 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
         NOT_PRESENT
     };
 
-    public LongZkLedgerIdGenerator(ZooKeeper zk, String ledgersPath, String idGenZnodeName, ZkLedgerIdGenerator shortIdGen) {
+    public LongZkLedgerIdGenerator(ZooKeeper zk, String ledgersPath, String idGenZnodeName, ZkLedgerIdGenerator shortIdGen, List<ACL> zkAcls) {
         this.zk = zk;
         if (StringUtils.isBlank(idGenZnodeName)) {
             this.ledgerIdGenPath = ledgersPath;
@@ -80,6 +82,7 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
         this.shortIdGen = shortIdGen;
         highOrderDirectories = new ArrayList<String>();
         ledgerIdGenPathStatus = HighOrderLedgerIdGenPathStatus.UNKNOWN;
+        this.zkAcls = zkAcls; 
     }
 
     private void generateLongLedgerIdLowBits(final String ledgerPrefix, long highBits, final GenericCallback<Long> cb) throws KeeperException, InterruptedException, IOException {
@@ -113,7 +116,7 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
                 }
             }
 
-        }, zk, ZkLedgerIdGenerator.createLedgerPrefix(highPath, null));
+        }, zk, ZkLedgerIdGenerator.createLedgerPrefix(highPath, null), zkAcls);
     }
 
     /**

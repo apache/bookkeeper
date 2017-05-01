@@ -17,6 +17,11 @@
  */
 package org.apache.bookkeeper.meta;
 
+import java.util.List;
+
+import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.zookeeper.data.ACL;
+
 /**
  * Legacy Hierarchical Ledger Manager Factory
  */
@@ -26,8 +31,9 @@ public class HierarchicalLedgerManagerFactory extends LegacyHierarchicalLedgerMa
     
     @Override
     public LedgerIdGenerator newLedgerIdGenerator() {
-        ZkLedgerIdGenerator subIdGenerator = new ZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), LegacyHierarchicalLedgerManager.IDGEN_ZNODE);
-        return new LongZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), LongHierarchicalLedgerManager.IDGEN_ZNODE, subIdGenerator);
+        List<ACL> zkAcls = ZkUtils.getACLs(conf);
+        ZkLedgerIdGenerator subIdGenerator = new ZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), LegacyHierarchicalLedgerManager.IDGEN_ZNODE, zkAcls);
+        return new LongZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), LongHierarchicalLedgerManager.IDGEN_ZNODE, subIdGenerator, zkAcls);
     }
     
 }
