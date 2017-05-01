@@ -56,6 +56,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.apache.bookkeeper.replication.ReplicationStats.ELECTION_ATTEMPTS;
+import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.zookeeper.data.ACL;
 
 /**
  * Performing auditor election using Apache ZooKeeper. Using ZooKeeper as a
@@ -147,10 +149,11 @@ public class AuditorElector {
 
     private void createMyVote() throws KeeperException, InterruptedException {
         if (null == myVote || null == zkc.exists(myVote, false)) {
+            List<ACL> zkAcls = ZkUtils.getACLs(conf);
             AuditorVoteFormat.Builder builder = AuditorVoteFormat.newBuilder()
                 .setBookieId(bookieId);
             myVote = zkc.create(getVotePath(PATH_SEPARATOR + VOTE_PREFIX),
-                    TextFormat.printToString(builder.build()).getBytes(UTF_8), Ids.OPEN_ACL_UNSAFE,
+                    TextFormat.printToString(builder.build()).getBytes(UTF_8), zkAcls,
                     CreateMode.EPHEMERAL_SEQUENTIAL);
         }
     }
@@ -161,9 +164,10 @@ public class AuditorElector {
 
     private void createElectorPath() throws UnavailableException {
         try {
+            List<ACL> zkAcls = ZkUtils.getACLs(conf);
             if (zkc.exists(basePath, false) == null) {
                 try {
-                    zkc.create(basePath, new byte[0], Ids.OPEN_ACL_UNSAFE,
+                    zkc.create(basePath, new byte[0], zkAcls,
                             CreateMode.PERSISTENT);
                 } catch (KeeperException.NodeExistsException nee) {
                     // do nothing, someone else could have created it
@@ -172,7 +176,7 @@ public class AuditorElector {
             if (zkc.exists(getVotePath(""), false) == null) {
                 try {
                     zkc.create(getVotePath(""), new byte[0],
-                            Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                            zkAcls, CreateMode.PERSISTENT);
                 } catch (KeeperException.NodeExistsException nee) {
                     // do nothing, someone else could have created it
                 }

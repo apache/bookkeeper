@@ -41,7 +41,6 @@ import org.apache.zookeeper.KeeperException.NodeExistsException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +48,10 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
+
 import java.util.Map;
+import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.zookeeper.data.ACL;
 
 /**
  * This class is responsible for maintaining a consistent view of what bookies
@@ -184,6 +186,10 @@ class BookieWatcher implements Watcher, ChildrenCallback {
         synchronized (this) {
             Set<BookieSocketAddress> readonlyBookies = readOnlyBookieWatcher.getReadOnlyBookies();
             placementPolicy.onClusterChanged(newBookieAddrs, readonlyBookies);
+            if (bk.conf.getDiskWeightBasedPlacementEnabled()) {
+                // start collecting bookieInfo for the newly joined bookies, if any
+                bk.bookieInfoReader.availableBookiesChanged(newBookieAddrs);
+            }
         }
 
         // we don't need to close clients here, because:
@@ -332,7 +338,8 @@ class BookieWatcher implements Watcher, ChildrenCallback {
                     + BookKeeperConstants.READONLY;
             if (null == bk.getZkHandle().exists(readOnlyBookieRegPath, false)) {
                 try {
-                    bk.getZkHandle().create(readOnlyBookieRegPath, new byte[0], Ids.OPEN_ACL_UNSAFE,
+                    List<ACL> zkAcls = ZkUtils.getACLs(conf);
+                    bk.getZkHandle().create(readOnlyBookieRegPath, new byte[0], zkAcls,
                             CreateMode.PERSISTENT);
                 } catch (NodeExistsException e) {
                     // this node is just now created by someone.

@@ -17,14 +17,12 @@
  */
 package org.apache.bookkeeper.meta;
 
+/**
+ * Legacy Hierarchical Ledger Manager Factory
+ */
 public class HierarchicalLedgerManagerFactory extends LegacyHierarchicalLedgerManagerFactory {
 
     public static final String NAME = "hierarchical";
-
-    @Override
-    public LedgerManager newLedgerManager() {
-        return new HierarchicalLedgerManager(conf, zk);
-    }
     
     @Override
     public LedgerIdGenerator newLedgerIdGenerator() {

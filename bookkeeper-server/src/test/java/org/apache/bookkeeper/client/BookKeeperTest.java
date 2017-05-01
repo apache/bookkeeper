@@ -374,8 +374,8 @@ public class BookKeeperTest extends BaseTestCase {
     public void testReadHandleWithExplicitLAC() throws Exception {
         ClientConfiguration confWithExplicitLAC = new ClientConfiguration()
                 .setZkServers(zkUtil.getZooKeeperConnectString());
-        int explictLacInterval = 1;
-        confWithExplicitLAC.setExplictLacInterval(explictLacInterval);
+        int explicitLacIntervalMillis = 1000;
+        confWithExplicitLAC.setExplictLacInterval(explicitLacIntervalMillis);
 
         BookKeeper bkcWithExplicitLAC = new BookKeeper(confWithExplicitLAC);
 
@@ -401,7 +401,7 @@ public class BookKeeperTest extends BaseTestCase {
         // lh.getExplicitLastAddConfirmed() will be <
         // lh.getPiggyBackedLastAddConfirmed(),
         // so it wont make explicit writelac in the first run
-        Thread.sleep((2 * explictLacInterval + 1) * 1000);
+        Thread.sleep((2 * explicitLacIntervalMillis/1000 + 1) * 1000);
         Assert.assertTrue(
                 "Expected LAC of wlh: " + (2 * numOfEntries - 1) + " actual LAC of wlh: " + wlh.getLastAddConfirmed(),
                 (wlh.getLastAddConfirmed() == (2 * numOfEntries - 1)));

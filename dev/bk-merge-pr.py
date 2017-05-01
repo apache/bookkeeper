@@ -74,11 +74,13 @@ DEV_BRANCH_NAME = "master"
 
 DEFAULT_FIX_VERSION = os.environ.get("DEFAULT_FIX_VERSION", "0.9.1.0")
 
-def get_json(url):
+def get_json(url, preview_api = False):
     try:
         request = urllib2.Request(url)
         if GITHUB_OAUTH_KEY:
             request.add_header('Authorization', 'token %s' % GITHUB_OAUTH_KEY)
+        if preview_api:
+            request.add_header('Accept', 'application/vnd.github.black-cat-preview+json')
         return json.load(urllib2.urlopen(request))
     except urllib2.HTTPError as e:
         if "X-RateLimit-Remaining" in e.headers and e.headers["X-RateLimit-Remaining"] == '0':
@@ -149,6 +151,15 @@ def merge_pr(pr_num, target_ref, title, body, default_pr_reviewers, pr_repo_desc
             print('Unit tests execution succeeded')
         else:
             continue_maybe("Unit tests execution FAILED. Do you want to continue with the merge anyway?")
+
+    # Offer to run findbugs and rat before committing
+    result = raw_input('Do you want to validate findbugs and rat after the merge? (y/n): ')
+    if result.lower() == 'y':
+        test_res = subprocess.call('mvn clean install -DskipTests findbugs:check rat:rat'.split())
+        if test_res == 0:
+            print('QA tests execution succeeded')
+        else:
+            continue_maybe("QA tests execution FAILED. Do you want to continue with the merge anyway?")
 
     commit_authors = run_cmd(['git', 'log', 'HEAD..%s' % pr_branch_name,
                              '--pretty=format:%an <%ae>']).split("\n")
@@ -395,10 +406,28 @@ def get_reviewers(pr_num):
             if approval_msg in comment['body'].lower():
                 reviewers_ids.add(comment['user']['login'])
 
+    approval_review_states = ['approved']
+    pr_reviews = get_json('{0}/pulls/{1}/reviews'.format(GITHUB_API_BASE, pr_num), True)
+    for review in pr_reviews:
+        for approval_state in approval_review_states:
+            if approval_state in review['state'].lower():
+                reviewers_ids.add(review['user']['login'])
+
+    if len(reviewers_ids) == 0:
+        fail("No approvals found in this pull request")
+
     reviewers_emails = []
     for reviewer_id in reviewers_ids:
+        username = None
+        useremail = None
         user = get_json("%s/users/%s" % (GITHUB_API_URL, reviewer_id))
-        reviewers_emails += ['%s <%s>' % (user['name'].strip(), user['email'].strip())]
+        if user['email']:
+            useremail = user['email'].strip()
+        if user['name']:
+            username = user['name'].strip()
+        if username is None:
+            continue
+        reviewers_emails.append('{0} <{1}>'.format(username, useremail))
     return ', '.join(reviewers_emails)
 
 def main():

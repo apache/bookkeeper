@@ -19,6 +19,7 @@ package org.apache.bookkeeper.meta;
  */
 
 import java.io.IOException;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,9 +27,11 @@ import org.slf4j.LoggerFactory;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.util.ReflectionUtils;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.ACL;
 
 public abstract class LedgerManagerFactory {
 
@@ -220,8 +223,9 @@ public abstract class LedgerManagerFactory {
 
         layout = new LedgerLayout(factoryClass.getName(),
                 lmFactory.getCurrentVersion());
+        List<ACL> zkAcls = ZkUtils.getACLs(conf);
         try {
-            layout.store(zk, ledgerRootPath);
+            layout.store(zk, ledgerRootPath, zkAcls);
         } catch (KeeperException.NodeExistsException nee) {
             LedgerLayout layout2 = LedgerLayout.readLayout(zk, ledgerRootPath);
             if (!layout2.equals(layout)) {

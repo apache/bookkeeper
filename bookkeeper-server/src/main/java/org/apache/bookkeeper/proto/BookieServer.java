@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.lang.Integer;
+import java.util.Arrays;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
@@ -420,7 +421,7 @@ public class BookieServer {
         String hello = String.format(
                            "Hello, I'm your bookie, listening on port %1$s. ZKServers are on %2$s. Journals are in %3$s. Ledgers are stored in %4$s.",
                            conf.getBookiePort(), conf.getZkServers(),
-                           conf.getJournalDirName(), sb);
+                           Arrays.asList(conf.getJournalDirNames()), sb);
         LOG.info(hello);
         try {
             // Initialize Stats Provider
