@@ -470,12 +470,36 @@ public class LedgerHandle implements AutoCloseable {
      * @param lastEntry
      *          id of last entry of sequence (included)
      *
+     * @see #asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)
      */
     public Enumeration<LedgerEntry> readEntries(long firstEntry, long lastEntry)
             throws InterruptedException, BKException {
         CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
 
         asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
+
+        return SynchCallbackUtils.waitForResult(counter);
+    }
+
+    /**
+     * Read a sequence of entries synchronously, allowing to read after the LastAddConfirmed range.<br>
+     * This is the same of
+     * {@link #asyncReadUnconfirmedEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object) }
+     *
+     * @param firstEntry
+     *          id of first entry of sequence (included)
+     * @param lastEntry
+     *          id of last entry of sequence (included)
+     *
+     * @see #readEntries(long, long)
+     * @see #asyncReadUnconfirmedEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)
+     * @see #asyncReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, java.lang.Object)
+     */
+    public Enumeration<LedgerEntry> readUnconfirmedEntries(long firstEntry, long lastEntry)
+            throws InterruptedException, BKException {
+        CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
+
+        asyncReadUnconfirmedEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
 
         return SynchCallbackUtils.waitForResult(counter);
     }
@@ -505,6 +529,45 @@ public class LedgerHandle implements AutoCloseable {
             LOG.error("ReadException on ledgerId:{} firstEntry:{} lastEntry:{}",
                     new Object[] { ledgerId, firstEntry, lastEntry });
             cb.readComplete(BKException.Code.ReadException, this, null, ctx);
+            return;
+        }
+
+        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx);
+    }
+
+    /**
+     * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
+     * <br>This is the same of
+     * {@link #asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object) }
+     * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possibile to
+     * read entries for which the writer has not received the acknowledge yet. <br>
+     * For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully
+     * received the acknowledge.<br>
+     * For entries outside that range it is possible that the writer never received the acknoledge
+     * and so there is the risk that the reader is seeing entries before the writer and this could result in a consistency
+     * issue in some cases.<br>
+     * With this method you can even read entries before the LastAddConfirmed and entries after it with one call,
+     * the expected consistency will be as described above for each subrange of ids.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence
+     * @param lastEntry
+     *          id of last entry of sequence
+     * @param cb
+     *          object implementing read callback interface
+     * @param ctx
+     *          control object
+     *
+     * @see #asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)
+     * @see #asyncReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, java.lang.Object)
+     * @see #readUnconfirmedEntries(long, long)
+     */
+    public void asyncReadUnconfirmedEntries(long firstEntry, long lastEntry, ReadCallback cb, Object ctx) {
+        // Little sanity check
+        if (firstEntry < 0 || firstEntry > lastEntry) {
+            LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{} lastEntry:{}",
+                    new Object[] { ledgerId, firstEntry, lastEntry });
+            cb.readComplete(BKException.Code.IncorrectParameterException, this, null, ctx);
             return;
         }
 
