@@ -164,7 +164,8 @@ public abstract class LedgerManagerFactory {
 
         // handle V2 layout case
         if (factoryClass != null &&
-            !layout.getManagerFactoryClass().equals(factoryClass.getName())) {
+            !layout.getManagerFactoryClass().equals(factoryClass.getName()) &&
+            conf.getProperty(AbstractConfiguration.LEDGER_MANAGER_FACTORY_DISABLE_CLASS_CHECK) == null) { // Disable should ONLY happen during compatibility testing.
 
             throw new IOException("Configured layout " + factoryClass.getName()
                                 + " does not match existing layout "  + layout.getManagerFactoryClass());
@@ -210,6 +211,8 @@ public abstract class LedgerManagerFactory {
                     factoryClass = FlatLedgerManagerFactory.class;
                 } else if (HierarchicalLedgerManagerFactory.NAME.equals(lmType)) {
                     factoryClass = HierarchicalLedgerManagerFactory.class;
+                } else if (LongHierarchicalLedgerManagerFactory.NAME.equals(lmType)) {
+                    factoryClass = LongHierarchicalLedgerManagerFactory.class;
                 } else {
                     throw new IOException("Unknown ledger manager type: "
                             + lmType);

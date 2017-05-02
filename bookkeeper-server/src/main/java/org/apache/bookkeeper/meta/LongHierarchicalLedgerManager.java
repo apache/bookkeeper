@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
+import java.util.TreeSet;
 
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
@@ -37,32 +38,35 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * LongHierarchical Ledger Manager which manages ledger meta in zookeeper using 4-level hierarchical znodes.
+ * LongHierarchical Ledger Manager which manages ledger meta in zookeeper using 5-level hierarchical znodes.
  *
  * <p>
  * LongHierarchicalLedgerManager splits the generated id into 5 parts (3-4-4-4-4):
  *
  * <pre>
- * &lt;level1 (3 digits)&gt;&lt;level2 (4 digits)&gt;&lt;level3 (4 digits)&gt;&lt;level4 (4 digits)&gt;
- * &lt;level5 (4 digits)&gt;
+ * &lt;level0 (3 digits)&gt;&lt;level1 (4 digits)&gt;&lt;level2 (4 digits)&gt;&lt;level3 (4 digits)&gt;
+ * &lt;level4 (4 digits)&gt;
  * </pre>
  *
  * These 5 parts are used to form the actual ledger node path used to store ledger metadata:
  *
  * <pre>
- * (ledgersRootPath) / level1 / level2 / level3 / level4 / L(level5)
+ * (ledgersRootPath) / level0 / level1 / level2 / level3 / L(level4)
  * </pre>
  *
  * E.g Ledger 0000000000000000001 is split into 5 parts <i>000</i>, <i>0000</i>, <i>0000</i>, <i>0000</i>, <i>0001</i>,
  * which is stored in <i>(ledgersRootPath)/000/0000/0000/0000/L0001</i>. So each znode could have at most 10000 ledgers,
  * which avoids errors during garbage collection due to lists of children that are too long.
+ *
  */
-class LongHierarchicalLedgerManager extends HierarchicalLedgerManager {
+class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
 
     static final Logger LOG = LoggerFactory.getLogger(LongHierarchicalLedgerManager.class);
 
+    static final String IDGEN_ZNODE = "idgen-long";
     private static final String MAX_ID_SUFFIX = "9999";
     private static final String MIN_ID_SUFFIX = "0000";
+
 
     /**
      * Constructor
@@ -77,11 +81,6 @@ class LongHierarchicalLedgerManager extends HierarchicalLedgerManager {
     }
 
     @Override
-    public String getLedgerPath(long ledgerId) {
-        return ledgerRootPath + StringUtils.getLongHierarchicalLedgerPath(ledgerId);
-    }
-
-    @Override
     public long getLedgerId(String pathName) throws IOException {
         if (!pathName.startsWith(ledgerRootPath)) {
             throw new IOException("it is not a valid hashed path name : " + pathName);
@@ -89,54 +88,68 @@ class LongHierarchicalLedgerManager extends HierarchicalLedgerManager {
         String hierarchicalPath = pathName.substring(ledgerRootPath.length() + 1);
         return StringUtils.stringToLongHierarchicalLedgerId(hierarchicalPath);
     }
+    
+    @Override
+    public String getLedgerPath(long ledgerId) {
+        return ledgerRootPath + StringUtils.getLongHierarchicalLedgerPath(ledgerId);
+    }
 
     //
     // Active Ledger Manager
     //
 
     /**
-     * Get the smallest cache id in a specified node /level1/level2/level3/level4
+     * Get the smallest cache id in a specified node /level0/level1/level2/level3
      *
-     * @param level1
+     * @param level0
      *            1st level node name
-     * @param level2
+     * @param level1
      *            2nd level node name
-     * @param level3
+     * @param level2
      *            3rd level node name
-     * @param level4
+     * @param level3
      *            4th level node name
      * @return the smallest ledger id
      */
-    private long getStartLedgerIdByLevel(String level1, String level2, String level3, String level4)
+    private long getStartLedgerIdByLevel(String level0, String level1, String level2, String level3)
             throws IOException {
-        return getLedgerId(level1, level2, level3, level4, MIN_ID_SUFFIX);
+        return getLedgerId(level0, level1, level2, level3, MIN_ID_SUFFIX);
     }
 
     /**
-     * Get the largest cache id in a specified node /level1/level2/level3/level4
+     * Get the largest cache id in a specified node /level0/level1/level2/level3
      *
-     * @param level1
+     * @param level0
      *            1st level node name
-     * @param level2
+     * @param level1
      *            2nd level node name
-     * @param level3
+     * @param level2
      *            3rd level node name
-     * @param level4
+     * @param level3
      *            4th level node name
      * @return the largest ledger id
      */
-    private long getEndLedgerIdByLevel(String level1, String level2, String level3, String level4) throws IOException {
-        return getLedgerId(level1, level2, level3, level4, MAX_ID_SUFFIX);
+    private long getEndLedgerIdByLevel(String level0, String level1, String level2, String level3) throws IOException {
+        return getLedgerId(level0, level1, level2, level3, MAX_ID_SUFFIX);
     }
 
     @Override
     public void asyncProcessLedgers(final Processor<Long> processor, final AsyncCallback.VoidCallback finalCb,
             final Object context, final int successRc, final int failureRc) {
+
+        // If it succeeds, proceed with our own recursive ledger processing for the 63-bit id ledgers
         asyncProcessLevelNodes(ledgerRootPath,
                 new RecursiveProcessor(0, ledgerRootPath, processor, context, successRc, failureRc), finalCb, context,
                 successRc, failureRc);
     }
 
+    protected static boolean isSpecialZnode(String znode) {
+        // Check nextnode length. All paths in long hierarchical format (3-4-4-4-4)
+        // are at least 3 characters long. This prevents picking up any old-style
+        // hierarchical paths (2-4-4)
+        return LegacyHierarchicalLedgerManager.isSpecialZnode(znode) || znode.length() < 3;
+    }
+    
     private class RecursiveProcessor implements Processor<String> {
         private final int level;
         private final String path;
@@ -167,7 +180,7 @@ class LongHierarchicalLedgerManager extends HierarchicalLedgerManager {
                         context, successRc, failureRc);
             } else {
                 // process each ledger after all ledger are processed, cb will be call to continue processing next
-                // level5 node
+                // level4 node
                 asyncProcessLedgersInSingleNode(nodePath, processor, cb, context, successRc, failureRc);
             }
         }
@@ -194,7 +207,7 @@ class LongHierarchicalLedgerManager extends HierarchicalLedgerManager {
             curLevelNodes = new ArrayList<String>(Collections.nCopies(4, (String) null));
         }
 
-        private void initialize(String path, int level) throws KeeperException, InterruptedException, IOException {
+        synchronized private void initialize(String path, int level) throws KeeperException, InterruptedException, IOException {
             List<String> levelNodes = zk.getChildren(path, null);
             Collections.sort(levelNodes);
             if (level == 0) {
@@ -217,6 +230,9 @@ class LongHierarchicalLedgerManager extends HierarchicalLedgerManager {
             }
             String curLNode = curLevelNodes.get(level);
             if (curLNode != null) {
+                // Traverse down through levels 0-3
+                // The nextRange becomes a listing of the children
+                // in the level4 directory.
                 if (level != 3) {
                     String nextLevelPath = path + "/" + curLNode;
                     initialize(nextLevelPath, level + 1);
@@ -229,7 +245,13 @@ class LongHierarchicalLedgerManager extends HierarchicalLedgerManager {
             }
         }
 
-        private boolean moveToNext(int level) throws KeeperException, InterruptedException {
+        private void clearHigherLevels(int level) {
+            for(int i = level+1; i < 4; i++) {
+                curLevelNodes.set(i, null);
+            }
+        }
+
+        synchronized private boolean moveToNext(int level) throws KeeperException, InterruptedException {
             Iterator<String> curLevelNodesIter = levelNodesIter.get(level);
             boolean movedToNextNode = false;
             if (level == 0) {
@@ -239,6 +261,7 @@ class LongHierarchicalLedgerManager extends HierarchicalLedgerManager {
                         continue;
                     } else {
                         curLevelNodes.set(level, nextNode);
+                        clearHigherLevels(level);
                         movedToNextNode = true;
                         break;
                     }
@@ -247,6 +270,7 @@ class LongHierarchicalLedgerManager extends HierarchicalLedgerManager {
                 if (curLevelNodesIter.hasNext()) {
                     String nextNode = curLevelNodesIter.next();
                     curLevelNodes.set(level, nextNode);
+                    clearHigherLevels(level);
                     movedToNextNode = true;
                 } else {
                     movedToNextNode = moveToNext(level - 1);
@@ -261,6 +285,7 @@ class LongHierarchicalLedgerManager extends HierarchicalLedgerManager {
                         levelNodesIter.set(level, newCurLevelNodesIter);
                         if (newCurLevelNodesIter.hasNext()) {
                             curLevelNodes.set(level, newCurLevelNodesIter.next());
+                            clearHigherLevels(level);
                             movedToNextNode = true;
                         }
                     }
@@ -306,15 +331,15 @@ class LongHierarchicalLedgerManager extends HierarchicalLedgerManager {
             return r;
         }
 
-        LedgerRange getLedgerRangeByLevel(List<String> curLevelNodes) throws IOException {
-            String level1 = curLevelNodes.get(0);
-            String level2 = curLevelNodes.get(1);
-            String level3 = curLevelNodes.get(2);
-            String level4 = curLevelNodes.get(3);
+        private LedgerRange getLedgerRangeByLevel(List<String> curLevelNodes) throws IOException {
+            String level0 = curLevelNodes.get(0);
+            String level1 = curLevelNodes.get(1);
+            String level2 = curLevelNodes.get(2);
+            String level3 = curLevelNodes.get(3);
 
             StringBuilder nodeBuilder = new StringBuilder();
-            nodeBuilder.append(ledgerRootPath).append("/").append(level1).append("/").append(level2).append("/")
-                    .append(level3).append("/").append(level4);
+            nodeBuilder.append(ledgerRootPath).append("/").append(level0).append("/").append(level1).append("/")
+                    .append(level2).append("/").append(level3);
             String nodePath = nodeBuilder.toString();
             List<String> ledgerNodes = null;
             try {
@@ -324,11 +349,11 @@ class LongHierarchicalLedgerManager extends HierarchicalLedgerManager {
             }
             NavigableSet<Long> zkActiveLedgers = ledgerListToSet(ledgerNodes, nodePath);
             if (LOG.isDebugEnabled()) {
-                LOG.debug("All active ledgers from ZK for hash node " + level1 + "/" + level2 + "/" + level3 + "/"
-                        + level4 + " : " + zkActiveLedgers);
+                LOG.debug("All active ledgers from ZK for hash node " + level0 + "/" + level1 + "/" + level2 + "/"
+                        + level3 + " : " + zkActiveLedgers);
             }
-            return new LedgerRange(zkActiveLedgers.subSet(getStartLedgerIdByLevel(level1, level2, level3, level4), true,
-                    getEndLedgerIdByLevel(level1, level2, level3, level4), true));
+            return new LedgerRange(zkActiveLedgers.subSet(getStartLedgerIdByLevel(level0, level1, level2, level3), true,
+                    getEndLedgerIdByLevel(level0, level1, level2, level3), true));
         }
     }
 }

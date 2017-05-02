@@ -24,6 +24,7 @@ import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.MSLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -882,8 +883,11 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
     public void ensurePasswordUsedForOldLedgers() throws Exception {
         // This test bases on creating old ledgers in version 4.1.0, which only
         // supports ZooKeeper based flat and hierarchical LedgerManagerFactory.
-        // So we ignore it for MSLedgerManagerFactory.
+        // So we ignore it for MSLedgerManagerFactory and LongHierarchicalLedgerManagerFactory.
         if (MSLedgerManagerFactory.class.getName().equals(ledgerManagerFactory)) {
+            return;
+        }
+        if (LongHierarchicalLedgerManagerFactory.class.getName().equals(ledgerManagerFactory)) {
             return;
         }
 
