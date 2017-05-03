@@ -130,8 +130,7 @@ interface ExplicitLacFlushPolicy {
                 lh.bk.mainWorkerPool.submit(new SafeRunnable() {
                     @Override
                     public void safeRun() {
-                    	ByteBuf toSend = lh.macManager
-                                .computeDigestAndPackageForSendingLac(lh.getLastAddConfirmed());
+                        ByteBuf toSend = lh.macManager.computeDigestAndPackageForSendingLac(lh.getLastAddConfirmed());
                         op.initiate(toSend);
                     }
                 });

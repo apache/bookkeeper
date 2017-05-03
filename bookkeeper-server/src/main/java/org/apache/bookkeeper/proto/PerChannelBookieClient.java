@@ -294,7 +294,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         // Set up the ClientBootStrap so we can create a new Channel connection to the bookie.
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(eventLoopGroup);
-        if (SystemUtils.IS_OS_LINUX && eventLoopGroup instanceof EpollEventLoopGroup) {
+        if (eventLoopGroup instanceof EpollEventLoopGroup) {
             bootstrap.channel(EpollSocketChannel.class);
         } else if (eventLoopGroup instanceof DefaultEventLoopGroup) {
             bootstrap.channel(LocalChannel.class);

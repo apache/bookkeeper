@@ -113,8 +113,8 @@ class BookieNettyServer {
             if (SystemUtils.IS_OS_LINUX) {
                 try {
                     eventLoopGroup = new EpollEventLoopGroup(numThreads, threadFactory);
-                } catch (Throwable t) {
-                    LOG.warn("Could not use Netty Epoll event loop for bookie server: {}", t.getMessage());
+                } catch (ExceptionInInitializerError | NoClassDefFoundError | UnsatisfiedLinkError e) {
+                    LOG.warn("Could not use Netty Epoll event loop for bookie server: {}", e.getMessage());
                     eventLoopGroup = new NioEventLoopGroup(numThreads, threadFactory);
                 }
             } else {
@@ -179,13 +179,13 @@ class BookieNettyServer {
             bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR,
                     new AdaptiveRecvByteBufAllocator(conf.getRecvByteBufAllocatorSizeMin(),
                             conf.getRecvByteBufAllocatorSizeInitial(), conf.getRecvByteBufAllocatorSizeMax()));
-    
+
             if (eventLoopGroup instanceof EpollEventLoopGroup) {
                 bootstrap.channel(EpollServerSocketChannel.class);
             } else {
                 bootstrap.channel(NioServerSocketChannel.class);
             }
-    
+
             bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 protected void initChannel(SocketChannel ch) throws Exception {
@@ -197,21 +197,21 @@ class BookieNettyServer {
 
                     BookieSideConnectionPeerContextHandler contextHandler = new BookieSideConnectionPeerContextHandler();
                     ChannelPipeline pipeline = ch.pipeline();
-    
+
                     pipeline.addLast("lengthbaseddecoder", new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));
                     pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
-    
+
                     pipeline.addLast("bookieProtoDecoder", requestDecoder);
                     pipeline.addLast("bookieProtoEncoder", responseEncoder);
                     pipeline.addLast("bookieAuthHandler", new AuthHandler.ServerSideHandler(contextHandler.getConnectionPeer(), authProviderFactory));
-    
+
                     ChannelInboundHandler requestHandler = isRunning.get()
                             ? new BookieRequestHandler(conf, requestProcessor, allChannels) : new RejectRequestHandler();
                     pipeline.addLast("bookieRequestHandler", requestHandler);
-    
+
                 }
             });
-    
+
             // Bind and start to accept incoming connections
             bootstrap.bind(address.getAddress(), address.getPort()).sync();
         }
@@ -280,9 +280,9 @@ class BookieNettyServer {
             eventLoopGroup.shutdownGracefully();
         }
         if (jvmEventLoopGroup != null) {
+            LocalBookiesRegistry.unregisterLocalBookieAddress(bookieAddress);
             jvmEventLoopGroup.shutdownGracefully();
-            LocalBookiesRegistry.registerLocalBookieAddress(bookieAddress);
-	}
+        }
 
         authProviderFactory.close();
     }
