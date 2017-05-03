@@ -234,8 +234,6 @@ class PendingAddOp implements WriteCallback, TimerTask {
     }
 
     void submitCallback(final int rc) {
-        ReferenceCountUtil.release(toSend);
-
         if (null != timeout) {
             timeout.cancel();
         }
@@ -253,6 +251,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
             addOpLogger.registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
         }
         cb.addComplete(rc, lh, entryId, ctx);
+        ReferenceCountUtil.release(toSend);
     }
 
     @Override

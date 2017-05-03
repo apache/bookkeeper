@@ -217,6 +217,7 @@ public class LedgerHandleAdv extends LedgerHandle {
                     ByteBuf toSend = macManager.computeDigestAndPackageForSending(
                                                op.getEntryId(), lastAddConfirmed, currentLength, data, offset, length);
                     op.initiate(toSend, length);
+                    toSend.release();
                 }
             });
         } catch (RejectedExecutionException e) {
