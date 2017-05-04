@@ -258,7 +258,15 @@ public class OrderedSafeExecutor {
         }
 
         return threads[MathUtils.signSafeMod(orderingKey.hashCode(), threads.length)];
+    }
 
+    ExecutorService chooseThread(long orderingKey) {
+        // skip hashcode generation in this special case
+        if (threads.length == 1) {
+            return threads[0];
+        }
+
+        return threads[MathUtils.signSafeMod(orderingKey, threads.length)];
     }
 
     private SafeRunnable timedRunnable(SafeRunnable r) {
@@ -383,13 +391,31 @@ public class OrderedSafeExecutor {
         return chooseThread(orderingKey).scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
 
-    private long getThreadID(Object orderingKey) {
+    /**
+     * schedules a one time action to execute with an ordering guarantee on the key
+     * @param orderingKey
+     * @param r
+     */
+    public void submitOrdered(long orderingKey, SafeRunnable r) {
+        chooseThread(orderingKey).submit(r);
+    }
+
+    /**
+     * schedules a one time action to execute with an ordering guarantee on the key
+     * @param orderingKey
+     * @param r
+     */
+    public void submitOrdered(int orderingKey, SafeRunnable r) {
+        chooseThread(orderingKey).submit(r);
+    }
+
+    private long getThreadID(long orderingKey) {
         // skip hashcode generation in this special case
         if (threadIds.length == 1) {
             return threadIds[0];
         }
 
-        return threadIds[MathUtils.signSafeMod(orderingKey.hashCode(), threadIds.length)];
+        return threadIds[MathUtils.signSafeMod(orderingKey, threadIds.length)];
     }
 
     public void shutdown() {
@@ -415,14 +441,14 @@ public class OrderedSafeExecutor {
         private final Logger LOG = LoggerFactory.getLogger(OrderedSafeGenericCallback.class);
 
         private final OrderedSafeExecutor executor;
-        private final Object orderingKey;
+        private final long orderingKey;
 
         /**
          * @param executor The executor on which to run the callback
          * @param orderingKey Key used to decide which thread the callback
          *                    should run on.
          */
-        public OrderedSafeGenericCallback(OrderedSafeExecutor executor, Object orderingKey) {
+        public OrderedSafeGenericCallback(OrderedSafeExecutor executor, long orderingKey) {
             this.executor = executor;
             this.orderingKey = orderingKey;
         }
