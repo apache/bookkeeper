@@ -183,6 +183,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 return;
             }
 
+            toSend.retain();
             client.obtain(new GenericCallback<PerChannelBookieClient>() {
                 @Override
                 public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
@@ -197,9 +198,11 @@ public class BookieClient implements PerChannelBookieClientFactory {
                         } catch (RejectedExecutionException re) {
                             cb.writeLacComplete(getRc(BKException.Code.InterruptedException), ledgerId, addr, ctx);
                         }
-                        return;
+                    } else {
+                        pcbc.writeLac(ledgerId, masterKey, lac, toSend, cb, ctx);
                     }
-                    pcbc.writeLac(ledgerId, masterKey, lac, toSend, cb, ctx);
+
+                    toSend.release();
                 }
             });
         } finally {
