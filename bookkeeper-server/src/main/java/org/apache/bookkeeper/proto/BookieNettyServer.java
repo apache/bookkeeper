@@ -49,6 +49,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.epoll.EpollChannelConfig;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.group.ChannelGroup;
@@ -85,7 +86,7 @@ class BookieNettyServer {
     final RequestProcessor requestProcessor;
     final AtomicBoolean isRunning = new AtomicBoolean(false);
     final Object suspensionLock = new Object();
-    boolean suspended = false;
+    volatile boolean suspended = false;
     ChannelGroup allChannels;
     final BookieSocketAddress bookieAddress;
 
@@ -153,7 +154,17 @@ class BookieNettyServer {
         synchronized (suspensionLock) {
             suspended = true;
             for (Channel channel : allChannels) {
-                channel.config().setAutoRead(false);
+                // To suspend processing in the bookie, submit a task
+                // that keeps the event loop busy until resume is
+                // explicitely invoked
+                channel.eventLoop().submit(() -> {
+                    while (suspended && isRunning()) {
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException e) {
+                        }
+                    }
+                });
             }
         }
     }
