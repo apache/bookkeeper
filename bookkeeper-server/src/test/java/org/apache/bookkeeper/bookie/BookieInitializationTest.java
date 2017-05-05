@@ -268,8 +268,10 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             bs2.start();
             fail("Should throw BindException, as the bk server is already running!");
         } catch (BindException e) {
+            // Ok
+        } catch (IOException e) {
             Assert.assertTrue("BKServer allowed duplicate Startups!",
-                    e.getMessage().contains("Address already in use"));
+                    e.getMessage().contains("bind"));
         }
     }
 
@@ -291,7 +293,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             fail("Should throw ConnectionLossException as ZKServer is not running!");
         } catch (KeeperException.ConnectionLossException e) {
             // expected behaviour
-        } 
+        }
     }
 
     /**
