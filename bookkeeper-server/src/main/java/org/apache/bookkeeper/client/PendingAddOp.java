@@ -59,6 +59,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
 
     DistributionSchedule.AckSet ackSet;
     boolean completed = false;
+    boolean cbCompleted = false;
 
     LedgerHandle lh;
     boolean isRecoveryAdd = false;
@@ -155,6 +156,11 @@ class PendingAddOp implements WriteCallback, TimerTask {
             return;
         }
 
+        // Ignore pendingAddOps that have already completed callbacks
+        if (cbCompleted) {
+            return;
+        }
+
         if (LOG.isDebugEnabled()) {
             LOG.debug("Unsetting success for ledger: " + lh.ledgerId + " entry: " + entryId + " bookie index: "
                       + bookieIndex);
@@ -234,6 +240,8 @@ class PendingAddOp implements WriteCallback, TimerTask {
     }
 
     void submitCallback(final int rc) {
+        ReferenceCountUtil.release(toSend);
+
         if (null != timeout) {
             timeout.cancel();
         }
@@ -251,7 +259,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
             addOpLogger.registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
         }
         cb.addComplete(rc, lh, entryId, ctx);
-        ReferenceCountUtil.release(toSend);
+        cbCompleted = true;
     }
 
     @Override
