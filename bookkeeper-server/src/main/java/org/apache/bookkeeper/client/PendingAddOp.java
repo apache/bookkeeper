@@ -68,6 +68,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
     Timeout timeout = null;
 
     OpStatsLogger addOpLogger;
+    boolean callbackTriggered = false;
 
     PendingAddOp(LedgerHandle lh, AddCallback cb, Object ctx) {
         this.lh = lh;
@@ -155,6 +156,10 @@ class PendingAddOp implements WriteCallback, TimerTask {
             return;
         }
 
+        if (callbackTriggered) {
+            return;
+        }
+
         if (LOG.isDebugEnabled()) {
             LOG.debug("Unsetting success for ledger: " + lh.ledgerId + " entry: " + entryId + " bookie index: "
                       + bookieIndex);
@@ -170,6 +175,12 @@ class PendingAddOp implements WriteCallback, TimerTask {
     }
 
     void initiate(ByteBuf toSend, int entryLength) {
+        if (callbackTriggered) {
+            // this should only be true if the request was failed due to another request ahead in the pending queue,
+            // so we can just ignore this request
+            return;
+        }
+
         if (timeoutSec > -1) {
             this.timeout = lh.bk.bookieClient.scheduleTimeout(this, timeoutSec, TimeUnit.SECONDS);
         }
@@ -238,6 +249,9 @@ class PendingAddOp implements WriteCallback, TimerTask {
             timeout.cancel();
         }
 
+
+        ReferenceCountUtil.release(toSend);
+
         if (LOG.isDebugEnabled()) {
             LOG.debug("Submit callback (lid:{}, eid: {}). rc:{}", new Object[] { lh.getId(), entryId, rc });
         }
@@ -251,7 +265,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
             addOpLogger.registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
         }
         cb.addComplete(rc, lh, entryId, ctx);
-        ReferenceCountUtil.release(toSend);
+        callbackTriggered = true;
     }
 
     @Override
