@@ -792,6 +792,8 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
         ByteBuffer lenBuff = ByteBuffer.allocate(4);
         ByteBuffer paddingBuff = ByteBuffer.allocate(2 * conf.getJournalAlignmentSize());
         ZeroBuffer.put(paddingBuff);
+        final int journalFormatVersionToWrite = conf.getJournalFormatVersionToWrite();
+        final int journalAlignmentSize = conf.getJournalAlignmentSize();
         JournalChannel logFile = null;
         forceWriteThread.start();
         Stopwatch journalCreationWatcher = new Stopwatch();
@@ -820,9 +822,9 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                                         logId,
                                         journalPreAllocSize,
                                         journalWriteBufferSize,
-                                        conf.getJournalAlignmentSize(),
+                                        journalAlignmentSize,
                                         removePagesFromCache,
-                                        conf.getJournalFormatVersionToWrite());
+                                        journalFormatVersionToWrite);
                     journalCreationStats.registerSuccessfulEvent(
                             journalCreationWatcher.stop().elapsedTime(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
 
@@ -885,8 +887,8 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
 
                         // toFlush is non null and not empty so should be safe to access getFirst
                         if (shouldFlush) {
-                            if (conf.getJournalFormatVersionToWrite() >= JournalChannel.V5) {
-                                writePaddingBytes(logFile, paddingBuff, conf.getJournalAlignmentSize());
+                            if (journalFormatVersionToWrite >= JournalChannel.V5) {
+                                writePaddingBytes(logFile, paddingBuff, journalAlignmentSize);
                             }
                             journalFlushWatcher.reset().start();
                             bc.flush(false);
