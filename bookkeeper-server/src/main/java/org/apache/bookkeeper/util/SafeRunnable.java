@@ -1,5 +1,7 @@
 package org.apache.bookkeeper.util;
 
+import java.util.function.Consumer;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -36,4 +38,58 @@ public abstract class SafeRunnable implements Runnable {
 
     public abstract void safeRun();
 
+    /**
+     * Utility method to use SafeRunnable from lambdas
+     * <p>
+     * Eg:
+     * <pre>
+     * <code>
+     * executor.submit(SafeRunnable.safeRun(() -> {
+     *    // My not-safe code
+     * });
+     * </code>
+     * </pre>
+     */
+    public static SafeRunnable safeRun(Runnable runnable) {
+        return new SafeRunnable() {
+            @Override
+            public void safeRun() {
+                runnable.run();
+            }
+        };
+    }
+
+    /**
+     * Utility method to use SafeRunnable from lambdas with
+     * a custom exception handler
+     * <p>
+     * Eg:
+     * <pre>
+     * <code>
+     * executor.submit(SafeRunnable.safeRun(() -> {
+     *    // My not-safe code
+     * }, exception -> {
+     *    // Handle exception
+     * );
+     * </code>
+     * </pre>
+     *
+     * @param runnable
+     * @param exceptionHandler
+     *            handler that will be called when there are any exception
+     * @return
+     */
+    public static SafeRunnable safeRun(Runnable runnable, Consumer<Throwable> exceptionHandler) {
+        return new SafeRunnable() {
+            @Override
+            public void safeRun() {
+                try {
+                    runnable.run();
+                } catch (Throwable t) {
+                    exceptionHandler.accept(t);
+                    throw t;
+                }
+            }
+        };
+    }
 }
