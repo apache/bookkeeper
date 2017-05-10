@@ -9,6 +9,9 @@
 *.iml
 *.iws
 
+# NetBeans
+/**/nb-configuration.xml
+
 # Mac
 .DS_Store
 
