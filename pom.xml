@@ -116,15 +116,20 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
-        <version>0.7</version>
+        <version>0.12</version>
         <configuration>
           <excludes>
             <exclude>.git/**/*</exclude>
+            <exclude>**/target/**/*</exclude>
             <exclude>**/.svn/**/*</exclude>
             <exclude>CHANGES.txt</exclude>
             <exclude>**/README</exclude>
             <exclude>**/apidocs/*</exclude>
-	    <exclude>test-patch/**/*</exclude>
+            <exclude>test-patch/**/*</exclude>
+            <exclude>**/.classpath</exclude>
+            <exclude>**/.gitignore</exclude>
+            <exclude>**/.project</exclude>
+            <exclude>**/.settings/*</exclude>
           </excludes>
         </configuration>
       </plugin>

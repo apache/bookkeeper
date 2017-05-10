@@ -279,12 +279,16 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
-        <version>0.7</version>
         <configuration>
           <excludes>
             <!-- exclude generated file //-->
             <exclude>**/DataFormats.java</exclude>
             <exclude>**/BookkeeperProtocol.java</exclude>
+            <exclude>**/target/**/*</exclude>
+            <exclude>**/.classpath</exclude>
+            <exclude>**/.gitignore</exclude>
+            <exclude>**/.project</exclude>
+            <exclude>**/.settings/*</exclude>
           </excludes>
         </configuration>
       </plugin>
