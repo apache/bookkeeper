@@ -57,12 +57,12 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>1.6.4</version>
+      <version>1.7.25</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
-      <version>1.6.4</version>
+      <version>1.7.25</version>
     </dependency>
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
@@ -122,7 +122,7 @@
     <!--
         Annoying dependency we need to include because
         zookeeper uses log4j and so we transatively do, but
-        log4j has some dependencies which aren't in the 
+        log4j has some dependencies which aren't in the
         default maven repositories
     //-->
     <dependency>
