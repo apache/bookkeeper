@@ -183,6 +183,7 @@ public class OrderedSafeExecutor {
                         .setNameFormat(name + "-orderedsafeexecutor-" + i + "-%d")
                         .setThreadFactory(threadFactory)
                         .build());
+            threads[i].setMaximumPoolSize(1);
 
             // Save thread ids
             final int idx = i;
