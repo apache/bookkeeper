@@ -23,6 +23,7 @@ package org.apache.bookkeeper.proto;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.bookie.Bookie;
@@ -49,7 +50,6 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.EpollChannelConfig;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.group.ChannelGroup;
@@ -288,7 +288,11 @@ class BookieNettyServer {
         allChannels.close().awaitUninterruptibly();
 
         if (eventLoopGroup != null) {
-            eventLoopGroup.shutdownGracefully();
+            try {
+                eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.MILLISECONDS).await();
+            } catch (InterruptedException e) {
+                /// OK
+            }
         }
         if (jvmEventLoopGroup != null) {
             LocalBookiesRegistry.unregisterLocalBookieAddress(bookieAddress);
