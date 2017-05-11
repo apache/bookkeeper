@@ -194,7 +194,7 @@ public class BookKeeper implements AutoCloseable {
     }
 
     /**
-     * Create a bookkeeper client. A zookeeper client and a client event loop group 
+     * Create a bookkeeper client. A zookeeper client and a client event loop group
      * will be instantiated as part of this constructor.
      *
      * @param servers
@@ -256,7 +256,7 @@ public class BookKeeper implements AutoCloseable {
     public BookKeeper(ClientConfiguration conf, ZooKeeper zk)
             throws IOException, InterruptedException, KeeperException {
 
-        this(conf, validateZooKeeper(zk), getDefaultEventLoopGroup());
+        this(conf, validateZooKeeper(zk), null, NullStatsLogger.INSTANCE, null, null, null);
     }
 
     /**
@@ -314,7 +314,7 @@ public class BookKeeper implements AutoCloseable {
             this.ownZKHandle = false;
         }
 
-        // initialize event loop group 
+        // initialize event loop group
         if (null == eventLoopGroup) {
             this.eventLoopGroup = getDefaultEventLoopGroup();
             this.ownEventLoopGroup = true;
