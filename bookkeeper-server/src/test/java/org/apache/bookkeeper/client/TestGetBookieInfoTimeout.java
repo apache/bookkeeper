@@ -24,7 +24,6 @@ package org.apache.bookkeeper.client;
 import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -32,11 +31,10 @@ import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
-import org.apache.bookkeeper.proto.BookkeeperProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
+import org.apache.bookkeeper.proto.BookkeeperProtocol;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
-import org.apache.commons.lang.SystemUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,7 +42,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 
 /**
@@ -65,16 +62,7 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        if (SystemUtils.IS_OS_LINUX) {
-            try {
-                eventLoopGroup = new EpollEventLoopGroup();
-            } catch (Throwable t) {
-                LOG.warn("Could not use Netty Epoll event loop {}", t.getMessage());
-                eventLoopGroup = new NioEventLoopGroup();
-            }
-        } else {
-            eventLoopGroup = new NioEventLoopGroup();
-        }
+        eventLoopGroup = new NioEventLoopGroup();
 
         executor = OrderedSafeExecutor.newBuilder()
                 .name("BKClientOrderedSafeExecutor")
