@@ -44,7 +44,6 @@
     <protobuf.version>2.6.1</protobuf.version>
     <guava.version>13.0.1</guava.version>
     <netty.version>4.1.10.Final</netty.version>
-    <motd-plugin.version>1.4.0.Final</motd-plugin.version>
     <zookeeper.version>3.5.1-alpha</zookeeper.version>
   </properties>
   <url>http://zookeeper.apache.org/bookkeeper</url>
@@ -150,17 +149,6 @@
     </plugins>
   </reporting>
   <profiles>
-  <profile>
-    <id>m2e</id>
-      <activation>
-        <property>
-          <name>m2e.version</name>
-        </property>
-      </activation>
-      <properties>
-        <os.detected.classifier></os.detected.classifier>
-      </properties>
-    </profile>
     <profile>
       <!-- Used only when cutting a full release.  Configures the deploy plugin to mark
           each artifact as a release (especially important for the archetype). Signs each
