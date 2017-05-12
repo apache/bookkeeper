@@ -35,6 +35,10 @@ public class MathUtils {
 
     }
 
+    public static int findNextPositivePowerOfTwo(final int value) {
+        return 1 << (32 - Integer.numberOfLeadingZeros(value - 1));
+    }
+
     /**
      * Current time from some arbitrary time base in the past, counting in
      * milliseconds, and not affected by settimeofday or similar system clock
