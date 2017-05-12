@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -77,7 +78,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
     private final String UNDERREPLICATED_PATH = baseClientConf
             .getZkLedgersRootPath()
             + "/underreplication/ledgers";
-    private HashMap<String, AuditorElector> auditorElectors = new HashMap<String, AuditorElector>();
+    private Map<String, AuditorElector> auditorElectors = new ConcurrentHashMap<>();
     private ZkLedgerUnderreplicationManager urLedgerMgr;
     private Set<Long> urLedgerList;
     private String electionPath;
@@ -316,7 +317,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
 
         /*
          * Sample data format present in the under replicated ledger path
-         * 
+         *
          * {4=replica: "10.18.89.153:5002"}
          */
         assertTrue("Ledger is not marked as underreplicated:" + ledgerId, urLedgerList.contains(ledgerId));
