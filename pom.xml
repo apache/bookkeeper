@@ -45,6 +45,7 @@
     <guava.version>13.0.1</guava.version>
     <netty.version>3.9.4.Final</netty.version>
     <zookeeper.version>3.5.1-alpha</zookeeper.version>
+    <slf4j.version>1.7.25</slf4j.version>
   </properties>
   <url>http://zookeeper.apache.org/bookkeeper</url>
   <build>
