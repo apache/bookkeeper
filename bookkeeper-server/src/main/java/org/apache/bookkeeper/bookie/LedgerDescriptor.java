@@ -21,12 +21,9 @@
 
 package org.apache.bookkeeper.bookie;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
+import io.netty.buffer.ByteBuf;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
 
 /**
  * Implements a ledger inside a bookie. In particular, it implements operations
@@ -57,12 +54,12 @@ public abstract class LedgerDescriptor {
     abstract boolean setFenced() throws IOException;
     abstract boolean isFenced() throws IOException;
 
-    abstract long addEntry(ByteBuffer entry) throws IOException;
-    abstract ByteBuffer readEntry(long entryId) throws IOException;
+    abstract long addEntry(ByteBuf entry) throws IOException;
+    abstract ByteBuf readEntry(long entryId) throws IOException;
 
     abstract long getLastAddConfirmed() throws IOException;
 
-    abstract void setExplicitLac(ByteBuffer entry) throws IOException;
+    abstract void setExplicitLac(ByteBuf entry) throws IOException;
 
-    abstract  ByteBuffer getExplicitLac();
+    abstract  ByteBuf getExplicitLac();
 }

@@ -34,6 +34,7 @@ import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 
 class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
@@ -69,7 +70,7 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         byte[] masterKey = writeLacRequest.getMasterKey().toByteArray();
 
         try {
-            requestProcessor.bookie.setExplicitLac(lacToAdd, channel, masterKey);
+            requestProcessor.bookie.setExplicitLac(Unpooled.wrappedBuffer(lacToAdd), channel, masterKey);
             status = StatusCode.EOK;
         } catch (IOException e) {
             logger.error("Error saving lac for ledger:{}",

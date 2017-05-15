@@ -43,6 +43,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 
+import io.netty.buffer.ByteBuf;
+
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_NUM_EVICTED_LEDGERS;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_OPEN_LEDGERS;
 
@@ -389,7 +391,7 @@ public class IndexPersistenceMgr {
         }
     }
 
-    void setExplicitLac(long ledgerId, ByteBuffer lac) throws IOException {
+    void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException {
         FileInfo fi = null;
         try {
             fi = getFileInfo(ledgerId, null);
@@ -402,7 +404,7 @@ public class IndexPersistenceMgr {
         }
     }
 
-    public ByteBuffer getExplicitLac(long ledgerId) {
+    public ByteBuf getExplicitLac(long ledgerId) {
         FileInfo fi = null;
         try {
             fi = getFileInfo(ledgerId, null);

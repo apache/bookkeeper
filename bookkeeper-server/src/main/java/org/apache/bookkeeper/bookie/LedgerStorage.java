@@ -21,13 +21,13 @@
 
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
-
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.meta.LedgerManager;
 
@@ -101,12 +101,12 @@ public interface LedgerStorage {
      * Add an entry to the storage.
      * @return the entry id of the entry added
      */
-    long addEntry(ByteBuffer entry) throws IOException;
+    long addEntry(ByteBuf entry) throws IOException;
 
     /**
      * Read an entry from storage
      */
-    ByteBuffer getEntry(long ledgerId, long entryId) throws IOException;
+    ByteBuf getEntry(long ledgerId, long entryId) throws IOException;
 
     /**
      * Get last add confirmed.
@@ -162,7 +162,7 @@ public interface LedgerStorage {
      */
     BKMBeanInfo getJMXBean();
 
-    void setExplicitlac(long ledgerId, ByteBuffer lac) throws IOException;
+    void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException;
 
-    ByteBuffer getExplicitLac(long ledgerId);
+    ByteBuf getExplicitLac(long ledgerId);
 }

@@ -21,6 +21,9 @@
 
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -330,7 +333,7 @@ public class LedgerCacheTest {
         Bookie b = new Bookie(conf);
         b.start();
         for (int i = 1; i <= numLedgers; i++) {
-            ByteBuffer packet = generateEntry(i, 1);
+            ByteBuf packet = generateEntry(i, 1);
             b.addEntry(packet, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
         }
 
@@ -511,7 +514,7 @@ public class LedgerCacheTest {
         // this bookie.addEntry call is required. FileInfo for Ledger 1 would be created with this call.
         // without the fileinfo, 'flushTestSortedLedgerStorage.addEntry' calls will fail because of BOOKKEEPER-965 change.
         bookie.addEntry(generateEntry(1, 1), new Bookie.NopWriteCallback(), null, "passwd".getBytes());
-        
+
         flushTestSortedLedgerStorage.addEntry(generateEntry(1, 2));
         assertFalse("Bookie is expected to be in ReadWrite mode", bookie.isReadOnly());
         assertTrue("EntryMemTable SnapShot is expected to be empty", memTable.snapshot.isEmpty());
@@ -535,14 +538,13 @@ public class LedgerCacheTest {
         assertTrue("EntryMemTable SnapShot is expected to be empty, because of successful flush",
                 memTable.snapshot.isEmpty());
     }
-    
-    private ByteBuffer generateEntry(long ledger, long entry) {
+
+    private ByteBuf generateEntry(long ledger, long entry) {
         byte[] data = ("ledger-" + ledger + "-" + entry).getBytes();
-        ByteBuffer bb = ByteBuffer.wrap(new byte[8 + 8 + data.length]);
-        bb.putLong(ledger);
-        bb.putLong(entry);
-        bb.put(data);
-        bb.flip();
+        ByteBuf bb = Unpooled.buffer(8 + 8 + data.length);
+        bb.writeLong(ledger);
+        bb.writeLong(entry);
+        bb.writeBytes(data);
         return bb;
     }
 }

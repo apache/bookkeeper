@@ -25,6 +25,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import io.netty.buffer.ByteBuf;
+
 /**
  * This class maps a ledger entry number into a location (entrylogid, offset) in
  * an entry log file. It does user level caching to more efficiently manage disk
@@ -51,6 +53,6 @@ interface LedgerCache extends Closeable {
     void deleteLedger(long ledgerId) throws IOException;
 
     LedgerCacheBean getJMXBean();
-    void setExplicitLac(long ledgerId, ByteBuffer lac) throws IOException;
-    ByteBuffer getExplicitLac(long ledgerId);
+    void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException;
+    ByteBuf getExplicitLac(long ledgerId);
 }

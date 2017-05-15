@@ -21,14 +21,16 @@
 
 package org.apache.bookkeeper.meta;
 
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -336,11 +338,11 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         }
 
         @Override
-        public void setExplicitlac(long ledgerId, ByteBuffer lac) throws IOException {
+        public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
         }
 
         @Override
-        public ByteBuffer getExplicitLac(long ledgerId) {
+        public ByteBuf getExplicitLac(long ledgerId) {
             return null;
         }
 
@@ -369,12 +371,12 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         }
 
         @Override
-        public long addEntry(ByteBuffer entry) throws IOException {
+        public long addEntry(ByteBuf entry) throws IOException {
             return 0;
         }
 
         @Override
-        public ByteBuffer getEntry(long ledgerId, long entryId) throws IOException {
+        public ByteBuf getEntry(long ledgerId, long entryId) throws IOException {
             return null;
         }
 

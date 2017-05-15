@@ -21,6 +21,9 @@
 
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -219,11 +222,13 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         return ledgerCache.isFenced(ledgerId);
     }
 
-    public void setExplicitlac(long ledgerId, ByteBuffer lac) throws IOException {
+    @Override
+    public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
         ledgerCache.setExplicitLac(ledgerId, lac);
     }
 
-    public ByteBuffer getExplicitLac(long ledgerId) {
+    @Override
+    public ByteBuf getExplicitLac(long ledgerId) {
         return ledgerCache.getExplicitLac(ledgerId);
     }
 
@@ -246,13 +251,13 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     public long getLastAddConfirmed(long ledgerId) throws IOException {
         Long lac = ledgerCache.getLastAddConfirmed(ledgerId);
         if (lac == null) {
-            ByteBuffer bb = getEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
+            ByteBuf bb = getEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
             if (null == bb) {
                 return BookieProtocol.INVALID_ENTRY_ID;
             } else {
-                bb.getLong(); // ledger id
-                bb.getLong(); // entry id
-                lac = bb.getLong();
+                bb.readLong(); // ledger id
+                bb.readLong(); // entry id
+                lac = bb.readLong();
                 lac = ledgerCache.updateLastAddConfirmed(ledgerId, lac);
             }
         }
@@ -260,21 +265,19 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
-    synchronized public long addEntry(ByteBuffer entry) throws IOException {
-        long ledgerId = entry.getLong();
-        long entryId = entry.getLong();
-        long lac = entry.getLong();
-        entry.rewind();
+    synchronized public long addEntry(ByteBuf entry) throws IOException {
+        long ledgerId = entry.getLong(entry.readerIndex() + 0);
+        long entryId = entry.getLong(entry.readerIndex() + 8);
+        long lac = entry.getLong(entry.readerIndex() + 16);
 
-        processEntry(ledgerId, entryId, entry);
+        processEntry(ledgerId, entryId, entry.nioBuffer());
 
         ledgerCache.updateLastAddConfirmed(ledgerId, lac);
-
         return entryId;
     }
 
     @Override
-    public ByteBuffer getEntry(long ledgerId, long entryId) throws IOException {
+    public ByteBuf getEntry(long ledgerId, long entryId) throws IOException {
         long offset;
         /*
          * If entryId is BookieProtocol.LAST_ADD_CONFIRMED, then return the last written.
@@ -305,7 +308,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         try {
             byte[] retBytes = entryLogger.readEntry(ledgerId, entryId, offset);
             success = true;
-            return ByteBuffer.wrap(retBytes);
+            return Unpooled.wrappedBuffer(retBytes);
         } finally {
             if (success) {
                 getEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);

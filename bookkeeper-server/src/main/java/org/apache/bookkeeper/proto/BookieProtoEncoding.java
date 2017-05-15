@@ -20,17 +20,6 @@
  */
 package org.apache.bookkeeper.proto;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.ByteBufOutputStream;
-import io.netty.buffer.CompositeByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelHandler.Sharable;
-import io.netty.handler.codec.MessageToMessageDecoder;
-import io.netty.handler.codec.MessageToMessageEncoder;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -43,6 +32,17 @@ import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandler.Sharable;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.MessageToMessageDecoder;
+import io.netty.handler.codec.MessageToMessageEncoder;
 
 public class BookieProtoEncoding {
     private final static Logger LOG = LoggerFactory.getLogger(BookieProtoEncoding.class);
@@ -146,10 +146,8 @@ public class BookieProtoEncoding {
                 packet.readBytes(masterKey, 0, BookieProtocol.MASTER_KEY_LENGTH);
 
                 // Read ledger and entry id without advancing the reader index
-                packet.markReaderIndex();
-                ledgerId = packet.readLong();
-                entryId = packet.readLong();
-                packet.resetReaderIndex();
+                ledgerId = packet.getLong(packet.readerIndex());
+                entryId = packet.getLong(packet.readerIndex() + 8);
                 return new BookieProtocol.AddRequest(h.getVersion(), ledgerId, entryId, flags, masterKey, packet.retain());
             case BookieProtocol.READENTRY:
                 ledgerId = packet.readLong();
@@ -169,6 +167,7 @@ public class BookieProtoEncoding {
                 builder.mergeFrom(new ByteBufInputStream(packet), extensionRegistry);
                 return new BookieProtocol.AuthRequest(h.getVersion(), builder.build());
             }
+
             return packet;
         }
     }
@@ -238,8 +237,9 @@ public class BookieProtoEncoding {
                 entryId = buffer.readLong();
 
                 if (rc == BookieProtocol.EOK) {
+                    ByteBuf content = buffer.slice();
                     return new BookieProtocol.ReadResponse(header.getVersion(), rc,
-                                                           ledgerId, entryId, buffer.slice());
+                                                           ledgerId, entryId, content.retain());
                 } else {
                     return new BookieProtocol.ReadResponse(header.getVersion(), rc,
                                                            ledgerId, entryId);
@@ -327,9 +327,6 @@ public class BookieProtoEncoding {
 
         @Override
         protected void encode(ChannelHandlerContext ctx, Object msg, List<Object> out) throws Exception {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Encode request {} to channel {}.", msg, ctx.channel());
-            }
             if (msg instanceof BookkeeperProtocol.Request) {
                 out.add(REQ_V3.encode(msg, ctx.alloc()));
             } else if (msg instanceof BookieProtocol.Request) {

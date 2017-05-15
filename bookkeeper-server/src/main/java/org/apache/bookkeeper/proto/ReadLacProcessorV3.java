@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.proto;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.Bookie;
@@ -36,7 +35,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.util.ReferenceCountUtil;
 
 class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     private final static Logger logger = LoggerFactory.getLogger(ReadLacProcessorV3.class);
@@ -61,14 +62,14 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
 
         logger.debug("Received ReadLac request: {}", request);
         StatusCode status = StatusCode.EOK;
-        ByteBuffer lastEntry;
-        ByteBuffer lac;
+        ByteBuf lastEntry = null;
+        ByteBuf lac = null;
         try {
             lastEntry = requestProcessor.bookie.readEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
             lac = requestProcessor.bookie.getExplicitLac(ledgerId);
             if (lac != null) {
-                readLacResponse.setLacBody(ByteString.copyFrom(lac));
-                readLacResponse.setLastEntryBody(ByteString.copyFrom(lastEntry));
+                readLacResponse.setLacBody(ByteString.copyFrom(lac.nioBuffer()));
+                readLacResponse.setLastEntryBody(ByteString.copyFrom(lastEntry.nioBuffer()));
             } else {
                 status = StatusCode.ENOENTRY;
             }
@@ -78,7 +79,11 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         } catch (IOException e) {
             status = StatusCode.EIO;
             logger.error("IOException while performing readLac from ledger: {}", ledgerId);
+        } finally {
+            ReferenceCountUtil.release(lastEntry);
+            ReferenceCountUtil.release(lac);
         }
+
         if (status == StatusCode.EOK) {
             requestProcessor.readLacStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
                     TimeUnit.NANOSECONDS);
