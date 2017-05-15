@@ -323,6 +323,10 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         }
 
         @Override
+        public void reclaimDiskSpace() throws IOException {
+        }
+
+        @Override
         public void start() {
         }
 

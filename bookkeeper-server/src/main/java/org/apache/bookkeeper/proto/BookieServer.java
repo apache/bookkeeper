@@ -100,9 +100,19 @@ public class BookieServer {
         this.requestProcessor = new BookieRequestProcessor(conf, bookie,
                 statsLogger.scope(SERVER_SCOPE));
         this.nettyServer = new BookieNettyServer(this.conf, requestProcessor);
-        isAutoRecoveryDaemonEnabled = conf.isAutoRecoveryDaemonEnabled();
-        if (isAutoRecoveryDaemonEnabled) {
-            this.autoRecoveryMain = new AutoRecoveryMain(conf, statsLogger.scope(REPLICATION_SCOPE));
+        boolean success = false;
+        try {
+            this.bookie.initialize();
+
+            isAutoRecoveryDaemonEnabled = conf.isAutoRecoveryDaemonEnabled();
+            if (isAutoRecoveryDaemonEnabled) {
+                this.autoRecoveryMain = new AutoRecoveryMain(conf, statsLogger.scope(REPLICATION_SCOPE));
+            }
+            success = true;
+        } finally {
+            if (!success) {
+                this.nettyServer.shutdown();
+            }
         }
     }
 

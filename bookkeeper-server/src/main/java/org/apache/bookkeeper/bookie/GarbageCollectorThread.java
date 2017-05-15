@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.base.Stopwatch;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -322,6 +323,42 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
     }
 
+    /**
+     * gc ledger storage.
+     */
+    void gc() {
+        LOG.debug("Starting garbage collecting ledger storage.");
+
+        LOG.debug("Garbage collecting deleted ledgers' index files.");
+        // gc inactive/deleted ledgers
+        doGcLedgers();
+
+        Stopwatch scanStopwatch = new Stopwatch();
+        scanStopwatch.start();
+
+        LOG.debug("Scanning entry log files to extract metadata and delete empty entry logs if possible.");
+        // Extract all of the ledger ID's that comprise all of the entry logs
+        // (except for the current new one which is still being written to).
+        entryLogMetaMap = extractMetaFromEntryLogs(entryLogMetaMap);
+
+        // if it isn't running, break to not access zookeeper
+        if (!running) {
+            return;
+        }
+
+        long elapsedTimeOnScan = scanStopwatch.elapsedMillis();
+
+        if (elapsedTimeOnScan >= gcWaitTime) {
+            LOG.debug("Garbage collecting deleted ledgers' index files again just in case ledgers deleted during scanning.");
+            // gc inactive/deleted ledgers again, just in case ledgers are deleted during scanning entry logs
+            doGcLedgers();
+        }
+
+        LOG.debug("Garbage collecting empty entry log files.");
+        // gc entry logs
+        doGcEntryLogs();
+    }
+
     public void start() {
         if (scheduledFuture != null) {
             scheduledFuture.cancel(false);
@@ -336,46 +373,41 @@ public class GarbageCollectorThread extends SafeRunnable {
             LOG.info("Garbage collector thread forced to perform GC before expiry of wait time.");
         }
 
-        // Extract all of the ledger ID's that comprise all of the entry logs
-        // (except for the current new one which is still being written to).
-        entryLogMetaMap = extractMetaFromEntryLogs(entryLogMetaMap);
+        try {
+            gc(); 
 
-        // gc inactive/deleted ledgers
-        doGcLedgers();
+            boolean suspendMajor = suspendMajorCompaction.get();
+            boolean suspendMinor = suspendMinorCompaction.get();
+            if (suspendMajor) {
+                LOG.info("Disk almost full, suspend major compaction to slow down filling disk.");
+            }
+            if (suspendMinor) {
+                LOG.info("Disk full, suspend minor compaction to slow down filling disk.");
+            }
 
-        // gc entry logs
-        doGcEntryLogs();
+            long curTime = MathUtils.now();
+            if (enableMajorCompaction && (!suspendMajor) &&
+                (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
+                // enter major compaction
+                LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
+                doCompactEntryLogs(majorCompactionThreshold);
+                lastMajorCompactionTime = MathUtils.now();
+                // and also move minor compaction time
+                lastMinorCompactionTime = lastMajorCompactionTime;
+                forceGarbageCollection.set(false);
+                return;
+            }
 
-        boolean suspendMajor = suspendMajorCompaction.get();
-        boolean suspendMinor = suspendMinorCompaction.get();
-        if (suspendMajor) {
-            LOG.info("Disk almost full, suspend major compaction to slow down filling disk.");
-        }
-        if (suspendMinor) {
-            LOG.info("Disk full, suspend minor compaction to slow down filling disk.");
-        }
-
-        long curTime = MathUtils.now();
-        if (enableMajorCompaction && (!suspendMajor) &&
-            (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
-            // enter major compaction
-            LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
-            doCompactEntryLogs(majorCompactionThreshold);
-            lastMajorCompactionTime = MathUtils.now();
-            // and also move minor compaction time
-            lastMinorCompactionTime = lastMajorCompactionTime;
+            if (enableMinorCompaction && (!suspendMinor) &&
+                (force || curTime - lastMinorCompactionTime > minorCompactionInterval)) {
+                // enter minor compaction
+                LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
+                doCompactEntryLogs(minorCompactionThreshold);
+                lastMinorCompactionTime = MathUtils.now();
+            }
+        } finally {
             forceGarbageCollection.set(false);
-            return;
         }
-
-        if (enableMinorCompaction && (!suspendMinor) &&
-            (force || curTime - lastMinorCompactionTime > minorCompactionInterval)) {
-            // enter minor compaction
-            LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
-            doCompactEntryLogs(minorCompactionThreshold);
-            lastMinorCompactionTime = MathUtils.now();
-        }
-        forceGarbageCollection.set(false);
     }
 
     /**

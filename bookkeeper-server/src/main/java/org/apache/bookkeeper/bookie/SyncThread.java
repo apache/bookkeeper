@@ -22,6 +22,8 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
@@ -98,6 +100,20 @@ class SyncThread {
                     }
                 }
             }, flushInterval, flushInterval, TimeUnit.MILLISECONDS);
+    }
+
+    public Future<Void> requestFlush() {
+        return executor.submit(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                try {
+                    flush();
+                } catch (Throwable t) {
+                    LOG.error("Exception flushing ledgers ", t);
+                }
+                return null;
+            }
+        });
     }
 
     private void flush() {

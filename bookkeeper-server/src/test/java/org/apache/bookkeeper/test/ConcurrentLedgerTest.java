@@ -85,6 +85,7 @@ public class ConcurrentLedgerTest {
         conf.setJournalDirName(txnDir.getPath());
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
         bookie = new Bookie(conf);
+        bookie.initialize();
         bookie.start();
     }
 

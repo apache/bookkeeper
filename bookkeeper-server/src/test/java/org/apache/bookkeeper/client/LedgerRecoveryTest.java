@@ -191,6 +191,7 @@ public class LedgerRecoveryTest extends BaseTestCase {
                 // drop request to simulate a slow and failed bookie
             }
         };
+        fakeBookie.initialize();
         bsConfs.add(conf);
         bs.add(startBookie(conf, fakeBookie));
 
@@ -251,6 +252,7 @@ public class LedgerRecoveryTest extends BaseTestCase {
                 throw new IOException("Couldn't write for some reason");
             }
         };
+        deadBookie1.initialize();
         bsConfs.add(conf);
         bs.add(startBookie(conf, deadBookie1));
 
@@ -332,6 +334,7 @@ public class LedgerRecoveryTest extends BaseTestCase {
                 throw new IOException("Couldn't write for some reason");
             }
         };
+        deadBookie1.initialize();
         bsConfs.add(conf);
         bs.add(startBookie(conf, deadBookie1));
 
@@ -416,6 +419,7 @@ public class LedgerRecoveryTest extends BaseTestCase {
                 throw new IOException("Couldn't write entries for some reason");
             }
         };
+        rBookie.initialize();
         bsConfs.add(conf);
         bs.add(startBookie(conf, rBookie));
     }

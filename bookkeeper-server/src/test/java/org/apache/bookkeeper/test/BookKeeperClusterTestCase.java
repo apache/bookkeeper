@@ -212,6 +212,12 @@ public abstract class BookKeeperClusterTestCase {
         return conf;
     }
 
+    protected static Bookie newBookie(ServerConfiguration conf) throws Exception {
+        Bookie b = new Bookie(conf);
+        b.initialize();
+        return b;
+    }
+
     /**
      * Get bookie address for bookie at index
      */

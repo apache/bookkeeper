@@ -316,7 +316,9 @@ public class LedgerDirsManager {
      *             If all the configured ledger directories are full or having
      *             less space than threshold
      */
-    public void init() throws DiskErrorException, NoWritableLedgerDirException {
+    public void checkAllDirs() throws DiskErrorException, NoWritableLedgerDirException {
+        writableLedgerDirectories.addAll(filledDirs);
+        filledDirs.clear();
         monitor.checkDirs(writableLedgerDirectories);
     }
 

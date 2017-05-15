@@ -135,6 +135,7 @@ public class BookieShutdownTest extends BookKeeperClusterTestCase {
                 return exitCode;
             }
         };
+        bookie.initialize();
         bookie.start();
         // after 1 sec stop .
         Thread.sleep(1000);

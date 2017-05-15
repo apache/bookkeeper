@@ -45,6 +45,7 @@ public interface BookKeeperServerStats {
     public final static String BOOKIE_ADD_ENTRY = "BOOKIE_ADD_ENTRY";
     public final static String BOOKIE_RECOVERY_ADD_ENTRY = "BOOKIE_RECOVERY_ADD_ENTRY";
     public final static String BOOKIE_READ_ENTRY = "BOOKIE_READ_ENTRY";
+    public final static String BOOKIE_READ_LAST_CONFIRMED = "BOOKIE_READ_LAST_CONFIRMED";
 
     // Journal Stats
     public final static String JOURNAL_SCOPE = "journal";

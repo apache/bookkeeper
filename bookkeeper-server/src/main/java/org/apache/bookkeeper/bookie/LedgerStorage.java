@@ -50,6 +50,13 @@ public interface LedgerStorage {
             throws IOException;
 
     /**
+     * Reclaim disk space from ledger storage.
+     *
+     * @throws IOException
+     */
+    void reclaimDiskSpace() throws IOException;
+
+    /**
      * Start any background threads
      * belonging to the storage system. For example,
      * garbage collection.
