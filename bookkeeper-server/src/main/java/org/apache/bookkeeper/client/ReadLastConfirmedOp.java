@@ -17,13 +17,14 @@
  */
 package org.apache.bookkeeper.client;
 
+import io.netty.buffer.ByteBuf;
+
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.DigestManager.RecoveryData;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
  * This class encapsulated the read last confirmed operation.
@@ -75,7 +76,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
     }
 
     public synchronized void readEntryComplete(final int rc, final long ledgerId, final long entryId,
-            final ChannelBuffer buffer, final Object ctx) {
+            final ByteBuf buffer, final Object ctx) {
         int bookieIndex = (Integer) ctx;
 
         numResponsesPending--;

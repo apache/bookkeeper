@@ -23,8 +23,9 @@ package org.apache.bookkeeper.net;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
+import io.netty.channel.local.LocalAddress;
+
 import static org.apache.bookkeeper.util.BookKeeperConstants.COLON;
-import org.jboss.netty.channel.local.LocalAddress;
 
 /**
  * This is a data wrapper class that is an InetSocketAddress, it would use the hostname

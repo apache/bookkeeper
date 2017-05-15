@@ -21,9 +21,12 @@ package org.apache.bookkeeper.test;
  *
  */
 
+import io.netty.buffer.Unpooled;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.concurrent.Executors;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -31,9 +34,6 @@ import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,8 +67,8 @@ class LoopbackClient implements WriteCallback {
         }
     }
 
-    LoopbackClient(ClientSocketChannelFactory channelFactory, OrderedSafeExecutor executor, long begin, int limit) throws IOException {
-        this.client = new BookieClient(new ClientConfiguration(), channelFactory, executor);
+    LoopbackClient(EventLoopGroup eventLoopGroup, OrderedSafeExecutor executor, long begin, int limit) throws IOException {
+        this.client = new BookieClient(new ClientConfiguration(), eventLoopGroup, executor);
         this.begin = begin;
     }
 
@@ -78,7 +78,7 @@ class LoopbackClient implements WriteCallback {
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
 
-        client.addEntry(addr, ledgerId, passwd, entry, ChannelBuffers.wrappedBuffer(data), cb, ctx, BookieProtocol.FLAG_NONE);
+        client.addEntry(addr, ledgerId, passwd, entry, Unpooled.wrappedBuffer(data), cb, ctx, BookieProtocol.FLAG_NONE);
     }
 
     public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
@@ -94,15 +94,14 @@ class LoopbackClient implements WriteCallback {
         long begin = System.currentTimeMillis();
 
         LoopbackClient lb;
-        ClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors
-                .newCachedThreadPool());
+        EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         OrderedSafeExecutor executor = OrderedSafeExecutor.newBuilder()
                 .name("BookieClientScheduler")
                 .numThreads(2)
                 .build();
         try {
             BookieSocketAddress addr = new BookieSocketAddress("127.0.0.1", Integer.valueOf(args[2]).intValue());
-            lb = new LoopbackClient(channelFactory, executor, begin, limit.intValue());
+            lb = new LoopbackClient(eventLoopGroup, executor, begin, limit.intValue());
 
             for (int i = 0; i < limit; i++) {
                 lb.write(ledgerId, i, data, addr, lb, c);

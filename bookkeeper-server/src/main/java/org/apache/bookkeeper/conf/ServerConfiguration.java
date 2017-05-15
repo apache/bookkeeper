@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.annotations.Beta;
 
-import com.google.common.collect.Lists;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.util.BookKeeperConstants;
@@ -90,6 +89,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String ALLOW_STORAGE_EXPANSION = "allowStorageExpansion";
     // NIO Parameters
     protected final static String SERVER_TCP_NODELAY = "serverTcpNoDelay";
+    protected final static String SERVER_SOCK_KEEPALIVE = "serverSockKeepalive";
+    protected final static String SERVER_SOCK_LINGER = "serverTcpLinger";
 
     // Zookeeper Parameters
     protected final static String ZK_TIMEOUT = "zkTimeout";
@@ -132,6 +133,11 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String STATS_PROVIDER_CLASS = "statsProviderClass";
 
     protected final static String LEDGER_STORAGE_CLASS = "ledgerStorageClass";
+
+    // Rx adaptive ByteBuf allocator parameters
+    protected final static String BYTEBUF_ALLOCATOR_SIZE_INITIAL = "byteBufAllocatorSizeInitial";
+    protected final static String BYTEBUF_ALLOCATOR_SIZE_MIN = "byteBufAllocatorSizeMin";
+    protected final static String BYTEBUF_ALLOCATOR_SIZE_MAX = "byteBufAllocatorSizeMax";
 
     // Bookie auth provider factory class name
     protected final static String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
@@ -737,6 +743,54 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setServerTcpNoDelay(boolean noDelay) {
         setProperty(SERVER_TCP_NODELAY, Boolean.toString(noDelay));
+        return this;
+    }
+
+    /**
+     * Timeout to drain the socket on close.
+     *
+     * @return socket linger setting
+     */
+    public int getServerSockLinger() {
+        return getInt(SERVER_SOCK_LINGER, 0);
+    }
+
+    /**
+     * Set socket linger timeout on close.
+     * 
+     * When enabled, a close or shutdown will not return until all queued messages for the socket have been successfully
+     * sent or the linger timeout has been reached. Otherwise, the call returns immediately and the closing is done in
+     * the background.
+     *
+     * @param noDelay
+     *            NoDelay setting
+     * @return server configuration
+     */
+    public ServerConfiguration setServerSockLinger(int linger) {
+        setProperty(SERVER_SOCK_LINGER, Integer.toString(linger));
+        return this;
+    }
+
+    /**
+     * get socket keepalive
+     * 
+     * @return socket keepalive setting
+     */
+    public boolean getServerSockKeepalive() {
+        return getBoolean(SERVER_SOCK_KEEPALIVE, true);
+    }
+
+    /**
+     * Set socket keepalive setting.
+     * 
+     * This setting is used to send keep-alive messages on connection-oriented sockets.
+     * 
+     * @param keepalive
+     *            KeepAlive setting
+     * @return server configuration
+     */
+    public ServerConfiguration setServerSockKeepalive(boolean keepalive) {
+        setProperty(SERVER_SOCK_KEEPALIVE, Boolean.toString(keepalive));
         return this;
     }
 
@@ -1747,6 +1801,63 @@ public class ServerConfiguration extends AbstractConfiguration {
             throw new ConfigurationException("Entry log file size should not be larger than "
                     + BookKeeperConstants.MAX_LOG_SIZE_LIMIT);
         }
+    }
+
+    /**
+     * Get Recv ByteBuf allocator initial buf size
+     * 
+     * @return initial byteBuf size
+     */
+    public int getRecvByteBufAllocatorSizeInitial() {
+        return getInt(BYTEBUF_ALLOCATOR_SIZE_INITIAL, 64 * 1024);
+    }
+
+    /**
+     * Set Recv ByteBuf allocator initial buf size
+     * 
+     * @param size
+     *            buffer size
+     */
+    public void setRecvByteBufAllocatorSizeInitial(int size) {
+        setProperty(BYTEBUF_ALLOCATOR_SIZE_INITIAL, size);
+    }
+
+    /**
+     * Get Recv ByteBuf allocator min buf size
+     * 
+     * @return min byteBuf size
+     */
+    public int getRecvByteBufAllocatorSizeMin() {
+        return getInt(BYTEBUF_ALLOCATOR_SIZE_MIN, 64 * 1024);
+    }
+
+    /**
+     * Set Recv ByteBuf allocator min buf size
+     * 
+     * @param size
+     *            buffer size
+     */
+    public void setRecvByteBufAllocatorSizeMin(int size) {
+        setProperty(BYTEBUF_ALLOCATOR_SIZE_MIN, size);
+    }
+
+    /**
+     * Get Recv ByteBuf allocator max buf size
+     * 
+     * @return max byteBuf size
+     */
+    public int getRecvByteBufAllocatorSizeMax() {
+        return getInt(BYTEBUF_ALLOCATOR_SIZE_MAX, 1 * 1024 * 1024);
+    }
+
+    /**
+     * Set Recv ByteBuf allocator max buf size
+     * 
+     * @param size
+     *            buffer size
+     */
+    public void setRecvByteBufAllocatorSizeMax(int size) {
+        setProperty(BYTEBUF_ALLOCATOR_SIZE_MAX, size);
     }
 
     /*
