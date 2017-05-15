@@ -20,6 +20,9 @@
  */
 package org.apache.bookkeeper.client;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
+
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Enumeration;
@@ -41,8 +44,6 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -221,8 +222,8 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
         // return true if we managed to complete the entry
         // return false if the read entry is not complete or it is already completed before
-        boolean complete(BookieSocketAddress host, final ChannelBuffer buffer) {
-            ChannelBufferInputStream is;
+        boolean complete(BookieSocketAddress host, final ByteBuf buffer) {
+            ByteBufInputStream is;
             try {
                 is = lh.macManager.verifyDigestAndReturnData(entryId, buffer);
             } catch (BKDigestMatchException e) {
@@ -352,7 +353,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     }
 
     @Override
-    public void readEntryComplete(int rc, long ledgerId, final long entryId, final ChannelBuffer buffer, Object ctx) {
+    public void readEntryComplete(int rc, long ledgerId, final long entryId, final ByteBuf buffer, Object ctx) {
         final ReadContext rctx = (ReadContext)ctx;
         final LedgerEntryRequest entry = rctx.entry;
 

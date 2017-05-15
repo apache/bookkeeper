@@ -446,6 +446,7 @@ public abstract class BookKeeperClusterTestCase {
             throws Exception {
         ServerConfiguration conf = newServerConfiguration();
         bsConfs.add(conf);
+        LOG.info("Starting new bookie on port: {}", conf.getBookiePort());
         bs.add(startBookie(conf));
 
         return conf.getBookiePort();

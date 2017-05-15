@@ -24,7 +24,6 @@ package org.apache.bookkeeper.client;
 import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -32,17 +31,18 @@ import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
-import org.apache.bookkeeper.proto.BookkeeperProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
+import org.apache.bookkeeper.proto.BookkeeperProtocol;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 
 /**
  * This unit test tests timeout of GetBookieInfo request;
@@ -51,7 +51,7 @@ import org.slf4j.LoggerFactory;
 public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
     private final static Logger LOG = LoggerFactory.getLogger(TestGetBookieInfoTimeout.class);
     DigestType digestType;
-    public ClientSocketChannelFactory channelFactory;
+    public EventLoopGroup eventLoopGroup;
     public OrderedSafeExecutor executor;
 
     public TestGetBookieInfoTimeout() {
@@ -62,8 +62,8 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors
-                .newCachedThreadPool());
+        eventLoopGroup = new NioEventLoopGroup();
+
         executor = OrderedSafeExecutor.newBuilder()
                 .name("BKClientOrderedSafeExecutor")
                 .numThreads(2)
@@ -72,7 +72,7 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
 
     @After
     public void tearDown() throws Exception {
-        channelFactory.releaseExternalResources();
+        eventLoopGroup.shutdownGracefully();
         executor.shutdown();
     }
 
@@ -99,7 +99,7 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
         // try to get bookie info from the sleeping bookie. It should fail with timeout error
         BookieSocketAddress addr = new BookieSocketAddress(bookieToSleep.getSocketAddress().getHostString(),
                 bookieToSleep.getPort());
-        BookieClient bc = new BookieClient(cConf, channelFactory, executor);
+        BookieClient bc = new BookieClient(cConf, eventLoopGroup, executor);
         long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE |
                 BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
 

@@ -19,7 +19,8 @@ package org.apache.bookkeeper.client;
 */
 
 
-import java.nio.ByteBuffer;
+import io.netty.buffer.ByteBuf;
+
 import java.util.zip.CRC32;
 
 class CRC32DigestManager extends DigestManager {
@@ -40,16 +41,13 @@ class CRC32DigestManager extends DigestManager {
     }
 
     @Override
-    byte[] getValueAndReset() {
-        byte[] value = new byte[8];
-        ByteBuffer buf = ByteBuffer.wrap(value);
-        buf.putLong(crc.get().getValue());
+    void populateValueAndReset(ByteBuf buf) {
+        buf.writeLong(crc.get().getValue());
         crc.get().reset();
-        return value;
     }
 
     @Override
-    void update(byte[] data, int offset, int length) {
-        crc.get().update(data, offset, length);
+    void update(ByteBuf data) {
+        crc.get().update(data.nioBuffer());
     }
 }
