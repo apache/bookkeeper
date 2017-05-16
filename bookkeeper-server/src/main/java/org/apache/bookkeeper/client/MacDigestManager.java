@@ -25,6 +25,7 @@ import io.netty.buffer.ByteBuf;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -35,8 +36,8 @@ import org.slf4j.LoggerFactory;
 public class MacDigestManager extends DigestManager {
     private final static Logger LOG = LoggerFactory.getLogger(MacDigestManager.class);
 
-    public static String DIGEST_ALGORITHM = "SHA-1";
-    public static String KEY_ALGORITHM = "HmacSHA1";
+    public static final String DIGEST_ALGORITHM = "SHA-1";
+    public static final String KEY_ALGORITHM = "HmacSHA1";
 
     public static final int MAC_CODE_LENGTH = 20;
 
@@ -60,7 +61,7 @@ public class MacDigestManager extends DigestManager {
 
     public MacDigestManager(long ledgerId, byte[] passwd) throws GeneralSecurityException {
         super(ledgerId);
-        this.passwd = passwd;
+        this.passwd = Arrays.copyOf(passwd, passwd.length);
     }
 
     public static byte[] genDigest(String pad, byte[] passwd) throws NoSuchAlgorithmException {
