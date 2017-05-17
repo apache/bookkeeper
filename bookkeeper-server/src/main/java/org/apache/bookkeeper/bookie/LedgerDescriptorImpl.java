@@ -22,7 +22,6 @@
 package org.apache.bookkeeper.bookie;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -51,6 +50,8 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
     @Override
     void checkAccess(byte masterKey[]) throws BookieException, IOException {
         if (!Arrays.equals(this.masterKey, masterKey)) {
+            LOG.error("[{}] Requested master key {} does not match the cached master key {}", new Object[] {
+                    this.ledgerId, Arrays.toString(masterKey), Arrays.toString(this.masterKey) });
             throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
         }
     }
