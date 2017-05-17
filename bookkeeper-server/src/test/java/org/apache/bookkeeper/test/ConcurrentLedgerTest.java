@@ -21,6 +21,9 @@
 
 package org.apache.bookkeeper.test;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -148,12 +151,12 @@ public class ConcurrentLedgerTest {
         long start = System.currentTimeMillis();
         for(int i = 1; i <= totalwrites/ledgers; i++) {
             for(int j = 1; j <= ledgers; j++) {
-                ByteBuffer entry = bookie.readEntry(j, i);
+                ByteBuf entry = bookie.readEntry(j, i);
                 // skip the ledger id and the entry id
-                entry.getLong();
-                entry.getLong();
-                assertEquals(j + "@" + i, j+2, entry.getLong());
-                assertEquals(j + "@" + i, i+3, entry.getLong());
+                entry.readLong();
+                entry.readLong();
+                assertEquals(j + "@" + i, j+2, entry.readLong());
+                assertEquals(j + "@" + i, i+3, entry.readLong());
             }
         }
         long finish = System.currentTimeMillis();
@@ -184,7 +187,7 @@ public class ConcurrentLedgerTest {
                 bytes.position(0);
                 bytes.limit(bytes.capacity());
                 throttle.acquire();
-                bookie.addEntry(bytes, cb, counter, zeros);
+                bookie.addEntry(Unpooled.wrappedBuffer(bytes), cb, counter, zeros);
             }
         }
         long finish = System.currentTimeMillis();

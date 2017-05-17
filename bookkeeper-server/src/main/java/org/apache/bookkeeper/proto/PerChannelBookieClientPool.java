@@ -38,7 +38,7 @@ interface PerChannelBookieClientPool {
      * @param callback
      *          callback to return channel from channel pool.
      */
-    void obtain(GenericCallback<PerChannelBookieClient> callback);
+    void obtain(GenericCallback<PerChannelBookieClient> callback, long key);
 
     /**
      * record any read/write error on {@link PerChannelBookieClientPool}

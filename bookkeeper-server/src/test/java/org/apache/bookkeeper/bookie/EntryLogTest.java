@@ -20,9 +20,12 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
+import java.io.IOException;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -72,9 +75,9 @@ public class EntryLogTest {
         Bookie bookie = new Bookie(conf);
         // create some entries
         EntryLogger logger = ((InterleavedLedgerStorage)bookie.ledgerStorage).entryLogger;
-        logger.addEntry(1, generateEntry(1, 1));
-        logger.addEntry(3, generateEntry(3, 1));
-        logger.addEntry(2, generateEntry(2, 1));
+        logger.addEntry(1, generateEntry(1, 1).nioBuffer());
+        logger.addEntry(3, generateEntry(3, 1).nioBuffer());
+        logger.addEntry(2, generateEntry(2, 1).nioBuffer());
         logger.flush();
         // now lets truncate the file to corrupt the last entry, which simulates a partial write
         File f = new File(curDir, "0.log");
@@ -91,13 +94,12 @@ public class EntryLogTest {
         assertNotNull(meta.getLedgersMap().get(3L));
     }
 
-    private ByteBuffer generateEntry(long ledger, long entry) {
+    private ByteBuf generateEntry(long ledger, long entry) {
         byte[] data = ("ledger-" + ledger + "-" + entry).getBytes();
-        ByteBuffer bb = ByteBuffer.wrap(new byte[8 + 8 + data.length]);
-        bb.putLong(ledger);
-        bb.putLong(entry);
-        bb.put(data);
-        bb.flip();
+        ByteBuf bb = Unpooled.buffer(8 + 8 + data.length);
+        bb.writeLong(ledger);
+        bb.writeLong(entry);
+        bb.writeBytes(data);
         return bb;
     }
 
@@ -120,7 +122,7 @@ public class EntryLogTest {
             EntryLogger logger = new EntryLogger(conf,
                     bookie.getLedgerDirsManager());
             for (int j=0; j<numEntries; j++) {
-                positions[i][j] = logger.addEntry(i, generateEntry(i, j));
+                positions[i][j] = logger.addEntry(i, generateEntry(i, j).nioBuffer());
             }
             logger.flush();
         }
@@ -135,7 +137,7 @@ public class EntryLogTest {
             EntryLogger logger = new EntryLogger(conf,
                     bookie.getLedgerDirsManager());
             for (int j=0; j<numEntries; j++) {
-                positions[i][j] = logger.addEntry(i, generateEntry(i, j));
+                positions[i][j] = logger.addEntry(i, generateEntry(i, j).nioBuffer());
             }
             logger.flush();
         }
@@ -231,10 +233,10 @@ public class EntryLogTest {
 
         // create some entries
         EntryLogger logger = ((InterleavedLedgerStorage)bookie.ledgerStorage).entryLogger;
-        logger.addEntry(1, generateEntry(1, 1));
-        logger.addEntry(3, generateEntry(3, 1));
-        logger.addEntry(2, generateEntry(2, 1));
-        logger.addEntry(1, generateEntry(1, 2));
+        logger.addEntry(1, generateEntry(1, 1).nioBuffer());
+        logger.addEntry(3, generateEntry(3, 1).nioBuffer());
+        logger.addEntry(2, generateEntry(2, 1).nioBuffer());
+        logger.addEntry(1, generateEntry(1, 2).nioBuffer());
         logger.rollLog();
         logger.flushRotatedLogs();
 
@@ -265,10 +267,10 @@ public class EntryLogTest {
 
         // create some entries
         EntryLogger logger = ((InterleavedLedgerStorage) bookie.ledgerStorage).entryLogger;
-        logger.addEntry(1, generateEntry(1, 1));
-        logger.addEntry(3, generateEntry(3, 1));
-        logger.addEntry(2, generateEntry(2, 1));
-        logger.addEntry(1, generateEntry(1, 2));
+        logger.addEntry(1, generateEntry(1, 1).nioBuffer());
+        logger.addEntry(3, generateEntry(3, 1).nioBuffer());
+        logger.addEntry(2, generateEntry(2, 1).nioBuffer());
+        logger.addEntry(1, generateEntry(1, 2).nioBuffer());
         logger.rollLog();
 
         // Rewrite the entry log header to be on V0 format

@@ -18,11 +18,12 @@
 package org.apache.bookkeeper.net;
 
 import org.apache.bookkeeper.util.MathUtils;
-import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.Timeout;
-import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timeout;
+import io.netty.util.TimerTask;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;

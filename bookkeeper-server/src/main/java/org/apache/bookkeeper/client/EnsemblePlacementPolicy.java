@@ -25,6 +25,8 @@ import java.util.Set;
 
 import com.google.common.base.Optional;
 
+import io.netty.util.HashedWheelTimer;
+
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -32,7 +34,6 @@ import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.jboss.netty.util.HashedWheelTimer;
 
 /**
  * Encapsulation of the algorithm that selects a number of bookies from the cluster as an ensemble for storing

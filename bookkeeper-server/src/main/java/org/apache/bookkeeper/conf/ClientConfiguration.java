@@ -51,13 +51,14 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     // NIO Parameters
     protected final static String CLIENT_TCP_NODELAY = "clientTcpNoDelay";
+    protected final static String CLIENT_SOCK_KEEPALIVE = "clientSockKeepalive";
     protected final static String CLIENT_SENDBUFFER_SIZE = "clientSendBufferSize";
     protected final static String CLIENT_RECEIVEBUFFER_SIZE = "clientReceiveBufferSize";
     protected final static String CLIENT_WRITEBUFFER_LOW_WATER_MARK = "clientWriteBufferLowWaterMark";
     protected final static String CLIENT_WRITEBUFFER_HIGH_WATER_MARK = "clientWriteBufferHighWaterMark";
     protected final static String CLIENT_CONNECT_TIMEOUT_MILLIS = "clientConnectTimeoutMillis";
     protected final static String NUM_CHANNELS_PER_BOOKIE = "numChannelsPerBookie";
-
+    protected final static String USE_V2_WIRE_PROTOCOL = "useV2WireProtocol";
     // Read Parameters
     protected final static String READ_TIMEOUT = "readTimeout";
     protected final static String SPECULATIVE_READ_TIMEOUT = "speculativeReadTimeout";
@@ -267,6 +268,29 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * get socket keepalive
+     * 
+     * @return socket keepalive setting
+     */
+    public boolean getClientSockKeepalive() {
+        return getBoolean(CLIENT_SOCK_KEEPALIVE, true);
+    }
+
+    /**
+     * Set socket keepalive setting.
+     * 
+     * This setting is used to send keep-alive messages on connection-oriented sockets.
+     * 
+     * @param keepalive
+     *            KeepAlive setting
+     * @return client configuration
+     */
+    public ClientConfiguration setClientSockKeepalive(boolean keepalive) {
+        setProperty(CLIENT_SOCK_KEEPALIVE, Boolean.toString(keepalive));
+        return this;
+    }
+
+    /**
      * Get client netty channel send buffer size.
      *
      * @return client netty channel send buffer size
@@ -432,6 +456,27 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setNumChannelsPerBookie(int numChannelsPerBookie) {
         setProperty(NUM_CHANNELS_PER_BOOKIE, numChannelsPerBookie);
+        return this;
+    }
+
+    /**
+     * Use older Bookkeeper wire protocol (no protobuf)
+     *
+     * @return whether or not to use older Bookkeeper wire protocol (no protobuf)
+     */
+    public boolean getUseV2WireProtocol() {
+        return getBoolean(USE_V2_WIRE_PROTOCOL, false);
+    }
+
+    /**
+     * Set whether or not to use older Bookkeeper wire protocol (no protobuf)
+     *
+     * @param useV2WireProtocol
+     *          whether or not to use older Bookkeeper wire protocol (no protobuf)
+     * @return client configuration.
+     */
+    public ClientConfiguration setUseV2WireProtocol(boolean useV2WireProtocol) {
+        setProperty(USE_V2_WIRE_PROTOCOL, useV2WireProtocol);
         return this;
     }
 
@@ -1051,4 +1096,5 @@ public class ClientConfiguration extends AbstractConfiguration {
     public String getClientRole() {
         return getString(CLIENT_ROLE, CLIENT_ROLE_STANDARD);
     }
+
 }

@@ -251,7 +251,7 @@ public class EntryMemTable {
                         ledger = kv.getLedgerId();
                         if (ledgerGC != ledger) {
                             try {
-                                flusher.process(ledger, kv.getEntryId(), kv.getValueAsByteBuffer());
+                                flusher.process(ledger, kv.getEntryId(), kv.getValueAsByteBuffer().nioBuffer());
                             } catch (NoLedgerException exception) {
                                 ledgerGC = ledger;
                             }

@@ -76,6 +76,9 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     // Zookeeper ACL settings
     protected final static String ZK_ENABLE_SECURITY = "zkEnableSecurity";
 
+    // Kluge for compatibility testing. Never set this outside tests.
+    public final static String LEDGER_MANAGER_FACTORY_DISABLE_CLASS_CHECK = "ledgerManagerFactoryDisableClassCheck";
+
     protected AbstractConfiguration() {
         super();
         if (READ_SYSTEM_PROPERTIES) {

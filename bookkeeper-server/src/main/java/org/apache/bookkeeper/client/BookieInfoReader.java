@@ -40,6 +40,10 @@ import org.slf4j.LoggerFactory;
 
 public class BookieInfoReader {
     private static final Logger LOG = LoggerFactory.getLogger(BookieInfoReader.class);
+    private static final long GET_BOOKIE_INFO_REQUEST_FLAGS
+        = BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE |
+                               BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE;
+
     private final ScheduledExecutorService scheduler;
     private final BookKeeper bk;
     private final ClientConfiguration conf;
@@ -163,13 +167,11 @@ public class BookieInfoReader {
         }
 
         BookieClient bkc = bk.getBookieClient();
-        final long requested = BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE |
-                               BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE;
         totalSent.set(0);
         completedCnt.set(0);
         LOG.debug("Getting bookie info for: {}", joinedBookies);
         for (BookieSocketAddress b : joinedBookies) {
-            bkc.getBookieInfo(b, requested,
+            bkc.getBookieInfo(b, GET_BOOKIE_INFO_REQUEST_FLAGS,
                     new GetBookieInfoCallback() {
                         void processReadInfoComplete(int rc, BookieInfo bInfo, Object ctx) {
                             BookieSocketAddress b = (BookieSocketAddress) ctx;

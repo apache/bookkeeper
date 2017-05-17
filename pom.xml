@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
-    <version>9</version>
+    <version>18</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper</groupId>
@@ -43,8 +43,9 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <protobuf.version>2.6.1</protobuf.version>
     <guava.version>20.0</guava.version>
-    <netty.version>3.9.4.Final</netty.version>
+    <netty.version>4.1.10.Final</netty.version>
     <zookeeper.version>3.5.1-alpha</zookeeper.version>
+    <slf4j.version>1.7.25</slf4j.version>
   </properties>
   <url>http://zookeeper.apache.org/bookkeeper</url>
   <build>
@@ -52,7 +53,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>findbugs-maven-plugin</artifactId>
-        <version>3.0.3</version>
+        <version>3.0.4</version>
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>

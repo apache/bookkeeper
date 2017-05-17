@@ -17,8 +17,11 @@
  */
 package org.apache.bookkeeper.proto;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
+import io.netty.util.ReferenceCountUtil;
+
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +35,6 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 import org.apache.bookkeeper.util.MathUtils;
-import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,19 +66,19 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
 
         LOG.debug("Received new read request: {}", request);
         StatusCode status;
-        ByteBuffer entryBody;
+        ByteBuf entryBody = null;
         try {
             Future<Boolean> fenceResult = null;
             if (readRequest.hasFlag() && readRequest.getFlag().equals(ReadRequest.Flag.FENCE_LEDGER)) {
                 LOG.warn("Ledger fence request received for ledger: {} from address: {}", ledgerId,
-                         channel.getRemoteAddress());
+                         channel.remoteAddress());
 
                 if (readRequest.hasMasterKey()) {
                     byte[] masterKey = readRequest.getMasterKey().toByteArray();
                     fenceResult = requestProcessor.bookie.fenceLedger(ledgerId, masterKey);
                 } else {
                     LOG.error("Fence ledger request received without master key for ledger:{} from address: {}",
-                              ledgerId, channel.getRemoteAddress());
+                              ledgerId, channel.remoteAddress());
                     throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
                 }
             }
@@ -97,7 +99,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                         status = StatusCode.EIO;
                     } else {
                         status = StatusCode.EOK;
-                        readResponse.setBody(ByteString.copyFrom(entryBody));
+                        readResponse.setBody(ByteString.copyFrom(entryBody.nioBuffer()));
                     }
                 } catch (InterruptedException ie) {
                     LOG.error("Interrupting fence read entry (lid: {}, eid: {})",
@@ -113,7 +115,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                     status = StatusCode.EIO;
                 }
             } else {
-                readResponse.setBody(ByteString.copyFrom(entryBody));
+                readResponse.setBody(ByteString.copyFrom(entryBody.nioBuffer()));
                 status = StatusCode.EOK;
             }
         } catch (Bookie.NoLedgerException e) {
@@ -129,7 +131,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             LOG.error("IOException while reading entry:{} from ledger:{}", entryId, ledgerId);
         } catch (BookieException e) {
             LOG.error("Unauthorized access to ledger:{} while reading entry:{} in request from address: {}",
-                    new Object[]{ledgerId, entryId, channel.getRemoteAddress()});
+                    new Object[]{ledgerId, entryId, channel.remoteAddress()});
             status = StatusCode.EUA;
         }
 
@@ -140,6 +142,8 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             requestProcessor.readEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
                     TimeUnit.NANOSECONDS);
         }
+
+        ReferenceCountUtil.release(entryBody);
 
         // Finally set status and return. The body would have been updated if
         // a read went through.

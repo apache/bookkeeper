@@ -17,15 +17,15 @@
  */
 package org.apache.bookkeeper.client;
 
-import org.jboss.netty.buffer.ChannelBuffer;
+import io.netty.buffer.ByteBuf;
 
 public class ClientUtil {
-    public static ChannelBuffer generatePacket(long ledgerId, long entryId, long lastAddConfirmed,
+    public static ByteBuf generatePacket(long ledgerId, long entryId, long lastAddConfirmed,
                                                long length, byte[] data) {
         return generatePacket(ledgerId, entryId, lastAddConfirmed, length, data, 0, data.length);
     }
 
-    public static ChannelBuffer generatePacket(long ledgerId, long entryId, long lastAddConfirmed,
+    public static ByteBuf generatePacket(long ledgerId, long entryId, long lastAddConfirmed,
                                                long length, byte[] data, int offset, int len) {
         CRC32DigestManager dm = new CRC32DigestManager(ledgerId);
         return dm.computeDigestAndPackageForSending(entryId, lastAddConfirmed, length,

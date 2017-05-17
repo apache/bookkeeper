@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executors;
@@ -27,6 +29,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -93,12 +96,12 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
     }
 
     @Override
-    public long addEntry(ByteBuffer entry) throws IOException {
-        long ledgerId = entry.getLong();
-        long entryId = entry.getLong();
-        long lac = entry.getLong();
-        entry.rewind();
-        memTable.addEntry(ledgerId, entryId, entry, this);
+    public long addEntry(ByteBuf entry) throws IOException {
+        long ledgerId = entry.getLong(entry.readerIndex() + 0);
+        long entryId = entry.getLong(entry.readerIndex() + 8);
+        long lac = entry.getLong(entry.readerIndex() + 16);
+
+        memTable.addEntry(ledgerId, entryId, entry.nioBuffer(), this);
         ledgerCache.updateLastAddConfirmed(ledgerId, lac);
         return entryId;
     }
@@ -108,7 +111,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
      * @param ledgerId
      * @return
      */
-    private ByteBuffer getLastEntryId(long ledgerId) throws IOException {
+    private ByteBuf getLastEntryId(long ledgerId) throws IOException {
         EntryKeyValue kv = memTable.getLastEntry(ledgerId);
         if (null != kv) {
             return kv.getValueAsByteBuffer();
@@ -118,11 +121,11 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
     }
 
     @Override
-    public ByteBuffer getEntry(long ledgerId, long entryId) throws IOException {
+    public ByteBuf getEntry(long ledgerId, long entryId) throws IOException {
         if (entryId == BookieProtocol.LAST_ADD_CONFIRMED) {
             return getLastEntryId(ledgerId);
         }
-        ByteBuffer buffToRet;
+        ByteBuf buffToRet;
         try {
             buffToRet = super.getEntry(ledgerId, entryId);
         } catch (Bookie.NoEntryException nee) {
@@ -175,7 +178,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         //
         // The only exception for the size limitation is if a file grows to be more than hard limit 2GB,
         // we have to force rolling log, which it might cause slight performance effects
-        scheduler.submit(new Runnable() {
+        scheduler.execute(new Runnable() {
             @Override
             public void run() {
                 try {

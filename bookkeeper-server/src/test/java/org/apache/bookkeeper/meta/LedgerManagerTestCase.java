@@ -22,7 +22,6 @@
 package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -35,7 +34,6 @@ import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.EntryLogger;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
-import org.apache.bookkeeper.bookie.LedgerStorage.LedgerDeletionListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -48,6 +46,8 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.buffer.ByteBuf;
 
 /**
  * Test case to run over serveral ledger managers
@@ -153,12 +153,12 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public long addEntry(ByteBuffer entry) throws IOException {
+        public long addEntry(ByteBuf entry) throws IOException {
             return 0;
         }
 
         @Override
-        public ByteBuffer getEntry(long ledgerId, long entryId) throws IOException {
+        public ByteBuf getEntry(long ledgerId, long entryId) throws IOException {
             return null;
         }
 
@@ -213,13 +213,13 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void setExplicitlac(long ledgerId, ByteBuffer lac) throws IOException {
+        public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
             // TODO Auto-generated method stub
 
         }
 
         @Override
-        public ByteBuffer getExplicitLac(long ledgerId) {
+        public ByteBuf getExplicitLac(long ledgerId) {
             // TODO Auto-generated method stub
             return null;
         }

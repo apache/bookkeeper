@@ -1,5 +1,6 @@
 package org.apache.bookkeeper.client;
 
+import java.util.Collections;
 import java.util.Enumeration;
 
 /*
@@ -193,7 +194,7 @@ public class BookKeeperTest extends BaseTestCase {
     public void testCloseDuringOp() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
             .setZkServers(zkUtil.getZooKeeperConnectString());
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 10; i++) {
             final BookKeeper client = new BookKeeper(conf);
             final CountDownLatch l = new CountDownLatch(1);
             final AtomicBoolean success = new AtomicBoolean(false);
@@ -432,5 +433,222 @@ public class BookKeeperTest extends BaseTestCase {
         rlh.close();
         wlh.close();
         bkcWithExplicitLAC.close();
-    }	
+    }
+
+    @Test(timeout = 60000)
+    public void testReadAfterLastAddConfirmed() throws Exception {
+
+        ClientConfiguration clientConfiguration = new ClientConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString());
+
+        try (BookKeeper bkWriter = new BookKeeper(clientConfiguration);) {
+            LedgerHandle writeLh = bkWriter.createLedger(digestType, "testPasswd".getBytes());
+            long ledgerId = writeLh.getId();
+            int numOfEntries = 5;
+            for (int i = 0; i < numOfEntries; i++) {
+                writeLh.addEntry(("foobar" + i).getBytes());
+            }
+
+            try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
+                LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes());) {
+                Assert.assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                Assert.assertFalse(writeLh.isClosed());
+
+                // with readUnconfirmedEntries we are able to read all of the entries
+                Enumeration<LedgerEntry> entries = rlh.readUnconfirmedEntries(0, numOfEntries - 1);
+                int entryId = 0;
+                while (entries.hasMoreElements()) {
+                    LedgerEntry entry = entries.nextElement();
+                    String entryString = new String(entry.getEntry());
+                    Assert.assertTrue("Expected entry String: " + ("foobar" + entryId)
+                        + " actual entry String: " + entryString,
+                        entryString.equals("foobar" + entryId));
+                    entryId++;
+                }
+            }
+
+            try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
+                LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes());) {
+                Assert.assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                Assert.assertFalse(writeLh.isClosed());
+
+                // without readUnconfirmedEntries we are not able to read all of the entries
+                try {
+                    rlh.readEntries(0, numOfEntries - 1);
+                    fail("shoud not be able to read up to "+ (numOfEntries - 1) + " with readEntries");
+                } catch (BKException.BKReadException expected) {
+                }
+
+                // read all entries within the 0..LastAddConfirmed range with readEntries
+                assertEquals(rlh.getLastAddConfirmed() + 1,
+                    Collections.list(rlh.readEntries(0, rlh.getLastAddConfirmed())).size());
+
+                // assert local LAC does not change after reads
+                Assert.assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                // read all entries within the 0..LastAddConfirmed range with readUnconfirmedEntries
+                assertEquals(rlh.getLastAddConfirmed() + 1,
+                    Collections.list(rlh.readUnconfirmedEntries(0, rlh.getLastAddConfirmed())).size());
+
+                // assert local LAC does not change after reads
+                Assert.assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                // read all entries within the LastAddConfirmed..numOfEntries - 1 range with readUnconfirmedEntries
+                assertEquals(numOfEntries - rlh.getLastAddConfirmed(),
+                    Collections.list(rlh.readUnconfirmedEntries(rlh.getLastAddConfirmed(), numOfEntries - 1)).size());
+
+                // assert local LAC does not change after reads
+                Assert.assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                try {
+                    // read all entries within the LastAddConfirmed..numOfEntries range  with readUnconfirmedEntries
+                    // this is an error, we are going outside the range of existing entries
+                    rlh.readUnconfirmedEntries(rlh.getLastAddConfirmed(), numOfEntries);
+                    fail("the read tried to access data for unexisting entry id "+numOfEntries);
+                } catch (BKException.BKNoSuchEntryException expected) {
+                    // expecting a BKNoSuchEntryException, as the entry does not exist on bookies
+                }
+
+                try {
+                    // read all entries within the LastAddConfirmed..numOfEntries range with readEntries
+                    // this is an error, we are going outside the range of existing entries
+                    rlh.readEntries(rlh.getLastAddConfirmed(), numOfEntries);
+                    fail("the read tries to access data for unexisting entry id "+numOfEntries);
+                } catch (BKException.BKReadException expected) {
+                    // expecting a BKReadException, as the client rejected the request to access entries
+                    // after local LastAddConfirmed
+                }
+
+            }
+
+            // ensure that after restarting every bookie entries are not lost
+            // even entries after the LastAddConfirmed
+            restartBookies();
+
+            try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
+                LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes());) {
+                Assert.assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                Assert.assertFalse(writeLh.isClosed());
+
+                // with readUnconfirmedEntries we are able to read all of the entries
+                Enumeration<LedgerEntry> entries = rlh.readUnconfirmedEntries(0, numOfEntries - 1);
+                int entryId = 0;
+                while (entries.hasMoreElements()) {
+                    LedgerEntry entry = entries.nextElement();
+                    String entryString = new String(entry.getEntry());
+                    Assert.assertTrue("Expected entry String: " + ("foobar" + entryId)
+                        + " actual entry String: " + entryString,
+                        entryString.equals("foobar" + entryId));
+                    entryId++;
+                }
+            }
+
+            try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
+                LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes());) {
+                Assert.assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                Assert.assertFalse(writeLh.isClosed());
+
+                // without readUnconfirmedEntries we are not able to read all of the entries
+                try {
+                    rlh.readEntries(0, numOfEntries - 1);
+                    fail("shoud not be able to read up to "+ (numOfEntries - 1) + " with readEntries");
+                } catch (BKException.BKReadException expected) {
+                }
+
+                // read all entries within the 0..LastAddConfirmed range with readEntries
+                assertEquals(rlh.getLastAddConfirmed() + 1,
+                    Collections.list(rlh.readEntries(0, rlh.getLastAddConfirmed())).size());
+
+                // assert local LAC does not change after reads
+                Assert.assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                // read all entries within the 0..LastAddConfirmed range with readUnconfirmedEntries
+                assertEquals(rlh.getLastAddConfirmed() + 1,
+                    Collections.list(rlh.readUnconfirmedEntries(0, rlh.getLastAddConfirmed())).size());
+
+                // assert local LAC does not change after reads
+                Assert.assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                // read all entries within the LastAddConfirmed..numOfEntries - 1 range with readUnconfirmedEntries
+                assertEquals(numOfEntries - rlh.getLastAddConfirmed(),
+                    Collections.list(rlh.readUnconfirmedEntries(rlh.getLastAddConfirmed(), numOfEntries - 1)).size());
+
+                // assert local LAC does not change after reads
+                Assert.assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                try {
+                    // read all entries within the LastAddConfirmed..numOfEntries range  with readUnconfirmedEntries
+                    // this is an error, we are going outside the range of existing entries
+                    rlh.readUnconfirmedEntries(rlh.getLastAddConfirmed(), numOfEntries);
+                    fail("the read tried to access data for unexisting entry id "+numOfEntries);
+                } catch (BKException.BKNoSuchEntryException expected) {
+                    // expecting a BKNoSuchEntryException, as the entry does not exist on bookies
+                }
+
+                try {
+                    // read all entries within the LastAddConfirmed..numOfEntries range with readEntries
+                    // this is an error, we are going outside the range of existing entries
+                    rlh.readEntries(rlh.getLastAddConfirmed(), numOfEntries);
+                    fail("the read tries to access data for unexisting entry id "+numOfEntries);
+                } catch (BKException.BKReadException expected) {
+                    // expecting a BKReadException, as the client rejected the request to access entries
+                    // after local LastAddConfirmed
+                }
+
+            }
+
+            // open ledger with fencing, this will repair the ledger and make the last entry readable
+            try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
+                LedgerHandle rlh = bkReader.openLedger(ledgerId, digestType, "testPasswd".getBytes());) {
+                Assert.assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 1) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 1)));
+
+                Assert.assertFalse(writeLh.isClosed());
+
+                // without readUnconfirmedEntries we are not able to read all of the entries
+                Enumeration<LedgerEntry> entries = rlh.readEntries(0, numOfEntries - 1);
+                int entryId = 0;
+                while (entries.hasMoreElements()) {
+                    LedgerEntry entry = entries.nextElement();
+                    String entryString = new String(entry.getEntry());
+                    Assert.assertTrue("Expected entry String: " + ("foobar" + entryId)
+                        + " actual entry String: " + entryString,
+                        entryString.equals("foobar" + entryId));
+                    entryId++;
+                }
+            }
+
+            try {
+                writeLh.close();
+                fail("should not be able to close the first LedgerHandler as a recovery has been performed");
+            } catch (BKException.BKMetadataVersionException expected) {
+            }
+
+        }
+    }
 }

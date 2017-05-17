@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import com.google.common.base.Optional;
 
+import io.netty.util.HashedWheelTimer;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.Feature;
@@ -42,7 +43,6 @@ import org.apache.bookkeeper.net.NodeBase;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

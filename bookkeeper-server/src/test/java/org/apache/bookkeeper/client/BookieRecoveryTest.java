@@ -24,17 +24,19 @@ import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.MSLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.test.MultiLedgerManagerMultiDigestTestCase;
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -98,6 +100,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         LOG.info("Using ledger manager " + ledgerManagerFactory);
         // set ledger manager
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
+        baseConf.setOpenFileLimit(200); // Limit the number of open files to avoid reaching the proc max
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
     }
 
@@ -481,7 +484,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         }
 
         @Override
-        public void readEntryComplete(int rc, long ledgerId, long entryId, ChannelBuffer buffer, Object ctx) {
+        public void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Got " + rc + " for ledger " + ledgerId + " entry " + entryId + " from " + ctx);
             }
@@ -881,8 +884,11 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
     public void ensurePasswordUsedForOldLedgers() throws Exception {
         // This test bases on creating old ledgers in version 4.1.0, which only
         // supports ZooKeeper based flat and hierarchical LedgerManagerFactory.
-        // So we ignore it for MSLedgerManagerFactory.
+        // So we ignore it for MSLedgerManagerFactory and LongHierarchicalLedgerManagerFactory.
         if (MSLedgerManagerFactory.class.getName().equals(ledgerManagerFactory)) {
+            return;
+        }
+        if (LongHierarchicalLedgerManagerFactory.class.getName().equals(ledgerManagerFactory)) {
             return;
         }
 

@@ -39,6 +39,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.SettableFuture;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Enumeration;
@@ -72,7 +75,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
         Bookie delayBookie = new Bookie(conf) {
                 @Override
-                public void recoveryAddEntry(ByteBuffer entry, WriteCallback cb,
+                public void recoveryAddEntry(ByteBuf entry, WriteCallback cb,
                                              Object ctx, byte[] masterKey)
                         throws IOException, BookieException {
                     try {
@@ -86,7 +89,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                 }
 
                 @Override
-                public void addEntry(ByteBuffer entry, WriteCallback cb,
+                public void addEntry(ByteBuf entry, WriteCallback cb,
                                      Object ctx, byte[] masterKey)
                         throws IOException, BookieException {
                     try {
@@ -100,7 +103,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                 }
 
                 @Override
-                public ByteBuffer readEntry(long ledgerId, long entryId)
+                public ByteBuf readEntry(long ledgerId, long entryId)
                         throws IOException, NoLedgerException {
                     try {
                         Thread.sleep(5000);
@@ -467,60 +470,61 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
     @Test(timeout = 60000)
     public void testBookKeeperAdmin() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
-        BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk);
+        try (BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk);) {
 
-        LOG.info("Create ledger and add entries to it");
-        LedgerHandle lh1 = createLedgerWithEntries(bk, 100);
-        LedgerHandle lh2 = createLedgerWithEntries(bk, 100);
-        LedgerHandle lh3 = createLedgerWithEntries(bk, 100);
-        lh3.close();
+            LOG.info("Create ledger and add entries to it");
+            LedgerHandle lh1 = createLedgerWithEntries(bk, 100);
+            LedgerHandle lh2 = createLedgerWithEntries(bk, 100);
+            LedgerHandle lh3 = createLedgerWithEntries(bk, 100);
+            lh3.close();
 
-        BookieSocketAddress bookieToKill = getBookie(0);
-        killBookie(bookieToKill);
-        startNewBookie();
-        BookieSocketAddress newBookie = getBookie(2);
+            BookieSocketAddress bookieToKill = getBookie(0);
+            killBookie(bookieToKill);
+            startNewBookie();
+            BookieSocketAddress newBookie = getBookie(2);
 
-        CheckerCb checkercb = new CheckerCb();
-        LedgerChecker lc = new LedgerChecker(bk);
-        lc.checkLedger(lh3, checkercb);
-        assertEquals("Should have completed",
-                     checkercb.getRc(30, TimeUnit.SECONDS), BKException.Code.OK);
-        assertEquals("Should have a missing fragment",
-                     1, checkercb.getResult(30, TimeUnit.SECONDS).size());
+            CheckerCb checkercb = new CheckerCb();
+            LedgerChecker lc = new LedgerChecker(bk);
+            lc.checkLedger(lh3, checkercb);
+            assertEquals("Should have completed",
+                         checkercb.getRc(30, TimeUnit.SECONDS), BKException.Code.OK);
+            assertEquals("Should have a missing fragment",
+                         1, checkercb.getResult(30, TimeUnit.SECONDS).size());
 
-        // make sure a bookie in each quorum is slow
-        restartBookieSlow();
-        restartBookieSlow();
+            // make sure a bookie in each quorum is slow
+            restartBookieSlow();
+            restartBookieSlow();
 
-        bk.close();
+            bk.close();
 
-        try {
-            bkadmin.openLedger(lh1.getId());
-            fail("Shouldn't be able to open with a closed client");
-        } catch (BKException.BKClientClosedException cce) {
-            // correct behaviour
-        }
+            try {
+                bkadmin.openLedger(lh1.getId());
+                fail("Shouldn't be able to open with a closed client");
+            } catch (BKException.BKClientClosedException cce) {
+                // correct behaviour
+            }
 
-        try {
-            bkadmin.openLedgerNoRecovery(lh1.getId());
-            fail("Shouldn't be able to open with a closed client");
-        } catch (BKException.BKClientClosedException cce) {
-            // correct behaviour
-        }
+            try {
+                bkadmin.openLedgerNoRecovery(lh1.getId());
+                fail("Shouldn't be able to open with a closed client");
+            } catch (BKException.BKClientClosedException cce) {
+                // correct behaviour
+            }
 
-        try {
-            bkadmin.recoverBookieData(bookieToKill, newBookie);
-            fail("Shouldn't be able to recover with a closed client");
-        } catch (BKException.BKClientClosedException cce) {
-            // correct behaviour
-        }
+            try {
+                bkadmin.recoverBookieData(bookieToKill, newBookie);
+                fail("Shouldn't be able to recover with a closed client");
+            } catch (BKException.BKClientClosedException cce) {
+                // correct behaviour
+            }
 
-        try {
-            bkadmin.replicateLedgerFragment(lh3,
-                    checkercb.getResult(10, TimeUnit.SECONDS).iterator().next(), newBookie);
-            fail("Shouldn't be able to replicate with a closed client");
-        } catch (BKException.BKClientClosedException cce) {
-            // correct behaviour
+            try {
+                bkadmin.replicateLedgerFragment(lh3,
+                        checkercb.getResult(10, TimeUnit.SECONDS).iterator().next(), newBookie);
+                fail("Shouldn't be able to replicate with a closed client");
+            } catch (BKException.BKClientClosedException cce) {
+                // correct behaviour
+            }
         }
     }
 

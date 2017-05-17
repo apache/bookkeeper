@@ -20,7 +20,7 @@
  */
 package org.apache.bookkeeper.processor;
 
-import org.jboss.netty.channel.Channel;
+import io.netty.channel.Channel;
 
 public interface RequestProcessor {
 

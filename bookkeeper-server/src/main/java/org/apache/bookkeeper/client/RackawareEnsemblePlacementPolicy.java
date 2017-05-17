@@ -26,7 +26,8 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.jboss.netty.util.HashedWheelTimer;
+
+import io.netty.util.HashedWheelTimer;
 
 public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacementPolicyImpl
         implements ITopologyAwareEnsemblePlacementPolicy<TopologyAwareEnsemblePlacementPolicy.BookieNode> {

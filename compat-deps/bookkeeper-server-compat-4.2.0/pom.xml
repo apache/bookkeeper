@@ -25,7 +25,6 @@
   </parent>
   <groupId>org.apache.bookkeeper</groupId>
   <artifactId>bookkeeper-server-compat420</artifactId>
-  <version>4.2.0</version>
   <name>bookkeeper-server-compat420</name>
   <url>http://maven.apache.org</url>
   <properties>

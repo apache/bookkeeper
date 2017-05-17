@@ -38,7 +38,6 @@ import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.KeeperException;
-import org.jboss.netty.channel.ChannelException;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -268,9 +267,11 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             BookieServer bs2 = new BookieServer(conf);
             bs2.start();
             fail("Should throw BindException, as the bk server is already running!");
-        } catch (ChannelException ce) {
-            Assert.assertTrue("Should be caused by a bind exception",
-                              ce.getCause() instanceof BindException);            
+        } catch (BindException e) {
+            // Ok
+        } catch (IOException e) {
+            Assert.assertTrue("BKServer allowed duplicate Startups!",
+                    e.getMessage().contains("bind"));
         }
     }
 
@@ -292,7 +293,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             fail("Should throw ConnectionLossException as ZKServer is not running!");
         } catch (KeeperException.ConnectionLossException e) {
             // expected behaviour
-        } 
+        }
     }
 
     /**

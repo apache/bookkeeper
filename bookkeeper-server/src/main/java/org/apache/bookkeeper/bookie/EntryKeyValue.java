@@ -19,6 +19,9 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -82,8 +85,8 @@ public class EntryKeyValue extends EntryKey {
     *
     * @return the value
     */
-    public ByteBuffer getValueAsByteBuffer() {
-        return ByteBuffer.wrap(getBuffer(), getOffset(), getLength());
+    public ByteBuf getValueAsByteBuffer() {
+        return Unpooled.wrappedBuffer(getBuffer(), getOffset(), getLength());
     }
 
     /**

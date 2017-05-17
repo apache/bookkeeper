@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.util.SafeRunnable.safeRun;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -183,14 +185,18 @@ class BookieWatcher implements Watcher, ChildrenCallback {
 
         HashSet<BookieSocketAddress> newBookieAddrs = convertToBookieAddresses(children);
 
-        synchronized (this) {
-            Set<BookieSocketAddress> readonlyBookies = readOnlyBookieWatcher.getReadOnlyBookies();
-            placementPolicy.onClusterChanged(newBookieAddrs, readonlyBookies);
-            if (bk.conf.getDiskWeightBasedPlacementEnabled()) {
-                // start collecting bookieInfo for the newly joined bookies, if any
-                bk.bookieInfoReader.availableBookiesChanged(newBookieAddrs);
+        // Update watcher outside ZK callback thread, to avoid deadlock in case some other
+        // component is trying to do a blocking ZK operation
+        bk.mainWorkerPool.submitOrdered(path, safeRun(() -> {
+            synchronized (BookieWatcher.this) {
+                Set<BookieSocketAddress> readonlyBookies = readOnlyBookieWatcher.getReadOnlyBookies();
+                placementPolicy.onClusterChanged(newBookieAddrs, readonlyBookies);
+                if (bk.conf.getDiskWeightBasedPlacementEnabled()) {
+                    // start collecting bookieInfo for the newly joined bookies, if any
+                    bk.bookieInfoReader.availableBookiesChanged(newBookieAddrs);
+                }
             }
-        }
+        }));
 
         // we don't need to close clients here, because:
         // a. the dead bookies will be removed from topology, which will not be used in new ensemble.
@@ -236,13 +242,10 @@ class BookieWatcher implements Watcher, ChildrenCallback {
         final LinkedBlockingQueue<Integer> queue = new LinkedBlockingQueue<Integer>();
         readBookies(new ChildrenCallback() {
             public void processResult(int rc, String path, Object ctx, List<String> children) {
-                try {
+                bk.mainWorkerPool.submitOrdered(path, safeRun(() -> {
                     BookieWatcher.this.processResult(rc, path, ctx, children);
-                    queue.put(rc);
-                } catch (InterruptedException e) {
-                    logger.error("Interruped when trying to read bookies in a blocking fashion");
-                    throw new RuntimeException(e);
-                }
+                    queue.add(rc);
+                }));
             }
         });
         int rc = queue.take();

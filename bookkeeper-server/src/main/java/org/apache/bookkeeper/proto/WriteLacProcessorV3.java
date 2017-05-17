@@ -31,11 +31,13 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 import org.apache.bookkeeper.util.MathUtils;
-import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class WriteLacProcessorV3 extends PacketProcessorBaseV3 {
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+
+class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     private final static Logger logger = LoggerFactory.getLogger(WriteLacProcessorV3.class);
 
     public WriteLacProcessorV3(Request request, Channel channel,
@@ -68,7 +70,7 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 {
         byte[] masterKey = writeLacRequest.getMasterKey().toByteArray();
 
         try {
-            requestProcessor.bookie.setExplicitLac(lacToAdd, channel, masterKey);
+            requestProcessor.bookie.setExplicitLac(Unpooled.wrappedBuffer(lacToAdd), channel, masterKey);
             status = StatusCode.EOK;
         } catch (IOException e) {
             logger.error("Error saving lac for ledger:{}",

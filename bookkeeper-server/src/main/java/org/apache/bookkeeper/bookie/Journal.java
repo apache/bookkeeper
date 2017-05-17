@@ -21,6 +21,9 @@
 
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -36,6 +39,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Stopwatch;
+
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
@@ -272,14 +276,14 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
      * Journal Entry to Record
      */
     private class QueueEntry implements Runnable {
-        ByteBuffer entry;
+        ByteBuf entry;
         long ledgerId;
         long entryId;
         WriteCallback cb;
         Object ctx;
         long enqueueTime;
 
-        QueueEntry(ByteBuffer entry, long ledgerId, long entryId,
+        QueueEntry(ByteBuf entry, long ledgerId, long entryId,
                    WriteCallback cb, Object ctx, long enqueueTime) {
             this.entry = entry.duplicate();
             this.cb = cb;
@@ -338,7 +342,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
 
                 // Notify the waiters that the force write succeeded
                 for (QueueEntry e : this.forceWriteWaiters) {
-                    cbThreadPool.submit(e);
+                    cbThreadPool.execute(e);
                 }
 
                 return this.forceWriteWaiters.size();
@@ -750,14 +754,20 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
         }
     }
 
+    public void logAddEntry(ByteBuffer entry, WriteCallback cb, Object ctx) {
+        logAddEntry(Unpooled.wrappedBuffer(entry), cb, ctx);
+    }
+
     /**
      * record an add entry operation in journal
      */
-    public void logAddEntry(ByteBuffer entry, WriteCallback cb, Object ctx) {
-        long ledgerId = entry.getLong();
-        long entryId = entry.getLong();
-        entry.rewind();
+    public void logAddEntry(ByteBuf entry, WriteCallback cb, Object ctx) {
+        long ledgerId = entry.getLong(entry.readerIndex() + 0);
+        long entryId = entry.getLong(entry.readerIndex() + 8);
         journalQueueSize.inc();
+
+        //Retain entry until it gets written to journal
+        entry.retain();
         queue.add(new QueueEntry(entry, ledgerId, entryId, cb, ctx, MathUtils.nowInNano()));
     }
 
@@ -792,6 +802,8 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
         ByteBuffer lenBuff = ByteBuffer.allocate(4);
         ByteBuffer paddingBuff = ByteBuffer.allocate(2 * conf.getJournalAlignmentSize());
         ZeroBuffer.put(paddingBuff);
+        final int journalFormatVersionToWrite = conf.getJournalFormatVersionToWrite();
+        final int journalAlignmentSize = conf.getJournalAlignmentSize();
         JournalChannel logFile = null;
         forceWriteThread.start();
         Stopwatch journalCreationWatcher = Stopwatch.createUnstarted();
@@ -820,9 +832,9 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                                         logId,
                                         journalPreAllocSize,
                                         journalWriteBufferSize,
-                                        conf.getJournalAlignmentSize(),
+                                        journalAlignmentSize,
                                         removePagesFromCache,
-                                        conf.getJournalFormatVersionToWrite());
+                                        journalFormatVersionToWrite);
                     journalCreationStats.registerSuccessfulEvent(
                             journalCreationWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
 
@@ -885,8 +897,8 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
 
                         // toFlush is non null and not empty so should be safe to access getFirst
                         if (shouldFlush) {
-                            if (conf.getJournalFormatVersionToWrite() >= JournalChannel.V5) {
-                                writePaddingBytes(logFile, paddingBuff, conf.getJournalAlignmentSize());
+                            if (journalFormatVersionToWrite >= JournalChannel.V5) {
+                                writePaddingBytes(logFile, paddingBuff, journalAlignmentSize);
                             }
                             journalFlushWatcher.reset().start();
                             bc.flush(false);
@@ -925,24 +937,25 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                     continue;
                 }
 
-                journalWriteBytes.add(qe.entry.remaining());
+                journalWriteBytes.add(qe.entry.readableBytes());
                 journalQueueSize.dec();
 
-                batchSize += (4 + qe.entry.remaining());
+                batchSize += (4 + qe.entry.readableBytes());
 
                 lenBuff.clear();
-                lenBuff.putInt(qe.entry.remaining());
+                lenBuff.putInt(qe.entry.readableBytes());
                 lenBuff.flip();
 
                 // preAlloc based on size
-                logFile.preAllocIfNeeded(4 + qe.entry.remaining());
+                logFile.preAllocIfNeeded(4 + qe.entry.readableBytes());
 
                 //
                 // we should be doing the following, but then we run out of
                 // direct byte buffers
                 // logFile.write(new ByteBuffer[] { lenBuff, qe.entry });
                 bc.write(lenBuff);
-                bc.write(qe.entry);
+                bc.write(qe.entry.nioBuffer());
+                qe.entry.release();
 
                 toFlush.add(qe);
                 qe = null;

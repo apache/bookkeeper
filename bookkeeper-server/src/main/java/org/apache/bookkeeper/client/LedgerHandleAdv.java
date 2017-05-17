@@ -32,9 +32,10 @@ import java.util.concurrent.RejectedExecutionException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.util.SafeRunnable;
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.buffer.ByteBuf;
 
 /**
  * Ledger Advanced handle extends {@link LedgerHandle} to provide API to add entries with
@@ -213,9 +214,10 @@ public class LedgerHandleAdv extends LedgerHandle {
             bk.mainWorkerPool.submit(new SafeRunnable() {
                 @Override
                 public void safeRun() {
-                    ChannelBuffer toSend = macManager.computeDigestAndPackageForSending(
+                    ByteBuf toSend = macManager.computeDigestAndPackageForSending(
                                                op.getEntryId(), lastAddConfirmed, currentLength, data, offset, length);
                     op.initiate(toSend, length);
+                    toSend.release();
                 }
             });
         } catch (RejectedExecutionException e) {

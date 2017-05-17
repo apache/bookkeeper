@@ -37,6 +37,7 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.FileSystemUpgrade;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.util.IOUtils;
@@ -437,6 +438,17 @@ public class TestBackwardCompat {
             return new LedgerCurrent(newbk, newlh);
         }
 
+        static LedgerCurrent openLedger(long id, ClientConfiguration conf) throws Exception {
+            conf.setZkServers(zkUtil.getZooKeeperConnectString());
+            org.apache.bookkeeper.client.BookKeeper newbk
+                = new org.apache.bookkeeper.client.BookKeeper(conf);
+            org.apache.bookkeeper.client.LedgerHandle newlh
+                = newbk.openLedger(id,
+                                   org.apache.bookkeeper.client.BookKeeper.DigestType.CRC32,
+                                "foobar".getBytes());
+            return new LedgerCurrent(newbk, newlh);
+        }
+
         long getId() {
             return lh.getId();
         }
@@ -826,5 +838,46 @@ public class TestBackwardCompat {
         assertEquals("Failed to read entries!", 100, oldledger.readAll());
         oldledger.close();
         scur.stop();
+    }
+
+    /**
+     * Test compatability between version old version and the current version
+     * with respect to the HierarchicalLedgerManagers.
+     * - 4.2.0 server starts with HierarchicalLedgerManager.
+     * - Write ledgers with old and new clients
+     * - Read ledgers written by old clients.
+     */
+    @Test(timeout = 60000)
+    public void testCompatHierarchicalLedgerManager() throws Exception {
+        File journalDir = createTempDir("bookie", "journal");
+        File ledgerDir = createTempDir("bookie", "ledger");
+
+        int port = PortManager.nextFreePort();
+        // start server, upgrade
+        Server420 s420 = new Server420(journalDir, ledgerDir, port);
+        s420.getConf().setLedgerManagerFactoryClassName("org.apache.bk_v4_2_0.bookkeeper.meta.HierarchicalLedgerManagerFactory");
+        s420.start();
+
+        Ledger420 l420 = Ledger420.newLedger();
+        l420.write100();
+        long oldLedgerId = l420.getId();
+        l420.close();
+        s420.stop();
+
+        // Start the current server
+        ServerCurrent scur = new ServerCurrent(journalDir, ledgerDir, port, true);
+        scur.getConf().setLedgerManagerFactoryClassName("org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
+        scur.getConf().setProperty(AbstractConfiguration.LEDGER_MANAGER_FACTORY_DISABLE_CLASS_CHECK, true);
+        scur.start();
+
+        // Munge the conf so we can test.
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setLedgerManagerFactoryClassName("org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
+        conf.setProperty(AbstractConfiguration.LEDGER_MANAGER_FACTORY_DISABLE_CLASS_CHECK, true);
+
+        // check that new client can read old ledgers on new server
+        LedgerCurrent oldledger = LedgerCurrent.openLedger(oldLedgerId, conf);
+        assertEquals("Failed to read entries!", 100, oldledger.readAll());
+        oldledger.close();
     }
 }

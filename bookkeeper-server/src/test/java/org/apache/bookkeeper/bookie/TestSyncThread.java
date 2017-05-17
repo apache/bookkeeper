@@ -20,10 +20,10 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Callable;
@@ -35,17 +35,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
-
 import org.apache.bookkeeper.jmx.BKMBeanInfo;
-
+import org.apache.bookkeeper.meta.LedgerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.junit.Test;
 import org.junit.Before;
 import org.junit.After;
@@ -314,12 +311,12 @@ public class TestSyncThread {
         }
 
         @Override
-        public long addEntry(ByteBuffer entry) throws IOException {
+        public long addEntry(ByteBuf entry) throws IOException {
             return 1L;
         }
 
         @Override
-        public ByteBuffer getEntry(long ledgerId, long entryId)
+        public ByteBuf getEntry(long ledgerId, long entryId)
                 throws IOException {
             return null;
         }
@@ -334,11 +331,11 @@ public class TestSyncThread {
         }
 
         @Override
-        public void setExplicitlac(long ledgerId, ByteBuffer lac) {
+        public void setExplicitlac(long ledgerId, ByteBuf lac) {
         }
 
         @Override
-        public ByteBuffer getExplicitLac(long ledgerId) {
+        public ByteBuf getExplicitLac(long ledgerId) {
             return null;
         }
 

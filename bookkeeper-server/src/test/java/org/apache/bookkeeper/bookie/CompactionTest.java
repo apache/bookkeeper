@@ -20,9 +20,11 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,6 +53,7 @@ import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.TestUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.zookeeper.AsyncCallback;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -571,14 +574,13 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         storage.gcThread.doCompactEntryLogs(threshold);
     }
 
-    private ByteBuffer genEntry(long ledger, long entry, int size) {
-        ByteBuffer bb = ByteBuffer.wrap(new byte[size]);
-        bb.putLong(ledger);
-        bb.putLong(entry);
-        while (bb.hasRemaining()) {
-            bb.put((byte)0xFF);
+    private ByteBuf genEntry(long ledger, long entry, int size) {
+        ByteBuf bb = Unpooled.buffer(size);
+        bb.writeLong(ledger);
+        bb.writeLong(entry);
+        while (bb.isWritable()) {
+            bb.writeByte((byte)0xFF);
         }
-        bb.flip();
         return bb;
     }
 

@@ -20,10 +20,10 @@
  */
 package org.apache.bookkeeper.proto;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.ByteString;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+
+import io.netty.channel.Channel;
+
 import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.AuthToken;
 
@@ -33,7 +33,6 @@ import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
-import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -132,7 +131,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                     processReadRequestV3(r, c);
                     break;
                 case AUTH:
-                    LOG.info("Ignoring auth operation from client {}",c.getRemoteAddress());
+                    LOG.info("Ignoring auth operation from client {}",c.remoteAddress());
                     BookkeeperProtocol.AuthMessage message = BookkeeperProtocol.AuthMessage
                         .newBuilder()
                         .setAuthPluginName(AuthProviderFactoryFactory.authenticationDisabledPluginName)
@@ -142,7 +141,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                             BookkeeperProtocol.Response.newBuilder().setHeader(r.getHeader())
                             .setStatus(BookkeeperProtocol.StatusCode.EOK)
                             .setAuthResponse(message);
-                    c.write(authResponse.build());
+                    c.writeAndFlush(authResponse.build());
                     break;
                 case WRITE_LAC:
                     processWriteLacRequestV3(r,c);
@@ -158,7 +157,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                     BookkeeperProtocol.Response.Builder response =
                             BookkeeperProtocol.Response.newBuilder().setHeader(r.getHeader())
                             .setStatus(BookkeeperProtocol.StatusCode.EBADREQ);
-                    c.write(response.build());
+                    c.writeAndFlush(response.build());
                     if (statsEnabled) {
                         bkStats.getOpStats(BKStats.STATS_UNKNOWN).incrementFailedOps();
                     }
@@ -176,7 +175,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                     break;
                 default:
                     LOG.error("Unknown op type {}, sending error", r.getOpCode());
-                    c.write(ResponseBuilder.buildErrorResponse(BookieProtocol.EBADREQ, r));
+                    c.writeAndFlush(ResponseBuilder.buildErrorResponse(BookieProtocol.EBADREQ, r));
                     if (statsEnabled) {
                         bkStats.getOpStats(BKStats.STATS_UNKNOWN).incrementFailedOps();
                     }

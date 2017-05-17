@@ -20,8 +20,7 @@
  */
 package org.apache.bookkeeper.proto;
 
-import java.nio.ByteBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
+import io.netty.buffer.ByteBuf;
 
 class ResponseBuilder {
     static BookieProtocol.Response buildErrorResponse(int errorCode, BookieProtocol.Request r) {
@@ -40,8 +39,8 @@ class ResponseBuilder {
                                               r.getEntryId());
     }
 
-    static BookieProtocol.Response buildReadResponse(ByteBuffer data, BookieProtocol.Request r) {
+    static BookieProtocol.Response buildReadResponse(ByteBuf data, BookieProtocol.Request r) {
         return new BookieProtocol.ReadResponse(r.getProtocolVersion(), BookieProtocol.EOK,
-                r.getLedgerId(), r.getEntryId(), ChannelBuffers.wrappedBuffer(data));
+                r.getLedgerId(), r.getEntryId(), data);
     }
 }
