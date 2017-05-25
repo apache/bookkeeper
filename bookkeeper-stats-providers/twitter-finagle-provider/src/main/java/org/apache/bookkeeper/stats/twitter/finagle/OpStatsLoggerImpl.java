@@ -19,6 +19,7 @@ package org.apache.bookkeeper.stats.twitter.finagle;
 
 import com.twitter.finagle.stats.Stat;
 import com.twitter.finagle.stats.StatsReceiver;
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.stats.OpStatsData;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 
@@ -40,13 +41,23 @@ public class OpStatsLoggerImpl implements OpStatsLogger {
     }
 
     @Override
-    public void registerSuccessfulEvent(final long eventLatencyMicros) {
-        this.success.add(eventLatencyMicros);
+    public void registerFailedEvent(long eventLatency, TimeUnit unit) {
+        this.success.add(unit.toMillis(eventLatency));
     }
 
     @Override
-    public void registerFailedEvent(final long eventLatencyMicros) {
-        this.failure.add(eventLatencyMicros);
+    public void registerSuccessfulEvent(long eventLatency, TimeUnit unit) {
+        this.failure.add(unit.toMillis(eventLatency));
+    }
+
+    @Override
+    public void registerSuccessfulValue(final long value) {
+        this.success.add(value);
+    }
+
+    @Override
+    public void registerFailedValue(final long value) {
+        this.failure.add(value);
     }
 
     /**

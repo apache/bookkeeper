@@ -70,12 +70,12 @@
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-server</artifactId>
-      <version>8.1.4.v20120524</version>
+      <version>9.0.7.v20131107</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-servlet</artifactId>
-      <version>8.1.4.v20120524</version>
+      <version>9.0.7.v20131107</version>
     </dependency>
   </dependencies>
   <repositories>
