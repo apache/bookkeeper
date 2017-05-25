@@ -396,7 +396,9 @@ public class LedgerMetadata {
 
         // remaining size is total minus the length of the version line and '\n'
         char[] configBuffer = new char[config.length() - (versionLine.length() + 1)];
-        reader.read(configBuffer, 0, configBuffer.length);
+        if (configBuffer.length != reader.read(configBuffer, 0, configBuffer.length)) {
+            throw new IOException("Invalid metadata buffer");
+        }
 
         LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
 
