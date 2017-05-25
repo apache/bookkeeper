@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 public class ClientUtil {
     public static ByteBuf generatePacket(long ledgerId, long entryId, long lastAddConfirmed,
@@ -29,7 +30,7 @@ public class ClientUtil {
                                                long length, byte[] data, int offset, int len) {
         CRC32DigestManager dm = new CRC32DigestManager(ledgerId);
         return dm.computeDigestAndPackageForSending(entryId, lastAddConfirmed, length,
-                                                    data, offset, len);
+                                                    Unpooled.wrappedBuffer(data, offset, len));
     }
 
     /** Returns that whether ledger is in open state */
