@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 /**
  * Ledger Advanced handle extends {@link LedgerHandle} to provide API to add entries with
@@ -151,8 +152,8 @@ public class LedgerHandleAdv extends LedgerHandle {
             cb.addComplete(BKException.Code.DuplicateEntryIdException,
                     LedgerHandleAdv.this, entryId, ctx);
             return;
-        }       
-        doAsyncAddEntry(op, data, offset, length, cb, ctx);
+        }
+        doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
     }
 
     /**
@@ -161,14 +162,7 @@ public class LedgerHandleAdv extends LedgerHandle {
      * unaltered in the base class.
      */
     @Override
-    void doAsyncAddEntry(final PendingAddOp op, final byte[] data, final int offset, final int length,
-            final AddCallback cb, final Object ctx) {
-        if (offset < 0 || length < 0
-                || (offset + length) > data.length) {
-            throw new ArrayIndexOutOfBoundsException(
-                "Invalid values for offset("+offset
-                +") or length("+length+")");
-        }
+    protected void doAsyncAddEntry(final PendingAddOp op, final ByteBuf data, final AddCallback cb, final Object ctx) {
         if (throttler != null) {
             throttler.acquire();
         }
@@ -214,10 +208,13 @@ public class LedgerHandleAdv extends LedgerHandle {
             bk.mainWorkerPool.submit(new SafeRunnable() {
                 @Override
                 public void safeRun() {
-                    ByteBuf toSend = macManager.computeDigestAndPackageForSending(
-                                               op.getEntryId(), lastAddConfirmed, currentLength, data, offset, length);
-                    op.initiate(toSend, length);
-                    toSend.release();
+                    ByteBuf toSend = macManager.computeDigestAndPackageForSending(op.getEntryId(), lastAddConfirmed,
+                            currentLength, data);
+                    try {
+                        op.initiate(toSend, toSend.readableBytes());
+                    } finally {
+                        toSend.release();
+                    }
                 }
             });
         } catch (RejectedExecutionException e) {
