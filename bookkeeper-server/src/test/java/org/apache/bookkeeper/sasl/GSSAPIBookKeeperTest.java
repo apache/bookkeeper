@@ -76,10 +76,13 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
         kdc.start();
 
         String localhostName = InetAddress.getLocalHost().getHostName();
+
         String principalServerNoRealm = "bookkeeper/" + localhostName;
         String principalServer = "bookkeeper/" + localhostName + "@" + kdc.getRealm();
+        LOG.info("principalServer: " + principalServer);
         String principalClientNoRealm = "bookkeeperclient/" + localhostName;
         String principalClient = principalClientNoRealm + "@" + kdc.getRealm();
+        LOG.info("principalClient: " + principalClient);
 
         File keytabClient = new File(kerberosWorkDir.getRoot(), "bookkeeperclient.keytab");
         kdc.createPrincipal(keytabClient, principalClientNoRealm);
@@ -166,6 +169,7 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
         ClientConfiguration clientConf) throws Exception {
         LOG.info("Counting entries in {}", ledgerId);
         for (ServerConfiguration conf : bsConfs) {
+            bookieConf.setUseHostNameAsBookieID(true);
             bookieConf.setBookieAuthProviderFactoryClass(
                 SASLBookieAuthProviderFactory.class.getName());
         }
@@ -197,6 +201,7 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
     @Test(timeout = 30000)
     public void testSingleMessageAuth() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
+        bookieConf.setUseHostNameAsBookieID(true);
         bookieConf.setBookieAuthProviderFactoryClass(
             SASLBookieAuthProviderFactory.class.getName());
 
@@ -214,8 +219,9 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
     }
 
     @Test(timeout = 30000)
-    public void testNowAllowedClientId() throws Exception {
+    public void testNotAllowedClientId() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
+        bookieConf.setUseHostNameAsBookieID(true);
         bookieConf.setBookieAuthProviderFactoryClass(
             SASLBookieAuthProviderFactory.class.getName());
         bookieConf.setProperty(SaslConstants.JAAS_CLIENT_ALLOWED_IDS, "nobody");

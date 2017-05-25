@@ -40,12 +40,10 @@ public class SASLBookieAuthProvider implements BookieAuthProvider {
 
     private SaslServerState server;
     private final AuthCallbacks.GenericCallback<Void> completeCb;
-    private final Pattern allowedIdsPattern;
-
+    
     SASLBookieAuthProvider(BookieConnectionPeer addr, AuthCallbacks.GenericCallback<Void> completeCb,
         ServerConfiguration serverConfiguration, Subject subject, Pattern allowedIdsPattern) {
         this.completeCb = completeCb;
-        this.allowedIdsPattern = allowedIdsPattern;
         try {
             server = new SaslServerState(serverConfiguration, subject, allowedIdsPattern);
         } catch (IOException | LoginException error) {

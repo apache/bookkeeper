@@ -32,6 +32,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
+import static org.apache.bookkeeper.sasl.SaslConstants.JAAS_CLIENT_ALLOWED_IDS;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.AfterClass;
 
@@ -78,6 +79,7 @@ public class MD5DigestBookKeeperTest extends BookKeeperClusterTestCase {
         for (ServerConfiguration conf : bsConfs) {
             bookieConf.setBookieAuthProviderFactoryClass(
                 SASLBookieAuthProviderFactory.class.getName());
+            bookieConf.setProperty(JAAS_CLIENT_ALLOWED_IDS, ".*hd.*");
         }
         clientConf.setClientAuthProviderFactoryClass(
             SASLClientProviderFactory.class.getName());
@@ -110,6 +112,7 @@ public class MD5DigestBookKeeperTest extends BookKeeperClusterTestCase {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
             SASLBookieAuthProviderFactory.class.getName());
+        bookieConf.setProperty(JAAS_CLIENT_ALLOWED_IDS, ".*hd.*");
 
         ClientConfiguration clientConf = newClientConfiguration();
         clientConf.setClientAuthProviderFactoryClass(
