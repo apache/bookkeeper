@@ -30,6 +30,8 @@ public class TestBKConfiguration {
         confReturn.setJournalFormatVersionToWrite(5);
         confReturn.setAllowLoopback(true);
         confReturn.setGcWaitTime(1000);
+        confReturn.setDiskUsageThreshold(0.999f);
+        confReturn.setDiskUsageWarnThreshold(0.99f);
         return confReturn;
     }
 
