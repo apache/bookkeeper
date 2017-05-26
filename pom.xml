@@ -42,7 +42,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <protobuf.version>2.6.1</protobuf.version>
-    <guava.version>13.0.1</guava.version>
+    <guava.version>20.0</guava.version>
     <netty.version>4.1.10.Final</netty.version>
     <zookeeper.version>3.5.1-alpha</zookeeper.version>
     <slf4j.version>1.7.25</slf4j.version>
@@ -75,7 +75,7 @@
         <configuration>
           <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true</argLine>
 	  <redirectTestOutputToFile>true</redirectTestOutputToFile>
-	  <reuseForks>false</reuseForks>
+	  <forkMode>always</forkMode>
 	  <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
         </configuration>
       </plugin>
@@ -117,20 +117,15 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
-        <version>0.12</version>
+        <version>0.7</version>
         <configuration>
           <excludes>
             <exclude>.git/**/*</exclude>
-            <exclude>**/target/**/*</exclude>
             <exclude>**/.svn/**/*</exclude>
             <exclude>CHANGES.txt</exclude>
             <exclude>**/README</exclude>
             <exclude>**/apidocs/*</exclude>
-            <exclude>test-patch/**/*</exclude>
-            <exclude>**/.classpath</exclude>
-            <exclude>**/.gitignore</exclude>
-            <exclude>**/.project</exclude>
-            <exclude>**/.settings/*</exclude>
+	    <exclude>test-patch/**/*</exclude>
           </excludes>
         </configuration>
       </plugin>
