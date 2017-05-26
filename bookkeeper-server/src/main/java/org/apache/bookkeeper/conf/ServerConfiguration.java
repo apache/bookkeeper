@@ -604,6 +604,16 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Get dir name to store journal files
+     *
+     * @return journal dir name
+     */
+    public String getJournalDirNameWithoutDefault() {
+        return this.getString(JOURNAL_DIR);
+    }
+
+
+    /**
      * Set dir name to store journal files
      *
      * @param journalDir
@@ -646,9 +656,18 @@ public class ServerConfiguration extends AbstractConfiguration {
      *
      * @return ledger dir names, if not provided return null
      */
+    public String[] getLedgerDirWithoutDefault() {
+        return this.getStringArray(LEDGER_DIRS);
+    }
+
+    /**
+     * Get dir names to store ledger data
+     *
+     * @return ledger dir names, if not provided return null
+     */
     public String[] getLedgerDirNames() {
         String[] ledgerDirs = this.getStringArray(LEDGER_DIRS);
-        if (null == ledgerDirs) {
+        if ((null == ledgerDirs) || (0 == ledgerDirs.length)) {
             return new String[] { "/tmp/bk-data" };
         }
         return ledgerDirs;
