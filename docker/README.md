@@ -1,4 +1,4 @@
-# docker-distributedlog
+# docker-bookkeeper
 
 Dockerfile for [BookKeeper](http://bookkeeper.apache.org/).
 
