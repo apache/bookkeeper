@@ -3,6 +3,7 @@
 Dockerfile for [BookKeeper](http://bookkeeper.apache.org/).
 
 Some environment variables for docker image:
+
 |  *name*  |  *description*  |  *default value*  | 
 |----------|-----------------|-------------------|
 | BOOKIE_PORT     | bookie service port      |  3181 |
