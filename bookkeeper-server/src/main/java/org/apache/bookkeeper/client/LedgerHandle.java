@@ -309,9 +309,9 @@ public class LedgerHandle implements AutoCloseable {
      * of the ledger is. This ensures that, once the ledger has been closed, all
      * reads from the ledger will return the same set of entries.
      *
-     * @param origCb
+     * @param cb
      *          callback implementation
-     * @param origCtx
+     * @param ctx
      *          control object
      */
     public void asyncClose(CloseCallback cb, Object ctx) {
@@ -588,12 +588,8 @@ public class LedgerHandle implements AutoCloseable {
     }
 
     void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb, Object ctx) {
-        try {
-            new PendingReadOp(this, bk.scheduler,
-                              firstEntry, lastEntry, cb, ctx).initiate();
-        } catch (InterruptedException e) {
-            cb.readComplete(BKException.Code.InterruptedException, this, null, ctx);
-        }
+        new PendingReadOp(this, bk.scheduler,
+                          firstEntry, lastEntry, cb, ctx).initiate();
     }
 
     /**
@@ -1529,10 +1525,8 @@ public class LedgerHandle implements AutoCloseable {
          *
          * @param rc
          *          return code
-         * @param leder
+         * @param lh
          *          ledger identifier
-         * @param entry
-         *          entry identifier
          * @param ctx
          *          control object
          */

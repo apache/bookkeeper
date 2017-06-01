@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.client;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -26,8 +27,6 @@ import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.DigestManager.RecoveryData;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
-import org.apache.bookkeeper.stats.BookkeeperClientStatsLogger.BookkeeperClientOp;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +53,10 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     LedgerMetadata metadataForRecovery;
     boolean parallelRead = false;
     int readBatchSize = 1;
+
+    // EntryListener Hook
+    @VisibleForTesting
+    ReadEntryListener entryListener = null;
 
     class RecoveryReadOp extends ListenerBasedPendingReadOp {
 
@@ -89,6 +92,19 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
         return this;
     }
 
+    /**
+     * Set an entry listener to listen on individual recovery reads during recovery procedure.
+     *
+     * @param entryListener
+     *          entry listener
+     * @return ledger recovery operation
+     */
+    @VisibleForTesting
+    LedgerRecoveryOp setEntryListener(ReadEntryListener entryListener) {
+        this.entryListener = entryListener;
+        return this;
+    }
+
     public void initiate() {
         ReadLastConfirmedOp rlcop = new ReadLastConfirmedOp(lh,
                 new ReadLastConfirmedOp.LastConfirmedDataCallback() {
@@ -105,7 +121,6 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
                             submitCallback(rc);
                         } else {
                             submitCallback(BKException.Code.ReadException);
-                            cb.operationComplete(BKException.Code.ReadException, null);
                         }
                     }
                 });
@@ -116,6 +131,17 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
          * from writing to it.
          */
         rlcop.initiateWithFencing();
+    }
+
+    private void submitCallback(int rc) {
+        if (BKException.Code.OK == rc) {
+            lh.bk.getRecoverAddCountLogger().registerSuccessfulValue(writeCount.get());
+            lh.bk.getRecoverReadCountLogger().registerSuccessfulValue(readCount.get());
+        } else {
+            lh.bk.getRecoverAddCountLogger().registerFailedValue(writeCount.get());
+            lh.bk.getRecoverReadCountLogger().registerFailedValue(readCount.get());
+        }
+        cb.operationComplete(rc, null);
     }
 
     /**
@@ -138,9 +164,9 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
                     if (rc != BKException.Code.OK) {
                         LOG.warn("Close ledger {} failed during recovery: ",
                             LedgerRecoveryOp.this.lh.getId(), BKException.getMessage(rc));
-                        cb.operationComplete(rc, null);
+                        submitCallback(rc);
                     } else {
-                        cb.operationComplete(BKException.Code.OK, null);
+                        submitCallback(BKException.Code.OK);
                         LOG.debug("After closing length is: {}", lh.getLength());
                     }
                 }
@@ -150,7 +176,14 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
 
     @Override
     public void onEntryComplete(int rc, LedgerHandle lh, LedgerEntry entry, Object ctx) {
-        if (!readDone.get() && rc == BKException.Code.OK) {
+        // notify entry listener on individual entries being read during ledger recovery.
+        ReadEntryListener listener = entryListener;
+        if (null != listener) {
+            listener.onEntryComplete(rc, lh, entry, ctx);
+        }
+
+        // we only trigger recovery add an entry when readDone == false && callbackDone == false
+        if (!callbackDone.get() && !readDone.get() && rc == BKException.Code.OK) {
             readCount.incrementAndGet();
             byte[] data = entry.getEntry();
 
@@ -161,15 +194,24 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
              */
             synchronized (lh) {
                 lh.length = entry.getLength() - (long) data.length;
+                // check whether entry id is expected, so we won't overwritten any entries by mistake
+                if (entry.getEntryId() != lh.lastAddPushed + 1) {
+                    LOG.error("Unexpected to recovery add entry {} as entry {} for ledger {}.",
+                              new Object[] { entry.getEntryId(), (lh.lastAddPushed + 1), lh.getId() });
+                    rc = BKException.Code.UnexpectedConditionException;
+                }
             }
-            lh.asyncRecoveryAddEntry(data, 0, data.length, this, null);
-            if (entry.getEntryId() == endEntryToRead) {
-                // trigger next batch read
-                doRecoveryRead();
+            if (BKException.Code.OK == rc) {
+                lh.asyncRecoveryAddEntry(data, 0, data.length, this, null);
+                if (entry.getEntryId() == endEntryToRead) {
+                    // trigger next batch read
+                    doRecoveryRead();
+                }
+                return;
             }
-            return;
         }
 
+        // no entry found. stop recovery procedure but wait until recovery add finished.
         if (rc == BKException.Code.NoSuchEntryException || rc == BKException.Code.NoSuchLedgerExistsException) {
             readDone.set(true);
             if (readCount.get() == writeCount.get()) {
@@ -179,20 +221,27 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
         }
 
         // otherwise, some other error, we can't handle
-        LOG.error("Failure {} while reading entries: ({} - {}), ledger: {} while recovering ledger",
-                new Object[] { BKException.getMessage(rc), startEntryToRead, endEntryToRead, lh.getId() });
-        submitCallback(rc);
+        if (BKException.Code.OK != rc && callbackDone.compareAndSet(false, true)) {
+            LOG.error("Failure {} while reading entries: ({} - {}), ledger: {} while recovering ledger",
+                      new Object[] { BKException.getMessage(rc), startEntryToRead, endEntryToRead, lh.getId() });
+            submitCallback(rc);
+        } else if (BKException.Code.OK == rc) {
+            // we are here is because we successfully read an entry but readDone was already set to true.
+            // this would happen on recovery a ledger than has gaps in the tail.
+            LOG.warn("Successfully read entry {} for ledger {}, but readDone is already {}",
+                     new Object[] { entry.getEntryId(), lh.getId(), readDone.get() });
+        }
         return;
     }
 
     @Override
     public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
         if (rc != BKException.Code.OK) {
-            LOG.error("Failure " + BKException.getMessage(rc) + " while writing entry: " + (lh.lastAddConfirmed + 1)
+            LOG.error("Failure " + BKException.getMessage(rc) + " while writing entry: " + (entryId + 1)
                       + " ledger: " + lh.ledgerId + " while recovering ledger");
             if (callbackDone.compareAndSet(false, true)) {
                 // Give up, we can't recover from this error
-                cb.operationComplete(rc, null);
+                submitCallback(rc);
             }
             return;
         }

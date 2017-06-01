@@ -23,7 +23,6 @@ package org.apache.bookkeeper.client;
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -436,8 +435,9 @@ public class LedgerRecoveryTest extends BaseTestCase {
 
     private void batchRecovery(int batchSize) throws Exception {
         ClientConfiguration newConf = new ClientConfiguration()
-                .setReadTimeout(60000).setAddEntryTimeout(60000)
-                .setRecoveryReadBatchSize(batchSize);
+            .setReadEntryTimeout(60000)
+            .setAddEntryTimeout(60000)
+            .setRecoveryReadBatchSize(batchSize);
 
         newConf.setZkServers(zkUtil.getZooKeeperConnectString());
         BookKeeper newBk = new BookKeeper(newConf);
