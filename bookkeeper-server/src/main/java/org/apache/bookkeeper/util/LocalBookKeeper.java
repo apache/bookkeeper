@@ -45,7 +45,6 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
 
 import static com.google.common.base.Charsets.UTF_8;
-import org.apache.zookeeper.data.ACL;
 
 public class LocalBookKeeper {
     protected static final Logger LOG = LoggerFactory.getLogger(LocalBookKeeper.class);
@@ -180,8 +179,16 @@ public class LocalBookKeeper {
             bsConfs[i].setBookiePort(initialPort + i);
             LOG.info("Connecting to Zookeeper at " + loopbackIPAddr + " port:" + ZooKeeperDefaultPort);
             bsConfs[i].setZkServers(loopbackIPAddr + ":" + ZooKeeperDefaultPort);
-            bsConfs[i].setJournalDirName(tmpDirs[i].getPath());
-            bsConfs[i].setLedgerDirNames(new String[] { tmpDirs[i].getPath() });
+
+            if (null == bsConfs[i].getJournalDirNameWithoutDefault()) {
+                bsConfs[i].setJournalDirName(tmpDirs[i].getPath());
+            }
+
+            String [] ledgerDirs = bsConfs[i].getLedgerDirWithoutDefault();
+            if ((null == ledgerDirs) || (0 == ledgerDirs.length)) {
+                bsConfs[i].setLedgerDirNames(new String[] { tmpDirs[i].getPath() });
+            }
+
             bsConfs[i].setAllowLoopback(true);
 
             bs[i] = new BookieServer(bsConfs[i]);
