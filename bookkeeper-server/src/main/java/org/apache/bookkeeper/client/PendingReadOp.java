@@ -104,25 +104,26 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
          * @return return true if we managed to complete the entry;
          *         otherwise return false if the read entry is not complete or it is already completed before
          */
-        boolean complete(InetSocketAddress host, final ChannelBuffer buffer) {
-            ChannelBufferInputStream is;
+        boolean complete(BookieSocketAddress host, final ByteBuf buffer) {
+            ByteBuf content;
             try {
-                is = lh.macManager.verifyDigestAndReturnData(entryId, buffer);
+                content = lh.macManager.verifyDigestAndReturnData(entryId, buffer);
             } catch (BKDigestMatchException e) {
                 logErrorAndReattemptRead(host, "Mac mismatch", BKException.Code.DigestMatchException);
+                buffer.release();
                 return false;
             }
 
             if (!complete.getAndSet(true)) {
-                entryDataStream = is;
-
                 /*
                  * The length is a long and it is the last field of the metadata of an entry.
                  * Consequently, we have to subtract 8 from METADATA_LENGTH to get the length.
                  */
                 length = buffer.getLong(DigestManager.METADATA_LENGTH - 8);
+                data = content;
                 return true;
             } else {
+                buffer.release();
                 return false;
             }
         }
@@ -137,7 +138,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
          * @param rc
          *          read result code
          */
-        void logErrorAndReattemptRead(InetSocketAddress host, String errMsg, int rc) {
+        void logErrorAndReattemptRead(BookieSocketAddress host, String errMsg, int rc) {
             if (BKException.Code.OK == firstError ||
                 BKException.Code.NoSuchEntryException == firstError ||
                 BKException.Code.NoSuchLedgerExistsException == firstError) {
@@ -145,18 +146,23 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             } else if (BKException.Code.BookieHandleNotAvailableException == firstError &&
                        BKException.Code.NoSuchEntryException != rc &&
                        BKException.Code.NoSuchLedgerExistsException != rc) {
-                // if other exception rather than NoSuchEntryException is returned
-                // we need to update firstError to indicate that it might be a valid read but just failed.
+                // if other exception rather than NoSuchEntryException or NoSuchLedgerExistsException is
+                // returned we need to update firstError to indicate that it might be a valid read but just
+                // failed.
                 firstError = rc;
             }
             if (BKException.Code.NoSuchEntryException == rc ||
                 BKException.Code.NoSuchLedgerExistsException == rc) {
                 ++numMissedEntryReads;
-            }
-
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(errMsg + " while reading entry: " + entryId + " ledgerId: " + lh.ledgerId + " from bookie: "
-                        + host);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("No such entry found on bookie.  L{} E{} bookie: {}",
+                        new Object[] { lh.ledgerId, entryId, host });
+                }
+            } else {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(errMsg + " while reading L{} E{} from bookie: {}",
+                        new Object[]{lh.ledgerId, entryId, host});
+                }
             }
         }
 
@@ -168,7 +174,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
          *      the set of hosts that we already received responses.
          * @return host we sent to if we sent. null otherwise.
          */
-        abstract InetSocketAddress maybeSendSpeculativeRead(Set<InetSocketAddress> heardFromHosts);
+        abstract BookieSocketAddress maybeSendSpeculativeRead(Set<BookieSocketAddress> heardFromHosts);
 
         /**
          * Whether the read request completed.
@@ -192,7 +198,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         final BitSet sentReplicas;
         final BitSet erroredReplicas;
 
-        SequenceReadRequest(ArrayList<InetSocketAddress> ensemble, long lId, long eId) {
+        SequenceReadRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
             super(ensemble, lId, eId);
 
             this.sentReplicas = new BitSet(lh.getLedgerMetadata().getWriteQuorumSize());
