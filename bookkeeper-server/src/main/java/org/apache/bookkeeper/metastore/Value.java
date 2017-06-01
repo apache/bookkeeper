@@ -22,6 +22,7 @@ import com.google.common.hash.Hasher;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 
+import java.nio.charset.Charset;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -92,7 +93,7 @@ public class Value {
         HashFunction hf = Hashing.murmur3_32();
         Hasher hc = hf.newHasher();
         for (String key : fields.keySet()) {
-            hc.putString(key);
+            hc.putString(key, Charset.defaultCharset());
         }
         return hc.hash().asInt();
     }

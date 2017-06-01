@@ -1,4 +1,4 @@
-/*
+/**
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,21 +18,25 @@
  * under the License.
  *
  */
+package org.apache.bookkeeper.sasl;
 
-package org.apache.bookkeeper.conf;
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
+import org.apache.bookkeeper.conf.AbstractConfiguration;
 
-public class TestBKConfiguration {
+public interface JAASCredentialsContainer {
 
-    public static ServerConfiguration newServerConfiguration() {
-        ServerConfiguration confReturn = new ServerConfiguration();
-        confReturn.setJournalFlushWhenQueueEmpty(true);
-        // enable journal format version
-        confReturn.setJournalFormatVersionToWrite(5);
-        confReturn.setAllowLoopback(true);
-        confReturn.setGcWaitTime(1000);
-        confReturn.setDiskUsageThreshold(0.999f);
-        confReturn.setDiskUsageWarnThreshold(0.99f);
-        return confReturn;
-    }
+    Subject getSubject();
 
+    LoginContext getLogin();
+
+    void setLogin(LoginContext login);
+
+    boolean isUsingTicketCache();
+
+    String getPrincipal();
+
+    AbstractConfiguration getConfiguration();
+
+    String getLoginContextName();
 }

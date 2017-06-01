@@ -286,10 +286,11 @@ public class Auditor implements BookiesListener {
                                     return;
                                 }
 
-                                Stopwatch stopwatch = new Stopwatch().start();
+                                Stopwatch stopwatch = Stopwatch.createStarted();
                                 checkAllLedgers();
-                                checkAllLedgersTime.registerSuccessfulEvent(stopwatch.stop().elapsedMillis(),
-                                                                            TimeUnit.MILLISECONDS);
+                                checkAllLedgersTime.registerSuccessfulEvent(stopwatch.stop()
+                                                .elapsed(TimeUnit.MILLISECONDS),
+                                        TimeUnit.MILLISECONDS);
                             } catch (KeeperException ke) {
                                 LOG.error("Exception while running periodic check", ke);
                             } catch (InterruptedException ie) {
@@ -398,7 +399,7 @@ public class Auditor implements BookiesListener {
             return;
         }
 
-        Stopwatch stopwatch = new Stopwatch().start();
+        Stopwatch stopwatch = Stopwatch.createStarted();
         // put exit cases here
         Map<String, Set<Long>> ledgerDetails = generateBookie2LedgersIndex();
         try {
@@ -420,10 +421,12 @@ public class Auditor implements BookiesListener {
         Collection<String> lostBookies = CollectionUtils.subtract(knownBookies,
                 availableBookies);
 
-        bookieToLedgersMapCreationTime.registerSuccessfulEvent(stopwatch.elapsedMillis(), TimeUnit.MILLISECONDS);
+        bookieToLedgersMapCreationTime.registerSuccessfulEvent(stopwatch.elapsed(TimeUnit.MILLISECONDS),
+                TimeUnit.MILLISECONDS);
         if (lostBookies.size() > 0) {
             handleLostBookies(lostBookies, ledgerDetails);
-            uRLPublishTimeForLostBookies.registerSuccessfulEvent(stopwatch.stop().elapsedMillis(), TimeUnit.MILLISECONDS);
+            uRLPublishTimeForLostBookies.registerSuccessfulEvent(stopwatch.stop().elapsed(TimeUnit.MILLISECONDS),
+                    TimeUnit.MILLISECONDS);
         }
 
     }

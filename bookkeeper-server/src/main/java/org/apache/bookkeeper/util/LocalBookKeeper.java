@@ -205,7 +205,7 @@ public class LocalBookKeeper {
             }
 
             bsConfs[i] = new ServerConfiguration(baseConf);
-            
+
             // If the caller specified ephemeral ports then use ephemeral ports for all
             // the bookies else use numBookie ports starting at initialPort
             if (0 == initialPort) {

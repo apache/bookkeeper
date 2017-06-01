@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -223,24 +222,25 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         // return true if we managed to complete the entry
         // return false if the read entry is not complete or it is already completed before
         boolean complete(BookieSocketAddress host, final ByteBuf buffer) {
-            ByteBufInputStream is;
+            ByteBuf content;
             try {
-                is = lh.macManager.verifyDigestAndReturnData(entryId, buffer);
+                content = lh.macManager.verifyDigestAndReturnData(entryId, buffer);
             } catch (BKDigestMatchException e) {
                 logErrorAndReattemptRead(host, "Mac mismatch", BKException.Code.DigestMatchException);
+                buffer.release();
                 return false;
             }
 
             if (!complete.getAndSet(true)) {
-                entryDataStream = is;
-
                 /*
                  * The length is a long and it is the last field of the metadata of an entry.
                  * Consequently, we have to subtract 8 from METADATA_LENGTH to get the length.
                  */
                 length = buffer.getLong(DigestManager.METADATA_LENGTH - 8);
+                data = content;
                 return true;
             } else {
+                buffer.release();
                 return false;
             }
         }
