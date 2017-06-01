@@ -22,13 +22,18 @@
 package org.apache.bookkeeper.proto;
 
 import io.netty.buffer.ByteBuf;
-
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
+import org.apache.bookkeeper.client.LedgerEntry;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,9 +101,9 @@ public class BookkeeperInternalCallbacks {
         @Override
         public void operationComplete(int rc, T result) {
             if (successRc == rc) {
-                statsLogger.registerSuccessfulEvent(MathUtils.elapsedMicroSec(startTime));
+                statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
             } else {
-                statsLogger.registerFailedEvent(MathUtils.elapsedMicroSec(startTime));
+                statsLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
             }
             cb.operationComplete(rc, result);
         }
@@ -232,7 +237,7 @@ public class BookkeeperInternalCallbacks {
          *
          * @param data
          *          data to process
-         * @param iterationCallback
+         * @param cb
          *          Callback to invoke when process has been done.
          */
         public void process(T data, AsyncCallback.VoidCallback cb);

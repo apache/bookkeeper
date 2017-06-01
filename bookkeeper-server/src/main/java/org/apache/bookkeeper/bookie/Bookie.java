@@ -216,78 +216,6 @@ public class Bookie extends BookieCriticalThread {
         }
     }
 
-    final static Future<Boolean> SUCCESS_FUTURE = new Future<Boolean>() {
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) { return false; }
-        @Override
-        public Boolean get() { return true; }
-        @Override
-        public Boolean get(long timeout, TimeUnit unit) { return true; }
-        @Override
-        public boolean isCancelled() { return false; }
-        @Override
-        public boolean isDone() {
-            return true;
-        }
-    };
-
-    static class CountDownLatchFuture<T> implements Future<T> {
-
-        T value = null;
-        volatile boolean done = false;
-        CountDownLatch latch = new CountDownLatch(1);
-
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) { return false; }
-        @Override
-        public T get() throws InterruptedException {
-            latch.await();
-            return value;
-        }
-        @Override
-        public T get(long timeout, TimeUnit unit)
-            throws InterruptedException, TimeoutException {
-            if (!latch.await(timeout, unit)) {
-                throw new TimeoutException("Timed out waiting for latch");
-            }
-            return value;
-        }
-
-        @Override
-        public boolean isCancelled() { return false; }
-
-        @Override
-        public boolean isDone() {
-            return done;
-        }
-
-        void setDone(T value) {
-            this.value = value;
-            done = true;
-            latch.countDown();
-        }
-    }
-
-    static class FutureWriteCallback implements WriteCallback {
-
-        CountDownLatchFuture<Boolean> result =
-            new CountDownLatchFuture<Boolean>();
-
-        @Override
-        public void writeComplete(int rc, long ledgerId, long entryId,
-                                  BookieSocketAddress addr, Object ctx) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
-                          new Object[] { entryId, ledgerId, addr, rc });
-            }
-            result.setDone(0 == rc);
-        }
-
-        public Future<Boolean> getResult() {
-            return result;
-        }
-    }
-
     public static void checkDirectoryStructure(File dir) throws IOException {
         if (!dir.exists()) {
             File parent = dir.getParentFile();
@@ -1492,6 +1420,26 @@ public class Bookie extends BookieCriticalThread {
             entry.release();
         }
     }
+    
+    static class FutureWriteCallback implements WriteCallback {
+
+        SettableFuture<Boolean> result = SettableFuture.create();
+
+        @Override
+        public void writeComplete(int rc, long ledgerId, long entryId,
+                                  BookieSocketAddress addr, Object ctx) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
+                          new Object[] { entryId, ledgerId, addr, rc });
+            }
+
+            result.set(0 == rc);
+        }
+
+        public SettableFuture<Boolean> getResult() {
+            return result;
+        }
+    }
 
     /**
      * Fences a ledger. From this point on, clients will be unable to
@@ -1519,7 +1467,9 @@ public class Bookie extends BookieCriticalThread {
             return fwc.getResult();
         } else {
             // already fenced
-            return SUCCESS_FUTURE;
+            SettableFuture<Boolean> successFuture = SettableFuture.create();
+            successFuture.set(true);
+            return successFuture;
         }
     }
 
