@@ -63,8 +63,10 @@ class TGTRefreshThread extends Thread {
         for (KerberosTicket ticket : tickets) {
             KerberosPrincipal server = ticket.getServer();
             if (server.getName().equals("krbtgt/" + server.getRealm() + "@" + server.getRealm())) {
-                LOG.debug("Client principal is \"" + ticket.getClient().getName() + "\".");
-                LOG.debug("Server principal is \"" + ticket.getServer().getName() + "\".");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Client principal is \"" + ticket.getClient().getName() + "\".");
+                    LOG.debug("Server principal is \"" + ticket.getServer().getName() + "\".");
+                }
                 return ticket;
             }
         }
@@ -178,7 +180,9 @@ class TGTRefreshThread extends Thread {
                 int retry = 1;
                 while (retry >= 0) {
                     try {
-                        LOG.debug("running ticket cache refresh command: {} {}", cmd, kinitArgs);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("running ticket cache refresh command: {} {}", cmd, kinitArgs);
+                        }
                         Shell.execCommand(cmd, kinitArgs);
                         break;
                     } catch (Exception e) {

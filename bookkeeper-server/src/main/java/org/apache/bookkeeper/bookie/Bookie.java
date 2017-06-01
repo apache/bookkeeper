@@ -734,7 +734,9 @@ public class Bookie extends BookieCriticalThread {
                 long ledgerId = recBuff.getLong();
                 long entryId = recBuff.getLong();
                 try {
-                    LOG.debug("Replay journal - ledger id : {}, entry id : {}.", ledgerId, entryId);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Replay journal - ledger id : {}, entry id : {}.", ledgerId, entryId);
+                    }
                     if (entryId == METAENTRY_ID_LEDGER_KEY) {
                         if (journalVersion >= JournalChannel.V3) {
                             int masterKeyLen = recBuff.getInt();
@@ -771,7 +773,9 @@ public class Bookie extends BookieCriticalThread {
                         handle.addEntry(Unpooled.wrappedBuffer(recBuff));
                     }
                 } catch (NoLedgerException nsle) {
-                    LOG.debug("Skip replaying entries of ledger {} since it was deleted.", ledgerId);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Skip replaying entries of ledger {} since it was deleted.", ledgerId);
+                    }
                 } catch (BookieException be) {
                     throw new IOException(be);
                 }
@@ -788,8 +792,10 @@ public class Bookie extends BookieCriticalThread {
     @Override
     synchronized public void start() {
         setDaemon(true);
-        LOG.debug("I'm starting a bookie with journal directories {}",
-                  journalDirectories.stream().map(File::getName).collect(Collectors.joining(", ")));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("I'm starting a bookie with journal directories {}",
+                    journalDirectories.stream().map(File::getName).collect(Collectors.joining(", ")));
+        }
         //Start DiskChecker thread
         ledgerDirsManager.start();
         if (indexDirsManager != ledgerDirsManager) {
@@ -1453,7 +1459,9 @@ public class Bookie extends BookieCriticalThread {
             bb.flip();
 
             FutureWriteCallback fwc = new FutureWriteCallback();
-            LOG.debug("record fenced state for ledger {} in journal.", ledgerId);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("record fenced state for ledger {} in journal.", ledgerId);
+            }
             getJournal(ledgerId).logAddEntry(bb, fwc, null);
             return fwc.getResult();
         } else {
@@ -1469,7 +1477,9 @@ public class Bookie extends BookieCriticalThread {
         int entrySize = 0;
         try {
             LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
-            LOG.trace("Reading {}@{}", entryId, ledgerId);
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("Reading {}@{}", entryId, ledgerId);
+            }
             ByteBuf entry = handle.readEntry(entryId);
             readBytes.add(entry.readableBytes());
             success = true;

@@ -106,7 +106,7 @@ public class BookieServer {
 
     protected Bookie newBookie(ServerConfiguration conf)
         throws IOException, KeeperException, InterruptedException, BookieException {
-        return conf.isForceReadOnlyBookie() ? 
+        return conf.isForceReadOnlyBookie() ?
                 new ReadOnlyBookie(conf, statsLogger.scope(BOOKIE_SCOPE)) :
                 new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE));
     }
@@ -143,7 +143,9 @@ public class BookieServer {
      */
     @VisibleForTesting
     public void suspendProcessing() {
-        LOG.debug("Suspending bookie server, port is {}", conf.getBookiePort());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Suspending bookie server, port is {}", conf.getBookiePort());
+        }
         nettyServer.suspendProcessing();
     }
 
@@ -152,7 +154,9 @@ public class BookieServer {
      */
     @VisibleForTesting
     public void resumeProcessing() {
-        LOG.debug("Resuming bookie server, port is {}", conf.getBookiePort());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Resuming bookie server, port is {}", conf.getBookiePort());
+        }
         nettyServer.resumeProcessing();
     }
 
@@ -294,7 +298,7 @@ public class BookieServer {
                 throw new IllegalArgumentException();
             }
 
-            ServerConfiguration conf = new ServerConfiguration();            
+            ServerConfiguration conf = new ServerConfiguration();
 
             if (cmdLine.hasOption('c')) {
                 String confFile = cmdLine.getOptionValue("c");

@@ -53,7 +53,9 @@ public class SASLClientAuthProvider implements ClientAuthProvider {
                 hostname = InetAddress.getLocalHost().getHostName();
             }
             client = new SaslClientState(hostname, subject);
-            LOG.debug("SASLClientAuthProvider Boot " + client + " for " + hostname);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("SASLClientAuthProvider Boot " + client + " for " + hostname);
+            }
         } catch (IOException error) {
             LOG.error("Error while booting SASL client", error);
             completeCb.operationComplete(BKException.Code.UnauthorizedAccessException, null);
