@@ -22,7 +22,6 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -155,46 +154,6 @@ public class LedgerCacheImpl implements LedgerCache {
     @Override
     public boolean ledgerExists(long ledgerId) throws IOException {
         return indexPersistenceManager.ledgerExists(ledgerId);
-    }
-
-    @Override
-    public LedgerCacheBean getJMXBean() {
-        return new LedgerCacheBean() {
-            @Override
-            public String getName() {
-                return "LedgerCache";
-            }
-
-            @Override
-            public boolean isHidden() {
-                return false;
-            }
-
-            @Override
-            public int getPageCount() {
-                return LedgerCacheImpl.this.indexPageManager.getNumUsedPages();
-            }
-
-            @Override
-            public int getPageSize() {
-                return LedgerCacheImpl.this.getPageSize();
-            }
-
-            @Override
-            public int getOpenFileLimit() {
-                return LedgerCacheImpl.this.indexPersistenceManager.getOpenFileLimit();
-            }
-
-            @Override
-            public int getPageLimit() {
-                return LedgerCacheImpl.this.indexPageManager.getPageLimit();
-            }
-
-            @Override
-            public int getNumOpenLedgers() {
-                return LedgerCacheImpl.this.indexPersistenceManager.getNumOpenLedgers();
-            }
-        };
     }
 
     @Override

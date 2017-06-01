@@ -33,7 +33,6 @@ import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.jmx.BKMBeanRegistry;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
@@ -75,7 +74,6 @@ public class BookieServer {
     int exitCode = ExitCode.OK;
 
     // operation stats
-    protected BookieServerBean jmxBkServerBean;
     AutoRecoveryMain autoRecoveryMain = null;
     private boolean isAutoRecoveryDaemonEnabled;
 
@@ -128,9 +126,6 @@ public class BookieServer {
         running = true;
         deathWatcher = new DeathWatcher(conf);
         deathWatcher.start();
-
-        // register jmx
-        registerJMX();
     }
 
     @VisibleForTesting
@@ -173,33 +168,6 @@ public class BookieServer {
         }
         this.requestProcessor.close();
         running = false;
-
-        // unregister JMX
-        unregisterJMX();
-    }
-
-    protected void registerJMX() {
-        try {
-            jmxBkServerBean = new BookieServerBean(conf, this);
-            BKMBeanRegistry.getInstance().register(jmxBkServerBean, null);
-
-            bookie.registerJMX(jmxBkServerBean);
-        } catch (Exception e) {
-            LOG.warn("Failed to register with JMX", e);
-            jmxBkServerBean = null;
-        }
-    }
-
-    protected void unregisterJMX() {
-        try {
-            bookie.unregisterJMX();
-            if (jmxBkServerBean != null) {
-                BKMBeanRegistry.getInstance().unregister(jmxBkServerBean);
-            }
-        } catch (Exception e) {
-            LOG.warn("Failed to unregister with JMX", e);
-        }
-        jmxBkServerBean = null;
     }
 
     public boolean isRunning() {
