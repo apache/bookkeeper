@@ -23,11 +23,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
+import org.apache.bookkeeper.shims.zk.ZooKeeperServerShimFactory;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.io.FileUtils;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -39,9 +40,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.server.NIOServerCnxnFactory;
-import org.apache.zookeeper.server.ZooKeeperServer;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
 
 import static com.google.common.base.Charsets.UTF_8;
@@ -53,58 +51,58 @@ public class LocalBookKeeper {
     int numberOfBookies;
 
     public LocalBookKeeper() {
-        numberOfBookies = 3;
+        this(3);
     }
 
     public LocalBookKeeper(int numberOfBookies) {
-        this();
-        this.numberOfBookies = numberOfBookies;
-        LOG.info("Running " + this.numberOfBookies + " bookie(s).");
+        this(numberOfBookies, 5000, ZooKeeperDefaultHost, ZooKeeperDefaultPort);
     }
 
-    NIOServerCnxnFactory serverFactory;
-    ZooKeeperServer zks;
-    ZooKeeper zkc;
-    int ZooKeeperDefaultPort = 2181;
+    public LocalBookKeeper(int numberOfBookies, int initialPort, String zkHost, int zkPort) {
+        this.numberOfBookies = numberOfBookies;
+        this.initialPort = initialPort;
+        this.zkServer = String.format("%s:%d", zkHost, zkPort);
+        LOG.info("Running {} bookie(s) on zkServer {}.", this.numberOfBookies, zkServer);
+    }
+
+    private String zkServer;
+    static String ZooKeeperDefaultHost = "127.0.0.1";
+    static int ZooKeeperDefaultPort = 2181;
     static int zkSessionTimeOut = 5000;
-    File ZkTmpDir;
+    static Integer BookieDefaultInitialPort = 5000;
 
     //BookKeeper variables
-    File tmpDirs[];
+    File journalDirs[];
     BookieServer bs[];
     ServerConfiguration bsConfs[];
     Integer initialPort = 5000;
 
     /**
-     * @param args
+     * @param maxCC
+     *          Max Concurrency of Client
+     * @param zookeeperPort
+     *          ZooKeeper Server Port
      */
+    public static ZooKeeperServerShim runZookeeper(int maxCC, int zookeeperPort) throws IOException {
+        File zkTmpDir = IOUtils.createTempDir("zookeeper", "localbookkeeper");
+        return runZookeeper(maxCC, zookeeperPort, zkTmpDir);
+    }
 
-    private void runZookeeper(int maxCC) throws IOException {
-        // create a ZooKeeper server(dataDir, dataLogDir, port)
+    public static ZooKeeperServerShim runZookeeper(int maxCC, int zookeeperPort, File zkDir) throws IOException {
         LOG.info("Starting ZK server");
-        //ServerStats.registerAsConcrete();
-        //ClientBase.setupTestEnv();
-        ZkTmpDir = IOUtils.createTempDir("zookeeper", "localbookkeeper");
+        ZooKeeperServerShim server = ZooKeeperServerShimFactory.createServer(zkDir, zkDir, zookeeperPort, maxCC);
+        server.start();
 
-        InetAddress loopbackIP = InetAddress.getLoopbackAddress();
-        try {
-            zks = new ZooKeeperServer(ZkTmpDir, ZkTmpDir, ZooKeeperServer.DEFAULT_TICK_TIME);
-            serverFactory =  new NIOServerCnxnFactory();
-            LOG.info("Starting Zookeeper server at " + loopbackIP.getHostAddress() + " port:" + ZooKeeperDefaultPort);
-            serverFactory.configure(new InetSocketAddress(loopbackIP, ZooKeeperDefaultPort), maxCC);
-            serverFactory.startup(zks);
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            LOG.error("Exception while instantiating ZooKeeper", e);
-        }
-
-        boolean b = waitForServerUp(loopbackIP.getHostAddress() + ":" + ZooKeeperDefaultPort, CONNECTION_TIMEOUT);
+        boolean b = waitForServerUp(InetAddress.getLoopbackAddress().getHostAddress() + ":" + zookeeperPort,
+          CONNECTION_TIMEOUT);
         LOG.debug("ZooKeeper server up: {}", b);
+        return server;
     }
 
     private void initializeZookeeper() throws IOException {
         LOG.info("Instantiate ZK Client");
         //initialize the zk client with values
+        ZooKeeperClient zkc = null;
         try {
             zkc = ZooKeeperClient.newBuilder()
                     .connectString(InetAddress.getLoopbackAddress().getHostAddress() + ":" + ZooKeeperDefaultPort)
@@ -115,11 +113,11 @@ public class LocalBookKeeper {
             // No need to create an entry for each requested bookie anymore as the
             // BookieServers will register themselves with ZooKeeper on startup.
         } catch (KeeperException e) {
-            // TODO Auto-generated catch block
             LOG.error("Exception while creating znodes", e);
+            throw new IOException("Error creating znodes : ", e);
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
             LOG.error("Interrupted while creating znodes", e);
+            throw new IOException("Error creating znodes : ", e);
         }
     }
 
@@ -157,53 +155,165 @@ public class LocalBookKeeper {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void runBookies(ServerConfiguration baseConf, List<File> tempDirs, String dirSuffix)
             throws IOException, KeeperException, InterruptedException, BookieException,
             UnavailableException, CompatibilityException {
         LOG.info("Starting Bookie(s)");
         // Create Bookie Servers (B1, B2, B3)
 
-        tmpDirs = new File[numberOfBookies];
+        journalDirs = new File[numberOfBookies];
         bs = new BookieServer[numberOfBookies];
         bsConfs = new ServerConfiguration[numberOfBookies];
 
-        String loopbackIPAddr = InetAddress.getLoopbackAddress().getHostAddress();
         for(int i = 0; i < numberOfBookies; i++) {
-            tmpDirs[i] = File.createTempFile("bookie" + Integer.toString(i), "test");
-            if (!tmpDirs[i].delete() || !tmpDirs[i].mkdir()) {
-                throw new IOException("Couldn't create bookie dir " + tmpDirs[i]);
+            if (null == baseConf.getJournalDirNameWithoutDefault()) {
+                journalDirs[i] = IOUtils.createTempDir("localbookkeeper" + Integer.toString(i), dirSuffix);
+                tempDirs.add(journalDirs[i]);
+            } else {
+                journalDirs[i] = new File(baseConf.getJournalDirName(), "bookie" + Integer.toString(i));
+            }
+            if (journalDirs[i].exists()) {
+                if (journalDirs[i].isDirectory()) {
+                    FileUtils.deleteDirectory(journalDirs[i]);
+                } else if (!journalDirs[i].delete()) {
+                    throw new IOException("Couldn't cleanup bookie journal dir " + journalDirs[i]);
+                }
+            }
+            if (!journalDirs[i].mkdirs()) {
+                throw new IOException("Couldn't create bookie journal dir " + journalDirs[i]);
+            }
+
+            String [] ledgerDirs = baseConf.getLedgerDirWithoutDefault();
+            if ((null == ledgerDirs) || (0 == ledgerDirs.length)) {
+                ledgerDirs = new String[] { journalDirs[i].getPath() };
+            } else {
+                for (int l = 0; l < ledgerDirs.length; l++) {
+                    File dir = new File(ledgerDirs[l], "bookie" + Integer.toString(i));
+                    if (dir.exists()) {
+                        if (dir.isDirectory()) {
+                            FileUtils.deleteDirectory(dir);
+                        } else if (!dir.delete()) {
+                            throw new IOException("Couldn't cleanup bookie ledger dir " + dir);
+                        }
+                    }
+                    if (!dir.mkdirs()) {
+                        throw new IOException("Couldn't create bookie ledger dir " + dir);
+                    }
+                    ledgerDirs[l] = dir.getPath();
+                }
             }
 
             bsConfs[i] = new ServerConfiguration(baseConf);
-            // override settings
-            bsConfs[i].setBookiePort(initialPort + i);
-            LOG.info("Connecting to Zookeeper at " + loopbackIPAddr + " port:" + ZooKeeperDefaultPort);
-            bsConfs[i].setZkServers(loopbackIPAddr + ":" + ZooKeeperDefaultPort);
 
-            if (null == bsConfs[i].getJournalDirNameWithoutDefault()) {
-                bsConfs[i].setJournalDirName(tmpDirs[i].getPath());
+            // If the caller specified ephemeral ports then use ephemeral ports for all
+            // the bookies else use numBookie ports starting at initialPort
+            if (0 == initialPort) {
+                bsConfs[i].setBookiePort(0);
+            } else {
+                bsConfs[i].setBookiePort(initialPort + i);
+            }
+            
+            if (null == baseConf.getZkServers()) {
+                bsConfs[i].setZkServers(InetAddress.getLocalHost().getHostAddress() + ":"
+                                  + ZooKeeperDefaultPort);
             }
 
-            String [] ledgerDirs = bsConfs[i].getLedgerDirWithoutDefault();
-            if ((null == ledgerDirs) || (0 == ledgerDirs.length)) {
-                bsConfs[i].setLedgerDirNames(new String[] { tmpDirs[i].getPath() });
-            }
 
-            bsConfs[i].setAllowLoopback(true);
+            bsConfs[i].setJournalDirName(journalDirs[i].getPath());
+            bsConfs[i].setLedgerDirNames(ledgerDirs);
 
             bs[i] = new BookieServer(bsConfs[i]);
             bs[i].start();
         }
     }
 
-    public static void main(String[] args) throws IOException, KeeperException,
-            InterruptedException, BookieException, UnavailableException,
-            CompatibilityException {
+    public static void startLocalBookies(String zkHost,
+                                         int zkPort,
+                                         int numBookies,
+                                         boolean shouldStartZK,
+                                         int initialBookiePort)
+            throws Exception {
+        ServerConfiguration conf = new ServerConfiguration();
+        startLocalBookiesInternal(conf, zkHost, zkPort, numBookies, shouldStartZK, initialBookiePort, true, "test");
+    }
+
+    public static void startLocalBookies(String zkHost,
+                                         int zkPort,
+                                         int numBookies,
+                                         boolean shouldStartZK,
+                                         int initialBookiePort,
+                                         ServerConfiguration conf)
+            throws Exception {
+        startLocalBookiesInternal(conf, zkHost, zkPort, numBookies, shouldStartZK, initialBookiePort, true, "test");
+    }
+
+    public static void startLocalBookies(String zkHost,
+                                         int zkPort,
+                                         int numBookies,
+                                         boolean shouldStartZK,
+                                         int initialBookiePort,
+                                         String dirSuffix)
+            throws Exception {
+        ServerConfiguration conf = new ServerConfiguration();
+        startLocalBookiesInternal(conf, zkHost, zkPort, numBookies, shouldStartZK, initialBookiePort, true, dirSuffix);
+    }
+
+    static void startLocalBookiesInternal(ServerConfiguration conf,
+                                          String zkHost,
+                                          int zkPort,
+                                          int numBookies,
+                                          boolean shouldStartZK,
+                                          int initialBookiePort,
+                                          boolean stopOnExit,
+                                          String dirSuffix)
+            throws Exception {
+        LocalBookKeeper lb = new LocalBookKeeper(numBookies, initialBookiePort, zkHost, zkPort);
+
+        ZooKeeperServerShim zks = null;
+        File zkTmpDir = null;
+        List<File> bkTmpDirs = null;
+        try {
+            if (shouldStartZK) {
+                zkTmpDir = IOUtils.createTempDir("zookeeper", dirSuffix);
+                zks = LocalBookKeeper.runZookeeper(1000, zkPort, zkTmpDir);
+            }
+
+            lb.initializeZookeeper();
+            conf.setZkServers(zkHost + ":" + zkPort);
+            bkTmpDirs = lb.runBookies(conf, dirSuffix);
+
+            try {
+                while (true) {
+                    Thread.sleep(5000);
+                }
+            } catch (InterruptedException ie) {
+                if (stopOnExit) {
+                    lb.shutdownBookies();
+
+                    if (null != zks) {
+                        zks.stop();
+                    }
+                }
+                throw ie;
+            }
+        } finally {
+            if (stopOnExit) {
+                cleanupDirectories(bkTmpDirs);
+                if (null != zkTmpDir) {
+                    FileUtils.deleteDirectory(zkTmpDir);
+                }
+            }
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
         if(args.length < 1) {
             usage();
             System.exit(-1);
         }
-        LocalBookKeeper lb = new LocalBookKeeper(Integer.parseInt(args[0]));
+
+        int numBookies = Integer.parseInt(args[0]);
 
         ServerConfiguration conf = new ServerConfiguration();
         if (args.length >= 2) {
@@ -217,17 +327,8 @@ public class LocalBookKeeper {
             }
         }
 
-        lb.runZookeeper(1000);
-        lb.initializeZookeeper();
-        List<File> tmpDirs = lb.runBookies(conf, "test");
-        try {
-            while (true) {
-                Thread.sleep(5000);
-            }
-        } catch (InterruptedException ie) {
-            cleanupDirectories(tmpDirs);
-            throw ie;
-        }
+        startLocalBookiesInternal(conf, ZooKeeperDefaultHost, ZooKeeperDefaultPort,
+                numBookies, true, BookieDefaultInitialPort, false, "test");
     }
 
     private static void usage() {
@@ -277,6 +378,12 @@ public class LocalBookKeeper {
             }
         }
         return false;
+    }
+
+    public void shutdownBookies() {
+        for (BookieServer bookieServer: bs) {
+            bookieServer.shutdown();
+        }
     }
 
 }
