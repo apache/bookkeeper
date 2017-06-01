@@ -31,7 +31,7 @@ before_install:
 
 script:
   - travis_retry mvn --batch-mode clean apache-rat:check compile findbugs:check
-  - travis_wait 60 mvn --batch-mode clean package
+  - ./dev/ticktoc.sh "mvn --batch-mode clean package"
 
 cache:
   directories:
