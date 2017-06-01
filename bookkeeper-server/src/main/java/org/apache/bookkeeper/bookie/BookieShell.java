@@ -2301,7 +2301,7 @@ public class BookieShell implements Tool {
      * Print last log mark
      */
     protected void printLastLogMark() throws IOException {
-        for (Journal journal : journals) {
+        for (Journal journal : getJournals()) {
             LogMark lastLogMark = journal.getLastLogMark().getCurMark();
             System.out.println("LastLogMark: Journal Id - " + lastLogMark.getLogFileId() + "("
                     + Long.toHexString(lastLogMark.getLogFileId()) + ".txn), Pos - "
