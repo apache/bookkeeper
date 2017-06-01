@@ -29,6 +29,7 @@
   <packaging>pom</packaging>
   <name>bookkeeper-stats-providers</name>
   <modules>
+    <module>twitter-finagle-provider</module>
     <module>twitter-science-provider</module>
     <module>twitter-ostrich-provider</module>
     <module>codahale-metrics-provider</module>

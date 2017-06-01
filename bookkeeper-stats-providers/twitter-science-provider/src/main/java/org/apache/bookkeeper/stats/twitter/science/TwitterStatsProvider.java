@@ -16,6 +16,7 @@
  */
 package org.apache.bookkeeper.stats.twitter.science;
 
+import org.apache.bookkeeper.stats.CachingStatsProvider;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.commons.configuration.Configuration;
@@ -30,6 +31,27 @@ public class TwitterStatsProvider implements StatsProvider {
     protected final static String STATS_HTTP_PORT = "statsHttpPort";
 
     private HTTPStatsExporter statsExporter = null;
+    private final CachingStatsProvider cachingStatsProvider;
+
+    public TwitterStatsProvider() {
+        this.cachingStatsProvider = new CachingStatsProvider(new StatsProvider() {
+
+            @Override
+            public void start(Configuration conf) {
+                // nop
+            }
+
+            @Override
+            public void stop() {
+                // nop
+            }
+
+            @Override
+            public StatsLogger getStatsLogger(String scope) {
+                return new TwitterStatsLoggerImpl(scope);
+            }
+        });
+    }
 
     @Override
     public void start(Configuration conf) {
@@ -58,6 +80,6 @@ public class TwitterStatsProvider implements StatsProvider {
 
     @Override
     public StatsLogger getStatsLogger(String name) {
-        return new TwitterStatsLoggerImpl(name);
+        return this.cachingStatsProvider.getStatsLogger(name);
     }
 }
