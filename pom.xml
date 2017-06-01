@@ -41,13 +41,13 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <protobuf.version>2.6.1</protobuf.version>
     <guava.version>20.0</guava.version>
     <netty.version>4.1.10.Final</netty.version>
-    <zookeeper.version>3.5.1-alpha</zookeeper.version>
+    <protobuf.version>2.6.1</protobuf.version>
     <slf4j.version>1.7.25</slf4j.version>
+    <zookeeper.version>3.5.1-alpha</zookeeper.version>
   </properties>
-  <url>http://zookeeper.apache.org/bookkeeper</url>
+  <url>http://bookkeeper.apache.org</url>
   <build>
     <plugins>
       <plugin>

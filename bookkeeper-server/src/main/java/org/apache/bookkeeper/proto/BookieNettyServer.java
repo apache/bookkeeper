@@ -91,20 +91,14 @@ class BookieNettyServer {
     final BookieSocketAddress bookieAddress;
 
     final BookieAuthProvider.Factory authProviderFactory;
-    final BookieProtoEncoding.ResponseEncoder responseEncoder;
-    final BookieProtoEncoding.RequestDecoder requestDecoder;
+    final ExtensionRegistry registry = ExtensionRegistry.newInstance();
 
     BookieNettyServer(ServerConfiguration conf, RequestProcessor processor)
         throws IOException, KeeperException, InterruptedException, BookieException {
         this.maxFrameSize = conf.getNettyMaxFrameSizeBytes();
         this.conf = conf;
         this.requestProcessor = processor;
-
-        ExtensionRegistry registry = ExtensionRegistry.newInstance();
-        authProviderFactory = AuthProviderFactoryFactory.newBookieAuthProviderFactory(conf);
-
-        responseEncoder = new BookieProtoEncoding.ResponseEncoder(registry);
-        requestDecoder = new BookieProtoEncoding.RequestDecoder(registry);
+        this.authProviderFactory = AuthProviderFactoryFactory.newBookieAuthProviderFactory(conf);
 
         if (!conf.isDisableServerSocketBind()) {
             ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("bookie-io-%s").build();
@@ -212,8 +206,8 @@ class BookieNettyServer {
                     pipeline.addLast("lengthbaseddecoder", new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));
                     pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
 
-                    pipeline.addLast("bookieProtoDecoder", requestDecoder);
-                    pipeline.addLast("bookieProtoEncoder", responseEncoder);
+                    pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.RequestDecoder(registry));
+                    pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.ResponseEncoder(registry));
                     pipeline.addLast("bookieAuthHandler", new AuthHandler.ServerSideHandler(contextHandler.getConnectionPeer(), authProviderFactory));
 
                     ChannelInboundHandler requestHandler = isRunning.get()
@@ -261,8 +255,8 @@ class BookieNettyServer {
                     pipeline.addLast("lengthbaseddecoder", new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));
                     pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
 
-                    pipeline.addLast("bookieProtoDecoder", requestDecoder);
-                    pipeline.addLast("bookieProtoEncoder", responseEncoder);
+                    pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.RequestDecoder(registry));
+                    pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.ResponseEncoder(registry));;
                     pipeline.addLast("bookieAuthHandler", new AuthHandler.ServerSideHandler(contextHandler.getConnectionPeer(), authProviderFactory));
 
                     ChannelInboundHandler requestHandler = isRunning.get()

@@ -40,7 +40,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -418,11 +417,6 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     @Override
     public EntryLogger getEntryLogger() {
         return entryLogger;
-    }
-
-    @Override
-    public BKMBeanInfo getJMXBean() {
-        return ledgerCache.getJMXBean();
     }
 
     @Override

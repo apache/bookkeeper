@@ -21,7 +21,12 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.stats.OpStatsData;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 class OpStatsLoggerImpl implements OpStatsLogger {
+
+    static final Logger LOG = LoggerFactory.getLogger(OpStatsLoggerImpl.class);
 
     static final double[] PERCENTILES = new double[] {
             0.1, 0.5, 0.9, 0.99, 0.999, 0.9999
@@ -47,26 +52,42 @@ class OpStatsLoggerImpl implements OpStatsLogger {
 
     @Override
     public void registerFailedEvent(long eventLatency, TimeUnit unit) {
-        failureMetric.add((int) unit.toMillis(eventLatency));
-        failureCounter.incr();
+        if (eventLatency < 0) {
+            LOG.debug("{} : tried to register negative failure", scope);
+        } else {
+            failureMetric.add((int) unit.toMillis(eventLatency));
+            failureCounter.incr();
+        }
     }
 
     @Override
     public void registerSuccessfulEvent(long eventLatency, TimeUnit unit) {
-        successMetric.add((int) unit.toMillis(eventLatency));
-        successCounter.incr();
+        if (eventLatency < 0) {
+            LOG.debug("{} : tried to register negative success", scope);
+        } else {
+            successMetric.add((int) unit.toMillis(eventLatency));
+            successCounter.incr();
+        }
     }
 
     @Override
     public void registerSuccessfulValue(long value) {
-        successMetric.add((int) value);
-        successCounter.incr();
+        if (value < 0) {
+            LOG.debug("{} : tried to register negative success", scope);
+        } else {
+            successMetric.add((int) value);
+            successCounter.incr();
+        }
     }
 
     @Override
     public void registerFailedValue(long value) {
-        failureMetric.add((int) value);
-        failureCounter.incr();
+        if (value < 0) {
+            LOG.debug("{} : tried to register negative success", scope);
+        } else {
+            failureMetric.add((int) value);
+            failureCounter.incr();
+        }
     }
 
     @Override

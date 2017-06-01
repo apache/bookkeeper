@@ -25,8 +25,8 @@
     <relativePath>../..</relativePath>
   </parent>
   <groupId>org.apache.bookkeeper.stats</groupId>
-  <artifactId>twitter-science-provider</artifactId>
-  <name>Stats provider for twitter-stats package</name>
+  <artifactId>twitter-finagle-provider</artifactId>
+  <name>Stats provider for Finagle stats</name>
   <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -39,43 +39,9 @@
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.twitter.common</groupId>
-      <artifactId>stats</artifactId>
-      <version>0.0.64</version>
-    </dependency>
-    <dependency>
-      <groupId>com.twitter.common</groupId>
-      <artifactId>net-http-handlers</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>servlet-api</artifactId>
-        </exclusion>
-      </exclusions>
-      <version>0.0.39</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.twitter.common</groupId>
-      <artifactId>stats-time-series</artifactId>
-      <version>0.0.36</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.twitter.common</groupId>
-      <artifactId>stats-jvm</artifactId>
-      <version>0.0.33</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-server</artifactId>
-      <version>9.0.7.v20131107</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-servlet</artifactId>
-      <version>9.0.7.v20131107</version>
+      <groupId>com.twitter</groupId>
+      <artifactId>finagle-core_2.10</artifactId>
+      <version>6.34.0</version>
     </dependency>
   </dependencies>
   <repositories>
@@ -86,4 +52,4 @@
       <url>http://maven.twttr.com</url>
     </repository>
   </repositories>
-</project> 
+</project>

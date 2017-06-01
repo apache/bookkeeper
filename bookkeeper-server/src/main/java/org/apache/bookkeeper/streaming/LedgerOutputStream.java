@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  */
 public class LedgerOutputStream extends OutputStream {
     private final static Logger LOG = LoggerFactory.getLogger(LedgerOutputStream.class);
-    private LedgerHandle lh;
+    private final LedgerHandle lh;
     private ByteBuffer bytebuff;
     byte[] bbytes;
     int defaultSize = 1024 * 1024; // 1MB default size

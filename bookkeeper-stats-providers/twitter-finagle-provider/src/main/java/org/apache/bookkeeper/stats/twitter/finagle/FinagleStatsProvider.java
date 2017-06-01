@@ -15,42 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.stats.twitter.finagle;
 
-package org.apache.bookkeeper.bookie;
-
-import java.io.File;
-
-import org.apache.bookkeeper.jmx.BKMBeanInfo;
+import com.twitter.finagle.stats.StatsReceiver;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.StatsProvider;
+import org.apache.commons.configuration.Configuration;
 
 /**
- * Bookie Bean
+ * Main entry point to use Finagle stats for Bookkeeper.
+ *
+ * There's no requirement to start or stop it.
  */
-public class BookieBean implements BookieMXBean, BKMBeanInfo {
+public class FinagleStatsProvider implements StatsProvider {
+    final private StatsReceiver stats;
 
-    protected Bookie bk;
-
-    public BookieBean(Bookie bk) {
-        this.bk = bk;
+    public FinagleStatsProvider(final StatsReceiver stats) {
+        this.stats = stats;
     }
 
     @Override
-    public String getName() {
-        return "Bookie";
-    }
+    public void start(Configuration conf) { /* no-op */ }
 
     @Override
-    public boolean isHidden() {
-        return false;
-    }
+    public void stop() { /* no-op */ }
 
     @Override
-    public int getQueueLength() {
-
-        int totalLength = 0;
-        for (Journal journal : bk.journals) {
-            totalLength += journal.getJournalQueueLength();
-        }
-        return totalLength;
+    public StatsLogger getStatsLogger(final String scope) {
+        return new FinagleStatsLoggerImpl(this.stats.scope(scope));
     }
-
 }

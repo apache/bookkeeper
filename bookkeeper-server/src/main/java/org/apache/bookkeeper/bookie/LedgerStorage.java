@@ -28,7 +28,6 @@ import java.io.IOException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.meta.LedgerManager;
 
 /**
@@ -132,7 +131,7 @@ public interface LedgerStorage {
      * before that point already persist.
      *
      * @param checkpoint
-     *          Check Point that {@link Checkpointer} proposed.
+     *          Check Point that {@link Checkpoint} proposed.
      * @throws IOException
      * @return the checkpoint that the ledger storage finished.
      */
@@ -156,11 +155,6 @@ public interface LedgerStorage {
      *            object that will be notified every time a ledger is deleted
      */
     void registerLedgerDeletionListener(LedgerDeletionListener listener);
-
-    /**
-     * Get the JMX management bean for this LedgerStorage
-     */
-    BKMBeanInfo getJMXBean();
 
     void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException;
 

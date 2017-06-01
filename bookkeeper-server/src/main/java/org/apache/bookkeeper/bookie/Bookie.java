@@ -43,18 +43,16 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.jmx.BKMBeanInfo;
-import org.apache.bookkeeper.jmx.BKMBeanRegistry;
-
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
-
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
@@ -72,7 +70,6 @@ import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.io.FileUtils;
-
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.NodeExistsException;
@@ -80,14 +77,10 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
-
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Sets;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_ADD_ENTRY_BYTES;
@@ -141,10 +134,6 @@ public class Bookie extends BookieCriticalThread {
     private volatile boolean shuttingdown = false;
 
     private int exitCode = ExitCode.OK;
-
-    // jmx related beans
-    BookieBean jmxBookieBean;
-    BKMBeanInfo jmxLedgerStorageBean;
 
     private final ConcurrentLongHashMap<byte[]> masterKeyCache = new ConcurrentLongHashMap<>();
 
@@ -892,54 +881,6 @@ public class Bookie extends BookieCriticalThread {
             }
         };
     }
-
-    /**
-     * Register jmx with parent
-     *
-     * @param parent parent bk mbean info
-     */
-    public void registerJMX(BKMBeanInfo parent) {
-        try {
-            jmxBookieBean = new BookieBean(this);
-            BKMBeanRegistry.getInstance().register(jmxBookieBean, parent);
-
-            try {
-                jmxLedgerStorageBean = this.ledgerStorage.getJMXBean();
-                if (jmxLedgerStorageBean != null) {
-                    BKMBeanRegistry.getInstance().register(jmxLedgerStorageBean, jmxBookieBean);
-                }
-            } catch (Exception e) {
-                LOG.warn("Failed to register with JMX for ledger cache", e);
-                jmxLedgerStorageBean = null;
-            }
-        } catch (Exception e) {
-            LOG.warn("Failed to register with JMX", e);
-            jmxBookieBean = null;
-        }
-    }
-
-    /**
-     * Unregister jmx
-     */
-    public void unregisterJMX() {
-        try {
-            if (jmxLedgerStorageBean != null) {
-                BKMBeanRegistry.getInstance().unregister(jmxLedgerStorageBean);
-            }
-        } catch (Exception e) {
-            LOG.warn("Failed to unregister with JMX", e);
-        }
-        try {
-            if (jmxBookieBean != null) {
-                BKMBeanRegistry.getInstance().unregister(jmxBookieBean);
-            }
-        } catch (Exception e) {
-            LOG.warn("Failed to unregister with JMX", e);
-        }
-        jmxBookieBean = null;
-        jmxLedgerStorageBean = null;
-    }
-
 
     /**
      * Instantiate the ZooKeeper client for the Bookie.

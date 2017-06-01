@@ -39,7 +39,6 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
-import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -344,9 +343,6 @@ public class TestSyncThread {
                 throws IOException {
             return checkpoint;
         }
-
-        @Override
-        public BKMBeanInfo getJMXBean() { return null; }
 
         @Override
         public void registerLedgerDeletionListener(LedgerDeletionListener listener) {

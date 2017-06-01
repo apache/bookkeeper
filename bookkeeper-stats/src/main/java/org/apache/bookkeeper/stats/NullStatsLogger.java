@@ -101,8 +101,17 @@ public class NullStatsLogger implements StatsLogger {
     }
 
     @Override
+    public <T extends Number> void unregisterGauge(String name, Gauge<T> gauge) {
+        // nop
+    }
+
+    @Override
     public StatsLogger scope(String name) {
         return this;
     }
 
+    @Override
+    public void removeScope(String name, StatsLogger statsLogger) {
+        // nop
+    }
 }
