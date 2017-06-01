@@ -63,6 +63,16 @@ public class PrometheusStatsLogger implements StatsLogger {
     }
 
     @Override
+    public <T extends Number> void unregisterGauge(String name, Gauge<T> gauge) {
+        // no-op
+    }
+
+    @Override
+    public void removeScope(String name, StatsLogger statsLogger) {
+        // no-op
+    }
+
+    @Override
     public StatsLogger scope(String name) {
         return new PrometheusStatsLogger(registry, completeName(name));
     }

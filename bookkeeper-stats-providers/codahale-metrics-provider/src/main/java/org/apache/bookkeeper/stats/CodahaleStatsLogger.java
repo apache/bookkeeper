@@ -87,6 +87,11 @@ public class CodahaleStatsLogger implements StatsLogger {
     }
 
     @Override
+    public <T extends Number> void unregisterGauge(String statName, Gauge<T> gauge) {
+        // do nothing right now as the Codahale doesn't support conditional removal
+    }
+
+    @Override
     public StatsLogger scope(String scope) {
         String scopeName;
         if (0 == basename.length()) {
@@ -95,5 +100,10 @@ public class CodahaleStatsLogger implements StatsLogger {
             scopeName = name(basename, scope);
         }
         return new CodahaleStatsLogger(metrics, scopeName);
+    }
+
+    @Override
+    public void removeScope(String name, StatsLogger statsLogger) {
+        // no-op. the codahale stats logger doesn't have the references for stats logger.
     }
 }
