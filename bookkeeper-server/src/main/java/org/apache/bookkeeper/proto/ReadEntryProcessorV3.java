@@ -17,16 +17,17 @@
  */
 package org.apache.bookkeeper.proto;
 
+import com.google.common.base.Stopwatch;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.SettableFuture;
+import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.util.ReferenceCountUtil;
-
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadRequest;
@@ -34,11 +35,10 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
+import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.protobuf.ByteString;
 
 class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
 
@@ -57,7 +57,8 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
     protected final OpStatsLogger readStats;
     protected final OpStatsLogger reqStats;
 
-    public ReadEntryProcessorV3(Request request, Channel channel,
+    public ReadEntryProcessorV3(Request request,
+                                Channel channel,
                                 BookieRequestProcessor requestProcessor,
                                 ExecutorService fenceThreadPool) {
         super(request, channel, requestProcessor);
@@ -65,129 +66,243 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         this.ledgerId = readRequest.getLedgerId();
         this.entryId = readRequest.getEntryId();
         if (RequestUtils.isFenceRequest(this.readRequest)) {
-            this.readStats = statsLogger.getOpStatsLogger(READ_ENTRY_FENCE_READ);
-            this.reqStats = statsLogger.getOpStatsLogger(READ_ENTRY_FENCE_REQUEST);
+            this.readStats = requestProcessor.fenceReadEntryStats;
+            this.reqStats = requestProcessor.fenceReadRequestStats;
         } else if (readRequest.hasPreviousLAC()) {
-            this.readStats = statsLogger.getOpStatsLogger(READ_ENTRY_LONG_POLL_READ);
-            this.reqStats = statsLogger.getOpStatsLogger(READ_ENTRY_LONG_POLL_REQUEST);
+            this.readStats = requestProcessor.longPollReadStats;
+            this.reqStats = requestProcessor.longPollReadRequestStats;
         } else {
-            this.readStats = statsLogger.getOpStatsLogger(READ_ENTRY);
-            this.reqStats = statsLogger.getOpStatsLogger(READ_ENTRY_REQUEST);
+            this.readStats = requestProcessor.readEntryStats;
+            this.reqStats = requestProcessor.readRequestStats;
         }
         
         this.fenceThreadPool = fenceThreadPool;
         lastPhaseStartTime = Stopwatch.createStarted();
     }
 
-    private ReadResponse getReadResponse() {
-        long startTimeNanos = MathUtils.nowInNano();
-        ReadRequest readRequest = request.getReadRequest();
-        long ledgerId = readRequest.getLedgerId();
-        long entryId = readRequest.getEntryId();
-
-        ReadResponse.Builder readResponse = ReadResponse.newBuilder()
-                .setLedgerId(ledgerId)
-                .setEntryId(entryId);
-
-        if (!isVersionCompatible()) {
-            readResponse.setStatus(StatusCode.EBADVERSION);
-            return readResponse.build();
+    protected Long getPreviousLAC() {
+        if (readRequest.hasPreviousLAC()) {
+            return readRequest.getPreviousLAC();
+        } else {
+            return null;
         }
+    }
 
-        LOG.debug("Received new read request: {}", request);
-        StatusCode status;
-        ByteBuf entryBody = null;
+    /**
+     * Handle read result for fence read.
+     *
+     * @param entryBody
+     *          read result
+     * @param readResponseBuilder
+     *          read response builder
+     * @param entryId
+     *          entry id
+     * @param startTimeSw
+     *          timer for the read request
+     */
+    protected void handleReadResultForFenceRead(
+        final ByteBuf entryBody,
+        final ReadResponse.Builder readResponseBuilder,
+        final long entryId,
+        final Stopwatch startTimeSw) {
+        // reset last phase start time to measure fence result waiting time
+        lastPhaseStartTime.reset().start();
+        if (null != fenceThreadPool) {
+            Futures.addCallback(fenceResult, new FutureCallback<Boolean>() {
+                @Override
+                public void onSuccess(Boolean result) {
+                    sendFenceResponse(readResponseBuilder, entryBody, result, startTimeSw);
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    LOG.error("Fence request for ledgerId {} entryId {} encountered exception",
+                        new Object[] { ledgerId, entryId, t });
+                    sendFenceResponse(readResponseBuilder, entryBody, false, startTimeSw);
+                }
+            }, fenceThreadPool);
+        } else {
+            boolean success = false;
+            try {
+                success = fenceResult.get(1000, TimeUnit.MILLISECONDS);
+            } catch (Throwable t) {
+                LOG.error("Fence request for ledgerId {} entryId {} encountered exception : ",
+                    new Object[]{ readRequest.getLedgerId(), readRequest.getEntryId(), t });
+            }
+            sendFenceResponse(readResponseBuilder, entryBody, success, startTimeSw);
+        }
+    }
+
+    /**
+     * Read a specific entry.
+     *
+     * @param readResponseBuilder
+     *          read response builder.
+     * @param entryId
+     *          entry to read
+     * @param startTimeSw
+     *          stop watch to measure the read operation.
+     * @return read response or null if it is a fence read operation.
+     * @throws IOException
+     */
+    protected ReadResponse readEntry(ReadResponse.Builder readResponseBuilder,
+                                     long entryId,
+                                     Stopwatch startTimeSw)
+        throws IOException {
+        return readEntry(readResponseBuilder, entryId, false, startTimeSw);
+    }
+
+    /**
+     * Read a specific entry.
+     *
+     * @param readResponseBuilder
+     *          read response builder.
+     * @param entryId
+     *          entry to read
+     * @param startTimeSw
+     *          stop watch to measure the read operation.
+     * @return read response or null if it is a fence read operation.
+     * @throws IOException
+     */
+    protected ReadResponse readEntry(ReadResponse.Builder readResponseBuilder,
+                                     long entryId,
+                                     boolean readLACPiggyBack,
+                                     Stopwatch startTimeSw)
+        throws IOException {
+        ByteBuf entryBody = requestProcessor.bookie.readEntry(ledgerId, entryId);
+        if (null != fenceResult) {
+            handleReadResultForFenceRead(entryBody, readResponseBuilder, entryId, startTimeSw);
+            return null;
+        } else {
+            try {
+                readResponseBuilder.setBody(ByteString.copyFrom(entryBody.nioBuffer()));
+                if (readLACPiggyBack) {
+                    readResponseBuilder.setEntryId(entryId);
+                } else {
+                    long knownLAC = requestProcessor.bookie.readLastAddConfirmed(ledgerId);
+                    readResponseBuilder.setMaxLAC(knownLAC);
+                }
+                registerSuccessfulEvent(readStats, startTimeSw);
+                readResponseBuilder.setStatus(StatusCode.EOK);
+                return readResponseBuilder.build();
+            } finally {
+                ReferenceCountUtil.release(entryBody);
+            }
+        }
+    }
+
+    protected ReadResponse getReadResponse() {
+        final Stopwatch startTimeSw = Stopwatch.createStarted();
+
+        final ReadResponse.Builder readResponse = ReadResponse.newBuilder()
+            .setLedgerId(ledgerId)
+            .setEntryId(entryId);
         try {
-            Future<Boolean> fenceResult = null;
-            if (readRequest.hasFlag() && readRequest.getFlag().equals(ReadRequest.Flag.FENCE_LEDGER)) {
-                LOG.warn("Ledger fence request received for ledger: {} from address: {}", ledgerId,
-                         channel.remoteAddress());
-
-                if (readRequest.hasMasterKey()) {
+            // handle fence reqest
+            if (RequestUtils.isFenceRequest(readRequest)) {
+                LOG.info("Ledger fence request received for ledger: {} from address: {}", ledgerId,
+                    channel.remoteAddress());
+                if (!readRequest.hasMasterKey()) {
+                    LOG.error(
+                        "Fence ledger request received without master key for ledger:{} from address: {}",
+                        ledgerId, channel.remoteAddress());
+                    throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
+                } else {
                     byte[] masterKey = readRequest.getMasterKey().toByteArray();
                     fenceResult = requestProcessor.bookie.fenceLedger(ledgerId, masterKey);
-                } else {
-                    LOG.error("Fence ledger request received without master key for ledger:{} from address: {}",
-                              ledgerId, channel.remoteAddress());
-                    throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
                 }
             }
-            entryBody = requestProcessor.bookie.readEntry(ledgerId, entryId);
-            if (null != fenceResult) {
-                // TODO:
-                // currently we don't have readCallback to run in separated read
-                // threads. after BOOKKEEPER-429 is complete, we could improve
-                // following code to make it not wait here
-                //
-                // For now, since we only try to wait after read entry. so writing
-                // to journal and read entry are executed in different thread
-                // it would be fine.
-                try {
-                    Boolean fenced = fenceResult.get(1000, TimeUnit.MILLISECONDS);
-                    if (null == fenced || !fenced) {
-                        // if failed to fence, fail the read request to make it retry.
-                        status = StatusCode.EIO;
-                    } else {
-                        status = StatusCode.EOK;
-                        readResponse.setBody(ByteString.copyFrom(entryBody.nioBuffer()));
-                    }
-                } catch (InterruptedException ie) {
-                    LOG.error("Interrupting fence read entry (lid: {}, eid: {})",
-                              new Object[] { ledgerId, entryId, ie });
-                    status = StatusCode.EIO;
-                } catch (ExecutionException ee) {
-                    LOG.error("Failed to fence read entry (lid: {}, eid: {})",
-                              new Object[] { ledgerId, entryId, ee });
-                    status = StatusCode.EIO;
-                } catch (TimeoutException te) {
-                    LOG.error("Timeout to fence read entry (lid: {}, eid: {})",
-                              new Object[] { ledgerId, entryId, te });
-                    status = StatusCode.EIO;
-                }
-            } else {
-                readResponse.setBody(ByteString.copyFrom(entryBody.nioBuffer()));
-                status = StatusCode.EOK;
-            }
+            return readEntry(readResponse, entryId, startTimeSw);
         } catch (Bookie.NoLedgerException e) {
-            status = StatusCode.ENOLEDGER;
-            LOG.error("No ledger found while reading entry:{} from ledger: {}", entryId, ledgerId);
-        } catch (Bookie.NoEntryException e) {
-            status = StatusCode.ENOENTRY;
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("No entry found while reading entry:{} from ledger:{}", entryId, ledgerId);
+            if (RequestUtils.isFenceRequest(readRequest)) {
+                LOG.info("No ledger found reading entry {} when fencing ledger {}", entryId, ledgerId);
+            } else {
+                LOG.info("No ledger found while reading entry: {} from ledger: {}", entryId, ledgerId);
             }
+            return buildResponse(readResponse, StatusCode.ENOLEDGER, startTimeSw);
+        } catch (Bookie.NoEntryException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("No entry found while reading entry: {} from ledger: {}", entryId, ledgerId);
+            }
+            return buildResponse(readResponse, StatusCode.ENOENTRY, startTimeSw);
         } catch (IOException e) {
-            status = StatusCode.EIO;
-            LOG.error("IOException while reading entry:{} from ledger:{}", entryId, ledgerId);
+            LOG.error("IOException while reading entry: {} from ledger {} ", new Object[] { entryId, ledgerId, e });
+            return buildResponse(readResponse, StatusCode.EIO, startTimeSw);
         } catch (BookieException e) {
-            LOG.error("Unauthorized access to ledger:{} while reading entry:{} in request from address: {}",
-                    new Object[]{ledgerId, entryId, channel.remoteAddress()});
-            status = StatusCode.EUA;
+            LOG.error(
+                "Unauthorized access to ledger:{} while reading entry:{} in request from address: {}",
+                new Object[] { ledgerId, entryId, channel.remoteAddress() });
+            return buildResponse(readResponse, StatusCode.EUA, startTimeSw);
         }
-
-        if (status == StatusCode.EOK) {
-            requestProcessor.readEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
-                    TimeUnit.NANOSECONDS);
-        } else {
-            requestProcessor.readEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
-                    TimeUnit.NANOSECONDS);
-        }
-
-        ReferenceCountUtil.release(entryBody);
-
-        // Finally set status and return. The body would have been updated if
-        // a read went through.
-        readResponse.setStatus(status);
-        return readResponse.build();
     }
 
     @Override
     public void safeRun() {
-        ReadResponse readResponse = getReadResponse();
-        sendResponse(readResponse);
+        requestProcessor.readEntrySchedulingDelayStats.registerSuccessfulEvent(
+            MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+
+        if (!isVersionCompatible()) {
+            ReadResponse readResponse = ReadResponse.newBuilder()
+                .setLedgerId(ledgerId)
+                .setEntryId(entryId)
+                .setStatus(StatusCode.EBADVERSION)
+                .build();
+            sendResponse(readResponse);
+            return;
+        }
+
+        executeOp();
     }
 
-    private void sendResponse(ReadResponse readResponse) {
+    protected void executeOp() {
+        ReadResponse readResponse = getReadResponse();
+        if (null != readResponse) {
+            sendResponse(readResponse);
+        }
+    }
+
+    private void getFenceResponse(ReadResponse.Builder readResponse,
+                                  ByteBuf entryBody,
+                                  boolean fenceResult) {
+        StatusCode status;
+        if (!fenceResult) {
+            status = StatusCode.EIO;
+            registerFailedEvent(requestProcessor.fenceReadWaitStats, lastPhaseStartTime);
+        } else {
+            status = StatusCode.EOK;
+            readResponse.setBody(ByteString.copyFrom(entryBody.nioBuffer()));
+            registerSuccessfulEvent(requestProcessor.fenceReadWaitStats, lastPhaseStartTime);
+        }
+
+        if (null != entryBody) {
+            ReferenceCountUtil.release(entryBody);
+        }
+
+        readResponse.setStatus(status);
+    }
+
+    private void sendFenceResponse(ReadResponse.Builder readResponse,
+                                   ByteBuf entryBody,
+                                   boolean fenceResult,
+                                   Stopwatch startTimeSw) {
+        // build the fence read response
+        getFenceResponse(readResponse, entryBody, fenceResult);
+        // register fence read stat
+        registerEvent(!fenceResult, requestProcessor.fenceReadEntryStats, startTimeSw);
+        // send the fence read response
+        sendResponse(readResponse.build());
+    }
+
+    protected ReadResponse buildResponse(
+            ReadResponse.Builder readResponseBuilder,
+            StatusCode statusCode,
+            Stopwatch startTimeSw) {
+        registerEvent(!statusCode.equals(StatusCode.EOK), readStats, startTimeSw);
+        readResponseBuilder.setStatus(statusCode);
+        return readResponseBuilder.build();
+    }
+
+    protected void sendResponse(ReadResponse readResponse) {
         Response.Builder response = Response.newBuilder()
                 .setHeader(getHeader())
                 .setStatus(readResponse.getStatus())
@@ -211,9 +326,9 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
 
     protected void registerEvent(boolean failed, OpStatsLogger statsLogger, Stopwatch startTime) {
         if (failed) {
-            statsLogger.registerFailedEvent(startTime.elapsed(TimeUnit.MICROSECONDS));
+            statsLogger.registerFailedEvent(startTime.elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
         } else {
-            statsLogger.registerSuccessfulEvent(startTime.elapsed(TimeUnit.MICROSECONDS));
+            statsLogger.registerSuccessfulEvent(startTime.elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
         }
     }
 }
