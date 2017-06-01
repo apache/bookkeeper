@@ -44,9 +44,39 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
 
     private final static Logger LOG = LoggerFactory.getLogger(ReadEntryProcessorV3.class);
 
+    protected Stopwatch lastPhaseStartTime;
+    private final ExecutorService fenceThreadPool;
+
+    private SettableFuture<Boolean> fenceResult = null;
+    
+    protected final ReadRequest readRequest;
+    protected final long ledgerId;
+    protected final long entryId;
+    
+    // Stats
+    protected final OpStatsLogger readStats;
+    protected final OpStatsLogger reqStats;
+
     public ReadEntryProcessorV3(Request request, Channel channel,
-                                BookieRequestProcessor requestProcessor) {
+                                BookieRequestProcessor requestProcessor,
+                                ExecutorService fenceThreadPool) {
         super(request, channel, requestProcessor);
+        this.readRequest = request.getReadRequest();
+        this.ledgerId = readRequest.getLedgerId();
+        this.entryId = readRequest.getEntryId();
+        if (RequestUtils.isFenceRequest(this.readRequest)) {
+            this.readStats = statsLogger.getOpStatsLogger(READ_ENTRY_FENCE_READ);
+            this.reqStats = statsLogger.getOpStatsLogger(READ_ENTRY_FENCE_REQUEST);
+        } else if (readRequest.hasPreviousLAC()) {
+            this.readStats = statsLogger.getOpStatsLogger(READ_ENTRY_LONG_POLL_READ);
+            this.reqStats = statsLogger.getOpStatsLogger(READ_ENTRY_LONG_POLL_REQUEST);
+        } else {
+            this.readStats = statsLogger.getOpStatsLogger(READ_ENTRY);
+            this.reqStats = statsLogger.getOpStatsLogger(READ_ENTRY_REQUEST);
+        }
+        
+        this.fenceThreadPool = fenceThreadPool;
+        lastPhaseStartTime = Stopwatch.createStarted();
     }
 
     private ReadResponse getReadResponse() {
@@ -164,7 +194,27 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                 .setReadResponse(readResponse);
         sendResponse(response.getStatus(),
                      response.build(),
-                     requestProcessor.readRequestStats);
+                     reqStats);
+    }
+
+    //
+    // Stats Methods
+    //
+
+    protected void registerSuccessfulEvent(OpStatsLogger statsLogger, Stopwatch startTime) {
+        registerEvent(false, statsLogger, startTime);
+    }
+
+    protected void registerFailedEvent(OpStatsLogger statsLogger, Stopwatch startTime) {
+        registerEvent(true, statsLogger, startTime);
+    }
+
+    protected void registerEvent(boolean failed, OpStatsLogger statsLogger, Stopwatch startTime) {
+        if (failed) {
+            statsLogger.registerFailedEvent(startTime.elapsed(TimeUnit.MICROSECONDS));
+        } else {
+            statsLogger.registerSuccessfulEvent(startTime.elapsed(TimeUnit.MICROSECONDS));
+        }
     }
 }
 

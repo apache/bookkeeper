@@ -368,6 +368,13 @@ public interface BookieProtocol {
             super(protocolVersion, ADDENTRY, errorCode, ledgerId, entryId);
         }
     }
+    
+    static class ErrorResponse extends Response {
+        ErrorResponse(byte protocolVersion, byte opCode, int errorCode,
+                      long ledgerId, long entryId) {
+            super(protocolVersion, opCode, errorCode, ledgerId, entryId);
+        }
+    }
 
     static class AuthResponse extends Response {
         final AuthMessage authMessage;

@@ -46,10 +46,9 @@ import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.MessageToMessageEncoder;
 
 public class BookieProtoEncoding {
-    private final static Logger LOG = LoggerFactory.getLogger(BookieProtoEncoding.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BookieProtoEncoding.class);
 
-    static interface EnDecoder {
-
+    public static interface EnDecoder {
         /**
          * Encode a <i>object</i> into channel buffer.
          *

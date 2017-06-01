@@ -21,7 +21,8 @@
 package org.apache.bookkeeper.proto;
 
 import io.netty.channel.Channel;
-
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
@@ -48,12 +49,24 @@ public abstract class PacketProcessorBaseV3 extends SafeRunnable {
     }
 
     protected void sendResponse(StatusCode code, Object response, OpStatsLogger statsLogger) {
-        channel.writeAndFlush(response);
-        if (StatusCode.EOK == code) {
-            statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
-        } else {
-            statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
-        }
+        final long writeNanos = MathUtils.nowInNano();
+        channel.writeAndFlush(response).addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                long writeElapsedNanos = MathUtils.elapsedNanos(writeNanos);
+                if (!future.isSuccess()) {
+                    requestProcessor.channelWriteStats.registerFailedEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
+                } else {
+                    requestProcessor.channelWriteStats.registerSuccessfulEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
+                }
+                if (StatusCode.EOK == code) {
+                    statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+                } else {
+                    statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+                }
+            }
+        });
+
     }
 
     protected boolean isVersionCompatible() {
