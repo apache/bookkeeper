@@ -18,21 +18,18 @@
  * under the License.
  *
  */
+package org.apache.bookkeeper.shims.zk;
 
-package org.apache.bookkeeper.conf;
+import java.io.File;
+import java.io.IOException;
 
-public class TestBKConfiguration {
+public class ZooKeeperServerShimFactory {
 
-    public static ServerConfiguration newServerConfiguration() {
-        ServerConfiguration confReturn = new ServerConfiguration();
-        confReturn.setJournalFlushWhenQueueEmpty(true);
-        // enable journal format version
-        confReturn.setJournalFormatVersionToWrite(5);
-        confReturn.setAllowLoopback(true);
-        confReturn.setGcWaitTime(1000);
-        confReturn.setDiskUsageThreshold(0.999f);
-        confReturn.setDiskUsageWarnThreshold(0.99f);
-        return confReturn;
+    public static ZooKeeperServerShim createServer(File snapDir, File logDir, int zkPort, int maxCC)
+        throws IOException {
+        ZooKeeperServerShim server = new ZooKeeperServerShimImpl();
+        server.initialize(snapDir, logDir, zkPort, maxCC);
+        return server;
     }
 
 }

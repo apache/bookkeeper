@@ -104,6 +104,6 @@ public class CodahaleStatsLogger implements StatsLogger {
 
     @Override
     public void removeScope(String name, StatsLogger statsLogger) {
-        // no-op. the codahale stats logger doesn't the references for stats logger.
+        // no-op. the codahale stats logger doesn't have the references for stats logger.
     }
 }

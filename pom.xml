@@ -41,7 +41,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <guava.version>13.0.1</guava.version>
+    <guava.version>20.0</guava.version>
     <netty.version>4.1.10.Final</netty.version>
     <protobuf.version>2.6.1</protobuf.version>
     <slf4j.version>1.7.25</slf4j.version>

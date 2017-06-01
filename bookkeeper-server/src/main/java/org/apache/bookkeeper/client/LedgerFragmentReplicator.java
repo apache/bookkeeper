@@ -20,6 +20,7 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -284,7 +285,7 @@ public class LedgerFragmentReplicator {
                 ByteBuf toSend = lh.getDigestManager()
                         .computeDigestAndPackageForSending(entryId,
                                 lh.getLastAddConfirmed(), entry.getLength(),
-                                data, 0, data.length);
+                                Unpooled.wrappedBuffer(data, 0, data.length));
                 bkc.getBookieClient().addEntry(newBookie, lh.getId(),
                         lh.getLedgerKey(), entryId, toSend,
                         new WriteCallback() {
