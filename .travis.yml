@@ -30,8 +30,8 @@ before_install:
   - echo "MAVEN_OPTS='-Xmx3072m -XX:MaxPermSize=512m'" > ~/.mavenrc
 
 script:
-  - travis_retry mvn --batch-mode clean apache-rat:check
-  - travis_wait 60 mvn --batch-mode clean package findbugs:check
+  - travis_retry mvn --batch-mode clean apache-rat:check compile findbugs:check
+  - travis_wait 60 mvn --batch-mode clean package
 
 cache:
   directories:
