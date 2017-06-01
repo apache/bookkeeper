@@ -213,7 +213,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
         int numPendings;
 
-        ParallelReadRequest(ArrayList<InetSocketAddress> ensemble, long lId, long eId) {
+        ParallelReadRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
             super(ensemble, lId, eId);
             numPendings = writeSet.size();
         }
@@ -221,7 +221,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         @Override
         void read() {
             for (int bookieIndex : writeSet) {
-                InetSocketAddress to = ensemble.get(bookieIndex);
+                BookieSocketAddress to = ensemble.get(bookieIndex);
                 try {
                     sendReadTo(to, this);
                 } catch (InterruptedException ie) {
@@ -234,7 +234,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         }
 
         @Override
-        synchronized void logErrorAndReattemptRead(InetSocketAddress host, String errMsg, int rc) {
+        synchronized void logErrorAndReattemptRead(BookieSocketAddress host, String errMsg, int rc) {
             super.logErrorAndReattemptRead(host, errMsg, rc);
             --numPendings;
             // if received all responses or this entry doesn't meet quorum write, complete the request.
@@ -249,7 +249,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         }
 
         @Override
-        InetSocketAddress maybeSendSpeculativeRead(Set<InetSocketAddress> heardFromHosts) {
+        BookieSocketAddress maybeSendSpeculativeRead(Set<BookieSocketAddress> heardFromHosts) {
             // no speculative read
             return null;
         }

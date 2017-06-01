@@ -20,15 +20,20 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
@@ -167,13 +172,13 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         long id = getLedgerToRead(5, 5, 3, numEntries);
 
         ClientConfiguration newConf = new ClientConfiguration()
-                .setReadTimeout(30000);
+            .setReadEntryTimeout(30000);
         newConf.setZkServers(zkUtil.getZooKeeperConnectString());
         BookKeeper newBk = new BookKeeper(newConf);
 
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
 
-        ArrayList<InetSocketAddress> ensemble =
+        ArrayList<BookieSocketAddress> ensemble =
                 lh.getLedgerMetadata().getEnsemble(10);
         CountDownLatch latch1 = new CountDownLatch(1);
         CountDownLatch latch2 = new CountDownLatch(1);
@@ -202,13 +207,13 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         long id = getLedgerToRead(5, 3, 3, numEntries);
 
         ClientConfiguration newConf = new ClientConfiguration()
-                .setReadTimeout(30000);
+            .setReadEntryTimeout(30000);
         newConf.setZkServers(zkUtil.getZooKeeperConnectString());
         BookKeeper newBk = new BookKeeper(newConf);
 
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
 
-        ArrayList<InetSocketAddress> ensemble =
+        ArrayList<BookieSocketAddress> ensemble =
                 lh.getLedgerMetadata().getEnsemble(5);
         // kill two bookies
         killBookie(ensemble.get(0));
@@ -243,13 +248,13 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         long id = getLedgerToRead(5, 3, 3, numEntries);
 
         ClientConfiguration newConf = new ClientConfiguration()
-                .setReadTimeout(30000);
+            .setReadEntryTimeout(30000);
         newConf.setZkServers(zkUtil.getZooKeeperConnectString());
         BookKeeper newBk = new BookKeeper(newConf);
 
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
 
-        ArrayList<InetSocketAddress> ensemble =
+        ArrayList<BookieSocketAddress> ensemble =
                 lh.getLedgerMetadata().getEnsemble(5);
         // kill two bookies
         killBookie(ensemble.get(0));
