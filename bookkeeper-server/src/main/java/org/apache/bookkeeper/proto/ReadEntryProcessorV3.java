@@ -116,6 +116,8 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                 }
             } else {
                 readResponse.setBody(ByteString.copyFrom(entryBody.nioBuffer()));
+                long knownLAC = requestProcessor.bookie.readLastAddConfirmed(ledgerId);
+                readResponse.setMaxLAC(knownLAC);
                 status = StatusCode.EOK;
             }
         } catch (Bookie.NoLedgerException e) {

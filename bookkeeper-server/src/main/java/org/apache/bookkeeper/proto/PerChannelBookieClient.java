@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.proto;
 
+import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -68,6 +70,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallbackCtx;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
@@ -1137,7 +1140,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
      * Called by netty when a message is received on a channel
      */
     @Override
-	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 
         if (msg instanceof BookieProtocol.Response) {
             BookieProtocol.Response response = (BookieProtocol.Response) msg;
@@ -1182,7 +1185,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             if (readResponse.hasData()) {
                               data = readResponse.getData();
                             }
-                            handleReadResponse(ledgerId, entryId, status, data, completionValue);
+                            handleReadResponse(ledgerId, entryId, status, data, INVALID_ENTRY_ID, completionValue);
                             break;
                         }
                         default:
@@ -1270,7 +1273,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             if (readResponse.hasBody()) {
                                 buffer = Unpooled.wrappedBuffer(readResponse.getBody().asReadOnlyByteBuffer());
                             }
-                            handleReadResponse(readResponse.getLedgerId(), readResponse.getEntryId(), status, buffer, completionValue);
+                            long maxLAC = INVALID_ENTRY_ID;
+                            if (readResponse.hasMaxLAC()) {
+                                maxLAC = readResponse.getMaxLAC();
+                            }
+                            handleReadResponse(readResponse.getLedgerId(), readResponse.getEntryId(), status, buffer, maxLAC, completionValue);
                             break;
                         }
                         case WRITE_LAC: {
@@ -1372,7 +1379,12 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         glac.cb.readLacComplete(rcToRet, ledgerId, lacBuffer.slice(), lastEntryBuffer.slice(), glac.ctx);
     }
 
-    void handleReadResponse(long ledgerId, long entryId, StatusCode status, ByteBuf buffer, CompletionValue completionValue) {
+    void handleReadResponse(long ledgerId,
+                            long entryId,
+                            StatusCode status,
+                            ByteBuf buffer,
+                            long maxLAC, // max known lac piggy-back from bookies
+                            CompletionValue completionValue) {
         // The completion value should always be an instance of a ReadCompletion object when we reach here.
         ReadCompletion rc = (ReadCompletion)completionValue;
 
@@ -1392,6 +1404,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
         if(buffer != null) {
             buffer = buffer.slice();
+        }
+        if (maxLAC > INVALID_ENTRY_ID && (rc.ctx instanceof ReadEntryCallbackCtx)) {
+            ((ReadEntryCallbackCtx) rc.ctx).setLastAddConfirmed(maxLAC);
         }
         rc.cb.readEntryComplete(rcToRet, ledgerId, entryId, buffer, rc.ctx);
     }

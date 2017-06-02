@@ -81,13 +81,17 @@ public class BookkeeperInternalCallbacks {
         void operationComplete(int rc, T result);
     }
 
+    public interface ReadEntryCallbackCtx {
+        void setLastAddConfirmed(long lac);
+        long getLastAddConfirmed();
+    }
+
     /**
      * Declaration of a callback implementation for calls from BookieClient objects.
      * Such calls are for replies of read operations (operations to read an entry
      * from a ledger).
      *
      */
-
     public interface ReadEntryCallback {
         void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx);
     }
