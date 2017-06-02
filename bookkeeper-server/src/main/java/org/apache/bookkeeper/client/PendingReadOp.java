@@ -41,6 +41,7 @@ import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallbackCtx;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
@@ -484,13 +485,24 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         }
     }
 
-    private static class ReadContext {
+    private static class ReadContext implements ReadEntryCallbackCtx {
         final BookieSocketAddress to;
         final LedgerEntryRequest entry;
+        long lac = LedgerHandle.INVALID_ENTRY_ID;
 
         ReadContext(BookieSocketAddress to, LedgerEntryRequest entry) {
             this.to = to;
             this.entry = entry;
+        }
+
+        @Override
+        public void setLastAddConfirmed(long lac) {
+            this.lac = lac;
+        }
+
+        @Override
+        public long getLastAddConfirmed() {
+            return lac;
         }
     }
 
@@ -516,11 +528,13 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         heardFromHosts.add(rctx.to);
 
         if (entry.complete(rctx.to, buffer)) {
+            lh.updateLastConfirmed(rctx.getLastAddConfirmed(), 0L);
             submitCallback(BKException.Code.OK);
         }
 
         if(numPendingEntries < 0)
-            LOG.error("Read too many values");
+            LOG.error("Read too many values for ledger {} : [{}, {}].", new Object[] { ledgerId,
+                    startEntryId, endEntryId });
     }
 
     protected void submitCallback(int code) {
