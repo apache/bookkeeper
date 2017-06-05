@@ -91,6 +91,6 @@ public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements R
                 .setGetBookieInfoResponse(getBookieInfoResponse);
         sendResponse(response.getStatus(),
                      response.build(),
-                     requestProcessor.getBookieInfoStats);
+                     requestProcessor.getBookieInfoRequestStats);
     }
 }
