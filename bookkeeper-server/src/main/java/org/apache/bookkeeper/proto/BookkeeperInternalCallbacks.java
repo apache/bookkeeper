@@ -42,7 +42,6 @@ import org.slf4j.LoggerFactory;
  * Declaration of a callback interfaces used in bookkeeper client library but
  * not exposed to the client application.
  */
-
 public class BookkeeperInternalCallbacks {
 
     static final Logger LOG = LoggerFactory.getLogger(BookkeeperInternalCallbacks.class);
@@ -120,7 +119,6 @@ public class BookkeeperInternalCallbacks {
      * from a ledger).
      *
      */
-
     public interface ReadEntryCallback {
         void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx);
     }
