@@ -100,7 +100,9 @@ public class WeightedRandomSelection<T> {
         medianWeight = median/(double)totalWeight;
         minWeight = (double)min/totalWeight;
 
-        LOG.debug("Updating weights map. MediaWeight: " + medianWeight + " MinWeight: " + minWeight);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Updating weights map. MediaWeight: " + medianWeight + " MinWeight: " + minWeight);
+        }
 
         double maxWeight = maxProbabilityMultiplier*medianWeight;
         Map<T, Double> weightMap = new HashMap<T, Double>();
@@ -113,7 +115,10 @@ public class WeightedRandomSelection<T> {
             }
             if (maxWeight > 0 && weightedProbability > maxWeight) {
                 weightedProbability=maxWeight;
-                LOG.debug("Capping the probability to " + weightedProbability + " for " + e.getKey() + " Value: " + e.getValue());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Capping the probability to " + weightedProbability + " for " + e.getKey() + " Value: "
+                            + e.getValue());
+                }
             }
             weightMap.put(e.getKey(), weightedProbability);
         }
@@ -125,8 +130,10 @@ public class WeightedRandomSelection<T> {
         Double key=0.0;
         for (Map.Entry<T, Double> e : weightMap.entrySet()) {
             tmpCummulativeMap.put(key, e.getKey());
-            LOG.debug("Key: " + e.getKey() + " Value: " + e.getValue()
-                    + " AssignedKey: " + key + " AssignedWeight: " + e.getValue());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Key: " + e.getKey() + " Value: " + e.getValue() + " AssignedKey: " + key
+                        + " AssignedWeight: " + e.getValue());
+            }
             key += e.getValue();
         }
 

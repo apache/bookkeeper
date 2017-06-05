@@ -169,7 +169,9 @@ public class GarbageCollectorThread extends SafeRunnable {
 
         void flush() throws IOException {
             if (offsets.isEmpty()) {
-                LOG.debug("Skipping entry log flushing, as there are no offset!");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Skipping entry log flushing, as there are no offset!");
+                }
                 return;
             }
 

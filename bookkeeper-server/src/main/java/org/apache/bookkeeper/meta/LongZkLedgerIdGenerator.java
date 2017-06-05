@@ -82,7 +82,7 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
         this.shortIdGen = shortIdGen;
         highOrderDirectories = new ArrayList<String>();
         ledgerIdGenPathStatus = HighOrderLedgerIdGenPathStatus.UNKNOWN;
-        this.zkAcls = zkAcls; 
+        this.zkAcls = zkAcls;
     }
 
     private void generateLongLedgerIdLowBits(final String ledgerPrefix, long highBits, final GenericCallback<Long> cb) throws KeeperException, InterruptedException, IOException {
@@ -130,13 +130,17 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
 
     private void createHOBPathAndGenerateId(String ledgerPrefix, int hob, final GenericCallback<Long> cb) throws KeeperException, InterruptedException, IOException {
         try {
-            LOG.debug("Creating HOB path: {}", ledgerPrefix + formatHalfId(hob));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Creating HOB path: {}", ledgerPrefix + formatHalfId(hob));
+            }
             zk.create(ledgerPrefix + formatHalfId(hob), new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         }
         catch(KeeperException.NodeExistsException e) {
             // It's fine if we lost a race to create the node (NodeExistsException).
             // All other exceptions should continue unwinding.
-            LOG.debug("Tried to create High-order-bits node, but it already existed!", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Tried to create High-order-bits node, but it already existed!", e);
+            }
         }
         // We just created a new HOB directory. Invalidate the directory cache
         invalidateDirectoryCache();
@@ -210,13 +214,17 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
 
             for(int i = 0; i < highOrderDirs.length - 3; i++) {
                 String path = ledgerPrefix + formatHalfId(((Long)highOrderDirs[i]).intValue());
-                LOG.debug("DELETING HIGH ORDER DIR: {}", path);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("DELETING HIGH ORDER DIR: {}", path);
+                }
                 try {
                     zk.delete(path, 0);
                 }
                 catch (KeeperException e) {
                     // We don't care if we fail. Just warn about it.
-                    LOG.debug("Failed to delete {}", path);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Failed to delete {}", path);
+                    }
                 }
             }
         }

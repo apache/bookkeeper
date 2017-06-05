@@ -120,7 +120,9 @@ class FileInfo {
     public ByteBuf getExplicitLac() {
         ByteBuf retLac = null;
         synchronized(this) {
-            LOG.debug("fileInfo:GetLac: {}", explicitLac);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("fileInfo:GetLac: {}", explicitLac);
+            }
             if (explicitLac != null) {
                 retLac = Unpooled.buffer(explicitLac.capacity());
                 explicitLac.rewind();//copy from the beginning
@@ -145,7 +147,9 @@ class FileInfo {
             long explicitLacValue = explicitLac.getLong();
             setLastAddConfirmed(explicitLacValue);
             explicitLac.rewind();
-            LOG.debug("fileInfo:SetLac: {}", explicitLac);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("fileInfo:SetLac: {}", explicitLac);
+            }
         }
     }
 
@@ -244,7 +248,9 @@ class FileInfo {
      */
     synchronized public boolean setFenced() throws IOException {
         checkOpen(false);
-        LOG.debug("Try to set fenced state in file info {} : state bits {}.", lf, stateBits);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Try to set fenced state in file info {} : state bits {}.", lf, stateBits);
+        }
         if ((stateBits & STATE_FENCED_BIT) != STATE_FENCED_BIT) {
             // not fenced yet
             stateBits |= STATE_FENCED_BIT;

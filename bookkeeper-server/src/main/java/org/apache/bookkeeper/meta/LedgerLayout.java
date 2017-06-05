@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
 class LedgerLayout {
     static final Logger LOG = LoggerFactory.getLogger(LedgerLayout.class);
 
-   
+
     // version of compability layout version
     public static final int LAYOUT_MIN_COMPAT_VERSION = 1;
     // version of ledger layout metadata
@@ -65,7 +65,7 @@ class LedgerLayout {
             } catch (KeeperException.NoNodeException nne) {
                 return null;
             }
-            
+
             return layout;
         } catch (InterruptedException ie) {
             throw new IOException(ie);
@@ -169,7 +169,9 @@ class LedgerLayout {
           new StringBuilder().append(layoutFormatVersion).append(lSplitter)
               .append(managerFactoryCls).append(splitter).append(managerVersion).toString();
 
-        LOG.debug("Serialized layout info: {}", s);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Serialized layout info: {}", s);
+        }
         return s.getBytes("UTF-8");
     }
 
@@ -186,8 +188,9 @@ class LedgerLayout {
      */
     private static LedgerLayout parseLayout(byte[] bytes) throws IOException {
         String layout = new String(bytes, "UTF-8");
-
-        LOG.debug("Parsing Layout: {}", layout);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Parsing Layout: {}", layout);
+        }
 
         String lines[] = layout.split(lSplitter);
 
@@ -195,7 +198,7 @@ class LedgerLayout {
             int layoutFormatVersion = Integer.parseInt(lines[0]);
             if (LAYOUT_FORMAT_VERSION < layoutFormatVersion ||
                 LAYOUT_MIN_COMPAT_VERSION > layoutFormatVersion) {
-                throw new IOException("Metadata version not compatible. Expected " 
+                throw new IOException("Metadata version not compatible. Expected "
                         + LAYOUT_FORMAT_VERSION + ", but got " + layoutFormatVersion);
             }
 
