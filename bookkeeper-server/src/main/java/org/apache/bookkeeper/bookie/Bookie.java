@@ -62,6 +62,7 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
+import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
@@ -124,6 +125,9 @@ public class Bookie extends BookieCriticalThread {
 
     private final LedgerDirsManager ledgerDirsManager;
     private LedgerDirsManager indexDirsManager;
+    
+    private final LedgerDirsMonitor ledgerMonitor;
+    private final LedgerDirsMonitor idxMonitor;
 
     // ZooKeeper client instance for the Bookie
     ZooKeeper zk;
@@ -657,6 +661,7 @@ public class Bookie extends BookieCriticalThread {
 
         this.ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 statsLogger.scope(LD_LEDGER_SCOPE));
+
         File[] idxDirs = conf.getIndexDirs();
         if (null == idxDirs) {
             this.indexDirsManager = this.ledgerDirsManager;
@@ -672,10 +677,28 @@ public class Bookie extends BookieCriticalThread {
         LOG.info("instantiate ledger manager {}", ledgerManagerFactory.getClass().getName());
         ledgerManager = ledgerManagerFactory.newLedgerManager();
 
-        // Initialise ledgerDirManager. This would look through all the
+        // Initialise ledgerDirMonitor. This would look through all the
         // configured directories. When disk errors or all the ledger
         // directories are full, would throws exception and fail bookie startup.
-        this.ledgerDirsManager.init();
+        this.ledgerMonitor = new LedgerDirsMonitor(conf, 
+                                    new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), 
+                                    ledgerDirsManager);
+        this.ledgerMonitor.init();
+        
+        if (null == idxDirs) {
+            this.idxMonitor = this.ledgerMonitor;
+        } else {
+            this.idxMonitor = new LedgerDirsMonitor(conf, 
+                                        new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), 
+                                        indexDirsManager);
+            this.idxMonitor.init();
+        }
+
+        // ZK ephemeral node for this Bookie.
+        String myID = getMyId();
+        zkBookieRegPath = this.bookieRegistrationPath + myID;
+        zkBookieReadOnlyPath = this.bookieReadonlyRegistrationPath + "/" + myID;
+
         // instantiate the journals
         journals = Lists.newArrayList();
         for(int i=0 ;i<journalDirectories.size();i++) {
@@ -692,13 +715,7 @@ public class Bookie extends BookieCriticalThread {
         ledgerStorage.initialize(conf, ledgerManager, ledgerDirsManager, indexDirsManager, checkpointSource, statsLogger);
         syncThread = new SyncThread(conf, getLedgerDirsListener(),
                                     ledgerStorage, checkpointSource);
-
         handles = new HandleFactoryImpl(ledgerStorage);
-
-        // ZK ephemeral node for this Bookie.
-        String myID = getMyId();
-        zkBookieRegPath = this.bookieRegistrationPath + myID;
-        zkBookieReadOnlyPath = this.bookieReadonlyRegistrationPath + "/" + myID;
 
         // Expose Stats
         writeBytes = statsLogger.getCounter(WRITE_BYTES);
@@ -797,9 +814,9 @@ public class Bookie extends BookieCriticalThread {
                     journalDirectories.stream().map(File::getName).collect(Collectors.joining(", ")));
         }
         //Start DiskChecker thread
-        ledgerDirsManager.start();
+        ledgerMonitor.start();
         if (indexDirsManager != ledgerDirsManager) {
-            indexDirsManager.start();
+            idxMonitor.start();
         }
         // replay journals
         try {
@@ -1274,9 +1291,9 @@ public class Bookie extends BookieCriticalThread {
                 }
 
                 //Shutdown disk checker
-                ledgerDirsManager.shutdown();
+                ledgerMonitor.shutdown();
                 if (indexDirsManager != ledgerDirsManager) {
-                    indexDirsManager.shutdown();
+                    idxMonitor.shutdown();
                 }
 
                 // Shutdown the ZK client

@@ -541,6 +541,11 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             return;
         }
 
+        // ensure callback once
+        if (!complete.compareAndSet(false, true)) {
+            return;
+        }
+
         long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
         if (code != BKException.Code.OK) {
             long firstUnread = LedgerHandle.INVALID_ENTRY_ID;
