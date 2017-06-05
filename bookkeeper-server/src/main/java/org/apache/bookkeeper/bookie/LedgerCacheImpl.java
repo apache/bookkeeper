@@ -117,7 +117,9 @@ public class LedgerCacheImpl implements LedgerCache {
      */
     @Override
     public void deleteLedger(long ledgerId) throws IOException {
-        LOG.debug("Deleting ledgerId: {}", ledgerId);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Deleting ledgerId: {}", ledgerId);
+        }
 
         indexPageManager.removePagesForLedger(ledgerId);
         indexPersistenceManager.removeLedger(ledgerId);

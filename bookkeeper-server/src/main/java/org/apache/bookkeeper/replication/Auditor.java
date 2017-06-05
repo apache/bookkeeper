@@ -566,7 +566,9 @@ public class Auditor implements BookiesListener {
                         numBookiesPerLedger.registerSuccessfulValue(lh.getNumBookies());
                         numLedgersChecked.inc();
                     } catch (BKException.BKNoSuchLedgerExistsException bknsle) {
-                        LOG.debug("Ledger was deleted before we could check it", bknsle);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Ledger was deleted before we could check it", bknsle);
+                        }
                         callback.processResult(BKException.Code.OK,
                                                null, null);
                         return;

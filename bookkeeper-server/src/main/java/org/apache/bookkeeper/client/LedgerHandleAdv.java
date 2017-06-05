@@ -92,7 +92,9 @@ public class LedgerHandleAdv extends LedgerHandle {
     @Override
     public long addEntry(final long entryId, byte[] data, int offset, int length) throws InterruptedException,
             BKException {
-        LOG.debug("Adding entry {}", data);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Adding entry {}", data);
+        }
 
         CompletableFuture<Long> counter = new CompletableFuture<>();
 

@@ -150,8 +150,10 @@ public class IndexPersistenceMgr {
             fi = oldFi;
         } else {
             if (createdNewFile) {
-                // Else, we won and the active ledger manager should know about this.
-                LOG.debug("New ledger index file created for ledgerId: {}", ledger);
+                // Else, we won and the active ledger manager should know about this
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("New ledger index file created for ledgerId: {}", ledger);
+                }
                 activeLedgers.put(ledger, true);
             }
             // Evict cached items from the file info cache if necessary

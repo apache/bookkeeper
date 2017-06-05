@@ -240,7 +240,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     @Override
     public void markLedgerUnderreplicated(long ledgerId, String missingReplica)
             throws ReplicationException.UnavailableException {
-        LOG.debug("markLedgerUnderreplicated(ledgerId={}, missingReplica={})", ledgerId, missingReplica);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("markLedgerUnderreplicated(ledgerId={}, missingReplica={})", ledgerId, missingReplica);
+        }
         try {
             List<ACL> zkAcls = ZkUtils.getACLs(conf);
             String znode = getUrLedgerZnode(ledgerId);
@@ -289,7 +291,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     @Override
     public void markLedgerReplicated(long ledgerId) throws ReplicationException.UnavailableException {
-        LOG.debug("markLedgerReplicated(ledgerId={})", ledgerId);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("markLedgerReplicated(ledgerId={})", ledgerId);
+        }
         try {
             Lock l = heldLocks.get(ledgerId);
             if (l != null) {
@@ -405,7 +409,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
                     Stat stat = zkc.exists(parent + "/" + tryChild, false);
                     if (stat == null) {
-                        LOG.debug("{}/{} doesn't exist", parent, tryChild);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("{}/{} doesn't exist", parent, tryChild);
+                        }
                         children.remove(tryChild);
                         continue;
                     }
@@ -449,7 +455,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     @Override
     public long pollLedgerToRereplicate() throws ReplicationException.UnavailableException {
-        LOG.debug("pollLedgerToRereplicate()");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("pollLedgerToRereplicate()");
+        }
         try {
             Watcher w = new Watcher() {
                     public void process(WatchedEvent e) { // do nothing
@@ -466,7 +474,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     @Override
     public long getLedgerToRereplicate() throws ReplicationException.UnavailableException {
-        LOG.debug("getLedgerToRereplicate()");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("getLedgerToRereplicate()");
+        }
         try {
             while (true) {
                 waitIfLedgerReplicationDisabled();
@@ -508,7 +518,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     @Override
     public void releaseUnderreplicatedLedger(long ledgerId) throws ReplicationException.UnavailableException {
-        LOG.debug("releaseLedger(ledgerId={})", ledgerId);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("releaseLedger(ledgerId={})", ledgerId);
+        }
         try {
             Lock l = heldLocks.remove(ledgerId);
             if (l != null) {
@@ -527,7 +539,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     @Override
     public void close() throws ReplicationException.UnavailableException {
-        LOG.debug("close()");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("close()");
+        }
         try {
             for (Map.Entry<Long, Lock> e : heldLocks.entrySet()) {
                 zkc.delete(e.getValue().getLockZNode(), -1);
@@ -547,7 +561,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     public void disableLedgerReplication()
             throws ReplicationException.UnavailableException {
         List<ACL> zkAcls = ZkUtils.getACLs(conf);
-        LOG.debug("disableLedegerReplication()");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("disableLedegerReplication()");
+        }
         try {
             String znode = basePath + '/' + BookKeeperConstants.DISABLE_NODE;
             zkc.create(znode, "".getBytes(UTF_8), zkAcls, CreateMode.PERSISTENT);
@@ -570,7 +586,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     @Override
     public void enableLedgerReplication()
             throws ReplicationException.UnavailableException {
-        LOG.debug("enableLedegerReplication()");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("enableLedegerReplication()");
+        }
         try {
             zkc.delete(basePath + '/' + BookKeeperConstants.DISABLE_NODE, -1);
             LOG.info("Resuming automatic ledger re-replication");
@@ -592,7 +610,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     @Override
     public boolean isLedgerReplicationEnabled()
             throws ReplicationException.UnavailableException {
-        LOG.debug("isLedgerReplicationEnabled()");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("isLedgerReplicationEnabled()");
+        }
         try {
             if (null != zkc.exists(basePath + '/'
                     + BookKeeperConstants.DISABLE_NODE, false)) {
@@ -614,7 +634,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     @Override
     public void notifyLedgerReplicationEnabled(final GenericCallback<Void> cb)
             throws ReplicationException.UnavailableException {
-        LOG.debug("notifyLedgerReplicationEnabled()");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("notifyLedgerReplicationEnabled()");
+        }
         Watcher w = new Watcher() {
             public void process(WatchedEvent e) {
                 if (e.getType() == Watcher.Event.EventType.NodeDeleted) {
