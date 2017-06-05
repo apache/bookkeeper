@@ -1217,8 +1217,8 @@ public class BookieShell implements Tool {
             return opts;
         }
     }
-    
-    
+
+
     /**
      * Command to print help message
      */
@@ -1479,7 +1479,9 @@ public class BookieShell implements Tool {
                         oldCookie.getValue().deleteFromZooKeeper(zk, conf, oldCookie.getVersion());
                         return 0;
                     } catch (KeeperException.NoNodeException nne) {
-                        LOG.debug("Ignoring, cookie will be written to zookeeper");
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Ignoring, cookie will be written to zookeeper");
+                        }
                     }
                 } else {
                     // writes newcookie to local dirs
@@ -1877,7 +1879,9 @@ public class BookieShell implements Tool {
             indexDirectories = Bookie.getCurrentDirectories(bkConf.getIndexDirs());
         }
         formatter = EntryFormatter.newEntryFormatter(bkConf, ENTRY_FORMATTER_CLASS);
-        LOG.debug("Using entry formatter {}", formatter.getClass().getName());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Using entry formatter {}", formatter.getClass().getName());
+        }
         pageSize = bkConf.getPageSize();
         entriesPerPage = pageSize / 8;
     }
@@ -1918,8 +1922,8 @@ public class BookieShell implements Tool {
     /**
      * Returns the sorted list of the files in the given folders with the given file extensions.
      * Sorting is done on the basis of CreationTime if the CreationTime is not available or if they are equal
-     * then sorting is done by LastModifiedTime  
-     * @param folderNames - array of folders which we need to look recursively for files with given extensions  
+     * then sorting is done by LastModifiedTime
+     * @param folderNames - array of folders which we need to look recursively for files with given extensions
      * @param extensions - the file extensions, which we are interested in
      * @return sorted list of files
      */
@@ -1947,11 +1951,11 @@ public class BookieShell implements Tool {
                 FileTime file1CreationTime = file1Attributes.creationTime();
                 FileTime file2CreationTime = file2Attributes.creationTime();
                 int compareValue = file1CreationTime.compareTo(file2CreationTime);
-                /* 
+                /*
                  * please check https://docs.oracle.com/javase/7/docs/api/java/nio/file/attribute/BasicFileAttributes.html#creationTime()
                  * So not all file system implementation store creation time, in that case creationTime()
-                 * method may return FileTime representing the epoch (1970-01-01T00:00:00Z). So in that case 
-                 * it would be better to compare lastModifiedTime 
+                 * method may return FileTime representing the epoch (1970-01-01T00:00:00Z). So in that case
+                 * it would be better to compare lastModifiedTime
                  */
                 if (compareValue == 0) {
                     FileTime file1LastModifiedTime = file1Attributes.lastModifiedTime();
@@ -1959,7 +1963,7 @@ public class BookieShell implements Tool {
                     compareValue = file1LastModifiedTime.compareTo(file2LastModifiedTime);
                 }
                 return compareValue;
-            } catch (IOException e) {                
+            } catch (IOException e) {
                 return 0;
             }
         }
@@ -2177,7 +2181,7 @@ public class BookieShell implements Tool {
 
     /**
      * Scan over an entry log file for a particular entry
-     * 
+     *
      * @param logId
      *          Entry Log File id.
      * @param ledgerId
@@ -2218,7 +2222,7 @@ public class BookieShell implements Tool {
 
     /**
      * Scan over an entry log file for entries in the given position range
-     * 
+     *
      * @param logId
      *          Entry Log File id.
      * @param rangeStartPos
@@ -2273,7 +2277,7 @@ public class BookieShell implements Tool {
                     + "or greater than the current log filesize.");
         }
     }
-    
+
     /**
      * Scan a journal file
      *
@@ -2311,10 +2315,10 @@ public class BookieShell implements Tool {
 
     /**
      * Format the entry into a readable format.
-     * 
-     * @param entry 
+     *
+     * @param entry
      *          ledgerentry to print
-     * @param printMsg 
+     * @param printMsg
      *          Whether printing the message body
      */
     private void formatEntry(LedgerEntry entry, boolean printMsg) {
@@ -2327,7 +2331,7 @@ public class BookieShell implements Tool {
             formatter.formatEntry(entry.getEntry());
         }
     }
-    
+
     /**
      * Format the message into a readable format.
      *

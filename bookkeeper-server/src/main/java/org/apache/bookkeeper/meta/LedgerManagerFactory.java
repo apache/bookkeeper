@@ -138,7 +138,9 @@ public abstract class LedgerManagerFactory {
             return lmFactory
                     .initialize(conf, zk, lmFactory.getCurrentVersion());
         }
-        LOG.debug("read ledger layout {}", layout);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("read ledger layout {}", layout);
+        }
 
         // there is existing layout, we need to look into the layout.
         // handle pre V2 layout
@@ -242,7 +244,7 @@ public abstract class LedgerManagerFactory {
 
     /**
      * Format the ledger metadata for LedgerManager
-     * 
+     *
      * @param conf
      *            Configuration instance
      * @param zk
@@ -250,18 +252,18 @@ public abstract class LedgerManagerFactory {
      */
     public void format(final AbstractConfiguration conf, final ZooKeeper zk)
             throws InterruptedException, KeeperException, IOException {
-        
+
         Class<? extends LedgerManagerFactory> factoryClass;
         try {
             factoryClass = conf.getLedgerManagerFactoryClass();
         } catch (ConfigurationException e) {
             throw new IOException("Failed to get ledger manager factory class from configuration : ", e);
         }
-       
+
         LedgerLayout layout = LedgerLayout.readLayout(zk,
                 conf.getZkLedgersRootPath());
         layout.delete(zk, conf.getZkLedgersRootPath());
-        // Create new layout information again.        
+        // Create new layout information again.
         createNewLMFactory(conf, zk, factoryClass);
     }
 }

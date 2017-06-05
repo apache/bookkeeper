@@ -171,7 +171,9 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
             // which is safe since records before lastMark have been
             // persisted to disk (both index & entry logger)
             lastMark.getCurMark().writeLogMark(bb);
-            LOG.debug("RollLog to persist last marked log : {}", lastMark.getCurMark());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("RollLog to persist last marked log : {}", lastMark.getCurMark());
+            }
             List<File> writableLedgerDirs = ledgerDirsManager
                     .getWritableLedgerDirs();
             for (File dir : writableLedgerDirs) {
@@ -566,7 +568,9 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
         this.removePagesFromCache = conf.getJournalRemovePagesFromCache();
         // read last log mark
         lastLogMark.readLog();
-        LOG.debug("Last Log Mark : {}", lastLogMark.getCurMark());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Last Log Mark : {}", lastLogMark.getCurMark());
+        }
 
         // Expose Stats
         journalAddEntryStats = statsLogger.getOpStatsLogger(JOURNAL_ADD_ENTRY);
@@ -740,7 +744,10 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                 throw new IOException("Recovery log " + markedLog.getLogFileId() + " is missing");
             }
         }
-        LOG.debug("Try to relay journal logs : {}", logs);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Try to relay journal logs : {}", logs);
+        }
         // TODO: When reading in the journal logs that need to be synced, we
         // should use BufferedChannels instead to minimize the amount of
         // system calls done.

@@ -40,7 +40,7 @@ public class SASLBookieAuthProvider implements BookieAuthProvider {
 
     private SaslServerState server;
     private final AuthCallbacks.GenericCallback<Void> completeCb;
-    
+
     SASLBookieAuthProvider(BookieConnectionPeer addr, AuthCallbacks.GenericCallback<Void> completeCb,
         ServerConfiguration serverConfiguration, Subject subject, Pattern allowedIdsPattern) {
         this.completeCb = completeCb;
@@ -64,7 +64,9 @@ public class SASLBookieAuthProvider implements BookieAuthProvider {
                 completeCb.operationComplete(BKException.Code.OK, null);
             }
         } catch (SaslException err) {
-            LOG.debug("SASL error", err);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("SASL error", err);
+            }
             completeCb.operationComplete(BKException.Code.UnauthorizedAccessException, null);
         }
 

@@ -298,7 +298,7 @@ public class TestSpeculativeRead extends BaseTestCase {
 
             // if we've already heard from all hosts,
             // we only send the initial read
-            req0 = op.new LedgerEntryRequest(ensemble, l.getId(), 0);
+            req0 = op.new SequenceReadRequest(ensemble, l.getId(), 0);
             assertTrue("Should have sent to first",
                        req0.maybeSendSpeculativeRead(allHosts).equals(ensemble.get(0)));
             assertNull("Should not have sent another",
@@ -306,7 +306,7 @@ public class TestSpeculativeRead extends BaseTestCase {
 
             // if we have heard from some hosts, but not one we have sent to
             // send again
-            req2 = op.new LedgerEntryRequest(ensemble, l.getId(), 2);
+            req2 = op.new SequenceReadRequest(ensemble, l.getId(), 2);
             assertTrue("Should have sent to third",
                        req2.maybeSendSpeculativeRead(noHost).equals(ensemble.get(2)));
             assertTrue("Should have sent to first",
@@ -314,7 +314,7 @@ public class TestSpeculativeRead extends BaseTestCase {
 
             // if we have heard from some hosts, which includes one we sent to
             // do not read again
-            req4 = op.new LedgerEntryRequest(ensemble, l.getId(), 4);
+            req4 = op.new SequenceReadRequest(ensemble, l.getId(), 4);
             assertTrue("Should have sent to second",
                        req4.maybeSendSpeculativeRead(noHost).equals(ensemble.get(1)));
             assertNull("Should not have sent another",
