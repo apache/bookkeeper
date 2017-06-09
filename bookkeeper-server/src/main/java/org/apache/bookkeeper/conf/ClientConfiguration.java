@@ -64,6 +64,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     // Read Parameters
     protected final static String READ_TIMEOUT = "readTimeout";
     protected final static String SPECULATIVE_READ_TIMEOUT = "speculativeReadTimeout";
+    protected final static String ENABLE_PARALLEL_RECOVERY_READ = "enableParallelRecoveryRead";
     // Timeout Setting
     protected final static String ADD_ENTRY_TIMEOUT_SEC = "addEntryTimeoutSec";
     protected final static String ADD_ENTRY_QUORUM_TIMEOUT_SEC = "addEntryQuorumTimeoutSec";
@@ -806,6 +807,27 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Whether to enable parallel reading in recovery read.
+     *
+     * @return true if enable parallel reading in recovery read. otherwise, return false.
+     */
+    public boolean getEnableParallelRecoveryRead() {
+        return getBoolean(ENABLE_PARALLEL_RECOVERY_READ, false);
+    }
+
+    /**
+     * Enable/Disable parallel reading in recovery read.
+     *
+     * @param enabled
+     *          flag to enable/disable parallel reading in recovery read.
+     * @return client configuration.
+     */
+    public ClientConfiguration setEnableParallelRecoveryRead(boolean enabled) {
+        setProperty(ENABLE_PARALLEL_RECOVERY_READ, enabled);
+        return this;
+    }
+
+    /**
      * Get Ensemble Placement Policy Class.
      *
      * @return ensemble placement policy class.
@@ -1081,7 +1103,6 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-<<<<<<< HEAD
      * Set the client role
      *
      * @param role defines how the client will act
@@ -1110,7 +1131,6 @@ public class ClientConfiguration extends AbstractConfiguration {
     public String getClientRole() {
         return getString(CLIENT_ROLE, CLIENT_ROLE_STANDARD);
     }
-
 
     /**
      * Get the keystore type for client. Default is JKS.

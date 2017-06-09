@@ -1477,7 +1477,8 @@ public class LedgerHandle implements AutoCloseable {
         if (wasInRecovery) {
             // if metadata is already in recover, dont try to write again,
             // just do the recovery from the starting point
-            new LedgerRecoveryOp(LedgerHandle.this, cb).initiate();
+            new LedgerRecoveryOp(LedgerHandle.this, cb)
+                    .parallelRead(bk.getConf().getEnableParallelRecoveryRead()).initiate();
             return;
         }
 
@@ -1503,7 +1504,8 @@ public class LedgerHandle implements AutoCloseable {
                         }
                     });
                 } else if (rc == BKException.Code.OK) {
-                    new LedgerRecoveryOp(LedgerHandle.this, cb).initiate();
+                    new LedgerRecoveryOp(LedgerHandle.this, cb)
+                            .parallelRead(bk.getConf().getEnableParallelRecoveryRead()).initiate();
                 } else {
                     LOG.error("Error writing ledger config " + rc + " of ledger " + ledgerId);
                     cb.operationComplete(rc, null);

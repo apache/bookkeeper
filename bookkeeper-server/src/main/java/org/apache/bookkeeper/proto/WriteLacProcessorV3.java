@@ -107,7 +107,7 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
                     .setStatus(writeLacResponse.getStatus())
                     .setWriteLacResponse(writeLacResponse);
             Response resp = response.build();
-            sendResponse(writeLacResponse.getStatus(), resp, requestProcessor.writeLacStats);
+            sendResponse(writeLacResponse.getStatus(), resp, requestProcessor.writeLacRequestStats);
         }
     }
 }

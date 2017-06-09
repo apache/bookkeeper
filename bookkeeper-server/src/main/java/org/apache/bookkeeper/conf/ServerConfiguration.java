@@ -106,6 +106,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     //Disk utilization
     protected final static String DISK_USAGE_THRESHOLD = "diskUsageThreshold";
     protected final static String DISK_USAGE_WARN_THRESHOLD = "diskUsageWarnThreshold";
+    protected final static String DISK_USAGE_LWM_THRESHOLD = "diskUsageLwmThreshold";
     protected final static String DISK_CHECK_INTERVAL = "diskCheckInterval";
     protected final static String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
     protected final static String AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL = "auditorPeriodicBookieCheckInterval";
@@ -1415,6 +1416,35 @@ public class ServerConfiguration extends AbstractConfiguration {
         return getFloat(DISK_USAGE_THRESHOLD, 0.95f);
     }
 
+    
+    /**
+     * Set the disk free space low water mark threshold. 
+     * Disk is considered full when usage threshold is exceeded.
+     * Disk returns back to non-full state when usage is below low water mark threshold.
+     * This prevents it from going back and forth between these states frequently 
+     * when concurrent writes and compaction are happening. This also prevent bookie from 
+     * switching frequently between read-only and read-writes states in the same cases.  
+     *
+     * @param threshold threshold to declare a disk full
+     *
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setDiskLowWaterMarkUsageThreshold(float threshold) {
+        setProperty(DISK_USAGE_LWM_THRESHOLD, threshold);
+        return this;
+    }
+
+    /**
+     * Returns disk free space low water mark threshold. By default it is the 
+     * same as usage threshold (for backwards-compatibility).
+     *
+     * @return the percentage below which a disk will NOT be considered full
+     */
+    public float getDiskLowWaterMarkUsageThreshold() {
+        return getFloat(DISK_USAGE_LWM_THRESHOLD, getDiskUsageThreshold());
+    }
+
+    
     /**
      * Set the disk checker interval to monitor ledger disk space
      *

@@ -21,15 +21,14 @@
 package org.apache.bookkeeper.proto;
 
 import com.google.protobuf.ByteString;
-
 import io.netty.channel.Channel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
+import java.util.concurrent.ExecutorService;
 import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.AuthToken;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
@@ -43,18 +42,31 @@ import org.slf4j.LoggerFactory;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY_REQUEST;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CHANNEL_WRITE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.GET_BOOKIE_INFO_REQUEST;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_FENCE_READ;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_FENCE_REQUEST;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_FENCE_WAIT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_PRE_WAIT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_READ;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_REQUEST;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_WAIT;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_REQUEST;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_SCHEDULING_DELAY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAC_REQUEST;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAC;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.GET_BOOKIE_INFO;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC_REQUEST;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class BookieRequestProcessor implements RequestProcessor {
 
-    private final static Logger LOG = LoggerFactory.getLogger(BookieRequestProcessor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BookieRequestProcessor.class);
+
     /**
      * The server configuration. We use this for getting the number of add and read
      * worker threads.
@@ -88,9 +100,21 @@ public class BookieRequestProcessor implements RequestProcessor {
     final OpStatsLogger addEntryStats;
     final OpStatsLogger readRequestStats;
     final OpStatsLogger readEntryStats;
+    final OpStatsLogger fenceReadRequestStats;
+    final OpStatsLogger fenceReadEntryStats;
+    final OpStatsLogger fenceReadWaitStats;
+    final OpStatsLogger readEntrySchedulingDelayStats;
+    final OpStatsLogger longPollPreWaitStats;
+    final OpStatsLogger longPollWaitStats;
+    final OpStatsLogger longPollReadStats;
+    final OpStatsLogger longPollReadRequestStats;
+    final OpStatsLogger writeLacRequestStats;
     final OpStatsLogger writeLacStats;
+    final OpStatsLogger readLacRequestStats;
     final OpStatsLogger readLacStats;
+    final OpStatsLogger getBookieInfoRequestStats;
     final OpStatsLogger getBookieInfoStats;
+    final OpStatsLogger channelWriteStats;
 
     public BookieRequestProcessor(ServerConfiguration serverCfg, Bookie bookie,
             StatsLogger statsLogger, SecurityHandlerFactory shFactory) {
@@ -109,9 +133,21 @@ public class BookieRequestProcessor implements RequestProcessor {
         this.addRequestStats = statsLogger.getOpStatsLogger(ADD_ENTRY_REQUEST);
         this.readEntryStats = statsLogger.getOpStatsLogger(READ_ENTRY);
         this.readRequestStats = statsLogger.getOpStatsLogger(READ_ENTRY_REQUEST);
+        this.fenceReadEntryStats = statsLogger.getOpStatsLogger(READ_ENTRY_FENCE_READ);
+        this.fenceReadRequestStats = statsLogger.getOpStatsLogger(READ_ENTRY_FENCE_REQUEST);
+        this.fenceReadWaitStats = statsLogger.getOpStatsLogger(READ_ENTRY_FENCE_WAIT);
+        this.readEntrySchedulingDelayStats = statsLogger.getOpStatsLogger(READ_ENTRY_SCHEDULING_DELAY);
+        this.longPollPreWaitStats = statsLogger.getOpStatsLogger(READ_ENTRY_LONG_POLL_PRE_WAIT);
+        this.longPollWaitStats = statsLogger.getOpStatsLogger(READ_ENTRY_LONG_POLL_WAIT);
+        this.longPollReadStats = statsLogger.getOpStatsLogger(READ_ENTRY_LONG_POLL_READ);
+        this.longPollReadRequestStats = statsLogger.getOpStatsLogger(READ_ENTRY_LONG_POLL_REQUEST);
         this.writeLacStats = statsLogger.getOpStatsLogger(WRITE_LAC);
+        this.writeLacRequestStats = statsLogger.getOpStatsLogger(WRITE_LAC_REQUEST);
         this.readLacStats = statsLogger.getOpStatsLogger(READ_LAC);
+        this.readLacRequestStats = statsLogger.getOpStatsLogger(READ_LAC_REQUEST);
         this.getBookieInfoStats = statsLogger.getOpStatsLogger(GET_BOOKIE_INFO);
+        this.getBookieInfoRequestStats = statsLogger.getOpStatsLogger(GET_BOOKIE_INFO_REQUEST);
+        this.channelWriteStats = statsLogger.getOpStatsLogger(CHANNEL_WRITE);
     }
 
     @Override
@@ -233,7 +269,9 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processReadRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
-        ReadEntryProcessorV3 read = new ReadEntryProcessorV3(r, c, this);
+        ExecutorService fenceThreadPool =
+          null == readThreadPool ? null : readThreadPool.chooseThread(c);
+        ReadEntryProcessorV3 read = new ReadEntryProcessorV3(r, c, this, fenceThreadPool);
         if (null == readThreadPool) {
             read.run();
         } else {
