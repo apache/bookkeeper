@@ -25,9 +25,16 @@ h1. ZookKeeper security on BookKeeper
 Both clients and Bookies read and write metadata on ZooKeeper, it is also used for Bookie discovery. 
 The best way to protect data stored on ZooKeeper is to put ACLs on every z-node, this way only authorized users will be able to access (read/write) data
 
-In order to configure BookKeeper and protect ZooKeeper just simply add a zookeeper.writeAcls=true configuration line.
-Beware that your Bookiesss and your clients MUST successfully authenticate to ZooKeeper cluster.
+In order to configure BookKeeper and protect ZooKeeper just simply add a zkEnableSecurity=true configuration property on Bookie Configuration.
+On the client side you have to set zkEnableSecurity property to true or use ClientConfiguration.setZkEnableSecurity(true).
+
+Beware that your Bookies and your clients MUST successfully authenticate to ZooKeeper cluster.
 You MUST use the same ZooKeeper principal for every Bookie and every Client, this is usually achived by using Kerberos.
+
+BookKeeper runtime will use ZooDefs.Ids.CREATOR_ALL_ACL ACLs for every new node.
+
+
+
 
 
 TODO WORK-IN-PROGRESS
