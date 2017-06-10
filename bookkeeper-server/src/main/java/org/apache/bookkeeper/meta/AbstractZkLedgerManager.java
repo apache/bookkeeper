@@ -259,11 +259,15 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
     }
 
     /**
-     * Removes ledger metadata from ZooKeeper if version matches.
+     * Removes ledger metadata from ZooKeeper and deletes its parent znodes
+     * recursively if they dont have anymore children.
      *
-     * @param   ledgerId    ledger identifier
-     * @param   version     local version of metadata znode
-     * @param   cb          callback object
+     * @param ledgerId
+     *            ledger identifier
+     * @param version
+     *            local version of metadata znode
+     * @param cb
+     *            callback object
      */
     @Override
     public void removeLedgerMetadata(final long ledgerId, final Version version,
@@ -282,8 +286,8 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
                 znodeVersion = ((ZkVersion)version).getZnodeVersion();
             }
         }
-
-        zk.delete(getLedgerPath(ledgerId), znodeVersion, new VoidCallback() {
+        
+        VoidCallback callbackForDelete = new VoidCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx) {
                 int bkRc;
@@ -308,9 +312,20 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
                 } else {
                     bkRc = BKException.Code.ZKException;
                 }
-                cb.operationComplete(bkRc, (Void)null);
+                cb.operationComplete(bkRc, (Void) null);
             }
-        }, null);
+        };
+        String ledgerZnodePath = getLedgerPath(ledgerId);
+        if (this instanceof HierarchicalLedgerManager || this instanceof LongHierarchicalLedgerManager) {
+            /*
+             * do recursive deletes only for HierarchicalLedgerManager and
+             * LongHierarchicalLedgerManager
+             */
+            ZkUtils.asyncDeleteFullPathOptimistic(zk, ledgerZnodePath, znodeVersion, callbackForDelete,
+                    ledgerZnodePath);
+        } else {
+            zk.delete(ledgerZnodePath, znodeVersion, callbackForDelete, null);
+        }
     }
 
     @Override
