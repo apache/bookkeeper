@@ -22,7 +22,6 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -52,7 +51,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.*;
 
 public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
@@ -79,6 +77,37 @@ public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
     @After
     public void teardown() throws Exception {
         zooKeeperClient.close();
+    }
+
+    @Test(timeout = 60000)
+    public void testCreateLogPath0() throws Exception {
+        createLogPathTest("/create/log/path/" + runtime.getMethodName());
+    }
+
+    @Test(timeout = 60000)
+    public void testCreateLogPath1() throws Exception {
+        createLogPathTest("create/log/path/" + runtime.getMethodName());
+    }
+
+    private void createLogPathTest(String logName) throws Exception {
+        URI uri = createDLMURI("/" + runtime.getMethodName());
+        ensureURICreated(zooKeeperClient.get(), uri);
+        DistributedLogConfiguration newConf = new DistributedLogConfiguration();
+        newConf.addConfiguration(conf);
+        newConf.setCreateStreamIfNotExists(false);
+        DistributedLogNamespace namespace = DistributedLogNamespaceBuilder.newBuilder()
+                .conf(newConf).uri(uri).build();
+        DistributedLogManager dlm = namespace.openLog(logName);
+        LogWriter writer;
+        try {
+            writer = dlm.startLogSegmentNonPartitioned();
+            writer.write(DLMTestUtil.getLogRecordInstance(1L));
+            writer.flushAndSync();
+            fail("Should fail to write data if stream doesn't exist.");
+        } catch (IOException ioe) {
+            // expected
+        }
+        dlm.close();
     }
 
     @Test(timeout = 60000)
@@ -143,8 +172,8 @@ public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
         }
 
         try {
-            namespace.openLog("/test2");
-            fail("should fail to create invalid stream /test2");
+            namespace.openLog("/ test2");
+            fail("should fail to create invalid stream / test2");
         } catch (InvalidStreamNameException isne) {
             // expected
         }

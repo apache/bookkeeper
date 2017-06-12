@@ -32,6 +32,7 @@ import com.google.common.io.Closeables;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
+import org.apache.distributedlog.exceptions.InvalidStreamNameException;
 import org.apache.distributedlog.exceptions.ZKException;
 import org.apache.distributedlog.function.VoidFunctions;
 import org.apache.distributedlog.io.AsyncCloseable;

@@ -21,12 +21,14 @@ import com.google.common.collect.Lists;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.LogSegmentMetadata.LogSegmentMetadataVersion;
+import org.apache.distributedlog.exceptions.InvalidStreamNameException;
 import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.junit.Test;
 
 import java.util.List;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.distributedlog.util.DLUtils.validateAndNormalizeName;
 import static org.junit.Assert.*;
 
 /**
@@ -268,6 +270,38 @@ public class TestDLUtils {
     public void testDeserializeInvalidLedgerId() throws Exception {
         byte[] corruptedData = "corrupted-ledger-id".getBytes(UTF_8);
         DLUtils.bytes2LogSegmentId(corruptedData);
+    }
+
+    @Test(timeout = 10000)
+    public void testValidateLogName() throws Exception {
+        String logName = "test-validate-log-name";
+        validateAndNormalizeName(logName);
+    }
+
+    @Test(timeout = 10000, expected = InvalidStreamNameException.class)
+    public void testValidateBadLogName0() throws Exception {
+        String logName = "  test-bad-log-name";
+        validateAndNormalizeName(logName);
+    }
+
+    @Test(timeout = 10000, expected = InvalidStreamNameException.class)
+    public void testValidateBadLogName1() throws Exception {
+        String logName = "test-bad-log-name/";
+        validateAndNormalizeName(logName);
+    }
+
+    @Test(timeout = 10000, expected = InvalidStreamNameException.class)
+    public void testValidateBadLogName2() throws Exception {
+        String logName = "../test-bad-log-name/";
+        validateAndNormalizeName(logName);
+    }
+
+    @Test(timeout = 10000)
+    public void testValidateSameStreamPath() throws Exception {
+        String logName1 = "/test-resolve-log";
+        String logName2 = "test-resolve-log";
+        validateAndNormalizeName(logName1);
+        validateAndNormalizeName(logName2);
     }
 
 }

@@ -74,7 +74,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.apache.distributedlog.util.DLUtils.isReservedStreamName;
-import static org.apache.distributedlog.util.DLUtils.validateName;
+import static org.apache.distributedlog.util.DLUtils.validateAndNormalizeName;
 
 /**
  * Manager for ZooKeeper/BookKeeper based namespace
@@ -504,7 +504,7 @@ public class BKNamespaceDriver implements NamespaceDriver {
             throw new UnsupportedOperationException();
         }
         checkState();
-        validateName(streamName);
+        streamName = validateAndNormalizeName(streamName);
         return new ZKMetadataAccessor(
                 streamName,
                 conf,
