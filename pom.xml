@@ -87,12 +87,7 @@
     <dependency>
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
-      <version>${libthrift.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.twitter</groupId>
-      <artifactId>scrooge-core_2.11</artifactId>
-      <version>${scrooge.version}</version>
+      <version>0.9.3</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
@@ -150,23 +145,6 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>com.twitter</groupId>
-        <artifactId>scrooge-maven-plugin</artifactId>
-        <version>${scrooge-maven-plugin.version}</version>
-        <configuration>
-          <language>java</language>
-        </configuration>
-        <executions>
-          <execution>
-            <id>thrift-sources</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven-compiler-plugin.version}</version>
       </plugin>
@@ -205,6 +183,37 @@
         <configuration>
           <excludeFilterFile>${basedir}/src/main/resources/findbugsExclude.xml</excludeFilterFile>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>${maven-shade-plugin.version}</version>
+        <configuration>
+          <!-- put your configurations here -->
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <createDependencyReducedPom>true</createDependencyReducedPom>
+              <artifactSet>
+                <includes>
+                  <include>org.apache.thrift:libthrift</include>
+                </includes>
+              </artifactSet>
+              <minimizeJar>true</minimizeJar>
+              <relocations>
+                <relocation>
+                  <pattern>org.apache.thrift</pattern>
+                  <shadedPattern>dl-shade.org.apache.thrift</shadedPattern>
+                </relocation>
+              </relocations>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
