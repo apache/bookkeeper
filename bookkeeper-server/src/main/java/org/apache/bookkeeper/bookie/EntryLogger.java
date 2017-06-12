@@ -749,7 +749,9 @@ public class EntryLogger {
         if (logChannel != null) {
             logChannel.flush(true);
             bytesWrittenSinceLastFlush = 0;
-            LOG.debug("Flush and sync current entry logger {}.", logChannel.getLogId());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Flush and sync current entry logger {}.", logChannel.getLogId());
+            }
         }
     }
 
@@ -781,7 +783,7 @@ public class EntryLogger {
         long pos = logChannel.position();
         logChannel.write(entry);
         logChannel.registerWrittenEntry(ledger, entrySize);
-        
+
         incrementBytesWrittenAndMaybeFlush(4L + entrySize);
 
         return (logChannel.getLogId() << 32L) | pos;
@@ -1111,7 +1113,9 @@ public class EntryLogger {
             }
         });
 
-        LOG.debug("Retrieved entry log meta data entryLogId: {}, meta: {}", entryLogId, meta);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Retrieved entry log meta data entryLogId: {}, meta: {}", entryLogId, meta);
+        }
         return meta;
     }
 

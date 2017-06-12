@@ -1140,5 +1140,4 @@ public class ClientConfiguration extends AbstractConfiguration {
     public String getClientRole() {
         return getString(CLIENT_ROLE, CLIENT_ROLE_STANDARD);
     }
-
 }

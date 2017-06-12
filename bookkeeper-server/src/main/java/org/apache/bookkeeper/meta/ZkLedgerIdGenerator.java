@@ -113,7 +113,9 @@ public class ZkLedgerIdGenerator implements LedgerIdGenerator {
                                     LOG.warn("Exception during deleting znode for id generation : ",
                                             KeeperException.create(KeeperException.Code.get(rc), path));
                                 } else {
-                                    LOG.debug("Deleting znode for id generation : {}", idPathName);
+                                    if (LOG.isDebugEnabled()) {
+                                        LOG.debug("Deleting znode for id generation : {}", idPathName);
+                                    }
                                 }
                             }
                         }, null);

@@ -251,7 +251,9 @@ class IndexInMemPageMgr {
                     }
 
                     if (null == lep) {
-                        LOG.debug("Did not find eligible page in the first pass");
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Did not find eligible page in the first pass");
+                        }
                         return null;
                     }
                 }
@@ -511,7 +513,9 @@ class IndexInMemPageMgr {
         indexPersistenceManager.flushLedgerHeader(ledger);
 
         if (null == firstEntryList || firstEntryList.size() == 0) {
-            LOG.debug("Nothing to flush for ledger {}.", ledger);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Nothing to flush for ledger {}.", ledger);
+            }
             // nothing to do
             return;
         }

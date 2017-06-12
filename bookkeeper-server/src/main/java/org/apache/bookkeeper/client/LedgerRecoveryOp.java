@@ -167,7 +167,9 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
                         submitCallback(rc);
                     } else {
                         submitCallback(BKException.Code.OK);
-                        LOG.debug("After closing length is: {}", lh.getLength());
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("After closing length is: {}", lh.getLength());
+                        }
                     }
                 }
             }, null, BKException.Code.LedgerClosedException);

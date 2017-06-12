@@ -59,7 +59,9 @@ interface ExplicitLacFlushPolicy {
         ExplicitLacFlushPolicyImpl(LedgerHandle lh) {
             this.lh = lh;
             scheduleExplictLacFlush();
-            LOG.debug("Scheduled Explicit Last Add Confirmed Update");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Scheduled Explicit Last Add Confirmed Update");
+            }
         }
 
         private long getExplicitLac() {
@@ -87,20 +89,25 @@ interface ExplicitLacFlushPolicy {
                     // Piggyback, so no need to send an explicit LAC update to
                     // bookies.
                     if (getExplicitLac() < getPiggyBackedLac()) {
-                        LOG.debug("ledgerid: {}", lh.getId());
-                        LOG.debug("explicitLac:{} piggybackLac:{}", getExplicitLac(),
-                                getPiggyBackedLac());
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("ledgerid: {}", lh.getId());
+                            LOG.debug("explicitLac:{} piggybackLac:{}", getExplicitLac(), getPiggyBackedLac());
+                        }
                         setExplicitLac(getPiggyBackedLac());
                         return;
                     }
 
                     if (lh.getLastAddConfirmed() > getExplicitLac()) {
                         // Send Explicit LAC
-                        LOG.debug("ledgerid: {}", lh.getId());
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("ledgerid: {}", lh.getId());
+                        }
                         asyncExplicitLacFlush(lh.getLastAddConfirmed());
                         setExplicitLac(lh.getLastAddConfirmed());
-                        LOG.debug("After sending explict LAC lac: {}  explicitLac:{}", lh.getLastAddConfirmed(),
-                                getExplicitLac());
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("After sending explict LAC lac: {}  explicitLac:{}", lh.getLastAddConfirmed(),
+                                    getExplicitLac());
+                        }
                     }
                 }
 
@@ -126,7 +133,9 @@ interface ExplicitLacFlushPolicy {
             final PendingWriteLacOp op = new PendingWriteLacOp(lh, cb, null);
             op.setLac(explicitLac);
             try {
-                LOG.debug("Sending Explicit LAC: {}", explicitLac);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Sending Explicit LAC: {}", explicitLac);
+                }
                 lh.bk.mainWorkerPool.submit(new SafeRunnable() {
                     @Override
                     public void safeRun() {

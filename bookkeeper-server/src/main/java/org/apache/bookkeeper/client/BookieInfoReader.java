@@ -91,7 +91,9 @@ public class BookieInfoReader {
         scheduler.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                LOG.debug("Running periodic BookieInfo scan");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Running periodic BookieInfo scan");
+                }
                 getReadWriteBookieInfo(null);
             }
         }, 0, conf.getGetBookieInfoIntervalSeconds(), TimeUnit.SECONDS);
@@ -128,7 +130,9 @@ public class BookieInfoReader {
             if (newBookiesList != null) {
                 refreshBookieList.set(true);
             }
-            LOG.debug("Exiting due to running instance");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Exiting due to running instance");
+            }
             return;
         }
         Collection<BookieSocketAddress> deadBookies = null, joinedBookies=null;
@@ -137,7 +141,9 @@ public class BookieInfoReader {
                 if (this.bookies == null) {
                     joinedBookies = this.bookies = bk.bookieWatcher.getBookies();
                 } else if (refreshBookieList.get()) {
-                    LOG.debug("Refreshing bookie list");
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Refreshing bookie list");
+                    }
                     newBookiesList = bk.bookieWatcher.getBookies();
                     refreshBookieList.set(false);
                 } else {
@@ -169,7 +175,9 @@ public class BookieInfoReader {
         BookieClient bkc = bk.getBookieClient();
         totalSent.set(0);
         completedCnt.set(0);
-        LOG.debug("Getting bookie info for: {}", joinedBookies);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Getting bookie info for: {}", joinedBookies);
+        }
         for (BookieSocketAddress b : joinedBookies) {
             bkc.getBookieInfo(b, GET_BOOKIE_INFO_REQUEST_FLAGS,
                     new GetBookieInfoCallback() {
@@ -181,7 +189,9 @@ public class BookieInfoReader {
                                 // create a new one only if the key was missing
                                 bookieInfoMap.putIfAbsent(b, new BookieInfo());
                             } else {
-                                LOG.debug("Bookie Info for bookie {} is {}", b, bInfo);
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("Bookie Info for bookie {} is {}", b, bInfo);
+                                }
                                 bookieInfoMap.put(b, bInfo);
                             }
                             if (completedCnt.incrementAndGet() == totalSent.get()) {
@@ -214,7 +224,9 @@ public class BookieInfoReader {
 
     void onExit() {
         if (isQueued.get()) {
-            LOG.debug("Scheduling a queued task");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Scheduling a queued task");
+            }
             submitTask(null);
         }
         isQueued.set(false);
@@ -243,7 +255,9 @@ public class BookieInfoReader {
                             if (rc != BKException.Code.OK) {
                                 LOG.error("Reading bookie info from bookie {} failed due to error: {}.", b, rc);
                             } else {
-                                LOG.debug("Free disk space on bookie {} is {}.", b, bInfo.getFreeDiskSpace());
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("Free disk space on bookie {} is {}.", b, bInfo.getFreeDiskSpace());
+                                }
                                 map.put(b, bInfo);
                             }
                             if (totalCompleted.incrementAndGet() == totalSent.get()) {

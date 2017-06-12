@@ -53,7 +53,9 @@ public class SaslClientState {
             throw new SaslException("Cannot create JAAS Sujbect for SASL");
         }
         if (clientSubject.getPrincipals().isEmpty()) {
-            LOG.debug("Using JAAS/SASL/DIGEST-MD5 auth to connect to {}", serverPrincipal);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Using JAAS/SASL/DIGEST-MD5 auth to connect to {}", serverPrincipal);
+            }
             String[] mechs = {"DIGEST-MD5"};
             username = (String) (clientSubject.getPublicCredentials().toArray()[0]);
             password = (String) (clientSubject.getPrivateCredentials().toArray()[0]);
@@ -67,7 +69,9 @@ public class SaslClientState {
             final String serviceName = serviceKerberosName.getServiceName();
             final String serviceHostname = serviceKerberosName.getHostName();
             final String clientPrincipalName = clientKerberosName.toString();
-            LOG.debug("Using JAAS/SASL/GSSAPI auth to connect to server Principal {}", serverPrincipal);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Using JAAS/SASL/GSSAPI auth to connect to server Principal {}", serverPrincipal);
+            }
             try {
                 saslClient = Subject.doAs(clientSubject, new PrivilegedExceptionAction<SaslClient>() {
                     @Override
@@ -78,7 +82,9 @@ public class SaslClientState {
                     }
                 });
             } catch (PrivilegedActionException err) {
-                LOG.debug("GSSAPI client error", err.getCause());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("GSSAPI client error", err.getCause());
+                }
                 throw new SaslException("error while booting GSSAPI client", err.getCause());
             }
         }
@@ -103,7 +109,9 @@ public class SaslClientState {
                     });
                 return retval;
             } catch (PrivilegedActionException e) {
-                LOG.debug("SASL error", e.getCause());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("SASL error", e.getCause());
+                }
                 throw new SaslException("SASL/JAAS error", e.getCause());
             }
         } else {
@@ -172,7 +180,9 @@ public class SaslClientState {
             byte[] retval = saslClient.evaluateChallenge(saslTokenMessage);
             return retval;
         } catch (SaslException e) {
-            LOG.debug("saslResponse: Failed to respond to SASL server's token:", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("saslResponse: Failed to respond to SASL server's token:", e);
+            }
             return null;
         }
     }
