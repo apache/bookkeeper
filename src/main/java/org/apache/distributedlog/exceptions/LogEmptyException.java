@@ -17,8 +17,6 @@
  */
 package org.apache.distributedlog.exceptions;
 
-import org.apache.distributedlog.thrift.service.StatusCode;
-
 /**
  * Exceptions are thrown when attempt to read a log stream that doesn't have any records.
  */

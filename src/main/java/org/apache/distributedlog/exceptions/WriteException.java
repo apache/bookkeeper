@@ -17,8 +17,6 @@
  */
 package org.apache.distributedlog.exceptions;
 
-import org.apache.distributedlog.thrift.service.StatusCode;
-
 /**
  * An exception on writing log records.
  */

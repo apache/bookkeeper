@@ -37,26 +37,6 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.apache.thrift</groupId>
-      <artifactId>libthrift</artifactId>
-      <version>${libthrift.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.twitter</groupId>
-      <artifactId>scrooge-core_2.11</artifactId>
-      <version>${scrooge.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.twitter</groupId>
-      <artifactId>finagle-core_2.11</artifactId>
-      <version>${finagle.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.twitter</groupId>
-      <artifactId>finagle-thrift_2.11</artifactId>
-      <version>${finagle.version}</version>
-    </dependency>
-    <dependency>
       <groupId>commons-lang</groupId>
       <artifactId>commons-lang</artifactId>
       <version>${commons-lang.version}</version>
@@ -65,6 +45,11 @@
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
       <version>${commons-codec.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.twitter</groupId>
+      <artifactId>finagle-core_2.11</artifactId>
+      <version>${finagle.version}</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -85,26 +70,6 @@
   </dependencies>
   <build>
     <plugins>
-      <plugin>
-        <groupId>com.twitter</groupId>
-        <artifactId>scrooge-maven-plugin</artifactId>
-        <version>${scrooge-maven-plugin.version}</version>
-        <configuration>
-          <language>java</language>
-          <thriftOpts>
-            <thriftOpt>--finagle</thriftOpt>
-          </thriftOpts>
-        </configuration>
-        <executions>
-          <execution>
-            <id>thrift-sources</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>

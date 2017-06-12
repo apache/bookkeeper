@@ -17,8 +17,6 @@
  */
 package org.apache.distributedlog.exceptions;
 
-import org.apache.distributedlog.thrift.service.StatusCode;
-
 /**
  * Exception is thrown when the system is over capacity.
  *
@@ -33,7 +31,7 @@ public class OverCapacityException extends DLException {
         super(StatusCode.OVER_CAPACITY, message);
     }
 
-    public OverCapacityException(StatusCode code, String message) {
+    public OverCapacityException(int code, String message) {
         super(code, message);
     }
 }

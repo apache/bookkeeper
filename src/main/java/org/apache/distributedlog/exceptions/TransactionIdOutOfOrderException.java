@@ -17,8 +17,6 @@
  */
 package org.apache.distributedlog.exceptions;
 
-import org.apache.distributedlog.thrift.service.StatusCode;
-
 /**
  * An exception is thrown when a log writer attempts to write a record with out-of-order transaction id.
  */

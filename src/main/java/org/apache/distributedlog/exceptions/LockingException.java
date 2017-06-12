@@ -17,8 +17,6 @@
  */
 package org.apache.distributedlog.exceptions;
 
-import org.apache.distributedlog.thrift.service.StatusCode;
-
 /**
  * Exception when a log writer attempts to acquire a lock to write data to the stream.
  */
@@ -34,11 +32,11 @@ public class LockingException extends DLException {
         this(StatusCode.LOCKING_EXCEPTION, lockPath, message, cause);
     }
 
-    protected LockingException(StatusCode code, String lockPath, String message) {
+    protected LockingException(int code, String lockPath, String message) {
         super(code, String.format("LockPath - %s: %s", lockPath, message));
     }
 
-    protected LockingException(StatusCode code, String lockPath, String message, Throwable cause) {
+    protected LockingException(int code, String lockPath, String message, Throwable cause) {
         super(code, String.format("LockPath - %s: %s", lockPath, message), cause);
     }
 }
