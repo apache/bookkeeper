@@ -38,19 +38,22 @@ public class ReplicationEnableCb implements GenericCallback<Void> {
     @Override
     public void operationComplete(int rc, Void result) {
         latch.countDown();
-        LOG.debug("Automatic ledger re-replication is enabled");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Automatic ledger re-replication is enabled");
+        }
     }
 
     /**
      * This is a blocking call and causes the current thread to wait until the
      * replication process is enabled
-     * 
+     *
      * @throws InterruptedException
      *             interrupted while waiting
      */
     public void await() throws InterruptedException {
-        LOG.debug("Automatic ledger re-replication is disabled. "
-                + "Hence waiting until its enabled!");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Automatic ledger re-replication is disabled. Hence waiting until its enabled!");
+        }
         latch.await();
     }
 }

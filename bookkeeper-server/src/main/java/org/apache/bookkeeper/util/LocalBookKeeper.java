@@ -95,7 +95,9 @@ public class LocalBookKeeper {
 
         boolean b = waitForServerUp(InetAddress.getLoopbackAddress().getHostAddress() + ":" + zookeeperPort,
           CONNECTION_TIMEOUT);
-        LOG.debug("ZooKeeper server up: {}", b);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("ZooKeeper server up: {}", b);
+        }
         return server;
     }
 
@@ -213,7 +215,7 @@ public class LocalBookKeeper {
             } else {
                 bsConfs[i].setBookiePort(initialPort + i);
             }
-            
+
             if (null == baseConf.getZkServers()) {
                 bsConfs[i].setZkServers(InetAddress.getLocalHost().getHostAddress() + ":"
                                   + ZooKeeperDefaultPort);

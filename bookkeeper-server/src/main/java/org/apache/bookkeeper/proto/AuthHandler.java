@@ -222,7 +222,9 @@ class AuthHandler {
                     authenticated = true;
                     LOG.info("Authentication success on server side");
                 } else {
-                    LOG.debug("Authentication failed on server side");
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Authentication failed on server side");
+                    }
                 }
             }
         }
@@ -386,7 +388,9 @@ class AuthHandler {
                     }
                 } else {
                     authenticationError(ctx, rc);
-                    LOG.debug("Authentication failed on server side");
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Authentication failed on server side");
+                    }
                 }
             }
         }

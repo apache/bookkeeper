@@ -22,15 +22,18 @@
 package org.apache.bookkeeper.proto;
 
 import io.netty.buffer.ByteBuf;
-
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +42,6 @@ import org.slf4j.LoggerFactory;
  * Declaration of a callback interfaces used in bookkeeper client library but
  * not exposed to the client application.
  */
-
 public class BookkeeperInternalCallbacks {
 
     static final Logger LOG = LoggerFactory.getLogger(BookkeeperInternalCallbacks.class);
@@ -80,7 +82,32 @@ public class BookkeeperInternalCallbacks {
     public interface GenericCallback<T> {
         void operationComplete(int rc, T result);
     }
+    
+        public static class TimedGenericCallback<T> implements GenericCallback<T> {
 
+        final GenericCallback<T> cb;
+        final int successRc;
+        final OpStatsLogger statsLogger;
+        final long startTime;
+
+        public TimedGenericCallback(GenericCallback<T> cb, int successRc, OpStatsLogger statsLogger) {
+            this.cb = cb;
+            this.successRc = successRc;
+            this.statsLogger = statsLogger;
+            this.startTime = MathUtils.nowInNano();
+        }
+
+        @Override
+        public void operationComplete(int rc, T result) {
+            if (successRc == rc) {
+                statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+            } else {
+                statsLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+            }
+            cb.operationComplete(rc, result);
+        }
+    }
+    
     public interface ReadEntryCallbackCtx {
         void setLastAddConfirmed(long lac);
         long getLastAddConfirmed();
@@ -94,10 +121,6 @@ public class BookkeeperInternalCallbacks {
      */
     public interface ReadEntryCallback {
         void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx);
-    }
-
-    public interface GetBookieInfoCallback {
-        void getBookieInfoComplete(int rc, BookieInfo bInfo, Object ctx);
     }
 
     /**
@@ -118,6 +141,10 @@ public class BookkeeperInternalCallbacks {
          */
         void onEntryComplete(int rc, LedgerHandle lh, LedgerEntry entry, Object ctx);
     }
+    
+    public interface GetBookieInfoCallback {
+        void getBookieInfoComplete(int rc, BookieInfo bInfo, Object ctx);
+    }
 
     /**
      * This is a multi callback object that waits for all of
@@ -132,29 +159,59 @@ public class BookkeeperInternalCallbacks {
         // Final callback and the corresponding context to invoke
         final AsyncCallback.VoidCallback cb;
         final Object context;
+        final ExecutorService callbackExecutor;
         // This keeps track of how many operations have completed
         final AtomicInteger done = new AtomicInteger();
         // List of the exceptions from operations that completed unsuccessfully
         final LinkedBlockingQueue<Integer> exceptions = new LinkedBlockingQueue<Integer>();
 
-        public MultiCallback(int expected, AsyncCallback.VoidCallback cb, Object context, int successRc, int failureRc) {
+        public MultiCallback(int expected, AsyncCallback.VoidCallback cb, Object context,
+                             int successRc, int failureRc) {
+            this(expected, cb, context, successRc, failureRc, null);
+        }
+
+        public MultiCallback(int expected, AsyncCallback.VoidCallback cb, Object context,
+                             int successRc, int failureRc, ExecutorService callbackExecutor) {
             this.expected = expected;
             this.cb = cb;
             this.context = context;
             this.failureRc = failureRc;
             this.successRc = successRc;
+            this.callbackExecutor = callbackExecutor;
             if (expected == 0) {
-                cb.processResult(successRc, null, context);
+                callback();
             }
         }
 
         private void tick() {
             if (done.incrementAndGet() == expected) {
-                if (exceptions.isEmpty()) {
-                    cb.processResult(successRc, null, context);
-                } else {
-                    cb.processResult(failureRc, null, context);
+                callback();
+            }
+        }
+
+        private void callback() {
+            if (null != callbackExecutor) {
+                try {
+                    callbackExecutor.submit(new Runnable() {
+                        @Override
+                        public void run() {
+                            doCallback();
+                        }
+                    });
+                } catch (RejectedExecutionException ree) {
+                    // if the callback executor is shutdown, do callback in same thread
+                    doCallback();
                 }
+            } else {
+                doCallback();
+            }
+        }
+
+        private void doCallback() {
+            if (exceptions.isEmpty()) {
+                cb.processResult(successRc, null, context);
+            } else {
+                cb.processResult(failureRc, null, context);
             }
         }
 
@@ -178,7 +235,7 @@ public class BookkeeperInternalCallbacks {
          *
          * @param data
          *          data to process
-         * @param iterationCallback
+         * @param cb
          *          Callback to invoke when process has been done.
          */
         public void process(T data, AsyncCallback.VoidCallback cb);

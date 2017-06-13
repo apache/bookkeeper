@@ -282,7 +282,9 @@ public class LedgerHandle implements AutoCloseable {
     }
 
     void writeLedgerConfig(GenericCallback<Void> writeCb) {
-        LOG.debug("Writing metadata to ledger manager: {}, {}", this.ledgerId, metadata.getVersion());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Writing metadata to ledger manager: {}, {}", this.ledgerId, metadata.getVersion());
+        }
 
         bk.getLedgerManager().writeLedgerMetadata(ledgerId, metadata, writeCb);
     }
@@ -329,7 +331,9 @@ public class LedgerHandle implements AutoCloseable {
         try {
             doAsyncCloseInternal(cb, ctx, rc);
         } catch (RejectedExecutionException re) {
-            LOG.debug("Failed to close ledger {} : ", ledgerId, re);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Failed to close ledger {} : ", ledgerId, re);
+            }
             errorOutPendingAdds(bk.getReturnRc(rc));
             cb.closeComplete(bk.getReturnRc(BKException.Code.InterruptedException), this, ctx);
         }
@@ -633,7 +637,9 @@ public class LedgerHandle implements AutoCloseable {
      */
     public long addEntry(byte[] data, int offset, int length)
             throws InterruptedException, BKException {
-        LOG.debug("Adding entry {}", data);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Adding entry {}", data);
+        }
 
         CompletableFuture<Long> counter = new CompletableFuture<>();
 
@@ -1150,12 +1156,17 @@ public class LedgerHandle implements AutoCloseable {
         while ((pendingAddOp = pendingAddOps.peek()) != null
                && blockAddCompletions.get() == 0) {
             if (!pendingAddOp.completed) {
-                LOG.debug("pending add not completed: {}", pendingAddOp);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("pending add not completed: {}", pendingAddOp);
+                }
                 return;
             }
             // Check if it is the next entry in the sequence.
             if (pendingAddOp.entryId != 0 && pendingAddOp.entryId != lastAddConfirmed + 1) {
-                LOG.debug("Head of the queue entryId: {} is not lac: {} + 1", pendingAddOp.entryId, lastAddConfirmed);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Head of the queue entryId: {} is not lac: {} + 1", pendingAddOp.entryId,
+                            lastAddConfirmed);
+                }
                 return;
             }
 
@@ -1535,7 +1546,9 @@ public class LedgerHandle implements AutoCloseable {
             if (rc != BKException.Code.OK) {
                 LOG.warn("LastAddConfirmedUpdate failed: {} ", BKException.getMessage(rc));
             } else {
-                LOG.debug("Callback LAC Updated for: {} ", lh.getId());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Callback LAC Updated for: {} ", lh.getId());
+                }
             }
         }
     }

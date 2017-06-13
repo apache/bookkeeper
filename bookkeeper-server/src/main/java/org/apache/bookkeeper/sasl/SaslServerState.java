@@ -70,7 +70,9 @@ public class SaslServerState {
             try {
                 final Object[] principals = subject.getPrincipals().toArray();
                 final Principal servicePrincipal = (Principal) principals[0];
-                LOG.debug("Authentication will use SASL/JAAS/Kerberos, servicePrincipal is {}", servicePrincipal);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Authentication will use SASL/JAAS/Kerberos, servicePrincipal is {}", servicePrincipal);
+                }
 
                 final String servicePrincipalNameAndHostname = servicePrincipal.getName();
                 int indexOf = servicePrincipalNameAndHostname.indexOf("/");
@@ -109,7 +111,9 @@ public class SaslServerState {
                 throw new SaslException("error on GSSAPI boot", e);
             }
         } else {
-            LOG.debug("Authentication will use SASL/JAAS/DIGEST-MD5");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Authentication will use SASL/JAAS/DIGEST-MD5");
+            }
             return Sasl.createSaslServer("DIGEST-MD5", SaslConstants.SASL_BOOKKEEPER_PROTOCOL,
                 SaslConstants.SASL_MD5_DUMMY_HOSTNAME, null, callbackHandler);
         }
@@ -199,7 +203,9 @@ public class SaslServerState {
         }
 
         private void handleRealmCallback(RealmCallback rc) {
-            LOG.debug("client supplied realm: " + rc.getDefaultText());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("client supplied realm: " + rc.getDefaultText());
+            }
             rc.setText(rc.getDefaultText());
         }
 
@@ -220,15 +226,19 @@ public class SaslServerState {
             }
             ac.setAuthorized(true);
 
-            LOG.debug("Successfully authenticated client: authenticationID=" + authenticationID
-                + ";  authorizationID=" + authorizationID + ".");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Successfully authenticated client: authenticationID=" + authenticationID
+                        + ";  authorizationID=" + authorizationID + ".");
+            }
 
             KerberosName kerberosName = new KerberosName(authenticationID);
             try {
                 StringBuilder userNameBuilder = new StringBuilder(kerberosName.getShortName());
                 userNameBuilder.append("/").append(kerberosName.getHostName());
                 userNameBuilder.append("@").append(kerberosName.getRealm());
-                LOG.debug("Setting authorizedID: " + userNameBuilder);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Setting authorizedID: " + userNameBuilder);
+                }
                 ac.setAuthorizedID(userNameBuilder.toString());
             } catch (IOException e) {
                 LOG.error("Failed to set name based on Kerberos authentication rules.");

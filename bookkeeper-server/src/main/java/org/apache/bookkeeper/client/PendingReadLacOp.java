@@ -130,8 +130,9 @@ class PendingReadLacOp implements ReadLacCallback {
                 && coverageSet.addBookieAndCheckCovered(bookieIndex)
                 && !completed) {
             completed = true;
-            LOG.debug("Read LAC complete with enough validResponse for ledger: {} LAC: {}",
-                    ledgerId, maxLac);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Read LAC complete with enough validResponse for ledger: {} LAC: {}", ledgerId, maxLac);
+            }
             cb.getLacComplete(BKException.Code.OK, maxLac);
             return;
         }

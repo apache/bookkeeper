@@ -28,7 +28,9 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
@@ -47,9 +49,10 @@ import org.slf4j.LoggerFactory;
 public class TestLedgerDirsManager {
     private final static Logger LOG = LoggerFactory.getLogger(TestLedgerDirsManager.class);
 
-    ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+    ServerConfiguration conf;
     File curDir;
     LedgerDirsManager dirsManager;
+    LedgerDirsMonitor ledgerMonitor;
     MockDiskChecker mockDiskChecker;
     int diskCheckInterval = 1000;
     float threshold = 0.5f;
@@ -69,19 +72,22 @@ public class TestLedgerDirsManager {
         curDir = Bookie.getCurrentDirectory(tmpDir);
         Bookie.checkDirectoryStructure(curDir);
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
+        conf.setDiskLowWaterMarkUsageThreshold(conf.getDiskUsageThreshold());
         conf.setDiskCheckInterval(diskCheckInterval);
         conf.setIsForceGCAllowWhenNoSpace(true);
 
         mockDiskChecker = new MockDiskChecker(threshold, warnThreshold);
-        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(), NullStatsLogger.INSTANCE, mockDiskChecker);
-        dirsManager.init();
+        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(), NullStatsLogger.INSTANCE);
+        ledgerMonitor = new LedgerDirsMonitor(conf, 
+                mockDiskChecker, dirsManager);
+        ledgerMonitor.init();
     }
 
     @After
     public void tearDown() throws Exception {
-        dirsManager.shutdown();
+        ledgerMonitor.shutdown();
         for (File dir : tempDirs) {
             FileUtils.deleteDirectory(dir);
         }
@@ -146,7 +152,7 @@ public class TestLedgerDirsManager {
 
         MockLedgerDirsListener mockLedgerDirsListener = new MockLedgerDirsListener();
         dirsManager.addLedgerDirsListener(mockLedgerDirsListener);
-        dirsManager.start();
+        ledgerMonitor.start();
 
         assertFalse(mockLedgerDirsListener.readOnly);
         mockDiskChecker.setUsage(threshold + 0.05f);
@@ -161,9 +167,166 @@ public class TestLedgerDirsManager {
         assertFalse(mockLedgerDirsListener.readOnly);
     }
 
+    @Test(timeout = 60000)
+    public void testLedgerDirsMonitorHandlingLowWaterMark() throws Exception {
+
+        ledgerMonitor.shutdown();
+
+        final float warn = 0.90f;
+        final float nospace = 0.98f;
+        final float lwm = (warn + nospace) / 2;
+        final float lwm2warn = (warn + lwm) / 2;
+        final float lwm2nospace = (lwm + nospace) / 2;
+        final float nospaceExceeded = nospace + 0.005f;
+
+        conf.setDiskUsageThreshold(nospace);
+        conf.setDiskLowWaterMarkUsageThreshold(lwm);
+        conf.setDiskUsageWarnThreshold(warn);
+
+        mockDiskChecker = new MockDiskChecker(nospace, warnThreshold);
+        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(), NullStatsLogger.INSTANCE);
+        ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, dirsManager);
+        ledgerMonitor.init();
+        final MockLedgerDirsListener mockLedgerDirsListener = new MockLedgerDirsListener();
+        dirsManager.addLedgerDirsListener(mockLedgerDirsListener);
+        ledgerMonitor.start();
+
+        Thread.sleep((diskCheckInterval * 2) + 100);
+        assertFalse(mockLedgerDirsListener.readOnly);
+
+        // go above LWM but below threshold
+        // should still be writable
+        mockDiskChecker.setUsage(lwm2nospace);
+        Thread.sleep((diskCheckInterval * 2) + 100);
+        assertFalse(mockLedgerDirsListener.readOnly);
+
+        // exceed the threshold, should go to readonly
+        mockDiskChecker.setUsage(nospaceExceeded);
+        Thread.sleep(diskCheckInterval + 100);
+        assertTrue(mockLedgerDirsListener.readOnly);
+
+        // drop below threshold but above LWM
+        // should stay read-only
+        mockDiskChecker.setUsage(lwm2nospace);
+        Thread.sleep((diskCheckInterval * 2) + 100);
+        assertTrue(mockLedgerDirsListener.readOnly);
+
+        // drop below LWM
+        // should become writable
+        mockDiskChecker.setUsage(lwm2warn);
+        Thread.sleep((diskCheckInterval * 2) + 100);
+        assertFalse(mockLedgerDirsListener.readOnly);
+
+        // go above LWM but below threshold
+        // should still be writable
+        mockDiskChecker.setUsage(lwm2nospace);
+        Thread.sleep((diskCheckInterval * 2) + 100);
+        assertFalse(mockLedgerDirsListener.readOnly);
+    }
+
+    @Test(timeout = 60000)
+    public void testLedgerDirsMonitorHandlingWithMultipleLedgerDirectories() throws Exception {
+        ledgerMonitor.shutdown();
+
+        final float nospace = 0.90f;
+        final float lwm = 0.80f;
+        final float warn = 0.99f;
+        HashMap<File, Float> usageMap;
+
+        File tmpDir1 = createTempDir("bkTest", ".dir");
+        File curDir1 = Bookie.getCurrentDirectory(tmpDir1);
+        Bookie.checkDirectoryStructure(curDir1);
+
+        File tmpDir2 = createTempDir("bkTest", ".dir");
+        File curDir2 = Bookie.getCurrentDirectory(tmpDir2);
+        Bookie.checkDirectoryStructure(curDir2);
+
+        conf.setDiskUsageThreshold(nospace);
+        conf.setDiskLowWaterMarkUsageThreshold(lwm);
+        conf.setDiskUsageWarnThreshold(warn);
+        conf.setLedgerDirNames(new String[] { tmpDir1.toString(), tmpDir2.toString() });
+
+        mockDiskChecker = new MockDiskChecker(nospace, warnThreshold);
+        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(), NullStatsLogger.INSTANCE);
+        ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, dirsManager);
+        usageMap = new HashMap<File, Float>();
+        usageMap.put(curDir1, 0.1f);
+        usageMap.put(curDir2, 0.1f);
+        mockDiskChecker.setUsageMap(usageMap);
+        ledgerMonitor.init();
+        final MockLedgerDirsListener mockLedgerDirsListener = new MockLedgerDirsListener();
+        dirsManager.addLedgerDirsListener(mockLedgerDirsListener);
+        ledgerMonitor.start();
+
+        Thread.sleep((diskCheckInterval * 2) + 100);
+        assertFalse(mockLedgerDirsListener.readOnly);
+
+        // go above LWM but below threshold
+        // should still be writable
+        setUsageAndThenVerify(curDir1, lwm + 0.05f, curDir2, lwm + 0.05f, mockDiskChecker, mockLedgerDirsListener,
+                false);
+
+        // one dir usagespace above storagethreshold, another dir below storagethreshold
+        // should still be writable
+        setUsageAndThenVerify(curDir1, nospace + 0.02f, curDir2, nospace - 0.05f, mockDiskChecker,
+                mockLedgerDirsListener, false);
+
+        // should remain readonly
+        setUsageAndThenVerify(curDir1, nospace + 0.05f, curDir2, nospace + 0.02f, mockDiskChecker,
+                mockLedgerDirsListener, true);
+
+        // bring the disk usages to less than the threshold,
+        // but more than the LWM.
+        // should still be readonly
+        setUsageAndThenVerify(curDir1, nospace - 0.05f, curDir2, nospace - 0.05f, mockDiskChecker,
+                mockLedgerDirsListener, true);
+
+        // bring one dir diskusage to less than lwm,
+        // the other dir to be more than lwm, but the
+        // overall diskusage to be more than lwm
+        // should still be readonly
+        setUsageAndThenVerify(curDir1, lwm - 0.03f, curDir2, lwm + 0.07f, mockDiskChecker, mockLedgerDirsListener,
+                true);
+
+        // bring one dir diskusage to much less than lwm,
+        // the other dir to be more than storage threahold, but the
+        // overall diskusage is less than lwm
+        // should goto readwrite
+        setUsageAndThenVerify(curDir1, lwm - 0.17f, curDir2, nospace + 0.03f, mockDiskChecker, mockLedgerDirsListener,
+                false);
+        assertTrue("Only one LedgerDir should be writable", dirsManager.getWritableLedgerDirs().size() == 1);
+
+        // bring both the dirs below lwm
+        // should still be readwrite
+        setUsageAndThenVerify(curDir1, lwm - 0.03f, curDir2, lwm - 0.02f, mockDiskChecker, mockLedgerDirsListener,
+                false);
+        assertTrue("Both the LedgerDirs should be writable", dirsManager.getWritableLedgerDirs().size() == 2);
+
+        // bring both the dirs above lwm but < threshold
+        // should still be readwrite
+        setUsageAndThenVerify(curDir1, lwm + 0.02f, curDir2, lwm + 0.08f, mockDiskChecker, mockLedgerDirsListener,
+                false);
+    }
+
+    private void setUsageAndThenVerify(File dir1, float dir1Usage, File dir2, float dir2Usage,
+            MockDiskChecker mockDiskChecker, MockLedgerDirsListener mockLedgerDirsListener, boolean verifyReadOnly)
+            throws InterruptedException {
+        HashMap<File, Float> usageMap = new HashMap<File, Float>();
+        usageMap.put(dir1, dir1Usage);
+        usageMap.put(dir2, dir2Usage);
+        mockDiskChecker.setUsageMap(usageMap);
+        Thread.sleep((diskCheckInterval * 2) + 100);
+        if (verifyReadOnly) {
+            assertTrue(mockLedgerDirsListener.readOnly);
+        } else {
+            assertFalse(mockLedgerDirsListener.readOnly);
+        }
+    }
+
     private class MockDiskChecker extends DiskChecker {
 
-        private float used;
+        private volatile float used;
+        private volatile Map<File, Float> usageMap = null;
 
         public MockDiskChecker(float threshold, float warnThreshold) {
             super(threshold, warnThreshold);
@@ -172,23 +335,48 @@ public class TestLedgerDirsManager {
 
         @Override
         public float checkDir(File dir) throws DiskErrorException, DiskOutOfSpaceException, DiskWarnThresholdException {
-            if (used > getDiskUsageThreshold()) {
-                throw new DiskOutOfSpaceException("", used);
+            float dirUsage = getDirUsage(dir);
+
+            if (dirUsage > getDiskUsageThreshold()) {
+                throw new DiskOutOfSpaceException("", dirUsage);
             }
-            if (used > getDiskUsageWarnThreshold()) {
-                throw new DiskWarnThresholdException("", used);
+            if (dirUsage > getDiskUsageWarnThreshold()) {
+                throw new DiskWarnThresholdException("", dirUsage);
             }
-            return used;
+            return dirUsage;
+        }
+
+        @Override
+        public float getTotalDiskUsage(List<File> dirs) {
+            float accumulatedDiskUsage = 0f;
+            for (File dir : dirs) {
+                accumulatedDiskUsage += getDirUsage(dir);
+            }
+            return (accumulatedDiskUsage / dirs.size());
+        }
+
+        public float getDirUsage(File dir) {
+            float dirUsage;
+            if ((usageMap == null) || (!usageMap.containsKey(dir))) {
+                dirUsage = used;
+            } else {
+                dirUsage = usageMap.get(dir);
+            }
+            return dirUsage;
         }
 
         public void setUsage(float usage) {
             this.used = usage;
         }
+
+        public void setUsageMap(Map<File, Float> usageMap) {
+            this.usageMap = usageMap;
+        }
     }
 
     private class MockLedgerDirsListener implements LedgerDirsListener {
 
-        public boolean readOnly;
+        public volatile boolean readOnly;
 
         public MockLedgerDirsListener() {
             reset();
