@@ -211,13 +211,13 @@ def merge_pr(pr_num, target_ref, title, body, default_pr_reviewers, pr_repo_desc
         merge_message_flags += ["-m", message]
 
     # The string "Closes #%s" string is required for GitHub to correctly close the PR
-    close_line = "Closes #%s from %s" % (pr_num, pr_repo_desc)
+    close_line = "This closes #%s from %s" % (pr_num, pr_repo_desc)
     # Find the github issues to close
-    github_issues = re.findall("%s #[0-9]{3,6}" % GITHUB_ISSUES_NAME, title)
+    github_issues = re.findall("#[0-9]{3,6}", title)
 
     if len(github_issues) != 0:
         for issue_id in github_issues:
-            close_line += " and Closes #%s" % (issue_id)
+            close_line += ", closes %s" % (issue_id)
 
     if should_list_commits:
         close_line += " and squashes the following commits:"
