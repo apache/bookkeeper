@@ -317,9 +317,9 @@ public final class BookkeeperProtocol {
      */
     GET_BOOKIE_INFO(7, 8),
     /**
-     * <code>STARTTLS = 9;</code>
+     * <code>START_TLS = 9;</code>
      */
-    STARTTLS(8, 9),
+    START_TLS(8, 9),
     ;
 
     /**
@@ -359,9 +359,9 @@ public final class BookkeeperProtocol {
      */
     public static final int GET_BOOKIE_INFO_VALUE = 8;
     /**
-     * <code>STARTTLS = 9;</code>
+     * <code>START_TLS = 9;</code>
      */
-    public static final int STARTTLS_VALUE = 9;
+    public static final int START_TLS_VALUE = 9;
 
 
     public final int getNumber() { return value; }
@@ -376,7 +376,7 @@ public final class BookkeeperProtocol {
         case 6: return WRITE_LAC;
         case 7: return READ_LAC;
         case 8: return GET_BOOKIE_INFO;
-        case 9: return STARTTLS;
+        case 9: return START_TLS;
         default: return null;
       }
     }
@@ -13132,12 +13132,12 @@ public final class BookkeeperProtocol {
       "ION_THREE\020\003*\206\001\n\nStatusCode\022\007\n\003EOK\020\000\022\016\n\tE" +
       "NOLEDGER\020\222\003\022\r\n\010ENOENTRY\020\223\003\022\014\n\007EBADREQ\020\224\003" +
       "\022\010\n\003EIO\020\365\003\022\010\n\003EUA\020\366\003\022\020\n\013EBADVERSION\020\367\003\022\014" +
-      "\n\007EFENCED\020\370\003\022\016\n\tEREADONLY\020\371\003*\243\001\n\rOperati" +
+      "\n\007EFENCED\020\370\003\022\016\n\tEREADONLY\020\371\003*\244\001\n\rOperati" +
       "onType\022\016\n\nREAD_ENTRY\020\001\022\r\n\tADD_ENTRY\020\002\022\024\n" +
       "\020RANGE_READ_ENTRY\020\003\022\023\n\017RANGE_ADD_ENTRY\020\004" +
       "\022\010\n\004AUTH\020\005\022\r\n\tWRITE_LAC\020\006\022\014\n\010READ_LAC\020\007\022" +
-      "\023\n\017GET_BOOKIE_INFO\020\010\022\014\n\010STARTTLS\020\tB\037\n\033or" +
-      "g.apache.bookkeeper.protoH\001"
+      "\023\n\017GET_BOOKIE_INFO\020\010\022\r\n\tSTART_TLS\020\tB\037\n\033o" +
+      "rg.apache.bookkeeper.protoH\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

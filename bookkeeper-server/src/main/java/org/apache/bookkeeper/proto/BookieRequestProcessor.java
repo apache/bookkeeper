@@ -60,9 +60,6 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.GET_BOOKIE_INFO;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC_REQUEST;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 public class BookieRequestProcessor implements RequestProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(BookieRequestProcessor.class);
@@ -206,7 +203,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                 case GET_BOOKIE_INFO:
                     processGetBookieInfoRequestV3(r,c);
                     break;
-                case STARTTLS:
+                case START_TLS:
                     processStartTLSRequestV3(r, c);
                     break;
                 default:
@@ -291,7 +288,6 @@ public class BookieRequestProcessor implements RequestProcessor {
             response.setStatus(BookkeeperProtocol.StatusCode.EBADREQ);
             c.writeAndFlush(response.build());
         } else {
-            LOG.info("Got StartTLS request from {}",c);
             // there is no need to execute in a different thread as this operation is light
             try {
                 SslHandler sslHandler = shFactory.getBookieHandler();
@@ -304,7 +300,6 @@ public class BookieRequestProcessor implements RequestProcessor {
                     @Override
                     public void operationComplete(Future<Channel> future) throws Exception {
                         // notify the AuthPlugin the completion of the handshake, even in case of failure
-                        LOG.info("Bookie STARTTLS handshake complete");
                         AuthHandler.ServerSideHandler authHandler = c.pipeline()
                                 .get(AuthHandler.ServerSideHandler.class);
                         authHandler.authProvider.onProtocolUpgrade();

@@ -1,22 +1,21 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.bookkeeper.ssl;
-
-/*
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
 
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -28,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Strings;
 
 import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslContext;
@@ -53,10 +51,6 @@ public class SSLContextFactory implements SecurityHandlerFactory {
     private final static String SSLCONTEXT_HANDLER_NAME = "ssl";
     private AbstractConfiguration conf;
     SslHandler sslHandler;
-
-    public SSLContextFactory(AbstractConfiguration conf) {
-        this.conf = conf;
-    }
 
     private String getPasswordFromFile(String path) throws IOException {
         FileInputStream pwdin = new FileInputStream(path);
@@ -213,7 +207,7 @@ public class SSLContextFactory implements SecurityHandlerFactory {
 
         // get key-store and trust-store locations and passwords
         if (!(this.conf instanceof ServerConfiguration)) {
-            throw new SecurityException("Client configruation not provided");
+            throw new SecurityException("Server configruation not provided");
         }
 
         serverConf = (ServerConfiguration) this.conf;
@@ -248,10 +242,11 @@ public class SSLContextFactory implements SecurityHandlerFactory {
     }
 
     @Override
-    public synchronized void init(NodeType type) throws SecurityException {
+    public synchronized void init(NodeType type, AbstractConfiguration conf) throws SecurityException {
         String enabledProtocols = "";
         String enabledCiphers = "";
 
+        this.conf = conf;
         enabledCiphers = conf.getSslEnabledCipherSuites();
         enabledProtocols = conf.getSslEnabledProtocols();
 
@@ -289,15 +284,11 @@ public class SSLContextFactory implements SecurityHandlerFactory {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public <T extends ChannelInboundHandlerAdapter> T getBookieHandler() throws SecurityException {
-        init(NodeType.Server);
-        return (T) sslHandler;
+    public SslHandler getBookieHandler() throws SecurityException {
+        return sslHandler;
     }
 
-    @SuppressWarnings("unchecked")
-    public <T extends ChannelInboundHandlerAdapter> T getClientHandler() throws SecurityException {
-        init(NodeType.Client);
-        return (T) sslHandler;
+    public SslHandler getClientHandler() throws SecurityException {
+        return sslHandler;
     }
 }

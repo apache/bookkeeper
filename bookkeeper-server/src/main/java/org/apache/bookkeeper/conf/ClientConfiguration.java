@@ -30,7 +30,6 @@ import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
 
-import com.google.common.annotations.VisibleForTesting;
 
 /**
  * Configuration settings for client side
@@ -1147,7 +1146,6 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    @VisibleForTesting
     public ClientConfiguration setSSLKeyStoreType(String arg) {
         setProperty(SSL_KEYSTORE_TYPE, arg);
         return this;
@@ -1167,7 +1165,6 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    @VisibleForTesting
     public ClientConfiguration setSSLKeyStore(String arg) {
         setProperty(SSL_KEYSTORE, arg);
         return this;
@@ -1187,7 +1184,6 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    @VisibleForTesting
     public ClientConfiguration setSSLKeyStorePasswordPath(String arg) {
         setProperty(SSL_KEYSTORE_PASSWORD_PATH, arg);
         return this;
@@ -1207,7 +1203,6 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    @VisibleForTesting
     public ClientConfiguration setSSLTrustStoreType(String arg) {
         setProperty(SSL_TRUSTSTORE_TYPE, arg);
         return this;
@@ -1227,7 +1222,6 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    @VisibleForTesting
     public ClientConfiguration setSSLTrustStore(String arg) {
         setProperty(SSL_TRUSTSTORE, arg);
         return this;
@@ -1248,7 +1242,6 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    @VisibleForTesting
     public ClientConfiguration setSSLTrustStorePasswordPath(String arg) {
         setProperty(SSL_TRUSTSTORE_PASSWORD_PATH, arg);
         return this;

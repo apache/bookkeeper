@@ -60,7 +60,7 @@ enum OperationType {
     WRITE_LAC = 6;
     READ_LAC = 7;
     GET_BOOKIE_INFO = 8;
-    STARTTLS = 9;
+    START_TLS = 9;
 }
 
 /**

@@ -99,25 +99,17 @@ class BookieNettyServer {
     volatile boolean suspended = false;
     ChannelGroup allChannels;
     final BookieSocketAddress bookieAddress;
-    final SecurityHandlerFactory shFactory;
     final InetSocketAddress bindAddress;
 
     final BookieAuthProvider.Factory authProviderFactory;
     final ExtensionRegistry registry = ExtensionRegistry.newInstance();
 
     BookieNettyServer(ServerConfiguration conf, RequestProcessor processor)
-        throws IOException, KeeperException, InterruptedException, BookieException, SecurityException {
+        throws IOException, KeeperException, InterruptedException, BookieException {
         this.maxFrameSize = conf.getNettyMaxFrameSizeBytes();
         this.conf = conf;
         this.requestProcessor = processor;
         this.authProviderFactory = AuthProviderFactoryFactory.newBookieAuthProviderFactory(conf);
-
-        LOG.info("Using security settings provided by class: {}", conf.getSSLProviderFactoryClass());
-        this.shFactory = SecurityProviderFactoryFactory
-                .getSecurityProviderFactory(conf.getSSLProviderFactoryClass(), this.conf);
-        if (this.shFactory != null) {
-            this.shFactory.init(NodeType.Server);
-        }
 
         if (!conf.isDisableServerSocketBind()) {
             ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("bookie-io-%s").build();

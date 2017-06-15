@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.annotations.Beta;
-import com.google.common.annotations.VisibleForTesting;
 
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
@@ -1963,7 +1962,6 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    @VisibleForTesting
     public ServerConfiguration setSSLKeyStoreType(String arg) {
         setProperty(SSL_KEYSTORE_TYPE, arg);
         return this;
@@ -1983,7 +1981,6 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    @VisibleForTesting
     public ServerConfiguration setSSLKeyStore(String arg) {
         setProperty(SSL_KEYSTORE, arg);
         return this;
@@ -2003,7 +2000,6 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    @VisibleForTesting
     public ServerConfiguration setSSLKeyStorePasswordPath(String arg) {
         setProperty(SSL_KEYSTORE_PASSWORD_PATH, arg);
         return this;
@@ -2023,7 +2019,6 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    @VisibleForTesting
     public ServerConfiguration setSSLTrustStoreType(String arg) {
         setProperty(SSL_TRUSTSTORE_TYPE, arg);
         return this;
@@ -2043,7 +2038,6 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    @VisibleForTesting
     public ServerConfiguration setSSLTrustStore(String arg) {
         setProperty(SSL_TRUSTSTORE, arg);
         return this;
@@ -2064,7 +2058,6 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    @VisibleForTesting
     public ServerConfiguration setSSLTrustStorePasswordPath(String arg) {
         setProperty(SSL_TRUSTSTORE_PASSWORD_PATH, arg);
         return this;

@@ -40,6 +40,7 @@ import org.apache.bookkeeper.replication.ReplicationException.CompatibilityExcep
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.ssl.SecurityException;
 import org.apache.bookkeeper.ssl.SecurityHandlerFactory;
+import org.apache.bookkeeper.ssl.SecurityHandlerFactory.NodeType;
 import org.apache.bookkeeper.ssl.SecurityProviderFactoryFactory;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -99,10 +100,15 @@ public class BookieServer {
         this.statsLogger = statsLogger;
         this.bookie = newBookie(conf);
         final SecurityHandlerFactory shFactory;
+
         shFactory = SecurityProviderFactoryFactory
-                .getSecurityProviderFactory(conf.getSSLProviderFactoryClass(), this.conf);
+                .getSecurityProviderFactory(conf.getSSLProviderFactoryClass());
+        if (shFactory != null) {
+            shFactory.init(NodeType.Server, conf);
+        }
         this.requestProcessor = new BookieRequestProcessor(conf, bookie,
                 statsLogger.scope(SERVER_SCOPE), shFactory);
+
         this.nettyServer = new BookieNettyServer(this.conf, requestProcessor);
         isAutoRecoveryDaemonEnabled = conf.isAutoRecoveryDaemonEnabled();
         if (isAutoRecoveryDaemonEnabled) {

@@ -127,7 +127,7 @@ class AuthHandler {
                         .toByteArray();
                     authProvider.process(AuthToken.wrap(payload),
                             new AuthResponseCallback(req, ctx.channel(), authProviderFactory.getPluginName()));
-                } else if (req.getHeader().getOperation() == BookkeeperProtocol.OperationType.STARTTLS
+                } else if (req.getHeader().getOperation() == BookkeeperProtocol.OperationType.START_TLS
                         && req.hasStartTLSRequest()) {
                     super.channelRead(ctx, msg);
                 } else {
@@ -268,7 +268,7 @@ class AuthHandler {
                     LOG.info("dropping received malformed message {} from bookie {}", msg, ctx.channel());
                     // drop the message without header
                 } else switch (resp.getHeader().getOperation()) {
-                    case STARTTLS:
+                    case START_TLS:
                         super.channelRead(ctx, msg);
                         break;
                     case AUTH:
@@ -310,7 +310,7 @@ class AuthHandler {
                     BookkeeperProtocol.Request req = (BookkeeperProtocol.Request) msg;
                     if (req.getHeader().getOperation()
                             == BookkeeperProtocol.OperationType.AUTH
-                        || req.getHeader().getOperation() == BookkeeperProtocol.OperationType.STARTTLS) {
+                        || req.getHeader().getOperation() == BookkeeperProtocol.OperationType.START_TLS) {
                         super.write(ctx, msg, promise);
                         super.flush(ctx);
                     } else {

@@ -66,9 +66,9 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
         this.conf = conf;
 
         this.shFactory = SecurityProviderFactoryFactory
-                .getSecurityProviderFactory(this.conf.getSSLProviderFactoryClass(), conf);
+                .getSecurityProviderFactory(conf.getSSLProviderFactoryClass());
         if (this.shFactory != null) {
-            this.shFactory.init(NodeType.Client);
+            this.shFactory.init(NodeType.Client, conf);
         }
 
         this.clients = new PerChannelBookieClient[coreSize];
