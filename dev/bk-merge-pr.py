@@ -43,6 +43,7 @@ except ImportError:
 PROJECT_NAME = "bookkeeper"
 
 CAPITALIZED_PROJECT_NAME = "bookkeeper".upper()
+GITHUB_ISSUES_NAME = "issue".upper()
 
 # Location of the local git repository
 REPO_HOME = os.environ.get("%s_HOME" % CAPITALIZED_PROJECT_NAME, os.getcwd())
@@ -211,6 +212,13 @@ def merge_pr(pr_num, target_ref, title, body, default_pr_reviewers, pr_repo_desc
 
     # The string "Closes #%s" string is required for GitHub to correctly close the PR
     close_line = "Closes #%s from %s" % (pr_num, pr_repo_desc)
+    # Find the github issues to close
+    github_issues = re.findall("%s #[0-9]{3,6}" % GITHUB_ISSUES_NAME, title)
+
+    if len(github_issues) != 0:
+        for issue_id in github_issues:
+            close_line += " and Closes #%s" % (issue_id)
+
     if should_list_commits:
         close_line += " and squashes the following commits:"
     merge_message_flags += ["-m", close_line]
@@ -360,6 +368,7 @@ def standardize_jira_ref(text):
     'BOOKKEEPER-877: Script for generating patch for reviews'
     """
     jira_refs = []
+    github_issue_refs = []
     components = []
 
     # Extract JIRA ref(s):
@@ -367,6 +376,13 @@ def standardize_jira_ref(text):
     for ref in pattern.findall(text):
         # Add brackets, replace spaces with a dash, & convert to uppercase
         jira_refs.append(re.sub(r'\s+', '-', ref.upper()))
+        text = text.replace(ref, '')
+
+    # Extract Github Issue ref(s)
+    pattern = re.compile(r'(%s[-\s]*[0-9]{3,6})+' % GITHUB_ISSUES_NAME, re.IGNORECASE)
+    for ref in pattern.findall(text):
+        # Add brackets, replace spaces or a dash with ' #', & convert to uppercase
+        github_issue_refs.append(re.sub(r'[-\s]+', ' #', ref.upper()))
         text = text.replace(ref, '')
 
     # Extract project name component(s):
@@ -382,10 +398,14 @@ def standardize_jira_ref(text):
         text = pattern.search(text).groups()[0]
 
     # Assemble full text (JIRA ref(s), module(s), remaining text)
+    prefix = ''
     jira_prefix = ' '.join(jira_refs).strip()
     if jira_prefix:
-        jira_prefix = jira_prefix + ": "
-    clean_text = jira_prefix + ' '.join(components).strip() + " " + text.strip()
+        prefix = jira_prefix + ": "
+    github_prefix = ' '.join(github_issue_refs).strip()
+    if github_prefix:
+        prefix = github_prefix + ": "
+    clean_text = prefix + ' '.join(components).strip() + " " + text.strip()
 
     # Replace multiple spaces with a single space, e.g. if no jira refs and/or components were included
     clean_text = re.sub(r'\s+', ' ', clean_text.strip())
