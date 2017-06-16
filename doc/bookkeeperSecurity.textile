@@ -18,7 +18,7 @@ Apache BookKeeper is a decentralized platform and there are multiple aspects to 
 
 Metadata are stored on ZooKeeper, so first of all you will need to secure your ZooKeeper cluster, see "ZooKeeper security":https://zookeeper.apache.org/security.html
 
-Then you have to take care of access to Bookies, you can configure Authentication and encryption using TLS, out of the box BookKeeper supports Kerberos authentication, DIGEST-MD5 authentication and TLS encryption. You can also leverage TLS client authentication in order to protect your data.
+Then you have to take care of access to Bookies, you can configure authentication and encryption using TLS, out of the box BookKeeper supports Kerberos authentication, DIGEST-MD5 authentication and TLS encryption. You can also leverage TLS client authentication in order to protect your data.
 
 h1. ZookKeeper security on BookKeeper
 
@@ -33,9 +33,10 @@ You MUST use the same ZooKeeper principal for every Bookie and every Client, thi
 
 BookKeeper runtime will use ZooDefs.Ids.CREATOR_ALL_ACL ACLs for every new node.
 
+In order to make a Bookie authenticate to a secured ZooKeeper cluster you have to:
 
+- create a jaas.conf file in your "conf" directory (you can just rename conf/jaas_example.conf and change it according to your needs)
 
+- add -Djava.security.auth.login.config=conf/jaas.conf to BOOKIE_EXTRA_OPTS in conf/bkenv.sh
 
-
-TODO WORK-IN-PROGRESS
-
+On the client side you have to follow similar steps but it depends on your application
