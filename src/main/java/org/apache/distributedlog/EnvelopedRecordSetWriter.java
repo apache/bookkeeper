@@ -26,12 +26,6 @@ import static org.apache.distributedlog.LogRecordSet.METADATA_VERSION_MASK;
 import static org.apache.distributedlog.LogRecordSet.NULL_OP_STATS_LOGGER;
 import static org.apache.distributedlog.LogRecordSet.VERSION;
 
-import org.apache.distributedlog.exceptions.LogRecordTooLongException;
-import org.apache.distributedlog.exceptions.WriteException;
-import org.apache.distributedlog.io.Buffer;
-import org.apache.distributedlog.io.CompressionCodec;
-import org.apache.distributedlog.io.CompressionUtils;
-import com.twitter.util.Promise;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -39,6 +33,12 @@ import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.exceptions.LogRecordTooLongException;
+import org.apache.distributedlog.exceptions.WriteException;
+import org.apache.distributedlog.io.Buffer;
+import org.apache.distributedlog.io.CompressionCodec;
+import org.apache.distributedlog.io.CompressionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +52,7 @@ class EnvelopedRecordSetWriter implements LogRecordSet.Writer {
     private final Buffer buffer;
     private final DataOutputStream writer;
     private final WritableByteChannel writeChannel;
-    private final List<Promise<DLSN>> promiseList;
+    private final List<CompletableFuture<DLSN>> promiseList;
     private final CompressionCodec.Type codec;
     private final int codecCode;
     private int count = 0;
@@ -61,7 +61,7 @@ class EnvelopedRecordSetWriter implements LogRecordSet.Writer {
     EnvelopedRecordSetWriter(int initialBufferSize,
                              CompressionCodec.Type codec) {
         this.buffer = new Buffer(Math.max(initialBufferSize, HEADER_LEN));
-        this.promiseList = new LinkedList<Promise<DLSN>>();
+        this.promiseList = new LinkedList<CompletableFuture<DLSN>>();
         this.codec = codec;
         switch (codec) {
             case LZ4:
@@ -84,13 +84,13 @@ class EnvelopedRecordSetWriter implements LogRecordSet.Writer {
         this.writeChannel = Channels.newChannel(writer);
     }
 
-    synchronized List<Promise<DLSN>> getPromiseList() {
+    synchronized List<CompletableFuture<DLSN>> getPromiseList() {
         return promiseList;
     }
 
     @Override
     public synchronized void writeRecord(ByteBuffer record,
-                                         Promise<DLSN> transmitPromise)
+                                         CompletableFuture<DLSN> transmitPromise)
             throws LogRecordTooLongException, WriteException {
         int logRecordSize = record.remaining();
         if (logRecordSize > MAX_LOGRECORD_SIZE) {
@@ -111,16 +111,16 @@ class EnvelopedRecordSetWriter implements LogRecordSet.Writer {
 
     private synchronized void satisfyPromises(long lssn, long entryId, long startSlotId) {
         long nextSlotId = startSlotId;
-        for (Promise<DLSN> promise : promiseList) {
-            promise.setValue(new DLSN(lssn, entryId, nextSlotId));
+        for (CompletableFuture<DLSN> promise : promiseList) {
+            promise.complete(new DLSN(lssn, entryId, nextSlotId));
             nextSlotId++;
         }
         promiseList.clear();
     }
 
     private synchronized void cancelPromises(Throwable reason) {
-        for (Promise<DLSN> promise : promiseList) {
-            promise.setException(reason);
+        for (CompletableFuture<DLSN> promise : promiseList) {
+            promise.completeExceptionally(reason);
         }
         promiseList.clear();
     }

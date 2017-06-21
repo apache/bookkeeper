@@ -19,15 +19,15 @@ package org.apache.distributedlog;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import org.apache.distributedlog.exceptions.LogRecordTooLongException;
-import org.apache.distributedlog.exceptions.WriteException;
-import org.apache.distributedlog.io.CompressionCodec;
-import com.twitter.util.Promise;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.distributedlog.exceptions.LogRecordTooLongException;
+import org.apache.distributedlog.exceptions.WriteException;
+import org.apache.distributedlog.io.CompressionCodec;
 
 /**
  * A set of {@link LogRecord}s.
@@ -134,7 +134,7 @@ public class LogRecordSet {
          * @throws LogRecordTooLongException if the record is too long
          * @throws WriteException when encountered exception writing the record
          */
-        void writeRecord(ByteBuffer record, Promise<DLSN> transmitPromise)
+        void writeRecord(ByteBuffer record, CompletableFuture<DLSN> transmitPromise)
                 throws LogRecordTooLongException, WriteException;
     }
 

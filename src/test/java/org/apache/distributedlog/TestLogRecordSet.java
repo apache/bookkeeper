@@ -25,15 +25,14 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
+import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.LogRecordSet.Reader;
 import org.apache.distributedlog.LogRecordSet.Writer;
 import org.apache.distributedlog.exceptions.LogRecordTooLongException;
 import org.apache.distributedlog.io.CompressionCodec.Type;
-import com.twitter.util.Await;
-import com.twitter.util.Future;
-import com.twitter.util.Promise;
-import java.nio.ByteBuffer;
-import java.util.List;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.junit.Test;
 
 /**
@@ -72,7 +71,7 @@ public class TestLogRecordSet {
 
         ByteBuffer dataBuf = ByteBuffer.allocate(MAX_LOGRECORD_SIZE + 1);
         try {
-            writer.writeRecord(dataBuf, new Promise<DLSN>());
+            writer.writeRecord(dataBuf, new CompletableFuture<DLSN>());
             fail("Should fail on writing large record");
         } catch (LogRecordTooLongException lrtle) {
             // expected
@@ -111,18 +110,18 @@ public class TestLogRecordSet {
         assertEquals("zero user bytes", HEADER_LEN, writer.getNumBytes());
         assertEquals("zero records", 0, writer.getNumRecords());
 
-        List<Future<DLSN>> writePromiseList = Lists.newArrayList();
+        List<CompletableFuture<DLSN>> writePromiseList = Lists.newArrayList();
         /// write first 5 records
         for (int i = 0; i < 5; i++) {
             ByteBuffer record = ByteBuffer.wrap(("record-" + i).getBytes(UTF_8));
-            Promise<DLSN> writePromise = new Promise<DLSN>();
+            CompletableFuture<DLSN> writePromise = new CompletableFuture<>();
             writer.writeRecord(record, writePromise);
             writePromiseList.add(writePromise);
             assertEquals((i + 1) + " records", (i + 1), writer.getNumRecords());
         }
         ByteBuffer dataBuf = ByteBuffer.allocate(MAX_LOGRECORD_SIZE + 1);
         try {
-            writer.writeRecord(dataBuf, new Promise<DLSN>());
+            writer.writeRecord(dataBuf, new CompletableFuture<>());
             fail("Should fail on writing large record");
         } catch (LogRecordTooLongException lrtle) {
             // expected
@@ -132,7 +131,7 @@ public class TestLogRecordSet {
         /// write another 5 records
         for (int i = 0; i < 5; i++) {
             ByteBuffer record = ByteBuffer.wrap(("record-" + (i + 5)).getBytes(UTF_8));
-            Promise<DLSN> writePromise = new Promise<DLSN>();
+            CompletableFuture<DLSN> writePromise = new CompletableFuture<>();
             writer.writeRecord(record, writePromise);
             writePromiseList.add(writePromise);
             assertEquals((i + 6) + " records", (i + 6), writer.getNumRecords());
@@ -143,7 +142,7 @@ public class TestLogRecordSet {
 
         // Test transmit complete
         writer.completeTransmit(1L, 1L, 10L);
-        List<DLSN> writeResults = Await.result(Future.collect(writePromiseList));
+        List<DLSN> writeResults = FutureUtils.result(FutureUtils.collect(writePromiseList));
         for (int i = 0; i < 10; i++) {
             assertEquals(new DLSN(1L, 1L, 10L + i), writeResults.get(i));
         }
