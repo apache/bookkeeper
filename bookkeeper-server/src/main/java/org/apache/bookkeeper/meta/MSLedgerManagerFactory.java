@@ -215,10 +215,14 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
             @Override
             public void run() {
                 if (null != listeners.get(ledgerId)) {
-                    LOG.debug("Re-read ledger metadata for {}.", ledgerId);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Re-read ledger metadata for {}.", ledgerId);
+                    }
                     readLedgerMetadata(ledgerId, ReadLedgerMetadataTask.this);
                 } else {
-                    LOG.debug("Ledger metadata listener for ledger {} is already removed.", ledgerId);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Ledger metadata listener for ledger {} is already removed.", ledgerId);
+                    }
                 }
             }
 
@@ -227,7 +231,9 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                 if (BKException.Code.OK == rc) {
                     final Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
                     if (null != listenerSet) {
-                        LOG.debug("Ledger metadata is changed for {} : {}.", ledgerId, result);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Ledger metadata is changed for {} : {}.", ledgerId, result);
+                        }
                         scheduler.submit(new Runnable() {
                             @Override
                             public void run() {
@@ -243,8 +249,10 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                     // the ledger is removed, do nothing
                     Set<LedgerMetadataListener> listenerSet = listeners.remove(ledgerId);
                     if (null != listenerSet) {
-                        LOG.debug("Removed ledger metadata listener set on ledger {} as its ledger is deleted : {}",
-                                ledgerId, listenerSet.size());
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Removed ledger metadata listener set on ledger {} as its ledger is deleted : {}",
+                                    ledgerId, listenerSet.size());
+                        }
                     }
                 } else {
                     LOG.warn("Failed on read ledger metadata of ledger {} : {}", ledgerId, rc);
@@ -360,7 +368,9 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                         ledgerCb.operationComplete(BKException.Code.MetaStoreException, null);
                         return;
                     }
-                    LOG.debug("Create ledger {} with version {} successfully.", lid, version);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Create ledger {} with version {} successfully.", lid, version);
+                    }
                     // update version
                     metadata.setVersion(version);
                     ledgerCb.operationComplete(BKException.Code.OK, null);
@@ -430,7 +440,9 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                 final GenericCallback<Void> cb) {
             Value data = new Value().setField(META_FIELD, metadata.serialize());
 
-            LOG.debug("Writing ledger {} metadata, version {}", new Object[] { ledgerId, metadata.getVersion() });
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Writing ledger {} metadata, version {}", new Object[] { ledgerId, metadata.getVersion() });
+            }
 
             final String key = ledgerId2Key(ledgerId);
             MetastoreCallback<Version> msCallback = new MetastoreCallback<Version>() {

@@ -44,7 +44,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
 
     final LedgerHandle lh;
     final AtomicLong readCount, writeCount;
-    final AtomicBoolean readDone;
+    volatile boolean readDone;
     final AtomicBoolean callbackDone;
     volatile long startEntryToRead;
     volatile long endEntryToRead;
@@ -76,7 +76,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     public LedgerRecoveryOp(LedgerHandle lh, GenericCallback<Void> cb) {
         readCount = new AtomicLong(0);
         writeCount = new AtomicLong(0);
-        readDone = new AtomicBoolean(false);
+        readDone = false;
         callbackDone = new AtomicBoolean(false);
         this.cb = cb;
         this.lh = lh;
@@ -169,7 +169,9 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
                         submitCallback(rc);
                     } else {
                         submitCallback(BKException.Code.OK);
-                        LOG.debug("After closing length is: {}", lh.getLength());
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("After closing length is: {}", lh.getLength());
+                        }
                     }
                 }
             }, null, BKException.Code.LedgerClosedException);
@@ -185,7 +187,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
         }
 
         // we only trigger recovery add an entry when readDone == false && callbackDone == false
-        if (!callbackDone.get() && !readDone.get() && rc == BKException.Code.OK) {
+        if (!callbackDone.get() && !readDone && rc == BKException.Code.OK) {
             readCount.incrementAndGet();
             byte[] data = entry.getEntry();
 
@@ -215,7 +217,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
 
         // no entry found. stop recovery procedure but wait until recovery add finished.
         if (rc == BKException.Code.NoSuchEntryException || rc == BKException.Code.NoSuchLedgerExistsException) {
-            readDone.set(true);
+            readDone = true;
             if (readCount.get() == writeCount.get()) {
                 closeAndCallback();
             }
@@ -231,7 +233,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
             // we are here is because we successfully read an entry but readDone was already set to true.
             // this would happen on recovery a ledger than has gaps in the tail.
             LOG.warn("Successfully read entry {} for ledger {}, but readDone is already {}",
-                     new Object[] { entry.getEntryId(), lh.getId(), readDone.get() });
+                     new Object[] { entry.getEntryId(), lh.getId(), readDone });
         }
         return;
     }
@@ -248,7 +250,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
             return;
         }
         long numAdd = writeCount.incrementAndGet();
-        if (readDone.get() && readCount.get() == numAdd) {
+        if (readDone && readCount.get() == numAdd) {
             closeAndCallback();
         }
     }

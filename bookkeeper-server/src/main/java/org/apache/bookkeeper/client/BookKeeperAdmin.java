@@ -312,7 +312,7 @@ public class BookKeeperAdmin implements AutoCloseable {
     /**
      * Read entries from a ledger synchronously. If the lastEntry is -1, it will read all the entries in the ledger from
      * the firstEntry.
-     * 
+     *
      * @param ledgerId
      * @param firstEntry
      * @param lastEntry
@@ -670,7 +670,9 @@ public class BookKeeperAdmin implements AutoCloseable {
      */
     private void recoverLedger(final BookieSocketAddress bookieSrc, final long lId,
             final AsyncCallback.VoidCallback ledgerIterCb, final List<BookieSocketAddress> availableBookies) {
-        LOG.debug("Recovering ledger : {}", lId);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Recovering ledger : {}", lId);
+        }
 
         asyncOpenLedgerNoRecovery(lId, new OpenCallback() {
             @Override
@@ -941,13 +943,15 @@ public class BookKeeperAdmin implements AutoCloseable {
             bkc = new BookKeeper(conf, zkc);
             // Format all ledger metadata layout
             bkc.ledgerManagerFactory.format(conf, zkc);
-            
+
             // Clear underreplicated ledgers
             try {
                 ZKUtil.deleteRecursive(zkc, ZkLedgerUnderreplicationManager.getBasePath(conf.getZkLedgersRootPath())
                         + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH);
             } catch (KeeperException.NoNodeException e) {
-                LOG.debug("underreplicated ledgers root path node not exists in zookeeper to delete");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("underreplicated ledgers root path node not exists in zookeeper to delete");
+                }
             }
 
             // Clear underreplicatedledger locks
@@ -955,15 +959,19 @@ public class BookKeeperAdmin implements AutoCloseable {
                 ZKUtil.deleteRecursive(zkc, ZkLedgerUnderreplicationManager.getBasePath(conf.getZkLedgersRootPath())
                         + '/' + BookKeeperConstants.UNDER_REPLICATION_LOCK);
             } catch (KeeperException.NoNodeException e) {
-                LOG.debug("underreplicatedledger locks node not exists in zookeeper to delete");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("underreplicatedledger locks node not exists in zookeeper to delete");
+                }
             }
-            
+
             // Clear the cookies
             try {
                 ZKUtil.deleteRecursive(zkc, conf.getZkLedgersRootPath()
                         + "/cookies");
             } catch (KeeperException.NoNodeException e) {
-                LOG.debug("cookies node not exists in zookeeper to delete");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("cookies node not exists in zookeeper to delete");
+                }
             }
 
             // Clear the INSTANCEID
@@ -971,7 +979,9 @@ public class BookKeeperAdmin implements AutoCloseable {
                 zkc.delete(conf.getZkLedgersRootPath() + "/"
                         + BookKeeperConstants.INSTANCEID, -1);
             } catch (KeeperException.NoNodeException e) {
-                LOG.debug("INSTANCEID not exists in zookeeper to delete");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("INSTANCEID not exists in zookeeper to delete");
+                }
             }
 
             // create INSTANCEID

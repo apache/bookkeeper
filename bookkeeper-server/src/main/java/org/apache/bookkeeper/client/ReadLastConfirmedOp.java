@@ -119,8 +119,10 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
             && coverageSet.addBookieAndCheckCovered(bookieIndex)
             && !completed) {
             completed = true;
-            LOG.debug("Read Complete with enough validResponses for ledger: {}, entry: {}",
-                ledgerId, entryId);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Read Complete with enough validResponses for ledger: {}, entry: {}",
+                        ledgerId, entryId);
+            }
 
             cb.readLastConfirmedDataComplete(BKException.Code.OK, maxRecoveredData);
             return;

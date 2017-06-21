@@ -121,6 +121,7 @@
         <configuration>
           <excludes>
             <exclude>.git/**/*</exclude>
+            <exclude>.github/**/*</exclude>
             <exclude>**/target/**/*</exclude>
             <exclude>**/.svn/**/*</exclude>
             <exclude>CHANGES.txt</exclude>

@@ -176,9 +176,11 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements ITopologyAwareEns
                             int maxAllowedSum) {
                 if (remainingRacksOrRegions.isEmpty() || (subsetSize <= 0)) {
                     if (maxAllowedSum < 0) {
-                        LOG.trace("CHECK FAILED: RacksOrRegions Included {} Remaining {}, subsetSize {}, maxAllowedSum {}", new Object[]{
-                            includedRacksOrRegions, remainingRacksOrRegions, subsetSize, maxAllowedSum
-                        });
+                        if (LOG.isTraceEnabled()) {
+                            LOG.trace(
+                                    "CHECK FAILED: RacksOrRegions Included {} Remaining {}, subsetSize {}, maxAllowedSum {}",
+                                    includedRacksOrRegions, remainingRacksOrRegions, subsetSize, maxAllowedSum);
+                        }
                     }
                     return (maxAllowedSum >= 0);
                 }
@@ -191,9 +193,11 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements ITopologyAwareEns
                     }
 
                     if (currentAllocation > maxAllowedSum) {
-                        LOG.trace("CHECK FAILED: RacksOrRegions Included {} Candidate {}, subsetSize {}, maxAllowedSum {}", new Object[]{
-                            includedRacksOrRegions, rackOrRegion, subsetSize, maxAllowedSum
-                        });
+                        if (LOG.isTraceEnabled()) {
+                            LOG.trace(
+                                    "CHECK FAILED: RacksOrRegions Included {} Candidate {}, subsetSize {}, maxAllowedSum {}",
+                                    includedRacksOrRegions, rackOrRegion, subsetSize, maxAllowedSum);
+                        }
                         return false;
                     } else {
                         Set<String> remainingElements = new HashSet<String>(remainingRacksOrRegions);

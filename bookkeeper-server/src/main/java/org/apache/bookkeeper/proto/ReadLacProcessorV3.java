@@ -109,6 +109,6 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             .setReadLacResponse(readLacResponse);
         sendResponse(response.getStatus(),
                 response.build(),
-                requestProcessor.readRequestStats);
+                requestProcessor.readLacRequestStats);
     }
 }

@@ -74,7 +74,9 @@ class SyncThread {
             .setNameFormat("SyncThread-" + conf.getBookiePort() + "-%d");
         this.executor = Executors.newSingleThreadScheduledExecutor(tfb.build());
         flushInterval = conf.getFlushInterval();
-        LOG.debug("Flush Interval : {}", flushInterval);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Flush Interval : {}", flushInterval);
+        }
     }
 
     void start() {

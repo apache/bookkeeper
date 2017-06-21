@@ -68,6 +68,7 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         super(numBookies);
         activeLedgers = new SnapshotMap<Long, Boolean>();
         baseConf.setLedgerManagerFactoryClass(lmFactoryCls);
+        baseClientConf.setLedgerManagerFactoryClass(lmFactoryCls);
     }
 
     public LedgerManager getLedgerManager() {
