@@ -78,8 +78,9 @@ public class LedgerHandle implements AutoCloseable {
     long length;
     final DigestManager macManager;
     final DistributionSchedule distributionSchedule;
-
     final RateLimiter throttler;
+    final boolean enableParallelRecoveryRead;
+    final boolean recoveryReadBatchSize;
 
     /**
      * Invalid entry id. This value is returned from methods which
@@ -111,7 +112,8 @@ public class LedgerHandle implements AutoCloseable {
         this.bk = bk;
         this.metadata = metadata;
         this.pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
-
+        this.enableParallelRecoveryRead = bk.getConf().getEnableParallelRecoveryRead();
+        this.recoveryReadBatchSize = bk.getConf().getRecoveryReadBatchSize();
 
         if (metadata.isClosed()) {
             lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
@@ -1502,8 +1504,8 @@ public class LedgerHandle implements AutoCloseable {
             // if metadata is already in recover, dont try to write again,
             // just do the recovery from the starting point
             new LedgerRecoveryOp(LedgerHandle.this, cb)
-                    .parallelRead(bk.getConf().getEnableParallelRecoveryRead())
-                    .readBatchSize(bk.getConf().getRecoveryReadBatchSize())
+                    .parallelRead(enableParallelRecoveryRead)
+                    .readBatchSize(recoveryReadBatchSize)
                     .setEntryListener(listener)
                     .initiate();
             return;
@@ -1535,8 +1537,8 @@ public class LedgerHandle implements AutoCloseable {
                     // otherwise, it couldn't prevent us advancing last confirmed while the other writer is closing the ledger,
                     // which will cause inconsistent last add confirmed on bookies & zookeeper metadata.
                     new LedgerRecoveryOp(LedgerHandle.this, cb)
-                        .parallelRead(bk.getConf().getEnableParallelRecoveryRead())
-                        .readBatchSize(bk.getConf().getRecoveryReadBatchSize())
+                        .parallelRead(enableParallelRecoveryRead)
+                        .readBatchSize(recoveryReadBatchSize)
                         .setEntryListener(listener)
                         .initiate();
                 } else {
