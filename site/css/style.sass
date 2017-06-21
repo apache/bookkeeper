@@ -10,8 +10,9 @@ $fa-font-path: "../fonts"
 @import typography
 @import vendor/bulma/bulma
 
-.highlighter-rouge + blockquote
-  margin-top: 1.5rem
+.highlighter-rouge
+  & + blockquote, & + h5
+    margin-top: 1.5rem
 
 em
   margin-right: $em-right-margin
@@ -21,71 +22,7 @@ table
     td
       max-width: 300px
       white-space: normal
-      overflow-x: scroll
-
-=before-after($color)
-  &:after
-    border-color: $color
-    background-color: $color
-  &:before
-    background-color: $color
-
-.timeline
-  border-left: 2px solid $grey
-  position: relative
-
-  .timeline-item
-    padding-bottom: 1px
-    position: relative
-    flex-grow: 0
-    flex-shrink: 0
-
-    &:after
-      background-color: #ffffff
-      border-color: $grey
-      border-radius: 20px
-      border-style: solid
-      border-width: 2px
-      bottom: 0
-      content: ''
-      height: 30px
-      left: 0
-      margin-left: -16px
-      position: absolute
-      top: 0px
-      width: 30px
-    &:before
-      content: " "
-      position: absolute
-      background: rgb(228, 228, 228)
-      top: 10px
-      width: 10px
-      height: 10px
-      z-index: 2
-      left: -6px
-      border-radius: 100%
-    &.is-danger
-      +before-after($danger)
-    &.is-success
-      +before-after($success)
-    &.is-info
-      +before-after($info)
-    &.is-warning
-      +before-after($warning)
-
-    .timeline-item-content
-      margin-bottom: 15px
-      margin-left: 30px
-      border-bottom: 1px solid red
-      .title
-        font-size: $size-6
-        font-weight: $weight-semibold
-        margin-bottom: 3px
-        color: $grey-light
-      .details
-        font-size: $size-6
-        font-weight: $weight-normal
-        color: $grey
+      overflow-x: inherit
 
 .fa-stack-overflow
   &:hover
