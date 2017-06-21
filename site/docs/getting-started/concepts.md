@@ -74,6 +74,8 @@ A journal file contains the BookKeeper transaction logs. Before any update takes
 
 An entry log file manages the written entries received from BookKeeper clients. Entries from different ledgers are aggregated and written sequentially, while their offsets are kept as pointers in LedgerCache for fast lookup. A new entry log file is created once the bookie starts or the older entry log file reaches the entry log size threshold. Old entry log files are removed by the Garbage Collector Thread once they are not associated with any active ledger.
 
+#### Log device
+
 ### Index files
 
 An index file is created for each ledger, which comprises a header and several fixed-length index pages, recording the offsets of data stored in entry log files.
@@ -83,6 +85,8 @@ Since updating index files would introduce random disk I/O, for performance reas
 ### Ledger cache
 
 A memory pool caches ledger index pages, which more efficiently manage disk head scheduling.
+
+#### Ledger device
 
 ### Data flush
 

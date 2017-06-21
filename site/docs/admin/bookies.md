@@ -53,4 +53,15 @@ $ bookkeeper-server/bin/bookkeeper localbookie 6
 
 ## Configuring bookies
 
-[Configuration](../../reference/config)
+There's a wide variety of parameters that you can set in the bookie configuration file in `bookkeeper-server/conf/bk_server.conf` of your [BookKeeper installation](../../reference/config). A full listing can be found in [Bookie configuration](../../reference/config).
+
+Some of the more important parameters to be aware of:
+
+Parameter | Description | Default
+:---------|:------------|:-------
+`bookiePort` | The TCP port that the bookie listens on | `3181`
+`zkServers` | A comma-separated list of ZooKeeper servers in `hostname:port` format | `localhost:2181`
+`journalDirectory` | The directory where the [log device](../../getting-started/concepts#log-device) stores the bookie's write-ahead log (WAL) | `/tmp/bk-txn`
+`ledgerDirectories` | The directories where the [ledger device](../../getting-started/concepts#ledger-device) stores the bookie's ledger entries (as a comma-separated list) | `/tmp/bk-data`
+
+> Ideally, the directories specified `journalDirectory` and `ledgerDirectories` should be on difference devices.
