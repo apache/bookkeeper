@@ -110,9 +110,11 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
                 new ReadLastConfirmedOp.LastConfirmedDataCallback() {
                     public void readLastConfirmedDataComplete(int rc, RecoveryData data) {
                         if (rc == BKException.Code.OK) {
-                            lh.lastAddPushed = lh.lastAddConfirmed = data.lastAddConfirmed;
-                            lh.length = data.length;
-                            startEntryToRead = endEntryToRead = lh.lastAddConfirmed;
+                            synchronized (lh) {
+                                lh.lastAddPushed = lh.lastAddConfirmed = data.lastAddConfirmed;
+                                lh.length = data.length;
+                                startEntryToRead = endEntryToRead = lh.lastAddConfirmed;
+                            }
                             // keep a copy of ledger metadata before proceeding
                             // ledger recovery
                             metadataForRecovery = new LedgerMetadata(lh.getLedgerMetadata());
