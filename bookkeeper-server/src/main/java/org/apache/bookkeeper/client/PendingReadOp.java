@@ -428,7 +428,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         return this;
     }
 
-    public void initiate() throws InterruptedException {
+    public void initiate() {
         long nextEnsembleChange = startEntryId, i = startEntryId;
         this.requestTimeNanos = MathUtils.nowInNano();
         ArrayList<BookieSocketAddress> ensemble = null;
