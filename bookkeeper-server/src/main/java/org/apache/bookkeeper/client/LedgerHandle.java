@@ -80,7 +80,7 @@ public class LedgerHandle implements AutoCloseable {
     final DistributionSchedule distributionSchedule;
     final RateLimiter throttler;
     final boolean enableParallelRecoveryRead;
-    final boolean recoveryReadBatchSize;
+    final int recoveryReadBatchSize;
 
     /**
      * Invalid entry id. This value is returned from methods which

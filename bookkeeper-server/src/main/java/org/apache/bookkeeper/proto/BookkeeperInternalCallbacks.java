@@ -147,25 +147,6 @@ public class BookkeeperInternalCallbacks {
     }
 
     /**
-     * Listener on entries responded.
-     */
-    public interface ReadEntryListener {
-        /**
-         * On given <i>entry</i> completed.
-         *
-         * @param rc
-         *          result code of reading this entry.
-         * @param lh
-         *          ledger handle.
-         * @param entry
-         *          ledger entry.
-         * @param ctx
-         *          callback context.
-         */
-        void onEntryComplete(int rc, LedgerHandle lh, LedgerEntry entry, Object ctx);
-    }
-
-    /**
      * This is a multi callback object that waits for all of
      * the multiple async operations to complete. If any fail, then we invoke
      * the final callback with a provided failureRc
