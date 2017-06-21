@@ -1,0 +1,15 @@
+- term: entry
+  q: What is an entry?
+  d: An entry is a sequence of bytes written to a BookKeeper ledger.
+- term: ledger
+  q: What is a ledger?
+  d: A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.
+- term: bookie
+  q: What is a bookie?
+  d: A bookie is an individial BookKeeper storage server. Bookies store the content of ledgers and act as an ensemble.
+- term: striping
+  q: What is striping?
+  d: Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble. Striping is essential to ensuring fast performance.
+- term: journal
+  q: What is a journal?
+  d: A journal file stores BookKeeper transaction logs.

@@ -1,0 +1,47 @@
+---
+layout: default
+---
+
+<div class="container bk-docs-container">
+  <div class="columns">
+    <div class="column is-2">
+      {% include sidebar.html %}
+    </div>
+
+    <div class="column is-8 bk-docs-block">
+      <div class="content is-medium">
+        <header class="docs-title">
+          <h1 class="title">{{ page.title }}</h1>
+          {% if page.subtitle %}<h2 class="subtitle">{{ page.subtitle }}</h2>{% endif %}
+          {% if page.javadoc_button %}
+          {% include javadoc-button.html %}
+          {% endif %}
+        </header>
+
+        <hr />
+
+        <section class="bk-docs-content">
+          {{ content }}
+        </section>
+
+        {% if page.next or page.prev %}
+        <nav class="pagination is-centered">
+          {% if page.prev %}
+          <a class="pagination-previous" href="{{ page.prev }}">Previous</a>
+          {% endif %}
+          {% if page.next %}
+          <a class="pagination-next" href="{{ page.next }}">Next</a>
+          {% endif %}
+          <ul class="pagination-list"></ul>
+        </nav>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="column is-2">
+      {% include table-of-contents.html %}
+    </div>
+  </div>
+</div>
+
+{% include popovers.html %}

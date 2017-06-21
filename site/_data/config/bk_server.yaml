@@ -1,0 +1,132 @@
+- param: bookiePort
+  description: The port that the bookie server listens on
+  default: 3181
+- param: listeningInterface
+  description: Set the network interface that the bookie should listen on. If not set, the bookie will listen on all interfaces.
+  default: eth0
+- param: allowLoopback
+  description: |
+    Whether the bookie allowed to use a loopback interface as its primary
+    interface(i.e. the interface it uses to establish its identity)?
+    By default, loopback interfaces are not allowed as the primary
+    interface.
+
+    Using a loopback interface as the primary interface usually indicates
+    a configuration error. For example, its fairly common in some VPS setups
+    to not configure a hostname, or to have the hostname resolve to
+    127.0.0.1. If this is the case, then all bookies in the cluster will
+    establish their identities as 127.0.0.1:3181, and only one will be able
+    to join the cluster. For VPSs configured like this, you should explicitly
+    set the listening interface.
+  default: 'false'
+- param: journalDirectory
+  description: Directory Bookkeeper outputs its write ahead log
+  default: /tmp/bk-txn
+- param: ledgerDirectories
+  description: Directory Bookkeeper outputs ledger snapshots could define multi directories to store snapshots, separated by ','
+  default: /tmp/bk1-data,/tmp/bk2-data
+- param: indexDirectories
+  description: Directories to store index files. If not specified, will use ledgerDirectories to store.
+  default: /tmp/bk-data
+- param: allowStorageExpansion
+  description: Allow the expansion of bookie storage capacity. Newly added ledger and index dirs must be empty.
+  default: 'false'
+- param: ledgerManagerType
+  description: Ledger Manager Class. What kind of ledger manager is used to manage how ledgers are stored, managed and garbage collected. Try to read 'BookKeeper Internals' for detail info.
+  default: flat
+- param: zkLedgersRootPath
+  description: Root zookeeper path to store ledger metadata. This parameter is used by zookeeper-based ledger manager as a root znode to store all ledgers.
+  default: /ledgers
+- param: ledgerStorageClass
+  description: Ledger storage implementation class
+  default: # org.apache.bookkeeper.bookie.SortedLedgerStorage
+- param: entryLogFilePreallocationEnabled
+  description: Enable/Disable entry logger preallocation
+  default: true
+- param: logSizeLimit
+  description: Max file size of entry logger, in bytes. A new entry log file will be created when the old one reaches the file size limitation.
+  default: 2147483648
+- param: minorCompactionThreshold
+  description: Threshold of minor compaction. For those entry log files whose remaining size percentage reaches below this threshold will be compacted in a minor compaction. If it is set to less than zero, the minor compaction is disabled.
+  default: 0.2
+- param: minorCompactionInterval
+  description: Interval to run minor compaction, in seconds. If it is set to less than zero, the minor compaction is disabled.
+  defauit: 3600
+- param: explicitLacInterval
+  description: Interval between sending an explicit LAC in seconds
+  default: 1
+- param: majorCompactionThreshold
+  description: Threshold of major compaction. For those entry log files whose remaining size percentage reaches below  this threshold will be compacted in a major compaction.  Those entry log files whose remaining size percentage is still higher than the threshold will never be compacted. If it is set to less than zero, the minor compaction is disabled.
+  default: 0.8
+- param: majorCompactionInterval
+  description: Interval to run major compaction, in seconds. If it is set to less than zero, the major compaction is disabled.
+  default: 86400
+- param: compactionMaxOutstandingRequests
+  description: Set the maximum number of entries which can be compacted without flushing. When compacting, the entries are written to the entrylog and the new offsets are cached in memory. Once the entrylog is flushed the index is updated with the new offsets. This parameter controls the number of entries added to the entrylog before a flush is forced. A higher value for this parameter means  more memory will be used for offsets. Each offset consists of 3 longs. This parameter should _not_ be modified unless you know what you're doing.
+  default: 100000
+- param: compactionRate
+  description: Set the rate at which compaction will readd entries. The unit is adds per second.
+  default: 1000
+- param: isThrottleByBytes
+  description: Throttle compaction by bytes or by entries.
+  default: 'false'
+- param: compactionRateByEntries
+  description: Set the rate at which compaction will readd entries. The unit is adds per second.
+  default: 1000
+- param: compactionRateByBytes
+  description: Set the rate at which compaction will read entries. The unit is bytes added per second.
+  default: 1000000
+- param: journalMaxSizeMB
+  description: Max file size of journal file, in mega bytes. A new journal file will be created when the old one reaches the file size limitation.
+  default: 2048
+- param: journalMaxBackups
+  description: Max number of old journal file to kept. Keep a number of old journal files would help data recovery in specia case.
+  default: 5
+- param: journalPreAllocSizeMB
+  description: How much space should we pre-allocate at a time in the journal.
+  default: 16
+- param: journalWriteBufferSizeKB
+  description: Size of the write buffers used for the journal.
+  default: 64
+- param: journalRemoveFromPageCache
+  description:  Should we remove pages from page cache after force write
+  default: 'false'
+- param: journalAdaptiveGroupWrites
+  description: Should we group journal force writes, which optimize group commit for higher throughput.
+  default: 'true'
+- param: journalMaxGroupWaitMSec
+  description: Maximum latency to impose on a journal write to achieve grouping.
+  default: 200
+- param: journalBufferedWritesThreshold
+  description: Maximum writes to buffer to achieve grouping.
+  default: 524288
+- param: journalFlushWhenQueueEmpty
+  description: If we should flush the journal when journal queue is empty.
+  default: 'false'
+- param: numJournalCallbackThreads
+  description: The number of threads that should handle journal callbacks.
+  default: 1
+- param: gcWaitTime
+  description: How long the interval to trigger next garbage collection, in milliseconds. Since garbage collection is running in background, too frequent gc will heart performance. It is better to give a higher number of gc interval if there is enough disk capacity.
+  default: 1000
+- name: gcOverreplicatedLedgerWaitTime
+  description: How long the interval to trigger next garbage collection of overreplicated ledgers, in milliseconds. This should not be run very frequently since we read the metadata for all the ledgers on the bookie from zk.
+  default: 86400000
+- param: flushInterval
+  description: How long the interval to flush ledger index pages to disk, in milliseconds. Flushing index files will introduce much random disk I/O. If separating journal dir and ledger dirs each on different devices, flushing would not affect performance. But if putting journal dir and ledger dirs on same device, performance degrade significantly on too frequent flushing. You can consider increment flush interval to get better performance, but you need to pay more time on bookie server restart after failure.
+  default: 100
+- param: bookieDeathWatchInterval
+  description: Interval to watch whether bookie is dead or not, in milliseconds.
+  default: 1000
+- param: zkServers
+  description: "A list of one of more servers on which zookeeper is running. The server list can be comma separated values, for example: zkServers=zk1:2181,zk2:2181,zk3:2181."
+  default: "localhost:2181"
+- param: zkTimeout
+  description: ZooKeeper client session timeout in milliseconds. Bookie server will exit if it received SESSION_EXPIRED because it was partitioned off from ZooKeeper for more than the session timeout  JVM garbage collection, disk I/O will cause SESSION_EXPIRED. Increment this value could help avoiding this issue.
+  default: 10000
+- param: serverTcpNoDelay
+  description: |
+    This settings is used to enabled/disabled Nagle's algorithm, which is a means of improving the efficiency of TCP/IP networks by reducing the number of packets that need to be sent over the network.
+
+    If you are sending many small messages, such that more than one can fit in a single IP packet, setting server.tcpnodelay to false to enable Nagle algorithm can provide better performance.
+  default: 'true'

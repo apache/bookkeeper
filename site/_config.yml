@@ -1,0 +1,23 @@
+title: Apache BookKeeper
+subtitle: A replicated log service
+github_repo: https://github.com/apache/bookkeeper
+permalink: pretty
+bk_version: "4.4.0"
+
+livereload: true
+
+defaults:
+- scope:
+    path: docs
+  values:
+    layout: docs
+    toc: true
+
+gems:
+- jekyll-toc
+
+exclude:
+- Gemfile
+- Gemfile.lock
+- Makefile
+- vendor/bundle

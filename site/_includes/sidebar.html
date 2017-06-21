@@ -1,0 +1,13 @@
+<aside class="menu">
+  {% for group in site.data.sidebar.groups %}{% assign docs = group.docs %}
+  <p class="menu-label">
+    {{ group.name }}
+  </p>
+  <ul class="menu-list">
+    {% for doc in docs %}
+    {% capture doc_url %}/docs/{{ group.dir }}/{{ doc.endpoint }}/{% endcapture %}
+    <li><a{% if doc_url == page.url %} class="is-active"{% endif %} href="/docs/{{ group.dir }}/{{ doc.endpoint }}">{{ doc.name }}</a></li>
+    {% endfor %}
+  </ul>
+  {% endfor %}
+</aside>

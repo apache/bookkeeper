@@ -1,0 +1,20 @@
+groups:
+- name: Getting started
+  dir: getting-started
+  docs:
+  - name: Installation
+    endpoint: installation
+  - name: Run a bookie
+    endpoint: run-server
+  - name: Concepts and architecture
+    endpoint: concepts
+- name: Applications
+  dir: applications
+  docs:
+  - name: Java client
+    endpoint: java-client
+- name: Reference
+  dir: reference
+  docs:
+  - name: Configuration
+    endpoint: config

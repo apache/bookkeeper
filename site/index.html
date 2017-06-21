@@ -1,0 +1,38 @@
+---
+title: Home
+layout: default
+---
+
+<section class="hero is-small">
+  <div class="hero-body">
+    <div class="container">
+      <div class="columns level">
+        <div class="column is-6">
+          <h1 class="title">
+            {{ site.title }}
+          </h1>
+          <h2 class="subtitle">
+            {{ site.subtitle }}
+          </h2>
+          <div class="block">
+            <a class="button is-primary is-large" href="/docs/getting-started/installation">
+              <span class="icon">
+                <i class="fa fa-download"></i>
+              </span>
+              <span>Get started</span>
+            </a>
+            <a class="button is-large" href="/docs">
+              <span class="icon"><i class="fa fa-book"></i></span><span>Documentation</span>
+            </a>
+            {% include javadoc-button.html %}
+          </div>
+        </div>
+        <div class="column is-6">
+          <div class="container">
+            <img src="/img/bk-logo.png">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

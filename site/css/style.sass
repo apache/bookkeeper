@@ -1,0 +1,170 @@
+---
+---
+
+$fa-font-path: "../fonts"
+@import vendor/font-awesome/font-awesome
+@import vendor/bulma/sass/utilities/initial-variables
+@import variables
+@import mixins
+@import syntax
+@import typography
+@import vendor/bulma/bulma
+
+=before-after($color)
+  &:after
+    border-color: $color
+    background-color: $color
+  &:before
+    background-color: $color
+
+.timeline
+  border-left: 2px solid $grey
+  position: relative
+
+  .timeline-item
+    padding-bottom: 1px
+    position: relative
+    flex-grow: 0
+    flex-shrink: 0
+
+    &:after
+      background-color: #ffffff
+      border-color: $grey
+      border-radius: 20px
+      border-style: solid
+      border-width: 2px
+      bottom: 0
+      content: ''
+      height: 30px
+      left: 0
+      margin-left: -16px
+      position: absolute
+      top: 0px
+      width: 30px
+    &:before
+      content: " "
+      position: absolute
+      background: rgb(228, 228, 228)
+      top: 10px
+      width: 10px
+      height: 10px
+      z-index: 2
+      left: -6px
+      border-radius: 100%
+    &.is-danger
+      +before-after($danger)
+    &.is-success
+      +before-after($success)
+    &.is-info
+      +before-after($info)
+    &.is-warning
+      +before-after($warning)
+
+    .timeline-item-content
+      margin-bottom: 15px
+      margin-left: 30px
+      border-bottom: 1px solid red
+      .title
+        font-size: $size-6
+        font-weight: $weight-semibold
+        margin-bottom: 3px
+        color: $grey-light
+      .details
+        font-size: $size-6
+        font-weight: $weight-normal
+        color: $grey
+
+.fa-stack-overflow
+  &:hover
+    color: #f48024
+
+.javadoc-button
+  span + span
+    margin-left: .5rem
+
+ul, li
+  margin: 0
+  padding: 0
+
+span.pop
+  color: $blue
+
++sticky-footer
+
+.highlighter-rouge + p
+  margin-top: 1rem
+
+$base-font-size: 1rem
+$toc-left-padding: 2rem
+
+// Popovers
+.popover-template
+  display: none
+
+.toc
+  $toc-base-font-size: 1.2rem
+  padding-left: $toc-left-padding
+
+  .section-nav
+    position: fixed
+
+    .toc-entry
+      &.toc-h2
+        font-size: $toc-base-font-size
+
+      &.toc-h3
+        padding-left: 10px
+        font-size: $toc-base-font-size * .8
+
+      &.toc-h4
+        padding-left: 20px
+        font-size: $toc-base-font-size * .6
+
+      a
+        &:hover
+          color: darken($tan, 20%)
+
+body
+  font-size: 1.25em
+
+.bk-docs-container
+  margin-top: $docs-container-vertical-margin
+  margin-bottom: $docs-container-vertical-margin
+
+  .bk-docs-block
+    padding-left: 2rem
+
+    .docs-title
+      .title + .subtitle
+        padding-top: .75rem
+        font-size: $base-font-size * 1.2
+
+  .bk-docs-content
+    ul, li
+      margin-left: .75rem
+      list-style-type: square
+
+    & + .pagination
+      margin-top: 2rem
+
+aside.menu
+  position: fixed
+
+nav.bk-navbar
+  //+sticky-navbar
+  height: $navbar-height
+
+  .container
+    width: 90%
+
+    a
+      font-size: 1.5rem
+
+    .bk-brand
+      h3
+        margin-left: 1rem
+        font-size: 2rem
+
+    .nav-right
+      .nav-item + .nav-item
+        margin-left: $base-margin * 2

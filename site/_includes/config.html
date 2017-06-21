@@ -1,0 +1,19 @@
+{% assign configs = site.data.config[include.id] %}
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for config in configs %}
+    <tr id="{{ config.param }}">
+      <td><code>{{ config.param }}</code></td>
+      <td>{{ config.description | markdownify }}</td>
+      <td>{% if config.default %}<code>{{ config.default }}</code>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
