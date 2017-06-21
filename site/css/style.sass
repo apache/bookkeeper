@@ -10,6 +10,19 @@ $fa-font-path: "../fonts"
 @import typography
 @import vendor/bulma/bulma
 
+.highlighter-rouge + blockquote
+  margin-top: 1.5rem
+
+em
+  margin-right: $em-right-margin
+
+table
+  tbody
+    td
+      max-width: 300px
+      white-space: normal
+      overflow-x: scroll
+
 =before-after($color)
   &:after
     border-color: $color
@@ -119,6 +132,9 @@ $toc-left-padding: 2rem
       &.toc-h4
         padding-left: 20px
         font-size: $toc-base-font-size * .6
+
+      &.toc-h4, &.toc-h5
+        display: none
 
       a
         &:hover

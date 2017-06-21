@@ -121,3 +121,48 @@ Garbage Collector thread scans entry log files to get their entry log metadata, 
 With the normal garbage collection flow, once the bookie determines that a ledger has been deleted, the ledger will be removed from the entry log metadata and the size of the entry log reduced.
 If the remaining size of an entry log file reaches a specified threshold, the entries of active ledgers in the entry log will be copied to a new entry log file.
 Once all valid entries have been copied, the old entry log file is deleted.
+
+## ZooKeeper metadata
+
+BookKeeper requires a ZooKeeper installation for storing [ledger](#ledger) metadata. Whenever you construct a [`BookKeeper`](/api/org/apache/bookkeeper/client/BookKeeper) client object, you need to pass a list of ZooKeeper servers as a parameter to the constructor, like this:
+
+```java
+String zkConnectionString = "127.0.0.1:2181";
+BookKeeper bkClient = new BookKeeper(zkConnectionString);
+```
+
+> For more info on using the BookKeeper Java client, see [this guide](../../applications/java-client).
+
+## Ledger manager
+
+A *ledger manager* handles ledgers' metadata (which is stored in ZooKeeper). BookKeeper offers two types of ledger managers: the [flat ledger manager](#flat-ledger-manager) and the [hierarchical ledger manager](#hierarchical-ledger-manager). Both ledger managers extend the [`AbstractZkLedgerManager`](/api/org/apache/bookkeeper/meta/AbstractZkLedgerManager) abstract class.
+
+> #### Use the flat ledger manager in most cases
+> The flat ledger manager is the default and is recommended for nearly all use cases. The hierarchical ledger manager is better suited only for managing very large numbers of BookKeeper ledgers (> 50,000).
+
+### Flat ledger manager
+
+The *flat ledger manager*, implemented in the [`FlatLedgerManager`](/api/org/apache/bookkeeper/meta/FlatLedgerManager.html) class, stores all ledgers' metadata in child nodes of a single ZooKeeper path. The flat ledger manager creates [sequential nodes](https://zookeeper.apache.org/doc/trunk/zookeeperProgrammers.html#Sequence+Nodes+--+Unique+Naming) to ensure the uniqueness of the ledger ID and prefixes all nodes with `L`. Bookie servers manage their own active ledgers in a hash map so that it's easy to find which ledgers have been deleted from ZooKeeper and then garbage collect them.
+
+The flat ledger manager's garbage collection follow proceeds as follows:
+
+* All existing ledgers are fetched from ZooKeeper (`zkActiveLedgers`)
+* All ledgers currently active within the bookie are fetched (`bkActiveLedgers`)
+* The currently actively ledgers are looped through to determine which ledgers don't currently exist in ZooKeeper. Those are then garbage collected.
+* The *hierarchical ledger manager* stores ledgers' metadata in two-level [znodes](https://zookeeper.apache.org/doc/current/zookeeperOver.html#Nodes+and+ephemeral+nodes).
+
+### Hierarchical ledger manager
+
+The *hierarchical ledger manager*, implemented in the [`HierarchicalLedgerManager`](/api/org/apache/bookkeeper/meta/HierarchicalLedgerManager) class, first obtains a global unique ID from ZooKeeper using an [`EPHEMERAL_SEQUENTIAL`](https://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/CreateMode.html#EPHEMERAL_SEQUENTIAL) znode. Size ZooKeeper's sequence counter has a format of `%10d` (10 digits with 0 padding, for example `<path>0000000001`), the hierarchical ledger manager splits the generated ID into 3 parts:
+
+```shell
+{level1 (2 digits)}{level2 (4 digits)}{level3 (4 digits)}
+```
+
+These three parts are used to form the actual ledger node path to store ledger metadata:
+
+```shell
+{ledgers_root_path}/{level1}/{level2}/L{level3}
+```
+
+For example, ledger 0000000001 is split into three parts, 00, 0000, and 00001 and stored in znode `/{ledgers_root_path}/00/0000/L0001`. Each znode could have as many 10,000 ledgers, which avoids the problem of the child list being larger than the maximum ZooKeeper packet size (which is the [limitation](https://issues.apache.org/jira/browse/BOOKKEEPER-39) that initially prompted the creation of the hierarchical ledger manager).

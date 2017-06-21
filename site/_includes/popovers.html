@@ -1,14 +1,17 @@
-{% for popover in site.data.popovers %}
+{% assign popovers = site.data.popovers %}
+{% for popover in popovers %}
 <div id="{{ popover.term | slug }}-popover-html" class="popover-template">
   <h1>{{ popover.q }}</h1>
   {{ popover.d | markdownify }}
 </div>
+{% endfor %}
 
 <script type="text/javascript">
+{% for popover in popovers %}
 tippy('#{{ popover.term | slug }}-popover', {
   html: '#{{ popover.term | slug }}-popover-html',
   arrow: true,
   animation: 'fade'
-})
-</script>
+});
 {% endfor %}
+</script>

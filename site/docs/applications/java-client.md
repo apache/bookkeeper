@@ -39,3 +39,42 @@ dependencies {
     compile 'org.apache.bookkeeper:bookkeeper-server:{{ site.bk_version }}'
 }
 ```
+
+## Creating a new client
+
+The easiest way to create a new [`BookKeeper`](/api/org/apache/bookkeeper/client/BookKeeper) client is to pass in a ZooKeeper connection string as the sole constructor:
+
+```java
+try {
+    String zkConnectionString = "127.0.0.1:2181";
+    BookKeeper bkClient = new BookKeeper(zkConnectionString);
+} catch (InterruptedException | IOException | KeeperException e) {
+    e.printStackTrace();
+}
+```
+
+There are, however, other ways that you can create a client object:
+
+* By passing in a [`ClientConfiguration`](/api/org/apache/bookkeeper/conf/ClientConfiguration) object. Here's an example:
+
+  ```java
+  ClientConfiguration config = new ClientConfiguration();
+  config.setZkServers(zkConnectionString);
+  config.setAddEntryTimeout(2000);
+  BookKeeper bkClient = new BookKeeper(config);
+  ```
+
+* By specifying a `ClientConfiguration` and a [`ZooKeeper`](http://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/ZooKeeper.html) client object:
+
+  ```java
+  ClientConfiguration config = new ClientConfiguration();
+  config.setAddEntryTimeout(5000);
+  ZooKeeper zkClient = new ZooKeeper(/* client args */);
+  BookKeeper bkClient = new BookKeeper(config, zkClient);
+  ```
+
+  > You can also pass in a Curator client object. TODO.
+
+## Creating ledgers
+
+## Adding entries to ledgers

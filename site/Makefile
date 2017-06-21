@@ -2,6 +2,9 @@ BUNDLER_VERSION = 1.15.1
 BUNDLE = bundle _${BUNDLER_VERSION}_
 JEKYLL = ${BUNDLE} exec jekyll
 
+clean:
+	rm -rf _site
+
 setup:
 	gem install bundler \
 		-v ${BUNDLER_VERSION} \
@@ -10,12 +13,12 @@ setup:
 	NOKOGIRI_USE_SYSTEM_LIBRARIES=true ${BUNDLE} install \
 		--path vendor/bundle
 
-build:
+build: clean
 	${JEKYLL} build
 
 javadoc:
 	scripts/javadoc-gen.sh
 
-serve:
+serve: build
 	${JEKYLL} serve \
 		--incremental
