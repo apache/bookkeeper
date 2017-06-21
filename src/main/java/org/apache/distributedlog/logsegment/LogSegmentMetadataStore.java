@@ -18,15 +18,15 @@
 package org.apache.distributedlog.logsegment;
 
 import com.google.common.annotations.Beta;
+import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.callback.LogSegmentNamesListener;
 import org.apache.distributedlog.metadata.LogMetadata;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.util.Transaction;
 import org.apache.distributedlog.util.Transaction.OpListener;
-import com.twitter.util.Future;
-import org.apache.bookkeeper.versioning.Version;
-import org.apache.bookkeeper.versioning.Versioned;
 
 import java.io.Closeable;
 import java.util.List;
@@ -135,7 +135,7 @@ public interface LogSegmentMetadataStore extends Closeable {
      *          path to store log segment metadata
      * @return future of the retrieved log segment metadata
      */
-    Future<LogSegmentMetadata> getLogSegment(String logSegmentPath);
+    CompletableFuture<LogSegmentMetadata> getLogSegment(String logSegmentPath);
 
     /**
      * Retrieve the list of log segments under <code>logSegmentsPath</code> and register a <i>listener</i>
@@ -147,8 +147,8 @@ public interface LogSegmentMetadataStore extends Closeable {
      *          log segment listener on log segment changes
      * @return future of the retrieved list of log segment names
      */
-    Future<Versioned<List<String>>> getLogSegmentNames(String logSegmentsPath,
-                                                       LogSegmentNamesListener listener);
+    CompletableFuture<Versioned<List<String>>> getLogSegmentNames(String logSegmentsPath,
+                                                                  LogSegmentNamesListener listener);
 
     /**
      * Unregister a log segment <code>listener</code> on log segment changes under <code>logSegmentsPath</code>.

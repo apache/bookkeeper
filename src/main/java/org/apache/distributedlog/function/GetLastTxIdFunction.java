@@ -17,16 +17,15 @@
  */
 package org.apache.distributedlog.function;
 
+import java.util.List;
+import java.util.function.Function;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.LogSegmentMetadata;
-import scala.runtime.AbstractFunction1;
-
-import java.util.List;
 
 /**
  * Retrieve the last tx id from list of log segments
  */
-public class GetLastTxIdFunction extends AbstractFunction1<List<LogSegmentMetadata>, Long> {
+public class GetLastTxIdFunction implements Function<List<LogSegmentMetadata>, Long> {
 
     public static final GetLastTxIdFunction INSTANCE = new GetLastTxIdFunction();
 

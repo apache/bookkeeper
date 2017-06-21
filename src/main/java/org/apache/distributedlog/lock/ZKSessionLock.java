@@ -17,8 +17,22 @@
  */
 package org.apache.distributedlog.lock;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.util.FailpointUtils;
 import org.apache.distributedlog.exceptions.LockingException;
@@ -27,18 +41,10 @@ import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.exceptions.OwnershipAcquireFailedException;
 import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.apache.distributedlog.exceptions.ZKException;
-import org.apache.distributedlog.stats.OpStatsListener;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.common.stats.OpStatsListener;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
-import com.twitter.util.Await;
-import com.twitter.util.Duration;
-import com.twitter.util.Function0;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
-import com.twitter.util.Promise;
-import com.twitter.util.Return;
-import com.twitter.util.Throw;
-import com.twitter.util.TimeoutException;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -54,20 +60,6 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.runtime.AbstractFunction1;
-import scala.runtime.BoxedUnit;
-
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.google.common.base.Charsets.UTF_8;
 
 /**
  * A lock under a given zookeeper session. This is a one-time lock.
@@ -276,7 +268,7 @@ class ZKSessionLock implements SessionLock {
     private StateManagement lockState;
     private final DistributedLockContext lockContext;
 
-    private final Promise<Boolean> acquireFuture;
+    private final CompletableFuture<Boolean> acquireFuture;
     private String currentId;
     private String currentNode;
     private String watchedNode;
@@ -342,15 +334,14 @@ class ZKSessionLock implements SessionLock {
         this.unlockStats = statsLogger.getOpStatsLogger("unlock");
 
         // Attach interrupt handler to acquire future so clients can abort the future.
-        this.acquireFuture = new Promise<Boolean>(new com.twitter.util.Function<Throwable, BoxedUnit>() {
-            @Override
-            public BoxedUnit apply(Throwable t) {
+        this.acquireFuture = FutureUtils.createFuture();
+        this.acquireFuture.whenComplete((value, cause) -> {
+            if (null != cause) {
                 // This will set the lock state to closed, and begin to cleanup the zk lock node.
                 // We have to be careful not to block here since doing so blocks the ordered lock
                 // state executor which can cause deadlocks depending on how futures are chained.
-                ZKSessionLock.this.asyncUnlock(t);
+                ZKSessionLock.this.asyncUnlock(cause);
                 // Note re. logging and exceptions: errors are already logged by unlockAsync.
-                return BoxedUnit.UNIT;
             }
         });
     }
@@ -433,7 +424,7 @@ class ZKSessionLock implements SessionLock {
      * @param promise
      *          promise
      */
-    protected <T> void executeLockAction(final int lockEpoch, final LockAction func, final Promise<T> promise) {
+    protected <T> void executeLockAction(final int lockEpoch, final LockAction func, final CompletableFuture<T> promise) {
         lockStateExecutor.submit(lockPath, new SafeRunnable() {
             @Override
             public void safeRun() {
@@ -453,7 +444,7 @@ class ZKSessionLock implements SessionLock {
                         LOG.trace("{} skipped executing lock action '{}' for lock {}, since epoch is changed from {} to {}.",
                                 new Object[]{lockId, func.getActionName(), lockPath, lockEpoch, currentEpoch});
                     }
-                    promise.setException(new EpochChangedException(lockPath, lockEpoch, currentEpoch));
+                    promise.completeExceptionally(new EpochChangedException(lockPath, lockEpoch, currentEpoch));
                 }
             }
         });
@@ -516,7 +507,7 @@ class ZKSessionLock implements SessionLock {
      *          node name
      * @return client id and its ephemeral owner.
      */
-    static Future<Pair<String, Long>> asyncParseClientID(ZooKeeper zkClient, String lockPath, String nodeName) {
+    static CompletableFuture<Pair<String, Long>> asyncParseClientID(ZooKeeper zkClient, String lockPath, String nodeName) {
         String[] parts = nodeName.split("_");
         // member_<clientid>_s<owner_session>_
         if (4 == parts.length && parts[2].startsWith("s")) {
@@ -524,19 +515,19 @@ class ZKSessionLock implements SessionLock {
             String clientId;
             try {
                 clientId = URLDecoder.decode(parts[1], UTF_8.name());
-                return Future.value(Pair.of(clientId, sessionOwner));
+                return FutureUtils.value(Pair.of(clientId, sessionOwner));
             } catch (UnsupportedEncodingException e) {
                 // if failed to parse client id, we have to get client id by zookeeper#getData.
             }
         }
-        final Promise<Pair<String, Long>> promise = new Promise<Pair<String, Long>>();
+        final CompletableFuture<Pair<String, Long>> promise = new CompletableFuture<Pair<String, Long>>();
         zkClient.getData(lockPath + "/" + nodeName, false, new AsyncCallback.DataCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
                 if (KeeperException.Code.OK.intValue() != rc) {
-                    promise.setException(KeeperException.create(KeeperException.Code.get(rc)));
+                    promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc)));
                 } else {
-                    promise.setValue(Pair.of(deserializeClientId(data), stat.getEphemeralOwner()));
+                    promise.complete(Pair.of(deserializeClientId(data), stat.getEphemeralOwner()));
                 }
             }
         }, null);
@@ -544,8 +535,8 @@ class ZKSessionLock implements SessionLock {
     }
 
     @Override
-    public Future<LockWaiter> asyncTryLock(final long timeout, final TimeUnit unit) {
-        final Promise<String> result = new Promise<String>();
+    public CompletableFuture<LockWaiter> asyncTryLock(final long timeout, final TimeUnit unit) {
+        final CompletableFuture<String> result = new CompletableFuture<String>();
         final boolean wait = DistributedLogConstants.LOCK_IMMEDIATE != timeout;
         if (wait) {
             asyncTryLock(wait, result);
@@ -559,11 +550,11 @@ class ZKSessionLock implements SessionLock {
                         @Override
                         public void safeRun() {
                             if (!lockState.inState(State.INIT)) {
-                                result.setException(new LockStateChangedException(lockPath, lockId, State.INIT, lockState.getState()));
+                                result.completeExceptionally(new LockStateChangedException(lockPath, lockId, State.INIT, lockState.getState()));
                                 return;
                             }
                             if (KeeperException.Code.OK.intValue() != rc) {
-                                result.setException(KeeperException.create(KeeperException.Code.get(rc)));
+                                result.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc)));
                                 return;
                             }
 
@@ -571,25 +562,20 @@ class ZKSessionLock implements SessionLock {
 
                             Collections.sort(children, MEMBER_COMPARATOR);
                             if (children.size() > 0) {
-                                asyncParseClientID(zk, lockPath, children.get(0)).addEventListener(
+                                asyncParseClientID(zk, lockPath, children.get(0)).whenCompleteAsync(
                                         new FutureEventListener<Pair<String, Long>>() {
                                             @Override
                                             public void onSuccess(Pair<String, Long> owner) {
                                                 if (!checkOrClaimLockOwner(owner, result)) {
-                                                    acquireFuture.updateIfEmpty(new Return<Boolean>(false));
+                                                    acquireFuture.complete(false);
                                                 }
                                             }
 
                                             @Override
                                             public void onFailure(final Throwable cause) {
-                                                lockStateExecutor.submit(lockPath, new SafeRunnable() {
-                                                    @Override
-                                                    public void safeRun() {
-                                                        result.setException(cause);
-                                                    }
-                                                });
+                                                result.completeExceptionally(cause);
                                             }
-                                        });
+                                        }, lockStateExecutor.chooseExecutor(lockPath));
                             } else {
                                 asyncTryLock(wait, result);
                             }
@@ -599,14 +585,9 @@ class ZKSessionLock implements SessionLock {
             }, null);
         }
 
-        final Promise<Boolean> waiterAcquireFuture = new Promise<Boolean>(new com.twitter.util.Function<Throwable, BoxedUnit>() {
-            @Override
-            public BoxedUnit apply(Throwable t) {
-                acquireFuture.raise(t);
-                return BoxedUnit.UNIT;
-            }
-        });
-        return result.map(new AbstractFunction1<String, LockWaiter>() {
+        final CompletableFuture<Boolean> waiterAcquireFuture = FutureUtils.createFuture();
+        waiterAcquireFuture.whenComplete((value, cause) -> acquireFuture.completeExceptionally(cause));
+        return result.thenApply(new Function<String, LockWaiter>() {
             @Override
             public LockWaiter apply(final String currentOwner) {
                 final Exception acquireException = new OwnershipAcquireFailedException(lockPath, currentOwner);
@@ -617,7 +598,7 @@ class ZKSessionLock implements SessionLock {
                         acquireException,
                         lockStateExecutor,
                         lockPath
-                ).addEventListener(new FutureEventListener<Boolean>() {
+                ).whenComplete(new FutureEventListener<Boolean>() {
 
                     @Override
                     public void onSuccess(Boolean acquired) {
@@ -631,17 +612,17 @@ class ZKSessionLock implements SessionLock {
 
                     private void completeOrFail(final Throwable acquireCause) {
                         if (isLockHeld()) {
-                            waiterAcquireFuture.setValue(true);
+                            waiterAcquireFuture.complete(true);
                         } else {
-                            asyncUnlock().addEventListener(new FutureEventListener<BoxedUnit>() {
+                            asyncUnlock().whenComplete(new FutureEventListener<Void>() {
                                 @Override
-                                public void onSuccess(BoxedUnit value) {
-                                    waiterAcquireFuture.setException(acquireCause);
+                                public void onSuccess(Void value) {
+                                    waiterAcquireFuture.completeExceptionally(acquireCause);
                                 }
 
                                 @Override
                                 public void onFailure(Throwable cause) {
-                                    waiterAcquireFuture.setException(acquireCause);
+                                    waiterAcquireFuture.completeExceptionally(acquireCause);
                                 }
                             });
                         }
@@ -656,12 +637,12 @@ class ZKSessionLock implements SessionLock {
     }
 
     private boolean checkOrClaimLockOwner(final Pair<String, Long> currentOwner,
-                                          final Promise<String> result) {
+                                          final CompletableFuture<String> result) {
         if (lockId.compareTo(currentOwner) != 0 && !lockContext.hasLockId(currentOwner)) {
             lockStateExecutor.submit(lockPath, new SafeRunnable() {
                 @Override
                 public void safeRun() {
-                    result.setValue(currentOwner.getLeft());
+                    result.complete(currentOwner.getLeft());
                 }
             });
             return false;
@@ -672,7 +653,7 @@ class ZKSessionLock implements SessionLock {
             @Override
             public void execute() {
                 if (!lockState.inState(State.INIT)) {
-                    result.setException(new LockStateChangedException(lockPath, lockId, State.INIT, lockState.getState()));
+                    result.completeExceptionally(new LockStateChangedException(lockPath, lockId, State.INIT, lockState.getState()));
                     return;
                 }
                 asyncTryLock(false, result);
@@ -693,12 +674,12 @@ class ZKSessionLock implements SessionLock {
      * @param result
      *          promise to satisfy with current lock owner
      */
-    private void asyncTryLock(boolean wait, final Promise<String> result) {
-        final Promise<String> lockResult = new Promise<String>();
-        lockResult.addEventListener(new FutureEventListener<String>() {
+    private void asyncTryLock(boolean wait, final CompletableFuture<String> result) {
+        final CompletableFuture<String> lockResult = new CompletableFuture<String>();
+        lockResult.whenComplete(new FutureEventListener<String>() {
             @Override
             public void onSuccess(String currentOwner) {
-                result.setValue(currentOwner);
+                result.complete(currentOwner);
             }
 
             @Override
@@ -707,7 +688,7 @@ class ZKSessionLock implements SessionLock {
                 if (lockCause instanceof LockStateChangedException) {
                     LOG.info("skipping cleanup for {} at {} after encountering lock " +
                             "state change exception : ", new Object[] { lockId, lockPath, lockCause });
-                    result.setException(lockCause);
+                    result.completeExceptionally(lockCause);
                     return;
                 }
                 if (LOG.isDebugEnabled()) {
@@ -716,15 +697,15 @@ class ZKSessionLock implements SessionLock {
                 }
 
                 // If we encountered any exception we should cleanup
-                Future<BoxedUnit> unlockResult = asyncUnlock();
-                unlockResult.addEventListener(new FutureEventListener<BoxedUnit>() {
+                CompletableFuture<Void> unlockResult = asyncUnlock();
+                unlockResult.whenComplete(new FutureEventListener<Void>() {
                     @Override
-                    public void onSuccess(BoxedUnit value) {
-                        result.setException(lockCause);
+                    public void onSuccess(Void value) {
+                        result.completeExceptionally(lockCause);
                     }
                     @Override
                     public void onFailure(Throwable cause) {
-                        result.setException(lockCause);
+                        result.completeExceptionally(lockCause);
                     }
                 });
             }
@@ -734,7 +715,7 @@ class ZKSessionLock implements SessionLock {
 
     /**
      * Try lock. If wait is true, it would wait and watch sibling to acquire lock when
-     * the sibling is dead. <i>acquireFuture</i> will be notified either it locked successfully
+     * the sibling is dead. <i>acquireCompletableFuture</i> will be notified either it locked successfully
      * or the lock failed. The promise will only satisfy with current lock owner.
      *
      * NOTE: the <i>promise</i> is only satisfied on <i>lockStateExecutor</i>, so any
@@ -745,12 +726,12 @@ class ZKSessionLock implements SessionLock {
      * @param promise
      *          promise to satisfy with current lock owner.
      */
-    private void asyncTryLockWithoutCleanup(final boolean wait, final Promise<String> promise) {
+    private void asyncTryLockWithoutCleanup(final boolean wait, final CompletableFuture<String> promise) {
         executeLockAction(epoch.get(), new LockAction() {
             @Override
             public void execute() {
                 if (!lockState.inState(State.INIT)) {
-                    promise.setException(new LockStateChangedException(lockPath, lockId, State.INIT, lockState.getState()));
+                    promise.completeExceptionally(new LockStateChangedException(lockPath, lockId, State.INIT, lockState.getState()));
                     return;
                 }
                 lockState.transition(State.PREPARING);
@@ -776,7 +757,7 @@ class ZKSessionLock implements SessionLock {
                                     public void execute() {
                                         if (KeeperException.Code.OK.intValue() != rc) {
                                             KeeperException ke = KeeperException.create(KeeperException.Code.get(rc));
-                                            promise.setException(ke);
+                                            promise.completeExceptionally(ke);
                                             return;
                                         }
 
@@ -797,14 +778,12 @@ class ZKSessionLock implements SessionLock {
                                         if (lockState.isExpiredOrClosing()) {
                                             // Delete node attempt may have come after PREPARING but before create node, in which case
                                             // we'd be left with a dangling node unless we clean up.
-                                            Promise<BoxedUnit> deletePromise = new Promise<BoxedUnit>();
+                                            CompletableFuture<Void> deletePromise = new CompletableFuture<Void>();
                                             deleteLockNode(deletePromise);
-                                            deletePromise.ensure(new Function0<BoxedUnit>() {
-                                                public BoxedUnit apply() {
-                                                    promise.setException(new LockClosedException(lockPath, lockId, lockState.getState()));
-                                                    return BoxedUnit.UNIT;
-                                                }
-                                            });
+                                            FutureUtils.ensure(
+                                                deletePromise,
+                                                () -> promise.completeExceptionally(
+                                                    new LockClosedException(lockPath, lockId, lockState.getState())));
                                             return;
                                         }
 
@@ -830,7 +809,7 @@ class ZKSessionLock implements SessionLock {
     @Override
     public void tryLock(long timeout, TimeUnit unit) throws LockingException {
         final Stopwatch stopwatch = Stopwatch.createStarted();
-        Future<LockWaiter> tryFuture = asyncTryLock(timeout, unit);
+        CompletableFuture<LockWaiter> tryFuture = asyncTryLock(timeout, unit);
         LockWaiter waiter = waitForTry(stopwatch, tryFuture);
         boolean acquired = waiter.waitForAcquireQuietly();
         if (!acquired) {
@@ -838,13 +817,13 @@ class ZKSessionLock implements SessionLock {
         }
     }
 
-    synchronized LockWaiter waitForTry(Stopwatch stopwatch, Future<LockWaiter> tryFuture)
+    synchronized LockWaiter waitForTry(Stopwatch stopwatch, CompletableFuture<LockWaiter> tryFuture)
             throws LockingException {
         boolean success = false;
         boolean stateChanged = false;
         LockWaiter waiter;
         try {
-            waiter = Await.result(tryFuture, Duration.fromMilliseconds(lockOpTimeout));
+            waiter = FutureUtils.result(tryFuture, lockOpTimeout, TimeUnit.MILLISECONDS);
             success = true;
         } catch (LockStateChangedException ex) {
             stateChanged = true;
@@ -873,12 +852,12 @@ class ZKSessionLock implements SessionLock {
     }
 
     @Override
-    public Future<BoxedUnit> asyncUnlock() {
+    public CompletableFuture<Void> asyncUnlock() {
         return asyncUnlock(new LockClosedException(lockPath, lockId, lockState.getState()));
     }
 
-    Future<BoxedUnit> asyncUnlock(final Throwable cause) {
-        final Promise<BoxedUnit> promise = new Promise<BoxedUnit>();
+    CompletableFuture<Void> asyncUnlock(final Throwable cause) {
+        final CompletableFuture<Void> promise = new CompletableFuture<Void>();
 
         // Use lock executor here rather than lock action, because we want this opertaion to be applied
         // whether the epoch has changed or not. The member node is EPHEMERAL_SEQUENTIAL so there's no
@@ -886,9 +865,9 @@ class ZKSessionLock implements SessionLock {
         lockStateExecutor.submit(lockPath, new SafeRunnable() {
             @Override
             public void safeRun() {
-                acquireFuture.updateIfEmpty(new Throw<Boolean>(cause));
+                acquireFuture.completeExceptionally(cause);
                 unlockInternal(promise);
-                promise.addEventListener(new OpStatsListener<BoxedUnit>(unlockStats));
+                promise.whenComplete(new OpStatsListener<Void>(unlockStats));
             }
         });
 
@@ -897,9 +876,9 @@ class ZKSessionLock implements SessionLock {
 
     @Override
     public void unlock() {
-        Future<BoxedUnit> unlockResult = asyncUnlock();
+        CompletableFuture<Void> unlockResult = asyncUnlock();
         try {
-            Await.result(unlockResult, Duration.fromMilliseconds(lockOpTimeout));
+            FutureUtils.result(unlockResult, lockOpTimeout, TimeUnit.MILLISECONDS);
         } catch (TimeoutException toe) {
             // This shouldn't happen unless we lose a watch, and may result in a leaked lock.
             LOG.error("Timeout unlocking {} owned by {} : ", new Object[] { lockPath, lockId, toe });
@@ -921,13 +900,13 @@ class ZKSessionLock implements SessionLock {
                     new Object[] { lockPath, System.currentTimeMillis(),
                             lockEpoch, ZKSessionLock.this.epoch.get() });
         }
-        acquireFuture.updateIfEmpty(new Return<Boolean>(true));
+        acquireFuture.complete(true);
     }
 
     /**
      * NOTE: unlockInternal should only after try lock.
      */
-    private void unlockInternal(final Promise<BoxedUnit> promise) {
+    private void unlockInternal(final CompletableFuture<Void> promise) {
 
         // already closed or expired, nothing to cleanup
         this.epoch.incrementAndGet();
@@ -936,7 +915,7 @@ class ZKSessionLock implements SessionLock {
         }
 
         if (lockState.inState(State.CLOSED)) {
-            promise.setValue(BoxedUnit.UNIT);
+            promise.complete(null);
             return;
         }
 
@@ -951,39 +930,34 @@ class ZKSessionLock implements SessionLock {
             // Nothing to cleanup if INIT (never tried) or EXPIRED (ephemeral node
             // auto-removed)
             lockState.transition(State.CLOSED);
-            promise.setValue(BoxedUnit.UNIT);
+            promise.complete(null);
             return;
         }
 
         // In any other state, we should clean up the member node
-        Promise<BoxedUnit> deletePromise = new Promise<BoxedUnit>();
+        CompletableFuture<Void> deletePromise = new CompletableFuture<Void>();
         deleteLockNode(deletePromise);
 
         // Set the state to closed after we've cleaned up
-        deletePromise.addEventListener(new FutureEventListener<BoxedUnit>() {
+        deletePromise.whenCompleteAsync(new FutureEventListener<Void>() {
             @Override
-            public void onSuccess(BoxedUnit complete) {
-                lockStateExecutor.submit(lockPath, new SafeRunnable() {
-                    @Override
-                    public void safeRun() {
-                        lockState.transition(State.CLOSED);
-                        promise.setValue(BoxedUnit.UNIT);
-                    }
-                });
+            public void onSuccess(Void complete) {
+                lockState.transition(State.CLOSED);
+                promise.complete(null);
             }
             @Override
             public void onFailure(Throwable cause) {
                 // Delete failure is quite serious (causes lock leak) and should be
                 // handled better
                 LOG.error("lock node delete failed {} {}", lockId, lockPath);
-                promise.setValue(BoxedUnit.UNIT);
+                promise.complete(null);
             }
-        });
+        }, lockStateExecutor.chooseExecutor(lockPath));
     }
 
-    private void deleteLockNode(final Promise<BoxedUnit> promise) {
+    private void deleteLockNode(final CompletableFuture<Void> promise) {
         if (null == currentNode) {
-            promise.setValue(BoxedUnit.UNIT);
+            promise.complete(null);
             return;
         }
 
@@ -1005,7 +979,7 @@ class ZKSessionLock implements SessionLock {
                         }
 
                         FailpointUtils.checkFailPointNoThrow(FailpointUtils.FailPointName.FP_LockUnlockCleanup);
-                        promise.setValue(BoxedUnit.UNIT);
+                        promise.complete(null);
                     }
                 });
             }
@@ -1041,8 +1015,8 @@ class ZKSessionLock implements SessionLock {
 
                 // if session expired, just notify the waiter. as the lock acquire doesn't succeed.
                 // we don't even need to clean up the lock as the znode will disappear after session expired
-                acquireFuture.updateIfEmpty(new Throw<Boolean>(
-                        new LockSessionExpiredException(lockPath, lockId, lockState.getState())));
+                acquireFuture.completeExceptionally(
+                    new LockSessionExpiredException(lockPath, lockId, lockState.getState()));
 
                 // session expired, ephemeral node is gone.
                 currentNode = null;
@@ -1088,9 +1062,9 @@ class ZKSessionLock implements SessionLock {
         });
     }
 
-    private Future<String> checkLockOwnerAndWaitIfPossible(final LockWatcher lockWatcher,
+    private CompletableFuture<String> checkLockOwnerAndWaitIfPossible(final LockWatcher lockWatcher,
                                                            final boolean wait) {
-        final Promise<String> promise = new Promise<String>();
+        final CompletableFuture<String> promise = new CompletableFuture<String>();
         checkLockOwnerAndWaitIfPossible(lockWatcher, wait, promise);
         return promise;
     }
@@ -1107,7 +1081,7 @@ class ZKSessionLock implements SessionLock {
      */
     private void checkLockOwnerAndWaitIfPossible(final LockWatcher lockWatcher,
                                                  final boolean wait,
-                                                 final Promise<String> promise) {
+                                                 final CompletableFuture<String> promise) {
         zk.getChildren(lockPath, false, new AsyncCallback.Children2Callback() {
             @Override
             public void processResult(int rc, String path, Object ctx, List<String> children, Stat stat) {
@@ -1134,22 +1108,22 @@ class ZKSessionLock implements SessionLock {
                                     final boolean wait,
                                     final int getChildrenRc,
                                     final List<String> children,
-                                    final Promise<String> promise) {
+                                    final CompletableFuture<String> promise) {
         executeLockAction(lockWatcher.epoch, new LockAction() {
             @Override
             public void execute() {
                 if (!lockState.inState(State.PREPARED)) { // e.g. lock closed or session expired after prepared
-                    promise.setException(new LockStateChangedException(lockPath, lockId, State.PREPARED, lockState.getState()));
+                    promise.completeExceptionally(new LockStateChangedException(lockPath, lockId, State.PREPARED, lockState.getState()));
                     return;
                 }
 
                 if (KeeperException.Code.OK.intValue() != getChildrenRc) {
-                    promise.setException(KeeperException.create(KeeperException.Code.get(getChildrenRc)));
+                    promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(getChildrenRc)));
                     return;
                 }
                 if (children.isEmpty()) {
                     LOG.error("Error, member list is empty for lock {}.", lockPath);
-                    promise.setException(new UnexpectedException("Empty member list for lock " + lockPath));
+                    promise.completeExceptionally(new UnexpectedException("Empty member list for lock " + lockPath));
                     return;
                 }
 
@@ -1164,10 +1138,10 @@ class ZKSessionLock implements SessionLock {
                 if (memberIndex == 0) {
                     LOG.info("{} acquired the lock {}.", cid, lockPath);
                     claimOwnership(lockWatcher.epoch);
-                    promise.setValue(cid);
+                    promise.complete(cid);
                 } else if (memberIndex > 0) { // we are in the member list but we didn't hold the lock
                     // get ownership of current owner
-                    asyncParseClientID(zk, lockPath, children.get(0)).addEventListener(new FutureEventListener<Pair<String, Long>>() {
+                    asyncParseClientID(zk, lockPath, children.get(0)).whenComplete(new FutureEventListener<Pair<String, Long>>() {
                         @Override
                         public void onSuccess(Pair<String, Long> currentOwner) {
                             watchLockOwner(lockWatcher, wait,
@@ -1179,7 +1153,7 @@ class ZKSessionLock implements SessionLock {
                             executeLockAction(lockWatcher.epoch, new LockAction() {
                                 @Override
                                 public void execute() {
-                                    promise.setException(cause);
+                                    promise.completeExceptionally(cause);
                                 }
 
                                 @Override
@@ -1192,7 +1166,7 @@ class ZKSessionLock implements SessionLock {
                 } else {
                     LOG.error("Member {} doesn't exist in the members list {} for lock {}.",
                             new Object[]{ cid, children, lockPath});
-                    promise.setException(
+                    promise.completeExceptionally(
                             new UnexpectedException("Member " + cid + " doesn't exist in member list " +
                                     children + " for lock " + lockPath));
                 }
@@ -1229,7 +1203,7 @@ class ZKSessionLock implements SessionLock {
                                 final String siblingNode,
                                 final String ownerNode,
                                 final Pair<String, Long> currentOwner,
-                                final Promise<String> promise) {
+                                final CompletableFuture<String> promise) {
         executeLockAction(lockWatcher.epoch, new LockAction() {
             @Override
             public void execute() {
@@ -1270,7 +1244,7 @@ class ZKSessionLock implements SessionLock {
                                 @Override
                                 public void execute() {
                                     if (!lockState.inState(State.PREPARED)) {
-                                        promise.setException(new LockStateChangedException(lockPath, lockId, State.PREPARED, lockState.getState()));
+                                        promise.completeExceptionally(new LockStateChangedException(lockPath, lockId, State.PREPARED, lockState.getState()));
                                         return;
                                     }
 
@@ -1280,17 +1254,17 @@ class ZKSessionLock implements SessionLock {
                                             LOG.info("LockWatcher {} claimed ownership for {} after set watcher on {}.",
                                                     new Object[]{ myNode, lockPath, ownerNode });
                                             claimOwnership(lockWatcher.epoch);
-                                            promise.setValue(currentOwner.getLeft());
+                                            promise.complete(currentOwner.getLeft());
                                         } else {
                                             // watch sibling successfully
                                             lockState.transition(State.WAITING);
-                                            promise.setValue(currentOwner.getLeft());
+                                            promise.complete(currentOwner.getLeft());
                                         }
                                     } else if (KeeperException.Code.NONODE.intValue() == rc) {
                                         // sibling just disappeared, it might be the chance to claim ownership
                                         checkLockOwnerAndWaitIfPossible(lockWatcher, wait, promise);
                                     } else {
-                                        promise.setException(KeeperException.create(KeeperException.Code.get(rc)));
+                                        promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc)));
                                     }
                                 }
 
@@ -1305,7 +1279,7 @@ class ZKSessionLock implements SessionLock {
                         }
                     }, null);
                 } else {
-                    promise.setValue(currentOwner.getLeft());
+                    promise.complete(currentOwner.getLeft());
                 }
             }
 

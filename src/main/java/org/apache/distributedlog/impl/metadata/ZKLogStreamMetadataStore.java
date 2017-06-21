@@ -20,10 +20,12 @@ package org.apache.distributedlog.impl.metadata;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.exceptions.DLException;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.exceptions.InvalidStreamNameException;
 import org.apache.distributedlog.exceptions.LockCancelledException;
@@ -42,18 +44,14 @@ import org.apache.distributedlog.metadata.LogMetadata;
 import org.apache.distributedlog.metadata.LogMetadataForReader;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.util.DLUtils;
-import org.apache.distributedlog.util.FutureUtils;
-import org.apache.distributedlog.util.SchedulerUtils;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.common.util.SchedulerUtils;
 import org.apache.distributedlog.zk.LimitedPermitManager;
 import org.apache.distributedlog.util.OrderedScheduler;
-import org.apache.distributedlog.util.PermitManager;
+import org.apache.distributedlog.common.util.PermitManager;
 import org.apache.distributedlog.util.Transaction;
 import org.apache.distributedlog.util.Utils;
 import org.apache.distributedlog.zk.ZKTransaction;
-import com.twitter.util.ExceptionalFunction;
-import com.twitter.util.ExceptionalFunction0;
-import com.twitter.util.Future;
-import com.twitter.util.Promise;
 import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -69,10 +67,7 @@ import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.runtime.AbstractFunction1;
-import scala.runtime.BoxedUnit;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
@@ -120,14 +115,9 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
 
     private synchronized OrderedScheduler getLockStateExecutor(boolean createIfNull) {
         if (createIfNull && null == lockStateExecutor) {
-            StatsLogger lockStateStatsLogger = statsLogger.scope("lock_scheduler");
             lockStateExecutor = OrderedScheduler.newBuilder()
                     .name("DLM-LockState")
                     .corePoolSize(conf.getNumLockStateThreads())
-                    .statsLogger(lockStateStatsLogger)
-                    .perExecutorStatsLogger(lockStateStatsLogger)
-                    .traceTaskExecution(conf.getEnableTaskExecutionStats())
-                    .traceTaskExecutionWarnTimeUs(conf.getTaskExecutionWarnTimeMicros())
                     .build();
         }
         return lockStateExecutor;
@@ -174,21 +164,21 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
     }
 
     @Override
-    public Future<Void> logExists(URI uri, final String logName) {
+    public CompletableFuture<Void> logExists(URI uri, final String logName) {
         final String logSegmentsPath = LogMetadata.getLogSegmentsPath(
                 uri, logName, conf.getUnpartitionedStreamName());
-        final Promise<Void> promise = new Promise<Void>();
+        final CompletableFuture<Void> promise = new CompletableFuture<Void>();
         try {
             final ZooKeeper zk = zooKeeperClient.get();
             zk.sync(logSegmentsPath, new AsyncCallback.VoidCallback() {
                 @Override
                 public void processResult(int syncRc, String path, Object syncCtx) {
                     if (KeeperException.Code.NONODE.intValue() == syncRc) {
-                        promise.setException(new LogNotFoundException(
+                        promise.completeExceptionally(new LogNotFoundException(
                                 String.format("Log %s does not exist or has been deleted", logName)));
                         return;
                     } else if (KeeperException.Code.OK.intValue() != syncRc){
-                        promise.setException(new ZKException("Error on checking log existence for " + logName,
+                        promise.completeExceptionally(new ZKException("Error on checking log existence for " + logName,
                                 KeeperException.create(KeeperException.Code.get(syncRc))));
                         return;
                     }
@@ -196,12 +186,12 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                         @Override
                         public void processResult(int rc, String path, Object ctx, Stat stat) {
                             if (KeeperException.Code.OK.intValue() == rc) {
-                                promise.setValue(null);
+                                promise.complete(null);
                             } else if (KeeperException.Code.NONODE.intValue() == rc) {
-                                promise.setException(new LogNotFoundException(
+                                promise.completeExceptionally(new LogNotFoundException(
                                         String.format("Log %s does not exist or has been deleted", logName)));
                             } else {
-                                promise.setException(new ZKException("Error on checking log existence for " + logName,
+                                promise.completeExceptionally(new ZKException("Error on checking log existence for " + logName,
                                         KeeperException.create(KeeperException.Code.get(rc))));
                             }
                         }
@@ -211,10 +201,10 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
 
         } catch (InterruptedException ie) {
             LOG.error("Interrupted while reading {}", logSegmentsPath, ie);
-            promise.setException(new DLInterruptedException("Interrupted while checking "
+            promise.completeExceptionally(new DLInterruptedException("Interrupted while checking "
                     + logSegmentsPath, ie));
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         }
         return promise;
     }
@@ -237,15 +227,13 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
     // Create Read Lock
     //
 
-    private Future<Void> ensureReadLockPathExist(final LogMetadata logMetadata,
+    private CompletableFuture<Void> ensureReadLockPathExist(final LogMetadata logMetadata,
                                                  final String readLockPath) {
-        final Promise<Void> promise = new Promise<Void>();
-        promise.setInterruptHandler(new com.twitter.util.Function<Throwable, BoxedUnit>() {
-            @Override
-            public BoxedUnit apply(Throwable t) {
-                FutureUtils.setException(promise, new LockCancelledException(readLockPath,
-                        "Could not ensure read lock path", t));
-                return null;
+        final CompletableFuture<Void> promise = new CompletableFuture<Void>();
+        promise.whenComplete((value, cause) -> {
+            if (cause instanceof CancellationException) {
+                FutureUtils.completeExceptionally(promise, new LockCancelledException(readLockPath,
+                        "Could not ensure read lock path", cause));
             }
         });
         Optional<String> parentPathShouldNotCreate = Optional.of(logMetadata.getLogRootPath());
@@ -255,21 +243,21 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                     @Override
                     public void processResult(final int rc, final String path, Object ctx, String name) {
                         if (KeeperException.Code.NONODE.intValue() == rc) {
-                            FutureUtils.setException(promise, new LogNotFoundException(
+                            FutureUtils.completeExceptionally(promise, new LogNotFoundException(
                                     String.format("Log %s does not exist or has been deleted",
                                             logMetadata.getFullyQualifiedName())));
                         } else if (KeeperException.Code.OK.intValue() == rc) {
-                            FutureUtils.setValue(promise, null);
+                            FutureUtils.complete(promise, null);
                             LOG.trace("Created path {}.", path);
                         } else if (KeeperException.Code.NODEEXISTS.intValue() == rc) {
-                            FutureUtils.setValue(promise, null);
+                            FutureUtils.complete(promise, null);
                             LOG.trace("Path {} is already existed.", path);
                         } else if (DistributedLogConstants.ZK_CONNECTION_EXCEPTION_RESULT_CODE == rc) {
-                            FutureUtils.setException(promise, new ZooKeeperClient.ZooKeeperConnectionException(path));
+                            FutureUtils.completeExceptionally(promise, new ZooKeeperClient.ZooKeeperConnectionException(path));
                         } else if (DistributedLogConstants.DL_INTERRUPTED_EXCEPTION_RESULT_CODE == rc) {
-                            FutureUtils.setException(promise, new DLInterruptedException(path));
+                            FutureUtils.completeExceptionally(promise, new DLInterruptedException(path));
                         } else {
-                            FutureUtils.setException(promise, KeeperException.create(KeeperException.Code.get(rc)));
+                            FutureUtils.completeExceptionally(promise, KeeperException.create(KeeperException.Code.get(rc)));
                         }
                     }
                 }, null);
@@ -277,28 +265,19 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
     }
 
     @Override
-    public Future<DistributedLock> createReadLock(final LogMetadataForReader metadata,
+    public CompletableFuture<DistributedLock> createReadLock(final LogMetadataForReader metadata,
                                                   Optional<String> readerId) {
         final String readLockPath = metadata.getReadLockPath(readerId);
-        return ensureReadLockPathExist(metadata, readLockPath).flatMap(
-                new ExceptionalFunction<Void, Future<DistributedLock>>() {
-            @Override
-            public Future<DistributedLock> applyE(Void value) throws Throwable {
-                // Unfortunately this has a blocking call which we should not execute on the
-                // ZK completion thread
-                return scheduler.apply(new ExceptionalFunction0<DistributedLock>() {
-                    @Override
-                    public DistributedLock applyE() throws Throwable {
-                        return new ZKDistributedLock(
-                            getLockStateExecutor(true),
-                            getLockFactory(true),
-                            readLockPath,
-                            conf.getLockTimeoutMilliSeconds(),
-                            statsLogger.scope("read_lock"));
-                    }
-                });
-            }
-        });
+        return ensureReadLockPathExist(metadata, readLockPath)
+            .thenApplyAsync((value) -> {
+                DistributedLock lock = new ZKDistributedLock(
+                    getLockStateExecutor(true),
+                    getLockFactory(true),
+                    readLockPath,
+                    conf.getLockTimeoutMilliSeconds(),
+                    statsLogger.scope("read_lock"));
+                return lock;
+            }, scheduler.chooseExecutor(readLockPath));
     }
 
     //
@@ -329,7 +308,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
             (byte) (i)};
     }
 
-    static Future<List<Versioned<byte[]>>> checkLogMetadataPaths(ZooKeeper zk,
+    static CompletableFuture<List<Versioned<byte[]>>> checkLogMetadataPaths(ZooKeeper zk,
                                                                  String logRootPath,
                                                                  boolean ownAllocator) {
         // Note re. persistent lock state initialization: the read lock persistent state (path) is
@@ -344,7 +323,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
         final String allocationPath = logRootPath + ALLOCATION_PATH;
 
         int numPaths = ownAllocator ? MetadataIndex.ALLOCATION + 1 : MetadataIndex.LOGSEGMENTS + 1;
-        List<Future<Versioned<byte[]>>> checkFutures = Lists.newArrayListWithExpectedSize(numPaths);
+        List<CompletableFuture<Versioned<byte[]>>> checkFutures = Lists.newArrayListWithExpectedSize(numPaths);
         checkFutures.add(Utils.zkGetData(zk, logRootParentPath, false));
         checkFutures.add(Utils.zkGetData(zk, logRootPath, false));
         checkFutures.add(Utils.zkGetData(zk, maxTxIdPath, false));
@@ -356,7 +335,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
             checkFutures.add(Utils.zkGetData(zk, allocationPath, false));
         }
 
-        return Future.collect(checkFutures);
+        return FutureUtils.collect(checkFutures);
     }
 
     static boolean pathExists(Versioned<byte[]> metadata) {
@@ -374,7 +353,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                                       final List<ACL> acl,
                                       final boolean ownAllocator,
                                       final boolean createIfNotExists,
-                                      final Promise<List<Versioned<byte[]>>> promise) {
+                                      final CompletableFuture<List<Versioned<byte[]>>> promise) {
         final List<byte[]> pathsToCreate = Lists.newArrayListWithExpectedSize(metadatas.size());
         final List<Op> zkOps = Lists.newArrayListWithExpectedSize(metadatas.size());
         CreateMode createMode = CreateMode.PERSISTENT;
@@ -447,11 +426,11 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
         }
         if (zkOps.isEmpty()) {
             // nothing missed
-            promise.setValue(metadatas);
+            promise.complete(metadatas);
             return;
         }
         if (!createIfNotExists) {
-            promise.setException(new LogNotFoundException("Log " + logRootPath + " not found"));
+            promise.completeExceptionally(new LogNotFoundException("Log " + logRootPath + " not found"));
             return;
         }
 
@@ -469,9 +448,9 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                             finalMetadatas.add(new Versioned<byte[]>(dataCreated, new ZkVersion(0)));
                         }
                     }
-                    promise.setValue(finalMetadatas);
+                    promise.complete(finalMetadatas);
                 } else if (KeeperException.Code.NODEEXISTS.intValue() == rc) {
-                    promise.setException(new LogExistsException("Someone just created log "
+                    promise.completeExceptionally(new LogExistsException("Someone just created log "
                             + logRootPath));
                 } else {
                     if (LOG.isDebugEnabled()) {
@@ -488,7 +467,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                         LOG.debug("Failed to create log, full rc list = {}", resultCodeList);
                     }
 
-                    promise.setException(new ZKException("Failed to create log " + logRootPath,
+                    promise.completeExceptionally(new ZKException("Failed to create log " + logRootPath,
                             KeeperException.Code.get(rc)));
                 }
             }
@@ -538,7 +517,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
         }
     }
 
-    static Future<LogMetadataForWriter> getLog(final URI uri,
+    static CompletableFuture<LogMetadataForWriter> getLog(final URI uri,
                                                final String logName,
                                                final String logIdentifier,
                                                final ZooKeeperClient zooKeeperClient,
@@ -549,42 +528,47 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
             PathUtils.validatePath(logRootPath);
         } catch (IllegalArgumentException e) {
             LOG.error("Illegal path value {} for stream {}", new Object[]{logRootPath, logName, e});
-            return Future.exception(new InvalidStreamNameException(logName, "Log name is invalid"));
+            return FutureUtils.exception(new InvalidStreamNameException(logName, "Log name is invalid"));
         }
 
         try {
             final ZooKeeper zk = zooKeeperClient.get();
             return checkLogMetadataPaths(zk, logRootPath, ownAllocator)
-                    .flatMap(new AbstractFunction1<List<Versioned<byte[]>>, Future<List<Versioned<byte[]>>>>() {
+                    .thenCompose(new Function<List<Versioned<byte[]>>, CompletableFuture<List<Versioned<byte[]>>>>() {
                         @Override
-                        public Future<List<Versioned<byte[]>>> apply(List<Versioned<byte[]>> metadatas) {
-                            Promise<List<Versioned<byte[]>>> promise =
-                                    new Promise<List<Versioned<byte[]>>>();
+                        public CompletableFuture<List<Versioned<byte[]>>> apply(List<Versioned<byte[]>> metadatas) {
+                            CompletableFuture<List<Versioned<byte[]>>> promise =
+                                    new CompletableFuture<List<Versioned<byte[]>>>();
                             createMissingMetadata(zk, logRootPath, metadatas, zooKeeperClient.getDefaultACL(),
                                     ownAllocator, createIfNotExists, promise);
                             return promise;
                         }
-                    }).map(new ExceptionalFunction<List<Versioned<byte[]>>, LogMetadataForWriter>() {
+                    }).thenCompose(new Function<List<Versioned<byte[]>>, CompletableFuture<LogMetadataForWriter>>() {
                         @Override
-                        public LogMetadataForWriter applyE(List<Versioned<byte[]>> metadatas) throws DLException {
-                            return processLogMetadatas(
-                                    uri,
-                                    logName,
-                                    logIdentifier,
-                                    metadatas,
-                                    ownAllocator);
+                        public CompletableFuture<LogMetadataForWriter> apply(List<Versioned<byte[]>> metadatas) {
+                            try {
+                                return FutureUtils.value(
+                                    processLogMetadatas(
+                                        uri,
+                                        logName,
+                                        logIdentifier,
+                                        metadatas,
+                                        ownAllocator));
+                            } catch (UnexpectedException e) {
+                                return FutureUtils.exception(e);
+                            }
                         }
                     });
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            return Future.exception(new ZKException("Encountered zookeeper connection issue on creating log " + logName,
+            return FutureUtils.exception(new ZKException("Encountered zookeeper connection issue on creating log " + logName,
                     KeeperException.Code.CONNECTIONLOSS));
         } catch (InterruptedException e) {
-            return Future.exception(new DLInterruptedException("Interrupted on creating log " + logName, e));
+            return FutureUtils.exception(new DLInterruptedException("Interrupted on creating log " + logName, e));
         }
     }
 
     @Override
-    public Future<LogMetadataForWriter> getLog(final URI uri,
+    public CompletableFuture<LogMetadataForWriter> getLog(final URI uri,
                                                final String logName,
                                                final boolean ownAllocator,
                                                final boolean createIfNotExists) {
@@ -602,30 +586,30 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
     //
 
     @Override
-    public Future<Void> deleteLog(URI uri, final String logName) {
-        final Promise<Void> promise = new Promise<Void>();
+    public CompletableFuture<Void> deleteLog(URI uri, final String logName) {
+        final CompletableFuture<Void> promise = new CompletableFuture<Void>();
         try {
             String streamPath = LogMetadata.getLogStreamPath(uri, logName);
             ZKUtil.deleteRecursive(zooKeeperClient.get(), streamPath, new AsyncCallback.VoidCallback() {
                 @Override
                 public void processResult(int rc, String path, Object ctx) {
                     if (KeeperException.Code.OK.intValue() != rc) {
-                        FutureUtils.setException(promise,
+                        FutureUtils.completeExceptionally(promise,
                                 new ZKException("Encountered zookeeper issue on deleting log stream "
                                         + logName, KeeperException.Code.get(rc)));
                         return;
                     }
-                    FutureUtils.setValue(promise, null);
+                    FutureUtils.complete(promise, null);
                 }
             }, null);
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            FutureUtils.setException(promise, new ZKException("Encountered zookeeper issue on deleting log stream "
+            FutureUtils.completeExceptionally(promise, new ZKException("Encountered zookeeper issue on deleting log stream "
                     + logName, KeeperException.Code.CONNECTIONLOSS));
         } catch (InterruptedException e) {
-            FutureUtils.setException(promise, new DLInterruptedException("Interrupted while deleting log stream "
+            FutureUtils.completeExceptionally(promise, new DLInterruptedException("Interrupted while deleting log stream "
                     + logName));
         } catch (KeeperException e) {
-            FutureUtils.setException(promise, new ZKException("Encountered zookeeper issue on deleting log stream "
+            FutureUtils.completeExceptionally(promise, new ZKException("Encountered zookeeper issue on deleting log stream "
                     + logName, e));
         }
         return promise;

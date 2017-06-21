@@ -17,6 +17,8 @@
  */
 package org.apache.distributedlog;
 
+import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.junit.Rule;
 import org.junit.Test;

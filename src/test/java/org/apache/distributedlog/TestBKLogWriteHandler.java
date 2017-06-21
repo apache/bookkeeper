@@ -17,12 +17,13 @@
  */
 package org.apache.distributedlog;
 
+import org.apache.distributedlog.api.AsyncLogWriter;
+import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.bk.LedgerAllocator;
 import org.apache.distributedlog.bk.LedgerAllocatorPool;
 import org.apache.distributedlog.impl.BKNamespaceDriver;
-import org.apache.distributedlog.namespace.DistributedLogNamespaceBuilder;
+import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.util.FailpointUtils;
-import org.apache.distributedlog.util.FutureUtils;
 import org.apache.distributedlog.util.Utils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -58,7 +59,7 @@ public class TestBKLogWriteHandler extends TestDistributedLogBase {
         confLocal.setLedgerAllocatorPoolName("test-allocator-pool");
 
         BKDistributedLogNamespace namespace = (BKDistributedLogNamespace)
-                DistributedLogNamespaceBuilder.newBuilder()
+                NamespaceBuilder.newBuilder()
                         .conf(confLocal)
                         .uri(uri)
                         .build();
@@ -66,8 +67,8 @@ public class TestBKLogWriteHandler extends TestDistributedLogBase {
         FailpointUtils.setFailpoint(FailpointUtils.FailPointName.FP_StartLogSegmentOnAssignLogSegmentSequenceNumber,
                 FailpointUtils.FailPointActions.FailPointAction_Throw);
         try {
-            AsyncLogWriter writer =  FutureUtils.result(dlm.openAsyncLogWriter());
-            FutureUtils.result(writer.write(DLMTestUtil.getLogRecordInstance(1L)));
+            AsyncLogWriter writer =  Utils.ioResult(dlm.openAsyncLogWriter());
+            Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(1L)));
             fail("Should fail opening the writer");
         } catch (IOException ioe) {
             // expected
@@ -82,7 +83,7 @@ public class TestBKLogWriteHandler extends TestDistributedLogBase {
         LedgerAllocatorPool allocatorPool = (LedgerAllocatorPool) allocator;
         assertEquals(0, allocatorPool.obtainMapSize());
 
-        AsyncLogWriter writer = FutureUtils.result(dlm.openAsyncLogWriter());
+        AsyncLogWriter writer = Utils.ioResult(dlm.openAsyncLogWriter());
         writer.write(DLMTestUtil.getLogRecordInstance(1L));
         Utils.close(writer);
     }

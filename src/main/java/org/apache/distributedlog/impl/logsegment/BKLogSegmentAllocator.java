@@ -17,25 +17,23 @@
  */
 package org.apache.distributedlog.impl.logsegment;
 
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import org.apache.distributedlog.bk.LedgerAllocator;
 import org.apache.distributedlog.logsegment.LogSegmentEntryWriter;
 import org.apache.distributedlog.util.Allocator;
 import org.apache.distributedlog.util.Transaction;
-import com.twitter.util.Future;
 import org.apache.bookkeeper.client.LedgerHandle;
-import scala.Function1;
-import scala.runtime.AbstractFunction1;
-
-import java.io.IOException;
 
 /**
  * Allocate log segments
  */
 class BKLogSegmentAllocator implements Allocator<LogSegmentEntryWriter, Object> {
 
-    private static class NewLogSegmentEntryWriterFn extends AbstractFunction1<LedgerHandle, LogSegmentEntryWriter> {
+    private static class NewLogSegmentEntryWriterFn implements Function<LedgerHandle, LogSegmentEntryWriter> {
 
-        static final Function1<LedgerHandle, LogSegmentEntryWriter> INSTANCE =
+        static final Function<LedgerHandle, LogSegmentEntryWriter> INSTANCE =
                 new NewLogSegmentEntryWriterFn();
 
         private NewLogSegmentEntryWriterFn() {}
@@ -58,8 +56,8 @@ class BKLogSegmentAllocator implements Allocator<LogSegmentEntryWriter, Object> 
     }
 
     @Override
-    public Future<LogSegmentEntryWriter> tryObtain(Transaction<Object> txn,
-                                                   final Transaction.OpListener<LogSegmentEntryWriter> listener) {
+    public CompletableFuture<LogSegmentEntryWriter> tryObtain(Transaction<Object> txn,
+                                                              final Transaction.OpListener<LogSegmentEntryWriter> listener) {
         return allocator.tryObtain(txn, new Transaction.OpListener<LedgerHandle>() {
             @Override
             public void onCommit(LedgerHandle lh) {
@@ -70,16 +68,16 @@ class BKLogSegmentAllocator implements Allocator<LogSegmentEntryWriter, Object> 
             public void onAbort(Throwable t) {
                 listener.onAbort(t);
             }
-        }).map(NewLogSegmentEntryWriterFn.INSTANCE);
+        }).thenApply(NewLogSegmentEntryWriterFn.INSTANCE);
     }
 
     @Override
-    public Future<Void> asyncClose() {
+    public CompletableFuture<Void> asyncClose() {
         return allocator.asyncClose();
     }
 
     @Override
-    public Future<Void> delete() {
+    public CompletableFuture<Void> delete() {
         return allocator.delete();
     }
 }

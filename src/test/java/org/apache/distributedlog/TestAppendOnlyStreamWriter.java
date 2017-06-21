@@ -20,8 +20,11 @@ package org.apache.distributedlog;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.exceptions.BKTransmitException;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.util.Utils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -29,9 +32,6 @@ import org.junit.rules.TestName;
 import org.apache.distributedlog.exceptions.EndOfStreamException;
 import org.apache.distributedlog.exceptions.WriteException;
 import org.apache.distributedlog.util.FailpointUtils;
-import com.twitter.util.Await;
-import com.twitter.util.Duration;
-import com.twitter.util.Future;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,14 +90,14 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
         // happen very quickly. But we can test that the mechanics of the future write and api are basically
         // correct.
         AppendOnlyStreamWriter writer = dlmwriter.getAppendOnlyStreamWriter();
-        Future<DLSN> dlsnFuture = writer.write(DLMTestUtil.repeatString("abc", 11).getBytes());
+        CompletableFuture<DLSN> dlsnFuture = writer.write(DLMTestUtil.repeatString("abc", 11).getBytes());
 
         // The real problem is the fsync completes before writes are submitted, so it never takes effect.
         Thread.sleep(1000);
-        assertFalse(dlsnFuture.isDefined());
+        assertFalse(dlsnFuture.isDone());
         writer.force(false);
         // Must not throw.
-        Await.result(dlsnFuture, Duration.fromSeconds(5));
+        Utils.ioResult(dlsnFuture, 5, TimeUnit.SECONDS);
         writer.close();
         dlmwriter.close();
 
@@ -124,11 +124,11 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
         // happen very quickly. But we can test that the mechanics of the future write and api are basically
         // correct.
         AppendOnlyStreamWriter writer = dlmwriter.getAppendOnlyStreamWriter();
-        Future<DLSN> dlsnFuture = writer.write(byteStream);
+        CompletableFuture<DLSN> dlsnFuture = writer.write(byteStream);
         Thread.sleep(100);
 
         // Write hasn't been persisted, position better not be updated.
-        assertFalse(dlsnFuture.isDefined());
+        assertFalse(dlsnFuture.isDone());
         assertEquals(0, writer.position());
         writer.force(false);
         // Position guaranteed to be accurate after writer.force().
@@ -167,7 +167,7 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
         // Much much less than the flush time, small enough not to slow down tests too much, just
         // gives a little more confidence.
         Thread.sleep(500);
-        Future<DLSN> dlsnFuture = writer.write(byteStream);
+        CompletableFuture<DLSN> dlsnFuture = writer.write(byteStream);
         assertEquals(0, writer.position());
 
         writer.close();
@@ -188,7 +188,7 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
         AppendOnlyStreamWriter writer = dlmwriter.getAppendOnlyStreamWriter();
         assertEquals(0, writer.position());
 
-        Await.result(writer.write(byteStream));
+        Utils.ioResult(writer.write(byteStream));
         Thread.sleep(100); // let WriteCompleteListener have time to run
         assertEquals(33, writer.position());
 
@@ -205,12 +205,12 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
         BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(conf, name);
 
         URI uri = createDLMURI("/" + name);
-        FutureUtils.result(dlm.getWriterMetadataStore().getLog(uri, name, true, true));
+        Utils.ioResult(dlm.getWriterMetadataStore().getLog(uri, name, true, true));
 
         // Log exists but is empty, better not throw.
         AppendOnlyStreamWriter writer = dlm.getAppendOnlyStreamWriter();
         byte[] byteStream = DLMTestUtil.repeatString("a", 1025).getBytes();
-        Await.result(writer.write(byteStream));
+        Utils.ioResult(writer.write(byteStream));
 
         writer.close();
         dlm.close();
@@ -266,7 +266,7 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
         BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(conf, name);
 
         URI uri = createDLMURI("/" + name);
-        FutureUtils.result(dlm.getWriterMetadataStore().getLog(uri, name, true, true));
+        Utils.ioResult(dlm.getWriterMetadataStore().getLog(uri, name, true, true));
 
         // Log exists but is empty, better not throw.
         AppendOnlyStreamWriter writer = dlm.getAppendOnlyStreamWriter();

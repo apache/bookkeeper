@@ -17,6 +17,7 @@
  */
 package org.apache.distributedlog.util;
 
+import org.apache.distributedlog.common.util.PermitManager;
 import org.apache.distributedlog.zk.LimitedPermitManager;
 import org.junit.Test;
 

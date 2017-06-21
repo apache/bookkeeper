@@ -20,14 +20,22 @@ package org.apache.distributedlog;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import org.apache.bookkeeper.feature.FeatureProvider;
+import org.apache.bookkeeper.stats.AlertStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.distributedlog.api.AsyncLogReader;
+import org.apache.distributedlog.api.AsyncLogWriter;
+import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.callback.LogSegmentListener;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.exceptions.AlreadyClosedException;
 import org.apache.distributedlog.exceptions.LogEmptyException;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.exceptions.UnexpectedException;
-import org.apache.distributedlog.function.CloseAsyncCloseableFunction;
-import org.apache.distributedlog.function.GetVersionedValueFunction;
 import org.apache.distributedlog.injector.AsyncFailureInjector;
 import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
 import org.apache.distributedlog.logsegment.LogSegmentEntryWriter;
@@ -41,40 +49,25 @@ import org.apache.distributedlog.logsegment.LogSegmentFilter;
 import org.apache.distributedlog.logsegment.LogSegmentMetadataCache;
 import org.apache.distributedlog.metadata.LogStreamMetadataStore;
 import org.apache.distributedlog.namespace.NamespaceDriver;
-import org.apache.distributedlog.stats.BroadCastStatsLogger;
-import org.apache.distributedlog.subscription.SubscriptionsStore;
+import org.apache.distributedlog.common.stats.BroadCastStatsLogger;
+import org.apache.distributedlog.api.subscription.SubscriptionsStore;
 import org.apache.distributedlog.util.Allocator;
 import org.apache.distributedlog.util.DLUtils;
-import org.apache.distributedlog.util.FutureUtils;
-import org.apache.distributedlog.util.MonitoredFuturePool;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
-import org.apache.distributedlog.util.PermitLimiter;
-import org.apache.distributedlog.util.PermitManager;
-import org.apache.distributedlog.util.SchedulerUtils;
+import org.apache.distributedlog.common.util.PermitLimiter;
+import org.apache.distributedlog.common.util.PermitManager;
 import org.apache.distributedlog.util.Utils;
-import com.twitter.util.ExceptionalFunction;
-import com.twitter.util.ExceptionalFunction0;
-import com.twitter.util.Function;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
-import com.twitter.util.Promise;
-import org.apache.bookkeeper.feature.FeatureProvider;
-import org.apache.bookkeeper.stats.AlertStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.runtime.AbstractFunction0;
-import scala.runtime.AbstractFunction1;
-import scala.runtime.BoxedUnit;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import static org.apache.distributedlog.namespace.NamespaceDriver.Role.READER;
 import static org.apache.distributedlog.namespace.NamespaceDriver.Role.WRITER;
@@ -104,20 +97,10 @@ class BKDistributedLogManager implements DistributedLogManager {
     static final Logger LOG = LoggerFactory.getLogger(BKDistributedLogManager.class);
 
     static final Function<LogRecordWithDLSN, Long> RECORD_2_TXID_FUNCTION =
-            new Function<LogRecordWithDLSN, Long>() {
-                @Override
-                public Long apply(LogRecordWithDLSN record) {
-                    return record.getTransactionId();
-                }
-            };
+        record -> record.getTransactionId();
 
     static final Function<LogRecordWithDLSN, DLSN> RECORD_2_DLSN_FUNCTION =
-            new Function<LogRecordWithDLSN, DLSN>() {
-                @Override
-                public DLSN apply(LogRecordWithDLSN record) {
-                    return record.getDlsn();
-                }
-            };
+        record -> record.getDlsn();
 
     private final URI uri;
     private final String name;
@@ -127,7 +110,7 @@ class BKDistributedLogManager implements DistributedLogManager {
     private final DistributedLogConfiguration conf;
     private final DynamicDistributedLogConfiguration dynConf;
     private final NamespaceDriver driver;
-    private Promise<Void> closePromise;
+    private CompletableFuture<Void> closePromise;
     private final OrderedScheduler scheduler;
     private final FeatureProvider featureProvider;
     private final AsyncFailureInjector failureInjector;
@@ -272,17 +255,18 @@ class BKDistributedLogManager implements DistributedLogManager {
 
     @Override
     public List<LogSegmentMetadata> getLogSegments() throws IOException {
-        return FutureUtils.result(getLogSegmentsAsync());
+        return Utils.ioResult(getLogSegmentsAsync());
     }
 
-    protected Future<List<LogSegmentMetadata>> getLogSegmentsAsync() {
+    protected CompletableFuture<List<LogSegmentMetadata>> getLogSegmentsAsync() {
         final BKLogReadHandler readHandler = createReadHandler();
         return readHandler.readLogSegmentsFromStore(
                 LogSegmentMetadata.COMPARATOR,
                 LogSegmentFilter.DEFAULT_FILTER,
-                null)
-                .map(GetVersionedValueFunction.GET_LOGSEGMENT_LIST_FUNC)
-                .ensure(CloseAsyncCloseableFunction.of(readHandler));
+                null
+        )
+        .thenApply((versionedList) -> versionedList.getValue())
+        .whenComplete((value, cause) -> readHandler.asyncClose());
     }
 
     @Override
@@ -353,29 +337,26 @@ class BKDistributedLogManager implements DistributedLogManager {
 
     public BKLogWriteHandler createWriteHandler(boolean lockHandler)
             throws IOException {
-        return FutureUtils.result(asyncCreateWriteHandler(lockHandler));
+        return Utils.ioResult(asyncCreateWriteHandler(lockHandler));
     }
 
-    Future<BKLogWriteHandler> asyncCreateWriteHandler(final boolean lockHandler) {
+    CompletableFuture<BKLogWriteHandler> asyncCreateWriteHandler(final boolean lockHandler) {
         // Fetching Log Metadata (create if not exists)
         return driver.getLogStreamMetadataStore(WRITER).getLog(
                 uri,
                 name,
                 true,
                 conf.getCreateStreamIfNotExists()
-        ).flatMap(new AbstractFunction1<LogMetadataForWriter, Future<BKLogWriteHandler>>() {
-            @Override
-            public Future<BKLogWriteHandler> apply(LogMetadataForWriter logMetadata) {
-                Promise<BKLogWriteHandler> createPromise = new Promise<BKLogWriteHandler>();
-                createWriteHandler(logMetadata, lockHandler, createPromise);
-                return createPromise;
-            }
+        ).thenCompose(logMetadata -> {
+            CompletableFuture<BKLogWriteHandler> createPromise = new CompletableFuture<BKLogWriteHandler>();
+            createWriteHandler(logMetadata, lockHandler, createPromise);
+            return createPromise;
         });
     }
 
     private void createWriteHandler(LogMetadataForWriter logMetadata,
                                     boolean lockHandler,
-                                    final Promise<BKLogWriteHandler> createPromise) {
+                                    final CompletableFuture<BKLogWriteHandler> createPromise) {
         // Build the locks
         DistributedLock lock;
         if (conf.isWriteLockEnabled()) {
@@ -389,7 +370,7 @@ class BKDistributedLogManager implements DistributedLogManager {
             segmentAllocator = driver.getLogSegmentEntryStore(WRITER)
                     .newLogSegmentAllocator(logMetadata, dynConf);
         } catch (IOException ioe) {
-            FutureUtils.setException(createPromise, ioe);
+            FutureUtils.completeExceptionally(createPromise, ioe);
             return;
         }
 
@@ -412,25 +393,21 @@ class BKDistributedLogManager implements DistributedLogManager {
                 dynConf,
                 lock);
         if (lockHandler) {
-            writeHandler.lockHandler().addEventListener(new FutureEventListener<DistributedLock>() {
+            writeHandler.lockHandler().whenComplete(new FutureEventListener<DistributedLock>() {
                 @Override
                 public void onSuccess(DistributedLock lock) {
-                    FutureUtils.setValue(createPromise, writeHandler);
+                    FutureUtils.complete(createPromise, writeHandler);
                 }
 
                 @Override
                 public void onFailure(final Throwable cause) {
-                    writeHandler.asyncClose().ensure(new AbstractFunction0<BoxedUnit>() {
-                        @Override
-                        public BoxedUnit apply() {
-                            FutureUtils.setException(createPromise, cause);
-                            return BoxedUnit.UNIT;
-                        }
-                    });
+                    FutureUtils.ensure(
+                        writeHandler.asyncClose(),
+                        () -> FutureUtils.completeExceptionally(createPromise, cause));
                 }
             });
         } else {
-            FutureUtils.setValue(createPromise, writeHandler);
+            FutureUtils.complete(createPromise, writeHandler);
         }
     }
 
@@ -438,18 +415,15 @@ class BKDistributedLogManager implements DistributedLogManager {
         return driver.getLogStreamMetadataStore(WRITER).getPermitManager();
     }
 
-    <T> Future<T> processReaderOperation(final Function<BKLogReadHandler, Future<T>> func) {
-        return scheduler.apply(new ExceptionalFunction0<BKLogReadHandler>() {
-            @Override
-            public BKLogReadHandler applyE() throws Throwable {
-                return getReadHandlerAndRegisterListener(true, null);
-            }
-        }).flatMap(new ExceptionalFunction<BKLogReadHandler, Future<T>>() {
-            @Override
-            public Future<T> applyE(final BKLogReadHandler readHandler) throws Throwable {
-                return func.apply(readHandler);
-            }
+    <T> CompletableFuture<T> processReaderOperation(final Function<BKLogReadHandler, CompletableFuture<T>> func) {
+        CompletableFuture<T> future = FutureUtils.createFuture();
+        scheduler.submit(() -> {
+            BKLogReadHandler readHandler = getReadHandlerAndRegisterListener(true, null);
+            FutureUtils.proxyTo(
+                func.apply(readHandler),
+                future);
         });
+        return future;
     }
 
     /**
@@ -461,7 +435,7 @@ class BKDistributedLogManager implements DistributedLogManager {
     @Override
     public boolean isEndOfStreamMarked() throws IOException {
         checkClosedOrInError("isEndOfStreamMarked");
-        long lastTxId = FutureUtils.result(getLastLogRecordAsyncInternal(false, true)).getTransactionId();
+        long lastTxId = Utils.ioResult(getLastLogRecordAsyncInternal(false, true)).getTransactionId();
         return lastTxId == DistributedLogConstants.MAX_TXID;
     }
 
@@ -473,7 +447,7 @@ class BKDistributedLogManager implements DistributedLogManager {
     public AppendOnlyStreamWriter getAppendOnlyStreamWriter() throws IOException {
         long position;
         try {
-            position = FutureUtils.result(getLastLogRecordAsyncInternal(true, false)).getTransactionId();
+            position = Utils.ioResult(getLastLogRecordAsyncInternal(true, false)).getTransactionId();
             if (DistributedLogConstants.INVALID_TXID == position ||
                 DistributedLogConstants.EMPTY_LOGSEGMENT_TX_ID == position) {
                 position = 0;
@@ -508,7 +482,7 @@ class BKDistributedLogManager implements DistributedLogManager {
         try {
             writer.createAndCacheWriteHandler();
             BKLogWriteHandler writeHandler = writer.getWriteHandler();
-            FutureUtils.result(writeHandler.lockHandler());
+            Utils.ioResult(writeHandler.lockHandler());
             success = true;
             return writer;
         } finally {
@@ -525,75 +499,63 @@ class BKDistributedLogManager implements DistributedLogManager {
      */
     @Override
     public BKAsyncLogWriter startAsyncLogSegmentNonPartitioned() throws IOException {
-        return (BKAsyncLogWriter) FutureUtils.result(openAsyncLogWriter());
+        return (BKAsyncLogWriter) Utils.ioResult(openAsyncLogWriter());
     }
 
     @Override
-    public Future<AsyncLogWriter> openAsyncLogWriter() {
+    public CompletableFuture<AsyncLogWriter> openAsyncLogWriter() {
         try {
             checkClosedOrInError("startLogSegmentNonPartitioned");
         } catch (AlreadyClosedException e) {
-            return Future.exception(e);
+            return FutureUtils.exception(e);
         }
 
-        Future<BKLogWriteHandler> createWriteHandleFuture;
+        CompletableFuture<BKLogWriteHandler> createWriteHandleFuture;
         synchronized (this) {
             // 1. create the locked write handler
             createWriteHandleFuture = asyncCreateWriteHandler(true);
         }
-        return createWriteHandleFuture.flatMap(new AbstractFunction1<BKLogWriteHandler, Future<AsyncLogWriter>>() {
-            @Override
-            public Future<AsyncLogWriter> apply(final BKLogWriteHandler writeHandler) {
-                final BKAsyncLogWriter writer;
-                synchronized (BKDistributedLogManager.this) {
-                    // 2. create the writer with the handler
-                    writer = new BKAsyncLogWriter(
-                            conf,
-                            dynConf,
-                            BKDistributedLogManager.this,
-                            writeHandler,
-                            featureProvider,
-                            statsLogger);
-                }
-                // 3. recover the incomplete log segments
-                return writeHandler.recoverIncompleteLogSegments()
-                        .map(new AbstractFunction1<Long, AsyncLogWriter>() {
-                            @Override
-                            public AsyncLogWriter apply(Long lastTxId) {
-                                // 4. update last tx id if successfully recovered
-                                writer.setLastTxId(lastTxId);
-                                return writer;
-                            }
-                        }).onFailure(new AbstractFunction1<Throwable, BoxedUnit>() {
-                            @Override
-                            public BoxedUnit apply(Throwable cause) {
-                                // 5. close the writer if recovery failed
-                                writer.asyncAbort();
-                                return BoxedUnit.UNIT;
-                            }
-                        });
+        return createWriteHandleFuture.thenCompose(writeHandler -> {
+            final BKAsyncLogWriter writer;
+            synchronized (BKDistributedLogManager.this) {
+                // 2. create the writer with the handler
+                writer = new BKAsyncLogWriter(
+                        conf,
+                        dynConf,
+                        BKDistributedLogManager.this,
+                        writeHandler,
+                        featureProvider,
+                        statsLogger);
             }
+            // 3. recover the incomplete log segments
+            return writeHandler.recoverIncompleteLogSegments()
+                .thenApply(lastTxId -> {
+                    // 4. update last tx id if successfully recovered
+                    writer.setLastTxId(lastTxId);
+                    return (AsyncLogWriter) writer;
+                })
+                .whenComplete((lastTxId, cause) -> {
+                    if (null != cause) {
+                        // 5. close the writer if recovery failed
+                        writer.asyncAbort();
+                    }
+                });
         });
     }
 
     @Override
-    public Future<DLSN> getDLSNNotLessThanTxId(final long fromTxnId) {
-        return getLogSegmentsAsync().flatMap(new AbstractFunction1<List<LogSegmentMetadata>, Future<DLSN>>() {
-            @Override
-            public Future<DLSN> apply(List<LogSegmentMetadata> segments) {
-                return getDLSNNotLessThanTxId(fromTxnId, segments);
-            }
-        });
+    public CompletableFuture<DLSN> getDLSNNotLessThanTxId(final long fromTxnId) {
+        return getLogSegmentsAsync().thenCompose(segments -> getDLSNNotLessThanTxId(fromTxnId, segments));
     }
 
-    private Future<DLSN> getDLSNNotLessThanTxId(long fromTxnId,
+    private CompletableFuture<DLSN> getDLSNNotLessThanTxId(long fromTxnId,
                                                 final List<LogSegmentMetadata> segments) {
         if (segments.isEmpty()) {
             return getLastDLSNAsync();
         }
         final int segmentIdx = DLUtils.findLogSegmentNotLessThanTxnId(segments, fromTxnId);
         if (segmentIdx < 0) {
-            return Future.value(new DLSN(segments.get(0).getLogSegmentSequenceNumber(), 0L, 0L));
+            return FutureUtils.value(new DLSN(segments.get(0).getLogSegmentSequenceNumber(), 0L, 0L));
         }
         return getDLSNNotLessThanTxIdInSegment(
                 fromTxnId,
@@ -603,7 +565,7 @@ class BKDistributedLogManager implements DistributedLogManager {
         );
     }
 
-    private Future<DLSN> getDLSNNotLessThanTxIdInSegment(final long fromTxnId,
+    private CompletableFuture<DLSN> getDLSNNotLessThanTxIdInSegment(final long fromTxnId,
                                                          final int segmentIdx,
                                                          final List<LogSegmentMetadata> segments,
                                                          final LogSegmentEntryStore entryStore) {
@@ -615,29 +577,23 @@ class BKDistributedLogManager implements DistributedLogManager {
                 scheduler,
                 entryStore,
                 Math.max(2, dynConf.getReadAheadBatchSize())
-        ).flatMap(new AbstractFunction1<Optional<LogRecordWithDLSN>, Future<DLSN>>() {
-            @Override
-            public Future<DLSN> apply(Optional<LogRecordWithDLSN> foundRecord) {
-                if (foundRecord.isPresent()) {
-                    return Future.value(foundRecord.get().getDlsn());
-                }
-                if ((segments.size() - 1) == segmentIdx) {
-                    return getLastLogRecordAsync().map(new AbstractFunction1<LogRecordWithDLSN, DLSN>() {
-                        @Override
-                        public DLSN apply(LogRecordWithDLSN record) {
-                            if (record.getTransactionId() >= fromTxnId) {
-                                return record.getDlsn();
-                            }
-                            return record.getDlsn().getNextDLSN();
-                        }
-                    });
-                } else {
-                    return getDLSNNotLessThanTxIdInSegment(
-                            fromTxnId,
-                            segmentIdx + 1,
-                            segments,
-                            entryStore);
-                }
+        ).thenCompose(foundRecord -> {
+            if (foundRecord.isPresent()) {
+                return FutureUtils.value(foundRecord.get().getDlsn());
+            }
+            if ((segments.size() - 1) == segmentIdx) {
+                return getLastLogRecordAsync().thenApply(record -> {
+                    if (record.getTransactionId() >= fromTxnId) {
+                        return record.getDlsn();
+                    }
+                    return record.getDlsn().getNextDLSN();
+                });
+            } else {
+                return getDLSNNotLessThanTxIdInSegment(
+                        fromTxnId,
+                        segmentIdx + 1,
+                        segments,
+                        entryStore);
             }
         });
     }
@@ -662,7 +618,7 @@ class BKDistributedLogManager implements DistributedLogManager {
 
     @Override
     public AsyncLogReader getAsyncLogReader(long fromTxnId) throws IOException {
-        return FutureUtils.result(openAsyncLogReader(fromTxnId));
+        return Utils.ioResult(openAsyncLogReader(fromTxnId));
     }
 
     /**
@@ -687,39 +643,34 @@ class BKDistributedLogManager implements DistributedLogManager {
      * @return future representing the open result.
      */
     @Override
-    public Future<AsyncLogReader> openAsyncLogReader(long fromTxnId) {
-        final Promise<DLSN> dlsnPromise = new Promise<DLSN>();
-        getDLSNNotLessThanTxId(fromTxnId).addEventListener(new FutureEventListener<DLSN>() {
+    public CompletableFuture<AsyncLogReader> openAsyncLogReader(long fromTxnId) {
+        final CompletableFuture<DLSN> dlsnPromise = new CompletableFuture<DLSN>();
+        getDLSNNotLessThanTxId(fromTxnId).whenComplete(new FutureEventListener<DLSN>() {
 
             @Override
             public void onSuccess(DLSN dlsn) {
-                dlsnPromise.setValue(dlsn);
+                dlsnPromise.complete(dlsn);
             }
 
             @Override
             public void onFailure(Throwable cause) {
                 if (cause instanceof LogEmptyException) {
-                    dlsnPromise.setValue(DLSN.InitialDLSN);
+                    dlsnPromise.complete(DLSN.InitialDLSN);
                 } else {
-                    dlsnPromise.setException(cause);
+                    dlsnPromise.completeExceptionally(cause);
                 }
             }
         });
-        return dlsnPromise.flatMap(new AbstractFunction1<DLSN, Future<AsyncLogReader>>() {
-            @Override
-            public Future<AsyncLogReader> apply(DLSN dlsn) {
-                return openAsyncLogReader(dlsn);
-            }
-        });
+        return dlsnPromise.thenCompose(dlsn -> openAsyncLogReader(dlsn));
     }
 
     @Override
     public AsyncLogReader getAsyncLogReader(DLSN fromDLSN) throws IOException {
-        return FutureUtils.result(openAsyncLogReader(fromDLSN));
+        return Utils.ioResult(openAsyncLogReader(fromDLSN));
     }
 
     @Override
-    public Future<AsyncLogReader> openAsyncLogReader(DLSN fromDLSN) {
+    public CompletableFuture<AsyncLogReader> openAsyncLogReader(DLSN fromDLSN) {
         Optional<String> subscriberId = Optional.absent();
         AsyncLogReader reader = new BKAsyncLogReader(
                 this,
@@ -729,7 +680,7 @@ class BKDistributedLogManager implements DistributedLogManager {
                 false,
                 statsLogger);
         pendingReaders.add(reader);
-        return Future.value(reader);
+        return FutureUtils.value(reader);
     }
 
     /**
@@ -738,26 +689,26 @@ class BKDistributedLogManager implements DistributedLogManager {
      * blocked.
      */
     @Override
-    public Future<AsyncLogReader> getAsyncLogReaderWithLock(final DLSN fromDLSN) {
+    public CompletableFuture<AsyncLogReader> getAsyncLogReaderWithLock(final DLSN fromDLSN) {
         Optional<String> subscriberId = Optional.absent();
         return getAsyncLogReaderWithLock(Optional.of(fromDLSN), subscriberId);
     }
 
     @Override
-    public Future<AsyncLogReader> getAsyncLogReaderWithLock(final DLSN fromDLSN, final String subscriberId) {
+    public CompletableFuture<AsyncLogReader> getAsyncLogReaderWithLock(final DLSN fromDLSN, final String subscriberId) {
         return getAsyncLogReaderWithLock(Optional.of(fromDLSN), Optional.of(subscriberId));
     }
 
     @Override
-    public Future<AsyncLogReader> getAsyncLogReaderWithLock(String subscriberId) {
+    public CompletableFuture<AsyncLogReader> getAsyncLogReaderWithLock(String subscriberId) {
         Optional<DLSN> fromDLSN = Optional.absent();
         return getAsyncLogReaderWithLock(fromDLSN, Optional.of(subscriberId));
     }
 
-    protected Future<AsyncLogReader> getAsyncLogReaderWithLock(final Optional<DLSN> fromDLSN,
+    protected CompletableFuture<AsyncLogReader> getAsyncLogReaderWithLock(final Optional<DLSN> fromDLSN,
                                                                final Optional<String> subscriberId) {
         if (!fromDLSN.isPresent() && !subscriberId.isPresent()) {
-            return Future.exception(new UnexpectedException("Neither from dlsn nor subscriber id is provided."));
+            return FutureUtils.exception(new UnexpectedException("Neither from dlsn nor subscriber id is provided."));
         }
         final BKAsyncLogReader reader = new BKAsyncLogReader(
                 BKDistributedLogManager.this,
@@ -767,55 +718,50 @@ class BKDistributedLogManager implements DistributedLogManager {
                 false,
                 statsLogger);
         pendingReaders.add(reader);
-        final Future<Void> lockFuture = reader.lockStream();
-        final Promise<AsyncLogReader> createPromise = new Promise<AsyncLogReader>(
-                new Function<Throwable, BoxedUnit>() {
-            @Override
-            public BoxedUnit apply(Throwable cause) {
+        final CompletableFuture<Void> lockFuture = reader.lockStream();
+        final CompletableFuture<AsyncLogReader> createPromise = FutureUtils.createFuture();
+        createPromise.whenComplete((value, cause) -> {
+            if (cause instanceof CancellationException) {
                 // cancel the lock when the creation future is cancelled
-                lockFuture.cancel();
-                return BoxedUnit.UNIT;
+                lockFuture.cancel(true);
             }
         });
         // lock the stream - fetch the last commit position on success
-        lockFuture.flatMap(new Function<Void, Future<AsyncLogReader>>() {
+        lockFuture.thenCompose(new Function<Void, CompletableFuture<AsyncLogReader>>() {
             @Override
-            public Future<AsyncLogReader> apply(Void complete) {
+            public CompletableFuture<AsyncLogReader> apply(Void complete) {
                 if (fromDLSN.isPresent()) {
-                    return Future.value((AsyncLogReader) reader);
+                    return FutureUtils.value(reader);
                 }
                 LOG.info("Reader {} @ {} reading last commit position from subscription store after acquired lock.",
                         subscriberId.get(), name);
                 // we acquired lock
                 final SubscriptionsStore subscriptionsStore = driver.getSubscriptionsStore(getStreamName());
                 return subscriptionsStore.getLastCommitPosition(subscriberId.get())
-                        .map(new ExceptionalFunction<DLSN, AsyncLogReader>() {
-                    @Override
-                    public AsyncLogReader applyE(DLSN lastCommitPosition) throws UnexpectedException {
-                        LOG.info("Reader {} @ {} positioned to last commit position {}.",
-                                new Object[] { subscriberId.get(), name, lastCommitPosition });
-                        reader.setStartDLSN(lastCommitPosition);
-                        return reader;
-                    }
-                });
+                        .thenCompose(lastCommitPosition -> {
+                            LOG.info("Reader {} @ {} positioned to last commit position {}.",
+                                    new Object[] { subscriberId.get(), name, lastCommitPosition });
+                            try {
+                                reader.setStartDLSN(lastCommitPosition);
+                            } catch (UnexpectedException e) {
+                                return FutureUtils.exception(e);
+                            }
+                            return FutureUtils.value(reader);
+                        });
             }
-        }).addEventListener(new FutureEventListener<AsyncLogReader>() {
+        }).whenComplete(new FutureEventListener<AsyncLogReader>() {
             @Override
             public void onSuccess(AsyncLogReader r) {
                 pendingReaders.remove(reader);
-                FutureUtils.setValue(createPromise, r);
+                FutureUtils.complete(createPromise, r);
             }
 
             @Override
             public void onFailure(final Throwable cause) {
                 pendingReaders.remove(reader);
-                reader.asyncClose().ensure(new AbstractFunction0<BoxedUnit>() {
-                    @Override
-                    public BoxedUnit apply() {
-                        FutureUtils.setException(createPromise, cause);
-                        return BoxedUnit.UNIT;
-                    }
-                });
+                FutureUtils.ensure(
+                    reader.asyncClose(),
+                    () -> FutureUtils.completeExceptionally(createPromise, cause));
             }
         });
         return createPromise;
@@ -833,7 +779,7 @@ class BKDistributedLogManager implements DistributedLogManager {
         throws IOException {
         DLSN fromDLSN;
         try {
-            fromDLSN = FutureUtils.result(getDLSNNotLessThanTxId(fromTxnId));
+            fromDLSN = Utils.ioResult(getDLSNNotLessThanTxId(fromTxnId));
         } catch (LogEmptyException lee) {
             fromDLSN = DLSN.InitialDLSN;
         }
@@ -861,25 +807,25 @@ class BKDistributedLogManager implements DistributedLogManager {
     @Override
     public LogRecordWithDLSN getLastLogRecord() throws IOException {
         checkClosedOrInError("getLastLogRecord");
-        return FutureUtils.result(getLastLogRecordAsync());
+        return Utils.ioResult(getLastLogRecordAsync());
     }
 
     @Override
     public long getFirstTxId() throws IOException {
         checkClosedOrInError("getFirstTxId");
-        return FutureUtils.result(getFirstRecordAsyncInternal()).getTransactionId();
+        return Utils.ioResult(getFirstRecordAsyncInternal()).getTransactionId();
     }
 
     @Override
     public long getLastTxId() throws IOException {
         checkClosedOrInError("getLastTxId");
-        return FutureUtils.result(getLastTxIdAsync());
+        return Utils.ioResult(getLastTxIdAsync());
     }
 
     @Override
     public DLSN getLastDLSN() throws IOException {
         checkClosedOrInError("getLastDLSN");
-        return FutureUtils.result(getLastLogRecordAsyncInternal(false, false)).getDlsn();
+        return Utils.ioResult(getLastLogRecordAsyncInternal(false, false)).getDlsn();
     }
 
     /**
@@ -888,15 +834,15 @@ class BKDistributedLogManager implements DistributedLogManager {
      * @return latest log record
      */
     @Override
-    public Future<LogRecordWithDLSN> getLastLogRecordAsync() {
+    public CompletableFuture<LogRecordWithDLSN> getLastLogRecordAsync() {
         return getLastLogRecordAsyncInternal(false, false);
     }
 
-    private Future<LogRecordWithDLSN> getLastLogRecordAsyncInternal(final boolean recover,
+    private CompletableFuture<LogRecordWithDLSN> getLastLogRecordAsyncInternal(final boolean recover,
                                                                     final boolean includeEndOfStream) {
-        return processReaderOperation(new Function<BKLogReadHandler, Future<LogRecordWithDLSN>>() {
+        return processReaderOperation(new Function<BKLogReadHandler, CompletableFuture<LogRecordWithDLSN>>() {
             @Override
-            public Future<LogRecordWithDLSN> apply(final BKLogReadHandler ledgerHandler) {
+            public CompletableFuture<LogRecordWithDLSN> apply(final BKLogReadHandler ledgerHandler) {
                 return ledgerHandler.getLastLogRecordAsync(recover, includeEndOfStream);
             }
         });
@@ -908,9 +854,9 @@ class BKDistributedLogManager implements DistributedLogManager {
      * @return latest transaction id
      */
     @Override
-    public Future<Long> getLastTxIdAsync() {
+    public CompletableFuture<Long> getLastTxIdAsync() {
         return getLastLogRecordAsyncInternal(false, false)
-                .map(RECORD_2_TXID_FUNCTION);
+                .thenApply(RECORD_2_TXID_FUNCTION);
     }
 
     /**
@@ -919,14 +865,14 @@ class BKDistributedLogManager implements DistributedLogManager {
      * @return first dlsn in the stream
      */
     @Override
-    public Future<DLSN> getFirstDLSNAsync() {
-        return getFirstRecordAsyncInternal().map(RECORD_2_DLSN_FUNCTION);
+    public CompletableFuture<DLSN> getFirstDLSNAsync() {
+        return getFirstRecordAsyncInternal().thenApply(RECORD_2_DLSN_FUNCTION);
     }
 
-    private Future<LogRecordWithDLSN> getFirstRecordAsyncInternal() {
-        return processReaderOperation(new Function<BKLogReadHandler, Future<LogRecordWithDLSN>>() {
+    private CompletableFuture<LogRecordWithDLSN> getFirstRecordAsyncInternal() {
+        return processReaderOperation(new Function<BKLogReadHandler, CompletableFuture<LogRecordWithDLSN>>() {
             @Override
-            public Future<LogRecordWithDLSN> apply(final BKLogReadHandler ledgerHandler) {
+            public CompletableFuture<LogRecordWithDLSN> apply(final BKLogReadHandler ledgerHandler) {
                 return ledgerHandler.asyncGetFirstLogRecord();
             }
         });
@@ -938,9 +884,9 @@ class BKDistributedLogManager implements DistributedLogManager {
      * @return latest transaction id
      */
     @Override
-    public Future<DLSN> getLastDLSNAsync() {
+    public CompletableFuture<DLSN> getLastDLSNAsync() {
         return getLastLogRecordAsyncInternal(false, false)
-                .map(RECORD_2_DLSN_FUNCTION);
+                .thenApply(RECORD_2_DLSN_FUNCTION);
     }
 
     /**
@@ -953,7 +899,7 @@ class BKDistributedLogManager implements DistributedLogManager {
     @Override
     public long getLogRecordCount() throws IOException {
         checkClosedOrInError("getLogRecordCount");
-        return FutureUtils.result(getLogRecordCountAsync(DLSN.InitialDLSN));
+        return Utils.ioResult(getLogRecordCountAsync(DLSN.InitialDLSN));
     }
 
     /**
@@ -964,10 +910,10 @@ class BKDistributedLogManager implements DistributedLogManager {
      * @throws IOException
      */
     @Override
-    public Future<Long> getLogRecordCountAsync(final DLSN beginDLSN) {
-        return processReaderOperation(new Function<BKLogReadHandler, Future<Long>>() {
+    public CompletableFuture<Long> getLogRecordCountAsync(final DLSN beginDLSN) {
+        return processReaderOperation(new Function<BKLogReadHandler, CompletableFuture<Long>>() {
                     @Override
-                    public Future<Long> apply(BKLogReadHandler ledgerHandler) {
+                    public CompletableFuture<Long> apply(BKLogReadHandler ledgerHandler) {
                         return ledgerHandler.asyncGetLogRecordCount(beginDLSN);
                     }
                 });
@@ -991,7 +937,7 @@ class BKDistributedLogManager implements DistributedLogManager {
         checkClosedOrInError("recoverInternal");
         BKLogWriteHandler ledgerHandler = createWriteHandler(true);
         try {
-            FutureUtils.result(ledgerHandler.recoverIncompleteLogSegments());
+            Utils.ioResult(ledgerHandler.recoverIncompleteLogSegments());
         } finally {
             Utils.closeQuietly(ledgerHandler);
         }
@@ -1004,7 +950,7 @@ class BKDistributedLogManager implements DistributedLogManager {
      */
     @Override
     public void delete() throws IOException {
-        FutureUtils.result(driver.getLogStreamMetadataStore(WRITER)
+        Utils.ioResult(driver.getLogStreamMetadataStore(WRITER)
                 .deleteLog(uri, getStreamName()));
     }
 
@@ -1025,7 +971,7 @@ class BKDistributedLogManager implements DistributedLogManager {
         BKLogWriteHandler ledgerHandler = createWriteHandler(true);
         try {
             LOG.info("Purging logs for {} older than {}", ledgerHandler.getFullyQualifiedName(), minTxIdToKeep);
-            FutureUtils.result(ledgerHandler.purgeLogSegmentsOlderThanTxnId(minTxIdToKeep));
+            Utils.ioResult(ledgerHandler.purgeLogSegmentsOlderThanTxnId(minTxIdToKeep));
         } finally {
             Utils.closeQuietly(ledgerHandler);
         }
@@ -1049,14 +995,11 @@ class BKDistributedLogManager implements DistributedLogManager {
         }
 
         @Override
-        public Future<Void> asyncClose() {
+        public CompletableFuture<Void> asyncClose() {
             return Utils.closeSequence(executorService, true, readers.toArray(new AsyncLogReader[readers.size()]))
-                    .onSuccess(new AbstractFunction1<Void, BoxedUnit>() {
-                        @Override
-                        public BoxedUnit apply(Void value) {
-                            readers.clear();
-                            return BoxedUnit.UNIT;
-                        }
+                    .thenApply(value -> {
+                        readers.clear();
+                        return null;
                     });
         }
     };
@@ -1065,28 +1008,28 @@ class BKDistributedLogManager implements DistributedLogManager {
      * Close the distributed log manager, freeing any resources it may hold.
      */
     @Override
-    public Future<Void> asyncClose() {
-        Promise<Void> closeFuture;
+    public CompletableFuture<Void> asyncClose() {
+        CompletableFuture<Void> closeFuture;
         BKLogReadHandler readHandlerToClose;
         synchronized (this) {
             if (null != closePromise) {
                 return closePromise;
             }
-            closeFuture = closePromise = new Promise<Void>();
+            closeFuture = closePromise = new CompletableFuture<Void>();
             readHandlerToClose = readHandlerForListener;
         }
 
-        Future<Void> closeResult = Utils.closeSequence(null, true,
+        CompletableFuture<Void> closeResult = Utils.closeSequence(null, true,
                 readHandlerToClose,
                 pendingReaders,
                 resourcesCloseable.or(AsyncCloseable.NULL));
-        closeResult.proxyTo(closeFuture);
+        FutureUtils.proxyTo(closeResult, closeFuture);
         return closeFuture;
     }
 
     @Override
     public void close() throws IOException {
-        FutureUtils.result(asyncClose());
+        Utils.ioResult(asyncClose());
     }
 
     @Override

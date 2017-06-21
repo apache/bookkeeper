@@ -21,8 +21,7 @@ import org.apache.distributedlog.LogSegmentMetadata.LogSegmentMetadataBuilder;
 import org.apache.distributedlog.LogSegmentMetadata.LogSegmentMetadataVersion;
 import org.apache.distributedlog.LogSegmentMetadata.TruncationStatus;
 import org.apache.distributedlog.exceptions.UnsupportedMetadataVersionException;
-
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.util.Utils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,7 +63,7 @@ public class TestLogSegmentMetadata extends ZooKeeperClusterTestCase {
         LogSegmentMetadata metadata1 = new LogSegmentMetadataBuilder("/metadata1",
             LogSegmentMetadata.LEDGER_METADATA_CURRENT_LAYOUT_VERSION, 1000, 1).setRegionId(TEST_REGION_ID).build();
         metadata1.write(zkc);
-        LogSegmentMetadata read1 = FutureUtils.result(LogSegmentMetadata.read(zkc, "/metadata1"));
+        LogSegmentMetadata read1 = Utils.ioResult(LogSegmentMetadata.read(zkc, "/metadata1"));
         assertEquals(metadata1, read1);
         assertEquals(TEST_REGION_ID, read1.getRegionId());
     }
@@ -75,7 +74,7 @@ public class TestLogSegmentMetadata extends ZooKeeperClusterTestCase {
             1, 1000, 1).setRegionId(TEST_REGION_ID).build();
         metadata1.write(zkc);
         // synchronous read
-        LogSegmentMetadata read1 = FutureUtils.result(LogSegmentMetadata.read(zkc, "/metadata2", true));
+        LogSegmentMetadata read1 = Utils.ioResult(LogSegmentMetadata.read(zkc, "/metadata2", true));
         assertEquals(read1.getLogSegmentId(), metadata1.getLogSegmentId());
         assertEquals(read1.getFirstTxId(), metadata1.getFirstTxId());
         assertEquals(read1.getLastTxId(), metadata1.getLastTxId());
@@ -90,7 +89,7 @@ public class TestLogSegmentMetadata extends ZooKeeperClusterTestCase {
         metadata1.write(zkc);
         // synchronous read
         try {
-            LogSegmentMetadata read1 = FutureUtils.result(LogSegmentMetadata.read(zkc, "/metadata-failure"));
+            LogSegmentMetadata read1 = Utils.ioResult(LogSegmentMetadata.read(zkc, "/metadata-failure"));
             fail("The previous statement should throw an exception");
         } catch (UnsupportedMetadataVersionException e) {
             // Expected

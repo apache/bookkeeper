@@ -18,11 +18,9 @@
 package org.apache.distributedlog.impl.logsegment;
 
 import com.google.common.collect.Lists;
-import org.apache.distributedlog.function.VoidFunctions;
-import org.apache.distributedlog.util.FutureUtils;
-import com.twitter.util.Future;
-import com.twitter.util.Futures;
-import com.twitter.util.Promise;
+import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.common.functions.VoidFunctions;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -40,15 +38,15 @@ public class BKUtils {
      * @param lh ledger handle
      * @return future represents close result.
      */
-    public static Future<Void> closeLedger(LedgerHandle lh) {
-        final Promise<Void> closePromise = new Promise<Void>();
+    public static CompletableFuture<Void> closeLedger(LedgerHandle lh) {
+        final CompletableFuture<Void> closePromise = new CompletableFuture<Void>();
         lh.asyncClose(new AsyncCallback.CloseCallback() {
             @Override
             public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
                 if (BKException.Code.OK != rc) {
-                    FutureUtils.setException(closePromise, BKException.create(rc));
+                    FutureUtils.completeExceptionally(closePromise, BKException.create(rc));
                 } else {
-                    FutureUtils.setValue(closePromise, null);
+                    FutureUtils.complete(closePromise, null);
                 }
             }
         }, null);
@@ -61,12 +59,12 @@ public class BKUtils {
      * @param lhs a list of ledgers
      * @return future represents close results.
      */
-    public static Future<Void> closeLedgers(LedgerHandle ... lhs) {
-        List<Future<Void>> closeResults = Lists.newArrayListWithExpectedSize(lhs.length);
+    public static CompletableFuture<Void> closeLedgers(LedgerHandle ... lhs) {
+        List<CompletableFuture<Void>> closeResults = Lists.newArrayListWithExpectedSize(lhs.length);
         for (LedgerHandle lh : lhs) {
             closeResults.add(closeLedger(lh));
         }
-        return Futures.collect(closeResults).map(VoidFunctions.LIST_TO_VOID_FUNC);
+        return FutureUtils.collect(closeResults).thenApply(VoidFunctions.LIST_TO_VOID_FUNC);
     }
 
 }

@@ -17,14 +17,14 @@
  */
 package org.apache.distributedlog;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.exceptions.LogRecordTooLongException;
 import org.apache.distributedlog.exceptions.WriteCancelledException;
 import org.apache.distributedlog.exceptions.WriteException;
 import org.apache.distributedlog.util.FailpointUtils;
-import org.apache.distributedlog.util.FutureUtils;
-import com.twitter.util.Await;
-import com.twitter.util.Duration;
-import com.twitter.util.Future;
+import org.apache.distributedlog.util.Utils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -83,8 +83,8 @@ public class TestAsyncBulkWrite extends TestDistributedLogBase {
         records.add(DLMTestUtil.getLogRecordInstance(goodRecs, MAX_LOGRECORD_SIZE + 1));
         records.addAll(DLMTestUtil.getLargeLogRecordInstanceList(1, goodRecs));
 
-        Future<List<Future<DLSN>>> futureResults = writer.writeBulk(records);
-        List<Future<DLSN>> results = validateFutureSucceededAndGetResult(futureResults);
+        CompletableFuture<List<CompletableFuture<DLSN>>> futureResults = writer.writeBulk(records);
+        List<CompletableFuture<DLSN>> results = validateFutureSucceededAndGetResult(futureResults);
 
         // One future returned for each write.
         assertEquals(2*goodRecs + 1, results.size());
@@ -160,14 +160,14 @@ public class TestAsyncBulkWrite extends TestDistributedLogBase {
         // Write one record larger than max seg size. Ledger doesn't roll until next write.
         int txid = 1;
         LogRecord record = DLMTestUtil.getLogRecordInstance(txid++, 2048);
-        Future<DLSN> result = writer.write(record);
+        CompletableFuture<DLSN> result = writer.write(record);
         DLSN dlsn = validateFutureSucceededAndGetResult(result);
         assertEquals(1, dlsn.getLogSegmentSequenceNo());
 
         // Write two more via bulk. Ledger doesn't roll because there's a partial failure.
         List<LogRecord> records = null;
-        Future<List<Future<DLSN>>> futureResults = null;
-        List<Future<DLSN>> results = null;
+        CompletableFuture<List<CompletableFuture<DLSN>>> futureResults = null;
+        List<CompletableFuture<DLSN>> results = null;
         records = new ArrayList<LogRecord>(2);
         records.add(DLMTestUtil.getLogRecordInstance(txid++, 2048));
         records.add(DLMTestUtil.getLogRecordInstance(txid++, MAX_LOGRECORD_SIZE + 1));
@@ -309,15 +309,15 @@ public class TestAsyncBulkWrite extends TestDistributedLogBase {
                                    long txIndex) throws Exception {
 
         List<LogRecord> records = DLMTestUtil.getLogRecordInstanceList(txIndex, batchSize, recSize);
-        Future<List<Future<DLSN>>> futureResults = writer.writeBulk(records);
+        CompletableFuture<List<CompletableFuture<DLSN>>> futureResults = writer.writeBulk(records);
         assertNotNull(futureResults);
-        List<Future<DLSN>> results = Await.result(futureResults, Duration.fromSeconds(10));
+        List<CompletableFuture<DLSN>> results = Utils.ioResult(futureResults, 10, TimeUnit.SECONDS);
         assertNotNull(results);
         assertEquals(results.size(), records.size());
         long prevEntryId = 0;
         DLSN lastDlsn = null;
-        for (Future<DLSN> result : results) {
-            DLSN dlsn = Await.result(result, Duration.fromSeconds(10));
+        for (CompletableFuture<DLSN> result : results) {
+            DLSN dlsn = Utils.ioResult(result, 10, TimeUnit.SECONDS);
             lastDlsn = dlsn;
 
             // If we cross a transmission boundary, slot id gets reset.
@@ -338,12 +338,12 @@ public class TestAsyncBulkWrite extends TestDistributedLogBase {
                                             long txIndex) throws Exception {
 
         List<LogRecord> records = DLMTestUtil.getLogRecordInstanceList(txIndex, batchSize, recSize);
-        Future<List<Future<DLSN>>> futureResults = writer.writeBulk(records);
+        CompletableFuture<List<CompletableFuture<DLSN>>> futureResults = writer.writeBulk(records);
         assertNotNull(futureResults);
-        List<Future<DLSN>> results = Await.result(futureResults, Duration.fromSeconds(10));
+        List<CompletableFuture<DLSN>> results = Utils.ioResult(futureResults, 10, TimeUnit.SECONDS);
         assertNotNull(results);
         assertEquals(results.size(), records.size());
-        for (Future<DLSN> result : results) {
+        for (CompletableFuture<DLSN> result : results) {
             validateFutureFailed(result, IOException.class);
         }
     }

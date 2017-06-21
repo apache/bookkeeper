@@ -18,6 +18,9 @@
 package org.apache.distributedlog;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.exceptions.AlreadyClosedException;
 import org.apache.distributedlog.exceptions.LockingException;
@@ -27,18 +30,12 @@ import org.apache.distributedlog.io.Abortable;
 import org.apache.distributedlog.io.Abortables;
 import org.apache.distributedlog.io.AsyncAbortable;
 import org.apache.distributedlog.io.AsyncCloseable;
-import org.apache.distributedlog.util.FutureUtils;
-import org.apache.distributedlog.util.PermitManager;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.common.util.PermitManager;
 import org.apache.distributedlog.util.Utils;
-import com.twitter.util.Function;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
-import com.twitter.util.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.runtime.AbstractFunction0;
-import scala.runtime.AbstractFunction1;
-import scala.runtime.BoxedUnit;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -53,18 +50,18 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
     protected final BKDistributedLogManager bkDistributedLogManager;
 
     // States
-    private Promise<Void> closePromise = null;
+    private CompletableFuture<Void> closePromise = null;
     private volatile boolean forceRolling = false;
     private boolean forceRecovery = false;
 
     // Truncation Related
-    private Future<List<LogSegmentMetadata>> lastTruncationAttempt = null;
+    private CompletableFuture<List<LogSegmentMetadata>> lastTruncationAttempt = null;
     @VisibleForTesting
     private Long minTimestampToKeepOverride = null;
 
     // Log Segment Writers
     protected BKLogSegmentWriter segmentWriter = null;
-    protected Future<BKLogSegmentWriter> segmentWriterFuture = null;
+    protected CompletableFuture<BKLogSegmentWriter> segmentWriterFuture = null;
     protected BKLogSegmentWriter allocatedSegmentWriter = null;
     protected BKLogWriteHandler writeHandler = null;
 
@@ -100,7 +97,7 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
         // This code path will be executed when the handler is not set or has been closed
         // due to forceRecovery during testing
         BKLogWriteHandler newHandler =
-                FutureUtils.result(bkDistributedLogManager.asyncCreateWriteHandler(false));
+                Utils.ioResult(bkDistributedLogManager.asyncCreateWriteHandler(false));
         boolean success = false;
         try {
             synchronized (this) {
@@ -123,13 +120,13 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
         return segmentWriter;
     }
 
-    protected synchronized Future<BKLogSegmentWriter> getCachedLogWriterFuture() {
+    protected synchronized CompletableFuture<BKLogSegmentWriter> getCachedLogWriterFuture() {
         return segmentWriterFuture;
     }
 
     protected synchronized void cacheLogWriter(BKLogSegmentWriter logWriter) {
         this.segmentWriter = logWriter;
-        this.segmentWriterFuture = Future.value(logWriter);
+        this.segmentWriterFuture = FutureUtils.value(logWriter);
     }
 
     protected synchronized BKLogSegmentWriter removeCachedLogWriter() {
@@ -157,12 +154,12 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
         }
     }
 
-    private Future<Void> asyncCloseAndComplete(boolean shouldThrow) {
+    private CompletableFuture<Void> asyncCloseAndComplete(boolean shouldThrow) {
         BKLogSegmentWriter segmentWriter = getCachedLogWriter();
         BKLogWriteHandler writeHandler = getCachedWriteHandler();
         if (null != segmentWriter && null != writeHandler) {
             cancelTruncation();
-            Promise<Void> completePromise = new Promise<Void>();
+            CompletableFuture<Void> completePromise = new CompletableFuture<Void>();
             asyncCloseAndComplete(segmentWriter, writeHandler, completePromise, shouldThrow);
             return completePromise;
         } else {
@@ -172,10 +169,10 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
 
     private void asyncCloseAndComplete(final BKLogSegmentWriter segmentWriter,
                                        final BKLogWriteHandler writeHandler,
-                                       final Promise<Void> completePromise,
+                                       final CompletableFuture<Void> completePromise,
                                        final boolean shouldThrow) {
         writeHandler.completeAndCloseLogSegment(segmentWriter)
-                .addEventListener(new FutureEventListener<LogSegmentMetadata>() {
+                .whenComplete(new FutureEventListener<LogSegmentMetadata>() {
                     @Override
                     public void onSuccess(LogSegmentMetadata segment) {
                         removeCachedLogWriter();
@@ -189,15 +186,11 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
                     }
 
                     private void complete(final Throwable cause) {
-                        closeNoThrow().ensure(new AbstractFunction0<BoxedUnit>() {
-                            @Override
-                            public BoxedUnit apply() {
-                                if (null != cause && shouldThrow) {
-                                    FutureUtils.setException(completePromise, cause);
-                                } else {
-                                    FutureUtils.setValue(completePromise, null);
-                                }
-                                return BoxedUnit.UNIT;
+                        FutureUtils.ensure(closeNoThrow(), () -> {
+                            if (null != cause && shouldThrow) {
+                                FutureUtils.completeExceptionally(completePromise, cause);
+                            } else {
+                                FutureUtils.complete(completePromise, null);
                             }
                         });
                     }
@@ -206,63 +199,67 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
 
     @VisibleForTesting
     void closeAndComplete() throws IOException {
-        FutureUtils.result(asyncCloseAndComplete(true));
+        Utils.ioResult(asyncCloseAndComplete(true));
     }
 
-    protected Future<Void> asyncCloseAndComplete() {
+    protected CompletableFuture<Void> asyncCloseAndComplete() {
         return asyncCloseAndComplete(true);
     }
 
     @Override
     public void close() throws IOException {
-        FutureUtils.result(asyncClose());
+        Utils.ioResult(asyncClose());
     }
 
     @Override
-    public Future<Void> asyncClose() {
+    public CompletableFuture<Void> asyncClose() {
         return asyncCloseAndComplete(false);
     }
 
     /**
      * Close the writer and release all the underlying resources
      */
-    protected Future<Void> closeNoThrow() {
-        Promise<Void> closeFuture;
+    protected CompletableFuture<Void> closeNoThrow() {
+        CompletableFuture<Void> closeFuture;
         synchronized (this) {
             if (null != closePromise) {
                 return closePromise;
             }
-            closeFuture = closePromise = new Promise<Void>();
+            closeFuture = closePromise = new CompletableFuture<Void>();
         }
         cancelTruncation();
-        Utils.closeSequence(bkDistributedLogManager.getScheduler(),
-                true, /** ignore close errors **/
-                getCachedLogWriter(),
-                getAllocatedLogWriter(),
-                getCachedWriteHandler()
-        ).proxyTo(closeFuture);
+        FutureUtils.proxyTo(
+            Utils.closeSequence(bkDistributedLogManager.getScheduler(),
+                    true, /** ignore close errors **/
+                    getCachedLogWriter(),
+                    getAllocatedLogWriter(),
+                    getCachedWriteHandler()
+            ),
+            closeFuture);
         return closeFuture;
     }
 
     @Override
     public void abort() throws IOException {
-        FutureUtils.result(asyncAbort());
+        Utils.ioResult(asyncAbort());
     }
 
     @Override
-    public Future<Void> asyncAbort() {
-        Promise<Void> closeFuture;
+    public CompletableFuture<Void> asyncAbort() {
+        CompletableFuture<Void> closeFuture;
         synchronized (this) {
             if (null != closePromise) {
                 return closePromise;
             }
-            closeFuture = closePromise = new Promise<Void>();
+            closeFuture = closePromise = new CompletableFuture<Void>();
         }
         cancelTruncation();
-        Abortables.abortSequence(bkDistributedLogManager.getScheduler(),
-                getCachedLogWriter(),
-                getAllocatedLogWriter(),
-                getCachedWriteHandler()).proxyTo(closeFuture);
+        FutureUtils.proxyTo(
+            Abortables.abortSequence(bkDistributedLogManager.getScheduler(),
+                    getCachedLogWriter(),
+                    getAllocatedLogWriter(),
+                    getCachedWriteHandler()),
+            closeFuture);
         return closeFuture;
     }
 
@@ -270,22 +267,22 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
     protected BKLogSegmentWriter getLedgerWriter(final long startTxId,
                                                  final boolean allowMaxTxID)
             throws IOException {
-        Future<BKLogSegmentWriter> logSegmentWriterFuture = asyncGetLedgerWriter(true);
+        CompletableFuture<BKLogSegmentWriter> logSegmentWriterFuture = asyncGetLedgerWriter(true);
         BKLogSegmentWriter logSegmentWriter = null;
         if (null != logSegmentWriterFuture) {
-            logSegmentWriter = FutureUtils.result(logSegmentWriterFuture);
+            logSegmentWriter = Utils.ioResult(logSegmentWriterFuture);
         }
         if (null == logSegmentWriter || (shouldStartNewSegment(logSegmentWriter) || forceRolling)) {
-            logSegmentWriter = FutureUtils.result(rollLogSegmentIfNecessary(
+            logSegmentWriter = Utils.ioResult(rollLogSegmentIfNecessary(
                     logSegmentWriter, startTxId, true /* bestEffort */, allowMaxTxID));
         }
         return logSegmentWriter;
     }
 
     // used by async writer
-    synchronized protected Future<BKLogSegmentWriter> asyncGetLedgerWriter(boolean resetOnError) {
+    synchronized protected CompletableFuture<BKLogSegmentWriter> asyncGetLedgerWriter(boolean resetOnError) {
         final BKLogSegmentWriter ledgerWriter = getCachedLogWriter();
-        Future<BKLogSegmentWriter> ledgerWriterFuture = getCachedLogWriterFuture();
+        CompletableFuture<BKLogSegmentWriter> ledgerWriterFuture = getCachedLogWriterFuture();
         if (null == ledgerWriterFuture || null == ledgerWriter) {
             return null;
         }
@@ -293,38 +290,38 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
         // Handle the case where the last call to write actually caused an error in the log
         if ((ledgerWriter.isLogSegmentInError() || forceRecovery) && resetOnError) {
             // Close the ledger writer so that we will recover and start a new log segment
-            Future<Void> closeFuture;
+            CompletableFuture<Void> closeFuture;
             if (ledgerWriter.isLogSegmentInError()) {
                 closeFuture = ledgerWriter.asyncAbort();
             } else {
                 closeFuture = ledgerWriter.asyncClose();
             }
-            return closeFuture.flatMap(
-                    new AbstractFunction1<Void, Future<BKLogSegmentWriter>>() {
+            return closeFuture.thenCompose(
+                    new Function<Void, CompletionStage<BKLogSegmentWriter>>() {
                 @Override
-                public Future<BKLogSegmentWriter> apply(Void result) {
+                public CompletableFuture<BKLogSegmentWriter> apply(Void result) {
                     removeCachedLogWriter();
 
                     if (ledgerWriter.isLogSegmentInError()) {
-                        return Future.value(null);
+                        return FutureUtils.value(null);
                     }
 
                     BKLogWriteHandler writeHandler;
                     try {
                         writeHandler = getWriteHandler();
                     } catch (IOException e) {
-                        return Future.exception(e);
+                        return FutureUtils.exception(e);
                     }
                     if (null != writeHandler && forceRecovery) {
                         return writeHandler.completeAndCloseLogSegment(ledgerWriter)
-                                .map(new AbstractFunction1<LogSegmentMetadata, BKLogSegmentWriter>() {
+                                .thenApply(new Function<LogSegmentMetadata, BKLogSegmentWriter>() {
                             @Override
                             public BKLogSegmentWriter apply(LogSegmentMetadata completedLogSegment) {
                                 return null;
                             }
                         });
                     } else {
-                        return Future.value(null);
+                        return FutureUtils.value(null);
                     }
                 }
             });
@@ -357,32 +354,25 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
         // skip scheduling if there is task that's already running
         //
         synchronized (this) {
-            if (truncationEnabled && ((lastTruncationAttempt == null) || lastTruncationAttempt.isDefined())) {
+            if (truncationEnabled && ((lastTruncationAttempt == null) || lastTruncationAttempt.isDone())) {
                 lastTruncationAttempt = writeHandler.purgeLogSegmentsOlderThanTimestamp(minTimestampToKeep);
             }
         }
     }
 
-    private Future<BKLogSegmentWriter> asyncStartNewLogSegment(final BKLogWriteHandler writeHandler,
+    private CompletableFuture<BKLogSegmentWriter> asyncStartNewLogSegment(final BKLogWriteHandler writeHandler,
                                                                final long startTxId,
                                                                final boolean allowMaxTxID) {
         return writeHandler.recoverIncompleteLogSegments()
-                .flatMap(new AbstractFunction1<Long, Future<BKLogSegmentWriter>>() {
-            @Override
-            public Future<BKLogSegmentWriter> apply(Long lastTxId) {
-                return writeHandler.asyncStartLogSegment(startTxId, false, allowMaxTxID)
-                        .onSuccess(new AbstractFunction1<BKLogSegmentWriter, BoxedUnit>() {
-                    @Override
-                    public BoxedUnit apply(BKLogSegmentWriter newSegmentWriter) {
+            .thenCompose(
+                lastTxId -> writeHandler.asyncStartLogSegment(startTxId, false, allowMaxTxID)
+                    .thenApply(newSegmentWriter -> {
                         cacheLogWriter(newSegmentWriter);
-                        return BoxedUnit.UNIT;
-                    }
-                });
-            }
-        });
+                        return newSegmentWriter;
+                    }));
     }
 
-    private Future<BKLogSegmentWriter> closeOldLogSegmentAndStartNewOneWithPermit(
+    private CompletableFuture<BKLogSegmentWriter> closeOldLogSegmentAndStartNewOneWithPermit(
             final BKLogSegmentWriter oldSegmentWriter,
             final BKLogWriteHandler writeHandler,
             final long startTxId,
@@ -390,47 +380,46 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
             final boolean allowMaxTxID) {
         final PermitManager.Permit switchPermit = bkDistributedLogManager.getLogSegmentRollingPermitManager().acquirePermit();
         if (switchPermit.isAllowed()) {
-            return closeOldLogSegmentAndStartNewOne(
-                    oldSegmentWriter,
-                    writeHandler,
-                    startTxId,
-                    bestEffort,
-                    allowMaxTxID
-            ).rescue(new Function<Throwable, Future<BKLogSegmentWriter>>() {
-                @Override
-                public Future<BKLogSegmentWriter> apply(Throwable cause) {
-                    if (cause instanceof LockingException) {
-                        LOG.warn("We lost lock during completeAndClose log segment for {}. Disable ledger rolling until it is recovered : ",
-                                writeHandler.getFullyQualifiedName(), cause);
-                        bkDistributedLogManager.getLogSegmentRollingPermitManager().disallowObtainPermits(switchPermit);
-                        return Future.value(oldSegmentWriter);
-                    } else if (cause instanceof ZKException) {
-                        ZKException zke = (ZKException) cause;
-                        if (ZKException.isRetryableZKException(zke)) {
-                            LOG.warn("Encountered zookeeper connection issues during completeAndClose log segment for {}." +
-                                    " Disable ledger rolling until it is recovered : {}", writeHandler.getFullyQualifiedName(),
-                                    zke.getKeeperExceptionCode());
+            return FutureUtils.ensure(
+                FutureUtils.rescue(
+                     closeOldLogSegmentAndStartNewOne(
+                            oldSegmentWriter,
+                            writeHandler,
+                            startTxId,
+                            bestEffort,
+                            allowMaxTxID
+                    ),
+                    // rescue function
+                    cause -> {
+                        if (cause instanceof LockingException) {
+                            LOG.warn("We lost lock during completeAndClose log segment for {}. Disable ledger rolling until it is recovered : ",
+                                    writeHandler.getFullyQualifiedName(), cause);
                             bkDistributedLogManager.getLogSegmentRollingPermitManager().disallowObtainPermits(switchPermit);
-                            return Future.value(oldSegmentWriter);
+                            return FutureUtils.value(oldSegmentWriter);
+                        } else if (cause instanceof ZKException) {
+                            ZKException zke = (ZKException) cause;
+                            if (ZKException.isRetryableZKException(zke)) {
+                                LOG.warn("Encountered zookeeper connection issues during completeAndClose log segment for {}." +
+                                        " Disable ledger rolling until it is recovered : {}", writeHandler.getFullyQualifiedName(),
+                                        zke.getKeeperExceptionCode());
+                                bkDistributedLogManager.getLogSegmentRollingPermitManager().disallowObtainPermits(switchPermit);
+                                return FutureUtils.value(oldSegmentWriter);
+                            }
                         }
+                        return FutureUtils.exception(cause);
                     }
-                    return Future.exception(cause);
-                }
-            }).ensure(new AbstractFunction0<BoxedUnit>() {
-                @Override
-                public BoxedUnit apply() {
-                    bkDistributedLogManager.getLogSegmentRollingPermitManager()
-                            .releasePermit(switchPermit);
-                    return BoxedUnit.UNIT;
-                }
-            });
+                ),
+                // ensure function
+                () -> bkDistributedLogManager.getLogSegmentRollingPermitManager()
+                                .releasePermit(switchPermit)
+            );
         } else {
             bkDistributedLogManager.getLogSegmentRollingPermitManager().releasePermit(switchPermit);
-            return Future.value(oldSegmentWriter);
+            return FutureUtils.value(oldSegmentWriter);
         }
     }
 
-    private Future<BKLogSegmentWriter> closeOldLogSegmentAndStartNewOne(
+    private CompletableFuture<BKLogSegmentWriter> closeOldLogSegmentAndStartNewOne(
             final BKLogSegmentWriter oldSegmentWriter,
             final BKLogWriteHandler writeHandler,
             final long startTxId,
@@ -444,14 +433,14 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
                         writeHandler.getFullyQualifiedName());
             }
             return writeHandler.asyncStartLogSegment(startTxId, bestEffort, allowMaxTxID)
-                    .flatMap(new AbstractFunction1<BKLogSegmentWriter, Future<BKLogSegmentWriter>>() {
+                    .thenCompose(new Function<BKLogSegmentWriter, CompletableFuture<BKLogSegmentWriter>>() {
                         @Override
-                        public Future<BKLogSegmentWriter> apply(BKLogSegmentWriter newSegmentWriter) {
+                        public CompletableFuture<BKLogSegmentWriter> apply(BKLogSegmentWriter newSegmentWriter) {
                             if (null == newSegmentWriter) {
                                 if (bestEffort) {
-                                    return Future.value(oldSegmentWriter);
+                                    return FutureUtils.value(oldSegmentWriter);
                                 } else {
-                                    return Future.exception(
+                                    return FutureUtils.exception(
                                             new UnexpectedException("StartLogSegment returns null for bestEffort rolling"));
                                 }
                             }
@@ -468,30 +457,30 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
         }
     }
 
-    private Future<BKLogSegmentWriter> completeOldSegmentAndCacheNewLogSegmentWriter(
+    private CompletableFuture<BKLogSegmentWriter> completeOldSegmentAndCacheNewLogSegmentWriter(
             BKLogSegmentWriter oldSegmentWriter,
             final BKLogSegmentWriter newSegmentWriter) {
-        final Promise<BKLogSegmentWriter> completePromise = new Promise<BKLogSegmentWriter>();
+        final CompletableFuture<BKLogSegmentWriter> completePromise = new CompletableFuture<BKLogSegmentWriter>();
         // complete the old log segment
         writeHandler.completeAndCloseLogSegment(oldSegmentWriter)
-                .addEventListener(new FutureEventListener<LogSegmentMetadata>() {
+                .whenComplete(new FutureEventListener<LogSegmentMetadata>() {
 
                     @Override
                     public void onSuccess(LogSegmentMetadata value) {
                         cacheLogWriter(newSegmentWriter);
                         removeAllocatedLogWriter();
-                        FutureUtils.setValue(completePromise, newSegmentWriter);
+                        FutureUtils.complete(completePromise, newSegmentWriter);
                     }
 
                     @Override
                     public void onFailure(Throwable cause) {
-                        FutureUtils.setException(completePromise, cause);
+                        FutureUtils.completeExceptionally(completePromise, cause);
                     }
                 });
         return completePromise;
     }
 
-    synchronized protected Future<BKLogSegmentWriter> rollLogSegmentIfNecessary(
+    synchronized protected CompletableFuture<BKLogSegmentWriter> rollLogSegmentIfNecessary(
             final BKLogSegmentWriter segmentWriter,
             long startTxId,
             boolean bestEffort,
@@ -500,18 +489,18 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
         try {
             writeHandler = getWriteHandler();
         } catch (IOException e) {
-            return Future.exception(e);
+            return FutureUtils.exception(e);
         }
-        Future<BKLogSegmentWriter> rollPromise;
+        CompletableFuture<BKLogSegmentWriter> rollPromise;
         if (null != segmentWriter && (writeHandler.shouldStartNewSegment(segmentWriter) || forceRolling)) {
             rollPromise = closeOldLogSegmentAndStartNewOneWithPermit(
                     segmentWriter, writeHandler, startTxId, bestEffort, allowMaxTxID);
         } else if (null == segmentWriter) {
             rollPromise = asyncStartNewLogSegment(writeHandler, startTxId, allowMaxTxID);
         } else {
-            rollPromise = Future.value(segmentWriter);
+            rollPromise = FutureUtils.value(segmentWriter);
         }
-        return rollPromise.map(new AbstractFunction1<BKLogSegmentWriter, BKLogSegmentWriter>() {
+        return rollPromise.thenApply(new Function<BKLogSegmentWriter, BKLogSegmentWriter>() {
             @Override
             public BKLogSegmentWriter apply(BKLogSegmentWriter newSegmentWriter) {
                 if (segmentWriter == newSegmentWriter) {
@@ -542,7 +531,7 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
 
     protected synchronized void cancelTruncation() {
         if (null != lastTruncationAttempt) {
-            FutureUtils.cancel(lastTruncationAttempt);
+            lastTruncationAttempt.cancel(true);
             lastTruncationAttempt = null;
         }
     }

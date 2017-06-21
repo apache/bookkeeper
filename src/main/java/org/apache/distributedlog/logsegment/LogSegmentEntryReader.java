@@ -18,12 +18,11 @@
 package org.apache.distributedlog.logsegment;
 
 import com.google.common.annotations.Beta;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.Entry;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.io.AsyncCloseable;
-import com.twitter.util.Future;
-
-import java.util.List;
 
 /**
  * An interface class to read the enveloped entry (serialized bytes of
@@ -87,7 +86,7 @@ public interface LogSegmentEntryReader extends AsyncCloseable {
      * @throws {@link org.apache.distributedlog.exceptions.EndOfLogSegmentException} when
      *          read entries beyond the end of a <i>closed</i> log segment.
      */
-    Future<List<Entry.Reader>> readNext(int numEntries);
+    CompletableFuture<List<Entry.Reader>> readNext(int numEntries);
 
     /**
      * Return the last add confirmed entry id (LAC).

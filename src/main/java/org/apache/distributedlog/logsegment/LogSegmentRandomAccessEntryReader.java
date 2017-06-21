@@ -17,11 +17,10 @@
  */
 package org.apache.distributedlog.logsegment;
 
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.Entry;
 import org.apache.distributedlog.io.AsyncCloseable;
-import com.twitter.util.Future;
-
-import java.util.List;
 
 /**
  * An interface class to read entries {@link org.apache.distributedlog.Entry}
@@ -36,7 +35,7 @@ public interface LogSegmentRandomAccessEntryReader extends AsyncCloseable {
      * @param endEntryId end entry id
      * @return A promise that when satisfied will contain a list of entries of [startEntryId, endEntryId].
      */
-    Future<List<Entry.Reader>> readEntries(long startEntryId, long endEntryId);
+    CompletableFuture<List<Entry.Reader>> readEntries(long startEntryId, long endEntryId);
 
     /**
      * Return the last add confirmed entry id (LAC).

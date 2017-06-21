@@ -25,7 +25,7 @@ import org.apache.distributedlog.ZooKeeperClusterTestCase;
 import org.apache.distributedlog.impl.acl.ZKAccessControl;
 import org.apache.distributedlog.impl.acl.ZKAccessControlManager;
 import org.apache.distributedlog.thrift.AccessControlEntry;
-import com.twitter.util.Await;
+import org.apache.distributedlog.util.Utils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -136,7 +136,7 @@ public class TestZKAccessControlManager extends ZooKeeperClusterTestCase {
             verifyStreamPermissions(zkcm, stream2, true, false, true, true, true);
 
             // delete stream2
-            Await.result(ZKAccessControl.delete(zkc, zkPath2));
+            Utils.ioResult(ZKAccessControl.delete(zkc, zkPath2));
             logger.info("Delete ACL for stream {}", stream2);
             while (!zkcm.allowTruncate(stream2)) {
                 Thread.sleep(100);

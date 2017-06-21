@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog.logsegment;
 
-import org.apache.distributedlog.util.Sizable;
+import org.apache.distributedlog.common.util.Sizable;
 import org.junit.Test;
 
 import static org.junit.Assert.*;

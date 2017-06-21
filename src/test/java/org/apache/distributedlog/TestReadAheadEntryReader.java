@@ -20,16 +20,18 @@ package org.apache.distributedlog;
 import com.google.common.base.Optional;
 import com.google.common.base.Ticker;
 import com.google.common.collect.Lists;
+import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.api.AsyncLogWriter;
+import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.exceptions.AlreadyTruncatedTransactionException;
 import org.apache.distributedlog.exceptions.DLIllegalStateException;
 import org.apache.distributedlog.impl.logsegment.BKLogSegmentEntryStore;
 import org.apache.distributedlog.injector.AsyncFailureInjector;
 import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
 import org.apache.distributedlog.util.ConfUtils;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
-import com.twitter.util.Promise;
 import org.apache.bookkeeper.stats.AlertStatsLogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.After;
@@ -130,14 +132,14 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
     }
 
     private void ensureOrderSchedulerEmpty(String streamName) throws Exception {
-        final Promise<Void> promise = new Promise<Void>();
+        final CompletableFuture<Void> promise = new CompletableFuture<Void>();
         scheduler.submit(streamName, new Runnable() {
             @Override
             public void run() {
-                FutureUtils.setValue(promise, null);
+                FutureUtils.complete(promise, null);
             }
         });
-        FutureUtils.result(promise);
+        Utils.ioResult(promise);
     }
 
     void generateCompletedLogSegments(DistributedLogManager dlm,
@@ -153,12 +155,12 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
 
         long txid = startTxId;
         for (long i = 0; i < numCompletedSegments; i++) {
-            AsyncLogWriter writer = FutureUtils.result(dlm.openAsyncLogWriter());
+            AsyncLogWriter writer = Utils.ioResult(dlm.openAsyncLogWriter());
             for (long j = 1; j <= segmentSize; j++) {
-                FutureUtils.result(writer.write(DLMTestUtil.getLogRecordInstance(txid++)));
+                Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txid++)));
                 LogRecord ctrlRecord = DLMTestUtil.getLogRecordInstance(txid);
                 ctrlRecord.setControl();
-                FutureUtils.result(writer.write(ctrlRecord));
+                Utils.ioResult(writer.write(ctrlRecord));
             }
             Utils.close(writer);
         }
@@ -167,12 +169,12 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
     AsyncLogWriter createInprogressLogSegment(DistributedLogManager dlm,
                                               DistributedLogConfiguration conf,
                                               long segmentSize) throws Exception {
-        AsyncLogWriter writer = FutureUtils.result(dlm.openAsyncLogWriter());
+        AsyncLogWriter writer = Utils.ioResult(dlm.openAsyncLogWriter());
         for (long i = 1L; i <= segmentSize; i++) {
-            FutureUtils.result(writer.write(DLMTestUtil.getLogRecordInstance(i)));
+            Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(i)));
             LogRecord ctrlRecord = DLMTestUtil.getLogRecordInstance(i);
             ctrlRecord.setControl();
-            FutureUtils.result(writer.write(ctrlRecord));
+            Utils.ioResult(writer.write(ctrlRecord));
         }
         return writer;
     }
@@ -325,8 +327,8 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
 
         // generate list of log segments
         generateCompletedLogSegments(dlm, 3, 3);
-        AsyncLogWriter writer = FutureUtils.result(dlm.openAsyncLogWriter());
-        FutureUtils.result(writer.truncate(new DLSN(2L, 1L, 0L)));
+        AsyncLogWriter writer = Utils.ioResult(dlm.openAsyncLogWriter());
+        Utils.ioResult(writer.truncate(new DLSN(2L, 1L, 0L)));
 
         List<LogSegmentMetadata> segments = dlm.getLogSegments();
 
@@ -382,8 +384,8 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
 
         // generate list of log segments
         generateCompletedLogSegments(dlm, 3, 2);
-        AsyncLogWriter writer = FutureUtils.result(dlm.openAsyncLogWriter());
-        FutureUtils.result(writer.truncate(new DLSN(2L, 1L, 0L)));
+        AsyncLogWriter writer = Utils.ioResult(dlm.openAsyncLogWriter());
+        Utils.ioResult(writer.truncate(new DLSN(2L, 1L, 0L)));
 
         List<LogSegmentMetadata> segments = dlm.getLogSegments();
 

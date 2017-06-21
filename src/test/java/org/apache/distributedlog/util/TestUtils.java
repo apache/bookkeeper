@@ -108,15 +108,15 @@ public class TestUtils extends ZooKeeperClusterTestCase {
     @Test(timeout = 60000)
     public void testZkGetData() throws Exception {
         String path1 = "/zk-get-data/non-existent-path";
-        Versioned<byte[]> data = FutureUtils.result(Utils.zkGetData(zkc.get(), path1, false));
+        Versioned<byte[]> data = Utils.ioResult(Utils.zkGetData(zkc.get(), path1, false));
         assertNull("No data should return from non-existent-path", data.getValue());
         assertNull("No version should return from non-existent-path", data.getVersion());
 
         String path2 = "/zk-get-data/path2";
         byte[] rawData = "test-data".getBytes(UTF_8);
-        FutureUtils.result(Utils.zkAsyncCreateFullPathOptimistic(zkc, path2, rawData,
+        Utils.ioResult(Utils.zkAsyncCreateFullPathOptimistic(zkc, path2, rawData,
                 zkc.getDefaultACL(), CreateMode.PERSISTENT));
-        data = FutureUtils.result(Utils.zkGetData(zkc.get(), path2, false));
+        data = Utils.ioResult(Utils.zkGetData(zkc.get(), path2, false));
         assertArrayEquals("Data should return as written",
                 rawData, data.getValue());
         assertEquals("Version should be zero",

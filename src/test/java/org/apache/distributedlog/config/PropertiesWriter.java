@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,10 +20,12 @@ package org.apache.distributedlog.config;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Properties;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Writer to write properties to files.
+ */
 public class PropertiesWriter {
     static final Logger LOG = LoggerFactory.getLogger(PropertiesWriter.class);
 
@@ -57,7 +59,7 @@ public class PropertiesWriter {
     public void save() throws Exception {
         FileOutputStream outputStream = new FileOutputStream(configFile);
         properties.store(outputStream, null);
-        configFile.setLastModified(configFile.lastModified()+1000);
+        configFile.setLastModified(configFile.lastModified() + 1000);
         LOG.debug("save modified={}", configFile.lastModified());
     }
 

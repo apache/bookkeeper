@@ -18,8 +18,9 @@
 package org.apache.distributedlog;
 
 import org.apache.distributedlog.LogSegmentMetadata.LogSegmentMetadataVersion;
-import com.twitter.util.Await;
-import com.twitter.util.FutureEventListener;
+import org.apache.distributedlog.api.AsyncLogReader;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.util.Utils;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,7 +73,7 @@ public class TestSequenceID extends TestDistributedLogBase {
 
         BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(confLocal, name);
         BKAsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned();
-        Await.result(writer.write(DLMTestUtil.getLogRecordInstance(0L)));
+        Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(0L)));
 
         dlm.close();
 
@@ -126,16 +127,16 @@ public class TestSequenceID extends TestDistributedLogBase {
         for (int i = 0; i < 3; i++) {
             BKAsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned();
             for (int j = 0; j < 2; j++) {
-                Await.result(writer.write(DLMTestUtil.getLogRecordInstance(txId++)));
+                Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txId++)));
 
                 if (null == reader) {
                     reader = readDLM.getAsyncLogReader(DLSN.InitialDLSN);
                     final AsyncLogReader r = reader;
-                    reader.readNext().addEventListener(new FutureEventListener<LogRecordWithDLSN>() {
+                    reader.readNext().whenComplete(new FutureEventListener<LogRecordWithDLSN>() {
                         @Override
                         public void onSuccess(LogRecordWithDLSN record) {
                             readRecords.add(record);
-                            r.readNext().addEventListener(this);
+                            r.readNext().whenComplete(this);
                         }
 
                         @Override
@@ -149,7 +150,7 @@ public class TestSequenceID extends TestDistributedLogBase {
         }
 
         BKAsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned();
-        Await.result(writer.write(DLMTestUtil.getLogRecordInstance(txId++)));
+        Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txId++)));
 
         List<LogSegmentMetadata> segments = dlm.getLogSegments();
         assertEquals(4, segments.size());
@@ -174,12 +175,12 @@ public class TestSequenceID extends TestDistributedLogBase {
         for (int i = 0; i < 3; i++) {
             BKAsyncLogWriter writerv5 = dlmv5.startAsyncLogSegmentNonPartitioned();
             for (int j = 0; j < 2; j++) {
-                Await.result(writerv5.write(DLMTestUtil.getLogRecordInstance(txId++)));
+                Utils.ioResult(writerv5.write(DLMTestUtil.getLogRecordInstance(txId++)));
             }
             writerv5.closeAndComplete();
         }
         BKAsyncLogWriter writerv5 = dlmv5.startAsyncLogSegmentNonPartitioned();
-        Await.result(writerv5.write(DLMTestUtil.getLogRecordInstance(txId++)));
+        Utils.ioResult(writerv5.write(DLMTestUtil.getLogRecordInstance(txId++)));
 
         List<LogSegmentMetadata> segmentsv5 = dlmv5.getLogSegments();
         assertEquals(8, segmentsv5.size());
@@ -205,7 +206,7 @@ public class TestSequenceID extends TestDistributedLogBase {
         for (int i = 0; i < 3; i++) {
             BKAsyncLogWriter writerv4 = dlmv4.startAsyncLogSegmentNonPartitioned();
             for (int j = 0; j < 2; j++) {
-                Await.result(writerv4.write(DLMTestUtil.getLogRecordInstance(txId++)));
+                Utils.ioResult(writerv4.write(DLMTestUtil.getLogRecordInstance(txId++)));
             }
             writerv4.closeAndComplete();
         }

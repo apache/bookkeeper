@@ -21,9 +21,11 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.distributedlog.annotations.DistributedLogAnnotations;
+import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.api.LogReader;
+import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
 import org.apache.distributedlog.exceptions.IdleReaderException;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.util.Utils;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -229,7 +231,7 @@ public class TestNonBlockingReads extends TestDistributedLogBase {
             BKAsyncLogWriter out = (BKAsyncLogWriter) dlm.startAsyncLogSegmentNonPartitioned();
             for (long j = 1; j <= segmentSize; j++) {
                 LogRecord op = DLMTestUtil.getLogRecordInstance(txid++);
-                FutureUtils.result(out.write(op));
+                Utils.ioResult(out.write(op));
                 numRecordsWritten++;
             }
             out.closeAndComplete();
@@ -237,7 +239,7 @@ public class TestNonBlockingReads extends TestDistributedLogBase {
 
         BKLogWriteHandler blplm = ((BKDistributedLogManager) (dlm)).createWriteHandler(true);
         String completedZNode = blplm.completedLedgerZNode(txid - segmentSize, txid - 1, 3);
-        LogSegmentMetadata metadata = FutureUtils.result(LogSegmentMetadata.read(zkClient, completedZNode));
+        LogSegmentMetadata metadata = Utils.ioResult(LogSegmentMetadata.read(zkClient, completedZNode));
         zkClient.get().delete(completedZNode, -1);
         LogSegmentMetadata metadataToChange =
                 metadata.mutator()
@@ -253,7 +255,7 @@ public class TestNonBlockingReads extends TestDistributedLogBase {
             BKAsyncLogWriter out = (BKAsyncLogWriter) dlm.startAsyncLogSegmentNonPartitioned();
             for (long j = 1; j <= segmentSize; j++) {
                 LogRecord op = DLMTestUtil.getLogRecordInstance(txid++);
-                FutureUtils.result(out.write(op));
+                Utils.ioResult(out.write(op));
                 numRecordsWritten++;
             }
             out.closeAndComplete();

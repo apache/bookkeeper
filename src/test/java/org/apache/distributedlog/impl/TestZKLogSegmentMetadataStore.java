@@ -18,6 +18,7 @@
 package org.apache.distributedlog.impl;
 
 import com.google.common.collect.Lists;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LogSegmentMetadata;
@@ -30,15 +31,13 @@ import org.apache.distributedlog.exceptions.ZKException;
 import org.apache.distributedlog.metadata.LogMetadata;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.util.DLUtils;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Transaction;
-import com.twitter.util.Await;
-import com.twitter.util.Future;
-import com.twitter.util.Promise;
 import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
@@ -137,7 +136,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         LogSegmentMetadata segment = createLogSegment(1L);
         Transaction<Object> createTxn = lsmStore.transaction();
         lsmStore.createLogSegment(createTxn, segment, null);
-        FutureUtils.result(createTxn.execute());
+        Utils.ioResult(createTxn.execute());
         // the log segment should be created
         assertNotNull("LogSegment " + segment + " should be created",
                 zkc.get().exists(segment.getZkPath(), false));
@@ -145,7 +144,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         Transaction<Object> createTxn2 = lsmStore.transaction();
         lsmStore.createLogSegment(createTxn2, segment2, null);
         try {
-            FutureUtils.result(createTxn2.execute());
+            Utils.ioResult(createTxn2.execute());
             fail("Should fail if log segment exists");
         } catch (Throwable t) {
             // expected
@@ -162,13 +161,13 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         LogSegmentMetadata segment = createLogSegment(1L);
         Transaction<Object> createTxn = lsmStore.transaction();
         lsmStore.createLogSegment(createTxn, segment, null);
-        FutureUtils.result(createTxn.execute());
+        Utils.ioResult(createTxn.execute());
         // the log segment should be created
         assertNotNull("LogSegment " + segment + " should be created",
                 zkc.get().exists(segment.getZkPath(), false));
         Transaction<Object> deleteTxn = lsmStore.transaction();
         lsmStore.deleteLogSegment(deleteTxn, segment, null);
-        FutureUtils.result(deleteTxn.execute());
+        Utils.ioResult(deleteTxn.execute());
         assertNull("LogSegment " + segment + " should be deleted",
                 zkc.get().exists(segment.getZkPath(), false));
     }
@@ -179,7 +178,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         Transaction<Object> deleteTxn = lsmStore.transaction();
         lsmStore.deleteLogSegment(deleteTxn, segment, null);
         try {
-            FutureUtils.result(deleteTxn.execute());
+            Utils.ioResult(deleteTxn.execute());
             fail("Should fail deletion if log segment doesn't exist");
         } catch (Throwable t) {
             assertTrue("Should throw NoNodeException if log segment doesn't exist",
@@ -196,7 +195,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         Transaction<Object> updateTxn = lsmStore.transaction();
         lsmStore.updateLogSegment(updateTxn, segment);
         try {
-            FutureUtils.result(updateTxn.execute());
+            Utils.ioResult(updateTxn.execute());
             fail("Should fail update if log segment doesn't exist");
         } catch (Throwable t) {
             assertTrue("Should throw NoNodeException if log segment doesn't exist",
@@ -212,17 +211,17 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         LogSegmentMetadata segment = createLogSegment(1L, 99L);
         Transaction<Object> createTxn = lsmStore.transaction();
         lsmStore.createLogSegment(createTxn, segment, null);
-        FutureUtils.result(createTxn.execute());
+        Utils.ioResult(createTxn.execute());
         // the log segment should be created
         assertNotNull("LogSegment " + segment + " should be created",
                 zkc.get().exists(segment.getZkPath(), false));
         LogSegmentMetadata modifiedSegment = createLogSegment(1L, 999L);
         Transaction<Object> updateTxn = lsmStore.transaction();
         lsmStore.updateLogSegment(updateTxn, modifiedSegment);
-        FutureUtils.result(updateTxn.execute());
+        Utils.ioResult(updateTxn.execute());
         // the log segment should be updated
         LogSegmentMetadata readSegment =
-                FutureUtils.result(LogSegmentMetadata.read(zkc, segment.getZkPath(), true));
+                Utils.ioResult(LogSegmentMetadata.read(zkc, segment.getZkPath(), true));
         assertEquals("Last entry id should be changed from 99L to 999L",
                 999L, readSegment.getLastEntryId());
     }
@@ -234,7 +233,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         // create log segment 1
         Transaction<Object> createTxn = lsmStore.transaction();
         lsmStore.createLogSegment(createTxn, segment1, null);
-        FutureUtils.result(createTxn.execute());
+        Utils.ioResult(createTxn.execute());
         // the log segment should be created
         assertNotNull("LogSegment " + segment1 + " should be created",
                 zkc.get().exists(segment1.getZkPath(), false));
@@ -242,7 +241,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         Transaction<Object> createDeleteTxn = lsmStore.transaction();
         lsmStore.createLogSegment(createDeleteTxn, segment2, null);
         lsmStore.deleteLogSegment(createDeleteTxn, segment1, null);
-        FutureUtils.result(createDeleteTxn.execute());
+        Utils.ioResult(createDeleteTxn.execute());
         // segment 1 should be deleted, segment 2 should be created
         assertNull("LogSegment " + segment1 + " should be deleted",
                 zkc.get().exists(segment1.getZkPath(), false));
@@ -258,7 +257,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         // create log segment 1
         Transaction<Object> createTxn = lsmStore.transaction();
         lsmStore.createLogSegment(createTxn, segment1, null);
-        FutureUtils.result(createTxn.execute());
+        Utils.ioResult(createTxn.execute());
         // the log segment should be created
         assertNotNull("LogSegment " + segment1 + " should be created",
                 zkc.get().exists(segment1.getZkPath(), false));
@@ -268,7 +267,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         lsmStore.deleteLogSegment(createDeleteTxn, segment2, null);
         lsmStore.createLogSegment(createDeleteTxn, segment3, null);
         try {
-            FutureUtils.result(createDeleteTxn.execute());
+            Utils.ioResult(createDeleteTxn.execute());
             fail("Should fail transaction if one operation failed");
         } catch (Throwable t) {
             assertTrue("Transaction is aborted",
@@ -290,12 +289,12 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         LogSegmentMetadata segment = createLogSegment(1L, 99L);
         Transaction<Object> createTxn = lsmStore.transaction();
         lsmStore.createLogSegment(createTxn, segment, null);
-        FutureUtils.result(createTxn.execute());
+        Utils.ioResult(createTxn.execute());
         // the log segment should be created
         assertNotNull("LogSegment " + segment + " should be created",
                 zkc.get().exists(segment.getZkPath(), false));
         LogSegmentMetadata readSegment =
-                FutureUtils.result(lsmStore.getLogSegment(segment.getZkPath()));
+                Utils.ioResult(lsmStore.getLogSegment(segment.getZkPath()));
         assertEquals("Log segment should match",
                 segment, readSegment);
     }
@@ -309,24 +308,24 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
             createdSegments.add(segment);
             lsmStore.createLogSegment(createTxn, segment, null);
         }
-        FutureUtils.result(createTxn.execute());
+        Utils.ioResult(createTxn.execute());
         String rootPath = "/" + runtime.getMethodName();
         List<String> children = zkc.get().getChildren(rootPath, false);
         Collections.sort(children);
         assertEquals("Should find 10 log segments",
                 10, children.size());
         List<String> logSegmentNames =
-                FutureUtils.result(lsmStore.getLogSegmentNames(rootPath, null)).getValue();
+                Utils.ioResult(lsmStore.getLogSegmentNames(rootPath, null)).getValue();
         Collections.sort(logSegmentNames);
         assertEquals("Should find 10 log segments",
                 10, logSegmentNames.size());
         assertEquals(children, logSegmentNames);
-        List<Future<LogSegmentMetadata>> getFutures = Lists.newArrayListWithExpectedSize(10);
+        List<CompletableFuture<LogSegmentMetadata>> getFutures = Lists.newArrayListWithExpectedSize(10);
         for (int i = 0; i < 10; i++) {
             getFutures.add(lsmStore.getLogSegment(rootPath + "/" + logSegmentNames.get(i)));
         }
         List<LogSegmentMetadata> segments =
-                FutureUtils.result(Future.collect(getFutures));
+                Utils.ioResult(FutureUtils.collect(getFutures));
         for (int i = 0; i < 10; i++) {
             assertEquals(createdSegments.get(i), segments.get(i));
         }
@@ -358,7 +357,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
             LogSegmentMetadata segment = createLogSegment(i);
             lsmStore.createLogSegment(createTxn, segment, null);
         }
-        FutureUtils.result(createTxn.execute());
+        Utils.ioResult(createTxn.execute());
         String rootPath = "/" + runtime.getMethodName();
         List<String> children = zkc.get().getChildren(rootPath, false);
         Collections.sort(children);
@@ -399,7 +398,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
             LogSegmentMetadata segment = createLogSegment(i);
             lsmStore.createLogSegment(anotherCreateTxn, segment, null);
         }
-        FutureUtils.result(anotherCreateTxn.execute());
+        Utils.ioResult(anotherCreateTxn.execute());
         List<String> newChildren = zkc.get().getChildren(rootPath, false);
         Collections.sort(newChildren);
         logger.info("All log segments become {}", newChildren);
@@ -424,7 +423,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
             LogSegmentMetadata segment = createLogSegment(i);
             lsmStore.createLogSegment(createTxn, segment, null);
         }
-        FutureUtils.result(createTxn.execute());
+        Utils.ioResult(createTxn.execute());
         String rootPath = "/" + runtime.getMethodName();
         List<String> children = zkc.get().getChildren(rootPath, false);
         Collections.sort(children);
@@ -464,7 +463,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
             LogSegmentMetadata segment = createLogSegment(i);
             lsmStore.deleteLogSegment(deleteTxn, segment, null);
         }
-        FutureUtils.result(deleteTxn.execute());
+        Utils.ioResult(deleteTxn.execute());
         List<String> newChildren = zkc.get().getChildren(rootPath, false);
         Collections.sort(newChildren);
         while (numNotifications.get() < 2) {
@@ -496,7 +495,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
             LogSegmentMetadata segment = createLogSegment(i);
             lsmStore.createLogSegment(createTxn, segment, null);
         }
-        FutureUtils.result(createTxn.execute());
+        Utils.ioResult(createTxn.execute());
         String rootPath = "/" + runtime.getMethodName();
         List<String> children = zkc.get().getChildren(rootPath, false);
         Collections.sort(children);
@@ -541,7 +540,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
             LogSegmentMetadata segment = createLogSegment(i);
             lsmStore.createLogSegment(anotherCreateTxn, segment, null);
         }
-        FutureUtils.result(anotherCreateTxn.execute());
+        Utils.ioResult(anotherCreateTxn.execute());
         List<String> newChildren = zkc.get().getChildren(rootPath, false);
         Collections.sort(newChildren);
         logger.info("All log segments become {}", newChildren);
@@ -566,7 +565,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
             LogSegmentMetadata segment = createLogSegment(i);
             lsmStore.createLogSegment(createTxn, segment, null);
         }
-        FutureUtils.result(createTxn.execute());
+        Utils.ioResult(createTxn.execute());
         String rootPath = "/" + runtime.getMethodName();
         List<String> children = zkc.get().getChildren(rootPath, false);
         Collections.sort(children);
@@ -607,7 +606,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
             LogSegmentMetadata segment = createLogSegment(i);
             lsmStore.deleteLogSegment(deleteTxn, segment, null);
         }
-        FutureUtils.result(deleteTxn.execute());
+        Utils.ioResult(deleteTxn.execute());
         List<String> newChildren = zkc.get().getChildren(rootPath, false);
         Collections.sort(newChildren);
         while (numNotifications.get() < 2) {
@@ -636,23 +635,23 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
     public void testStoreMaxLogSegmentSequenceNumber() throws Exception {
         Transaction<Object> updateTxn = lsmStore.transaction();
         Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(0));
-        final Promise<Version> result = new Promise<Version>();
+        final CompletableFuture<Version> result = new CompletableFuture<Version>();
         LogMetadata metadata = mock(LogMetadata.class);
         when(metadata.getLogSegmentsPath()).thenReturn(rootZkPath);
         lsmStore.storeMaxLogSegmentSequenceNumber(updateTxn, metadata, value,
                 new Transaction.OpListener<Version>() {
             @Override
             public void onCommit(Version r) {
-                result.setValue(r);
+                result.complete(r);
             }
 
             @Override
             public void onAbort(Throwable t) {
-                result.setException(t);
+                result.completeExceptionally(t);
             }
         });
-        FutureUtils.result(updateTxn.execute());
-        assertEquals(1, ((ZkVersion) FutureUtils.result(result)).getZnodeVersion());
+        Utils.ioResult(updateTxn.execute());
+        assertEquals(1, ((ZkVersion) Utils.ioResult(result)).getZnodeVersion());
         Stat stat = new Stat();
         byte[] data = zkc.get().getData(rootZkPath, false, stat);
         assertEquals(999L, DLUtils.deserializeLogSegmentSequenceNumber(data));
@@ -663,32 +662,32 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
     public void testStoreMaxLogSegmentSequenceNumberBadVersion() throws Exception {
         Transaction<Object> updateTxn = lsmStore.transaction();
         Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(10));
-        final Promise<Version> result = new Promise<Version>();
+        final CompletableFuture<Version> result = new CompletableFuture<Version>();
         LogMetadata metadata = mock(LogMetadata.class);
         when(metadata.getLogSegmentsPath()).thenReturn(rootZkPath);
         lsmStore.storeMaxLogSegmentSequenceNumber(updateTxn, metadata, value,
                 new Transaction.OpListener<Version>() {
                     @Override
                     public void onCommit(Version r) {
-                        result.setValue(r);
+                        result.complete(r);
                     }
 
                     @Override
                     public void onAbort(Throwable t) {
-                        result.setException(t);
+                        result.completeExceptionally(t);
                     }
                 });
         try {
-            FutureUtils.result(updateTxn.execute());
+            Utils.ioResult(updateTxn.execute());
             fail("Should fail on storing log segment sequence number if providing bad version");
         } catch (ZKException zke) {
             assertEquals(KeeperException.Code.BADVERSION, zke.getKeeperExceptionCode());
         }
         try {
-            Await.result(result);
+            Utils.ioResult(result);
             fail("Should fail on storing log segment sequence number if providing bad version");
-        } catch (KeeperException ke) {
-            assertEquals(KeeperException.Code.BADVERSION, ke.code());
+        } catch (ZKException ze) {
+            assertEquals(KeeperException.Code.BADVERSION, ze.getKeeperExceptionCode());
         }
         Stat stat = new Stat();
         byte[] data = zkc.get().getData(rootZkPath, false, stat);
@@ -700,7 +699,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
     public void testStoreMaxLogSegmentSequenceNumberOnNonExistentPath() throws Exception {
         Transaction<Object> updateTxn = lsmStore.transaction();
         Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(10));
-        final Promise<Version> result = new Promise<Version>();
+        final CompletableFuture<Version> result = new CompletableFuture<Version>();
         String nonExistentPath = rootZkPath + "/non-existent";
         LogMetadata metadata = mock(LogMetadata.class);
         when(metadata.getLogSegmentsPath()).thenReturn(nonExistentPath);
@@ -708,25 +707,25 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
                 new Transaction.OpListener<Version>() {
                     @Override
                     public void onCommit(Version r) {
-                        result.setValue(r);
+                        result.complete(r);
                     }
 
                     @Override
                     public void onAbort(Throwable t) {
-                        result.setException(t);
+                        result.completeExceptionally(t);
                     }
                 });
         try {
-            FutureUtils.result(updateTxn.execute());
+            Utils.ioResult(updateTxn.execute());
             fail("Should fail on storing log segment sequence number if path doesn't exist");
         } catch (ZKException zke) {
             assertEquals(KeeperException.Code.NONODE, zke.getKeeperExceptionCode());
         }
         try {
-            Await.result(result);
+            Utils.ioResult(result);
             fail("Should fail on storing log segment sequence number if path doesn't exist");
-        } catch (KeeperException ke) {
-            assertEquals(KeeperException.Code.NONODE, ke.code());
+        } catch (ZKException ke) {
+            assertEquals(KeeperException.Code.NONODE, ke.getKeeperExceptionCode());
         }
     }
 
@@ -734,23 +733,23 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
     public void testStoreMaxTxnId() throws Exception {
         Transaction<Object> updateTxn = lsmStore.transaction();
         Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(0));
-        final Promise<Version> result = new Promise<Version>();
+        final CompletableFuture<Version> result = new CompletableFuture<Version>();
         LogMetadataForWriter metadata = mock(LogMetadataForWriter.class);
         when(metadata.getMaxTxIdPath()).thenReturn(rootZkPath);
         lsmStore.storeMaxTxnId(updateTxn, metadata, value,
                 new Transaction.OpListener<Version>() {
             @Override
             public void onCommit(Version r) {
-                result.setValue(r);
+                result.complete(r);
             }
 
             @Override
             public void onAbort(Throwable t) {
-                result.setException(t);
+                result.completeExceptionally(t);
             }
         });
-        FutureUtils.result(updateTxn.execute());
-        assertEquals(1, ((ZkVersion) FutureUtils.result(result)).getZnodeVersion());
+        Utils.ioResult(updateTxn.execute());
+        assertEquals(1, ((ZkVersion) Utils.ioResult(result)).getZnodeVersion());
         Stat stat = new Stat();
         byte[] data = zkc.get().getData(rootZkPath, false, stat);
         assertEquals(999L, DLUtils.deserializeTransactionId(data));
@@ -761,32 +760,32 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
     public void testStoreMaxTxnIdBadVersion() throws Exception {
         Transaction<Object> updateTxn = lsmStore.transaction();
         Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(10));
-        final Promise<Version> result = new Promise<Version>();
+        final CompletableFuture<Version> result = new CompletableFuture<Version>();
         LogMetadataForWriter metadata = mock(LogMetadataForWriter.class);
         when(metadata.getMaxTxIdPath()).thenReturn(rootZkPath);
         lsmStore.storeMaxTxnId(updateTxn, metadata, value,
                 new Transaction.OpListener<Version>() {
                     @Override
                     public void onCommit(Version r) {
-                        result.setValue(r);
+                        result.complete(r);
                     }
 
                     @Override
                     public void onAbort(Throwable t) {
-                        result.setException(t);
+                        result.completeExceptionally(t);
                     }
                 });
         try {
-            FutureUtils.result(updateTxn.execute());
+            Utils.ioResult(updateTxn.execute());
             fail("Should fail on storing log record transaction id if providing bad version");
         } catch (ZKException zke) {
             assertEquals(KeeperException.Code.BADVERSION, zke.getKeeperExceptionCode());
         }
         try {
-            Await.result(result);
+            Utils.ioResult(result);
             fail("Should fail on storing log record transaction id if providing bad version");
-        } catch (KeeperException ke) {
-            assertEquals(KeeperException.Code.BADVERSION, ke.code());
+        } catch (ZKException ze) {
+            assertEquals(KeeperException.Code.BADVERSION, ze.getKeeperExceptionCode());
         }
         Stat stat = new Stat();
         byte[] data = zkc.get().getData(rootZkPath, false, stat);
@@ -798,7 +797,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
     public void testStoreMaxTxnIdOnNonExistentPath() throws Exception {
         Transaction<Object> updateTxn = lsmStore.transaction();
         Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(10));
-        final Promise<Version> result = new Promise<Version>();
+        final CompletableFuture<Version> result = new CompletableFuture<Version>();
         String nonExistentPath = rootZkPath + "/non-existent";
         LogMetadataForWriter metadata = mock(LogMetadataForWriter.class);
         when(metadata.getMaxTxIdPath()).thenReturn(nonExistentPath);
@@ -806,25 +805,25 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
                 new Transaction.OpListener<Version>() {
                     @Override
                     public void onCommit(Version r) {
-                        result.setValue(r);
+                        result.complete(r);
                     }
 
                     @Override
                     public void onAbort(Throwable t) {
-                        result.setException(t);
+                        result.completeExceptionally(t);
                     }
                 });
         try {
-            FutureUtils.result(updateTxn.execute());
+            Utils.ioResult(updateTxn.execute());
             fail("Should fail on storing log record transaction id if path doesn't exist");
         } catch (ZKException zke) {
             assertEquals(KeeperException.Code.NONODE, zke.getKeeperExceptionCode());
         }
         try {
-            Await.result(result);
+            Utils.ioResult(result);
             fail("Should fail on storing log record transaction id if path doesn't exist");
-        } catch (KeeperException ke) {
-            assertEquals(KeeperException.Code.NONODE, ke.code());
+        } catch (ZKException ze) {
+            assertEquals(KeeperException.Code.NONODE, ze.getKeeperExceptionCode());
         }
     }
 

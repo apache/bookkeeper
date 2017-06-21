@@ -17,20 +17,17 @@
  */
 package org.apache.distributedlog.lock;
 
-import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.exceptions.DLInterruptedException;
-import org.apache.distributedlog.util.OrderedScheduler;
-import com.twitter.util.Future;
-import com.twitter.util.Promise;
-import com.twitter.util.Return;
-import com.twitter.util.Throw;
-import org.apache.bookkeeper.stats.StatsLogger;
-import scala.runtime.BoxedUnit;
-
 import java.io.IOException;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.distributedlog.ZooKeeperClient;
+import org.apache.distributedlog.exceptions.DLInterruptedException;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.util.OrderedScheduler;
+import org.apache.bookkeeper.stats.StatsLogger;
 
 /**
  * Factory to create zookeeper based locks.
@@ -65,16 +62,14 @@ public class ZKSessionLockFactory implements SessionLockFactory {
     }
 
     @Override
-    public Future<SessionLock> createLock(String lockPath,
-                                          DistributedLockContext context) {
+    public CompletableFuture<SessionLock> createLock(String lockPath,
+                                                     DistributedLockContext context) {
         AtomicInteger numRetries = new AtomicInteger(lockCreationRetries);
         final AtomicReference<Throwable> interruptedException = new AtomicReference<Throwable>(null);
-        Promise<SessionLock> createPromise =
-                new Promise<SessionLock>(new com.twitter.util.Function<Throwable, BoxedUnit>() {
-            @Override
-            public BoxedUnit apply(Throwable t) {
-                interruptedException.set(t);
-                return BoxedUnit.UNIT;
+        CompletableFuture<SessionLock> createPromise = FutureUtils.createFuture();
+        createPromise.whenComplete((value, cause) -> {
+            if (null != cause && cause instanceof CancellationException) {
+                interruptedException.set(cause);
             }
         });
         createLock(
@@ -91,13 +86,13 @@ public class ZKSessionLockFactory implements SessionLockFactory {
                     final DistributedLockContext context,
                     final AtomicReference<Throwable> interruptedException,
                     final AtomicInteger numRetries,
-                    final Promise<SessionLock> createPromise,
+                    final CompletableFuture<SessionLock> createPromise,
                     final long delayMs) {
         lockStateExecutor.schedule(lockPath, new Runnable() {
             @Override
             public void run() {
                 if (null != interruptedException.get()) {
-                    createPromise.updateIfEmpty(new Throw<SessionLock>(interruptedException.get()));
+                    createPromise.completeExceptionally(interruptedException.get());
                     return;
                 }
                 try {
@@ -109,14 +104,14 @@ public class ZKSessionLockFactory implements SessionLockFactory {
                             lockOpTimeout,
                             lockStatsLogger,
                             context);
-                    createPromise.updateIfEmpty(new Return<SessionLock>(lock));
+                    createPromise.complete(lock);
                 } catch (DLInterruptedException dlie) {
                     // if the creation is interrupted, throw the exception without retrie.
-                    createPromise.updateIfEmpty(new Throw<SessionLock>(dlie));
+                    createPromise.completeExceptionally(dlie);
                     return;
                 } catch (IOException e) {
                     if (numRetries.getAndDecrement() < 0) {
-                        createPromise.updateIfEmpty(new Throw<SessionLock>(e));
+                        createPromise.completeExceptionally(e);
                         return;
                     }
                     createLock(

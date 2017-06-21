@@ -17,8 +17,9 @@
  */
 package org.apache.distributedlog.lock;
 
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.exceptions.LockingException;
-import com.twitter.util.Future;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 
 /**
  * An implementation of {@link DistributedLock} which does nothing.
@@ -30,8 +31,8 @@ public class NopDistributedLock implements DistributedLock {
     private NopDistributedLock() {}
 
     @Override
-    public Future<? extends DistributedLock> asyncAcquire() {
-        return Future.value(this);
+    public CompletableFuture<? extends DistributedLock> asyncAcquire() {
+        return FutureUtils.value(this);
     }
 
     @Override
@@ -45,7 +46,7 @@ public class NopDistributedLock implements DistributedLock {
     }
 
     @Override
-    public Future<Void> asyncClose() {
-        return Future.Void();
+    public CompletableFuture<Void> asyncClose() {
+        return FutureUtils.Void();
     }
 }

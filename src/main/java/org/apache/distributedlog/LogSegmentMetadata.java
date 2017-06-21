@@ -23,14 +23,13 @@ import java.util.Comparator;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.exceptions.LogSegmentNotFoundException;
 import org.apache.distributedlog.exceptions.UnsupportedMetadataVersionException;
 import org.apache.distributedlog.exceptions.ZKException;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.Utils;
-import com.twitter.util.Future;
-import com.twitter.util.Promise;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -590,21 +589,21 @@ public class LogSegmentMetadata {
                 .build();
     }
 
-    public static Future<LogSegmentMetadata> read(ZooKeeperClient zkc, String path) {
+    public static CompletableFuture<LogSegmentMetadata> read(ZooKeeperClient zkc, String path) {
         return read(zkc, path, false);
     }
 
-    public static Future<LogSegmentMetadata> read(ZooKeeperClient zkc, String path, final boolean skipMinVersionCheck) {
-        final Promise<LogSegmentMetadata> result = new Promise<LogSegmentMetadata>();
+    public static CompletableFuture<LogSegmentMetadata> read(ZooKeeperClient zkc, String path, final boolean skipMinVersionCheck) {
+        final CompletableFuture<LogSegmentMetadata> result = new CompletableFuture<LogSegmentMetadata>();
         try {
             zkc.get().getData(path, false, new AsyncCallback.DataCallback() {
                 @Override
                 public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
                     if (KeeperException.Code.OK.intValue() != rc) {
                         if (KeeperException.Code.NONODE.intValue() == rc) {
-                            FutureUtils.setException(result, new LogSegmentNotFoundException(path));
+                            FutureUtils.completeExceptionally(result, new LogSegmentNotFoundException(path));
                         } else {
-                            FutureUtils.setException(result,
+                            FutureUtils.completeExceptionally(result,
                                     new ZKException("Failed to read log segment metadata from " + path,
                                             KeeperException.Code.get(rc)));
                         }
@@ -612,17 +611,17 @@ public class LogSegmentMetadata {
                     }
                     try {
                         LogSegmentMetadata metadata = parseData(path, data, skipMinVersionCheck);
-                        FutureUtils.setValue(result, metadata);
+                        FutureUtils.complete(result, metadata);
                     } catch (IOException ie) {
                         LOG.error("Error on parsing log segment metadata from {} : ", path, ie);
-                        result.setException(ie);
+                        result.completeExceptionally(ie);
                     }
                 }
             }, null);
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            result.setException(FutureUtils.zkException(e, path));
+            result.completeExceptionally(Utils.zkException(e, path));
         } catch (InterruptedException e) {
-            result.setException(FutureUtils.zkException(e, path));
+            result.completeExceptionally(Utils.zkException(e, path));
         }
         return result;
     }

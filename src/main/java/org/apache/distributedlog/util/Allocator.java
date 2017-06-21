@@ -17,12 +17,11 @@
  */
 package org.apache.distributedlog.util;
 
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.io.AsyncCloseable;
 import org.apache.distributedlog.io.AsyncDeleteable;
 import org.apache.distributedlog.util.Transaction.OpListener;
-import com.twitter.util.Future;
-
-import java.io.IOException;
 
 /**
  * A common interface to allocate <i>I</i> under transaction <i>T</i>.
@@ -47,7 +46,7 @@ import java.io.IOException;
  * final Transaction<T> txn = ...;
  *
  * // Try obtain object I
- * Future<I> tryObtainFuture = allocator.tryObtain(txn, new OpListener<I>() {
+ * CompletableFuture<I> tryObtainFuture = allocator.tryObtain(txn, new OpListener<I>() {
  *     public void onCommit(I resource) {
  *         // the obtain succeed, process with the resource
  *     }
@@ -97,6 +96,6 @@ public interface Allocator<I, T> extends AsyncCloseable, AsyncDeleteable {
      *          transaction.
      * @return future result returning <i>I</i> that would be obtained under transaction <code>txn</code>.
      */
-    Future<I> tryObtain(Transaction<T> txn, OpListener<I> listener);
+    CompletableFuture<I> tryObtain(Transaction<T> txn, OpListener<I> listener);
 
 }

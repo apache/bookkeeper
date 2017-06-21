@@ -19,10 +19,9 @@ package org.apache.distributedlog.impl.acl;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.thrift.AccessControlEntry;
-import com.twitter.util.Future;
-import com.twitter.util.Promise;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.transport.TMemoryBuffer;
@@ -100,8 +99,8 @@ public class ZKAccessControl {
         return accessControlEntry;
     }
 
-    public Future<ZKAccessControl> create(ZooKeeperClient zkc) {
-        final Promise<ZKAccessControl> promise = new Promise<ZKAccessControl>();
+    public CompletableFuture<ZKAccessControl> create(ZooKeeperClient zkc) {
+        final CompletableFuture<ZKAccessControl> promise = new CompletableFuture<ZKAccessControl>();
         try {
             zkc.get().create(zkPath, serialize(accessControlEntry), zkc.getDefaultACL(), CreateMode.PERSISTENT,
                     new AsyncCallback.StringCallback() {
@@ -109,48 +108,48 @@ public class ZKAccessControl {
                         public void processResult(int rc, String path, Object ctx, String name) {
                             if (KeeperException.Code.OK.intValue() == rc) {
                                 ZKAccessControl.this.zkVersion = 0;
-                                promise.setValue(ZKAccessControl.this);
+                                promise.complete(ZKAccessControl.this);
                             } else {
-                                promise.setException(KeeperException.create(KeeperException.Code.get(rc)));
+                                promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc)));
                             }
                         }
                     }, null);
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         } catch (InterruptedException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         } catch (IOException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         }
         return promise;
     }
 
-    public Future<ZKAccessControl> update(ZooKeeperClient zkc) {
-        final Promise<ZKAccessControl> promise = new Promise<ZKAccessControl>();
+    public CompletableFuture<ZKAccessControl> update(ZooKeeperClient zkc) {
+        final CompletableFuture<ZKAccessControl> promise = new CompletableFuture<ZKAccessControl>();
         try {
             zkc.get().setData(zkPath, serialize(accessControlEntry), zkVersion, new AsyncCallback.StatCallback() {
                 @Override
                 public void processResult(int rc, String path, Object ctx, Stat stat) {
                     if (KeeperException.Code.OK.intValue() == rc) {
                         ZKAccessControl.this.zkVersion = stat.getVersion();
-                        promise.setValue(ZKAccessControl.this);
+                        promise.complete(ZKAccessControl.this);
                     } else {
-                        promise.setException(KeeperException.create(KeeperException.Code.get(rc)));
+                        promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc)));
                     }
                 }
             }, null);
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         } catch (InterruptedException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         } catch (IOException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         }
         return promise;
     }
 
-    public static Future<ZKAccessControl> read(final ZooKeeperClient zkc, final String zkPath, Watcher watcher) {
-        final Promise<ZKAccessControl> promise = new Promise<ZKAccessControl>();
+    public static CompletableFuture<ZKAccessControl> read(final ZooKeeperClient zkc, final String zkPath, Watcher watcher) {
+        final CompletableFuture<ZKAccessControl> promise = new CompletableFuture<ZKAccessControl>();
 
         try {
             zkc.get().getData(zkPath, watcher, new AsyncCallback.DataCallback() {
@@ -159,25 +158,25 @@ public class ZKAccessControl {
                     if (KeeperException.Code.OK.intValue() == rc) {
                         try {
                             AccessControlEntry ace = deserialize(zkPath, data);
-                            promise.setValue(new ZKAccessControl(ace, zkPath, stat.getVersion()));
+                            promise.complete(new ZKAccessControl(ace, zkPath, stat.getVersion()));
                         } catch (IOException ioe) {
-                            promise.setException(ioe);
+                            promise.completeExceptionally(ioe);
                         }
                     } else {
-                        promise.setException(KeeperException.create(KeeperException.Code.get(rc)));
+                        promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc)));
                     }
                 }
             }, null);
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         } catch (InterruptedException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         }
         return promise;
     }
 
-    public static Future<Void> delete(final ZooKeeperClient zkc, final String zkPath) {
-        final Promise<Void> promise = new Promise<Void>();
+    public static CompletableFuture<Void> delete(final ZooKeeperClient zkc, final String zkPath) {
+        final CompletableFuture<Void> promise = new CompletableFuture<Void>();
 
         try {
             zkc.get().delete(zkPath, -1, new AsyncCallback.VoidCallback() {
@@ -185,16 +184,16 @@ public class ZKAccessControl {
                 public void processResult(int rc, String path, Object ctx) {
                     if (KeeperException.Code.OK.intValue() == rc ||
                             KeeperException.Code.NONODE.intValue() == rc) {
-                        promise.setValue(null);
+                        promise.complete(null);
                     } else {
-                        promise.setException(KeeperException.create(KeeperException.Code.get(rc)));
+                        promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc)));
                     }
                 }
             }, null);
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         } catch (InterruptedException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         }
         return promise;
     }

@@ -18,20 +18,21 @@
 package org.apache.distributedlog;
 
 import com.google.common.base.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
+import org.apache.distributedlog.api.AsyncLogWriter;
+import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.api.LogWriter;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.exceptions.OwnershipAcquireFailedException;
 import org.apache.distributedlog.logsegment.LogSegmentFilter;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.Utils;
-import com.twitter.util.Duration;
-import com.twitter.util.Future;
-import com.twitter.util.Await;
 
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-import com.twitter.util.TimeoutException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -78,21 +79,21 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         DistributedLogManager dlm1 = createNewDLM(confLocal, dlName);
         long txid = 1;
 
-        ArrayList<Future<DLSN>> futures = new ArrayList<Future<DLSN>>(numEntriesPerSegment);
+        ArrayList<CompletableFuture<DLSN>> futures = new ArrayList<CompletableFuture<DLSN>>(numEntriesPerSegment);
         AsyncLogWriter out = dlm1.startAsyncLogSegmentNonPartitioned();
         for (int eid = 0; eid < numEntriesPerSegment; ++eid) {
             futures.add(out.write(DLMTestUtil.getLogRecordInstance(txid)));
             ++txid;
         }
-        FutureUtils.result(Future.collect(futures));
+        Utils.ioResult(FutureUtils.collect(futures));
         // commit
         LogRecord controlRecord = new LogRecord(txid, DistributedLogConstants.CONTROL_RECORD_CONTENT);
         controlRecord.setControl();
-        FutureUtils.result(out.write(controlRecord));
+        Utils.ioResult(out.write(controlRecord));
 
         DLSN last = dlm1.getLastDLSN();
         assertEquals(new DLSN(1,9,0), last);
-        DLSN first = Await.result(dlm1.getFirstDLSNAsync());
+        DLSN first = Utils.ioResult(dlm1.getFirstDLSNAsync());
         assertEquals(new DLSN(1,0,0), first);
         Utils.close(out);
     }
@@ -102,9 +103,9 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         String dlName = runtime.getMethodName();
         BKDistributedLogManager dlm = createNewDLM(conf, dlName);
         BKLogReadHandler readHandler = dlm.createReadHandler();
-        Future<LogRecordWithDLSN> futureRecord = readHandler.asyncGetFirstLogRecord();
+        CompletableFuture<LogRecordWithDLSN> futureRecord = readHandler.asyncGetFirstLogRecord();
         try {
-            Await.result(futureRecord);
+            Utils.ioResult(futureRecord);
             fail("should have thrown exception");
         } catch (LogNotFoundException ex) {
         }
@@ -116,9 +117,9 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         BKDistributedLogManager dlm = createNewDLM(conf, dlName);
         DLMTestUtil.generateCompletedLogSegments(dlm, conf, 3, 3);
         BKLogReadHandler readHandler = dlm.createReadHandler();
-        Future<LogRecordWithDLSN> futureRecord = readHandler.asyncGetFirstLogRecord();
+        CompletableFuture<LogRecordWithDLSN> futureRecord = readHandler.asyncGetFirstLogRecord();
         try {
-            LogRecordWithDLSN record = Await.result(futureRecord);
+            LogRecordWithDLSN record = Utils.ioResult(futureRecord);
             assertEquals(new DLSN(1, 0, 0), record.getDlsn());
         } catch (Exception ex) {
             fail("should not have thrown exception: " + ex);
@@ -133,11 +134,11 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         BKLogReadHandler readHandler =
             ((BKDistributedLogManager) dlm).createReadHandler();
         AsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned();
-        Future<Boolean> futureSuccess = writer.truncate(new DLSN(2, 0, 0));
-        Boolean success = Await.result(futureSuccess);
+        CompletableFuture<Boolean> futureSuccess = writer.truncate(new DLSN(2, 0, 0));
+        Boolean success = Utils.ioResult(futureSuccess);
         assertTrue(success);
-        Future<LogRecordWithDLSN> futureRecord = readHandler.asyncGetFirstLogRecord();
-        LogRecordWithDLSN record = Await.result(futureRecord);
+        CompletableFuture<LogRecordWithDLSN> futureRecord = readHandler.asyncGetFirstLogRecord();
+        LogRecordWithDLSN record = Utils.ioResult(futureRecord);
         assertEquals(new DLSN(2, 0, 0), record.getDlsn());
     }
 
@@ -151,11 +152,11 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         AsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned();
 
         // Only truncates at ledger boundary.
-        Future<Boolean> futureSuccess = writer.truncate(new DLSN(2, 5, 0));
-        Boolean success = Await.result(futureSuccess);
+        CompletableFuture<Boolean> futureSuccess = writer.truncate(new DLSN(2, 5, 0));
+        Boolean success = Utils.ioResult(futureSuccess);
         assertTrue(success);
-        Future<LogRecordWithDLSN> futureRecord = readHandler.asyncGetFirstLogRecord();
-        LogRecordWithDLSN record = Await.result(futureRecord);
+        CompletableFuture<LogRecordWithDLSN> futureRecord = readHandler.asyncGetFirstLogRecord();
+        LogRecordWithDLSN record = Utils.ioResult(futureRecord);
         assertEquals(new DLSN(2, 0, 0), record.getDlsn());
     }
 
@@ -164,10 +165,10 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         String dlName = runtime.getMethodName();
         DistributedLogManager dlm = createNewDLM(conf, dlName);
         BKLogReadHandler readHandler = ((BKDistributedLogManager) dlm).createReadHandler();
-        Future<Long> count = null;
+        CompletableFuture<Long> count = null;
         count = readHandler.asyncGetLogRecordCount(DLSN.InitialDLSN);
         try {
-            Await.result(count);
+            Utils.ioResult(count);
             fail("log is empty, should have returned log empty ex");
         } catch (LogNotFoundException ex) {
         }
@@ -179,9 +180,9 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         prepareLogSegmentsNonPartitioned(dlName, 11, 3);
         DistributedLogManager dlm = createNewDLM(conf, dlName);
         BKLogReadHandler readHandler = ((BKDistributedLogManager) dlm).createReadHandler();
-        Future<Long> count = null;
+        CompletableFuture<Long> count = null;
         count = readHandler.asyncGetLogRecordCount(DLSN.InitialDLSN);
-        assertEquals(33, Await.result(count).longValue());
+        assertEquals(33, Utils.ioResult(count).longValue());
     }
 
     @Test(timeout = 60000)
@@ -190,11 +191,11 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         prepareLogSegmentsNonPartitioned(dlName, 11, 3);
         DistributedLogManager dlm = createNewDLM(conf, dlName);
         BKLogReadHandler readHandler = ((BKDistributedLogManager) dlm).createReadHandler();
-        Future<Long> count = null;
+        CompletableFuture<Long> count = null;
         count = readHandler.asyncGetLogRecordCount(new DLSN(2, 0, 0));
-        assertEquals(30, Await.result(count).longValue());
+        assertEquals(30, Utils.ioResult(count).longValue());
         count = readHandler.asyncGetLogRecordCount(new DLSN(3, 0, 0));
-        assertEquals(27, Await.result(count).longValue());
+        assertEquals(27, Utils.ioResult(count).longValue());
     }
 
     @Test(timeout = 60000)
@@ -203,9 +204,9 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         prepareLogSegmentsNonPartitioned(dlName, 11, 3);
         DistributedLogManager dlm = createNewDLM(conf, dlName);
         BKLogReadHandler readHandler = ((BKDistributedLogManager) dlm).createReadHandler();
-        Future<Long> count = null;
+        CompletableFuture<Long> count = null;
         count = readHandler.asyncGetLogRecordCount(new DLSN(12, 0, 0));
-        assertEquals(0, Await.result(count).longValue());
+        assertEquals(0, Utils.ioResult(count).longValue());
     }
 
     @Test(timeout = 60000)
@@ -214,9 +215,9 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         prepareLogSegmentsNonPartitioned(dlName, 11, 3);
         DistributedLogManager dlm = createNewDLM(conf, dlName);
         BKLogReadHandler readHandler = ((BKDistributedLogManager) dlm).createReadHandler();
-        Future<Long> count = null;
+        CompletableFuture<Long> count = null;
         count = readHandler.asyncGetLogRecordCount(new DLSN(11, 2, 0));
-        assertEquals(1, Await.result(count).longValue());
+        assertEquals(1, Utils.ioResult(count).longValue());
     }
 
     @Test(timeout = 60000)
@@ -225,11 +226,11 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         prepareLogSegmentsNonPartitioned(dlName, 5, 10);
         DistributedLogManager dlm = createNewDLM(conf, dlName);
         BKLogReadHandler readHandler = ((BKDistributedLogManager) dlm).createReadHandler();
-        Future<Long> count = null;
+        CompletableFuture<Long> count = null;
         count = readHandler.asyncGetLogRecordCount(new DLSN(3, 5, 0));
-        assertEquals(25, Await.result(count).longValue());
+        assertEquals(25, Utils.ioResult(count).longValue());
         count = readHandler.asyncGetLogRecordCount(new DLSN(2, 5, 0));
-        assertEquals(35, Await.result(count).longValue());
+        assertEquals(35, Utils.ioResult(count).longValue());
     }
 
     @Test(timeout = 60000)
@@ -239,9 +240,9 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         txid += DLMTestUtil.generateLogSegmentNonPartitioned(dlm, 5, 5, txid);
         txid += DLMTestUtil.generateLogSegmentNonPartitioned(dlm, 0, 10, txid);
         BKLogReadHandler readHandler = ((BKDistributedLogManager) dlm).createReadHandler();
-        Future<Long> count = null;
+        CompletableFuture<Long> count = null;
         count = readHandler.asyncGetLogRecordCount(new DLSN(1, 0, 0));
-        assertEquals(15, Await.result(count).longValue());
+        assertEquals(15, Utils.ioResult(count).longValue());
     }
 
     @Test(timeout = 60000)
@@ -251,9 +252,9 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         txid += DLMTestUtil.generateLogSegmentNonPartitioned(dlm, 5, 0, txid);
         txid += DLMTestUtil.generateLogSegmentNonPartitioned(dlm, 10, 0, txid);
         BKLogReadHandler readHandler = ((BKDistributedLogManager) dlm).createReadHandler();
-        Future<Long> count = null;
+        CompletableFuture<Long> count = null;
         count = readHandler.asyncGetLogRecordCount(new DLSN(1, 0, 0));
-        assertEquals(0, Await.result(count).longValue());
+        assertEquals(0, Utils.ioResult(count).longValue());
     }
 
     @Test(timeout = 60000)
@@ -264,12 +265,12 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         AsyncLogWriter out = bkdlm.startAsyncLogSegmentNonPartitioned();
         int txid = 1;
 
-        Await.result(out.write(DLMTestUtil.getLargeLogRecordInstance(txid++, false)));
-        Await.result(out.write(DLMTestUtil.getLargeLogRecordInstance(txid++, false)));
-        Await.result(out.write(DLMTestUtil.getLargeLogRecordInstance(txid++, false)));
+        Utils.ioResult(out.write(DLMTestUtil.getLargeLogRecordInstance(txid++, false)));
+        Utils.ioResult(out.write(DLMTestUtil.getLargeLogRecordInstance(txid++, false)));
+        Utils.ioResult(out.write(DLMTestUtil.getLargeLogRecordInstance(txid++, false)));
 
         BKLogReadHandler readHandler = bkdlm.createReadHandler();
-        List<LogSegmentMetadata> ledgerList = FutureUtils.result(
+        List<LogSegmentMetadata> ledgerList = Utils.ioResult(
                 readHandler.readLogSegmentsFromStore(
                         LogSegmentMetadata.COMPARATOR,
                         LogSegmentFilter.DEFAULT_FILTER,
@@ -279,9 +280,9 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         assertEquals(1, ledgerList.size());
         assertTrue(ledgerList.get(0).isInProgress());
 
-        Future<Long> count = null;
+        CompletableFuture<Long> count = null;
         count = readHandler.asyncGetLogRecordCount(new DLSN(1, 0, 0));
-        assertEquals(2, Await.result(count).longValue());
+        assertEquals(2, Utils.ioResult(count).longValue());
 
         Utils.close(out);
     }
@@ -294,12 +295,12 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         long txid = 1;
         txid += DLMTestUtil.generateLogSegmentNonPartitioned(bkdlm, 0, 5, txid);
         AsyncLogWriter out = bkdlm.startAsyncLogSegmentNonPartitioned();
-        Await.result(out.write(DLMTestUtil.getLargeLogRecordInstance(txid++, false)));
-        Await.result(out.write(DLMTestUtil.getLargeLogRecordInstance(txid++, false)));
-        Await.result(out.write(DLMTestUtil.getLargeLogRecordInstance(txid++, false)));
+        Utils.ioResult(out.write(DLMTestUtil.getLargeLogRecordInstance(txid++, false)));
+        Utils.ioResult(out.write(DLMTestUtil.getLargeLogRecordInstance(txid++, false)));
+        Utils.ioResult(out.write(DLMTestUtil.getLargeLogRecordInstance(txid++, false)));
 
         BKLogReadHandler readHandler = bkdlm.createReadHandler();
-        List<LogSegmentMetadata> ledgerList = FutureUtils.result(
+        List<LogSegmentMetadata> ledgerList = Utils.ioResult(
                 readHandler.readLogSegmentsFromStore(
                         LogSegmentMetadata.COMPARATOR,
                         LogSegmentFilter.DEFAULT_FILTER,
@@ -309,9 +310,9 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         assertFalse(ledgerList.get(0).isInProgress());
         assertTrue(ledgerList.get(1).isInProgress());
 
-        Future<Long> count = null;
+        CompletableFuture<Long> count = null;
         count = readHandler.asyncGetLogRecordCount(new DLSN(1, 0, 0));
-        assertEquals(7, Await.result(count).longValue());
+        assertEquals(7, Utils.ioResult(count).longValue());
 
         Utils.close(out);
     }
@@ -322,14 +323,14 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         BKDistributedLogManager bkdlm = (BKDistributedLogManager) createNewDLM(conf, streamName);
         BKLogReadHandler readHandler = bkdlm.createReadHandler();
         try {
-            Await.result(readHandler.lockStream());
+            Utils.ioResult(readHandler.lockStream());
             fail("Should fail lock stream if log not found");
         } catch (LogNotFoundException ex) {
         }
 
         BKLogReadHandler subscriberReadHandler = bkdlm.createReadHandler(Optional.of("test-subscriber"));
         try {
-            Await.result(subscriberReadHandler.lockStream());
+            Utils.ioResult(subscriberReadHandler.lockStream());
             fail("Subscriber should fail lock stream if log not found");
         } catch (LogNotFoundException ex) {
             // expected
@@ -342,17 +343,17 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         BKDistributedLogManager bkdlm = createNewDLM(conf, streamName);
         DLMTestUtil.generateLogSegmentNonPartitioned(bkdlm, 0, 5, 1);
         BKLogReadHandler readHandler = bkdlm.createReadHandler();
-        Await.result(readHandler.lockStream());
+        Utils.ioResult(readHandler.lockStream());
 
         // two subscribers could lock stream in parallel
         BKDistributedLogManager bkdlm10 = createNewDLM(conf, streamName);
         BKLogReadHandler s10Handler =
                 bkdlm10.createReadHandler(Optional.of("s1"));
-        Await.result(s10Handler.lockStream());
+        Utils.ioResult(s10Handler.lockStream());
         BKDistributedLogManager bkdlm20 = createNewDLM(conf, streamName);
         BKLogReadHandler s20Handler =
                 bkdlm20.createReadHandler(Optional.of("s2"));
-        Await.result(s20Handler.lockStream());
+        Utils.ioResult(s20Handler.lockStream());
 
         readHandler.asyncClose();
         bkdlm.close();
@@ -368,19 +369,19 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         BKDistributedLogManager bkdlm = createNewDLM(conf, streamName);
         DLMTestUtil.generateLogSegmentNonPartitioned(bkdlm, 0, 5, 1);
         BKLogReadHandler readHandler = bkdlm.createReadHandler();
-        Await.result(readHandler.lockStream());
+        Utils.ioResult(readHandler.lockStream());
 
         // same subscrbiers couldn't lock stream in parallel
         BKDistributedLogManager bkdlm10 = createNewDLM(conf, streamName);
         BKLogReadHandler s10Handler =
                 bkdlm10.createReadHandler(Optional.of("s1"));
-        Await.result(s10Handler.lockStream());
+        Utils.ioResult(s10Handler.lockStream());
 
         BKDistributedLogManager bkdlm11 = createNewDLM(conf, streamName);
         BKLogReadHandler s11Handler =
                 bkdlm11.createReadHandler(Optional.of("s1"));
         try {
-            Await.result(s11Handler.lockStream(), Duration.apply(10000, TimeUnit.MILLISECONDS));
+            Utils.ioResult(s11Handler.lockStream(), 10000, TimeUnit.MILLISECONDS);
             fail("Should fail lock stream using same subscriber id");
         } catch (OwnershipAcquireFailedException oafe) {
             // expected

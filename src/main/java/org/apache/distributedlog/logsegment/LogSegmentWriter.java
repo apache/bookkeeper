@@ -18,15 +18,14 @@
 package org.apache.distributedlog.logsegment;
 
 import com.google.common.annotations.Beta;
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.LogRecord;
 import org.apache.distributedlog.exceptions.BKTransmitException;
 import org.apache.distributedlog.exceptions.LockingException;
 import org.apache.distributedlog.io.AsyncAbortable;
 import org.apache.distributedlog.io.AsyncCloseable;
-import com.twitter.util.Future;
-
-import java.io.IOException;
 
 /**
  * An interface class to write log records into a log segment.
@@ -53,7 +52,7 @@ public interface LogSegmentWriter extends AsyncCloseable, AsyncAbortable {
      * @throws BKTransmitException if failed to transmit data to bk
      * @throws org.apache.distributedlog.exceptions.WriteException if failed to write to bk
      */
-    public Future<DLSN> asyncWrite(LogRecord record);
+    public CompletableFuture<DLSN> asyncWrite(LogRecord record);
 
     /**
      * This isn't a simple synchronous version of {@code asyncWrite}. It has different semantic.
@@ -74,7 +73,7 @@ public interface LogSegmentWriter extends AsyncCloseable, AsyncAbortable {
      *
      * @return future representing the transmit result with last acknowledged transaction id.
      */
-    public Future<Long> flush();
+    public CompletableFuture<Long> flush();
 
     /**
      * Commit the current acknowledged data. It is the consequent operation of {@link #flush()},
@@ -82,6 +81,6 @@ public interface LogSegmentWriter extends AsyncCloseable, AsyncAbortable {
      *
      * @return future representing the commit result.
      */
-    public Future<Long> commit();
+    public CompletableFuture<Long> commit();
 
 }

@@ -21,6 +21,20 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Ticker;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.distributedlog.api.AsyncLogReader;
 import org.apache.distributedlog.exceptions.DLIllegalStateException;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.exceptions.EndOfStreamException;
@@ -28,32 +42,12 @@ import org.apache.distributedlog.exceptions.IdleReaderException;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.exceptions.ReadCancelledException;
 import org.apache.distributedlog.exceptions.UnexpectedException;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
-import com.twitter.util.Promise;
-import com.twitter.util.Throw;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.Function1;
-import scala.runtime.AbstractFunction1;
-import scala.runtime.BoxedUnit;
 
 /**
  * BookKeeper based {@link AsyncLogReader} implementation.
@@ -76,13 +70,8 @@ import scala.runtime.BoxedUnit;
 class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
     static final Logger LOG = LoggerFactory.getLogger(BKAsyncLogReader.class);
 
-    private static final Function1<List<LogRecordWithDLSN>, LogRecordWithDLSN> READ_NEXT_MAP_FUNCTION =
-            new AbstractFunction1<List<LogRecordWithDLSN>, LogRecordWithDLSN>() {
-                @Override
-                public LogRecordWithDLSN apply(List<LogRecordWithDLSN> records) {
-                    return records.get(0);
-                }
-            };
+    private static final Function<List<LogRecordWithDLSN>, LogRecordWithDLSN> READ_NEXT_MAP_FUNCTION =
+        records -> records.get(0);
 
     private final String streamName;
     protected final BKDistributedLogManager bkDistributedLogManager;
@@ -104,7 +93,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
     // last process time
     private final Stopwatch lastProcessTime;
 
-    protected Promise<Void> closeFuture = null;
+    protected CompletableFuture<Void> closeFuture = null;
 
     private boolean lockStream = false;
 
@@ -143,7 +132,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
         private final Stopwatch enqueueTime;
         private final int numEntries;
         private final List<LogRecordWithDLSN> records;
-        private final Promise<List<LogRecordWithDLSN>> promise;
+        private final CompletableFuture<List<LogRecordWithDLSN>> promise;
         private final long deadlineTime;
         private final TimeUnit deadlineTimeUnit;
 
@@ -158,12 +147,12 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
             } else {
                 this.records = new ArrayList<LogRecordWithDLSN>();
             }
-            this.promise = new Promise<List<LogRecordWithDLSN>>();
+            this.promise = new CompletableFuture<List<LogRecordWithDLSN>>();
             this.deadlineTime = deadlineTime;
             this.deadlineTimeUnit = deadlineTimeUnit;
         }
 
-        Promise<List<LogRecordWithDLSN>> getPromise() {
+        CompletableFuture<List<LogRecordWithDLSN>> getPromise() {
             return promise;
         }
 
@@ -171,9 +160,9 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
             return enqueueTime.elapsed(timeUnit);
         }
 
-        void setException(Throwable throwable) {
+        void completeExceptionally(Throwable throwable) {
             Stopwatch stopwatch = Stopwatch.createStarted();
-            if (promise.updateIfEmpty(new Throw<List<LogRecordWithDLSN>>(throwable))) {
+            if (promise.completeExceptionally(throwable)) {
                 futureSetLatency.registerFailedEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
                 delayUntilPromiseSatisfied.registerFailedEvent(enqueueTime.elapsed(TimeUnit.MICROSECONDS));
             }
@@ -204,7 +193,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
             }
             delayUntilPromiseSatisfied.registerSuccessfulEvent(enqueueTime.stop().elapsed(TimeUnit.MICROSECONDS));
             Stopwatch stopwatch = Stopwatch.createStarted();
-            promise.setValue(records);
+            promise.complete(records);
             futureSetLatency.registerSuccessfulEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
         }
     }
@@ -333,7 +322,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
         return startDLSN;
     }
 
-    public Future<Void> lockStream() {
+    public CompletableFuture<Void> lockStream() {
         this.lockStream = true;
         return readHandler.lockStream();
     }
@@ -381,16 +370,16 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
      * @return A promise that when satisfied will contain the Log Record with its DLSN.
      */
     @Override
-    public synchronized Future<LogRecordWithDLSN> readNext() {
-        return readInternal(1, 0, TimeUnit.MILLISECONDS).map(READ_NEXT_MAP_FUNCTION);
+    public synchronized CompletableFuture<LogRecordWithDLSN> readNext() {
+        return readInternal(1, 0, TimeUnit.MILLISECONDS).thenApply(READ_NEXT_MAP_FUNCTION);
     }
 
-    public synchronized Future<List<LogRecordWithDLSN>> readBulk(int numEntries) {
+    public synchronized CompletableFuture<List<LogRecordWithDLSN>> readBulk(int numEntries) {
         return readInternal(numEntries, 0, TimeUnit.MILLISECONDS);
     }
 
     @Override
-    public synchronized Future<List<LogRecordWithDLSN>> readBulk(int numEntries,
+    public synchronized CompletableFuture<List<LogRecordWithDLSN>> readBulk(int numEntries,
                                                                  long waitTime,
                                                                  TimeUnit timeUnit) {
         return readInternal(numEntries, waitTime, timeUnit);
@@ -404,7 +393,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
      *          num entries to read
      * @return A promise that satisfied with a non-empty list of log records with their DLSN.
      */
-    private synchronized Future<List<LogRecordWithDLSN>> readInternal(int numEntries,
+    private synchronized CompletableFuture<List<LogRecordWithDLSN>> readInternal(int numEntries,
                                                                       long deadlineTime,
                                                                       TimeUnit deadlineTimeUnit) {
         timeBetweenReadNexts.registerSuccessfulEvent(readNextDelayStopwatch.elapsed(TimeUnit.MICROSECONDS));
@@ -421,19 +410,15 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                     bkDistributedLogManager.getScheduler(),
                     Ticker.systemTicker(),
                     bkDistributedLogManager.alertStatsLogger);
-            readHandler.checkLogStreamExists().addEventListener(new FutureEventListener<Void>() {
+            readHandler.checkLogStreamExists().whenComplete(new FutureEventListener<Void>() {
                 @Override
                 public void onSuccess(Void value) {
                     try {
                         readHandler.registerListener(readAheadEntryReader);
                         readHandler.asyncStartFetchLogSegments()
-                                .map(new AbstractFunction1<Versioned<List<LogSegmentMetadata>>, BoxedUnit>() {
-                                    @Override
-                                    public BoxedUnit apply(Versioned<List<LogSegmentMetadata>> logSegments) {
-                                        readAheadEntryReader.addStateChangeNotification(BKAsyncLogReader.this);
-                                        readAheadEntryReader.start(logSegments.getValue());
-                                        return BoxedUnit.UNIT;
-                                    }
+                                .thenAccept(logSegments -> {
+                                    readAheadEntryReader.addStateChangeNotification(BKAsyncLogReader.this);
+                                    readAheadEntryReader.start(logSegments.getValue());
                                 });
                     } catch (Exception exc) {
                         notifyOnError(exc);
@@ -448,7 +433,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
         }
 
         if (checkClosedOrInError("readNext")) {
-            readRequest.setException(lastException.get());
+            readRequest.completeExceptionally(lastException.get());
         } else {
             boolean queueEmpty = pendingRequests.isEmpty();
             pendingRequests.add(readRequest);
@@ -478,15 +463,15 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
     }
 
     @Override
-    public Future<Void> asyncClose() {
+    public CompletableFuture<Void> asyncClose() {
         // Cancel the idle reader timeout task, interrupting if necessary
         ReadCancelledException exception;
-        Promise<Void> closePromise;
+        CompletableFuture<Void> closePromise;
         synchronized (this) {
             if (null != closeFuture) {
                 return closeFuture;
             }
-            closePromise = closeFuture = new Promise<Void>();
+            closePromise = closeFuture = new CompletableFuture<Void>();
             exception = new ReadCancelledException(readHandler.getFullyQualifiedName(), "Reader was closed");
             setLastException(exception);
         }
@@ -507,16 +492,18 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
             readHandler.unregisterListener(readAheadReader);
             readAheadReader.removeStateChangeNotification(this);
         }
-        Utils.closeSequence(bkDistributedLogManager.getScheduler(), true,
-                readAheadReader,
-                readHandler
-        ).proxyTo(closePromise);
+        FutureUtils.proxyTo(
+            Utils.closeSequence(bkDistributedLogManager.getScheduler(), true,
+                    readAheadReader,
+                    readHandler
+            ),
+            closePromise);
         return closePromise;
     }
 
     private void cancelAllPendingReads(Throwable throwExc) {
         for (PendingReadRequest promise : pendingRequests) {
-            promise.setException(throwExc);
+            promise.completeExceptionally(throwExc);
         }
         pendingRequests.clear();
     }
@@ -591,7 +578,8 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                     }
 
                     if (disableProcessingReadRequests) {
-                        LOG.info("Reader of {} is forced to stop processing read requests", readHandler.getFullyQualifiedName());
+                        LOG.info("Reader of {} is forced to stop processing read requests",
+                            readHandler.getFullyQualifiedName());
                         return;
                     }
                 }
@@ -601,9 +589,9 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                 // the reader in error and abort all pending reads since we dont
                 // know the last consumed read
                 if (null == lastException.get()) {
-                    if (nextRequest.getPromise().isInterrupted().isDefined()) {
-                        setLastException(new DLInterruptedException("Interrupted on reading " + readHandler.getFullyQualifiedName() + " : ",
-                                nextRequest.getPromise().isInterrupted().get()));
+                    if (nextRequest.getPromise().isCancelled()) {
+                        setLastException(new DLInterruptedException("Interrupted on reading "
+                            + readHandler.getFullyQualifiedName()));
                     }
                 }
 
@@ -680,9 +668,9 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                     } else {
                         DLIllegalStateException ise = new DLIllegalStateException("Unexpected condition at dlsn = "
                                 + nextRequest.records.get(0).getDlsn());
-                        nextRequest.setException(ise);
+                        nextRequest.completeExceptionally(ise);
                         if (null != request) {
-                            request.setException(ise);
+                            request.completeExceptionally(ise);
                         }
                         // We should never get here as we should have exited the loop if
                         // pendingRequests were empty

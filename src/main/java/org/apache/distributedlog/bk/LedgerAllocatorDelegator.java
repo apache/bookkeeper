@@ -17,9 +17,10 @@
  */
 package org.apache.distributedlog.bk;
 
+import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.Transaction;
 import org.apache.distributedlog.util.Transaction.OpListener;
-import com.twitter.util.Future;
 import org.apache.bookkeeper.client.LedgerHandle;
 
 import java.io.IOException;
@@ -57,8 +58,8 @@ public class LedgerAllocatorDelegator implements LedgerAllocator {
     }
 
     @Override
-    public Future<Void> delete() {
-        return Future.exception(new UnsupportedOperationException("Can't delete an allocator by delegator"));
+    public CompletableFuture<Void> delete() {
+        return FutureUtils.exception(new UnsupportedOperationException("Can't delete an allocator by delegator"));
     }
 
     @Override
@@ -67,17 +68,17 @@ public class LedgerAllocatorDelegator implements LedgerAllocator {
     }
 
     @Override
-    public Future<LedgerHandle> tryObtain(Transaction<Object> txn,
+    public CompletableFuture<LedgerHandle> tryObtain(Transaction<Object> txn,
                                           OpListener<LedgerHandle> listener) {
         return this.allocator.tryObtain(txn, listener);
     }
 
     @Override
-    public Future<Void> asyncClose() {
+    public CompletableFuture<Void> asyncClose() {
         if (ownAllocator) {
             return this.allocator.asyncClose();
         } else {
-            return Future.value(null);
+            return FutureUtils.value(null);
         }
     }
 }

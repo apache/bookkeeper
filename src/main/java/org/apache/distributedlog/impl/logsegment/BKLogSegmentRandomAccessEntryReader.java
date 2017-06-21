@@ -18,14 +18,13 @@
 package org.apache.distributedlog.impl.logsegment;
 
 import com.google.common.collect.Lists;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.Entry;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.exceptions.BKTransmitException;
 import org.apache.distributedlog.logsegment.LogSegmentRandomAccessEntryReader;
-import org.apache.distributedlog.util.FutureUtils;
-import com.twitter.util.Future;
-import com.twitter.util.Promise;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerEntry;
@@ -49,7 +48,7 @@ class BKLogSegmentRandomAccessEntryReader implements
     // state
     private final LogSegmentMetadata metadata;
     private final LedgerHandle lh;
-    private Promise<Void> closePromise = null;
+    private CompletableFuture<Void> closePromise = null;
 
     BKLogSegmentRandomAccessEntryReader(LogSegmentMetadata metadata,
                                         LedgerHandle lh,
@@ -68,8 +67,8 @@ class BKLogSegmentRandomAccessEntryReader implements
     }
 
     @Override
-    public Future<List<Entry.Reader>> readEntries(long startEntryId, long endEntryId) {
-        Promise<List<Entry.Reader>> promise = new Promise<List<Entry.Reader>>();
+    public CompletableFuture<List<Entry.Reader>> readEntries(long startEntryId, long endEntryId) {
+        CompletableFuture<List<Entry.Reader>> promise = new CompletableFuture<List<Entry.Reader>>();
         lh.asyncReadEntries(startEntryId, endEntryId, this, promise);
         return promise;
     }
@@ -86,34 +85,37 @@ class BKLogSegmentRandomAccessEntryReader implements
 
     @Override
     public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> entries, Object ctx) {
-        Promise<List<Entry.Reader>> promise = (Promise<List<Entry.Reader>>) ctx;
+        CompletableFuture<List<Entry.Reader>> promise = (CompletableFuture<List<Entry.Reader>>) ctx;
         if (BKException.Code.OK == rc) {
             List<Entry.Reader> entryList = Lists.newArrayList();
             while (entries.hasMoreElements()) {
                 try {
                     entryList.add(processReadEntry(entries.nextElement()));
                 } catch (IOException ioe) {
-                    FutureUtils.setException(promise, ioe);
+                    FutureUtils.completeExceptionally(promise, ioe);
                     return;
                 }
             }
-            FutureUtils.setValue(promise, entryList);
+            FutureUtils.complete(promise, entryList);
         } else {
-            FutureUtils.setException(promise,
+            FutureUtils.completeExceptionally(promise,
                     new BKTransmitException("Failed to read entries :", rc));
         }
     }
 
     @Override
-    public Future<Void> asyncClose() {
-        final Promise<Void> closeFuture;
+    public CompletableFuture<Void> asyncClose() {
+        final CompletableFuture<Void> closeFuture;
         synchronized (this) {
             if (null != closePromise) {
                 return closePromise;
             }
-            closeFuture = closePromise = new Promise<Void>();
+            closeFuture = closePromise = new CompletableFuture<Void>();
         }
-        BKUtils.closeLedgers(lh).proxyTo(closeFuture);
+        FutureUtils.proxyTo(
+            BKUtils.closeLedgers(lh),
+            closeFuture
+        );
         return closeFuture;
     }
 }

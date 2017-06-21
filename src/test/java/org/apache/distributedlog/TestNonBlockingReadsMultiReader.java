@@ -18,8 +18,10 @@
 package org.apache.distributedlog;
 
 import com.google.common.util.concurrent.RateLimiter;
+import org.apache.distributedlog.api.AsyncLogWriter;
+import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
-import org.apache.distributedlog.util.FutureUtils;
 import org.apache.distributedlog.util.Utils;
 import org.junit.Test;
 
@@ -93,8 +95,8 @@ public class TestNonBlockingReadsMultiReader extends TestDistributedLogBase {
         DistributedLogManager dlmwrite = createNewDLM(confLocal, name);
 
         final AsyncLogWriter writer = dlmwrite.startAsyncLogSegmentNonPartitioned();
-        FutureUtils.result(writer.write(DLMTestUtil.getLogRecordInstance(0)));
-        FutureUtils.result(writer.write(DLMTestUtil.getLogRecordInstance(1)));
+        Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(0)));
+        Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(1)));
         final AtomicInteger writeCount = new AtomicInteger(2);
 
         DistributedLogManager dlmread = createNewDLM(conf, name);
@@ -116,7 +118,7 @@ public class TestNonBlockingReadsMultiReader extends TestDistributedLogBase {
                         while (running.get()) {
                             limiter.acquire();
                             long curTxId = txid++;
-                            dlsn = FutureUtils.result(writer.write(DLMTestUtil.getLogRecordInstance(curTxId)));
+                            dlsn = Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(curTxId)));
                             writeCount.incrementAndGet();
                             if (curTxId % 1000 == 0) {
                                 LOG.info("writer write {}", curTxId);
@@ -126,7 +128,7 @@ public class TestNonBlockingReadsMultiReader extends TestDistributedLogBase {
                         Utils.close(writer);
                     } catch (DLInterruptedException die) {
                         Thread.currentThread().interrupt();
-                    } catch (IOException e) {
+                    } catch (Exception e) {
 
                     }
                 }

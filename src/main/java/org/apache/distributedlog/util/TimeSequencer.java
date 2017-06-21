@@ -18,6 +18,7 @@
 package org.apache.distributedlog.util;
 
 import org.apache.distributedlog.DistributedLogConstants;
+import org.apache.distributedlog.common.util.Sequencer;
 
 /**
  * Time based sequencer. It generated non-decreasing transaction id using milliseconds.

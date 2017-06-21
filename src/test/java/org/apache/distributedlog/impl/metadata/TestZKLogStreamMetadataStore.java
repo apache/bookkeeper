@@ -20,19 +20,17 @@ package org.apache.distributedlog.impl.metadata;
 import com.google.common.collect.Lists;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.DistributedLogConfiguration;
-import org.apache.distributedlog.MetadataAccessor;
+import org.apache.distributedlog.api.MetadataAccessor;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
-import org.apache.distributedlog.impl.metadata.BKDLConfig;
+import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.metadata.DLMetadata;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
-import org.apache.distributedlog.namespace.DistributedLogNamespace;
-import org.apache.distributedlog.namespace.DistributedLogNamespaceBuilder;
+import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.ZooKeeperClusterTestCase;
 import org.apache.distributedlog.util.DLUtils;
-import org.apache.distributedlog.util.FutureUtils;
 import org.apache.distributedlog.util.Utils;
 import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -129,7 +127,7 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
     public void testCheckLogMetadataPathsWithAllocator() throws Exception {
         String logRootPath = "/" + testName.getMethodName();
         List<Versioned<byte[]>> metadatas =
-                FutureUtils.result(checkLogMetadataPaths(
+                Utils.ioResult(checkLogMetadataPaths(
                         zkc.get(), logRootPath, true));
         assertEquals("Should have 8 paths",
                 8, metadatas.size());
@@ -143,7 +141,7 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
     public void testCheckLogMetadataPathsWithoutAllocator() throws Exception {
         String logRootPath = "/" + testName.getMethodName();
         List<Versioned<byte[]>> metadatas =
-                FutureUtils.result(checkLogMetadataPaths(
+                Utils.ioResult(checkLogMetadataPaths(
                         zkc.get(), logRootPath, false));
         assertEquals("Should have 7 paths",
                 7, metadatas.size());
@@ -169,12 +167,12 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
         }
 
         LogMetadataForWriter logMetadata =
-                FutureUtils.result(getLog(uri, logName, logIdentifier, zkc, ownAllocator, true));
+                Utils.ioResult(getLog(uri, logName, logIdentifier, zkc, ownAllocator, true));
 
         final String logRootPath = getLogRootPath(uri, logName, logIdentifier);
 
         List<Versioned<byte[]>> metadatas =
-                FutureUtils.result(checkLogMetadataPaths(zkc.get(), logRootPath, ownAllocator));
+                Utils.ioResult(checkLogMetadataPaths(zkc.get(), logRootPath, ownAllocator));
 
         if (ownAllocator) {
             assertEquals("Should have 8 paths : ownAllocator = " + ownAllocator,
@@ -301,7 +299,7 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
     public void testCreateLogMetadataWithCreateIfNotExistsSetToFalse() throws Exception {
         String logName = testName.getMethodName();
         String logIdentifier = "<default>";
-        FutureUtils.result(getLog(uri, logName, logIdentifier, zkc, true, false));
+        Utils.ioResult(getLog(uri, logName, logIdentifier, zkc, true, false));
     }
 
     @Test(timeout = 60000)
@@ -312,7 +310,7 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
 
         DLMetadata.create(new BKDLConfig(zkServers, "/ledgers")).update(uri);
 
-        DistributedLogNamespace namespace = DistributedLogNamespaceBuilder.newBuilder()
+        Namespace namespace = NamespaceBuilder.newBuilder()
             .conf(new DistributedLogConfiguration())
             .uri(uri)
             .build();

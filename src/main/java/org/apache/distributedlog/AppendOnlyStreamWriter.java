@@ -17,14 +17,12 @@
  */
 package org.apache.distributedlog;
 
-import org.apache.distributedlog.exceptions.UnexpectedException;
-import org.apache.distributedlog.util.FutureUtils;
-import com.twitter.util.Await;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
 import java.io.Closeable;
 import java.io.IOException;
-
+import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.exceptions.UnexpectedException;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,16 +42,16 @@ public class AppendOnlyStreamWriter implements Closeable {
         this.requestPos = pos;
     }
 
-    public Future<DLSN> write(byte[] data) {
+    public CompletableFuture<DLSN> write(byte[] data) {
         requestPos += data.length;
-        Future<DLSN> writeResult = logWriter.write(new LogRecord(requestPos, data));
-        return writeResult.addEventListener(new WriteCompleteListener(requestPos));
+        CompletableFuture<DLSN> writeResult = logWriter.write(new LogRecord(requestPos, data));
+        return writeResult.whenComplete(new WriteCompleteListener(requestPos));
     }
 
     public void force(boolean metadata) throws IOException {
         long pos = 0;
         try {
-            pos = Await.result(logWriter.flushAndCommit());
+            pos = FutureUtils.result(logWriter.flushAndCommit());
         } catch (IOException ioe) {
             throw ioe;
         } catch (Exception ex) {
@@ -78,7 +76,7 @@ public class AppendOnlyStreamWriter implements Closeable {
 
     public void markEndOfStream() throws IOException {
         try {
-            Await.result(logWriter.markEndOfStream());
+            FutureUtils.result(logWriter.markEndOfStream());
         } catch (IOException ioe) {
             throw ioe;
         } catch (Exception ex) {

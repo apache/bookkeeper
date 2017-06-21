@@ -25,16 +25,14 @@ import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.TestDistributedLogBase;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
 import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.ZooKeeperClientBuilder;
 import org.apache.distributedlog.ZooKeeperClientUtils;
 import org.apache.distributedlog.callback.NamespaceListener;
 import org.apache.distributedlog.exceptions.LogExistsException;
 import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.apache.distributedlog.impl.BKNamespaceDriver;
 import org.apache.distributedlog.metadata.LogMetadataStore;
-import org.apache.distributedlog.util.DLUtils;
-import org.apache.distributedlog.util.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
+import org.apache.distributedlog.util.Utils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -153,7 +151,7 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
     }
 
     private void deleteLog(String logName) throws Exception {
-        Optional<URI> logUriOptional = FutureUtils.result(metadataStore.getLogLocation(logName));
+        Optional<URI> logUriOptional = Utils.ioResult(metadataStore.getLogLocation(logName));
         assertTrue(logUriOptional.isPresent());
         URI logUri = logUriOptional.get();
         zkc.get().delete(logUri.getPath() + "/" + logName, -1);
@@ -164,12 +162,12 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
         TestNamespaceListener listener = new TestNamespaceListener();
         metadataStore.registerNamespaceListener(listener);
         String logName = "test-log-1";
-        URI logUri = FutureUtils.result(metadataStore.createLog(logName));
+        URI logUri = Utils.ioResult(metadataStore.createLog(logName));
         assertEquals(uri, logUri);
-        Optional<URI> logLocation = FutureUtils.result(metadataStore.getLogLocation(logName));
+        Optional<URI> logLocation = Utils.ioResult(metadataStore.getLogLocation(logName));
         assertTrue(logLocation.isPresent());
         assertEquals(uri, logLocation.get());
-        Optional<URI> notExistLogLocation = FutureUtils.result(metadataStore.getLogLocation("non-existent-log"));
+        Optional<URI> notExistLogLocation = Utils.ioResult(metadataStore.getLogLocation("non-existent-log"));
         assertFalse(notExistLogLocation.isPresent());
         // listener should receive notification
         listener.waitForDone();
@@ -178,7 +176,7 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
         assertEquals(logName, logsIter.next());
         assertFalse(logsIter.hasNext());
         // get logs should return the log
-        Iterator<String> newLogsIter = FutureUtils.result(metadataStore.getLogs());
+        Iterator<String> newLogsIter = Utils.ioResult(metadataStore.getLogs());
         assertTrue(newLogsIter.hasNext());
         assertEquals(logName, newLogsIter.next());
         assertFalse(newLogsIter.hasNext());
@@ -191,7 +189,7 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
         metadataStore.registerNamespaceListener(listener1);
         metadataStore.registerNamespaceListener(listener2);
         String logName = "test-multiple-listeners";
-        URI logUri = FutureUtils.result(metadataStore.createLog(logName));
+        URI logUri = Utils.ioResult(metadataStore.createLog(logName));
         assertEquals(uri, logUri);
         listener1.waitForDone();
         listener2.waitForDone();
@@ -220,8 +218,8 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
                 checkStore = metadataStore;
             }
             String logName = "test-create-log-" + i;
-            URI logUri = FutureUtils.result(createStore.createLog(logName));
-            Optional<URI> logLocation = FutureUtils.result(checkStore.getLogLocation(logName));
+            URI logUri = Utils.ioResult(createStore.createLog(logName));
+            Optional<URI> logLocation = Utils.ioResult(checkStore.getLogLocation(logName));
             assertTrue("Log " + logName + " doesn't exist", logLocation.isPresent());
             assertEquals("Different log location " + logLocation.get() + " is found",
                     logUri, logLocation.get());
@@ -236,10 +234,10 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
         conf.addConfiguration(baseConf);
 
         String logName = "test-log";
-        FutureUtils.result(metadataStore.createLog(logName));
+        Utils.ioResult(metadataStore.createLog(logName));
 
-        URI subNs1 = FutureUtils.result(metadataStore.createSubNamespace());
-        URI subNs2 = FutureUtils.result(metadataStore.createSubNamespace());
+        URI subNs1 = Utils.ioResult(metadataStore.createSubNamespace());
+        URI subNs2 = Utils.ioResult(metadataStore.createSubNamespace());
 
         String duplicatedLogName = "test-duplicated-logs";
         // Create same log in different sub namespaces
@@ -247,35 +245,35 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
         metadataStore.createLogInNamespaceSync(subNs2, duplicatedLogName);
 
         try {
-            FutureUtils.result(metadataStore.createLog("non-existent-log"));
+            Utils.ioResult(metadataStore.createLog("non-existent-log"));
             fail("should throw exception when duplicated log found");
         } catch (UnexpectedException ue) {
             // should throw unexpected exception
             assertTrue(metadataStore.duplicatedLogFound.get());
         }
         try {
-            FutureUtils.result(metadataStore.getLogLocation(logName));
+            Utils.ioResult(metadataStore.getLogLocation(logName));
             fail("should throw exception when duplicated log found");
         } catch (UnexpectedException ue) {
             // should throw unexpected exception
             assertTrue(metadataStore.duplicatedLogFound.get());
         }
         try {
-            FutureUtils.result(metadataStore.getLogLocation("non-existent-log"));
+            Utils.ioResult(metadataStore.getLogLocation("non-existent-log"));
             fail("should throw exception when duplicated log found");
         } catch (UnexpectedException ue) {
             // should throw unexpected exception
             assertTrue(metadataStore.duplicatedLogFound.get());
         }
         try {
-            FutureUtils.result(metadataStore.getLogLocation(duplicatedLogName));
+            Utils.ioResult(metadataStore.getLogLocation(duplicatedLogName));
             fail("should throw exception when duplicated log found");
         } catch (UnexpectedException ue) {
             // should throw unexpected exception
             assertTrue(metadataStore.duplicatedLogFound.get());
         }
         try {
-            FutureUtils.result(metadataStore.getLogs());
+            Utils.ioResult(metadataStore.getLogs());
             fail("should throw exception when duplicated log found");
         } catch (UnexpectedException ue) {
             // should throw unexpected exception
@@ -286,10 +284,10 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
     @Test(timeout = 60000)
     public void testGetLogLocationWhenCacheMissed() throws Exception {
         String logName = "test-get-location-when-cache-missed";
-        URI logUri = FutureUtils.result(metadataStore.createLog(logName));
+        URI logUri = Utils.ioResult(metadataStore.createLog(logName));
         assertEquals(uri, logUri);
         metadataStore.removeLogFromCache(logName);
-        Optional<URI> logLocation = FutureUtils.result(metadataStore.getLogLocation(logName));
+        Optional<URI> logLocation = Utils.ioResult(metadataStore.getLogLocation(logName));
         assertTrue(logLocation.isPresent());
         assertEquals(logUri, logLocation.get());
     }
@@ -297,25 +295,25 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
     @Test(timeout = 60000, expected = LogExistsException.class)
     public void testCreateLogWhenCacheMissed() throws Exception {
         String logName = "test-create-log-when-cache-missed";
-        URI logUri = FutureUtils.result(metadataStore.createLog(logName));
+        URI logUri = Utils.ioResult(metadataStore.createLog(logName));
         assertEquals(uri, logUri);
         metadataStore.removeLogFromCache(logName);
-        FutureUtils.result(metadataStore.createLog(logName));
+        Utils.ioResult(metadataStore.createLog(logName));
     }
 
     @Test(timeout = 60000, expected = LogExistsException.class)
     public void testCreateLogWhenLogExists() throws Exception {
         String logName = "test-create-log-when-log-exists";
-        URI logUri = FutureUtils.result(metadataStore.createLog(logName));
+        URI logUri = Utils.ioResult(metadataStore.createLog(logName));
         assertEquals(uri, logUri);
-        FutureUtils.result(metadataStore.createLog(logName));
+        Utils.ioResult(metadataStore.createLog(logName));
     }
 
     private Set<String> createLogs(int numLogs, String prefix) throws Exception {
         Set<String> expectedLogs = Sets.newTreeSet();
         for (int i = 0; i < numLogs; i++) {
             String logName = prefix + i;
-            FutureUtils.result(metadataStore.createLog(logName));
+            Utils.ioResult(metadataStore.createLog(logName));
             expectedLogs.add(logName);
         }
         return expectedLogs;
@@ -339,7 +337,7 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
         do {
             TimeUnit.MILLISECONDS.sleep(20);
             receivedLogs = new TreeSet<String>();
-            Iterator<String> logs = FutureUtils.result(metadataStore.getLogs());
+            Iterator<String> logs = Utils.ioResult(metadataStore.getLogs());
             receivedLogs.addAll(Lists.newArrayList(logs));
         } while (receivedLogs.size() < numLogs);
         assertEquals(numLogs, receivedLogs.size());
@@ -372,8 +370,8 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
 
     @Test(timeout = 60000)
     public void testCreateLogPickingFirstAvailableSubNamespace() throws Exception {
-        URI subNs1 = FutureUtils.result(metadataStore.createSubNamespace());
-        URI subNs2 = FutureUtils.result(metadataStore.createSubNamespace());
+        URI subNs1 = Utils.ioResult(metadataStore.createSubNamespace());
+        URI subNs2 = Utils.ioResult(metadataStore.createSubNamespace());
 
         Set<String> logs0 = createLogs(uri, maxLogsPerSubnamespace - 1, "test-ns0-");
         Set<String> logs1 = createLogs(subNs1, maxLogsPerSubnamespace, "test-ns1-");
@@ -388,7 +386,7 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
         do {
             TimeUnit.MILLISECONDS.sleep(20);
             receivedLogs = new TreeSet<String>();
-            Iterator<String> logs = FutureUtils.result(metadataStore.getLogs());
+            Iterator<String> logs = Utils.ioResult(metadataStore.getLogs());
             receivedLogs.addAll(Lists.newArrayList(logs));
         } while (receivedLogs.size() < 3 * maxLogsPerSubnamespace - 1);
 
@@ -396,19 +394,19 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
                 new TestNamespaceListenerWithExpectedSize(3 * maxLogsPerSubnamespace + 1);
         metadataStore.registerNamespaceListener(listener);
 
-        Set<URI> uris = FutureUtils.result(metadataStore.fetchSubNamespaces(null));
+        Set<URI> uris = Utils.ioResult(metadataStore.fetchSubNamespaces(null));
         assertEquals(3, uris.size());
         String testLogName = "test-pick-first-available-ns";
-        URI createdURI = FutureUtils.result(metadataStore.createLog(testLogName));
+        URI createdURI = Utils.ioResult(metadataStore.createLog(testLogName));
         allLogs.add(testLogName);
         assertEquals(uri, createdURI);
-        uris = FutureUtils.result(metadataStore.fetchSubNamespaces(null));
+        uris = Utils.ioResult(metadataStore.fetchSubNamespaces(null));
         assertEquals(3, uris.size());
         testLogName = "test-create-new-ns";
-        URI newURI = FutureUtils.result(metadataStore.createLog(testLogName));
+        URI newURI = Utils.ioResult(metadataStore.createLog(testLogName));
         allLogs.add(testLogName);
         assertFalse(uris.contains(newURI));
-        uris = FutureUtils.result(metadataStore.fetchSubNamespaces(null));
+        uris = Utils.ioResult(metadataStore.fetchSubNamespaces(null));
         assertEquals(4, uris.size());
 
         listener.waitForDone();
@@ -435,7 +433,7 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
                 .build();
         FederatedZKLogMetadataStore anotherMetadataStore =
                 new FederatedZKLogMetadataStore(anotherConf, uri, anotherZkc, scheduler);
-        FutureUtils.result(anotherMetadataStore.createLog(testLogName));
+        Utils.ioResult(anotherMetadataStore.createLog(testLogName));
 
         listener.waitForDone();
         Set<String> receivedLogs = listener.getResult();

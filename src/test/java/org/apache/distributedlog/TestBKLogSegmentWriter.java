@@ -17,24 +17,23 @@
  */
 package org.apache.distributedlog;
 
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.exceptions.BKTransmitException;
 import org.apache.distributedlog.exceptions.EndOfStreamException;
 import org.apache.distributedlog.exceptions.WriteCancelledException;
 import org.apache.distributedlog.exceptions.WriteException;
+import org.apache.distributedlog.exceptions.ZKException;
 import org.apache.distributedlog.impl.BKNamespaceDriver;
 import org.apache.distributedlog.impl.logsegment.BKLogSegmentEntryWriter;
-import org.apache.distributedlog.io.Abortables;
 import org.apache.distributedlog.lock.SessionLockFactory;
 import org.apache.distributedlog.lock.ZKDistributedLock;
 import org.apache.distributedlog.lock.ZKSessionLockFactory;
 import org.apache.distributedlog.impl.metadata.BKDLConfig;
 import org.apache.distributedlog.util.ConfUtils;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
-import org.apache.distributedlog.util.PermitLimiter;
+import org.apache.distributedlog.common.util.PermitLimiter;
 import org.apache.distributedlog.util.Utils;
-import com.twitter.util.Await;
-import com.twitter.util.Future;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -42,14 +41,12 @@ import org.apache.bookkeeper.feature.SettableFeatureProvider;
 import org.apache.bookkeeper.stats.AlertStatsLogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import scala.runtime.AbstractFunction0;
 
 import java.io.IOException;
 import java.net.URI;
@@ -129,9 +126,9 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                                          boolean acquireLock)
             throws Exception {
         try {
-            Await.result(Utils.zkAsyncCreateFullPathOptimistic(zkClient, path, new byte[0],
+            Utils.ioResult(Utils.zkAsyncCreateFullPathOptimistic(zkClient, path, new byte[0],
                     ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT));
-        } catch (KeeperException.NodeExistsException nee) {
+        } catch (ZKException zke) {
             // node already exists
         }
         SessionLockFactory lockFactory = new ZKSessionLockFactory(
@@ -150,7 +147,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                 Long.MAX_VALUE,
                 NullStatsLogger.INSTANCE);
         if (acquireLock) {
-            return FutureUtils.result(lock.asyncAcquire());
+            return Utils.ioResult(lock.asyncAcquire());
         } else {
             return lock;
         }
@@ -158,9 +155,9 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
 
     private void closeWriterAndLock(BKLogSegmentWriter writer,
                                     ZKDistributedLock lock)
-            throws IOException {
+            throws Exception {
         try {
-            FutureUtils.result(writer.asyncClose());
+            Utils.ioResult(writer.asyncClose());
         } finally {
             Utils.closeQuietly(lock);
         }
@@ -170,7 +167,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                                     ZKDistributedLock lock)
             throws IOException {
         try {
-            Abortables.abort(writer, false);
+            Utils.abort(writer, false);
         } finally {
             Utils.closeQuietly(lock);
         }
@@ -231,10 +228,10 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                 createLogSegmentWriter(confLocal, 0L, -1L, lock);
         // Use another lock to wait for writer releasing lock
         ZKDistributedLock lock0 = createLock("/test/lock-" + runtime.getMethodName(), zkc0, false);
-        Future<ZKDistributedLock> lockFuture0 = lock0.asyncAcquire();
+        CompletableFuture<ZKDistributedLock> lockFuture0 = lock0.asyncAcquire();
         // add 10 records
         int numRecords = 10;
-        List<Future<DLSN>> futureList = new ArrayList<Future<DLSN>>(numRecords);
+        List<CompletableFuture<DLSN>> futureList = new ArrayList<CompletableFuture<DLSN>>(numRecords);
         for (int i = 0; i < numRecords; i++) {
             futureList.add(writer.asyncWrite(DLMTestUtil.getLogRecordInstance(i)));
         }
@@ -248,7 +245,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                 10, writer.getPositionWithinLogSegment());
         // close the writer should flush buffered data and release lock
         closeWriterAndLock(writer, lock);
-        Await.result(lockFuture0);
+        Utils.ioResult(lockFuture0);
         lock0.checkOwnership();
         assertEquals("Last tx id should still be " + (numRecords - 1),
                 numRecords - 1, writer.getLastTxId());
@@ -256,7 +253,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                 numRecords - 1, writer.getLastTxIdAcknowledged());
         assertEquals("Position should still be " + numRecords,
                 10, writer.getPositionWithinLogSegment());
-        List<DLSN> dlsns = Await.result(Future.collect(futureList));
+        List<DLSN> dlsns = Utils.ioResult(FutureUtils.collect(futureList));
         assertEquals("All records should be written",
                 numRecords, dlsns.size());
         for (int i = 0; i < numRecords; i++) {
@@ -293,10 +290,10 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                 createLogSegmentWriter(confLocal, 0L, -1L, lock);
         // Use another lock to wait for writer releasing lock
         ZKDistributedLock lock0 = createLock("/test/lock-" + runtime.getMethodName(), zkc0, false);
-        Future<ZKDistributedLock> lockFuture0 = lock0.asyncAcquire();
+        CompletableFuture<ZKDistributedLock> lockFuture0 = lock0.asyncAcquire();
         // add 10 records
         int numRecords = 10;
-        List<Future<DLSN>> futureList = new ArrayList<Future<DLSN>>(numRecords);
+        List<CompletableFuture<DLSN>> futureList = new ArrayList<CompletableFuture<DLSN>>(numRecords);
         for (int i = 0; i < numRecords; i++) {
             futureList.add(writer.asyncWrite(DLMTestUtil.getLogRecordInstance(i)));
         }
@@ -310,7 +307,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                 10, writer.getPositionWithinLogSegment());
         // close the writer should flush buffered data and release lock
         abortWriterAndLock(writer, lock);
-        Await.result(lockFuture0);
+        Utils.ioResult(lockFuture0);
         lock0.checkOwnership();
         assertEquals("Last tx id should still be " + (numRecords - 1),
                 numRecords - 1, writer.getLastTxId());
@@ -323,7 +320,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
 
         for (int i = 0; i < numRecords; i++) {
             try {
-                Await.result(futureList.get(i));
+                Utils.ioResult(futureList.get(i));
                 fail("Should be aborted record " + i + " with transmit exception");
             } catch (WriteCancelledException wce) {
                 assertTrue("Record " + i + " should be aborted because of ledger fenced",
@@ -369,10 +366,10 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                 createLogSegmentWriter(confLocal, 0L, -1L, lock);
         // Use another lock to wait for writer releasing lock
         ZKDistributedLock lock0 = createLock("/test/lock-" + runtime.getMethodName(), zkc0, false);
-        Future<ZKDistributedLock> lockFuture0 = lock0.asyncAcquire();
+        CompletableFuture<ZKDistributedLock> lockFuture0 = lock0.asyncAcquire();
         // add 10 records
         int numRecords = 10;
-        List<Future<DLSN>> futureList = new ArrayList<Future<DLSN>>(numRecords);
+        List<CompletableFuture<DLSN>> futureList = new ArrayList<CompletableFuture<DLSN>>(numRecords);
         for (int i = 0; i < numRecords; i++) {
             futureList.add(writer.asyncWrite(DLMTestUtil.getLogRecordInstance(i)));
         }
@@ -393,7 +390,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
             assertEquals("Inconsistent rc is thrown",
                     rcToFailComplete, bkte.getBKResultCode());
         }
-        Await.result(lockFuture0);
+        Utils.ioResult(lockFuture0);
         lock0.checkOwnership();
         assertEquals("Last tx id should still be " + (numRecords - 1),
                 numRecords - 1, writer.getLastTxId());
@@ -406,7 +403,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
 
         for (int i = 0; i < numRecords; i++) {
             try {
-                Await.result(futureList.get(i));
+                Utils.ioResult(futureList.get(i));
                 fail("Should be aborted record " + i + " with transmit exception");
             } catch (WriteCancelledException wce) {
                 assertTrue("Record " + i + " should be aborted because of ledger fenced",
@@ -441,10 +438,10 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                 createLogSegmentWriter(confLocal, 0L, -1L, lock);
         // Use another lock to wait for writer releasing lock
         ZKDistributedLock lock0 = createLock("/test/lock-" + runtime.getMethodName(), zkc0, false);
-        Future<ZKDistributedLock> lockFuture0 = lock0.asyncAcquire();
+        CompletableFuture<ZKDistributedLock> lockFuture0 = lock0.asyncAcquire();
         // add 10 records
         int numRecords = 10;
-        List<Future<DLSN>> futureList = new ArrayList<Future<DLSN>>(numRecords);
+        List<CompletableFuture<DLSN>> futureList = new ArrayList<CompletableFuture<DLSN>>(numRecords);
         for (int i = 0; i < numRecords; i++) {
             futureList.add(writer.asyncWrite(DLMTestUtil.getLogRecordInstance(i)));
         }
@@ -467,7 +464,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                     BKException.Code.LedgerFencedException, bkte.getBKResultCode());
         }
 
-        Await.result(lockFuture0);
+        Utils.ioResult(lockFuture0);
         lock0.checkOwnership();
 
         assertEquals("Last tx id should still be " + (numRecords - 1),
@@ -481,7 +478,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
 
         for (int i = 0; i < numRecords; i++) {
             try {
-                Await.result(futureList.get(i));
+                Utils.ioResult(futureList.get(i));
                 fail("Should be aborted record " + i + " with transmit exception");
             } catch (BKTransmitException bkte) {
                 assertEquals("Record " + i + " should be aborted",
@@ -513,10 +510,10 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                 createLogSegmentWriter(confLocal, 0L, -1L, lock);
         // Use another lock to wait for writer releasing lock
         ZKDistributedLock lock0 = createLock("/test/lock-" + runtime.getMethodName(), zkc0, false);
-        Future<ZKDistributedLock> lockFuture0 = lock0.asyncAcquire();
+        CompletableFuture<ZKDistributedLock> lockFuture0 = lock0.asyncAcquire();
         // add 10 records
         int numRecords = 10;
-        List<Future<DLSN>> futureList = new ArrayList<Future<DLSN>>(numRecords);
+        List<CompletableFuture<DLSN>> futureList = new ArrayList<CompletableFuture<DLSN>>(numRecords);
         for (int i = 0; i < numRecords; i++) {
             futureList.add(writer.asyncWrite(DLMTestUtil.getLogRecordInstance(i)));
         }
@@ -530,23 +527,19 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                 numRecords, writer.getPositionWithinLogSegment());
 
         final CountDownLatch deferLatch = new CountDownLatch(1);
-        writer.getFuturePool().apply(new AbstractFunction0<Object>() {
-            @Override
-            public Object apply() {
-                try {
-                    deferLatch.await();
-                } catch (InterruptedException e) {
-                    LOG.warn("Interrupted on deferring completion : ", e);
-                }
-                return null;
+        writer.getFuturePool().submit(() -> {
+            try {
+                deferLatch.await();
+            } catch (InterruptedException e) {
+                LOG.warn("Interrupted on deferring completion : ", e);
             }
         });
 
         // transmit the buffered data
-        FutureUtils.result(writer.flush());
+        Utils.ioResult(writer.flush());
 
         // add another 10 records
-        List<Future<DLSN>> anotherFutureList = new ArrayList<Future<DLSN>>(numRecords);
+        List<CompletableFuture<DLSN>> anotherFutureList = new ArrayList<CompletableFuture<DLSN>>(numRecords);
         for (int i = numRecords; i < 2 * numRecords; i++) {
             anotherFutureList.add(writer.asyncWrite(DLMTestUtil.getLogRecordInstance(i)));
         }
@@ -562,13 +555,13 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
         // abort the writer: it waits for outstanding transmits and abort buffered data
         abortWriterAndLock(writer, lock);
 
-        Await.result(lockFuture0);
+        Utils.ioResult(lockFuture0);
         lock0.checkOwnership();
 
         // release defer latch so completion would go through
         deferLatch.countDown();
 
-        List<DLSN> dlsns = Await.result(Future.collect(futureList));
+        List<DLSN> dlsns = Utils.ioResult(FutureUtils.collect(futureList));
         assertEquals("All first 10 records should be written",
                 numRecords, dlsns.size());
         for (int i = 0; i < numRecords; i++) {
@@ -582,7 +575,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
         }
         for (int i = 0; i < numRecords; i++) {
             try {
-                Await.result(anotherFutureList.get(i));
+                Utils.ioResult(anotherFutureList.get(i));
                 fail("Should be aborted record " + (numRecords + i) + " with transmit exception");
             } catch (WriteCancelledException wce) {
                 // writes should be cancelled.
@@ -622,7 +615,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                 createLogSegmentWriter(confLocal, 0L, -1L, lock);
         // add 10 records
         int numRecords = 10;
-        List<Future<DLSN>> futureList = new ArrayList<Future<DLSN>>(numRecords);
+        List<CompletableFuture<DLSN>> futureList = new ArrayList<CompletableFuture<DLSN>>(numRecords);
         for (int i = 0; i < numRecords; i++) {
             futureList.add(writer.asyncWrite(DLMTestUtil.getLogRecordInstance(i)));
         }
@@ -639,7 +632,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
         // close the writer to flush the output buffer
         closeWriterAndLock(writer, lock);
 
-        List<DLSN> dlsns = Await.result(Future.collect(futureList));
+        List<DLSN> dlsns = Utils.ioResult(FutureUtils.collect(futureList));
         assertEquals("All 11 records should be written",
                 numRecords + 1, dlsns.size());
         for (int i = 0; i < numRecords; i++) {
@@ -687,10 +680,10 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
 
         // close the writer
         closeWriterAndLock(writer, lock);
-        FutureUtils.result(writer.asyncClose());
+        Utils.ioResult(writer.asyncClose());
 
         try {
-            Await.result(writer.asyncWrite(DLMTestUtil.getLogRecordInstance(1)));
+            Utils.ioResult(writer.asyncWrite(DLMTestUtil.getLogRecordInstance(1)));
             fail("Should fail the write if the writer is closed");
         } catch (WriteException we) {
             // expected
@@ -713,10 +706,10 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
         BKLogSegmentWriter writer =
                 createLogSegmentWriter(confLocal, 0L, -1L, lock);
 
-        FutureUtils.result(writer.markEndOfStream());
+        Utils.ioResult(writer.markEndOfStream());
 
         try {
-            Await.result(writer.asyncWrite(DLMTestUtil.getLogRecordInstance(1)));
+            Utils.ioResult(writer.asyncWrite(DLMTestUtil.getLogRecordInstance(1)));
             fail("Should fail the write if the writer is marked as end of stream");
         } catch (EndOfStreamException we) {
             // expected
@@ -747,7 +740,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
         LogRecord record = DLMTestUtil.getLogRecordInstance(1);
         record.setControl();
         try {
-            Await.result(writer.asyncWrite(record));
+            Utils.ioResult(writer.asyncWrite(record));
             fail("Should fail the writer if the log segment is already fenced");
         } catch (BKTransmitException bkte) {
             // expected
@@ -755,7 +748,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
         }
 
         try {
-            Await.result(writer.asyncWrite(DLMTestUtil.getLogRecordInstance(2)));
+            Utils.ioResult(writer.asyncWrite(DLMTestUtil.getLogRecordInstance(2)));
             fail("Should fail the writer if the log segment is already fenced");
         } catch (WriteException we) {
             // expected
@@ -781,7 +774,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                 createLogSegmentWriter(confLocal, 0L, -1L, lock);
 
         assertEquals(DLSN.InvalidDLSN,
-                Await.result(writer.asyncWrite(DLMTestUtil.getLogRecordInstance(2))));
+                Utils.ioResult(writer.asyncWrite(DLMTestUtil.getLogRecordInstance(2))));
         assertEquals(-1L, ((BKLogSegmentEntryWriter) writer.getEntryWriter())
                 .getLedgerHandle().getLastAddPushed());
 

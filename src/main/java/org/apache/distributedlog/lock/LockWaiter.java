@@ -17,10 +17,13 @@
  */
 package org.apache.distributedlog.lock;
 
-import com.twitter.util.Await;
-import com.twitter.util.Duration;
-import com.twitter.util.Future;
-import com.twitter.util.Timer;
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import org.apache.distributedlog.exceptions.DLInterruptedException;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.util.OrderedScheduler;
+import org.apache.distributedlog.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,11 +36,11 @@ public class LockWaiter {
 
     private final String lockId;
     private final String currentOwner;
-    private final Future<Boolean> acquireFuture;
+    private final CompletableFuture<Boolean> acquireFuture;
 
     public LockWaiter(String lockId,
                       String currentOwner,
-                      Future<Boolean> acquireFuture) {
+                      CompletableFuture<Boolean> acquireFuture) {
         this.lockId = lockId;
         this.currentOwner = currentOwner;
         this.acquireFuture = acquireFuture;
@@ -64,12 +67,13 @@ public class LockWaiter {
     /**
      * Return the future representing the waiting result.
      *
-     * <p>If the future is interrupted (e.g. {@link Future#within(Duration, Timer)}),
+     * <p>If the future is interrupted
+     * (e.g. {@link FutureUtils#within(CompletableFuture, long, TimeUnit, Throwable, OrderedScheduler, Object)}),
      * the waiter will automatically clean up its waiting state.
      *
      * @return the future representing the acquire result.
      */
-    public Future<Boolean> getAcquireFuture() {
+    public CompletableFuture<Boolean> getAcquireFuture() {
         return acquireFuture;
     }
 
@@ -81,12 +85,12 @@ public class LockWaiter {
     public boolean waitForAcquireQuietly() {
         boolean success = false;
         try {
-            success = Await.result(acquireFuture);
-        } catch (InterruptedException ie) {
+            success = Utils.ioResult(acquireFuture);
+        } catch (DLInterruptedException ie) {
             Thread.currentThread().interrupt();
         } catch (LockTimeoutException lte) {
             logger.debug("Timeout on lock acquiring", lte);
-        } catch (Exception e) {
+        } catch (IOException e) {
             logger.error("Caught exception waiting for lock acquired", e);
         }
         return success;

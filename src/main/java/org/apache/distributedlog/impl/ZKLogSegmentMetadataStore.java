@@ -18,6 +18,7 @@
 package org.apache.distributedlog.impl;
 
 import com.google.common.collect.ImmutableList;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.ZooKeeperClient;
@@ -29,17 +30,15 @@ import org.apache.distributedlog.metadata.LogMetadata;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.logsegment.LogSegmentMetadataStore;
 import org.apache.distributedlog.util.DLUtils;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
 import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Transaction;
 import org.apache.distributedlog.util.Transaction.OpListener;
+import org.apache.distributedlog.util.Utils;
 import org.apache.distributedlog.zk.DefaultZKOp;
 import org.apache.distributedlog.zk.ZKOp;
 import org.apache.distributedlog.zk.ZKTransaction;
 import org.apache.distributedlog.zk.ZKVersionedSetOp;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
-import com.twitter.util.Promise;
 import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -116,7 +115,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         @Override
         public void run() {
             if (null != store.listeners.get(logSegmentsPath)) {
-                store.zkGetLogSegmentNames(logSegmentsPath, store).addEventListener(this);
+                store.zkGetLogSegmentNames(logSegmentsPath, store).whenComplete(this);
             } else {
                 logger.debug("Log segments listener for {} has been removed.", logSegmentsPath);
             }
@@ -350,18 +349,18 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
     }
 
     @Override
-    public Future<LogSegmentMetadata> getLogSegment(String logSegmentPath) {
+    public CompletableFuture<LogSegmentMetadata> getLogSegment(String logSegmentPath) {
         return LogSegmentMetadata.read(zkc, logSegmentPath, skipMinVersionCheck);
     }
 
-    Future<Versioned<List<String>>> zkGetLogSegmentNames(String logSegmentsPath, Watcher watcher) {
-        Promise<Versioned<List<String>>> result = new Promise<Versioned<List<String>>>();
+    CompletableFuture<Versioned<List<String>>> zkGetLogSegmentNames(String logSegmentsPath, Watcher watcher) {
+        CompletableFuture<Versioned<List<String>>> result = new CompletableFuture<Versioned<List<String>>>();
         try {
             zkc.get().getChildren(logSegmentsPath, watcher, this, result);
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            result.setException(FutureUtils.zkException(e, logSegmentsPath));
+            result.completeExceptionally(Utils.zkException(e, logSegmentsPath));
         } catch (InterruptedException e) {
-            result.setException(FutureUtils.zkException(e, logSegmentsPath));
+            result.completeExceptionally(Utils.zkException(e, logSegmentsPath));
         }
         return result;
     }
@@ -369,21 +368,21 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
     @Override
     @SuppressWarnings("unchecked")
     public void processResult(int rc, String path, Object ctx, List<String> children, Stat stat) {
-        Promise<Versioned<List<String>>> result = ((Promise<Versioned<List<String>>>) ctx);
+        CompletableFuture<Versioned<List<String>>> result = ((CompletableFuture<Versioned<List<String>>>) ctx);
         if (KeeperException.Code.OK.intValue() == rc) {
             /** cversion: the number of changes to the children of this znode **/
             ZkVersion zkVersion = new ZkVersion(stat.getCversion());
-            result.setValue(new Versioned(children, zkVersion));
+            result.complete(new Versioned(children, zkVersion));
         } else if (KeeperException.Code.NONODE.intValue() == rc) {
-            result.setException(new LogNotFoundException("Log " + path + " not found"));
+            result.completeExceptionally(new LogNotFoundException("Log " + path + " not found"));
         } else {
-            result.setException(new ZKException("Failed to get log segments from " + path,
+            result.completeExceptionally(new ZKException("Failed to get log segments from " + path,
                     KeeperException.Code.get(rc)));
         }
     }
 
     @Override
-    public Future<Versioned<List<String>>> getLogSegmentNames(String logSegmentsPath,
+    public CompletableFuture<Versioned<List<String>>> getLogSegmentNames(String logSegmentsPath,
                                                               LogSegmentNamesListener listener) {
         Watcher zkWatcher;
         if (null == listener) {
@@ -422,9 +421,9 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
                 closeLock.readLock().unlock();
             }
         }
-        Future<Versioned<List<String>>> getLogSegmentNamesResult = zkGetLogSegmentNames(logSegmentsPath, zkWatcher);
+        CompletableFuture<Versioned<List<String>>> getLogSegmentNamesResult = zkGetLogSegmentNames(logSegmentsPath, zkWatcher);
         if (null != listener) {
-            getLogSegmentNamesResult.addEventListener(new ReadLogSegmentsTask(logSegmentsPath, this));
+            getLogSegmentNamesResult.whenComplete(new ReadLogSegmentsTask(logSegmentsPath, this));
         }
         return zkGetLogSegmentNames(logSegmentsPath, zkWatcher);
     }

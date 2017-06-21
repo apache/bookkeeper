@@ -17,30 +17,28 @@
  */
 package org.apache.distributedlog;
 
-import com.twitter.util.Await;
-import com.twitter.util.Duration;
-import com.twitter.util.FutureEventListener;
-import com.twitter.util.Promise;
-
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 
 class BKTransmitPacket {
 
     private final EntryBuffer recordSet;
     private final long transmitTime;
-    private final Promise<Integer> transmitComplete;
+    private final CompletableFuture<Integer> transmitComplete;
 
     BKTransmitPacket(EntryBuffer recordSet) {
         this.recordSet = recordSet;
         this.transmitTime = System.nanoTime();
-        this.transmitComplete = new Promise<Integer>();
+        this.transmitComplete = new CompletableFuture<Integer>();
     }
 
     EntryBuffer getRecordSet() {
         return recordSet;
     }
 
-    Promise<Integer> getTransmitFuture() {
+    CompletableFuture<Integer> getTransmitFuture() {
         return transmitComplete;
     }
 
@@ -53,7 +51,7 @@ class BKTransmitPacket {
      *          transmit result code.
      */
     public void notifyTransmitComplete(int transmitResult) {
-        transmitComplete.setValue(transmitResult);
+        transmitComplete.complete(transmitResult);
     }
 
     /**
@@ -66,7 +64,7 @@ class BKTransmitPacket {
      * @see #awaitTransmitComplete(long, TimeUnit)
      */
     void addTransmitCompleteListener(FutureEventListener<Integer> transmitCompleteListener) {
-        transmitComplete.addEventListener(transmitCompleteListener);
+        transmitComplete.whenComplete(transmitCompleteListener);
     }
 
     /**
@@ -79,8 +77,7 @@ class BKTransmitPacket {
      */
     int awaitTransmitComplete(long timeout, TimeUnit unit)
         throws Exception {
-        return Await.result(transmitComplete,
-                Duration.fromTimeUnit(timeout, unit));
+        return FutureUtils.result(transmitComplete, timeout, unit);
     }
 
     public long getTransmitTime() {

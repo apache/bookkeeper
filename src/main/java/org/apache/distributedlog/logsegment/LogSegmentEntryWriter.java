@@ -19,7 +19,7 @@ package org.apache.distributedlog.logsegment;
 
 import com.google.common.annotations.Beta;
 import org.apache.distributedlog.Entry;
-import org.apache.distributedlog.util.Sizable;
+import org.apache.distributedlog.common.util.Sizable;
 import org.apache.bookkeeper.client.AsyncCallback;
 
 /**

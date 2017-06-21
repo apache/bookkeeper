@@ -18,19 +18,20 @@
 package org.apache.distributedlog.bk;
 
 import com.google.common.collect.Lists;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import org.apache.distributedlog.BookKeeperClient;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.util.DLUtils;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
 import org.apache.distributedlog.util.Transaction;
 import org.apache.distributedlog.util.Transaction.OpListener;
 import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.Utils;
 import org.apache.distributedlog.zk.ZKTransaction;
 import org.apache.distributedlog.zk.ZKVersionedSetOp;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
-import com.twitter.util.Promise;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.bookkeeper.versioning.Version;
@@ -40,9 +41,6 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.runtime.AbstractFunction0;
-import scala.runtime.AbstractFunction1;
-import scala.runtime.BoxedUnit;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -96,7 +94,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
     // version
     ZkVersion version = new ZkVersion(-1);
     // outstanding allocation
-    Promise<LedgerHandle> allocatePromise;
+    CompletableFuture<LedgerHandle> allocatePromise;
     // outstanding tryObtain transaction
     Transaction<Object> tryObtainTxn = null;
     OpListener<LedgerHandle> tryObtainListener = null;
@@ -105,73 +103,71 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
     // Allocated Ledger
     LedgerHandle allocatedLh = null;
 
-    Future<Void> closeFuture = null;
-    final LinkedList<Future<Void>> ledgerDeletions =
-            new LinkedList<Future<Void>>();
+    CompletableFuture<Void> closeFuture = null;
+    final LinkedList<CompletableFuture<Void>> ledgerDeletions =
+            new LinkedList<CompletableFuture<Void>>();
 
     // Ledger configuration
     private final QuorumConfigProvider quorumConfigProvider;
 
-    static Future<Versioned<byte[]>> getAndCreateAllocationData(final String allocatePath,
+    static CompletableFuture<Versioned<byte[]>> getAndCreateAllocationData(final String allocatePath,
                                                                 final ZooKeeperClient zkc) {
         return Utils.zkGetData(zkc, allocatePath, false)
-                .flatMap(new AbstractFunction1<Versioned<byte[]>, Future<Versioned<byte[]>>>() {
+                .thenCompose(new Function<Versioned<byte[]>, CompletionStage<Versioned<byte[]>>>() {
             @Override
-            public Future<Versioned<byte[]>> apply(Versioned<byte[]> result) {
+            public CompletableFuture<Versioned<byte[]>> apply(Versioned<byte[]> result) {
                 if (null != result && null != result.getVersion() && null != result.getValue()) {
-                    return Future.value(result);
+                    return FutureUtils.value(result);
                 }
                 return createAllocationData(allocatePath, zkc);
             }
         });
     }
 
-    private static Future<Versioned<byte[]>> createAllocationData(final String allocatePath,
+    private static CompletableFuture<Versioned<byte[]>> createAllocationData(final String allocatePath,
                                                                   final ZooKeeperClient zkc) {
         try {
-            final Promise<Versioned<byte[]>> promise = new Promise<Versioned<byte[]>>();
+            final CompletableFuture<Versioned<byte[]>> promise = new CompletableFuture<Versioned<byte[]>>();
             zkc.get().create(allocatePath, DistributedLogConstants.EMPTY_BYTES,
                     zkc.getDefaultACL(), CreateMode.PERSISTENT,
                     new org.apache.zookeeper.AsyncCallback.Create2Callback() {
                         @Override
                         public void processResult(int rc, String path, Object ctx, String name, Stat stat) {
                             if (KeeperException.Code.OK.intValue() == rc) {
-                                promise.setValue(new Versioned<byte[]>(DistributedLogConstants.EMPTY_BYTES,
+                                promise.complete(new Versioned<byte[]>(DistributedLogConstants.EMPTY_BYTES,
                                         new ZkVersion(stat.getVersion())));
                             } else if (KeeperException.Code.NODEEXISTS.intValue() == rc) {
-                                Utils.zkGetData(zkc, allocatePath, false).proxyTo(promise);
+                                FutureUtils.proxyTo(
+                                  Utils.zkGetData(zkc, allocatePath, false),
+                                  promise
+                                );
                             } else {
-                                promise.setException(FutureUtils.zkException(
+                                promise.completeExceptionally(Utils.zkException(
                                         KeeperException.create(KeeperException.Code.get(rc)), allocatePath));
                             }
                         }
                     }, null);
             return promise;
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            return Future.exception(FutureUtils.zkException(e, allocatePath));
+            return FutureUtils.exception(Utils.zkException(e, allocatePath));
         } catch (InterruptedException e) {
-            return Future.exception(FutureUtils.zkException(e, allocatePath));
+            return FutureUtils.exception(Utils.zkException(e, allocatePath));
         }
     }
 
-    public static Future<SimpleLedgerAllocator> of(final String allocatePath,
+    public static CompletableFuture<SimpleLedgerAllocator> of(final String allocatePath,
                                                    final Versioned<byte[]> allocationData,
                                                    final QuorumConfigProvider quorumConfigProvider,
                                                    final ZooKeeperClient zkc,
                                                    final BookKeeperClient bkc) {
         if (null != allocationData && null != allocationData.getValue()
                 && null != allocationData.getVersion()) {
-            return Future.value(new SimpleLedgerAllocator(allocatePath, allocationData,
+            return FutureUtils.value(new SimpleLedgerAllocator(allocatePath, allocationData,
                     quorumConfigProvider, zkc, bkc));
         }
         return getAndCreateAllocationData(allocatePath, zkc)
-                .map(new AbstractFunction1<Versioned<byte[]>, SimpleLedgerAllocator>() {
-            @Override
-            public SimpleLedgerAllocator apply(Versioned<byte[]> allocationData) {
-                return new SimpleLedgerAllocator(allocatePath, allocationData,
-                        quorumConfigProvider, zkc, bkc);
-            }
-        });
+            .thenApply(allocationData1 -> new SimpleLedgerAllocator(allocatePath, allocationData1,
+                        quorumConfigProvider, zkc, bkc));
     }
 
     /**
@@ -240,14 +236,14 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
     }
 
     @Override
-    public synchronized Future<LedgerHandle> tryObtain(final Transaction<Object> txn,
-                                                       final OpListener<LedgerHandle> listener) {
+    public synchronized CompletableFuture<LedgerHandle> tryObtain(final Transaction<Object> txn,
+                                                                  final OpListener<LedgerHandle> listener) {
         if (Phase.ERROR == phase) {
-            return Future.exception(new AllocationException(Phase.ERROR,
+            return FutureUtils.exception(new AllocationException(Phase.ERROR,
                     "Error on allocating ledger under " + allocatePath));
         }
         if (Phase.HANDING_OVER == phase || Phase.HANDED_OVER == phase || null != tryObtainTxn) {
-            return Future.exception(new ConcurrentObtainException(phase,
+            return FutureUtils.exception(new ConcurrentObtainException(phase,
                     "Ledger handle is handling over to another thread : " + phase));
         }
         tryObtainTxn = txn;
@@ -328,13 +324,13 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
             return;
         }
         setPhase(Phase.ALLOCATING);
-        allocatePromise = new Promise<LedgerHandle>();
+        allocatePromise = new CompletableFuture<LedgerHandle>();
         QuorumConfig quorumConfig = quorumConfigProvider.getQuorumConfig();
         bkc.createLedger(
                 quorumConfig.getEnsembleSize(),
                 quorumConfig.getWriteQuorumSize(),
                 quorumConfig.getAckQuorumSize()
-        ).addEventListener(this);
+        ).whenComplete(this);
     }
 
     private synchronized void completeAllocation(LedgerHandle lh) {
@@ -347,11 +343,11 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
         ZKVersionedSetOp commitOp = new ZKVersionedSetOp(zkSetDataOp, this);
         tryObtainTxn.addOp(commitOp);
         setPhase(Phase.HANDING_OVER);
-        FutureUtils.setValue(allocatePromise, lh);
+        allocatePromise.complete(lh);
     }
 
     private synchronized void failAllocation(Throwable cause) {
-        FutureUtils.setException(allocatePromise, cause);
+        allocatePromise.completeExceptionally(cause);
     }
 
     @Override
@@ -386,7 +382,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
     private void markAsAllocated(final LedgerHandle lh) {
         byte[] data = DLUtils.logSegmentId2Bytes(lh.getId());
         Utils.zkSetData(zkc, allocatePath, data, getVersion())
-            .addEventListener(new FutureEventListener<ZkVersion>() {
+            .whenComplete(new FutureEventListener<ZkVersion>() {
                 @Override
                 public void onSuccess(ZkVersion version) {
                     // we only issue deleting ledger left from previous allocation when we could allocate first ledger
@@ -411,27 +407,20 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
     }
 
     void deleteLedger(final long ledgerId) {
-        final Future<Void> deleteFuture = bkc.deleteLedger(ledgerId, true);
+        final CompletableFuture<Void> deleteFuture = bkc.deleteLedger(ledgerId, true);
         synchronized (ledgerDeletions) {
             ledgerDeletions.add(deleteFuture);
         }
-        deleteFuture.onFailure(new AbstractFunction1<Throwable, BoxedUnit>() {
-            @Override
-            public BoxedUnit apply(Throwable cause) {
+        deleteFuture.whenComplete((value, cause) -> {
+            if (null != cause) {
                 LOG.error("Error deleting ledger {} for ledger allocator {}, retrying : ",
                         new Object[] { ledgerId, allocatePath, cause });
                 if (!isClosing()) {
                     deleteLedger(ledgerId);
                 }
-                return BoxedUnit.UNIT;
             }
-        }).ensure(new AbstractFunction0<BoxedUnit>() {
-            @Override
-            public BoxedUnit apply() {
-                synchronized (ledgerDeletions) {
-                    ledgerDeletions.remove(deleteFuture);
-                }
-                return BoxedUnit.UNIT;
+            synchronized (ledgerDeletions) {
+                ledgerDeletions.remove(deleteFuture);
             }
         });
     }
@@ -440,25 +429,25 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
         return closeFuture != null;
     }
 
-    private Future<Void> closeInternal(boolean cleanup) {
-        Promise<Void> closePromise;
+    private CompletableFuture<Void> closeInternal(boolean cleanup) {
+        CompletableFuture<Void> closePromise;
         synchronized (this) {
             if (null != closeFuture) {
                 return closeFuture;
             }
-            closePromise = new Promise<Void>();
+            closePromise = new CompletableFuture<Void>();
             closeFuture = closePromise;
         }
         if (!cleanup) {
             LOG.info("Abort ledger allocator without cleaning up on {}.", allocatePath);
-            FutureUtils.setValue(closePromise, null);
+            closePromise.complete(null);
             return closePromise;
         }
         cleanupAndClose(closePromise);
         return closePromise;
     }
 
-    private void cleanupAndClose(final Promise<Void> closePromise) {
+    private void cleanupAndClose(final CompletableFuture<Void> closePromise) {
         LOG.info("Closing ledger allocator on {}.", allocatePath);
         final ZKTransaction txn = new ZKTransaction(zkc);
         // try obtain ledger handle
@@ -476,21 +465,21 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
             }
 
             private void complete() {
-                FutureUtils.setValue(closePromise, null);
+                closePromise.complete(null);
                 LOG.info("Closed ledger allocator on {}.", allocatePath);
             }
-        }).addEventListener(new FutureEventListener<LedgerHandle>() {
+        }).whenComplete(new FutureEventListener<LedgerHandle>() {
             @Override
             public void onSuccess(LedgerHandle lh) {
                 // try obtain succeed
                 // if we could obtain the ledger handle, we have the responsibility to close it
                 deleteLedger(lh.getId());
                 // wait for deletion to be completed
-                List<Future<Void>> outstandingDeletions;
+                List<CompletableFuture<Void>> outstandingDeletions;
                 synchronized (ledgerDeletions) {
                     outstandingDeletions = Lists.newArrayList(ledgerDeletions);
                 }
-                Future.collect(outstandingDeletions).addEventListener(new FutureEventListener<List<Void>>() {
+                FutureUtils.collect(outstandingDeletions).whenComplete(new FutureEventListener<List<Void>>() {
                     @Override
                     public void onSuccess(List<Void> values) {
                         txn.execute();
@@ -499,7 +488,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
                     @Override
                     public void onFailure(Throwable cause) {
                         LOG.debug("Fail to obtain the allocated ledger handle when closing the allocator : ", cause);
-                        FutureUtils.setValue(closePromise, null);
+                        closePromise.complete(null);
                     }
                 });
             }
@@ -507,7 +496,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
             @Override
             public void onFailure(Throwable cause) {
                 LOG.debug("Fail to obtain the allocated ledger handle when closing the allocator : ", cause);
-                FutureUtils.setValue(closePromise, null);
+                closePromise.complete(null);
             }
         });
 
@@ -519,18 +508,13 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
     }
 
     @Override
-    public Future<Void> asyncClose() {
+    public CompletableFuture<Void> asyncClose() {
         return closeInternal(false);
     }
 
     @Override
-    public Future<Void> delete() {
-        return closeInternal(true).flatMap(new AbstractFunction1<Void, Future<Void>>() {
-            @Override
-            public Future<Void> apply(Void value) {
-                return Utils.zkDelete(zkc, allocatePath, getVersion());
-            }
-        });
+    public CompletableFuture<Void> delete() {
+        return closeInternal(true).thenCompose(value -> Utils.zkDelete(zkc, allocatePath, getVersion()));
     }
 
 }

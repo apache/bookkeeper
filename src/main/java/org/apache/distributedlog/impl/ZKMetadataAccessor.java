@@ -21,17 +21,16 @@ import java.io.IOException;
 import java.net.URI;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.DistributedLogConfiguration;
-import org.apache.distributedlog.MetadataAccessor;
+import org.apache.distributedlog.api.MetadataAccessor;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.ZooKeeperClientBuilder;
 import org.apache.distributedlog.exceptions.AlreadyClosedException;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.impl.metadata.BKDLConfig;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.Utils;
-import com.twitter.util.Future;
-import com.twitter.util.Promise;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.RetryPolicy;
@@ -45,7 +44,7 @@ import static org.apache.distributedlog.impl.BKNamespaceDriver.getZKServersFromD
 public class ZKMetadataAccessor implements MetadataAccessor {
     static final Logger LOG = LoggerFactory.getLogger(ZKMetadataAccessor.class);
     protected final String name;
-    protected Promise<Void> closePromise;
+    protected CompletableFuture<Void> closePromise;
     protected final URI uri;
     // zookeeper clients
     // NOTE: The actual zookeeper client is initialized lazily when it is referenced by
@@ -213,13 +212,13 @@ public class ZKMetadataAccessor implements MetadataAccessor {
      * @return future represents the close result.
      */
     @Override
-    public Future<Void> asyncClose() {
-        Promise<Void> closeFuture;
+    public CompletableFuture<Void> asyncClose() {
+        CompletableFuture<Void> closeFuture;
         synchronized (this) {
             if (null != closePromise) {
                 return closePromise;
             }
-            closeFuture = closePromise = new Promise<Void>();
+            closeFuture = closePromise = new CompletableFuture<Void>();
         }
         // NOTE: ownWriterZKC and ownReaderZKC are mostly used by tests
         //       the managers created by the namespace - whose zkc will be closed by namespace
@@ -233,13 +232,13 @@ public class ZKMetadataAccessor implements MetadataAccessor {
         } catch (Exception e) {
             LOG.warn("Exception while closing distributed log manager", e);
         }
-        FutureUtils.setValue(closeFuture, null);
+        FutureUtils.complete(closeFuture, null);
         return closeFuture;
     }
 
     @Override
     public void close() throws IOException {
-        FutureUtils.result(asyncClose());
+        Utils.ioResult(asyncClose());
     }
 
     public synchronized void checkClosedOrInError(String operation) throws AlreadyClosedException {

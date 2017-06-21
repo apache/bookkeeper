@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog.lock;
 
-import com.twitter.util.Future;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Factory to create {@link SessionLock}
@@ -33,6 +33,6 @@ public interface SessionLockFactory {
      *          lock context
      * @return future represents the creation result.
      */
-    Future<SessionLock> createLock(String lockPath, DistributedLockContext context);
+    CompletableFuture<SessionLock> createLock(String lockPath, DistributedLockContext context);
 
 }

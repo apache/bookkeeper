@@ -23,7 +23,6 @@ import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.TestDistributedLogBase;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
 import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.util.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.CreateMode;
@@ -89,12 +88,12 @@ public class TestZKLogMetadataStore extends TestDistributedLogBase {
 
     @Test(timeout = 60000)
     public void testCreateLog() throws Exception {
-        assertEquals(uri, FutureUtils.result(metadataStore.createLog("test")));
+        assertEquals(uri, Utils.ioResult(metadataStore.createLog("test")));
     }
 
     @Test(timeout = 60000)
     public void testGetLogLocation() throws Exception {
-        Optional<URI> uriOptional = FutureUtils.result(metadataStore.getLogLocation("test"));
+        Optional<URI> uriOptional = Utils.ioResult(metadataStore.getLogLocation("test"));
         assertTrue(uriOptional.isPresent());
         assertEquals(uri, uriOptional.get());
     }
@@ -107,7 +106,7 @@ public class TestZKLogMetadataStore extends TestDistributedLogBase {
             logs.add(logName);
             createLogInNamespace(uri, logName);
         }
-        Set<String> result = Sets.newHashSet(FutureUtils.result(metadataStore.getLogs()));
+        Set<String> result = Sets.newHashSet(Utils.ioResult(metadataStore.getLogs()));
         assertEquals(10, result.size());
         assertTrue(Sets.difference(logs, result).isEmpty());
     }

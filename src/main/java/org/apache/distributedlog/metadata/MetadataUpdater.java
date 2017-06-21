@@ -17,11 +17,11 @@
  */
 package org.apache.distributedlog.metadata;
 
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.LogRecordWithDLSN;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.util.Transaction;
-import com.twitter.util.Future;
 
 /**
  * An updater to update metadata. It contains utility functions on mutating metadata.
@@ -44,8 +44,8 @@ public interface MetadataUpdater {
      *          correct last record.
      * @return new log segment
      */
-    Future<LogSegmentMetadata> updateLastRecord(LogSegmentMetadata segment,
-                                                LogRecordWithDLSN record);
+    CompletableFuture<LogSegmentMetadata> updateLastRecord(LogSegmentMetadata segment,
+                                                           LogRecordWithDLSN record);
 
     /**
      * Change ledger sequence number of <i>segment</i> to given <i>logSegmentSeqNo</i>.
@@ -56,7 +56,7 @@ public interface MetadataUpdater {
      *          ledger sequence number to change.
      * @return new log segment
      */
-    Future<LogSegmentMetadata> changeSequenceNumber(LogSegmentMetadata segment,
+    CompletableFuture<LogSegmentMetadata> changeSequenceNumber(LogSegmentMetadata segment,
                                                     long logSegmentSeqNo);
 
     /**
@@ -66,7 +66,7 @@ public interface MetadataUpdater {
      *          log segment to change truncation status to active.
      * @return new log segment
      */
-    Future<LogSegmentMetadata> setLogSegmentActive(LogSegmentMetadata segment);
+    CompletableFuture<LogSegmentMetadata> setLogSegmentActive(LogSegmentMetadata segment);
 
     /**
      * Change the truncation status of a <i>log segment</i> to truncated
@@ -75,7 +75,7 @@ public interface MetadataUpdater {
      *          log segment to change truncation status to truncated.
      * @return new log segment
      */
-    Future<LogSegmentMetadata> setLogSegmentTruncated(LogSegmentMetadata segment);
+    CompletableFuture<LogSegmentMetadata> setLogSegmentTruncated(LogSegmentMetadata segment);
 
     /**
      * Change the truncation status of a <i>log segment</i> to truncated. The operation won't be executed
@@ -98,7 +98,7 @@ public interface MetadataUpdater {
      *          DLSN within the log segment before which log has been truncated
      * @return new log segment
      */
-    Future<LogSegmentMetadata> setLogSegmentPartiallyTruncated(LogSegmentMetadata segment,
+    CompletableFuture<LogSegmentMetadata> setLogSegmentPartiallyTruncated(LogSegmentMetadata segment,
                                                                DLSN minActiveDLSN);
 
     /**

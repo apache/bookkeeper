@@ -18,17 +18,16 @@
 package org.apache.distributedlog.zk;
 
 import com.google.common.collect.Lists;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.Transaction;
-import com.twitter.util.Future;
-import com.twitter.util.Promise;
+import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.OpResult;
-
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * ZooKeeper Transaction
@@ -38,14 +37,14 @@ public class ZKTransaction implements Transaction<Object>, AsyncCallback.MultiCa
     private final ZooKeeperClient zkc;
     private final List<ZKOp> ops;
     private final List<org.apache.zookeeper.Op> zkOps;
-    private final Promise<Void> result;
+    private final CompletableFuture<Void> result;
     private final AtomicBoolean done = new AtomicBoolean(false);
 
     public ZKTransaction(ZooKeeperClient zkc) {
         this.zkc = zkc;
         this.ops = Lists.newArrayList();
         this.zkOps = Lists.newArrayList();
-        this.result = new Promise<Void>();
+        this.result = new CompletableFuture<Void>();
     }
 
     @Override
@@ -60,16 +59,16 @@ public class ZKTransaction implements Transaction<Object>, AsyncCallback.MultiCa
     }
 
     @Override
-    public Future<Void> execute() {
+    public CompletableFuture<Void> execute() {
         if (!done.compareAndSet(false, true)) {
             return result;
         }
         try {
             zkc.get().multi(zkOps, this, result);
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            result.setException(FutureUtils.zkException(e, ""));
+            result.completeExceptionally(Utils.zkException(e, ""));
         } catch (InterruptedException e) {
-            result.setException(FutureUtils.zkException(e, ""));
+            result.completeExceptionally(Utils.zkException(e, ""));
         }
         return result;
     }
@@ -82,7 +81,7 @@ public class ZKTransaction implements Transaction<Object>, AsyncCallback.MultiCa
         for (int i = 0; i < ops.size(); i++) {
             ops.get(i).abortOpResult(cause, null);
         }
-        FutureUtils.setException(result, cause);
+        FutureUtils.completeExceptionally(result, cause);
     }
 
     @Override
@@ -91,13 +90,13 @@ public class ZKTransaction implements Transaction<Object>, AsyncCallback.MultiCa
             for (int i = 0; i < ops.size(); i++) {
                 ops.get(i).commitOpResult(results.get(i));
             }
-            FutureUtils.setValue(result, null);
+            FutureUtils.complete(result, null);
         } else {
             KeeperException ke = KeeperException.create(KeeperException.Code.get(rc));
             for (int i = 0; i < ops.size(); i++) {
                 ops.get(i).abortOpResult(ke, null != results ? results.get(i) : null);
             }
-            FutureUtils.setException(result, ke);
+            FutureUtils.completeExceptionally(result, ke);
         }
     }
 }

@@ -15,14 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.subscription;
-
-import org.apache.distributedlog.DLSN;
-import com.twitter.util.Future;
-import scala.runtime.BoxedUnit;
+package org.apache.distributedlog.api.subscription;
 
 import java.io.Closeable;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.DLSN;
 
 /**
  * Store to manage subscriptions
@@ -36,14 +34,14 @@ public interface SubscriptionsStore extends Closeable {
      *          subscriber id
      * @return future representing last committed position.
      */
-    public Future<DLSN> getLastCommitPosition(String subscriberId);
+    public CompletableFuture<DLSN> getLastCommitPosition(String subscriberId);
 
     /**
      * Get the last committed positions for all subscribers.
      *
      * @return future representing last committed positions for all subscribers.
      */
-    public Future<Map<String, DLSN>> getLastCommitPositions();
+    public CompletableFuture<Map<String, DLSN>> getLastCommitPositions();
 
     /**
      * Advance the last committed position for <i>subscriberId</i>.
@@ -54,7 +52,7 @@ public interface SubscriptionsStore extends Closeable {
      *          new committed position.
      * @return future representing advancing result.
      */
-    public Future<BoxedUnit> advanceCommitPosition(String subscriberId, DLSN newPosition);
+    public CompletableFuture<Void> advanceCommitPosition(String subscriberId, DLSN newPosition);
 
     /**
      * Delete the subscriber <i>subscriberId</i> permanently. Once the subscriber is deleted, all the
@@ -64,6 +62,6 @@ public interface SubscriptionsStore extends Closeable {
      * return true only if there's such subscriber and we removed it successfully.
      * return false if there's no such subscriber, or we failed to remove.
      */
-    public Future<Boolean> deleteSubscriber(String subscriberId);
+    public CompletableFuture<Boolean> deleteSubscriber(String subscriberId);
 
 }

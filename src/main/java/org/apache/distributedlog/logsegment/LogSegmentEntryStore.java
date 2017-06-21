@@ -18,12 +18,11 @@
 package org.apache.distributedlog.logsegment;
 
 import com.google.common.annotations.Beta;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.util.Allocator;
-import org.apache.distributedlog.util.Transaction;
-import com.twitter.util.Future;
 
 import java.io.IOException;
 
@@ -39,7 +38,7 @@ public interface LogSegmentEntryStore {
      * @param segment log segment metadata
      * @return future represent the delete result
      */
-    Future<LogSegmentMetadata> deleteLogSegment(LogSegmentMetadata segment);
+    CompletableFuture<LogSegmentMetadata> deleteLogSegment(LogSegmentMetadata segment);
 
     /**
      * Create a new log segment allocator for allocating log segment entry writers.
@@ -58,7 +57,7 @@ public interface LogSegmentEntryStore {
      * @param startEntryId the start entry id
      * @return future represent the opened reader
      */
-    Future<LogSegmentEntryReader> openReader(LogSegmentMetadata segment,
+    CompletableFuture<LogSegmentEntryReader> openReader(LogSegmentMetadata segment,
                                              long startEntryId);
 
     /**
@@ -68,6 +67,6 @@ public interface LogSegmentEntryStore {
      * @param fence the flag to fence log segment
      * @return future represent the opened random access reader
      */
-    Future<LogSegmentRandomAccessEntryReader> openRandomAccessReader(LogSegmentMetadata segment,
+    CompletableFuture<LogSegmentRandomAccessEntryReader> openRandomAccessReader(LogSegmentMetadata segment,
                                                                      boolean fence);
 }

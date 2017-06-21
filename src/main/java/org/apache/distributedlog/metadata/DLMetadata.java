@@ -18,6 +18,7 @@
 package org.apache.distributedlog.metadata;
 
 import org.apache.distributedlog.DistributedLogConfiguration;
+import org.apache.distributedlog.exceptions.ZKException;
 import org.apache.distributedlog.impl.metadata.BKDLConfig;
 import org.apache.distributedlog.util.Utils;
 import org.apache.distributedlog.ZooKeeperClient;
@@ -144,13 +145,9 @@ public class DLMetadata {
         byte[] data = serialize();
         try {
             Utils.zkCreateFullPathOptimistic(zkc, uri.getPath(), data,
-                    zkc.getDefaultACL(), CreateMode.PERSISTENT);
-        } catch (KeeperException e) {
-            throw new IOException("Fail to write dl metadata " + new String(data, UTF_8)
-                    +  " to uri " + uri, e);
-        } catch (InterruptedException e) {
-            throw new IOException("Interrupted when writing dl metadata " + new String(data, UTF_8)
-                    + " to uri " + uri, e);
+                zkc.getDefaultACL(), CreateMode.PERSISTENT);
+        } catch (KeeperException ke) {
+            throw new ZKException("Encountered zookeeper exception on creating dl metadata", ke);
         } finally {
             zkc.close();
         }

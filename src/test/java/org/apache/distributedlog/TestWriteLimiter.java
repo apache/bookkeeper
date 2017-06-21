@@ -18,7 +18,6 @@
 package org.apache.distributedlog;
 
 import org.apache.distributedlog.exceptions.OverCapacityException;
-import org.apache.distributedlog.util.PermitLimiter;
 import org.apache.distributedlog.util.SimplePermitLimiter;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.SettableFeature;
@@ -30,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import scala.runtime.BoxedUnit;
 
 public class TestWriteLimiter {
     static final Logger LOG = LoggerFactory.getLogger(TestWriteLimiter.class);

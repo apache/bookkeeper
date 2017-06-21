@@ -21,6 +21,9 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Ticker;
+import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.api.LogReader;
+import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.impl.BKNamespaceDriver;
 import org.apache.distributedlog.impl.logsegment.BKLogSegmentEntryWriter;
 import org.apache.distributedlog.injector.AsyncFailureInjector;
@@ -29,14 +32,13 @@ import org.apache.distributedlog.io.AsyncCloseable;
 import org.apache.distributedlog.logsegment.LogSegmentEntryWriter;
 import org.apache.distributedlog.logsegment.LogSegmentMetadataCache;
 import org.apache.distributedlog.logsegment.LogSegmentMetadataStore;
-import org.apache.distributedlog.namespace.DistributedLogNamespace;
-import org.apache.distributedlog.namespace.DistributedLogNamespaceBuilder;
+import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.namespace.NamespaceDriver;
 import org.apache.distributedlog.util.ConfUtils;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
-import org.apache.distributedlog.util.PermitLimiter;
-import org.apache.distributedlog.util.SchedulerUtils;
-import com.twitter.util.Future;
+import org.apache.distributedlog.common.util.PermitLimiter;
+import org.apache.distributedlog.common.util.SchedulerUtils;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
@@ -171,7 +173,7 @@ public class TestDistributedLogBase {
             throws Exception {
         URI uri = createDLMURI("/" + name);
         ensureURICreated(uri);
-        final DistributedLogNamespace namespace = DistributedLogNamespaceBuilder.newBuilder()
+        final Namespace namespace = NamespaceBuilder.newBuilder()
                 .uri(uri)
                 .conf(conf)
                 .build();
@@ -181,14 +183,14 @@ public class TestDistributedLogBase {
                 .build();
         AsyncCloseable resourcesCloseable = new AsyncCloseable() {
             @Override
-            public Future<Void> asyncClose() {
+            public CompletableFuture<Void> asyncClose() {
                 LOG.info("Shutting down the scheduler");
                 SchedulerUtils.shutdownScheduler(scheduler, 1, TimeUnit.SECONDS);
                 LOG.info("Shut down the scheduler");
                 LOG.info("Closing the namespace");
                 namespace.close();
                 LOG.info("Closed the namespace");
-                return Future.Void();
+                return FutureUtils.Void();
             }
         };
         AsyncFailureInjector failureInjector = AsyncRandomFailureInjector.newBuilder()
@@ -217,20 +219,20 @@ public class TestDistributedLogBase {
                 Optional.of(resourcesCloseable));
     }
 
-    protected LogSegmentMetadataStore getLogSegmentMetadataStore(DistributedLogNamespace namespace)
+    protected LogSegmentMetadataStore getLogSegmentMetadataStore(Namespace namespace)
             throws IOException {
         return namespace.getNamespaceDriver().getLogStreamMetadataStore(NamespaceDriver.Role.READER)
                 .getLogSegmentMetadataStore();
     }
 
-    protected ZooKeeperClient getZooKeeperClient(DistributedLogNamespace namespace) throws Exception {
+    protected ZooKeeperClient getZooKeeperClient(Namespace namespace) throws Exception {
         NamespaceDriver driver = namespace.getNamespaceDriver();
         assertTrue(driver instanceof BKNamespaceDriver);
         return ((BKNamespaceDriver) driver).getWriterZKC();
     }
 
     @SuppressWarnings("deprecation")
-    protected BookKeeperClient getBookKeeperClient(DistributedLogNamespace namespace) throws Exception {
+    protected BookKeeperClient getBookKeeperClient(Namespace namespace) throws Exception {
         NamespaceDriver driver = namespace.getNamespaceDriver();
         assertTrue(driver instanceof BKNamespaceDriver);
         return ((BKNamespaceDriver) driver).getReaderBKC();

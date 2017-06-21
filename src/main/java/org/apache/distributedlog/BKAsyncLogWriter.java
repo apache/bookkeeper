@@ -19,33 +19,30 @@ package org.apache.distributedlog;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import org.apache.bookkeeper.feature.Feature;
+import org.apache.bookkeeper.feature.FeatureProvider;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.exceptions.StreamNotReadyException;
 import org.apache.distributedlog.exceptions.WriteCancelledException;
 import org.apache.distributedlog.exceptions.WriteException;
 import org.apache.distributedlog.feature.CoreFeatureKeys;
 import org.apache.distributedlog.util.FailpointUtils;
-import org.apache.distributedlog.util.FutureUtils;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
-import com.twitter.util.Promise;
-import com.twitter.util.Try;
-import org.apache.bookkeeper.feature.Feature;
-import org.apache.bookkeeper.feature.FeatureProvider;
-import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.Function1;
-import scala.Option;
-import scala.runtime.AbstractFunction1;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * BookKeeper based {@link AsyncLogWriter} implementation.
@@ -70,35 +67,30 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
 
     static final Logger LOG = LoggerFactory.getLogger(BKAsyncLogWriter.class);
 
-    static Function1<List<LogSegmentMetadata>, Boolean> TruncationResultConverter =
-            new AbstractFunction1<List<LogSegmentMetadata>, Boolean>() {
-                @Override
-                public Boolean apply(List<LogSegmentMetadata> segments) {
-                    return true;
-                }
-            };
+    static Function<List<LogSegmentMetadata>, Boolean> TruncationResultConverter =
+        segments -> true;
 
     // Records pending for roll log segment.
     class PendingLogRecord implements FutureEventListener<DLSN> {
 
         final LogRecord record;
-        final Promise<DLSN> promise;
+        final CompletableFuture<DLSN> promise;
         final boolean flush;
 
         PendingLogRecord(LogRecord record, boolean flush) {
             this.record = record;
-            this.promise = new Promise<DLSN>();
+            this.promise = new CompletableFuture<DLSN>();
             this.flush = flush;
         }
 
         @Override
         public void onSuccess(DLSN value) {
-            promise.setValue(value);
+            promise.complete(value);
         }
 
         @Override
         public void onFailure(Throwable cause) {
-            promise.setException(cause);
+            promise.completeExceptionally(cause);
             encounteredError = true;
         }
     }
@@ -135,7 +127,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
     private final boolean disableRollOnSegmentError;
     private LinkedList<PendingLogRecord> pendingRequests = null;
     private volatile boolean encounteredError = false;
-    private Promise<BKLogSegmentWriter> rollingFuture = null;
+    private CompletableFuture<BKLogSegmentWriter> rollingFuture = null;
     private long lastTxId = DistributedLogConstants.INVALID_TXID;
 
     private final StatsLogger statsLogger;
@@ -186,7 +178,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
      *          log record
      * @return future of the write
      */
-    public Future<DLSN> writeControlRecord(final LogRecord record) {
+    public CompletableFuture<DLSN> writeControlRecord(final LogRecord record) {
         record.setControl();
         return write(record);
     }
@@ -206,7 +198,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
         }
     }
 
-    private Future<BKLogSegmentWriter> getLogSegmentWriter(long firstTxid,
+    private CompletableFuture<BKLogSegmentWriter> getLogSegmentWriter(long firstTxid,
                                                            boolean bestEffort,
                                                            boolean rollLog,
                                                            boolean allowMaxTxID) {
@@ -217,24 +209,20 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
                 stopwatch);
     }
 
-    private Future<BKLogSegmentWriter> doGetLogSegmentWriter(final long firstTxid,
+    private CompletableFuture<BKLogSegmentWriter> doGetLogSegmentWriter(final long firstTxid,
                                                              final boolean bestEffort,
                                                              final boolean rollLog,
                                                              final boolean allowMaxTxID) {
         if (encounteredError) {
-            return Future.exception(new WriteException(bkDistributedLogManager.getStreamName(),
+            return FutureUtils.exception(new WriteException(bkDistributedLogManager.getStreamName(),
                     "writer has been closed due to error."));
         }
-        Future<BKLogSegmentWriter> writerFuture = asyncGetLedgerWriter(!disableRollOnSegmentError);
+        CompletableFuture<BKLogSegmentWriter> writerFuture = asyncGetLedgerWriter(!disableRollOnSegmentError);
         if (null == writerFuture) {
             return rollLogSegmentIfNecessary(null, firstTxid, bestEffort, allowMaxTxID);
         } else if (rollLog) {
-            return writerFuture.flatMap(new AbstractFunction1<BKLogSegmentWriter, Future<BKLogSegmentWriter>>() {
-                @Override
-                public Future<BKLogSegmentWriter> apply(BKLogSegmentWriter writer) {
-                    return rollLogSegmentIfNecessary(writer, firstTxid, bestEffort, allowMaxTxID);
-                }
-            });
+            return writerFuture.thenCompose(
+                writer -> rollLogSegmentIfNecessary(writer, firstTxid, bestEffort, allowMaxTxID));
         } else {
             return writerFuture;
         }
@@ -244,20 +232,20 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
      * We write end of stream marker by writing a record with MAX_TXID, so we need to allow using
      * max txid when rolling for this case only.
      */
-    private Future<BKLogSegmentWriter> getLogSegmentWriterForEndOfStream() {
+    private CompletableFuture<BKLogSegmentWriter> getLogSegmentWriterForEndOfStream() {
         return getLogSegmentWriter(DistributedLogConstants.MAX_TXID,
                                      false /* bestEffort */,
                                      false /* roll log */,
                                      true /* allow max txid */);
     }
 
-    private Future<BKLogSegmentWriter> getLogSegmentWriter(long firstTxid,
+    private CompletableFuture<BKLogSegmentWriter> getLogSegmentWriter(long firstTxid,
                                                            boolean bestEffort,
                                                            boolean rollLog) {
         return getLogSegmentWriter(firstTxid, bestEffort, rollLog, false /* allow max txid */);
     }
 
-    Future<DLSN> queueRequest(LogRecord record, boolean flush) {
+    CompletableFuture<DLSN> queueRequest(LogRecord record, boolean flush) {
         PendingLogRecord pendingLogRecord = new PendingLogRecord(record, flush);
         pendingRequests.add(pendingLogRecord);
         return pendingLogRecord.promise;
@@ -276,25 +264,25 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
     void startQueueingRequests() {
         assert(null == pendingRequests && null == rollingFuture);
         pendingRequests = new LinkedList<PendingLogRecord>();
-        rollingFuture = new Promise<BKLogSegmentWriter>();
+        rollingFuture = new CompletableFuture<BKLogSegmentWriter>();
     }
 
     // for ordering guarantee, we shouldn't send requests to next log segments until
     // previous log segment is done.
-    private synchronized Future<DLSN> asyncWrite(final LogRecord record,
+    private synchronized CompletableFuture<DLSN> asyncWrite(final LogRecord record,
                                                  boolean flush) {
         // The passed in writer may be stale since we acquire the writer outside of sync
         // lock. If we recently rolled and the new writer is cached, use that instead.
-        Future<DLSN> result = null;
+        CompletableFuture<DLSN> result = null;
         BKLogSegmentWriter w;
         try {
             w = getCachedLogSegmentWriter();
         } catch (WriteException we) {
-            return Future.exception(we);
+            return FutureUtils.exception(we);
         }
         if (null != rollingFuture) {
             if (streamFailFast) {
-                result = Future.exception(new StreamNotReadyException("Rolling log segment"));
+                result = FutureUtils.exception(new StreamNotReadyException("Rolling log segment"));
             } else {
                 result = queueRequest(record, flush);
             }
@@ -303,7 +291,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
             startQueueingRequests();
             if (null != w) {
                 LastPendingLogRecord lastLogRecordInCurrentSegment = new LastPendingLogRecord(record, flush);
-                w.asyncWrite(record, true).addEventListener(lastLogRecordInCurrentSegment);
+                w.asyncWrite(record, true).whenComplete(lastLogRecordInCurrentSegment);
                 result = lastLogRecordInCurrentSegment.promise;
             } else { // no log segment yet. roll the log segment and issue pending requests.
                 result = queueRequest(record, flush);
@@ -314,26 +302,22 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
         }
         // use map here rather than onSuccess because we want lastTxId to be updated before
         // satisfying the future
-        return result.map(new AbstractFunction1<DLSN, DLSN>() {
-            @Override
-            public DLSN apply(DLSN dlsn) {
-                setLastTxId(record.getTransactionId());
-                return dlsn;
-            }
+        return result.thenApply(dlsn -> {
+            setLastTxId(record.getTransactionId());
+            return dlsn;
         });
     }
 
-    private List<Future<DLSN>> asyncWriteBulk(List<LogRecord> records) {
-        final ArrayList<Future<DLSN>> results = new ArrayList<Future<DLSN>>(records.size());
+    private List<CompletableFuture<DLSN>> asyncWriteBulk(List<LogRecord> records) {
+        final ArrayList<CompletableFuture<DLSN>> results = new ArrayList<CompletableFuture<DLSN>>(records.size());
         Iterator<LogRecord> iterator = records.iterator();
         while (iterator.hasNext()) {
             LogRecord record = iterator.next();
-            Future<DLSN> future = asyncWrite(record, !iterator.hasNext());
+            CompletableFuture<DLSN> future = asyncWrite(record, !iterator.hasNext());
             results.add(future);
 
             // Abort early if an individual write has already failed.
-            Option<Try<DLSN>> result = future.poll();
-            if (result.isDefined() && result.get().isThrow()) {
+            if (future.isDone() && future.isCompletedExceptionally()) {
                 break;
             }
         }
@@ -343,18 +327,18 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
         return results;
     }
 
-    private void appendCancelledFutures(List<Future<DLSN>> futures, int numToAdd) {
+    private void appendCancelledFutures(List<CompletableFuture<DLSN>> futures, int numToAdd) {
         final WriteCancelledException cre =
             new WriteCancelledException(getStreamName());
         for (int i = 0; i < numToAdd; i++) {
-            Future<DLSN> cancelledFuture = Future.exception(cre);
+            CompletableFuture<DLSN> cancelledFuture = FutureUtils.exception(cre);
             futures.add(cancelledFuture);
         }
     }
 
     private void rollLogSegmentAndIssuePendingRequests(final long firstTxId) {
         getLogSegmentWriter(firstTxId, true, true)
-                .addEventListener(new FutureEventListener<BKLogSegmentWriter>() {
+                .whenComplete(new FutureEventListener<BKLogSegmentWriter>() {
             @Override
             public void onSuccess(BKLogSegmentWriter writer) {
                 try {
@@ -362,7 +346,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
                         for (PendingLogRecord pendingLogRecord : pendingRequests) {
                             FailpointUtils.checkFailPoint(FailpointUtils.FailPointName.FP_LogWriterIssuePending);
                             writer.asyncWrite(pendingLogRecord.record, pendingLogRecord.flush)
-                                    .addEventListener(pendingLogRecord);
+                                    .whenComplete(pendingLogRecord);
                         }
                         // if there are no records in the pending queue, let's write a control record
                         // so that when a new log segment is rolled, a control record will be added and
@@ -373,10 +357,10 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
                             controlRecord.setControl();
                             PendingLogRecord controlReq = new PendingLogRecord(controlRecord, false);
                             writer.asyncWrite(controlReq.record, controlReq.flush)
-                                    .addEventListener(controlReq);
+                                    .whenComplete(controlReq);
                         }
                         if (null != rollingFuture) {
-                            FutureUtils.setValue(rollingFuture, writer);
+                            FutureUtils.complete(rollingFuture, writer);
                         }
                         rollingFuture = null;
                         pendingRequestDispatch.add(pendingRequests.size());
@@ -401,7 +385,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
             encounteredError = errorOutWriter;
             pendingRequests = null;
             if (null != rollingFuture) {
-                FutureUtils.setException(rollingFuture, cause);
+                FutureUtils.completeExceptionally(rollingFuture, cause);
             }
             rollingFuture = null;
         }
@@ -411,7 +395,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
         // After erroring out the writer above, no more requests
         // will be enqueued to pendingRequests
         for (PendingLogRecord pendingLogRecord : pendingRequestsSnapshot) {
-            pendingLogRecord.promise.setException(cause);
+            pendingLogRecord.promise.completeExceptionally(cause);
         }
     }
 
@@ -425,7 +409,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
      * @param record single log record
      */
     @Override
-    public Future<DLSN> write(final LogRecord record) {
+    public CompletableFuture<DLSN> write(final LogRecord record) {
         final Stopwatch stopwatch = Stopwatch.createStarted();
         return FutureUtils.stats(
                 asyncWrite(record, true),
@@ -442,30 +426,30 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
      * @param records list of records
      */
     @Override
-    public Future<List<Future<DLSN>>> writeBulk(final List<LogRecord> records) {
+    public CompletableFuture<List<CompletableFuture<DLSN>>> writeBulk(final List<LogRecord> records) {
         final Stopwatch stopwatch = Stopwatch.createStarted();
         return FutureUtils.stats(
-                Future.value(asyncWriteBulk(records)),
+                FutureUtils.value(asyncWriteBulk(records)),
                 bulkWriteOpStatsLogger,
                 stopwatch);
     }
 
     @Override
-    public Future<Boolean> truncate(final DLSN dlsn) {
+    public CompletableFuture<Boolean> truncate(final DLSN dlsn) {
         if (DLSN.InvalidDLSN == dlsn) {
-            return Future.value(false);
+            return FutureUtils.value(false);
         }
         BKLogWriteHandler writeHandler;
         try {
             writeHandler = getWriteHandler();
         } catch (IOException e) {
-            return Future.exception(e);
+            return FutureUtils.exception(e);
         }
-        return writeHandler.setLogSegmentsOlderThanDLSNTruncated(dlsn).map(TruncationResultConverter);
+        return writeHandler.setLogSegmentsOlderThanDLSNTruncated(dlsn).thenApply(TruncationResultConverter);
     }
 
-    Future<Long> flushAndCommit() {
-        Future<BKLogSegmentWriter> writerFuture;
+    CompletableFuture<Long> flushAndCommit() {
+        CompletableFuture<BKLogSegmentWriter> writerFuture;
         synchronized (this) {
             if (null != this.rollingFuture) {
                 writerFuture = this.rollingFuture;
@@ -474,19 +458,14 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
             }
         }
         if (null == writerFuture) {
-            return Future.value(getLastTxId());
+            return FutureUtils.value(getLastTxId());
         }
-        return writerFuture.flatMap(new AbstractFunction1<BKLogSegmentWriter, Future<Long>>() {
-            @Override
-            public Future<Long> apply(BKLogSegmentWriter writer) {
-                return writer.flushAndCommit();
-            }
-        });
+        return writerFuture.thenCompose(writer -> writer.flushAndCommit());
     }
 
-    Future<Long> markEndOfStream() {
+    CompletableFuture<Long> markEndOfStream() {
         final Stopwatch stopwatch = Stopwatch.createStarted();
-        Future<BKLogSegmentWriter> logSegmentWriterFuture;
+        CompletableFuture<BKLogSegmentWriter> logSegmentWriterFuture;
         synchronized (this) {
             logSegmentWriterFuture = this.rollingFuture;
         }
@@ -495,19 +474,14 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
         }
 
         return FutureUtils.stats(
-                logSegmentWriterFuture.flatMap(new AbstractFunction1<BKLogSegmentWriter, Future<Long>>() {
-                    @Override
-                    public Future<Long> apply(BKLogSegmentWriter w) {
-                        return w.markEndOfStream();
-                    }
-                }),
+                logSegmentWriterFuture.thenCompose(w -> w.markEndOfStream()),
                 markEndOfStreamOpStatsLogger,
                 stopwatch);
     }
 
     @Override
-    protected Future<Void> asyncCloseAndComplete() {
-        Future<BKLogSegmentWriter> logSegmentWriterFuture;
+    protected CompletableFuture<Void> asyncCloseAndComplete() {
+        CompletableFuture<BKLogSegmentWriter> logSegmentWriterFuture;
         synchronized (this) {
             logSegmentWriterFuture = this.rollingFuture;
         }
@@ -515,18 +489,13 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
         if (null == logSegmentWriterFuture) {
             return super.asyncCloseAndComplete();
         } else {
-            return logSegmentWriterFuture.flatMap(new AbstractFunction1<BKLogSegmentWriter, Future<Void>>() {
-                @Override
-                public Future<Void> apply(BKLogSegmentWriter segmentWriter) {
-                    return BKAsyncLogWriter.super.asyncCloseAndComplete();
-                }
-            });
+            return logSegmentWriterFuture.thenCompose(segmentWriter1 -> super.asyncCloseAndComplete());
         }
     }
 
     @Override
     void closeAndComplete() throws IOException {
-        FutureUtils.result(asyncCloseAndComplete());
+        Utils.ioResult(asyncCloseAndComplete());
     }
 
     /**
@@ -539,12 +508,12 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
     }
 
     @Override
-    public Future<Void> asyncAbort() {
-        Future<Void> result = super.asyncAbort();
+    public CompletableFuture<Void> asyncAbort() {
+        CompletableFuture<Void> result = super.asyncAbort();
         synchronized (this) {
             if (pendingRequests != null) {
                 for (PendingLogRecord pendingLogRecord : pendingRequests) {
-                    pendingLogRecord.promise.setException(new WriteException(bkDistributedLogManager.getStreamName(),
+                    pendingLogRecord.promise.completeExceptionally(new WriteException(bkDistributedLogManager.getStreamName(),
                             "abort wring: writer has been closed due to error."));
                 }
             }

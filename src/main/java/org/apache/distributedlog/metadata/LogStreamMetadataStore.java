@@ -19,11 +19,11 @@ package org.apache.distributedlog.metadata;
 
 import com.google.common.annotations.Beta;
 import com.google.common.base.Optional;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.lock.DistributedLock;
 import org.apache.distributedlog.logsegment.LogSegmentMetadataStore;
-import org.apache.distributedlog.util.PermitManager;
+import org.apache.distributedlog.common.util.PermitManager;
 import org.apache.distributedlog.util.Transaction;
-import com.twitter.util.Future;
 
 import java.io.Closeable;
 import java.net.URI;
@@ -47,10 +47,10 @@ public interface LogStreamMetadataStore extends Closeable {
      *
      * @param uri the location of the log stream
      * @param logName the name of the log stream
-     * @return future represents the existence of a log stream. {@link org.apache.distributedlog.LogNotFoundException}
-     *         is thrown if the log doesn't exist
+     * @return future represents the existence of a log stream.
+     *         {@link org.apache.distributedlog.exceptions.LogNotFoundException} is thrown if the log doesn't exist
      */
-    Future<Void> logExists(URI uri, String logName);
+    CompletableFuture<Void> logExists(URI uri, String logName);
 
     /**
      * Create the read lock for the log stream.
@@ -59,7 +59,7 @@ public interface LogStreamMetadataStore extends Closeable {
      * @param readerId the reader id used for lock
      * @return the read lock
      */
-    Future<DistributedLock> createReadLock(LogMetadataForReader metadata,
+    CompletableFuture<DistributedLock> createReadLock(LogMetadataForReader metadata,
                                            Optional<String> readerId);
 
     /**
@@ -79,7 +79,7 @@ public interface LogStreamMetadataStore extends Closeable {
      * @param createIfNotExists flag to create the stream if it doesn't exist
      * @return the metadata of the log
      */
-    Future<LogMetadataForWriter> getLog(URI uri,
+    CompletableFuture<LogMetadataForWriter> getLog(URI uri,
                                         String streamName,
                                         boolean ownAllocator,
                                         boolean createIfNotExists);
@@ -91,7 +91,7 @@ public interface LogStreamMetadataStore extends Closeable {
      * @param streamName the name of the log stream
      * @return future represents the result of the deletion.
      */
-    Future<Void> deleteLog(URI uri, String streamName);
+    CompletableFuture<Void> deleteLog(URI uri, String streamName);
 
     /**
      * Get the log segment metadata store.

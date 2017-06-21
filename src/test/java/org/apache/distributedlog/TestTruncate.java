@@ -22,7 +22,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.api.AsyncLogWriter;
+import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.util.Utils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -31,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.distributedlog.LogSegmentMetadata.TruncationStatus;
-import com.twitter.util.Await;
 
 import static org.junit.Assert.*;
 
@@ -96,11 +97,11 @@ public class TestTruncate extends TestDistributedLogBase {
         AsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned();
         long txid = 1 + 10 * 10;
         for (int j = 1; j <= 10; j++) {
-            Await.result(writer.write(DLMTestUtil.getLogRecordInstance(txid++)));
+            Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txid++)));
         }
 
         // to make sure the truncation task is executed
-        DLSN lastDLSN = Await.result(dlm.getLastDLSNAsync());
+        DLSN lastDLSN = Utils.ioResult(dlm.getLastDLSNAsync());
         LOG.info("Get last dlsn of stream {} : {}", name, lastDLSN);
 
         assertEquals(6, distributedLogManager.getLogSegments().size());
@@ -123,20 +124,20 @@ public class TestTruncate extends TestDistributedLogBase {
         Thread.sleep(1000);
 
         // delete invalid dlsn
-        assertFalse(Await.result(pair.getRight().truncate(DLSN.InvalidDLSN)));
+        assertFalse(Utils.ioResult(pair.getRight().truncate(DLSN.InvalidDLSN)));
         verifyEntries(name, 1, 1, 5 * 10);
 
         for (int i = 1; i <= 4; i++) {
             int txn = (i-1) * 10 + i;
             DLSN dlsn = txid2DLSN.get((long)txn);
-            assertTrue(Await.result(pair.getRight().truncate(dlsn)));
+            assertTrue(Utils.ioResult(pair.getRight().truncate(dlsn)));
             verifyEntries(name, 1, (i - 1) * 10 + 1, (5 - i + 1) * 10);
         }
 
         // Delete higher dlsn
         int txn = 43;
         DLSN dlsn = txid2DLSN.get((long) txn);
-        assertTrue(Await.result(pair.getRight().truncate(dlsn)));
+        assertTrue(Utils.ioResult(pair.getRight().truncate(dlsn)));
         verifyEntries(name, 1, 41, 10);
 
         Utils.close(pair.getRight());
@@ -160,14 +161,14 @@ public class TestTruncate extends TestDistributedLogBase {
         for (int i = 1; i <= 4; i++) {
             int txn = (i-1) * 10 + i;
             DLSN dlsn = txid2DLSN.get((long)txn);
-            assertTrue(Await.result(pair.getRight().truncate(dlsn)));
+            assertTrue(Utils.ioResult(pair.getRight().truncate(dlsn)));
             verifyEntries(name, 1, (i - 1) * 10 + 1, (5 - i + 1) * 10);
         }
 
         // Delete higher dlsn
         int txn = 43;
         DLSN dlsn = txid2DLSN.get((long) txn);
-        assertTrue(Await.result(pair.getRight().truncate(dlsn)));
+        assertTrue(Utils.ioResult(pair.getRight().truncate(dlsn)));
         verifyEntries(name, 1, 41, 10);
 
         Utils.close(pair.getRight());
@@ -176,7 +177,7 @@ public class TestTruncate extends TestDistributedLogBase {
         // Try force truncation
         BKDistributedLogManager dlm = (BKDistributedLogManager)createNewDLM(confLocal, name);
         BKLogWriteHandler handler = dlm.createWriteHandler(true);
-        FutureUtils.result(handler.purgeLogSegmentsOlderThanTxnId(Integer.MAX_VALUE));
+        Utils.ioResult(handler.purgeLogSegmentsOlderThanTxnId(Integer.MAX_VALUE));
 
         verifyEntries(name, 1, 41, 10);
     }
@@ -230,11 +231,11 @@ public class TestTruncate extends TestDistributedLogBase {
         AsyncLogWriter newWriter = newDLM.startAsyncLogSegmentNonPartitioned();
         long txid = 1 + 4 * 10;
         for (int j = 1; j <= 10; j++) {
-            Await.result(newWriter.write(DLMTestUtil.getLogRecordInstance(txid++)));
+            Utils.ioResult(newWriter.write(DLMTestUtil.getLogRecordInstance(txid++)));
         }
 
         // to make sure the truncation task is executed
-        DLSN lastDLSN = Await.result(newDLM.getLastDLSNAsync());
+        DLSN lastDLSN = Utils.ioResult(newDLM.getLastDLSNAsync());
         LOG.info("Get last dlsn of stream {} : {}", name, lastDLSN);
 
         assertEquals(5, newDLM.getLogSegments().size());
@@ -277,7 +278,7 @@ public class TestTruncate extends TestDistributedLogBase {
 
         DistributedLogManager newDLM = createNewDLM(confLocal, name);
         AsyncLogWriter newWriter = newDLM.startAsyncLogSegmentNonPartitioned();
-        Await.result(newWriter.truncate(dlsnMap.get(15L)));
+        Utils.ioResult(newWriter.truncate(dlsnMap.get(15L)));
 
         List<LogSegmentMetadata> newSegments2 = newDLM.getLogSegments();
         assertArrayEquals(newSegments.toArray(new LogSegmentMetadata[4]),
@@ -299,7 +300,7 @@ public class TestTruncate extends TestDistributedLogBase {
             AsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned();
             for (int j = 1; j <= numEntriesPerLogSegment; j++) {
                 long curTxId = txid++;
-                DLSN dlsn = Await.result(writer.write(DLMTestUtil.getLogRecordInstance(curTxId)));
+                DLSN dlsn = Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(curTxId)));
                 txid2DLSN.put(curTxId, dlsn);
             }
             Utils.close(writer);
@@ -311,7 +312,7 @@ public class TestTruncate extends TestDistributedLogBase {
             AsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned();
             for (int j = 1; j <= 10; j++) {
                 long curTxId = txid++;
-                DLSN dlsn = Await.result(writer.write(DLMTestUtil.getLogRecordInstance(curTxId)));
+                DLSN dlsn = Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(curTxId)));
                 txid2DLSN.put(curTxId, dlsn);
             }
             return new ImmutablePair<DistributedLogManager, AsyncLogWriter>(dlm, writer);

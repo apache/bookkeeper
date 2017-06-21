@@ -20,6 +20,8 @@ package org.apache.distributedlog.config;
 import org.apache.distributedlog.DistributedLogConfiguration;
 
 import org.apache.distributedlog.bk.QuorumConfig;
+import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
+import org.apache.distributedlog.common.config.ConcurrentConstConfiguration;
 import org.junit.Test;
 
 import static org.apache.distributedlog.DistributedLogConfiguration.*;

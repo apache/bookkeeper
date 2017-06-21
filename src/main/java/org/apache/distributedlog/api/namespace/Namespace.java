@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,12 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.namespace;
+package org.apache.distributedlog.api.namespace;
 
 import com.google.common.annotations.Beta;
 import com.google.common.base.Optional;
 import org.apache.distributedlog.DistributedLogConfiguration;
-import org.apache.distributedlog.DistributedLogManager;
+import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.acl.AccessControlManager;
 import org.apache.distributedlog.callback.NamespaceListener;
@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.distributedlog.namespace.NamespaceDriver;
 
 /**
  * A namespace is the basic unit for managing a set of distributedlogs.
@@ -38,7 +39,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
  * <h4>Namespace Interface</h4>
  *
  * <P>
- * The <code>DistributedLogNamespace</code> interface is implemented by different backend providers.
+ * The <code>Namespace</code> interface is implemented by different backend providers.
  * There are several components are required for an implementation:
  * <OL>
  *     <LI>Log Management -- manage logs in a given namespace. e.g. create/open/delete log, list of logs,
@@ -49,7 +50,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
  *
  * <h4>Namespace Location</h4>
  *
- * At the highest level, a <code>DistributedLogNamespace</code> is located by a <code>URI</code>. The location
+ * At the highest level, a <code>Namespace</code> is located by a <code>URI</code>. The location
  * URI is in string form has the syntax
  *
  * <blockquote>
@@ -68,7 +69,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
  * @since 0.3.32
  */
 @Beta
-public interface DistributedLogNamespace {
+public interface Namespace {
 
     /**
      * Get the namespace driver used by this namespace.

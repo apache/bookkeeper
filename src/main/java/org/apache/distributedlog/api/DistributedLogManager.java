@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,18 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog;
-
-import org.apache.distributedlog.callback.LogSegmentListener;
-import org.apache.distributedlog.io.AsyncCloseable;
-import org.apache.distributedlog.namespace.NamespaceDriver;
-import org.apache.distributedlog.subscription.SubscriptionStateStore;
-import org.apache.distributedlog.subscription.SubscriptionsStore;
-import com.twitter.util.Future;
+package org.apache.distributedlog.api;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.AppendOnlyStreamReader;
+import org.apache.distributedlog.AppendOnlyStreamWriter;
+import org.apache.distributedlog.DLSN;
+import org.apache.distributedlog.LogRecordWithDLSN;
+import org.apache.distributedlog.LogSegmentMetadata;
+import org.apache.distributedlog.callback.LogSegmentListener;
+import org.apache.distributedlog.io.AsyncCloseable;
+import org.apache.distributedlog.namespace.NamespaceDriver;
+import org.apache.distributedlog.api.subscription.SubscriptionsStore;
 
 /**
  * A DistributedLogManager is responsible for managing a single place of storing
@@ -79,7 +82,7 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      *
      * @return result represents the open result
      */
-    public Future<AsyncLogWriter> openAsyncLogWriter();
+    public CompletableFuture<AsyncLogWriter> openAsyncLogWriter();
 
     /**
      * Begin writing to the log stream identified by the name
@@ -129,7 +132,7 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      *          transaction id to start reading from
      * @return async log reader
      */
-    public Future<AsyncLogReader> openAsyncLogReader(long fromTxnId);
+    public CompletableFuture<AsyncLogReader> openAsyncLogReader(long fromTxnId);
 
     /**
      * Open an async log reader to read records from a log starting from <code>fromDLSN</code>
@@ -138,7 +141,7 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      *          dlsn to start reading from
      * @return async log reader
      */
-    public Future<AsyncLogReader> openAsyncLogReader(DLSN fromDLSN);
+    public CompletableFuture<AsyncLogReader> openAsyncLogReader(DLSN fromDLSN);
 
     // @Deprecated
     public AsyncLogReader getAsyncLogReader(long fromTxnId) throws IOException;
@@ -146,7 +149,7 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
     // @Deprecated
     public AsyncLogReader getAsyncLogReader(DLSN fromDLSN) throws IOException;
 
-    public Future<AsyncLogReader> getAsyncLogReaderWithLock(DLSN fromDLSN);
+    public CompletableFuture<AsyncLogReader> getAsyncLogReaderWithLock(DLSN fromDLSN);
 
     /**
      * Get a log reader with lock starting from <i>fromDLSN</i> and using <i>subscriberId</i>.
@@ -159,7 +162,7 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      *          subscriber id
      * @return async log reader
      */
-    public Future<AsyncLogReader> getAsyncLogReaderWithLock(DLSN fromDLSN, String subscriberId);
+    public CompletableFuture<AsyncLogReader> getAsyncLogReaderWithLock(DLSN fromDLSN, String subscriberId);
 
     /**
      * Get a log reader using <i>subscriberId</i> with lock. The reader will start reading from
@@ -173,7 +176,7 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      *          subscriber id
      * @return async log reader
      */
-    public Future<AsyncLogReader> getAsyncLogReaderWithLock(String subscriberId);
+    public CompletableFuture<AsyncLogReader> getAsyncLogReaderWithLock(String subscriberId);
 
     /**
      * Get the {@link DLSN} of first log record whose transaction id is not less than <code>transactionId</code>.
@@ -182,7 +185,7 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      *          transaction id
      * @return dlsn of first log record whose transaction id is not less than transactionId.
      */
-    public Future<DLSN> getDLSNNotLessThanTxId(long transactionId);
+    public CompletableFuture<DLSN> getDLSNNotLessThanTxId(long transactionId);
 
     /**
      * Get the last log record in the stream
@@ -222,28 +225,28 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      *
      * @return latest log record with DLSN
      */
-    public Future<LogRecordWithDLSN> getLastLogRecordAsync();
+    public CompletableFuture<LogRecordWithDLSN> getLastLogRecordAsync();
 
     /**
      * Get Latest Transaction Id in the log - async
      *
      * @return latest transaction id
      */
-    public Future<Long> getLastTxIdAsync();
+    public CompletableFuture<Long> getLastTxIdAsync();
 
     /**
      * Get first DLSN in the log.
      *
      * @return first dlsn in the stream
      */
-    public Future<DLSN> getFirstDLSNAsync();
+    public CompletableFuture<DLSN> getFirstDLSNAsync();
 
     /**
      * Get Latest DLSN in the log - async
      *
      * @return latest transaction id
      */
-    public Future<DLSN> getLastDLSNAsync();
+    public CompletableFuture<DLSN> getLastDLSNAsync();
 
     /**
      * Get the number of log records in the active portion of the log
@@ -261,7 +264,7 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      * @return future number of log records
      * @throws IOException
      */
-    public Future<Long> getLogRecordCountAsync(final DLSN beginDLSN);
+    public CompletableFuture<Long> getLogRecordCountAsync(final DLSN beginDLSN);
 
     /**
      * Run recovery on the log.

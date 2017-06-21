@@ -18,16 +18,15 @@
 package org.apache.distributedlog.impl.acl;
 
 import com.google.common.collect.Sets;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.acl.AccessControlManager;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.thrift.AccessControlEntry;
-import com.twitter.util.Await;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
-import com.twitter.util.Promise;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -76,7 +75,7 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
         this.scheduledExecutorService = scheduledExecutorService;
         this.streamEntries = new ConcurrentHashMap<String, ZKAccessControl>();
         try {
-            Await.result(fetchDefaultAccessControlEntry());
+            FutureUtils.result(fetchDefaultAccessControlEntry());
         } catch (Throwable t) {
             if (t instanceof InterruptedException) {
                 throw new DLInterruptedException("Interrupted on getting default access control entry for " + zkRootPath, t);
@@ -90,7 +89,7 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
         }
 
         try {
-            Await.result(fetchAccessControlEntries());
+            FutureUtils.result(fetchAccessControlEntries());
         } catch (Throwable t) {
             if (t instanceof InterruptedException) {
                 throw new DLInterruptedException("Interrupted on getting access control entries for " + zkRootPath, t);
@@ -140,19 +139,19 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
         closed = true;
     }
 
-    private Future<Void> fetchAccessControlEntries() {
-        final Promise<Void> promise = new Promise<Void>();
+    private CompletableFuture<Void> fetchAccessControlEntries() {
+        final CompletableFuture<Void> promise = new CompletableFuture<Void>();
         fetchAccessControlEntries(promise);
         return promise;
     }
 
-    private void fetchAccessControlEntries(final Promise<Void> promise) {
+    private void fetchAccessControlEntries(final CompletableFuture<Void> promise) {
         try {
             zkc.get().getChildren(zkRootPath, this, new AsyncCallback.Children2Callback() {
                 @Override
                 public void processResult(int rc, String path, Object ctx, List<String> children, Stat stat) {
                     if (KeeperException.Code.OK.intValue() != rc) {
-                        promise.setException(KeeperException.create(KeeperException.Code.get(rc)));
+                        promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc)));
                         return;
                     }
                     Set<String> streamsReceived = new HashSet<String>();
@@ -166,7 +165,7 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
                         }
                     }
                     if (streamsReceived.isEmpty()) {
-                        promise.setValue(null);
+                        promise.complete(null);
                         return;
                     }
                     final AtomicInteger numPendings = new AtomicInteger(streamsReceived.size());
@@ -174,7 +173,7 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
                     for (String s : streamsReceived) {
                         final String streamName = s;
                         ZKAccessControl.read(zkc, zkRootPath + "/" + streamName, null)
-                                .addEventListener(new FutureEventListener<ZKAccessControl>() {
+                                .whenComplete(new FutureEventListener<ZKAccessControl>() {
 
                                     @Override
                                     public void onSuccess(ZKAccessControl accessControl) {
@@ -193,7 +192,7 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
                                             streamEntries.remove(streamName);
                                         } else {
                                             if (1 == numFailures.incrementAndGet()) {
-                                                promise.setException(cause);
+                                                promise.completeExceptionally(cause);
                                             }
                                         }
                                         complete();
@@ -201,7 +200,7 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
 
                                     private void complete() {
                                         if (0 == numPendings.decrementAndGet() && numFailures.get() == 0) {
-                                            promise.setValue(null);
+                                            promise.complete(null);
                                         }
                                     }
                                 });
@@ -209,28 +208,28 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
                 }
             }, null);
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         } catch (InterruptedException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         }
     }
 
-    private Future<ZKAccessControl> fetchDefaultAccessControlEntry() {
-        final Promise<ZKAccessControl> promise = new Promise<ZKAccessControl>();
+    private CompletableFuture<ZKAccessControl> fetchDefaultAccessControlEntry() {
+        final CompletableFuture<ZKAccessControl> promise = new CompletableFuture<ZKAccessControl>();
         fetchDefaultAccessControlEntry(promise);
         return promise;
     }
 
-    private void fetchDefaultAccessControlEntry(final Promise<ZKAccessControl> promise) {
+    private void fetchDefaultAccessControlEntry(final CompletableFuture<ZKAccessControl> promise) {
         ZKAccessControl.read(zkc, zkRootPath, this)
-            .addEventListener(new FutureEventListener<ZKAccessControl>() {
+            .whenComplete(new FutureEventListener<ZKAccessControl>() {
                 @Override
                 public void onSuccess(ZKAccessControl accessControl) {
                     logger.info("Default Access Control will be changed from {} to {}",
                                 ZKAccessControlManager.this.defaultAccessControl,
                                 accessControl);
                     ZKAccessControlManager.this.defaultAccessControl = accessControl;
-                    promise.setValue(accessControl);
+                    promise.complete(accessControl);
                 }
 
                 @Override
@@ -239,21 +238,21 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
                         logger.info("Default Access Control is missing, creating one for {} ...", zkRootPath);
                         createDefaultAccessControlEntryIfNeeded(promise);
                     } else {
-                        promise.setException(cause);
+                        promise.completeExceptionally(cause);
                     }
                 }
             });
     }
 
-    private void createDefaultAccessControlEntryIfNeeded(final Promise<ZKAccessControl> promise) {
+    private void createDefaultAccessControlEntryIfNeeded(final CompletableFuture<ZKAccessControl> promise) {
         ZooKeeper zk;
         try {
             zk = zkc.get();
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
             return;
         } catch (InterruptedException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
             return;
         }
         ZkUtils.asyncCreateFullPathOptimistic(zk, zkRootPath, new byte[0], zkc.getDefaultACL(),
@@ -264,7 +263,7 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
                     logger.info("Created zk path {} for default ACL.", zkRootPath);
                     fetchDefaultAccessControlEntry(promise);
                 } else {
-                    promise.setException(KeeperException.create(KeeperException.Code.get(rc)));
+                    promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc)));
                 }
             }
         }, null);
@@ -277,7 +276,7 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
         scheduledExecutorService.schedule(new Runnable() {
             @Override
             public void run() {
-                fetchDefaultAccessControlEntry().addEventListener(new FutureEventListener<ZKAccessControl>() {
+                fetchDefaultAccessControlEntry().whenComplete(new FutureEventListener<ZKAccessControl>() {
                     @Override
                     public void onSuccess(ZKAccessControl value) {
                         // no-op
@@ -305,7 +304,7 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
         scheduledExecutorService.schedule(new Runnable() {
             @Override
             public void run() {
-                fetchAccessControlEntries().addEventListener(new FutureEventListener<Void>() {
+                fetchAccessControlEntries().whenComplete(new FutureEventListener<Void>() {
                     @Override
                     public void onSuccess(Void value) {
                         // no-op
@@ -328,10 +327,10 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
         scheduledExecutorService.schedule(new Runnable() {
             @Override
             public void run() {
-                fetchDefaultAccessControlEntry().addEventListener(new FutureEventListener<ZKAccessControl>() {
+                fetchDefaultAccessControlEntry().whenComplete(new FutureEventListener<ZKAccessControl>() {
                     @Override
                     public void onSuccess(ZKAccessControl value) {
-                        fetchAccessControlEntries().addEventListener(new FutureEventListener<Void>() {
+                        fetchAccessControlEntries().whenComplete(new FutureEventListener<Void>() {
                             @Override
                             public void onSuccess(Void value) {
                                 // no-op

@@ -19,11 +19,10 @@ package org.apache.distributedlog.metadata;
 
 import com.google.common.annotations.Beta;
 import com.google.common.base.Optional;
-import org.apache.distributedlog.callback.NamespaceListener;
-import com.twitter.util.Future;
-
 import java.net.URI;
 import java.util.Iterator;
+import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.callback.NamespaceListener;
 
 /**
  * Interface for log metadata store.
@@ -38,7 +37,7 @@ public interface LogMetadataStore {
      *          name of the log
      * @return namespace location that stores this stream.
      */
-    Future<URI> createLog(String logName);
+    CompletableFuture<URI> createLog(String logName);
 
     /**
      * Get the location of the log.
@@ -47,14 +46,14 @@ public interface LogMetadataStore {
      *          name of the log
      * @return namespace location that stores this stream.
      */
-    Future<Optional<URI>> getLogLocation(String logName);
+    CompletableFuture<Optional<URI>> getLogLocation(String logName);
 
     /**
      * Retrieves logs from the namespace.
      *
      * @return iterator of logs of the namespace.
      */
-    Future<Iterator<String>> getLogs();
+    CompletableFuture<Iterator<String>> getLogs();
 
     /**
      * Register a namespace listener on streams changes.

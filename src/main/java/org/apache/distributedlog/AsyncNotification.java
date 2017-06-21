@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog;
 
-public interface AsyncNotification {
+interface AsyncNotification {
     /**
      * Triggered when the background activity encounters an exception
      *

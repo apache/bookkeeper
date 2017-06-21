@@ -17,11 +17,11 @@
  */
 package org.apache.distributedlog;
 
-import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
-import org.apache.distributedlog.util.FutureUtils;
-
 import java.io.IOException;
 import java.util.List;
+import org.apache.distributedlog.api.LogWriter;
+import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
+import org.apache.distributedlog.util.Utils;
 
 class BKSyncLogWriter extends BKAbstractLogWriter implements LogWriter {
 
@@ -59,7 +59,7 @@ class BKSyncLogWriter extends BKAbstractLogWriter implements LogWriter {
      */
     @Override
     public void markEndOfStream() throws IOException {
-        FutureUtils.result(getLedgerWriter(DistributedLogConstants.MAX_TXID, true).markEndOfStream());
+        Utils.ioResult(getLedgerWriter(DistributedLogConstants.MAX_TXID, true).markEndOfStream());
         closeAndComplete();
     }
 
@@ -73,7 +73,7 @@ class BKSyncLogWriter extends BKAbstractLogWriter implements LogWriter {
         long highestTransactionId = 0;
         BKLogSegmentWriter writer = getCachedLogWriter();
         if (null != writer) {
-            highestTransactionId = Math.max(highestTransactionId, FutureUtils.result(writer.flush()));
+            highestTransactionId = Math.max(highestTransactionId, Utils.ioResult(writer.flush()));
         }
         return highestTransactionId;
     }
@@ -93,7 +93,7 @@ class BKSyncLogWriter extends BKAbstractLogWriter implements LogWriter {
         long highestTransactionId = 0;
         BKLogSegmentWriter writer = getCachedLogWriter();
         if (null != writer) {
-            highestTransactionId = Math.max(highestTransactionId, FutureUtils.result(writer.commit()));
+            highestTransactionId = Math.max(highestTransactionId, Utils.ioResult(writer.commit()));
             LOG.debug("FlushAndSync Completed");
         } else {
             LOG.debug("FlushAndSync Completed - Nothing to Flush");

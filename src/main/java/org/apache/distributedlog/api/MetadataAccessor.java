@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,20 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.io;
+package org.apache.distributedlog.api;
 
-import com.twitter.util.Future;
+import org.apache.distributedlog.io.AsyncCloseable;
 
-/**
- * A {@code AsyncDeleteable} is a source or destination of data that can be deleted asynchronously.
- * This delete method is invoked to delete the source.
- */
-public interface AsyncDeleteable {
+import java.io.Closeable;
+import java.io.IOException;
+
+public interface MetadataAccessor extends Closeable, AsyncCloseable {
     /**
-     * Releases any system resources associated with this and delete the source. If the source is
-     * already deleted then invoking this method has no effect.
-     *
-     * @return future representing the deletion result.
+     * Get the name of the stream managed by this log manager
+     * @return streamName
      */
-    Future<Void> delete();
+    public String getStreamName();
+
+    public void createOrUpdateMetadata(byte[] metadata) throws IOException;
+
+    public void deleteMetadata() throws IOException;
+
+    public byte[] getMetadata() throws IOException;
+
+    /**
+     * Close the distributed log metadata, freeing any resources it may hold.
+     */
+    public void close() throws IOException;
+
 }

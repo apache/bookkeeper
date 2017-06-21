@@ -30,10 +30,10 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 
-import org.apache.distributedlog.annotations.DistributedLogAnnotations.Compression;
+import org.apache.distributedlog.common.annotations.DistributedLogAnnotations.Compression;
 import org.apache.distributedlog.io.CompressionCodec;
 import org.apache.distributedlog.io.CompressionUtils;
-import org.apache.distributedlog.util.BitMaskUtils;
+import org.apache.distributedlog.common.util.BitMaskUtils;
 
 /**
  * An enveloped entry written to BookKeeper.

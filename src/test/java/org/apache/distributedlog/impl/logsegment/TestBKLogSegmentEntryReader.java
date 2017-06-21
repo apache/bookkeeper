@@ -18,13 +18,14 @@
 package org.apache.distributedlog.impl.logsegment;
 
 import com.google.common.collect.Lists;
-import org.apache.distributedlog.AsyncLogWriter;
+import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.BookKeeperClient;
 import org.apache.distributedlog.BookKeeperClientBuilder;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.DistributedLogConfiguration;
-import org.apache.distributedlog.DistributedLogManager;
+import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.Entry;
 import org.apache.distributedlog.LogRecord;
 import org.apache.distributedlog.LogRecordWithDLSN;
@@ -37,10 +38,8 @@ import org.apache.distributedlog.exceptions.ReadCancelledException;
 import org.apache.distributedlog.injector.AsyncFailureInjector;
 import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
 import org.apache.distributedlog.util.ConfUtils;
-import org.apache.distributedlog.util.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
-import com.twitter.util.Future;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.After;
 import org.junit.Before;
@@ -112,7 +111,7 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
                 null,
                 NullStatsLogger.INSTANCE,
                 AsyncFailureInjector.NULL);
-        return (BKLogSegmentEntryReader) FutureUtils.result(store.openReader(segment, startEntryId));
+        return (BKLogSegmentEntryReader) Utils.ioResult(store.openReader(segment, startEntryId));
     }
 
     void generateCompletedLogSegments(DistributedLogManager dlm,
@@ -121,12 +120,12 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
                                       long segmentSize) throws Exception {
         long txid = 1L;
         for (long i = 0; i < numCompletedSegments; i++) {
-            AsyncLogWriter writer = FutureUtils.result(dlm.openAsyncLogWriter());
+            AsyncLogWriter writer = Utils.ioResult(dlm.openAsyncLogWriter());
             for (long j = 1; j <= segmentSize; j++) {
-                FutureUtils.result(writer.write(DLMTestUtil.getLogRecordInstance(txid++)));
+                Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txid++)));
                 LogRecord ctrlRecord = DLMTestUtil.getLogRecordInstance(txid);
                 ctrlRecord.setControl();
-                FutureUtils.result(writer.write(ctrlRecord));
+                Utils.ioResult(writer.write(ctrlRecord));
             }
             Utils.close(writer);
         }
@@ -135,12 +134,12 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
     AsyncLogWriter createInprogressLogSegment(DistributedLogManager dlm,
                                               DistributedLogConfiguration conf,
                                               long segmentSize) throws Exception {
-        AsyncLogWriter writer = FutureUtils.result(dlm.openAsyncLogWriter());
+        AsyncLogWriter writer = Utils.ioResult(dlm.openAsyncLogWriter());
         for (long i = 1L; i <= segmentSize; i++) {
-            FutureUtils.result(writer.write(DLMTestUtil.getLogRecordInstance(i)));
+            Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(i)));
             LogRecord ctrlRecord = DLMTestUtil.getLogRecordInstance(i);
             ctrlRecord.setControl();
-            FutureUtils.result(writer.write(ctrlRecord));
+            Utils.ioResult(writer.write(ctrlRecord));
         }
         return writer;
     }
@@ -168,7 +167,7 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
         while (!done) {
             Entry.Reader entryReader;
             try {
-                entryReader = FutureUtils.result(reader.readNext(1)).get(0);
+                entryReader = Utils.ioResult(reader.readNext(1)).get(0);
             } catch (EndOfLogSegmentException eol) {
                 done = true;
                 continue;
@@ -205,15 +204,15 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
                 1, segments.size());
 
         BKLogSegmentEntryReader reader = createEntryReader(segments.get(0), 0, confLocal);
-        List<Future<List<Entry.Reader>>> futures = Lists.newArrayList();
+        List<CompletableFuture<List<Entry.Reader>>> futures = Lists.newArrayList();
         for (int i = 0; i < 5; i++) {
             futures.add(reader.readNext(1));
         }
         assertFalse("Reader should not be closed yet", reader.isClosed());
         Utils.close(reader);
-        for (Future<List<Entry.Reader>> future : futures) {
+        for (CompletableFuture<List<Entry.Reader>> future : futures) {
             try {
-                FutureUtils.result(future);
+                Utils.ioResult(future);
                 fail("The read request should be cancelled");
             } catch (ReadCancelledException rce) {
                 // expected
@@ -253,7 +252,7 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
         assertEquals(10, reader.getNextEntryId());
         assertFalse(reader.hasCaughtUpOnInprogress());
         // read first entry
-        Entry.Reader entryReader = FutureUtils.result(reader.readNext(1)).get(0);
+        Entry.Reader entryReader = Utils.ioResult(reader.readNext(1)).get(0);
         LogRecordWithDLSN record = entryReader.nextRecord();
         while (null != record) {
             if (!record.isControl()) {
@@ -309,7 +308,7 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
         assertEquals(5, reader.readAheadEntries.size());
         assertEquals(5, reader.getNextEntryId());
         // read first entry
-        Entry.Reader entryReader = FutureUtils.result(reader.readNext(1)).get(0);
+        Entry.Reader entryReader = Utils.ioResult(reader.readNext(1)).get(0);
         LogRecordWithDLSN record = entryReader.nextRecord();
         while (null != record) {
             if (!record.isControl()) {
@@ -365,7 +364,7 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
         assertEquals((reader.getLastAddConfirmed() + 1), reader.readAheadEntries.size());
         assertEquals((reader.getLastAddConfirmed() + 1), reader.getNextEntryId());
         // read first entry
-        Entry.Reader entryReader = FutureUtils.result(reader.readNext(1)).get(0);
+        Entry.Reader entryReader = Utils.ioResult(reader.readNext(1)).get(0);
         LogRecordWithDLSN record = entryReader.nextRecord();
         while (null != record) {
             if (!record.isControl()) {
@@ -415,7 +414,7 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
         long txId = 1L;
         long entryId = 0L;
         while (true) {
-            Entry.Reader entryReader = FutureUtils.result(reader.readNext(1)).get(0);
+            Entry.Reader entryReader = Utils.ioResult(reader.readNext(1)).get(0);
             LogRecordWithDLSN record = entryReader.nextRecord();
             while (null != record) {
                 if (!record.isControl()) {
@@ -435,11 +434,11 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
         }
         assertEquals(6L, txId);
 
-        Future<List<Entry.Reader>> nextReadFuture = reader.readNext(1);
+        CompletableFuture<List<Entry.Reader>> nextReadFuture = reader.readNext(1);
         // write another record to commit previous writes
-        FutureUtils.result(writer.write(DLMTestUtil.getLogRecordInstance(txId)));
+        Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txId)));
         // the long poll will be satisfied
-        List<Entry.Reader> nextReadEntries = FutureUtils.result(nextReadFuture);
+        List<Entry.Reader> nextReadEntries = Utils.ioResult(nextReadFuture);
         assertEquals(1, nextReadEntries.size());
         assertTrue(reader.hasCaughtUpOnInprogress());
         Entry.Reader entryReader = nextReadEntries.get(0);
@@ -486,7 +485,7 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
         long txId = 1L;
         long entryId = 0L;
         while (true) {
-            Entry.Reader entryReader = FutureUtils.result(reader.readNext(1)).get(0);
+            Entry.Reader entryReader = Utils.ioResult(reader.readNext(1)).get(0);
             LogRecordWithDLSN record = entryReader.nextRecord();
             while (null != record) {
                 if (!record.isControl()) {
@@ -506,11 +505,11 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
         }
         assertEquals(6L, txId);
 
-        Future<List<Entry.Reader>> nextReadFuture = reader.readNext(1);
+        CompletableFuture<List<Entry.Reader>> nextReadFuture = reader.readNext(1);
         // write another record to commit previous writes
-        FutureUtils.result(writer.write(DLMTestUtil.getLogRecordInstance(txId)));
+        Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txId)));
         // the long poll will be satisfied
-        List<Entry.Reader> nextReadEntries = FutureUtils.result(nextReadFuture);
+        List<Entry.Reader> nextReadEntries = Utils.ioResult(nextReadFuture);
         assertEquals(1, nextReadEntries.size());
         Entry.Reader entryReader = nextReadEntries.get(0);
         LogRecordWithDLSN record = entryReader.nextRecord();
@@ -528,7 +527,7 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
         ++entryId;
         // close the writer, the write will be committed
         Utils.close(writer);
-        entryReader = FutureUtils.result(reader.readNext(1)).get(0);
+        entryReader = Utils.ioResult(reader.readNext(1)).get(0);
         record = entryReader.nextRecord();
         assertNotNull(record);
         assertFalse(record.isControl());
@@ -549,8 +548,8 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
         try {
             // when we closed the log segment, another control record will be
             // written, so we loop over the reader until we reach end of log segment.
-            FutureUtils.result(reader.readNext(1));
-            FutureUtils.result(reader.readNext(1));
+            Utils.ioResult(reader.readNext(1));
+            Utils.ioResult(reader.readNext(1));
             fail("Should reach end of log segment");
         } catch (EndOfLogSegmentException eol) {
             // expected

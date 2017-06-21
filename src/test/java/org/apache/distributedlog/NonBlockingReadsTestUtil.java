@@ -17,10 +17,11 @@
  */
 package org.apache.distributedlog;
 
+import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.exceptions.LogEmptyException;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.exceptions.LogReadException;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,19 +124,19 @@ class NonBlockingReadsTestUtil {
         for (long i = 0; i < 3; i++) {
             BKAsyncLogWriter writer = (BKAsyncLogWriter) dlm.startAsyncLogSegmentNonPartitioned();
             for (long j = 1; j < segmentSize; j++) {
-                FutureUtils.result(writer.write(DLMTestUtil.getLogRecordInstance(txId++)));
+                Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txId++)));
             }
             if (recover) {
-                FutureUtils.result(writer.write(DLMTestUtil.getLogRecordInstance(txId++)));
+                Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txId++)));
                 TimeUnit.MILLISECONDS.sleep(300);
                 writer.abort();
                 LOG.debug("Recovering Segments");
                 BKLogWriteHandler blplm = ((BKDistributedLogManager) (dlm)).createWriteHandler(true);
-                FutureUtils.result(blplm.recoverIncompleteLogSegments());
-                FutureUtils.result(blplm.asyncClose());
+                Utils.ioResult(blplm.recoverIncompleteLogSegments());
+                Utils.ioResult(blplm.asyncClose());
                 LOG.debug("Recovered Segments");
             } else {
-                FutureUtils.result(writer.write(DLMTestUtil.getLogRecordInstance(txId++)));
+                Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txId++)));
                 writer.closeAndComplete();
             }
             TimeUnit.MILLISECONDS.sleep(300);

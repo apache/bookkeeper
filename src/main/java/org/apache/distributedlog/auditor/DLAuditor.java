@@ -20,20 +20,20 @@ package org.apache.distributedlog.auditor;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.SettableFuture;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.BookKeeperClient;
 import org.apache.distributedlog.BookKeeperClientBuilder;
 import org.apache.distributedlog.DistributedLogConfiguration;
-import org.apache.distributedlog.DistributedLogManager;
+import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.LogSegmentMetadata;
+import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.impl.BKNamespaceDriver;
-import org.apache.distributedlog.namespace.DistributedLogNamespace;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.ZooKeeperClientBuilder;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.exceptions.ZKException;
 import org.apache.distributedlog.impl.metadata.BKDLConfig;
-import org.apache.distributedlog.namespace.DistributedLogNamespaceBuilder;
+import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.namespace.NamespaceDriver;
 import org.apache.distributedlog.util.DLUtils;
 import org.apache.bookkeeper.client.BKException;
@@ -45,6 +45,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
@@ -84,13 +85,13 @@ public class DLAuditor {
         this.conf = conf;
     }
 
-    private ZooKeeperClient getZooKeeperClient(DistributedLogNamespace namespace) {
+    private ZooKeeperClient getZooKeeperClient(Namespace namespace) {
         NamespaceDriver driver = namespace.getNamespaceDriver();
         assert(driver instanceof BKNamespaceDriver);
         return ((BKNamespaceDriver) driver).getWriterZKC();
     }
 
-    private BookKeeperClient getBookKeeperClient(DistributedLogNamespace namespace) {
+    private BookKeeperClient getBookKeeperClient(Namespace namespace) {
         NamespaceDriver driver = namespace.getNamespaceDriver();
         assert(driver instanceof BKNamespaceDriver);
         return ((BKNamespaceDriver) driver).getReaderBKC();
@@ -169,7 +170,7 @@ public class DLAuditor {
         LedgerManager lm = BookKeeperAccessor.getLedgerManager(bkc.get());
 
         final Set<Long> ledgers = new HashSet<Long>();
-        final SettableFuture<Void> doneFuture = SettableFuture.create();
+        final CompletableFuture<Void> doneFuture = FutureUtils.createFuture();
 
         BookkeeperInternalCallbacks.Processor<Long> collector =
                 new BookkeeperInternalCallbacks.Processor<Long>() {
@@ -195,9 +196,9 @@ public class DLAuditor {
             @Override
             public void processResult(int rc, String path, Object ctx) {
                 if (BKException.Code.OK == rc) {
-                    doneFuture.set(null);
+                    doneFuture.complete(null);
                 } else {
-                    doneFuture.setException(BKException.create(rc));
+                    doneFuture.completeExceptionally(BKException.create(rc));
                 }
             }
         };
@@ -225,12 +226,12 @@ public class DLAuditor {
     private Set<Long> collectLedgersFromDL(List<URI> uris, List<List<String>> allocationPaths)
             throws IOException {
         final Set<Long> ledgers = new TreeSet<Long>();
-        List<DistributedLogNamespace> namespaces =
-                new ArrayList<DistributedLogNamespace>(uris.size());
+        List<Namespace> namespaces =
+                new ArrayList<Namespace>(uris.size());
         try {
             for (URI uri : uris) {
                 namespaces.add(
-                        DistributedLogNamespaceBuilder.newBuilder()
+                        NamespaceBuilder.newBuilder()
                                 .conf(conf)
                                 .uri(uri)
                                 .build());
@@ -240,8 +241,8 @@ public class DLAuditor {
             ExecutorService executor = Executors.newFixedThreadPool(uris.size());
             try {
                 int i = 0;
-                for (final DistributedLogNamespace namespace : namespaces) {
-                    final DistributedLogNamespace dlNamespace = namespace;
+                for (final Namespace namespace : namespaces) {
+                    final Namespace dlNamespace = namespace;
                     final URI uri = uris.get(i);
                     final List<String> aps = allocationPaths.get(i);
                     i++;
@@ -278,7 +279,7 @@ public class DLAuditor {
                 executor.shutdown();
             }
         } finally {
-            for (DistributedLogNamespace namespace : namespaces) {
+            for (Namespace namespace : namespaces) {
                 namespace.close();
             }
         }
@@ -286,7 +287,7 @@ public class DLAuditor {
     }
 
     private void collectLedgersFromAllocator(final URI uri,
-                                             final DistributedLogNamespace namespace,
+                                             final Namespace namespace,
                                              final List<String> allocationPaths,
                                              final Set<Long> ledgers) throws IOException {
         final LinkedBlockingQueue<String> poolQueue =
@@ -346,7 +347,7 @@ public class DLAuditor {
     }
 
     private void collectLedgersFromDL(final URI uri,
-                                      final DistributedLogNamespace namespace,
+                                      final Namespace namespace,
                                       final Set<Long> ledgers) throws IOException {
         logger.info("Enumerating {} to collect streams.", uri);
         Iterator<String> streams = namespace.getLogs();
@@ -366,7 +367,7 @@ public class DLAuditor {
         });
     }
 
-    private List<Long> collectLedgersFromStream(DistributedLogNamespace namespace,
+    private List<Long> collectLedgersFromStream(Namespace namespace,
                                                 String stream,
                                                 Set<Long> ledgers)
             throws IOException {
@@ -394,7 +395,7 @@ public class DLAuditor {
      */
     public Map<String, Long> calculateStreamSpaceUsage(final URI uri) throws IOException {
         logger.info("Collecting stream space usage for {}.", uri);
-        DistributedLogNamespace namespace = DistributedLogNamespaceBuilder.newBuilder()
+        Namespace namespace = NamespaceBuilder.newBuilder()
                 .conf(conf)
                 .uri(uri)
                 .build();
@@ -406,7 +407,7 @@ public class DLAuditor {
     }
 
     private Map<String, Long> calculateStreamSpaceUsage(
-            final URI uri, final DistributedLogNamespace namespace)
+            final URI uri, final Namespace namespace)
         throws IOException {
         Iterator<String> streams = namespace.getLogs();
         final LinkedBlockingQueue<String> streamQueue = new LinkedBlockingQueue<String>();
@@ -432,7 +433,7 @@ public class DLAuditor {
         return streamSpaceUsageMap;
     }
 
-    private long calculateStreamSpaceUsage(final DistributedLogNamespace namespace,
+    private long calculateStreamSpaceUsage(final Namespace namespace,
                                            final String stream) throws IOException {
         DistributedLogManager dlm = namespace.openLog(stream);
         long totalBytes = 0;
@@ -504,7 +505,7 @@ public class DLAuditor {
 
         LedgerManager lm = BookKeeperAccessor.getLedgerManager(bkc.get());
 
-        final SettableFuture<Void> doneFuture = SettableFuture.create();
+        final CompletableFuture<Void> doneFuture = FutureUtils.createFuture();
         final BookKeeper bk = bkc.get();
 
         BookkeeperInternalCallbacks.Processor<Long> collector =
@@ -544,9 +545,9 @@ public class DLAuditor {
             @Override
             public void processResult(int rc, String path, Object ctx) {
                 if (BKException.Code.OK == rc) {
-                    doneFuture.set(null);
+                    doneFuture.complete(null);
                 } else {
-                    doneFuture.setException(BKException.create(rc));
+                    doneFuture.completeExceptionally(BKException.create(rc));
                 }
             }
         };

@@ -23,6 +23,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.callback.NamespaceListener;
@@ -32,12 +33,10 @@ import org.apache.distributedlog.exceptions.ZKException;
 import org.apache.distributedlog.impl.ZKNamespaceWatcher;
 import org.apache.distributedlog.metadata.LogMetadataStore;
 import org.apache.distributedlog.namespace.NamespaceWatcher;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
-import com.twitter.util.Promise;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -49,8 +48,6 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.runtime.AbstractFunction1;
-import scala.runtime.BoxedUnit;
 
 import java.io.IOException;
 import java.net.URI;
@@ -80,8 +77,9 @@ import static com.google.common.base.Charsets.UTF_8;
  * NOTE: current federated namespace isn't optimized for deletion/creation. so don't use it in the workloads
  *       that have lots of creations or deletions.
  */
-public class FederatedZKLogMetadataStore extends NamespaceWatcher implements LogMetadataStore, Watcher, Runnable,
-        FutureEventListener<Set<URI>> {
+public class FederatedZKLogMetadataStore
+        extends NamespaceWatcher
+        implements LogMetadataStore, Watcher, Runnable, FutureEventListener<Set<URI>> {
 
     static final Logger logger = LoggerFactory.getLogger(FederatedZKLogMetadataStore.class);
 
@@ -100,7 +98,7 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
      * @throws KeeperException
      */
     public static void createFederatedNamespace(URI namespace, ZooKeeperClient zkc)
-            throws InterruptedException, ZooKeeperClient.ZooKeeperConnectionException, KeeperException {
+            throws IOException, KeeperException {
         String zkSubNamespacesPath = namespace.getPath() + "/" + ZNODE_SUB_NAMESPACES;
         Utils.zkCreateFullPathOptimistic(zkc, zkSubNamespacesPath, new byte[0],
                 zkc.getDefaultACL(), CreateMode.PERSISTENT);
@@ -112,7 +110,7 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
     class SubNamespace implements NamespaceListener {
         final URI uri;
         final ZKNamespaceWatcher watcher;
-        Promise<Set<String>> logsFuture = new Promise<Set<String>>();
+        CompletableFuture<Set<String>> logsFuture = new CompletableFuture<Set<String>>();
 
         SubNamespace(URI uri) {
             this.uri = uri;
@@ -124,7 +122,7 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
             this.watcher.watchNamespaceChanges();
         }
 
-        synchronized Future<Set<String>> getLogs() {
+        synchronized CompletableFuture<Set<String>> getLogs() {
             return logsFuture;
         }
 
@@ -134,16 +132,16 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
             Set<String> oldLogs = Sets.newHashSet();
 
             // update the sub namespace cache
-            Promise<Set<String>> newLogsPromise;
+            CompletableFuture<Set<String>> newLogsPromise;
             synchronized (this) {
-                if (logsFuture.isDefined()) { // the promise is already satisfied
+                if (logsFuture.isDone()) { // the promise is already satisfied
                     try {
                         oldLogs = FutureUtils.result(logsFuture);
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         logger.error("Unexpected exception when getting logs from a satisified future of {} : ",
                                 uri, e);
                     }
-                    logsFuture = new Promise<Set<String>>();
+                    logsFuture = new CompletableFuture<Set<String>>();
                 }
 
                 // update the reverse cache
@@ -163,7 +161,7 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
                 }
                 newLogsPromise = logsFuture;
             }
-            newLogsPromise.setValue(newLogs);
+            newLogsPromise.complete(newLogs);
 
             // notify namespace changes
             notifyOnNamespaceChanges();
@@ -203,7 +201,16 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
         this.maxLogsPerSubnamespace = conf.getFederatedMaxLogsPerSubnamespace();
 
         // fetch the sub namespace
-        Set<URI> uris = FutureUtils.result(fetchSubNamespaces(this));
+        Set<URI> uris;
+        try {
+            uris = FutureUtils.result(fetchSubNamespaces(this));
+        } catch (Exception e) {
+            if (e instanceof IOException) {
+                throw (IOException) e;
+            } else {
+                throw new IOException(e);
+            }
+        }
         for (URI uri : uris) {
             SubNamespace subNs = new SubNamespace(uri);
             if (null == subNamespaces.putIfAbsent(uri, subNs)) {
@@ -228,21 +235,21 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
         }
     }
 
-    private <T> Future<T> postStateCheck(Future<T> future) {
-        final Promise<T> postCheckedPromise = new Promise<T>();
-        future.addEventListener(new FutureEventListener<T>() {
+    private <T> CompletableFuture<T> postStateCheck(CompletableFuture<T> future) {
+        final CompletableFuture<T> postCheckedPromise = new CompletableFuture<T>();
+        future.whenComplete(new FutureEventListener<T>() {
             @Override
             public void onSuccess(T value) {
                 if (duplicatedLogFound.get()) {
-                    postCheckedPromise.setException(new UnexpectedException("Duplicate log found under " + namespace));
+                    postCheckedPromise.completeExceptionally(new UnexpectedException("Duplicate log found under " + namespace));
                 } else {
-                    postCheckedPromise.setValue(value);
+                    postCheckedPromise.complete(value);
                 }
             }
 
             @Override
             public void onFailure(Throwable cause) {
-                postCheckedPromise.setException(cause);
+                postCheckedPromise.completeExceptionally(cause);
             }
         });
         return postCheckedPromise;
@@ -273,13 +280,13 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
                 namespace.getFragment());
     }
 
-    Future<Set<URI>> getCachedSubNamespaces() {
+    CompletableFuture<Set<URI>> getCachedSubNamespaces() {
         Set<URI> nsSet = subNamespaces.keySet();
-        return Future.value(nsSet);
+        return FutureUtils.value(nsSet);
     }
 
-    Future<Set<URI>> fetchSubNamespaces(final Watcher watcher) {
-        final Promise<Set<URI>> promise = new Promise<Set<URI>>();
+    CompletableFuture<Set<URI>> fetchSubNamespaces(final Watcher watcher) {
+        final CompletableFuture<Set<URI>> promise = new CompletableFuture<Set<URI>>();
         try {
             zkc.get().sync(this.zkSubnamespacesPath, new AsyncCallback.VoidCallback() {
                 @Override
@@ -287,27 +294,27 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
                     if (Code.OK.intValue() == rc) {
                         fetchSubNamespaces(watcher, promise);
                     } else {
-                        promise.setException(KeeperException.create(Code.get(rc)));
+                        promise.completeExceptionally(KeeperException.create(Code.get(rc)));
                     }
                 }
             }, null);
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         } catch (InterruptedException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         }
         return promise;
     }
 
     private void fetchSubNamespaces(Watcher watcher,
-                                    final Promise<Set<URI>> promise) {
+                                    final CompletableFuture<Set<URI>> promise) {
         try {
             zkc.get().getChildren(this.zkSubnamespacesPath, watcher,
                     new AsyncCallback.Children2Callback() {
                         @Override
                         public void processResult(int rc, String path, Object ctx, List<String> children, Stat stat) {
                             if (Code.NONODE.intValue() == rc) {
-                                promise.setException(new UnexpectedException(
+                                promise.completeExceptionally(new UnexpectedException(
                                         "The subnamespaces don't exist for the federated namespace " + namespace));
                             } else if (Code.OK.intValue() == rc) {
                                 Set<URI> subnamespaces = Sets.newHashSet();
@@ -318,26 +325,26 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
                                     }
                                 } catch (URISyntaxException use) {
                                     logger.error("Invalid sub namespace uri found : ", use);
-                                    promise.setException(new UnexpectedException(
+                                    promise.completeExceptionally(new UnexpectedException(
                                             "Invalid sub namespace uri found in " + namespace, use));
                                     return;
                                 }
                                 // update the sub namespaces set before update version
                                 setZkSubnamespacesVersion(stat.getVersion());
-                                promise.setValue(subnamespaces);
+                                promise.complete(subnamespaces);
                             }
                         }
                     }, null);
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         } catch (InterruptedException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         }
     }
 
     @Override
     public void run() {
-        fetchSubNamespaces(this).addEventListener(this);
+        fetchSubNamespaces(this).whenComplete(this);
     }
 
     @Override
@@ -370,7 +377,7 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
         }
         if (Event.EventType.NodeChildrenChanged == watchedEvent.getType()) {
             // fetch the namespace
-            fetchSubNamespaces(this).addEventListener(this);
+            fetchSubNamespaces(this).whenComplete(this);
         }
     }
 
@@ -378,27 +385,27 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
     // Log Related Methods
     //
 
-    private <A> Future<A> duplicatedLogException(String logName) {
-        return Future.exception(new UnexpectedException("Duplicated log " + logName
+    private <A> CompletableFuture<A> duplicatedLogException(String logName) {
+        return FutureUtils.exception(new UnexpectedException("Duplicated log " + logName
                 + " found in namespace " + namespace));
     }
 
     @Override
-    public Future<URI> createLog(final String logName) {
+    public CompletableFuture<URI> createLog(final String logName) {
         if (duplicatedLogFound.get()) {
             return duplicatedLogException(duplicatedLogName.get());
         }
-        Promise<URI> createPromise = new Promise<URI>();
+        CompletableFuture<URI> createPromise = new CompletableFuture<URI>();
         doCreateLog(logName, createPromise);
         return postStateCheck(createPromise);
     }
 
-    void doCreateLog(final String logName, final Promise<URI> createPromise) {
-        getLogLocation(logName).addEventListener(new FutureEventListener<Optional<URI>>() {
+    void doCreateLog(final String logName, final CompletableFuture<URI> createPromise) {
+        getLogLocation(logName).whenComplete(new FutureEventListener<Optional<URI>>() {
             @Override
             public void onSuccess(Optional<URI> uriOptional) {
                 if (uriOptional.isPresent()) {
-                    createPromise.setException(new LogExistsException("Log " + logName + " already exists in " + uriOptional.get()));
+                    createPromise.completeExceptionally(new LogExistsException("Log " + logName + " already exists in " + uriOptional.get()));
                 } else {
                     getCachedSubNamespacesAndCreateLog(logName, createPromise);
                 }
@@ -406,14 +413,14 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
 
             @Override
             public void onFailure(Throwable cause) {
-                createPromise.setException(cause);
+                createPromise.completeExceptionally(cause);
             }
         });
     }
 
     private void getCachedSubNamespacesAndCreateLog(final String logName,
-                                                    final Promise<URI> createPromise) {
-        getCachedSubNamespaces().addEventListener(new FutureEventListener<Set<URI>>() {
+                                                    final CompletableFuture<URI> createPromise) {
+        getCachedSubNamespaces().whenComplete(new FutureEventListener<Set<URI>>() {
             @Override
             public void onSuccess(Set<URI> uris) {
                 findSubNamespaceToCreateLog(logName, uris, createPromise);
@@ -421,14 +428,14 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
 
             @Override
             public void onFailure(Throwable cause) {
-                createPromise.setException(cause);
+                createPromise.completeExceptionally(cause);
             }
         });
     }
 
     private void fetchSubNamespacesAndCreateLog(final String logName,
-                                                final Promise<URI> createPromise) {
-        fetchSubNamespaces(null).addEventListener(new FutureEventListener<Set<URI>>() {
+                                                final CompletableFuture<URI> createPromise) {
+        fetchSubNamespaces(null).whenComplete(new FutureEventListener<Set<URI>>() {
             @Override
             public void onSuccess(Set<URI> uris) {
                 findSubNamespaceToCreateLog(logName, uris, createPromise);
@@ -436,26 +443,26 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
 
             @Override
             public void onFailure(Throwable cause) {
-                createPromise.setException(cause);
+                createPromise.completeExceptionally(cause);
             }
         });
     }
 
     private void findSubNamespaceToCreateLog(final String logName,
                                              final Set<URI> uris,
-                                             final Promise<URI> createPromise) {
+                                             final CompletableFuture<URI> createPromise) {
         final List<URI> uriList = Lists.newArrayListWithExpectedSize(uris.size());
-        List<Future<Set<String>>> futureList = Lists.newArrayListWithExpectedSize(uris.size());
+        List<CompletableFuture<Set<String>>> futureList = Lists.newArrayListWithExpectedSize(uris.size());
         for (URI uri : uris) {
             SubNamespace subNs = subNamespaces.get(uri);
             if (null == subNs) {
-                createPromise.setException(new UnexpectedException("No sub namespace " + uri + " found"));
+                createPromise.completeExceptionally(new UnexpectedException("No sub namespace " + uri + " found"));
                 return;
             }
             futureList.add(subNs.getLogs());
             uriList.add(uri);
         }
-        Future.collect(futureList).addEventListener(new FutureEventListener<List<Set<String>>>() {
+        FutureUtils.collect(futureList).whenComplete(new FutureEventListener<List<Set<String>>>() {
             @Override
             public void onSuccess(List<Set<String>> resultList) {
                 for (int i = resultList.size() - 1; i >= 0; i--) {
@@ -467,7 +474,7 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
                     }
                 }
                 // All sub namespaces are full
-                createSubNamespace().addEventListener(new FutureEventListener<URI>() {
+                createSubNamespace().whenComplete(new FutureEventListener<URI>() {
                     @Override
                     public void onSuccess(URI uri) {
                         // the new namespace will be propagated to the namespace cache by the namespace listener
@@ -479,14 +486,14 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
 
                     @Override
                     public void onFailure(Throwable cause) {
-                        createPromise.setException(cause);
+                        createPromise.completeExceptionally(cause);
                     }
                 });
             }
 
             @Override
             public void onFailure(Throwable cause) {
-                createPromise.setException(cause);
+                createPromise.completeExceptionally(cause);
             }
         });
     }
@@ -499,8 +506,8 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
         return SUB_NAMESPACE_PREFIX + parts[parts.length - 1];
     }
 
-    Future<URI> createSubNamespace() {
-        final Promise<URI> promise = new Promise<URI>();
+    CompletableFuture<URI> createSubNamespace() {
+        final CompletableFuture<URI> promise = new CompletableFuture<URI>();
 
         final String nsPath = namespace.getPath() + "/" + ZNODE_SUB_NAMESPACES + "/" + SUB_NAMESPACE_PREFIX;
         try {
@@ -512,21 +519,21 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
                                 try {
                                     URI newUri = getSubNamespaceURI(getNamespaceFromZkPath(name));
                                     logger.info("Created sub namespace {}", newUri);
-                                    promise.setValue(newUri);
+                                    promise.complete(newUri);
                                 } catch (UnexpectedException ue) {
-                                    promise.setException(ue);
+                                    promise.completeExceptionally(ue);
                                 } catch (URISyntaxException e) {
-                                    promise.setException(new UnexpectedException("Invalid namespace " + name + " is created."));
+                                    promise.completeExceptionally(new UnexpectedException("Invalid namespace " + name + " is created."));
                                 }
                             } else {
-                                promise.setException(KeeperException.create(Code.get(rc)));
+                                promise.completeExceptionally(KeeperException.create(Code.get(rc)));
                             }
                         }
                     }, null);
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         } catch (InterruptedException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         }
 
         return promise;
@@ -545,22 +552,22 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
      */
     private void createLogInNamespace(final URI uri,
                                       final String logName,
-                                      final Promise<URI> createPromise) {
+                                      final CompletableFuture<URI> createPromise) {
         // TODO: rewrite this after we bump to zk 3.5, where we will have asynchronous version of multi
         scheduler.submit(new Runnable() {
             @Override
             public void run() {
                 try {
                     createLogInNamespaceSync(uri, logName);
-                    createPromise.setValue(uri);
+                    createPromise.complete(uri);
                 } catch (InterruptedException e) {
-                    createPromise.setException(e);
+                    createPromise.completeExceptionally(e);
                 } catch (IOException e) {
-                    createPromise.setException(e);
+                    createPromise.completeExceptionally(e);
                 } catch (KeeperException.BadVersionException bve) {
                     fetchSubNamespacesAndCreateLog(logName, createPromise);
                 } catch (KeeperException e) {
-                    createPromise.setException(e);
+                    createPromise.completeExceptionally(e);
                 }
             }
         });
@@ -617,39 +624,35 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
     }
 
     @Override
-    public Future<Optional<URI>> getLogLocation(final String logName) {
+    public CompletableFuture<Optional<URI>> getLogLocation(final String logName) {
         if (duplicatedLogFound.get()) {
             return duplicatedLogException(duplicatedLogName.get());
         }
         URI location = log2Locations.get(logName);
         if (null != location) {
-            return postStateCheck(Future.value(Optional.of(location)));
+            return postStateCheck(FutureUtils.value(Optional.of(location)));
         }
         if (!forceCheckLogExistence) {
             Optional<URI> result = Optional.absent();
-            return Future.value(result);
+            return FutureUtils.value(result);
         }
-        return postStateCheck(fetchLogLocation(logName).onSuccess(
-                new AbstractFunction1<Optional<URI>, BoxedUnit>() {
-                    @Override
-                    public BoxedUnit apply(Optional<URI> uriOptional) {
-                        if (uriOptional.isPresent()) {
-                            log2Locations.putIfAbsent(logName, uriOptional.get());
-                        }
-                        return BoxedUnit.UNIT;
-                    }
-                }));
+        return postStateCheck(fetchLogLocation(logName).thenApply((uriOptional) -> {
+            if (uriOptional.isPresent()) {
+                log2Locations.putIfAbsent(logName, uriOptional.get());
+            }
+            return uriOptional;
+        }));
     }
 
-    private Future<Optional<URI>> fetchLogLocation(final String logName) {
-        final Promise<Optional<URI>> fetchPromise = new Promise<Optional<URI>>();
+    private CompletableFuture<Optional<URI>> fetchLogLocation(final String logName) {
+        final CompletableFuture<Optional<URI>> fetchPromise = new CompletableFuture<Optional<URI>>();
 
         Set<URI> uris = subNamespaces.keySet();
-        List<Future<Optional<URI>>> fetchFutures = Lists.newArrayListWithExpectedSize(uris.size());
+        List<CompletableFuture<Optional<URI>>> fetchFutures = Lists.newArrayListWithExpectedSize(uris.size());
         for (URI uri : uris) {
             fetchFutures.add(fetchLogLocation(uri, logName));
         }
-        Future.collect(fetchFutures).addEventListener(new FutureEventListener<List<Optional<URI>>>() {
+        FutureUtils.collect(fetchFutures).whenComplete(new FutureEventListener<List<Optional<URI>>>() {
             @Override
             public void onSuccess(List<Optional<URI>> fetchResults) {
                 Optional<URI> result = Optional.absent();
@@ -660,7 +663,7 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
                                     new Object[] { logName, result.get(), fetchResult.get() });
                             duplicatedLogName.compareAndSet(null, logName);
                             duplicatedLogFound.set(true);
-                            fetchPromise.setException(new UnexpectedException("Log " + logName
+                            fetchPromise.completeExceptionally(new UnexpectedException("Log " + logName
                                     + " is found in multiple sub namespaces : "
                                     + result.get() + " & " + fetchResult.get()));
                             return;
@@ -669,62 +672,57 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
                         result = fetchResult;
                     }
                 }
-                fetchPromise.setValue(result);
+                fetchPromise.complete(result);
             }
 
             @Override
             public void onFailure(Throwable cause) {
-                fetchPromise.setException(cause);
+                fetchPromise.completeExceptionally(cause);
             }
         });
         return fetchPromise;
     }
 
-    private Future<Optional<URI>> fetchLogLocation(final URI uri, String logName) {
-        final Promise<Optional<URI>> fetchPromise = new Promise<Optional<URI>>();
+    private CompletableFuture<Optional<URI>> fetchLogLocation(final URI uri, String logName) {
+        final CompletableFuture<Optional<URI>> fetchPromise = new CompletableFuture<Optional<URI>>();
         final String logRootPath = uri.getPath() + "/" + logName;
         try {
             zkc.get().exists(logRootPath, false, new AsyncCallback.StatCallback() {
                 @Override
                 public void processResult(int rc, String path, Object ctx, Stat stat) {
                     if (Code.OK.intValue() == rc) {
-                        fetchPromise.setValue(Optional.of(uri));
+                        fetchPromise.complete(Optional.of(uri));
                     } else if (Code.NONODE.intValue() == rc) {
-                        fetchPromise.setValue(Optional.<URI>absent());
+                        fetchPromise.complete(Optional.<URI>absent());
                     } else {
-                        fetchPromise.setException(KeeperException.create(Code.get(rc)));
+                        fetchPromise.completeExceptionally(KeeperException.create(Code.get(rc)));
                     }
                 }
             }, null);
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            fetchPromise.setException(e);
+            fetchPromise.completeExceptionally(e);
         } catch (InterruptedException e) {
-            fetchPromise.setException(e);
+            fetchPromise.completeExceptionally(e);
         }
         return fetchPromise;
     }
 
     @Override
-    public Future<Iterator<String>> getLogs() {
+    public CompletableFuture<Iterator<String>> getLogs() {
         if (duplicatedLogFound.get()) {
             return duplicatedLogException(duplicatedLogName.get());
         }
-        return postStateCheck(retrieveLogs().map(
-                new AbstractFunction1<List<Set<String>>, Iterator<String>>() {
-                    @Override
-                    public Iterator<String> apply(List<Set<String>> resultList) {
-                        return getIterator(resultList);
-                    }
-                }));
+        return postStateCheck(retrieveLogs().thenApply(
+            resultList -> getIterator(resultList)));
     }
 
-    private Future<List<Set<String>>> retrieveLogs() {
+    private CompletableFuture<List<Set<String>>> retrieveLogs() {
         Collection<SubNamespace> subNss = subNamespaces.values();
-        List<Future<Set<String>>> logsList = Lists.newArrayListWithExpectedSize(subNss.size());
+        List<CompletableFuture<Set<String>>> logsList = Lists.newArrayListWithExpectedSize(subNss.size());
         for (SubNamespace subNs : subNss) {
             logsList.add(subNs.getLogs());
         }
-        return Future.collect(logsList);
+        return FutureUtils.collect(logsList);
     }
 
     private Iterator<String> getIterator(List<Set<String>> resultList) {
@@ -747,13 +745,9 @@ public class FederatedZKLogMetadataStore extends NamespaceWatcher implements Log
     }
 
     private void notifyOnNamespaceChanges() {
-        retrieveLogs().onSuccess(new AbstractFunction1<List<Set<String>>, BoxedUnit>() {
-            @Override
-            public BoxedUnit apply(List<Set<String>> resultList) {
-                for (NamespaceListener listener : listeners) {
-                    listener.onStreamsChanged(getIterator(resultList));
-                }
-                return BoxedUnit.UNIT;
+        retrieveLogs().thenAccept(resultList -> {
+            for (NamespaceListener listener : listeners) {
+                listener.onStreamsChanged(getIterator(resultList));
             }
         });
     }

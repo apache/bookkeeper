@@ -17,17 +17,14 @@
  */
 package org.apache.distributedlog;
 
-import java.io.ByteArrayInputStream;
-import java.net.URI;
 import java.util.Arrays;
 
+import org.apache.distributedlog.api.DistributedLogManager;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
 import org.apache.distributedlog.exceptions.EndOfStreamException;
-import com.twitter.util.Await;
-import com.twitter.util.Duration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

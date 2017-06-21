@@ -17,16 +17,10 @@
  */
 package org.apache.distributedlog.limiter;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-
-import org.apache.distributedlog.exceptions.OverCapacityException;
-import org.apache.distributedlog.limiter.GuavaRateLimiter;
-import org.apache.distributedlog.limiter.RateLimiter;
-
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.StatsLogger;
-
+import org.apache.distributedlog.exceptions.OverCapacityException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

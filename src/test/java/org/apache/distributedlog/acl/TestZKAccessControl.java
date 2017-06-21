@@ -17,19 +17,19 @@
  */
 package org.apache.distributedlog.acl;
 
+import java.net.URI;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.ZooKeeperClusterTestCase;
 import org.apache.distributedlog.impl.acl.ZKAccessControl;
 import org.apache.distributedlog.thrift.AccessControlEntry;
-import com.twitter.util.Await;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.net.URI;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static org.junit.Assert.*;
@@ -60,14 +60,14 @@ public class TestZKAccessControl extends ZooKeeperClusterTestCase {
         ace.setDenyWrite(true);
         String zkPath = "/create-zk-access-control";
         ZKAccessControl zkac = new ZKAccessControl(ace, zkPath);
-        Await.result(zkac.create(zkc));
+        Utils.ioResult(zkac.create(zkc));
 
-        ZKAccessControl readZKAC = Await.result(ZKAccessControl.read(zkc, zkPath, null));
+        ZKAccessControl readZKAC = Utils.ioResult(ZKAccessControl.read(zkc, zkPath, null));
         assertEquals(zkac, readZKAC);
 
         ZKAccessControl another = new ZKAccessControl(ace, zkPath);
         try {
-            Await.result(another.create(zkc));
+            FutureUtils.result(another.create(zkc));
         } catch (KeeperException.NodeExistsException ke) {
             // expected
         }
@@ -81,19 +81,19 @@ public class TestZKAccessControl extends ZooKeeperClusterTestCase {
         ace.setDenyDelete(true);
 
         ZKAccessControl zkac = new ZKAccessControl(ace, zkPath);
-        Await.result(zkac.create(zkc));
+        Utils.ioResult(zkac.create(zkc));
 
-        ZKAccessControl readZKAC = Await.result(ZKAccessControl.read(zkc, zkPath, null));
+        ZKAccessControl readZKAC = Utils.ioResult(ZKAccessControl.read(zkc, zkPath, null));
         assertEquals(zkac, readZKAC);
 
-        Await.result(ZKAccessControl.delete(zkc, zkPath));
+        Utils.ioResult(ZKAccessControl.delete(zkc, zkPath));
 
         try {
-            Await.result(ZKAccessControl.read(zkc, zkPath, null));
+            FutureUtils.result(ZKAccessControl.read(zkc, zkPath, null));
         } catch (KeeperException.NoNodeException nne) {
             // expected.
         }
-        Await.result(ZKAccessControl.delete(zkc, zkPath));
+        Utils.ioResult(ZKAccessControl.delete(zkc, zkPath));
     }
 
     @Test(timeout = 60000)
@@ -102,7 +102,7 @@ public class TestZKAccessControl extends ZooKeeperClusterTestCase {
 
         zkc.get().create(zkPath, new byte[0], zkc.getDefaultACL(), CreateMode.PERSISTENT);
 
-        ZKAccessControl readZKAC = Await.result(ZKAccessControl.read(zkc, zkPath, null));
+        ZKAccessControl readZKAC = Utils.ioResult(ZKAccessControl.read(zkc, zkPath, null));
 
         assertEquals(zkPath, readZKAC.getZKPath());
         assertEquals(ZKAccessControl.DEFAULT_ACCESS_CONTROL_ENTRY, readZKAC.getAccessControlEntry());
@@ -116,7 +116,7 @@ public class TestZKAccessControl extends ZooKeeperClusterTestCase {
         zkc.get().create(zkPath, "corrupted-data".getBytes(UTF_8), zkc.getDefaultACL(), CreateMode.PERSISTENT);
 
         try {
-            Await.result(ZKAccessControl.read(zkc, zkPath, null));
+            Utils.ioResult(ZKAccessControl.read(zkc, zkPath, null));
         } catch (ZKAccessControl.CorruptedAccessControlException cace) {
             // expected
         }
@@ -130,25 +130,25 @@ public class TestZKAccessControl extends ZooKeeperClusterTestCase {
         ace.setDenyDelete(true);
 
         ZKAccessControl zkac = new ZKAccessControl(ace, zkPath);
-        Await.result(zkac.create(zkc));
+        Utils.ioResult(zkac.create(zkc));
 
-        ZKAccessControl readZKAC = Await.result(ZKAccessControl.read(zkc, zkPath, null));
+        ZKAccessControl readZKAC = Utils.ioResult(ZKAccessControl.read(zkc, zkPath, null));
         assertEquals(zkac, readZKAC);
 
         ace.setDenyRelease(true);
         ZKAccessControl newZKAC = new ZKAccessControl(ace, zkPath);
-        Await.result(newZKAC.update(zkc));
-        ZKAccessControl readZKAC2 = Await.result(ZKAccessControl.read(zkc, zkPath, null));
+        Utils.ioResult(newZKAC.update(zkc));
+        ZKAccessControl readZKAC2 = Utils.ioResult(ZKAccessControl.read(zkc, zkPath, null));
         assertEquals(newZKAC, readZKAC2);
 
         try {
-            Await.result(readZKAC.update(zkc));
+            FutureUtils.result(readZKAC.update(zkc));
         } catch (KeeperException.BadVersionException bve) {
             // expected
         }
         readZKAC2.getAccessControlEntry().setDenyTruncate(true);
-        Await.result(readZKAC2.update(zkc));
-        ZKAccessControl readZKAC3 = Await.result(ZKAccessControl.read(zkc, zkPath, null));
+        Utils.ioResult(readZKAC2.update(zkc));
+        ZKAccessControl readZKAC3 = Utils.ioResult(ZKAccessControl.read(zkc, zkPath, null));
         assertEquals(readZKAC2, readZKAC3);
     }
 }

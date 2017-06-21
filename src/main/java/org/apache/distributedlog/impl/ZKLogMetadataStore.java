@@ -19,22 +19,21 @@ package org.apache.distributedlog.impl;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
+import java.net.URI;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.callback.NamespaceListener;
 import org.apache.distributedlog.exceptions.ZKException;
 import org.apache.distributedlog.metadata.LogMetadataStore;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
-import com.twitter.util.Future;
-import com.twitter.util.Promise;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
-
-import java.net.URI;
-import java.util.Iterator;
-import java.util.List;
 
 import static org.apache.distributedlog.util.DLUtils.*;
 
@@ -60,18 +59,18 @@ public class ZKLogMetadataStore implements LogMetadataStore {
     }
 
     @Override
-    public Future<URI> createLog(String logName) {
-        return Future.value(namespace);
+    public CompletableFuture<URI> createLog(String logName) {
+        return FutureUtils.value(namespace);
     }
 
     @Override
-    public Future<Optional<URI>> getLogLocation(String logName) {
-        return Future.value(nsOptional);
+    public CompletableFuture<Optional<URI>> getLogLocation(String logName) {
+        return FutureUtils.value(nsOptional);
     }
 
     @Override
-    public Future<Iterator<String>> getLogs() {
-        final Promise<Iterator<String>> promise = new Promise<Iterator<String>>();
+    public CompletableFuture<Iterator<String>> getLogs() {
+        final CompletableFuture<Iterator<String>> promise = new CompletableFuture<Iterator<String>>();
         final String nsRootPath = namespace.getPath();
         try {
             final ZooKeeper zk = zkc.get();
@@ -89,30 +88,30 @@ public class ZKLogMetadataStore implements LogMetadataStore {
                                             results.add(child);
                                         }
                                     }
-                                    promise.setValue(results.iterator());
+                                    promise.complete(results.iterator());
                                 } else if (KeeperException.Code.NONODE.intValue() == rc) {
                                     List<String> streams = Lists.newLinkedList();
-                                    promise.setValue(streams.iterator());
+                                    promise.complete(streams.iterator());
                                 } else {
-                                    promise.setException(new ZKException("Error reading namespace " + nsRootPath,
+                                    promise.completeExceptionally(new ZKException("Error reading namespace " + nsRootPath,
                                             KeeperException.Code.get(rc)));
                                 }
                             }
                         }, null);
                     } else if (KeeperException.Code.NONODE.intValue() == syncRc) {
                         List<String> streams = Lists.newLinkedList();
-                        promise.setValue(streams.iterator());
+                        promise.complete(streams.iterator());
                     } else {
-                        promise.setException(new ZKException("Error reading namespace " + nsRootPath,
+                        promise.completeExceptionally(new ZKException("Error reading namespace " + nsRootPath,
                                 KeeperException.Code.get(syncRc)));
                     }
                 }
             }, null);
             zkc.get();
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         } catch (InterruptedException e) {
-            promise.setException(e);
+            promise.completeExceptionally(e);
         }
         return promise;
     }

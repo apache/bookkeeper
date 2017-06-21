@@ -15,10 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.rate;
+package org.apache.distributedlog.api.subscription;
 
-public interface MovingAverageRate {
-    double get();
-    void add(long amount);
-    void inc();
+import java.io.Closeable;
+import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.DLSN;
+
+public interface SubscriptionStateStore extends Closeable {
+    /**
+     * Get the last committed position stored for this subscription
+     *
+     * @return future represents the last commit position
+     */
+    public CompletableFuture<DLSN> getLastCommitPosition();
+
+    /**
+     * Advances the position associated with the subscriber
+     *
+     * @param newPosition - new commit position
+     * @return future represents the advance result
+     */
+    public CompletableFuture<Void> advanceCommitPosition(DLSN newPosition);
 }

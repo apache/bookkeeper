@@ -19,6 +19,7 @@ package org.apache.distributedlog.impl.logsegment;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.Entry;
 import org.apache.distributedlog.LogSegmentMetadata;
@@ -29,10 +30,8 @@ import org.apache.distributedlog.exceptions.EndOfLogSegmentException;
 import org.apache.distributedlog.exceptions.ReadCancelledException;
 import org.apache.distributedlog.injector.AsyncFailureInjector;
 import org.apache.distributedlog.logsegment.LogSegmentEntryReader;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
-import com.twitter.util.Future;
-import com.twitter.util.Promise;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -87,7 +86,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
             return done;
         }
 
-        void setValue(LedgerEntry entry) {
+        void complete(LedgerEntry entry) {
             synchronized (this) {
                 if (done) {
                     return;
@@ -98,7 +97,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
             setDone(true);
         }
 
-        void setException(int rc) {
+        void completeExceptionally(int rc) {
             synchronized (this) {
                 if (done) {
                     return;
@@ -152,16 +151,16 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
             while (entries.hasMoreElements()) {
                 // more entries are returned
                 if (null != entry) {
-                    setException(BKException.Code.UnexpectedConditionException);
+                    completeExceptionally(BKException.Code.UnexpectedConditionException);
                     return;
                 }
                 entry = entries.nextElement();
             }
             if (null == entry || entry.getEntryId() != entryId) {
-                setException(BKException.Code.UnexpectedConditionException);
+                completeExceptionally(BKException.Code.UnexpectedConditionException);
                 return;
             }
-            setValue(entry);
+            complete(entry);
         }
 
         @Override
@@ -186,7 +185,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
                 return;
             }
             if (null != entry && this.entryId == entryId) {
-                setValue(entry);
+                complete(entry);
                 return;
             }
             // the long poll is timeout or interrupted; we will retry it again.
@@ -215,7 +214,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
                         nextReadBackoffTime,
                         TimeUnit.MILLISECONDS);
             } else {
-                setException(rc);
+                completeExceptionally(rc);
             }
             return false;
         }
@@ -229,7 +228,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
     private class PendingReadRequest {
         private final int numEntries;
         private final List<Entry.Reader> entries;
-        private final Promise<List<Entry.Reader>> promise;
+        private final CompletableFuture<List<Entry.Reader>> promise;
 
         PendingReadRequest(int numEntries) {
             this.numEntries = numEntries;
@@ -238,15 +237,15 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
             } else {
                 this.entries = new ArrayList<Entry.Reader>();
             }
-            this.promise = new Promise<List<Entry.Reader>>();
+            this.promise = new CompletableFuture<List<Entry.Reader>>();
         }
 
-        Promise<List<Entry.Reader>> getPromise() {
+        CompletableFuture<List<Entry.Reader>> getPromise() {
             return promise;
         }
 
-        void setException(Throwable throwable) {
-            FutureUtils.setException(promise, throwable);
+        void completeExceptionally(Throwable throwable) {
+            FutureUtils.completeExceptionally(promise, throwable);
         }
 
         void addEntry(Entry.Reader entry) {
@@ -254,7 +253,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
         }
 
         void complete() {
-            FutureUtils.setValue(promise, entries);
+            FutureUtils.complete(promise, entries);
             onEntriesConsumed(entries.size());
         }
 
@@ -277,7 +276,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
     private final int numPrefetchEntries;
     private final int maxPrefetchEntries;
     // state
-    private Promise<Void> closePromise = null;
+    private CompletableFuture<Void> closePromise = null;
     private LogSegmentMetadata metadata;
     private LedgerHandle lh;
     private final List<LedgerHandle> openLedgerHandles;
@@ -457,7 +456,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
         if (isBeyondLastAddConfirmed()) {
             // if the reader is already caught up, let's fail the reader immediately
             // as we need to pull the latest metadata of this log segment.
-            setException(new BKTransmitException("Failed to open ledger for reading log segment " + getSegment(), rc),
+            completeExceptionally(new BKTransmitException("Failed to open ledger for reading log segment " + getSegment(), rc),
                     true);
             return;
         }
@@ -488,7 +487,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
      * @param throwable exception indicating the error
      * @param isBackground is the reader set exception by background reads or foreground reads
      */
-    private void setException(Throwable throwable, boolean isBackground) {
+    private void completeExceptionally(Throwable throwable, boolean isBackground) {
         lastException.compareAndSet(null, throwable);
         if (isBackground) {
             notifyReaders();
@@ -510,7 +509,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
             readQueue.clear();
         }
         for (PendingReadRequest request : requestsToCancel) {
-            request.setException(throwExc);
+            request.completeExceptionally(throwExc);
         }
     }
 
@@ -630,11 +629,11 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
     }
 
     @Override
-    public Future<List<Entry.Reader>> readNext(int numEntries) {
+    public CompletableFuture<List<Entry.Reader>> readNext(int numEntries) {
         final PendingReadRequest readRequest = new PendingReadRequest(numEntries);
 
         if (checkClosedOrInError()) {
-            readRequest.setException(lastException.get());
+            readRequest.completeExceptionally(lastException.get());
         } else {
             boolean wasQueueEmpty;
             synchronized (readQueue) {
@@ -682,9 +681,9 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
             // mark the reader in error and abort all pending reads since
             // we don't know the last consumed read
             if (null == lastException.get()) {
-                if (nextRequest.getPromise().isInterrupted().isDefined()) {
-                    setException(new DLInterruptedException("Interrupted on reading log segment "
-                            + getSegment() + " : " + nextRequest.getPromise().isInterrupted().get()), false);
+                if (nextRequest.getPromise().isCancelled()) {
+                    completeExceptionally(new DLInterruptedException("Interrupted on reading log segment "
+                            + getSegment() + " : " + nextRequest.getPromise().isCancelled()), false);
                 }
             }
 
@@ -707,11 +706,11 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
                 } else {
                     DLIllegalStateException ise = new DLIllegalStateException("Unexpected condition at reading from "
                             + getSegment());
-                    nextRequest.setException(ise);
+                    nextRequest.completeExceptionally(ise);
                     if (null != request) {
-                        request.setException(ise);
+                        request.completeExceptionally(ise);
                     }
-                    setException(ise, false);
+                    completeExceptionally(ise, false);
                 }
             } else {
                 if (0 == scheduleCountLocal) {
@@ -732,7 +731,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
             }
             // reach end of log segment
             if (hitEndOfLogSegment) {
-                setException(new EndOfLogSegmentException(getSegment().getZNodeName()), false);
+                completeExceptionally(new EndOfLogSegmentException(getSegment().getZNodeName()), false);
                 return;
             }
             if (null == entry) {
@@ -742,7 +741,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
             if (!entry.isDone()) {
                 // we already reached end of the log segment
                 if (isEndOfLogSegment(entry.getEntryId())) {
-                    setException(new EndOfLogSegmentException(getSegment().getZNodeName()), false);
+                    completeExceptionally(new EndOfLogSegmentException(getSegment().getZNodeName()), false);
                 }
                 return;
             }
@@ -751,13 +750,13 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
                 if (entry != removedEntry) {
                     DLIllegalStateException ise = new DLIllegalStateException("Unexpected condition at reading from "
                             + getSegment());
-                    setException(ise, false);
+                    completeExceptionally(ise, false);
                     return;
                 }
                 try {
                     nextRequest.addEntry(processReadEntry(entry.getEntry()));
                 } catch (IOException e) {
-                    setException(e, false);
+                    completeExceptionally(e, false);
                     return;
                 }
             } else if (skipBrokenEntries && BKException.Code.DigestMatchException == entry.getRc()) {
@@ -766,7 +765,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
                 readAheadEntries.poll();
                 continue;
             } else {
-                setException(new BKTransmitException("Encountered issue on reading entry " + entry.getEntryId()
+                completeExceptionally(new BKTransmitException("Encountered issue on reading entry " + entry.getEntryId()
                         + " @ log segment " + getSegment(), entry.getRc()), false);
                 return;
             }
@@ -812,26 +811,29 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
     }
 
     @Override
-    public Future<Void> asyncClose() {
-        final Promise<Void> closeFuture;
+    public CompletableFuture<Void> asyncClose() {
+        final CompletableFuture<Void> closeFuture;
         ReadCancelledException exception;
         LedgerHandle[] lhsToClose;
         synchronized (this) {
             if (null != closePromise) {
                 return closePromise;
             }
-            closeFuture = closePromise = new Promise<Void>();
+            closeFuture = closePromise = new CompletableFuture<Void>();
             lhsToClose = openLedgerHandles.toArray(new LedgerHandle[openLedgerHandles.size()]);
             // set the exception to cancel pending and subsequent reads
             exception = new ReadCancelledException(getSegment().getZNodeName(), "Reader was closed");
-            setException(exception, false);
+            completeExceptionally(exception, false);
         }
 
         // cancel all pending reads
         cancelAllPendingReads(exception);
 
         // close all the open ledger
-        BKUtils.closeLedgers(lhsToClose).proxyTo(closeFuture);
+        FutureUtils.proxyTo(
+            BKUtils.closeLedgers(lhsToClose),
+            closeFuture
+        );
         return closeFuture;
     }
 }

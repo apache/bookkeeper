@@ -17,9 +17,9 @@
  */
 package org.apache.distributedlog.lock;
 
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.exceptions.LockingException;
 import org.apache.distributedlog.io.AsyncCloseable;
-import com.twitter.util.Future;
 
 /**
  * Interface for distributed locking
@@ -31,7 +31,7 @@ public interface DistributedLock extends AsyncCloseable {
      *
      * @return future represents the acquire result.
      */
-    Future<? extends DistributedLock> asyncAcquire();
+    CompletableFuture<? extends DistributedLock> asyncAcquire();
 
     /**
      * Check if hold lock. If it doesn't, then re-acquire the lock.

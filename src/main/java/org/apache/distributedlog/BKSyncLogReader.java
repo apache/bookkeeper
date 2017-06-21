@@ -20,17 +20,15 @@ package org.apache.distributedlog;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Ticker;
+import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.api.AsyncLogReader;
+import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.exceptions.EndOfStreamException;
 import org.apache.distributedlog.exceptions.IdleReaderException;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.Utils;
-import com.twitter.util.Future;
-import com.twitter.util.Promise;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.versioning.Versioned;
-import scala.runtime.AbstractFunction1;
-import scala.runtime.BoxedUnit;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -48,7 +46,7 @@ class BKSyncLogReader implements LogReader, AsyncNotification {
     private final AtomicReference<IOException> readerException =
             new AtomicReference<IOException>(null);
     private final int maxReadAheadWaitTime;
-    private Promise<Void> closeFuture;
+    private CompletableFuture<Void> closeFuture;
     private final Optional<Long> startTransactionId;
     private boolean positioned = false;
     private Entry.Reader currentEntry = null;
@@ -101,13 +99,10 @@ class BKSyncLogReader implements LogReader, AsyncNotification {
                     bkdlm.alertStatsLogger);
         readHandler.registerListener(readAheadReader);
         readHandler.asyncStartFetchLogSegments()
-                .map(new AbstractFunction1<Versioned<List<LogSegmentMetadata>>, BoxedUnit>() {
-                    @Override
-                    public BoxedUnit apply(Versioned<List<LogSegmentMetadata>> logSegments) {
-                        readAheadReader.addStateChangeNotification(BKSyncLogReader.this);
-                        readAheadReader.start(logSegments.getValue());
-                        return BoxedUnit.UNIT;
-                    }
+                .thenApply(logSegments -> {
+                    readAheadReader.addStateChangeNotification(BKSyncLogReader.this);
+                    readAheadReader.start(logSegments.getValue());
+                    return null;
                 });
     }
 
@@ -234,26 +229,28 @@ class BKSyncLogReader implements LogReader, AsyncNotification {
     }
 
     @Override
-    public Future<Void> asyncClose() {
-        Promise<Void> closePromise;
+    public CompletableFuture<Void> asyncClose() {
+        CompletableFuture<Void> closePromise;
         synchronized (this) {
             if (null != closeFuture) {
                 return closeFuture;
             }
-            closeFuture = closePromise = new Promise<Void>();
+            closeFuture = closePromise = new CompletableFuture<Void>();
         }
         readHandler.unregisterListener(readAheadReader);
         readAheadReader.removeStateChangeNotification(this);
-        Utils.closeSequence(bkdlm.getScheduler(), true,
-                readAheadReader,
-                readHandler
-        ).proxyTo(closePromise);
+        FutureUtils.proxyTo(
+            Utils.closeSequence(bkdlm.getScheduler(), true,
+                    readAheadReader,
+                    readHandler
+            ),
+            closePromise);
         return closePromise;
     }
 
     @Override
     public void close() throws IOException {
-        FutureUtils.result(asyncClose());
+        Utils.ioResult(asyncClose());
     }
 
     //

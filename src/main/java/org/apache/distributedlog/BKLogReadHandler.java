@@ -17,15 +17,22 @@
  */
 package org.apache.distributedlog;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
+import javax.annotation.Nullable;
+import org.apache.bookkeeper.stats.AlertStatsLogger;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.callback.LogSegmentListener;
 import org.apache.distributedlog.callback.LogSegmentNamesListener;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
@@ -40,29 +47,12 @@ import org.apache.distributedlog.lock.DistributedLock;
 import org.apache.distributedlog.logsegment.LogSegmentFilter;
 import org.apache.distributedlog.logsegment.LogSegmentMetadataCache;
 import org.apache.distributedlog.metadata.LogStreamMetadataStore;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
-import com.twitter.util.ExceptionalFunction;
-import com.twitter.util.Function;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
-import com.twitter.util.Promise;
-import com.twitter.util.Return;
-import com.twitter.util.Throw;
-import com.twitter.util.Try;
-import org.apache.bookkeeper.stats.AlertStatsLogger;
-import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.util.SafeRunnable;
-import org.apache.bookkeeper.versioning.Version;
-import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.runtime.AbstractFunction1;
-import scala.runtime.BoxedUnit;
-
-import javax.annotation.Nullable;
 
 /**
  * Log Handler for Readers.
@@ -112,7 +102,7 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
 
     private final Optional<String> subscriberId;
     private DistributedLock readLock;
-    private Future<Void> lockAcquireFuture;
+    private CompletableFuture<Void> lockAcquireFuture;
 
     // notify the state change about the read handler
     protected final AsyncNotification readerStateNotification;
@@ -166,31 +156,23 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
         return logMetadataForReader.getReadLockPath(subscriberId);
     }
 
-    <T> void satisfyPromiseAsync(final Promise<T> promise, final Try<T> result) {
-        scheduler.submit(new SafeRunnable() {
-            @Override
-            public void safeRun() {
-                promise.update(result);
-            }
-        });
-    }
-
-    Future<Void> checkLogStreamExists() {
+    CompletableFuture<Void> checkLogStreamExists() {
         return streamMetadataStore.logExists(logMetadata.getUri(), logMetadata.getLogName());
     }
 
     /**
      * Elective stream lock--readers are not required to acquire the lock before using the stream.
      */
-    synchronized Future<Void> lockStream() {
+    synchronized CompletableFuture<Void> lockStream() {
         if (null == lockAcquireFuture) {
             lockAcquireFuture = streamMetadataStore.createReadLock(logMetadataForReader, subscriberId)
-                    .flatMap(new ExceptionalFunction<DistributedLock, Future<Void>>() {
-                        @Override
-                        public Future<Void> applyE(DistributedLock lock) throws Throwable {
+                    .thenCompose(lock -> {
+                        try {
                             BKLogReadHandler.this.readLock = lock;
                             LOG.info("acquiring readlock {} at {}", getLockClientId(), getReadLockPath());
                             return acquireLockOnExecutorThread(lock);
+                        } catch (LockingException le) {
+                            return FutureUtils.exception(le);
                         }
                     });
         }
@@ -201,33 +183,31 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
      * Begin asynchronous lock acquire, but ensure that the returned future is satisfied on an
      * executor service thread.
      */
-    Future<Void> acquireLockOnExecutorThread(DistributedLock lock) throws LockingException {
-        final Future<? extends DistributedLock> acquireFuture = lock.asyncAcquire();
+    CompletableFuture<Void> acquireLockOnExecutorThread(DistributedLock lock) throws LockingException {
+        final CompletableFuture<? extends DistributedLock> acquireFuture = lock.asyncAcquire();
 
         // The future we return must be satisfied on an executor service thread. If we simply
         // return the future returned by asyncAcquire, user callbacks may end up running in
         // the lock state executor thread, which will cause deadlocks and introduce latency
         // etc.
-        final Promise<Void> threadAcquirePromise = new Promise<Void>();
-        threadAcquirePromise.setInterruptHandler(new Function<Throwable, BoxedUnit>() {
-            @Override
-            public BoxedUnit apply(Throwable t) {
-                FutureUtils.cancel(acquireFuture);
-                return null;
+        final CompletableFuture<Void> threadAcquirePromise = new CompletableFuture<Void>();
+        threadAcquirePromise.whenComplete((value, cause) -> {
+            if (cause instanceof CancellationException) {
+                acquireFuture.cancel(true);
             }
         });
-        acquireFuture.addEventListener(new FutureEventListener<DistributedLock>() {
+        acquireFuture.whenCompleteAsync(new FutureEventListener<DistributedLock>() {
             @Override
             public void onSuccess(DistributedLock lock) {
                 LOG.info("acquired readlock {} at {}", getLockClientId(), getReadLockPath());
-                satisfyPromiseAsync(threadAcquirePromise, new Return<Void>(null));
+                threadAcquirePromise.complete(null);
             }
 
             @Override
             public void onFailure(Throwable cause) {
                 LOG.info("failed to acquire readlock {} at {}",
                         new Object[]{ getLockClientId(), getReadLockPath(), cause });
-                satisfyPromiseAsync(threadAcquirePromise, new Throw<Void>(cause));
+                threadAcquirePromise.completeExceptionally(cause);
             }
         });
         return threadAcquirePromise;
@@ -239,7 +219,7 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
     void checkReadLock() throws DLIllegalStateException, LockingException {
         synchronized (this) {
             if ((null == lockAcquireFuture) ||
-                (!lockAcquireFuture.isDefined())) {
+                (!lockAcquireFuture.isDone())) {
                 throw new DLIllegalStateException("Attempt to check for lock before it has been acquired successfully");
             }
         }
@@ -247,27 +227,24 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
         readLock.checkOwnership();
     }
 
-    public Future<Void> asyncClose() {
+    public CompletableFuture<Void> asyncClose() {
         DistributedLock lockToClose;
         synchronized (this) {
-            if (null != lockAcquireFuture && !lockAcquireFuture.isDefined()) {
-                FutureUtils.cancel(lockAcquireFuture);
+            if (null != lockAcquireFuture && !lockAcquireFuture.isDone()) {
+                lockAcquireFuture.cancel(true);
             }
             lockToClose = readLock;
         }
         return Utils.closeSequence(scheduler, lockToClose)
-                .flatMap(new AbstractFunction1<Void, Future<Void>>() {
-            @Override
-            public Future<Void> apply(Void result) {
+            .thenApply((value) -> {
                 // unregister the log segment listener
                 metadataStore.unregisterLogSegmentListener(logMetadata.getLogSegmentsPath(), BKLogReadHandler.this);
-                return Future.Void();
-            }
-        });
+                return null;
+            });
     }
 
     @Override
-    public Future<Void> asyncAbort() {
+    public CompletableFuture<Void> asyncAbort() {
         return asyncClose();
     }
 
@@ -277,18 +254,18 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
      *
      * @return future represents the fetch result
      */
-    Future<Versioned<List<LogSegmentMetadata>>> asyncStartFetchLogSegments() {
-        Promise<Versioned<List<LogSegmentMetadata>>> promise =
-                new Promise<Versioned<List<LogSegmentMetadata>>>();
+    CompletableFuture<Versioned<List<LogSegmentMetadata>>> asyncStartFetchLogSegments() {
+        CompletableFuture<Versioned<List<LogSegmentMetadata>>> promise =
+                new CompletableFuture<Versioned<List<LogSegmentMetadata>>>();
         asyncStartFetchLogSegments(promise);
         return promise;
     }
 
-    void asyncStartFetchLogSegments(final Promise<Versioned<List<LogSegmentMetadata>>> promise) {
+    void asyncStartFetchLogSegments(final CompletableFuture<Versioned<List<LogSegmentMetadata>>> promise) {
         readLogSegmentsFromStore(
                 LogSegmentMetadata.COMPARATOR,
                 LogSegmentFilter.DEFAULT_FILTER,
-                this).addEventListener(new FutureEventListener<Versioned<List<LogSegmentMetadata>>>() {
+                this).whenComplete(new FutureEventListener<Versioned<List<LogSegmentMetadata>>>() {
             @Override
             public void onFailure(Throwable cause) {
                 if (cause instanceof LogNotFoundException ||
@@ -298,7 +275,7 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
                     metadataException.compareAndSet(null, (IOException) cause);
                     // notify the reader that read handler is in error state
                     notifyReaderOnError(cause);
-                    FutureUtils.setException(promise, cause);
+                    FutureUtils.completeExceptionally(promise, cause);
                     return;
                 }
                 scheduler.schedule(new Runnable() {
@@ -312,7 +289,7 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
             @Override
             public void onSuccess(Versioned<List<LogSegmentMetadata>> segments) {
                 // no-op
-                FutureUtils.setValue(promise, segments);
+                FutureUtils.complete(promise, segments);
             }
         });
     }
@@ -332,9 +309,9 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
             }
         }
 
-        Promise<Versioned<List<LogSegmentMetadata>>> readLogSegmentsPromise =
-                new Promise<Versioned<List<LogSegmentMetadata>>>();
-        readLogSegmentsPromise.addEventListener(new FutureEventListener<Versioned<List<LogSegmentMetadata>>>() {
+        CompletableFuture<Versioned<List<LogSegmentMetadata>>> readLogSegmentsPromise =
+                new CompletableFuture<Versioned<List<LogSegmentMetadata>>>();
+        readLogSegmentsPromise.whenComplete(new FutureEventListener<Versioned<List<LogSegmentMetadata>>>() {
             @Override
             public void onFailure(Throwable cause) {
                 if (cause instanceof LogNotFoundException ||

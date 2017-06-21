@@ -20,8 +20,11 @@ package org.apache.distributedlog.util;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
 
@@ -29,18 +32,18 @@ import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.ZooKeeperClient;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.exceptions.BKTransmitException;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
-import org.apache.distributedlog.exceptions.InvalidStreamNameException;
+import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.apache.distributedlog.exceptions.ZKException;
-import org.apache.distributedlog.function.VoidFunctions;
+import org.apache.distributedlog.common.functions.VoidFunctions;
+import org.apache.distributedlog.io.AsyncAbortable;
 import org.apache.distributedlog.io.AsyncCloseable;
-import com.twitter.util.Await;
-import com.twitter.util.Future;
-import com.twitter.util.Promise;
-import com.twitter.util.Return;
-import com.twitter.util.Throw;
 import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.ZooKeeper;
@@ -49,16 +52,12 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import scala.runtime.BoxedUnit;
 
 /**
  * Basic Utilities.
  */
+@Slf4j
 public class Utils {
-
-    private static final Logger logger = LoggerFactory.getLogger(Utils.class);
 
     /**
      * Current time from some arbitrary time base in the past, counting in
@@ -115,16 +114,15 @@ public class Utils {
         String path,
         byte[] data,
         final List<ACL> acl,
-        final CreateMode createMode)
-        throws ZooKeeperClient.ZooKeeperConnectionException, KeeperException, InterruptedException {
+        final CreateMode createMode) throws IOException, KeeperException {
         try {
-            Await.result(zkAsyncCreateFullPathOptimistic(zkc, path, data, acl, createMode));
+            FutureUtils.result(zkAsyncCreateFullPathOptimistic(zkc, path, data, acl, createMode));
         } catch (ZooKeeperClient.ZooKeeperConnectionException zkce) {
             throw zkce;
         } catch (KeeperException ke) {
             throw ke;
         } catch (InterruptedException ie) {
-            throw ie;
+            throw new DLInterruptedException("Interrupted on create zookeeper path " + path, ie);
         } catch (RuntimeException rte) {
             throw rte;
         } catch (Exception exc) {
@@ -208,7 +206,7 @@ public class Utils {
      * @param acl Acl of the zk path
      * @param createMode Create mode of zk path
      */
-    public static Future<BoxedUnit> zkAsyncCreateFullPathOptimistic(
+    public static CompletableFuture<Void> zkAsyncCreateFullPathOptimistic(
         final ZooKeeperClient zkc,
         final String pathToCreate,
         final byte[] data,
@@ -234,14 +232,14 @@ public class Utils {
      * @param acl Acl of the zk path
      * @param createMode Create mode of zk path
      */
-    public static Future<BoxedUnit> zkAsyncCreateFullPathOptimistic(
+    public static CompletableFuture<Void> zkAsyncCreateFullPathOptimistic(
         final ZooKeeperClient zkc,
         final String pathToCreate,
         final Optional<String> parentPathShouldNotCreate,
         final byte[] data,
         final List<ACL> acl,
         final CreateMode createMode) {
-        final Promise<BoxedUnit> result = new Promise<BoxedUnit>();
+        final CompletableFuture<Void> result = new CompletableFuture<Void>();
 
         zkAsyncCreateFullPathOptimisticRecursive(zkc, pathToCreate, parentPathShouldNotCreate,
                 data, acl, createMode, new AsyncCallback.StringCallback() {
@@ -263,13 +261,13 @@ public class Utils {
      * @param acl Acl of the zk path
      * @param createMode Create mode of zk path
      */
-    public static Future<BoxedUnit> zkAsyncCreateFullPathOptimisticAndSetData(
+    public static CompletableFuture<Void> zkAsyncCreateFullPathOptimisticAndSetData(
         final ZooKeeperClient zkc,
         final String pathToCreate,
         final byte[] data,
         final List<ACL> acl,
         final CreateMode createMode) {
-        final Promise<BoxedUnit> result = new Promise<BoxedUnit>();
+        final CompletableFuture<Void> result = new CompletableFuture<Void>();
 
         try {
             zkc.get().setData(pathToCreate, data, -1, new AsyncCallback.StatCallback() {
@@ -291,32 +289,32 @@ public class Utils {
                 }
             }, result);
         } catch (Exception exc) {
-            result.setException(exc);
+            result.completeExceptionally(exc);
         }
 
         return result;
     }
 
-    private static void handleKeeperExceptionCode(int rc, String pathOrMessage, Promise<BoxedUnit> result) {
+    private static void handleKeeperExceptionCode(int rc, String pathOrMessage, CompletableFuture<Void> result) {
         if (KeeperException.Code.OK.intValue() == rc) {
-            result.setValue(BoxedUnit.UNIT);
+            result.complete(null);
         } else if (DistributedLogConstants.ZK_CONNECTION_EXCEPTION_RESULT_CODE == rc) {
-            result.setException(new ZooKeeperClient.ZooKeeperConnectionException(pathOrMessage));
+            result.completeExceptionally(new ZooKeeperClient.ZooKeeperConnectionException(pathOrMessage));
         } else if (DistributedLogConstants.DL_INTERRUPTED_EXCEPTION_RESULT_CODE == rc) {
-            result.setException(new DLInterruptedException(pathOrMessage));
+            result.completeExceptionally(new DLInterruptedException(pathOrMessage));
         } else {
-            result.setException(KeeperException.create(KeeperException.Code.get(rc), pathOrMessage));
+            result.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), pathOrMessage));
         }
     }
 
-    public static Future<Versioned<byte[]>> zkGetData(ZooKeeperClient zkc, String path, boolean watch) {
+    public static CompletableFuture<Versioned<byte[]>> zkGetData(ZooKeeperClient zkc, String path, boolean watch) {
         ZooKeeper zk;
         try {
             zk = zkc.get();
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            return Future.exception(FutureUtils.zkException(e, path));
+            return FutureUtils.exception(zkException(e, path));
         } catch (InterruptedException e) {
-            return Future.exception(FutureUtils.zkException(e, path));
+            return FutureUtils.exception(zkException(e, path));
         }
         return zkGetData(zk, path, watch);
     }
@@ -330,35 +328,35 @@ public class Utils {
      *          whether to watch the path
      * @return future representing the versioned value. null version or null value means path doesn't exist.
      */
-    public static Future<Versioned<byte[]>> zkGetData(ZooKeeper zk, String path, boolean watch) {
-        final Promise<Versioned<byte[]>> promise = new Promise<Versioned<byte[]>>();
+    public static CompletableFuture<Versioned<byte[]>> zkGetData(ZooKeeper zk, String path, boolean watch) {
+        final CompletableFuture<Versioned<byte[]>> promise = new CompletableFuture<Versioned<byte[]>>();
         zk.getData(path, watch, new AsyncCallback.DataCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
                 if (KeeperException.Code.OK.intValue() == rc) {
                     if (null == stat) {
-                        promise.setValue(new Versioned<byte[]>(null, null));
+                        promise.complete(new Versioned<byte[]>(null, null));
                     } else {
-                        promise.setValue(new Versioned<byte[]>(data, new ZkVersion(stat.getVersion())));
+                        promise.complete(new Versioned<byte[]>(data, new ZkVersion(stat.getVersion())));
                     }
                 } else if (KeeperException.Code.NONODE.intValue() == rc) {
-                    promise.setValue(new Versioned<byte[]>(null, null));
+                    promise.complete(new Versioned<byte[]>(null, null));
                 } else {
-                    promise.setException(KeeperException.create(KeeperException.Code.get(rc)));
+                    promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc)));
                 }
             }
         }, null);
         return promise;
     }
 
-    public static Future<ZkVersion> zkSetData(ZooKeeperClient zkc, String path, byte[] data, ZkVersion version) {
+    public static CompletableFuture<ZkVersion> zkSetData(ZooKeeperClient zkc, String path, byte[] data, ZkVersion version) {
         ZooKeeper zk;
         try {
             zk = zkc.get();
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            return Future.exception(FutureUtils.zkException(e, path));
+            return FutureUtils.exception(zkException(e, path));
         } catch (InterruptedException e) {
-            return Future.exception(FutureUtils.zkException(e, path));
+            return FutureUtils.exception(zkException(e, path));
         }
         return zkSetData(zk, path, data, version);
     }
@@ -376,31 +374,31 @@ public class Utils {
      *          version used to set data
      * @return future representing the version after this operation.
      */
-    public static Future<ZkVersion> zkSetData(ZooKeeper zk, String path, byte[] data, ZkVersion version) {
-        final Promise<ZkVersion> promise = new Promise<ZkVersion>();
+    public static CompletableFuture<ZkVersion> zkSetData(ZooKeeper zk, String path, byte[] data, ZkVersion version) {
+        final CompletableFuture<ZkVersion> promise = new CompletableFuture<ZkVersion>();
         zk.setData(path, data, version.getZnodeVersion(), new AsyncCallback.StatCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, Stat stat) {
                 if (KeeperException.Code.OK.intValue() == rc) {
-                    promise.updateIfEmpty(new Return<ZkVersion>(new ZkVersion(stat.getVersion())));
+                    promise.complete(new ZkVersion(stat.getVersion()));
                     return;
                 }
-                promise.updateIfEmpty(new Throw<ZkVersion>(
-                        KeeperException.create(KeeperException.Code.get(rc))));
+                promise.completeExceptionally(
+                        KeeperException.create(KeeperException.Code.get(rc)));
                 return;
             }
         }, null);
         return promise;
     }
 
-    public static Future<Void> zkDelete(ZooKeeperClient zkc, String path, ZkVersion version) {
+    public static CompletableFuture<Void> zkDelete(ZooKeeperClient zkc, String path, ZkVersion version) {
         ZooKeeper zk;
         try {
             zk = zkc.get();
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            return Future.exception(FutureUtils.zkException(e, path));
+            return FutureUtils.exception(zkException(e, path));
         } catch (InterruptedException e) {
-            return Future.exception(FutureUtils.zkException(e, path));
+            return FutureUtils.exception(zkException(e, path));
         }
         return zkDelete(zk, path, version);
     }
@@ -416,17 +414,17 @@ public class Utils {
      *          version used to set data
      * @return future representing the version after this operation.
      */
-    public static Future<Void> zkDelete(ZooKeeper zk, String path, ZkVersion version) {
-        final Promise<Void> promise = new Promise<Void>();
+    public static CompletableFuture<Void> zkDelete(ZooKeeper zk, String path, ZkVersion version) {
+        final CompletableFuture<Void> promise = new CompletableFuture<Void>();
         zk.delete(path, version.getZnodeVersion(), new AsyncCallback.VoidCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx) {
                 if (KeeperException.Code.OK.intValue() == rc) {
-                    promise.updateIfEmpty(new Return<Void>(null));
+                    promise.complete(null);
                     return;
                 }
-                promise.updateIfEmpty(new Throw<Void>(
-                        KeeperException.create(KeeperException.Code.get(rc))));
+                promise.completeExceptionally(
+                        KeeperException.create(KeeperException.Code.get(rc)));
                 return;
             }
         }, null);
@@ -446,35 +444,35 @@ public class Utils {
      * false if the node doesn't exist, otherwise future will throw exception
      *
      */
-    public static Future<Boolean> zkDeleteIfNotExist(ZooKeeperClient zkc, String path, ZkVersion version) {
+    public static CompletableFuture<Boolean> zkDeleteIfNotExist(ZooKeeperClient zkc, String path, ZkVersion version) {
         ZooKeeper zk;
         try {
             zk = zkc.get();
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            return Future.exception(FutureUtils.zkException(e, path));
+            return FutureUtils.exception(zkException(e, path));
         } catch (InterruptedException e) {
-            return Future.exception(FutureUtils.zkException(e, path));
+            return FutureUtils.exception(zkException(e, path));
         }
-        final Promise<Boolean> promise = new Promise<Boolean>();
+        final CompletableFuture<Boolean> promise = new CompletableFuture<Boolean>();
         zk.delete(path, version.getZnodeVersion(), new AsyncCallback.VoidCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx) {
                 if (KeeperException.Code.OK.intValue() == rc ) {
-                    promise.setValue(true);
+                    promise.complete(true);
                 } else if (KeeperException.Code.NONODE.intValue() == rc) {
-                    promise.setValue(false);
+                    promise.complete(false);
                 } else {
-                    promise.setException(KeeperException.create(KeeperException.Code.get(rc)));
+                    promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc)));
                 }
             }
         }, null);
         return promise;
     }
 
-    public static Future<Void> asyncClose(@Nullable AsyncCloseable closeable,
+    public static CompletableFuture<Void> asyncClose(@Nullable AsyncCloseable closeable,
                                           boolean swallowIOException) {
         if (null == closeable) {
-            return Future.Void();
+            return FutureUtils.Void();
         } else if (swallowIOException) {
             return FutureUtils.ignore(closeable.asyncClose());
         } else {
@@ -548,7 +546,7 @@ public class Utils {
         if (null == closeable) {
             return;
         }
-        FutureUtils.result(closeable.asyncClose());
+        Utils.ioResult(closeable.asyncClose());
     }
 
     /**
@@ -562,7 +560,7 @@ public class Utils {
             return;
         }
         try {
-            FutureUtils.result(closeable.asyncClose());
+            Utils.ioResult(closeable.asyncClose());
         } catch (IOException e) {
             // no-op. the exception is swallowed.
         }
@@ -575,7 +573,7 @@ public class Utils {
      *          closeables to close
      * @return future represents the close future
      */
-    public static Future<Void> closeSequence(ExecutorService executorService,
+    public static CompletableFuture<Void> closeSequence(ExecutorService executorService,
                                              AsyncCloseable... closeables) {
         return closeSequence(executorService, false, closeables);
     }
@@ -588,7 +586,7 @@ public class Utils {
      * @param closeables list of closeables
      * @return future represents the close future.
      */
-    public static Future<Void> closeSequence(ExecutorService executorService,
+    public static CompletableFuture<Void> closeSequence(ExecutorService executorService,
                                              boolean ignoreCloseError,
                                              AsyncCloseable... closeables) {
         List<AsyncCloseable> closeableList = Lists.newArrayListWithExpectedSize(closeables.length);
@@ -602,7 +600,8 @@ public class Utils {
         return FutureUtils.processList(
                 closeableList,
                 ignoreCloseError ? AsyncCloseable.CLOSE_FUNC_IGNORE_ERRORS : AsyncCloseable.CLOSE_FUNC,
-                executorService).map(VoidFunctions.LIST_TO_VOID_FUNC);
+                executorService
+        ).thenApply(VoidFunctions.LIST_TO_VOID_FUNC);
     }
 
     /**
@@ -634,6 +633,114 @@ public class Utils {
             return "/";
         }
         return path.substring(0, lastIndex);
+    }
+
+    /**
+     * Convert the <i>throwable</i> to zookeeper related exceptions.
+     *
+     * @param throwable cause
+     * @param path zookeeper path
+     * @return zookeeper related exceptions
+     */
+    public static Throwable zkException(Throwable throwable, String path) {
+        if (throwable instanceof KeeperException) {
+            return new ZKException("Encountered zookeeper exception on " + path, (KeeperException) throwable);
+        } else if (throwable instanceof ZooKeeperClient.ZooKeeperConnectionException) {
+            return new ZKException("Encountered zookeeper connection loss on " + path,
+                    KeeperException.Code.CONNECTIONLOSS);
+        } else if (throwable instanceof InterruptedException) {
+            return new DLInterruptedException("Interrupted on operating " + path, throwable);
+        } else {
+            return new UnexpectedException("Encountered unexpected exception on operatiing " + path, throwable);
+        }
+    }
+
+    /**
+     * Create transmit exception from transmit result.
+     *
+     * @param transmitResult
+     *          transmit result (basically bk exception code)
+     * @return transmit exception
+     */
+    public static BKTransmitException transmitException(int transmitResult) {
+        return new BKTransmitException("Failed to write to bookkeeper; Error is ("
+            + transmitResult + ") "
+            + BKException.getMessage(transmitResult), transmitResult);
+    }
+
+    /**
+     * A specific version of {@link FutureUtils#result(CompletableFuture)} to handle known exception issues.
+     */
+    public static <T> T ioResult(CompletableFuture<T> result) throws IOException {
+        return FutureUtils.result(
+            result,
+            (cause) -> {
+                if (cause instanceof IOException) {
+                    return (IOException) cause;
+                } else if (cause instanceof KeeperException) {
+                    return new ZKException("Encountered zookeeper exception on waiting result",
+                        (KeeperException) cause);
+                } else if (cause instanceof BKException) {
+                    return new BKTransmitException("Encountered bookkeeper exception on waiting result",
+                        ((BKException) cause).getCode());
+                } else if (cause instanceof InterruptedException) {
+                    return new DLInterruptedException("Interrupted on waiting result", cause);
+                } else {
+                    return new IOException("Encountered exception on waiting result", cause);
+                }
+            });
+    }
+
+    /**
+     * A specific version of {@link FutureUtils#result(CompletableFuture, long, TimeUnit)}
+     * to handle known exception issues.
+     */
+    public static <T> T ioResult(CompletableFuture<T> result, long timeout, TimeUnit timeUnit)
+            throws IOException, TimeoutException {
+        return FutureUtils.result(
+            result,
+            (cause) -> {
+                if (cause instanceof IOException) {
+                    return (IOException) cause;
+                } else if (cause instanceof KeeperException) {
+                    return new ZKException("Encountered zookeeper exception on waiting result",
+                        (KeeperException) cause);
+                } else if (cause instanceof BKException) {
+                    return new BKTransmitException("Encountered bookkeeper exception on waiting result",
+                        ((BKException) cause).getCode());
+                } else if (cause instanceof InterruptedException) {
+                    return new DLInterruptedException("Interrupted on waiting result", cause);
+                } else {
+                    return new IOException("Encountered exception on waiting result", cause);
+                }
+            },
+            timeout,
+            timeUnit);
+    }
+
+    /**
+     * Abort async <i>abortable</i>
+     *
+     * @param abortable the {@code AsyncAbortable} object to be aborted, or null, in which case this method
+     *                  does nothing.
+     * @param swallowIOException if true, don't propagate IO exceptions thrown by the {@code abort} methods
+     * @throws IOException if {@code swallowIOException} is false and {@code abort} throws an {@code IOException}
+     */
+    public static void abort(@Nullable AsyncAbortable abortable,
+                             boolean swallowIOException)
+            throws IOException {
+        if (null == abortable) {
+            return;
+        }
+        try {
+            ioResult(abortable.asyncAbort());
+        } catch (Exception ioe) {
+            if (swallowIOException) {
+                log.warn("IOException thrown while aborting Abortable {} : ", abortable, ioe);
+            } else {
+                throw ioe;
+            }
+        }
     }
 
 }

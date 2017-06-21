@@ -19,6 +19,7 @@ package org.apache.distributedlog;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -31,14 +32,10 @@ import org.apache.distributedlog.selector.FirstDLSNNotLessThanSelector;
 import org.apache.distributedlog.selector.FirstTxIdNotLessThanSelector;
 import org.apache.distributedlog.selector.LastRecordSelector;
 import org.apache.distributedlog.selector.LogRecordSelector;
-import org.apache.distributedlog.util.FutureUtils.FutureEventListenerRunnable;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
-import com.twitter.util.Promise;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.runtime.AbstractFunction0;
-import scala.runtime.BoxedUnit;
 
 /**
  * Utility function for readers
@@ -78,7 +75,7 @@ public class ReadUtils {
      *          log segment entry store
      * @return a future with last record.
      */
-    public static Future<LogRecordWithDLSN> asyncReadLastRecord(
+    public static CompletableFuture<LogRecordWithDLSN> asyncReadLastRecord(
             final String streamName,
             final LogSegmentMetadata l,
             final boolean fence,
@@ -116,7 +113,7 @@ public class ReadUtils {
      *          threshold dlsn
      * @return a future with last record.
      */
-    public static Future<LogRecordWithDLSN> asyncReadFirstUserRecord(
+    public static CompletableFuture<LogRecordWithDLSN> asyncReadFirstUserRecord(
             final String streamName,
             final LogSegmentMetadata l,
             final int scanStartBatchSize,
@@ -243,14 +240,14 @@ public class ReadUtils {
      *          scan context
      * @return a future with the log record.
      */
-    private static Future<LogRecordWithDLSN> asyncReadRecordFromEntries(
+    private static CompletableFuture<LogRecordWithDLSN> asyncReadRecordFromEntries(
             final String streamName,
             final LogSegmentRandomAccessEntryReader reader,
             final LogSegmentMetadata metadata,
             final ExecutorService executorService,
             final ScanContext context,
             final LogRecordSelector selector) {
-        final Promise<LogRecordWithDLSN> promise = new Promise<LogRecordWithDLSN>();
+        final CompletableFuture<LogRecordWithDLSN> promise = new CompletableFuture<LogRecordWithDLSN>();
         final long startEntryId = context.curStartEntryId.get();
         final long endEntryId = context.curEndEntryId.get();
         if (LOG.isDebugEnabled()) {
@@ -271,7 +268,7 @@ public class ReadUtils {
                         } catch (IOException ioe) {
                             // exception is only thrown due to bad ledger entry, so it might be corrupted
                             // we shouldn't do anything beyond this point. throw the exception to application
-                            promise.setException(ioe);
+                            promise.completeExceptionally(ioe);
                             return;
                         }
                     }
@@ -282,16 +279,16 @@ public class ReadUtils {
                                 new Object[]{streamName, startEntryId, endEntryId,
                                         metadata, record});
                     }
-                    promise.setValue(record);
+                    promise.complete(record);
                 }
 
                 @Override
                 public void onFailure(final Throwable cause) {
-                    promise.setException(cause);
+                    promise.completeExceptionally(cause);
                 }
             };
         reader.readEntries(startEntryId, endEntryId)
-                .addEventListener(FutureEventListenerRunnable.of(readEntriesListener, executorService));
+                .whenCompleteAsync(readEntriesListener, executorService);
         return promise;
     }
 
@@ -343,7 +340,7 @@ public class ReadUtils {
             final LogSegmentRandomAccessEntryReader reader,
             final LogSegmentMetadata metadata,
             final ExecutorService executorService,
-            final Promise<LogRecordWithDLSN> promise,
+            final CompletableFuture<LogRecordWithDLSN> promise,
             final ScanContext context,
             final LogRecordSelector selector) {
         FutureEventListener<LogRecordWithDLSN> readEntriesListener =
@@ -356,12 +353,12 @@ public class ReadUtils {
                                         metadata, value});
                     }
                     if (null != value) {
-                        promise.setValue(value);
+                        promise.complete(value);
                         return;
                     }
                     if (!context.moveToNextRange()) {
                         // no entries to read again
-                        promise.setValue(null);
+                        promise.complete(null);
                         return;
                     }
                     // scan next range
@@ -376,11 +373,11 @@ public class ReadUtils {
 
                 @Override
                 public void onFailure(Throwable cause) {
-                    promise.setException(cause);
+                    promise.completeExceptionally(cause);
                 }
             };
         asyncReadRecordFromEntries(streamName, reader, metadata, executorService, context, selector)
-                .addEventListener(FutureEventListenerRunnable.of(readEntriesListener, executorService));
+                .whenCompleteAsync(readEntriesListener, executorService);
     }
 
     private static void asyncReadRecordFromLogSegment(
@@ -392,7 +389,7 @@ public class ReadUtils {
             final int scanMaxBatchSize,
             final boolean includeControl,
             final boolean includeEndOfStream,
-            final Promise<LogRecordWithDLSN> promise,
+            final CompletableFuture<LogRecordWithDLSN> promise,
             final AtomicInteger numRecordsScanned,
             final LogRecordSelector selector,
             final boolean backward,
@@ -402,7 +399,7 @@ public class ReadUtils {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Log segment {} is empty for {}.", new Object[] { metadata, streamName });
             }
-            promise.setValue(null);
+            promise.complete(null);
             return;
         }
         final ScanContext context = new ScanContext(
@@ -413,7 +410,7 @@ public class ReadUtils {
                                    promise, context, selector);
     }
 
-    private static Future<LogRecordWithDLSN> asyncReadRecord(
+    private static CompletableFuture<LogRecordWithDLSN> asyncReadRecord(
             final String streamName,
             final LogSegmentMetadata l,
             final boolean fence,
@@ -428,7 +425,7 @@ public class ReadUtils {
             final boolean backward,
             final long startEntryId) {
 
-        final Promise<LogRecordWithDLSN> promise = new Promise<LogRecordWithDLSN>();
+        final CompletableFuture<LogRecordWithDLSN> promise = new CompletableFuture<LogRecordWithDLSN>();
 
         FutureEventListener<LogSegmentRandomAccessEntryReader> openReaderListener =
             new FutureEventListener<LogSegmentRandomAccessEntryReader>() {
@@ -438,13 +435,7 @@ public class ReadUtils {
                         LOG.debug("{} Opened log segment {} for reading record",
                                 streamName, l);
                     }
-                    promise.ensure(new AbstractFunction0<BoxedUnit>() {
-                        @Override
-                        public BoxedUnit apply() {
-                            reader.asyncClose();
-                            return BoxedUnit.UNIT;
-                        }
-                    });
+                    promise.whenComplete((value, cause) -> reader.asyncClose());
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("{} {} scanning {}.", new Object[]{
                                 (backward ? "backward" : "forward"), streamName, l});
@@ -458,11 +449,11 @@ public class ReadUtils {
 
                 @Override
                 public void onFailure(final Throwable cause) {
-                    promise.setException(cause);
+                    promise.completeExceptionally(cause);
                 }
             };
         entryStore.openRandomAccessReader(l, fence)
-                .addEventListener(FutureEventListenerRunnable.of(openReaderListener, executorService));
+                .whenCompleteAsync(openReaderListener, executorService);
         return promise;
     }
 
@@ -499,7 +490,7 @@ public class ReadUtils {
      *          how many number of entries to search in parallel
      * @return found log record. none if all transaction ids are less than provided <code>transactionId</code>.
      */
-    public static Future<Optional<LogRecordWithDLSN>> getLogRecordNotLessThanTxId(
+    public static CompletableFuture<Optional<LogRecordWithDLSN>> getLogRecordNotLessThanTxId(
             final String logName,
             final LogSegmentMetadata segment,
             final long transactionId,
@@ -511,30 +502,23 @@ public class ReadUtils {
                 // all log records whose transaction id is less than provided transactionId
                 // then return none
                 Optional<LogRecordWithDLSN> noneRecord = Optional.absent();
-                return Future.value(noneRecord);
+                return FutureUtils.value(noneRecord);
             }
         }
 
-        final Promise<Optional<LogRecordWithDLSN>> promise =
-                new Promise<Optional<LogRecordWithDLSN>>();
+        final CompletableFuture<Optional<LogRecordWithDLSN>> promise =
+                new CompletableFuture<Optional<LogRecordWithDLSN>>();
         final FutureEventListener<LogSegmentRandomAccessEntryReader> openReaderListener =
             new FutureEventListener<LogSegmentRandomAccessEntryReader>() {
                 @Override
                 public void onSuccess(final LogSegmentRandomAccessEntryReader reader) {
-                    promise.ensure(new AbstractFunction0<BoxedUnit>() {
-                        @Override
-                        public BoxedUnit apply() {
-                            reader.asyncClose();
-                            return BoxedUnit.UNIT;
-                        }
-
-                    });
+                    promise.whenComplete((value, cause) -> reader.asyncClose());
                     long lastEntryId = reader.getLastAddConfirmed();
                     if (lastEntryId < 0) {
                         // it means that the log segment is created but not written yet or an empty log segment.
                         // it is equivalent to 'all log records whose transaction id is less than provided transactionId'
                         Optional<LogRecordWithDLSN> nonRecord = Optional.absent();
-                        promise.setValue(nonRecord);
+                        promise.complete(nonRecord);
                         return;
                     }
                     // all log records whose transaction id is not less than provided transactionId
@@ -548,15 +532,15 @@ public class ReadUtils {
                                 executorService,
                                 new SingleEntryScanContext(0L),
                                 selector
-                        ).addEventListener(new FutureEventListener<LogRecordWithDLSN>() {
+                        ).whenComplete(new FutureEventListener<LogRecordWithDLSN>() {
                             @Override
                             public void onSuccess(LogRecordWithDLSN value) {
-                                promise.setValue(Optional.of(selector.result()));
+                                promise.complete(Optional.of(selector.result()));
                             }
 
                             @Override
                             public void onFailure(Throwable cause) {
-                                promise.setException(cause);
+                                promise.completeExceptionally(cause);
                             }
                         });
 
@@ -576,12 +560,12 @@ public class ReadUtils {
 
                 @Override
                 public void onFailure(final Throwable cause) {
-                    promise.setException(cause);
+                    promise.completeExceptionally(cause);
                 }
             };
 
         entryStore.openRandomAccessReader(segment, false)
-                .addEventListener(FutureEventListenerRunnable.of(openReaderListener, executorService));
+                .whenCompleteAsync(openReaderListener, executorService);
         return promise;
     }
 
@@ -617,12 +601,12 @@ public class ReadUtils {
             final List<Long> entriesToSearch,
             final int nWays,
             final Optional<LogRecordWithDLSN> prevFoundRecord,
-            final Promise<Optional<LogRecordWithDLSN>> promise) {
-        final List<Future<LogRecordWithDLSN>> searchResults =
+            final CompletableFuture<Optional<LogRecordWithDLSN>> promise) {
+        final List<CompletableFuture<LogRecordWithDLSN>> searchResults =
                 Lists.newArrayListWithExpectedSize(entriesToSearch.size());
         for (Long entryId : entriesToSearch) {
             LogRecordSelector selector = new FirstTxIdNotLessThanSelector(transactionId);
-            Future<LogRecordWithDLSN> searchResult = asyncReadRecordFromEntries(
+            CompletableFuture<LogRecordWithDLSN> searchResult = asyncReadRecordFromEntries(
                     logName,
                     reader,
                     segment,
@@ -649,11 +633,11 @@ public class ReadUtils {
 
                     @Override
                     public void onFailure(Throwable cause) {
-                        promise.setException(cause);
+                        promise.completeExceptionally(cause);
                     }
                 };
-        Future.collect(searchResults).addEventListener(
-                FutureEventListenerRunnable.of(processSearchResultsListener, executorService));
+        FutureUtils.collect(searchResults).whenCompleteAsync(
+                processSearchResultsListener, executorService);
     }
 
     /**
@@ -668,7 +652,7 @@ public class ReadUtils {
             final List<LogRecordWithDLSN> searchResults,
             final int nWays,
             final Optional<LogRecordWithDLSN> prevFoundRecord,
-            final Promise<Optional<LogRecordWithDLSN>> promise) {
+            final CompletableFuture<Optional<LogRecordWithDLSN>> promise) {
         int found = -1;
         for (int i = 0; i < searchResults.size(); i++) {
             LogRecordWithDLSN record = searchResults.get(i);
@@ -678,7 +662,7 @@ public class ReadUtils {
             }
         }
         if (found == -1) { // all log records' transaction id is less than provided transaction id
-            promise.setValue(prevFoundRecord);
+            promise.complete(prevFoundRecord);
             return;
         }
         // we found a log record
@@ -691,7 +675,7 @@ public class ReadUtils {
         if (foundRecord.getDlsn().getSlotId() != 0L
                 || found == 0
                 || foundRecord.getDlsn().getEntryId() == (searchResults.get(found - 1).getDlsn().getEntryId() + 1)) {
-            promise.setValue(Optional.of(foundRecord));
+            promise.complete(Optional.of(foundRecord));
             return;
         }
 
@@ -702,7 +686,7 @@ public class ReadUtils {
                 searchResults.get(found),
                 nWays);
         if (nextSearchBatch.isEmpty()) {
-            promise.setValue(prevFoundRecord);
+            promise.complete(prevFoundRecord);
             return;
         }
         getLogRecordNotLessThanTxIdFromEntries(

@@ -17,6 +17,7 @@
  */
 package org.apache.distributedlog;
 
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.Entry.Writer;
 import org.apache.distributedlog.exceptions.InvalidEnvelopedEntryException;
 import org.apache.distributedlog.exceptions.LogRecordTooLongException;
@@ -24,7 +25,6 @@ import org.apache.distributedlog.exceptions.WriteCancelledException;
 import org.apache.distributedlog.exceptions.WriteException;
 import org.apache.distributedlog.io.Buffer;
 import org.apache.distributedlog.io.CompressionCodec;
-import com.twitter.util.Promise;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,9 +46,9 @@ class EnvelopedEntryWriter implements Writer {
     private static class WriteRequest {
 
         private final int numRecords;
-        private final Promise<DLSN> promise;
+        private final CompletableFuture<DLSN> promise;
 
-        WriteRequest(int numRecords, Promise<DLSN> promise) {
+        WriteRequest(int numRecords, CompletableFuture<DLSN> promise) {
             this.numRecords = numRecords;
             this.promise = promise;
         }
@@ -89,7 +89,7 @@ class EnvelopedEntryWriter implements Writer {
 
     @Override
     public synchronized void writeRecord(LogRecord record,
-                                         Promise<DLSN> transmitPromise)
+                                         CompletableFuture<DLSN> transmitPromise)
             throws LogRecordTooLongException, WriteException {
         int logRecordSize = record.getPersistentSize();
         if (logRecordSize > MAX_LOGRECORD_SIZE) {
@@ -121,7 +121,7 @@ class EnvelopedEntryWriter implements Writer {
     private synchronized void satisfyPromises(long lssn, long entryId) {
         long nextSlotId = 0;
         for (WriteRequest request : writeRequests) {
-            request.promise.setValue(new DLSN(lssn, entryId, nextSlotId));
+            request.promise.complete(new DLSN(lssn, entryId, nextSlotId));
             nextSlotId += request.numRecords;
         }
         writeRequests.clear();
@@ -129,7 +129,7 @@ class EnvelopedEntryWriter implements Writer {
 
     private synchronized void cancelPromises(Throwable reason) {
         for (WriteRequest request : writeRequests) {
-            request.promise.setException(reason);
+            request.promise.completeExceptionally(reason);
         }
         writeRequests.clear();
     }

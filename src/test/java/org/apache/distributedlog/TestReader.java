@@ -17,13 +17,13 @@
  */
 package org.apache.distributedlog;
 
+import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.api.AsyncLogReader;
+import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
 import org.apache.distributedlog.util.Utils;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.runtime.AbstractFunction1;
-import scala.runtime.BoxedUnit;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -140,8 +140,8 @@ public class TestReader implements FutureEventListener<LogRecordWithDLSN> {
     }
 
     private void readNext() {
-        Future<LogRecordWithDLSN> record = reader.readNext();
-        record.addEventListener(this);
+        CompletableFuture<LogRecordWithDLSN> record = reader.readNext();
+        record.whenComplete(this);
     }
 
     @Override
@@ -184,12 +184,8 @@ public class TestReader implements FutureEventListener<LogRecordWithDLSN> {
 
     private void closeReader() {
         if (null != reader) {
-            reader.asyncClose().onFailure(new AbstractFunction1<Throwable, BoxedUnit>() {
-                @Override
-                public BoxedUnit apply(Throwable cause) {
-                    LOG.warn("Exception on closing reader {} : ", readerName, cause);
-                    return BoxedUnit.UNIT;
-                }
+            reader.asyncClose().whenComplete((value, cause) -> {
+                LOG.warn("Exception on closing reader {} : ", readerName, cause);
             });
         }
     }

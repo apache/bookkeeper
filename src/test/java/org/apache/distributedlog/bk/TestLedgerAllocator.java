@@ -17,22 +17,21 @@
  */
 package org.apache.distributedlog.bk;
 
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.BookKeeperClient;
 import org.apache.distributedlog.BookKeeperClientBuilder;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
-import org.apache.distributedlog.annotations.DistributedLogAnnotations;
+import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
 import org.apache.distributedlog.bk.SimpleLedgerAllocator.AllocationException;
 import org.apache.distributedlog.bk.SimpleLedgerAllocator.Phase;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.TestDistributedLogBase;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.exceptions.ZKException;
-import org.apache.distributedlog.util.FutureUtils;
 import org.apache.distributedlog.util.Transaction.OpListener;
 import org.apache.distributedlog.util.Utils;
 import org.apache.distributedlog.zk.DefaultZKOp;
 import org.apache.distributedlog.zk.ZKTransaction;
-import com.twitter.util.Future;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
@@ -53,7 +52,6 @@ import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -116,13 +114,13 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         return new ZKTransaction(zkc);
     }
 
-    private SimpleLedgerAllocator createAllocator(String allocationPath) throws IOException {
+    private SimpleLedgerAllocator createAllocator(String allocationPath) throws Exception {
         return createAllocator(allocationPath, dlConf);
     }
 
     private SimpleLedgerAllocator createAllocator(String allocationPath,
-                                                  DistributedLogConfiguration conf) throws IOException {
-        return FutureUtils.result(SimpleLedgerAllocator.of(allocationPath, null, newQuorumConfigProvider(conf), zkc, bkc));
+                                                  DistributedLogConfiguration conf) throws Exception {
+        return Utils.ioResult(SimpleLedgerAllocator.of(allocationPath, null, newQuorumConfigProvider(conf), zkc, bkc));
     }
 
     /**
@@ -136,13 +134,13 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         SimpleLedgerAllocator allocator = createAllocator(allocationPath);
         allocator.allocate();
         ZKTransaction txn = newTxn();
-        LedgerHandle lh = FutureUtils.result(allocator.tryObtain(txn, NULL_LISTENER));
+        LedgerHandle lh = Utils.ioResult(allocator.tryObtain(txn, NULL_LISTENER));
         logger.info("Try obtaining ledger handle {}", lh.getId());
         byte[] data = zkc.get().getData(allocationPath, false, null);
         assertEquals((Long) lh.getId(), Long.valueOf(new String(data, UTF_8)));
         txn.addOp(DefaultZKOp.of(Op.setData("/unexistedpath", "data".getBytes(UTF_8), -1), null));
         try {
-            FutureUtils.result(txn.execute());
+            Utils.ioResult(txn.execute());
             fail("Should fail the transaction when setting unexisted path");
         } catch (ZKException ke) {
             // expected
@@ -154,9 +152,9 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         // Create new transaction to obtain the ledger again.
         txn = newTxn();
         // we could obtain the ledger if it was obtained
-        LedgerHandle newLh = FutureUtils.result(allocator.tryObtain(txn, NULL_LISTENER));
+        LedgerHandle newLh = Utils.ioResult(allocator.tryObtain(txn, NULL_LISTENER));
         assertEquals(lh.getId(), newLh.getId());
-        FutureUtils.result(txn.execute());
+        Utils.ioResult(txn.execute());
         data = zkc.get().getData(allocationPath, false, null);
         assertEquals(0, data.length);
         Utils.close(allocator);
@@ -177,16 +175,16 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         allocator1.allocate();
         // wait until allocated
         ZKTransaction txn1 = newTxn();
-        LedgerHandle lh = FutureUtils.result(allocator1.tryObtain(txn1, NULL_LISTENER));
+        LedgerHandle lh = Utils.ioResult(allocator1.tryObtain(txn1, NULL_LISTENER));
         allocator2.allocate();
         ZKTransaction txn2 = newTxn();
         try {
-            FutureUtils.result(allocator2.tryObtain(txn2, NULL_LISTENER));
+            Utils.ioResult(allocator2.tryObtain(txn2, NULL_LISTENER));
             fail("Should fail allocating on second allocator as allocator1 is starting allocating something.");
-        } catch (ZKException zke) {
-            assertEquals(KeeperException.Code.BADVERSION, zke.getKeeperExceptionCode());
+        } catch (ZKException ke) {
+            assertEquals(KeeperException.Code.BADVERSION, ke.getKeeperExceptionCode());
         }
-        FutureUtils.result(txn1.execute());
+        Utils.ioResult(txn1.execute());
         Utils.close(allocator1);
         Utils.close(allocator2);
 
@@ -217,7 +215,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         ZKTransaction txn1 = newTxn();
 
         try {
-            FutureUtils.result(allocator1.tryObtain(txn1, NULL_LISTENER));
+            Utils.ioResult(allocator1.tryObtain(txn1, NULL_LISTENER));
             fail("Should fail allocating ledger if there aren't enough bookies");
         } catch (AllocationException ioe) {
             // expected
@@ -241,7 +239,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         allocator1.allocate();
         // wait until allocated
         ZKTransaction txn1 = newTxn();
-        LedgerHandle lh1 = FutureUtils.result(allocator1.tryObtain(txn1, NULL_LISTENER));
+        LedgerHandle lh1 = Utils.ioResult(allocator1.tryObtain(txn1, NULL_LISTENER));
 
         // Second allocator kicks in
         stat = new Stat();
@@ -252,16 +250,16 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         allocator2.allocate();
         // wait until allocated
         ZKTransaction txn2 = newTxn();
-        LedgerHandle lh2 = FutureUtils.result(allocator2.tryObtain(txn2, NULL_LISTENER));
+        LedgerHandle lh2 = Utils.ioResult(allocator2.tryObtain(txn2, NULL_LISTENER));
 
         // should fail to commit txn1 as version is changed by second allocator
         try {
-            FutureUtils.result(txn1.execute());
+            Utils.ioResult(txn1.execute());
             fail("Should fail commit obtaining ledger handle from first allocator as allocator is modified by second allocator.");
         } catch (ZKException ke) {
             // as expected
         }
-        FutureUtils.result(txn2.execute());
+        Utils.ioResult(txn2.execute());
         Utils.close(allocator1);
         Utils.close(allocator2);
 
@@ -298,7 +296,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         allocator.allocate();
         ZKTransaction txn = newTxn();
         // close during obtaining ledger.
-        LedgerHandle lh = FutureUtils.result(allocator.tryObtain(txn, NULL_LISTENER));
+        LedgerHandle lh = Utils.ioResult(allocator.tryObtain(txn, NULL_LISTENER));
         Utils.close(allocator);
         byte[] data = zkc.get().getData(allocationPath, false, null);
         assertEquals((Long) lh.getId(), Long.valueOf(new String(data, UTF_8)));
@@ -319,8 +317,8 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         allocator.allocate();
         ZKTransaction txn = newTxn();
         // close during obtaining ledger.
-        LedgerHandle lh = FutureUtils.result(allocator.tryObtain(txn, NULL_LISTENER));
-        FutureUtils.result(txn.execute());
+        LedgerHandle lh = Utils.ioResult(allocator.tryObtain(txn, NULL_LISTENER));
+        Utils.ioResult(txn.execute());
         Utils.close(allocator);
         byte[] data = zkc.get().getData(allocationPath, false, null);
         assertEquals(0, data.length);
@@ -336,10 +334,10 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         allocator.allocate();
         ZKTransaction txn = newTxn();
         // close during obtaining ledger.
-        LedgerHandle lh = FutureUtils.result(allocator.tryObtain(txn, NULL_LISTENER));
+        LedgerHandle lh = Utils.ioResult(allocator.tryObtain(txn, NULL_LISTENER));
         txn.addOp(DefaultZKOp.of(Op.setData("/unexistedpath", "data".getBytes(UTF_8), -1), null));
         try {
-            FutureUtils.result(txn.execute());
+            Utils.ioResult(txn.execute());
             fail("Should fail the transaction when setting unexisted path");
         } catch (ZKException ke) {
             // expected
@@ -358,13 +356,13 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         SimpleLedgerAllocator allocator = createAllocator(allcationPath);
         allocator.allocate();
         ZKTransaction txn1 = newTxn();
-        Future<LedgerHandle> obtainFuture1 = allocator.tryObtain(txn1, NULL_LISTENER);
+        CompletableFuture<LedgerHandle> obtainFuture1 = allocator.tryObtain(txn1, NULL_LISTENER);
         ZKTransaction txn2 = newTxn();
-        Future<LedgerHandle> obtainFuture2 = allocator.tryObtain(txn2, NULL_LISTENER);
-        assertTrue(obtainFuture2.isDefined());
-        assertTrue(obtainFuture2.isThrow());
+        CompletableFuture<LedgerHandle> obtainFuture2 = allocator.tryObtain(txn2, NULL_LISTENER);
+        assertTrue(obtainFuture2.isDone());
+        assertTrue(obtainFuture2.isCompletedExceptionally());
         try {
-            FutureUtils.result(obtainFuture2);
+            Utils.ioResult(obtainFuture2);
             fail("Should fail the concurrent obtain since there is already a transaction obtaining the ledger handle");
         } catch (SimpleLedgerAllocator.ConcurrentObtainException cbe) {
             // expected
@@ -380,8 +378,8 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         for (int i = 0; i < numLedgers; i++) {
             allocator.allocate();
             ZKTransaction txn = newTxn();
-            LedgerHandle lh = FutureUtils.result(allocator.tryObtain(txn, NULL_LISTENER));
-            FutureUtils.result(txn.execute());
+            LedgerHandle lh = Utils.ioResult(allocator.tryObtain(txn, NULL_LISTENER));
+            Utils.ioResult(txn.execute());
             allocatedLedgers.add(lh);
         }
         assertEquals(numLedgers, allocatedLedgers.size());

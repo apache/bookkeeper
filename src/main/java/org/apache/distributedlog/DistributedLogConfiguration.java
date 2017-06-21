@@ -22,7 +22,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import org.apache.distributedlog.bk.QuorumConfig;
 import org.apache.distributedlog.feature.DefaultFeatureProvider;
-import org.apache.distributedlog.namespace.DistributedLogNamespaceBuilder;
+import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.net.DNSResolverForRacks;
 import org.apache.distributedlog.net.DNSResolverForRows;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -1351,7 +1351,6 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
      * <p>
      * The setting is only applied for v2 implementation.
      *
-     * @see org.apache.distributedlog.util.MonitoredScheduledThreadPoolExecutor
      * @return number of resource release threads used by distributedlog namespace.
      */
     public int getNumResourceReleaseThreads() {
@@ -3048,7 +3047,7 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
     /**
      * Whether to enable per stream stat or not.
      *
-     * @deprecated please use {@link DistributedLogNamespaceBuilder#perLogStatsLogger(StatsLogger)}
+     * @deprecated please use {@link NamespaceBuilder#perLogStatsLogger(StatsLogger)}
      * @return flag to enable per stream stat.
      */
     public boolean getEnablePerStreamStat() {
@@ -3058,7 +3057,7 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
     /**
      * Set the flag to enable per stream stat or not.
      *
-     * @deprecated please use {@link DistributedLogNamespaceBuilder#perLogStatsLogger(StatsLogger)}
+     * @deprecated please use {@link NamespaceBuilder#perLogStatsLogger(StatsLogger)}
      * @param enabled
      *          flag to enable/disable per stream stat.
      * @return dl configuration.

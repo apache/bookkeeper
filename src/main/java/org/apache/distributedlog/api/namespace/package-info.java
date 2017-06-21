@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,17 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.util;
 
 /**
- * The {@code Sizable} interface is to provide the capability of calculating size
- * of any objects.
+ * Namespace API and the builder to build namespace instance.
  */
-public interface Sizable {
-    /**
-     * Calculate the size for this instance.
-     *
-     * @return size of the instance.
-     */
-    long size();
-}
+package org.apache.distributedlog.api.namespace;

@@ -17,20 +17,18 @@
  */
 package org.apache.distributedlog.lock;
 
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.apache.distributedlog.util.FailpointUtils;
 import org.apache.distributedlog.exceptions.LockingException;
 import org.apache.distributedlog.TestDistributedLogBase;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
 import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.ZooKeeperClientBuilder;
 import org.apache.distributedlog.ZooKeeperClientUtils;
 import org.apache.distributedlog.exceptions.OwnershipAcquireFailedException;
-import com.twitter.util.Await;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.zookeeper.CreateMode;
@@ -192,9 +190,9 @@ public class TestDistributedLock extends TestDistributedLogBase {
 
     private static void checkLockAndReacquire(ZKDistributedLock lock, boolean sync) throws Exception {
         lock.checkOwnershipAndReacquire();
-        Future<ZKDistributedLock> reacquireFuture = lock.getLockReacquireFuture();
+        CompletableFuture<ZKDistributedLock> reacquireFuture = lock.getLockReacquireFuture();
         if (null != reacquireFuture && sync) {
-            FutureUtils.result(reacquireFuture);
+            Utils.ioResult(reacquireFuture);
         }
     }
 
@@ -212,7 +210,7 @@ public class TestDistributedLock extends TestDistributedLogBase {
             try {
                 ZKDistributedLock lock = new ZKDistributedLock(lockStateExecutor, lockFactory, lockPath,
                         Long.MAX_VALUE, NullStatsLogger.INSTANCE);
-                FutureUtils.result(lock.asyncAcquire());
+                Utils.ioResult(lock.asyncAcquire());
                 fail("Should fail on creating lock if couldn't establishing connections to zookeeper");
             } catch (IOException ioe) {
                 // expected.
@@ -228,7 +226,7 @@ public class TestDistributedLock extends TestDistributedLogBase {
             try {
                 ZKDistributedLock lock = new ZKDistributedLock(lockStateExecutor, lockFactory, lockPath,
                         Long.MAX_VALUE, NullStatsLogger.INSTANCE);
-                FutureUtils.result(lock.asyncAcquire());
+                Utils.ioResult(lock.asyncAcquire());
                 fail("Should fail on creating lock if couldn't establishing connections to zookeeper after 3 retries");
             } catch (IOException ioe) {
                 // expected.
@@ -243,14 +241,14 @@ public class TestDistributedLock extends TestDistributedLogBase {
         try {
             ZKDistributedLock lock = new ZKDistributedLock(lockStateExecutor, lockFactory, lockPath,
                 Long.MAX_VALUE, NullStatsLogger.INSTANCE);
-            FutureUtils.result(lock.asyncAcquire());
+            Utils.ioResult(lock.asyncAcquire());
 
             Pair<String, Long> lockId1 = ((ZKSessionLock) lock.getInternalLock()).getLockId();
 
             List<String> children = getLockWaiters(zkc, lockPath);
             assertEquals(1, children.size());
             assertTrue(lock.haveLock());
-            assertEquals(lockId1, Await.result(asyncParseClientID(zkc0.get(), lockPath, children.get(0))));
+            assertEquals(lockId1, Utils.ioResult(asyncParseClientID(zkc0.get(), lockPath, children.get(0))));
 
             lock.asyncClose();
         } finally {
@@ -268,16 +266,16 @@ public class TestDistributedLock extends TestDistributedLogBase {
         SessionLockFactory lockFactory = createLockFactory(clientId, zkc);
         ZKDistributedLock lock = new ZKDistributedLock(lockStateExecutor, lockFactory, lockPath,
                 Long.MAX_VALUE, NullStatsLogger.INSTANCE);
-        FutureUtils.result(lock.asyncAcquire());
+        Utils.ioResult(lock.asyncAcquire());
 
         Pair<String, Long> lockId1 = ((ZKSessionLock) lock.getInternalLock()).getLockId();
 
         List<String> children = getLockWaiters(zkc, lockPath);
         assertEquals(1, children.size());
         assertTrue(lock.haveLock());
-        assertEquals(lockId1, Await.result(asyncParseClientID(zkc0.get(), lockPath, children.get(0))));
+        assertEquals(lockId1, Utils.ioResult(asyncParseClientID(zkc0.get(), lockPath, children.get(0))));
 
-        FutureUtils.result(lock.asyncClose());
+        Utils.ioResult(lock.asyncClose());
 
         children = getLockWaiters(zkc, lockPath);
         assertEquals(0, children.size());
@@ -285,25 +283,25 @@ public class TestDistributedLock extends TestDistributedLogBase {
 
         lock = new ZKDistributedLock(lockStateExecutor, lockFactory, lockPath,
                 Long.MAX_VALUE, NullStatsLogger.INSTANCE);
-        FutureUtils.result(lock.asyncAcquire());
+        Utils.ioResult(lock.asyncAcquire());
 
         Pair<String, Long> lockId2 = ((ZKSessionLock) lock.getInternalLock()).getLockId();
 
         children = getLockWaiters(zkc, lockPath);
         assertEquals(1, children.size());
         assertTrue(lock.haveLock());
-        assertEquals(lockId2, Await.result(asyncParseClientID(zkc0.get(), lockPath, children.get(0))));
+        assertEquals(lockId2, Utils.ioResult(asyncParseClientID(zkc0.get(), lockPath, children.get(0))));
 
         assertEquals(lockId1, lockId2);
 
-        FutureUtils.result(lock.asyncClose());
+        Utils.ioResult(lock.asyncClose());
 
         children = getLockWaiters(zkc, lockPath);
         assertEquals(0, children.size());
         assertFalse(lock.haveLock());
 
         try {
-            FutureUtils.result(lock.asyncAcquire());
+            Utils.ioResult(lock.asyncAcquire());
             fail("Should fail on acquiring a closed lock");
         } catch (UnexpectedException le) {
             // expected.
@@ -324,7 +322,7 @@ public class TestDistributedLock extends TestDistributedLogBase {
         ZKDistributedLock lock0 =
                 new ZKDistributedLock(lockStateExecutor, lockFactory0, lockPath,
                         Long.MAX_VALUE, NullStatsLogger.INSTANCE);
-        FutureUtils.result(lock0.asyncAcquire());
+        Utils.ioResult(lock0.asyncAcquire());
 
         Pair<String, Long> lockId0_1 = ((ZKSessionLock) lock0.getInternalLock()).getLockId();
 
@@ -332,7 +330,7 @@ public class TestDistributedLock extends TestDistributedLogBase {
         assertEquals(1, children.size());
         assertTrue(lock0.haveLock());
         assertEquals(lockId0_1,
-                Await.result(asyncParseClientID(zkc0.get(), lockPath, children.get(0))));
+                Utils.ioResult(asyncParseClientID(zkc0.get(), lockPath, children.get(0))));
 
         // expire the session
         ZooKeeperClientUtils.expireSession(zkc0, zkServers, sessionTimeoutMs);
@@ -347,7 +345,7 @@ public class TestDistributedLock extends TestDistributedLogBase {
         assertEquals(1, children.size());
         assertTrue(lock0.haveLock());
         assertEquals(lockId0_2,
-                Await.result(asyncParseClientID(zkc0.get(), lockPath, children.get(0))));
+                Utils.ioResult(asyncParseClientID(zkc0.get(), lockPath, children.get(0))));
 
 
         SessionLockFactory lockFactory = createLockFactory(clientId, zkc);
@@ -359,9 +357,9 @@ public class TestDistributedLock extends TestDistributedLogBase {
             @Override
             public void run() {
                 try {
-                    FutureUtils.result(lock1.asyncAcquire());
+                    Utils.ioResult(lock1.asyncAcquire());
                     lockLatch.countDown();
-                } catch (IOException e) {
+                } catch (Exception e) {
                     logger.error("Failed on locking lock1 : ", e);
                 }
             }
@@ -424,7 +422,7 @@ public class TestDistributedLock extends TestDistributedLogBase {
         ZKDistributedLock lock0 =
                 new ZKDistributedLock(lockStateExecutor, lockFactory0, lockPath,
                         Long.MAX_VALUE, NullStatsLogger.INSTANCE);
-        FutureUtils.result(lock0.asyncAcquire());
+        Utils.ioResult(lock0.asyncAcquire());
 
         Pair<String, Long> lockId0_1 = ((ZKSessionLock) lock0.getInternalLock()).getLockId();
 
@@ -432,7 +430,7 @@ public class TestDistributedLock extends TestDistributedLogBase {
         assertEquals(1, children.size());
         assertTrue(lock0.haveLock());
         assertEquals(lockId0_1,
-                Await.result(asyncParseClientID(zkc0.get(), lockPath, children.get(0))));
+                Utils.ioResult(asyncParseClientID(zkc0.get(), lockPath, children.get(0))));
 
         ZooKeeperClientUtils.expireSession(zkc0, zkServers, sessionTimeoutMs);
 
@@ -441,13 +439,13 @@ public class TestDistributedLock extends TestDistributedLogBase {
             checkLockAndReacquire(lock0, false);
         } else {
             // session expire will trigger lock re-acquisition
-            Future<ZKDistributedLock> asyncLockAcquireFuture;
+            CompletableFuture<ZKDistributedLock> asyncLockAcquireFuture;
             do {
                 Thread.sleep(1);
                 asyncLockAcquireFuture = lock0.getLockReacquireFuture();
             } while (null == asyncLockAcquireFuture && lock0.getReacquireCount() < 1);
             if (null != asyncLockAcquireFuture) {
-                Await.result(asyncLockAcquireFuture);
+                Utils.ioResult(asyncLockAcquireFuture);
             }
             checkLockAndReacquire(lock0, false);
         }
@@ -456,11 +454,11 @@ public class TestDistributedLock extends TestDistributedLogBase {
         assertTrue(lock0.haveLock());
         Pair<String, Long> lock0_2 = ((ZKSessionLock) lock0.getInternalLock()).getLockId();
         assertEquals(lock0_2,
-                Await.result(asyncParseClientID(zkc.get(), lockPath, children.get(0))));
+                Utils.ioResult(asyncParseClientID(zkc.get(), lockPath, children.get(0))));
         assertEquals(clientId, lock0_2.getLeft());
         assertFalse(lockId0_1.equals(lock0_2));
 
-        FutureUtils.result(lock0.asyncClose());
+        Utils.ioResult(lock0.asyncClose());
 
         children = getLockWaiters(zkc, lockPath);
         assertEquals(0, children.size());
@@ -495,7 +493,7 @@ public class TestDistributedLock extends TestDistributedLogBase {
         ZKDistributedLock lock0 =
                 new ZKDistributedLock(lockStateExecutor, lockFactory0, lockPath,
                         Long.MAX_VALUE, NullStatsLogger.INSTANCE);
-        FutureUtils.result(lock0.asyncAcquire());
+        Utils.ioResult(lock0.asyncAcquire());
 
         final CountDownLatch lock1DoneLatch = new CountDownLatch(1);
         SessionLockFactory lockFactory1 = createLockFactory(clientId, zkc);
@@ -506,9 +504,9 @@ public class TestDistributedLock extends TestDistributedLogBase {
             @Override
             public void run() {
                 try {
-                    FutureUtils.result(lock1.asyncAcquire());
+                    Utils.ioResult(lock1.asyncAcquire());
                     lock1DoneLatch.countDown();
-                } catch (IOException e) {
+                } catch (Exception e) {
                     logger.error("Error on acquiring lock1 : ", e);
                 }
             }
@@ -524,9 +522,9 @@ public class TestDistributedLock extends TestDistributedLogBase {
         assertTrue(lock0.haveLock());
         assertFalse(lock1.haveLock());
         assertEquals(((ZKSessionLock) lock0.getInternalLock()).getLockId(),
-                Await.result(asyncParseClientID(zkc0.get(), lockPath, children.get(0))));
+                Utils.ioResult(asyncParseClientID(zkc0.get(), lockPath, children.get(0))));
         assertEquals(((ZKSessionLock) lock1.getInternalLock()).getLockId(),
-                Await.result(asyncParseClientID(zkc.get(), lockPath, children.get(1))));
+                Utils.ioResult(asyncParseClientID(zkc.get(), lockPath, children.get(1))));
 
         logger.info("Expiring session on lock0");
         ZooKeeperClientUtils.expireSession(zkc0, zkServers, sessionTimeoutMs);
@@ -553,14 +551,14 @@ public class TestDistributedLock extends TestDistributedLogBase {
         } else {
             logger.info("Waiting lock0 to attempt acquisition after session expired");
             // session expire will trigger lock re-acquisition
-            Future<ZKDistributedLock> asyncLockAcquireFuture;
+            CompletableFuture<ZKDistributedLock> asyncLockAcquireFuture;
             do {
                 Thread.sleep(1);
                 asyncLockAcquireFuture = lock0.getLockReacquireFuture();
             } while (null == asyncLockAcquireFuture);
 
             try {
-                Await.result(asyncLockAcquireFuture);
+                Utils.ioResult(asyncLockAcquireFuture);
                 fail("Should fail check write lock since lock is already held by other people");
             } catch (OwnershipAcquireFailedException oafe) {
                 assertEquals(((ZKSessionLock) lock1.getInternalLock()).getLockId().getLeft(),
@@ -579,10 +577,10 @@ public class TestDistributedLock extends TestDistributedLogBase {
         assertFalse(lock0.haveLock());
         assertTrue(lock1.haveLock());
         assertEquals(((ZKSessionLock) lock1.getInternalLock()).getLockId(),
-                Await.result(asyncParseClientID(zkc.get(), lockPath, children.get(0))));
+                Utils.ioResult(asyncParseClientID(zkc.get(), lockPath, children.get(0))));
 
-        FutureUtils.result(lock0.asyncClose());
-        FutureUtils.result(lock1.asyncClose());
+        Utils.ioResult(lock0.asyncClose());
+        Utils.ioResult(lock1.asyncClose());
 
         children = getLockWaiters(zkc, lockPath);
         assertEquals(0, children.size());
@@ -597,7 +595,7 @@ public class TestDistributedLock extends TestDistributedLogBase {
         SessionLockFactory lockFactory = createLockFactory(clientId, zkc, conf.getLockTimeoutMilliSeconds(), 0);
         ZKDistributedLock lock = new ZKDistributedLock(lockStateExecutor, lockFactory, lockPath,
             conf.getLockTimeoutMilliSeconds(), NullStatsLogger.INSTANCE);
-        FutureUtils.result(lock.asyncAcquire());
+        Utils.ioResult(lock.asyncAcquire());
 
         // try and cleanup the underlying lock
         lock.getInternalLock().unlock();
@@ -614,14 +612,14 @@ public class TestDistributedLock extends TestDistributedLogBase {
 
         boolean exceptionEncountered = false;
         try {
-            FutureUtils.result(lock2.asyncAcquire());
+            Utils.ioResult(lock2.asyncAcquire());
         } catch (OwnershipAcquireFailedException exc) {
             assertEquals(clientId, exc.getCurrentOwner());
             exceptionEncountered = true;
         }
         assertTrue(exceptionEncountered);
-        FutureUtils.result(lock.asyncClose());
-        FutureUtils.result(lock2.asyncClose());
+        Utils.ioResult(lock.asyncClose());
+        Utils.ioResult(lock2.asyncClose());
     }
 
     @Test(timeout = 60000)
@@ -633,7 +631,7 @@ public class TestDistributedLock extends TestDistributedLogBase {
         SessionLockFactory factory = createLockFactory(clientId, zkc, conf.getLockTimeoutMilliSeconds(), 0);
         ZKDistributedLock lock = new ZKDistributedLock(lockStateExecutor, factory, lockPath,
             conf.getLockTimeoutMilliSeconds(), NullStatsLogger.INSTANCE);
-        FutureUtils.result(lock.asyncAcquire());
+        Utils.ioResult(lock.asyncAcquire());
 
         // try and cleanup the underlying lock
         lock.getInternalLock().unlock();
@@ -650,15 +648,15 @@ public class TestDistributedLock extends TestDistributedLogBase {
 
         boolean exceptionEncountered = false;
         try {
-            FutureUtils.result(lock2.asyncAcquire());
+            Utils.ioResult(lock2.asyncAcquire());
         } catch (OwnershipAcquireFailedException exc) {
             assertEquals(clientId, exc.getCurrentOwner());
             exceptionEncountered = true;
         }
         assertTrue(exceptionEncountered);
-        FutureUtils.result(lock2.asyncClose());
+        Utils.ioResult(lock2.asyncClose());
 
-        FutureUtils.result(lock.asyncClose());
+        Utils.ioResult(lock.asyncClose());
         assertEquals(false, lock.haveLock());
         assertEquals(false, lock.getInternalLock().isLockHeld());
 
@@ -666,10 +664,10 @@ public class TestDistributedLock extends TestDistributedLogBase {
         ZKDistributedLock lock3 = new ZKDistributedLock(lockStateExecutor, factory, lockPath,
             0, NullStatsLogger.INSTANCE);
 
-        FutureUtils.result(lock3.asyncAcquire());
+        Utils.ioResult(lock3.asyncAcquire());
         assertEquals(true, lock3.haveLock());
         assertEquals(true, lock3.getInternalLock().isLockHeld());
-        FutureUtils.result(lock3.asyncClose());
+        Utils.ioResult(lock3.asyncClose());
     }
 
     void assertLatchesSet(CountDownLatch[] latches, int endIndex) {
@@ -697,8 +695,8 @@ public class TestDistributedLock extends TestDistributedLogBase {
         TestLockFactory locks = new TestLockFactory(runtime.getMethodName(), zkc, lockStateExecutor);
 
         int count = 3;
-        ArrayList<Future<ZKDistributedLock>> results =
-                new ArrayList<Future<ZKDistributedLock>>(count);
+        ArrayList<CompletableFuture<ZKDistributedLock>> results =
+                new ArrayList<CompletableFuture<ZKDistributedLock>>(count);
         ZKDistributedLock[] lockArray = new ZKDistributedLock[count];
         final CountDownLatch[] latches = new CountDownLatch[count];
 
@@ -708,7 +706,7 @@ public class TestDistributedLock extends TestDistributedLogBase {
             latches[i] = new CountDownLatch(1);
             lockArray[i] = locks.createLock(i, zkc);
             final int index = i;
-            results.add(lockArray[i].asyncAcquire().addEventListener(
+            results.add(lockArray[i].asyncAcquire().whenComplete(
                 new FutureEventListener<ZKDistributedLock>() {
                     @Override
                     public void onSuccess(ZKDistributedLock lock) {
@@ -727,8 +725,8 @@ public class TestDistributedLock extends TestDistributedLogBase {
         for (int i = 0; i < count; i++) {
             latches[i].await();
             assertLatchesSet(latches, i+1);
-            Await.result(results.get(i));
-            FutureUtils.result(lockArray[i].asyncClose());
+            Utils.ioResult(results.get(i));
+            Utils.ioResult(lockArray[i].asyncClose());
         }
     }
 
@@ -738,7 +736,7 @@ public class TestDistributedLock extends TestDistributedLogBase {
         final ZKDistributedLock lock0 = locks.createLock(0, zkc);
         final ZKDistributedLock lock1 = locks.createLock(1, zkc0);
 
-        FutureUtils.result(lock0.asyncAcquire());
+        Utils.ioResult(lock0.asyncAcquire());
 
         // Initial state.
         assertLockState(lock0, true, true, lock1, false, false, 1, locks.getLockPath());
@@ -747,8 +745,8 @@ public class TestDistributedLock extends TestDistributedLogBase {
             @Override
             public void run() {
                 try {
-                    FutureUtils.result(lock1.asyncAcquire());
-                } catch (IOException e) {
+                    Utils.ioResult(lock1.asyncAcquire());
+                } catch (Exception e) {
                     fail("shouldn't fail to acquire");
                 }
             }
@@ -761,13 +759,13 @@ public class TestDistributedLock extends TestDistributedLogBase {
         }
         assertLockState(lock0, true, true, lock1, false, false, 2, locks.getLockPath());
 
-        FutureUtils.result(lock0.asyncClose());
-        Await.result(lock1.getLockAcquireFuture());
+        Utils.ioResult(lock0.asyncClose());
+        Utils.ioResult(lock1.getLockAcquireFuture());
 
         assertLockState(lock0, false, false, lock1, true, true, 1, locks.getLockPath());
 
         // Release lock1
-        FutureUtils.result(lock1.asyncClose());
+        Utils.ioResult(lock1.asyncClose());
         assertLockState(lock0, false, false, lock1, false, false, 0, locks.getLockPath());
     }
 
@@ -777,8 +775,8 @@ public class TestDistributedLock extends TestDistributedLogBase {
         final ZKDistributedLock lock0 = locks.createLock(0, zkc);
         final ZKDistributedLock lock1 = locks.createLock(1, zkc0);
 
-        FutureUtils.result(lock0.asyncAcquire());
-        Future<ZKDistributedLock> result = lock1.asyncAcquire();
+        Utils.ioResult(lock0.asyncAcquire());
+        CompletableFuture<ZKDistributedLock> result = lock1.asyncAcquire();
         // make sure we place a waiter for lock1
         while (null == lock1.getLockWaiter()) {
             TimeUnit.MILLISECONDS.sleep(20);
@@ -787,7 +785,7 @@ public class TestDistributedLock extends TestDistributedLogBase {
         // Expire causes acquire future to be failed and unset.
         ZooKeeperClientUtils.expireSession(zkc0, zkServers, sessionTimeoutMs);
         try {
-            Await.result(result);
+            Utils.ioResult(result);
             fail("future should have been failed");
         } catch (OwnershipAcquireFailedException ex) {
         }
@@ -803,11 +801,11 @@ public class TestDistributedLock extends TestDistributedLogBase {
         final ZKDistributedLock lock0 = locks.createLock(0, zkc);
         final ZKDistributedLock lock1 = locks.createLock(1, zkc0);
 
-        FutureUtils.result(lock0.asyncAcquire());
-        Future<ZKDistributedLock> result = lock1.asyncAcquire();
-        FutureUtils.result(lock1.asyncClose());
+        Utils.ioResult(lock0.asyncAcquire());
+        CompletableFuture<ZKDistributedLock> result = lock1.asyncAcquire();
+        Utils.ioResult(lock1.asyncClose());
         try {
-            Await.result(result);
+            Utils.ioResult(result);
             fail("future should have been failed");
         } catch (LockClosedException ex) {
         }
@@ -821,12 +819,12 @@ public class TestDistributedLock extends TestDistributedLogBase {
         TestLockFactory locks = new TestLockFactory(runtime.getMethodName(), zkc, lockStateExecutor);
         final ZKDistributedLock lock0 = locks.createLock(0, zkc);
 
-        Future<ZKDistributedLock> result = lock0.asyncAcquire();
-        Await.result(result);
-        FutureUtils.result(lock0.asyncClose());
+        CompletableFuture<ZKDistributedLock> result = lock0.asyncAcquire();
+        Utils.ioResult(result);
+        Utils.ioResult(lock0.asyncClose());
 
         // Already have this, stays satisfied.
-        Await.result(result);
+        Utils.ioResult(result);
 
         // But we no longer have the lock.
         assertEquals(false, lock0.haveLock());

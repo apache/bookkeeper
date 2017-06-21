@@ -17,10 +17,11 @@
  */
 package org.apache.distributedlog.metadata;
 
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.logsegment.LogSegmentMetadataStore;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.Transaction;
-import com.twitter.util.Future;
 
 public class DryrunLogSegmentMetadataStoreUpdater extends LogSegmentMetadataStoreUpdater {
 
@@ -38,8 +39,8 @@ public class DryrunLogSegmentMetadataStoreUpdater extends LogSegmentMetadataStor
             }
 
             @Override
-            public Future<Void> execute() {
-                return Future.Void();
+            public CompletableFuture<Void> execute() {
+                return FutureUtils.Void();
             }
 
             @Override

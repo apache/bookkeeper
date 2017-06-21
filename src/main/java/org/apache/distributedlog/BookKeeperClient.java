@@ -18,17 +18,7 @@
 package org.apache.distributedlog;
 
 import com.google.common.base.Optional;
-import org.apache.distributedlog.ZooKeeperClient.Credentials;
-import org.apache.distributedlog.ZooKeeperClient.DigestCredentials;
-import org.apache.distributedlog.exceptions.AlreadyClosedException;
-import org.apache.distributedlog.exceptions.DLInterruptedException;
-import org.apache.distributedlog.exceptions.ZKException;
-import org.apache.distributedlog.net.NetUtils;
-import org.apache.distributedlog.util.ConfUtils;
-import com.twitter.util.Future;
-import com.twitter.util.Promise;
-import com.twitter.util.Return;
-import com.twitter.util.Throw;
+import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -41,6 +31,14 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.distributedlog.ZooKeeperClient.Credentials;
+import org.apache.distributedlog.ZooKeeperClient.DigestCredentials;
+import org.apache.distributedlog.exceptions.AlreadyClosedException;
+import org.apache.distributedlog.exceptions.DLInterruptedException;
+import org.apache.distributedlog.exceptions.ZKException;
+import org.apache.distributedlog.net.NetUtils;
+import org.apache.distributedlog.util.ConfUtils;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.zookeeper.KeeperException;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;
@@ -198,52 +196,52 @@ public class BookKeeperClient {
     }
 
     // Util functions
-    public Future<LedgerHandle> createLedger(int ensembleSize,
-                                             int writeQuorumSize,
-                                             int ackQuorumSize) {
+    public CompletableFuture<LedgerHandle> createLedger(int ensembleSize,
+                                                        int writeQuorumSize,
+                                                        int ackQuorumSize) {
         BookKeeper bk;
         try {
             bk = get();
         } catch (IOException ioe) {
-            return Future.exception(ioe);
+            return FutureUtils.exception(ioe);
         }
-        final Promise<LedgerHandle> promise = new Promise<LedgerHandle>();
+        final CompletableFuture<LedgerHandle> promise = new CompletableFuture<LedgerHandle>();
         bk.asyncCreateLedger(ensembleSize, writeQuorumSize, ackQuorumSize,
                 BookKeeper.DigestType.CRC32, passwd, new AsyncCallback.CreateCallback() {
                     @Override
                     public void createComplete(int rc, LedgerHandle lh, Object ctx) {
                         if (BKException.Code.OK == rc) {
-                            promise.updateIfEmpty(new Return<LedgerHandle>(lh));
+                            promise.complete(lh);
                         } else {
-                            promise.updateIfEmpty(new Throw<LedgerHandle>(BKException.create(rc)));
+                            promise.completeExceptionally(BKException.create(rc));
                         }
                     }
                 }, null);
         return promise;
     }
 
-    public Future<Void> deleteLedger(long lid,
+    public CompletableFuture<Void> deleteLedger(long lid,
                                      final boolean ignoreNonExistentLedger) {
         BookKeeper bk;
         try {
             bk = get();
         } catch (IOException ioe) {
-            return Future.exception(ioe);
+            return FutureUtils.exception(ioe);
         }
-        final Promise<Void> promise = new Promise<Void>();
+        final CompletableFuture<Void> promise = new CompletableFuture<Void>();
         bk.asyncDeleteLedger(lid, new AsyncCallback.DeleteCallback() {
             @Override
             public void deleteComplete(int rc, Object ctx) {
                 if (BKException.Code.OK == rc) {
-                    promise.updateIfEmpty(new Return<Void>(null));
+                    promise.complete(null);
                 } else if (BKException.Code.NoSuchLedgerExistsException == rc) {
                     if (ignoreNonExistentLedger) {
-                        promise.updateIfEmpty(new Return<Void>(null));
+                        promise.complete(null);
                     } else {
-                        promise.updateIfEmpty(new Throw<Void>(BKException.create(rc)));
+                        promise.completeExceptionally(BKException.create(rc));
                     }
                 } else {
-                    promise.updateIfEmpty(new Throw<Void>(BKException.create(rc)));
+                    promise.completeExceptionally(BKException.create(rc));
                 }
             }
         }, null);

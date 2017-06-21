@@ -20,6 +20,8 @@ package org.apache.distributedlog;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,6 +30,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
+import java.util.function.Function;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.exceptions.BKTransmitException;
 import org.apache.distributedlog.exceptions.EndOfStreamException;
@@ -47,20 +50,15 @@ import org.apache.distributedlog.io.CompressionUtils;
 import org.apache.distributedlog.lock.DistributedLock;
 import org.apache.distributedlog.logsegment.LogSegmentEntryWriter;
 import org.apache.distributedlog.logsegment.LogSegmentWriter;
-import org.apache.distributedlog.stats.BroadCastStatsLogger;
-import org.apache.distributedlog.stats.OpStatsListener;
+import org.apache.distributedlog.common.stats.BroadCastStatsLogger;
+import org.apache.distributedlog.common.stats.OpStatsListener;
 import org.apache.distributedlog.util.FailpointUtils;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
-import org.apache.distributedlog.util.PermitLimiter;
-import org.apache.distributedlog.util.SafeQueueingFuturePool;
+import org.apache.distributedlog.common.util.PermitLimiter;
 import org.apache.distributedlog.util.SimplePermitLimiter;
-import org.apache.distributedlog.util.Sizable;
-import com.twitter.util.Function0;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
-import com.twitter.util.FuturePool;
-import com.twitter.util.Promise;
+import org.apache.distributedlog.common.util.Sizable;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.BKException;
@@ -73,10 +71,9 @@ import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.distributedlog.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.runtime.AbstractFunction1;
-import scala.runtime.BoxedUnit;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.distributedlog.LogRecord.MAX_LOGRECORD_SIZE;
@@ -146,7 +143,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
     final private AtomicReference<ScheduledFuture<?>> immFlushSchedFutureRef = new AtomicReference<ScheduledFuture<?>>(null);
     final private AtomicReference<Exception> scheduledFlushException = new AtomicReference<Exception>(null);
     private boolean enforceLock = true;
-    private Promise<Void> closeFuture = null;
+    private CompletableFuture<Void> closeFuture = null;
     private final boolean enableRecordCounts;
     private int positionWithinLogSegment = 0;
     private final long logSegmentSequenceNumber;
@@ -170,28 +167,17 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
     private final OpStatsLogger addCompleteDeferredTime;
     private final Counter pendingWrites;
 
-    // add complete processing
-    private final SafeQueueingFuturePool<Void> addCompleteFuturePool;
-
     // Functions
-    private final AbstractFunction1<Integer, Future<Long>> GET_LAST_TXID_ACKNOWLEDGED_AFTER_TRANSMIT_FUNC =
-            new AbstractFunction1<Integer, Future<Long>>() {
-                @Override
-                public Future<Long> apply(Integer transmitRc) {
-                    if (BKException.Code.OK == transmitRc) {
-                        return Future.value(getLastTxIdAcknowledged());
-                    } else {
-                        return Future.exception(new BKTransmitException("Failed to transmit entry", transmitRc));
-                    }
-                }
-            };
-    final AbstractFunction1<Long, Future<Long>> COMMIT_AFTER_FLUSH_FUNC =
-            new AbstractFunction1<Long, Future<Long>>() {
-                @Override
-                public Future<Long> apply(Long lastAckedTxId) {
-                    return commit();
-                }
-            };
+    private final Function<Integer, CompletableFuture<Long>> GET_LAST_TXID_ACKNOWLEDGED_AFTER_TRANSMIT_FUNC =
+        transmitRc -> {
+            if (BKException.Code.OK == transmitRc) {
+                return FutureUtils.value(getLastTxIdAcknowledged());
+            } else {
+                return FutureUtils.exception(new BKTransmitException("Failed to transmit entry", transmitRc));
+            }
+        };
+    final Function<Long, CompletableFuture<Long>> COMMIT_AFTER_FLUSH_FUNC =
+        lastAckedTxId -> commit();
 
     private final AlertStatsLogger alertStatsLogger;
     private final WriteLimiter writeLimiter;
@@ -341,11 +327,6 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
         }
 
         this.conf = conf;
-        if (null != scheduler) {
-            this.addCompleteFuturePool = new SafeQueueingFuturePool<Void>(scheduler.getFuturePool(streamName));
-        } else {
-            this.addCompleteFuturePool = null;
-        }
         assert(!this.immediateFlushEnabled || (null != this.scheduler));
         this.lastTransmit = Stopwatch.createStarted();
     }
@@ -360,11 +341,8 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
     }
 
     @VisibleForTesting
-    FuturePool getFuturePool() {
-        if (null == scheduler) {
-            return null;
-        }
-        return scheduler.getFuturePool(streamName);
+    ScheduledExecutorService getFuturePool() {
+        return scheduler.chooseExecutor(streamName);
     }
 
     @VisibleForTesting
@@ -471,19 +449,13 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
     }
 
     @Override
-    public Future<Void> asyncClose() {
+    public CompletableFuture<Void> asyncClose() {
         return closeInternal(false);
     }
 
     @Override
-    public Future<Void> asyncAbort() {
+    public CompletableFuture<Void> asyncAbort() {
         return closeInternal(true);
-    }
-
-    private void flushAddCompletes() {
-        if (null != addCompleteFuturePool) {
-            addCompleteFuturePool.close();
-        }
     }
 
     private synchronized void abortPacket(BKTransmitPacket packet) {
@@ -495,7 +467,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
             if (BKException.Code.OK == rc) {
                 rc = BKException.Code.InterruptedException;
             }
-            Throwable reason = new WriteCancelledException(streamName, FutureUtils.transmitException(rc));
+            Throwable reason = new WriteCancelledException(streamName, Utils.transmitException(rc));
             recordSet.abortTransmit(reason);
         }
         LOG.info("Stream {} aborted {} writes", fullyQualifiedLogSegment, numRecords);
@@ -509,21 +481,13 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
         }
     }
 
-    private synchronized long getPendingAddCompleteCount() {
-        if (null != addCompleteFuturePool) {
-            return addCompleteFuturePool.size();
-        } else {
-            return 0;
-        }
-    }
-
-    private Future<Void> closeInternal(boolean abort) {
-        Promise<Void> closePromise;
+    private CompletableFuture<Void> closeInternal(boolean abort) {
+        CompletableFuture<Void> closePromise;
         synchronized (this) {
             if (null != closeFuture) {
                 return closeFuture;
             }
-            closePromise = closeFuture = new Promise<Void>();
+            closePromise = closeFuture = new CompletableFuture<Void>();
         }
 
         AtomicReference<Throwable> throwExc = new AtomicReference<Throwable>(null);
@@ -533,7 +497,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
 
     private void closeInternal(final boolean abort,
                                final AtomicReference<Throwable> throwExc,
-                               final Promise<Void> closePromise) {
+                               final CompletableFuture<Void> closePromise) {
         // clean stats resources
         this.transmitOutstandingLogger.unregisterGauge("requests", transmitOutstandingGauge);
         this.writeLimiter.close();
@@ -560,7 +524,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
         if (!abort && !isLogSegmentInError()) {
             this.enforceLock = false;
             LOG.info("Flushing before closing log segment {}", getFullyQualifiedLogSegment());
-            flushAndCommit().addEventListener(new FutureEventListener<Long>() {
+            flushAndCommit().whenComplete(new FutureEventListener<Long>() {
                 @Override
                 public void onSuccess(Long value) {
                     abortTransmitPacketOnClose(abort, throwExc, closePromise);
@@ -580,11 +544,11 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
 
     private void abortTransmitPacketOnClose(final boolean abort,
                                             final AtomicReference<Throwable> throwExc,
-                                            final Promise<Void> closePromise) {
+                                            final CompletableFuture<Void> closePromise) {
         LOG.info("Closing BKPerStreamLogWriter (abort={}) for {} :" +
-                        " lastDLSN = {} outstandingTransmits = {} writesPendingTransmit = {} addCompletesPending = {}",
+                        " lastDLSN = {} outstandingTransmits = {} writesPendingTransmit = {}",
                 new Object[]{abort, fullyQualifiedLogSegment, getLastDLSN(),
-                        outstandingTransmits.get(), getWritesPendingTransmit(), getPendingAddCompleteCount()});
+                        outstandingTransmits.get(), getWritesPendingTransmit()});
 
         // Save the current packet to reset, leave a new empty packet to avoid a race with
         // addCompleteDeferredProcessing.
@@ -602,7 +566,6 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
             packetPreviousSaved.addTransmitCompleteListener(new FutureEventListener<Integer>() {
                 @Override
                 public void onSuccess(Integer transmitResult) {
-                    flushAddCompletes();
                     abortPacket(packetCurrentSaved);
                 }
                 @Override
@@ -620,7 +583,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
 
     private void closeLedgerOnClose(final boolean abort,
                                     final AtomicReference<Throwable> throwExc,
-                                    final Promise<Void> closePromise) {
+                                    final CompletableFuture<Void> closePromise) {
         // close the log segment if it isn't in error state, so all the outstanding addEntry(s) will callback.
         if (null == throwExc.get() && !isLogSegmentInError()) {
             // Synchronous closing the ledger handle, if we couldn't close a ledger handle successfully.
@@ -644,16 +607,16 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
 
     private void completeClosePromise(final boolean abort,
                                       final AtomicReference<Throwable> throwExc,
-                                      final Promise<Void> closePromise) {
+                                      final CompletableFuture<Void> closePromise) {
         // If add entry failed because of closing ledger above, we don't need to fail the close operation
         if (!abort && null == throwExc.get() && shouldFailCompleteLogSegment()) {
             throwExc.set(new BKTransmitException("Closing an errored stream : ", transmitResult.get()));
         }
 
         if (null == throwExc.get()) {
-            FutureUtils.setValue(closePromise, null);
+            FutureUtils.complete(closePromise, null);
         } else {
-            FutureUtils.setException(closePromise, throwExc.get());
+            FutureUtils.completeExceptionally(closePromise, throwExc.get());
         }
     }
 
@@ -664,12 +627,12 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
     }
 
     @Override
-    synchronized public Future<DLSN> asyncWrite(LogRecord record) {
+    synchronized public CompletableFuture<DLSN> asyncWrite(LogRecord record) {
         return asyncWrite(record, true);
     }
 
-    synchronized public Future<DLSN> asyncWrite(LogRecord record, boolean flush) {
-        Future<DLSN> result = null;
+    synchronized public CompletableFuture<DLSN> asyncWrite(LogRecord record, boolean flush) {
+        CompletableFuture<DLSN> result = null;
         try {
             if (record.isControl()) {
                 // we don't pack control records with user records together
@@ -677,7 +640,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
                 try {
                     transmit();
                 } catch (IOException ioe) {
-                    return Future.exception(new WriteCancelledException(fullyQualifiedLogSegment, ioe));
+                    return FutureUtils.exception(new WriteCancelledException(fullyQualifiedLogSegment, ioe));
                 }
                 result = writeControlLogRecord(record);
                 transmit();
@@ -685,7 +648,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
                 result = writeUserRecord(record);
                 if (!isDurableWriteEnabled) {
                     // we have no idea about the DLSN if durability is turned off.
-                    result = Future.value(DLSN.InvalidDLSN);
+                    result = FutureUtils.value(DLSN.InvalidDLSN);
                 }
                 if (flush) {
                     flushIfNeeded();
@@ -697,7 +660,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
             if (null != result) {
                 LOG.error("Overriding first result with flush failure {}", result);
             }
-            result = Future.exception(ioe);
+            result = FutureUtils.exception(ioe);
 
             // Flush to ensure any prev. writes with flush=false are flushed despite failure.
             flushIfNeededNoThrow();
@@ -705,7 +668,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
         return result;
     }
 
-    synchronized private Future<DLSN> writeUserRecord(LogRecord record) throws IOException {
+    synchronized private CompletableFuture<DLSN> writeUserRecord(LogRecord record) throws IOException {
         if (null != closeFuture) {
             throw new WriteException(fullyQualifiedLogSegment, BKException.getMessage(BKException.Code.LedgerClosedException));
         }
@@ -737,7 +700,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
         // Internally generated log records don't increment the count
         // writeInternal will always set a count regardless of whether it was
         // incremented or not.
-        Future<DLSN> future = null;
+        CompletableFuture<DLSN> future = null;
         try {
             // increment the position for the record to write
             // if the record is failed to write, it would be decremented.
@@ -759,12 +722,9 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
         }
 
         // Track outstanding requests and return the future.
-        return future.ensure(new Function0<BoxedUnit>() {
-            public BoxedUnit apply() {
-                pendingWrites.dec();
-                writeLimiter.release();
-                return null;
-            }
+        return FutureUtils.ensure(future, () -> {
+            pendingWrites.dec();
+            writeLimiter.release();
         });
     }
 
@@ -777,7 +737,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
                 (transmitResult.get() != BKException.Code.LedgerClosedException);
     }
 
-    synchronized public Future<DLSN> writeInternal(LogRecord record)
+    synchronized public CompletableFuture<DLSN> writeInternal(LogRecord record)
             throws LogRecordTooLongException, LockingException, BKTransmitException,
                    WriteException, InvalidEnvelopedEntryException {
         int logRecordSize = record.getPersistentSize();
@@ -802,8 +762,8 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
             record.setPositionWithinLogSegment(positionWithinLogSegment);
         }
 
-        Promise<DLSN> writePromise = new Promise<DLSN>();
-        writePromise.addEventListener(new OpStatsListener<DLSN>(writeTime));
+        CompletableFuture<DLSN> writePromise = new CompletableFuture<DLSN>();
+        writePromise.whenComplete(new OpStatsListener<DLSN>(writeTime));
         recordSetWriter.writeRecord(record, writePromise);
 
         if (record.getTransactionId() < lastTxId) {
@@ -818,7 +778,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
         return writePromise;
     }
 
-    synchronized private Future<DLSN> writeControlLogRecord()
+    synchronized private CompletableFuture<DLSN> writeControlLogRecord()
             throws BKTransmitException, WriteException, InvalidEnvelopedEntryException,
                    LockingException, LogRecordTooLongException {
         LogRecord controlRec = new LogRecord(lastTxId, DistributedLogConstants.CONTROL_RECORD_CONTENT);
@@ -826,7 +786,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
         return writeControlLogRecord(controlRec);
     }
 
-    synchronized private Future<DLSN> writeControlLogRecord(LogRecord record)
+    synchronized private CompletableFuture<DLSN> writeControlLogRecord(LogRecord record)
             throws BKTransmitException, WriteException, InvalidEnvelopedEntryException,
                    LockingException, LogRecordTooLongException {
         return writeInternal(record);
@@ -851,12 +811,12 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
      * as read-only in the metadata. No appends to the
      * stream will be allowed after this point
      */
-    public Future<Long> markEndOfStream() {
+    public CompletableFuture<Long> markEndOfStream() {
         synchronized (this) {
             try {
                 writeEndOfStreamMarker();
             } catch (IOException e) {
-                return Future.exception(e);
+                return FutureUtils.exception(e);
             }
             streamEnded = true;
         }
@@ -905,60 +865,60 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
     }
 
     @Override
-    public synchronized Future<Long> flush() {
+    public synchronized CompletableFuture<Long> flush() {
         try {
             checkStateBeforeTransmit();
         } catch (WriteException e) {
-            return Future.exception(e);
+            return FutureUtils.exception(e);
         }
 
-        Future<Integer> transmitFuture;
+        CompletableFuture<Integer> transmitFuture;
         try {
             transmitFuture = transmit();
         } catch (BKTransmitException e) {
-            return Future.exception(e);
+            return FutureUtils.exception(e);
         } catch (LockingException e) {
-            return Future.exception(e);
+            return FutureUtils.exception(e);
         } catch (WriteException e) {
-            return Future.exception(e);
+            return FutureUtils.exception(e);
         } catch (InvalidEnvelopedEntryException e) {
-            return Future.exception(e);
+            return FutureUtils.exception(e);
         }
 
         if (null == transmitFuture) {
             if (null != packetPrevious) {
                 transmitFuture = packetPrevious.getTransmitFuture();
             }  else {
-                return Future.value(getLastTxIdAcknowledged());
+                return FutureUtils.value(getLastTxIdAcknowledged());
             }
         }
 
-        return transmitFuture.flatMap(GET_LAST_TXID_ACKNOWLEDGED_AFTER_TRANSMIT_FUNC);
+        return transmitFuture.thenCompose(GET_LAST_TXID_ACKNOWLEDGED_AFTER_TRANSMIT_FUNC);
     }
 
     @Override
-    public synchronized Future<Long> commit() {
+    public synchronized CompletableFuture<Long> commit() {
         // we don't pack control records with user records together
         // so transmit current output buffer if possible
-        Future<Integer> transmitFuture;
+        CompletableFuture<Integer> transmitFuture;
         try {
             try {
                 transmitFuture = transmit();
             } catch (IOException ioe) {
-                return Future.exception(ioe);
+                return FutureUtils.exception(ioe);
             }
             if (null == transmitFuture) {
                 writeControlLogRecord();
                 return flush();
             }
         } catch (IOException ioe) {
-            return Future.exception(ioe);
+            return FutureUtils.exception(ioe);
         }
-        return transmitFuture.flatMap(GET_LAST_TXID_ACKNOWLEDGED_AFTER_TRANSMIT_FUNC);
+        return transmitFuture.thenCompose(GET_LAST_TXID_ACKNOWLEDGED_AFTER_TRANSMIT_FUNC);
     }
 
-    Future<Long> flushAndCommit() {
-        return flush().flatMap(COMMIT_AFTER_FLUSH_FUNC);
+    CompletableFuture<Long> flushAndCommit() {
+        return flush().thenCompose(COMMIT_AFTER_FLUSH_FUNC);
     }
 
     void flushIfNeededNoThrow() {
@@ -1054,7 +1014,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
      * @throws WriteException if failed to create the envelope for the data to transmit
      * @throws InvalidEnvelopedEntryException when built an invalid enveloped entry
      */
-    private Future<Integer> transmit()
+    private CompletableFuture<Integer> transmit()
         throws BKTransmitException, LockingException, WriteException, InvalidEnvelopedEntryException {
         EntryBuffer recordSetToTransmit;
         transmitLock.lock();
@@ -1183,10 +1143,11 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
             }
         }
 
-        if (null != addCompleteFuturePool) {
+        if (null != scheduler) {
             final Stopwatch queuedTime = Stopwatch.createStarted();
-            addCompleteFuturePool.apply(new Function0<Void>() {
-                public Void apply() {
+            scheduler.submit(streamName, new Callable<Void>() {
+                @Override
+                public Void call() {
                     final Stopwatch deferredTime = Stopwatch.createStarted();
                     addCompleteQueuedTime.registerSuccessfulEvent(queuedTime.elapsed(TimeUnit.MICROSECONDS));
                     addCompleteDeferredProcessing(transmitPacket, entryId, effectiveRC.get());
@@ -1198,7 +1159,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
                     return String.format("AddComplete(Stream=%s, entryId=%d, rc=%d)",
                             fullyQualifiedLogSegment, entryId, rc);
                 }
-            }).addEventListener(new FutureEventListener<Void>() {
+            }).whenComplete(new FutureEventListener<Void>() {
                 @Override
                 public void onSuccess(Void done) {
                 }
@@ -1278,7 +1239,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
         if (BKException.Code.OK == transmitResult.get()) {
             recordSet.completeTransmit(logSegmentSequenceNumber, entryId);
         } else {
-            recordSet.abortTransmit(FutureUtils.transmitException(transmitResult.get()));
+            recordSet.abortTransmit(Utils.transmitException(transmitResult.get()));
         }
 
         if (cancelPendingPromises) {
@@ -1292,7 +1253,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
             }
             packetCurrentSaved.getRecordSet().abortTransmit(
                     new WriteCancelledException(streamName,
-                            FutureUtils.transmitException(transmitResult.get())));
+                            Utils.transmitException(transmitResult.get())));
         }
     }
 

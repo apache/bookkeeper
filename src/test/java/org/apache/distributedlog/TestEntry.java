@@ -17,19 +17,17 @@
  */
 package org.apache.distributedlog;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.Entry.Reader;
 import org.apache.distributedlog.Entry.Writer;
 import org.apache.distributedlog.exceptions.LogRecordTooLongException;
 import org.apache.distributedlog.io.Buffer;
 import org.apache.distributedlog.io.CompressionCodec;
-import com.twitter.io.Buf;
-import com.twitter.util.Await;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
-import com.twitter.util.Promise;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.util.Utils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -80,7 +78,7 @@ public class TestEntry {
 
         LogRecord largeRecord = new LogRecord(1L, new byte[MAX_LOGRECORD_SIZE + 1]);
         try {
-            writer.writeRecord(largeRecord, new Promise<DLSN>());
+            writer.writeRecord(largeRecord, new CompletableFuture<DLSN>());
             Assert.fail("Should fail on writing large record");
         } catch (LogRecordTooLongException lrtle) {
             // expected
@@ -103,12 +101,12 @@ public class TestEntry {
         assertEquals("zero bytes", 0, writer.getNumBytes());
         assertEquals("zero records", 0, writer.getNumRecords());
 
-        List<Future<DLSN>> writePromiseList = Lists.newArrayList();
+        List<CompletableFuture<DLSN>> writePromiseList = Lists.newArrayList();
         // write first 5 records
         for (int i = 0; i < 5; i++) {
             LogRecord record = new LogRecord(i, ("record-" + i).getBytes(UTF_8));
             record.setPositionWithinLogSegment(i);
-            Promise<DLSN> writePromise = new Promise<DLSN>();
+            CompletableFuture<DLSN> writePromise = new CompletableFuture<DLSN>();
             writer.writeRecord(record, writePromise);
             writePromiseList.add(writePromise);
             assertEquals((i + 1) + " records", (i + 1), writer.getNumRecords());
@@ -117,7 +115,7 @@ public class TestEntry {
         // write large record
         LogRecord largeRecord = new LogRecord(1L, new byte[MAX_LOGRECORD_SIZE + 1]);
         try {
-            writer.writeRecord(largeRecord, new Promise<DLSN>());
+            writer.writeRecord(largeRecord, new CompletableFuture<DLSN>());
             Assert.fail("Should fail on writing large record");
         } catch (LogRecordTooLongException lrtle) {
             // expected
@@ -128,7 +126,7 @@ public class TestEntry {
         for (int i = 0; i < 5; i++) {
             LogRecord record = new LogRecord(i + 5, ("record-" + (i + 5)).getBytes(UTF_8));
             record.setPositionWithinLogSegment(i + 5);
-            Promise<DLSN> writePromise = new Promise<DLSN>();
+            CompletableFuture<DLSN> writePromise = new CompletableFuture<DLSN>();
             writer.writeRecord(record, writePromise);
             writePromiseList.add(writePromise);
             assertEquals((i + 6) + " records", (i + 6), writer.getNumRecords());
@@ -138,7 +136,7 @@ public class TestEntry {
 
         // Test transmit complete
         writer.completeTransmit(1L, 1L);
-        List<DLSN> writeResults = Await.result(Future.collect(writePromiseList));
+        List<DLSN> writeResults = Utils.ioResult(FutureUtils.collect(writePromiseList));
         for (int i = 0; i < 10; i++) {
             Assert.assertEquals(new DLSN(1L, 1L, i), writeResults.get(i));
         }
@@ -175,23 +173,23 @@ public class TestEntry {
         assertEquals("zero bytes", 0, writer.getNumBytes());
         assertEquals("zero records", 0, writer.getNumRecords());
 
-        List<Future<DLSN>> writePromiseList = Lists.newArrayList();
+        List<CompletableFuture<DLSN>> writePromiseList = Lists.newArrayList();
         // write first 5 records
         for (int i = 0; i < 5; i++) {
             LogRecord record = new LogRecord(i, ("record-" + i).getBytes(UTF_8));
             record.setPositionWithinLogSegment(i);
-            Promise<DLSN> writePromise = new Promise<DLSN>();
+            CompletableFuture<DLSN> writePromise = new CompletableFuture<DLSN>();
             writer.writeRecord(record, writePromise);
             writePromiseList.add(writePromise);
             assertEquals((i + 1) + " records", (i + 1), writer.getNumRecords());
         }
 
         final LogRecordSet.Writer recordSetWriter = LogRecordSet.newWriter(1024, CompressionCodec.Type.NONE);
-        List<Future<DLSN>> recordSetPromiseList = Lists.newArrayList();
+        List<CompletableFuture<DLSN>> recordSetPromiseList = Lists.newArrayList();
         // write another 5 records as a batch
         for (int i = 0; i < 5; i++) {
             ByteBuffer record = ByteBuffer.wrap(("record-" + (i + 5)).getBytes(UTF_8));
-            Promise<DLSN> writePromise = new Promise<DLSN>();
+            CompletableFuture<DLSN> writePromise = new CompletableFuture<DLSN>();
             recordSetWriter.writeRecord(record, writePromise);
             recordSetPromiseList.add(writePromise);
             assertEquals((i + 1) + " records", (i + 1), recordSetWriter.getNumRecords());
@@ -202,8 +200,8 @@ public class TestEntry {
         LogRecord setRecord = new LogRecord(5L, data);
         setRecord.setPositionWithinLogSegment(5);
         setRecord.setRecordSet();
-        Promise<DLSN> writePromise = new Promise<DLSN>();
-        writePromise.addEventListener(new FutureEventListener<DLSN>() {
+        CompletableFuture<DLSN> writePromise = new CompletableFuture<DLSN>();
+        writePromise.whenComplete(new FutureEventListener<DLSN>() {
             @Override
             public void onSuccess(DLSN dlsn) {
                 recordSetWriter.completeTransmit(
@@ -224,7 +222,7 @@ public class TestEntry {
         for (int i = 0; i < 5; i++) {
             LogRecord record = new LogRecord(i + 10, ("record-" + (i + 10)).getBytes(UTF_8));
             record.setPositionWithinLogSegment(i + 10);
-            writePromise = new Promise<DLSN>();
+            writePromise = new CompletableFuture<DLSN>();
             writer.writeRecord(record, writePromise);
             writePromiseList.add(writePromise);
             assertEquals((i + 11) + " records", (i + 11), writer.getNumRecords());
@@ -234,7 +232,7 @@ public class TestEntry {
 
         // Test transmit complete
         writer.completeTransmit(1L, 1L);
-        List<DLSN> writeResults = Await.result(Future.collect(writePromiseList));
+        List<DLSN> writeResults = Utils.ioResult(FutureUtils.collect(writePromiseList));
         for (int i = 0; i < 5; i++) {
             Assert.assertEquals(new DLSN(1L, 1L, i), writeResults.get(i));
         }
@@ -242,7 +240,7 @@ public class TestEntry {
         for (int i = 0; i < 5; i++) {
             Assert.assertEquals(new DLSN(1L, 1L, (10 + i)), writeResults.get(6 + i));
         }
-        List<DLSN> recordSetWriteResults = Await.result(Future.collect(recordSetPromiseList));
+        List<DLSN> recordSetWriteResults = Utils.ioResult(FutureUtils.collect(recordSetPromiseList));
         for (int i = 0; i < 5; i++) {
             Assert.assertEquals(new DLSN(1L, 1L, (5 + i)), recordSetWriteResults.get(i));
         }

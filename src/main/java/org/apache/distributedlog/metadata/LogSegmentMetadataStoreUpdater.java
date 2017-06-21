@@ -18,16 +18,15 @@
 package org.apache.distributedlog.metadata;
 
 import com.google.common.base.Preconditions;
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LogRecordWithDLSN;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.logsegment.LogSegmentMetadataStore;
 import org.apache.distributedlog.util.Transaction;
-import com.twitter.util.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.runtime.AbstractFunction1;
 
 public class LogSegmentMetadataStoreUpdater implements MetadataUpdater {
 
@@ -57,8 +56,8 @@ public class LogSegmentMetadataStoreUpdater implements MetadataUpdater {
     }
 
     @Override
-    public Future<LogSegmentMetadata> updateLastRecord(LogSegmentMetadata segment,
-                                                       LogRecordWithDLSN record) {
+    public CompletableFuture<LogSegmentMetadata> updateLastRecord(LogSegmentMetadata segment,
+                                                                  LogRecordWithDLSN record) {
         DLSN dlsn = record.getDlsn();
         Preconditions.checkState(!segment.isInProgress(),
                 "Updating last dlsn for an inprogress log segment isn't supported.");
@@ -73,7 +72,7 @@ public class LogSegmentMetadataStoreUpdater implements MetadataUpdater {
     }
 
     @Override
-    public Future<LogSegmentMetadata> changeSequenceNumber(LogSegmentMetadata segment,
+    public CompletableFuture<LogSegmentMetadata> changeSequenceNumber(LogSegmentMetadata segment,
                                                            long logSegmentSeqNo) {
         String newZkPath = segment.getZkPath()
                 .replace(formatLogSegmentSequenceNumber(segment.getLogSegmentSequenceNumber()),
@@ -92,7 +91,7 @@ public class LogSegmentMetadataStoreUpdater implements MetadataUpdater {
      * @return new log segment
      */
     @Override
-    public Future<LogSegmentMetadata> setLogSegmentActive(LogSegmentMetadata segment) {
+    public CompletableFuture<LogSegmentMetadata> setLogSegmentActive(LogSegmentMetadata segment) {
         final LogSegmentMetadata newSegment = segment.mutator()
             .setTruncationStatus(LogSegmentMetadata.TruncationStatus.ACTIVE)
             .build();
@@ -106,7 +105,7 @@ public class LogSegmentMetadataStoreUpdater implements MetadataUpdater {
      * @return new log segment
      */
     @Override
-    public Future<LogSegmentMetadata> setLogSegmentTruncated(LogSegmentMetadata segment) {
+    public CompletableFuture<LogSegmentMetadata> setLogSegmentTruncated(LogSegmentMetadata segment) {
         final LogSegmentMetadata newSegment = segment.mutator()
             .setTruncationStatus(LogSegmentMetadata.TruncationStatus.TRUNCATED)
             .build();
@@ -130,7 +129,7 @@ public class LogSegmentMetadataStoreUpdater implements MetadataUpdater {
      * @return new log segment
      */
     @Override
-    public Future<LogSegmentMetadata> setLogSegmentPartiallyTruncated(LogSegmentMetadata segment, DLSN minActiveDLSN) {
+    public CompletableFuture<LogSegmentMetadata> setLogSegmentPartiallyTruncated(LogSegmentMetadata segment, DLSN minActiveDLSN) {
         final LogSegmentMetadata newSegment = segment.mutator()
             .setTruncationStatus(LogSegmentMetadata.TruncationStatus.PARTIALLY_TRUNCATED)
             .setMinActiveDLSN(minActiveDLSN)
@@ -150,28 +149,18 @@ public class LogSegmentMetadataStoreUpdater implements MetadataUpdater {
         return newSegment;
     }
 
-    protected Future<LogSegmentMetadata> updateSegmentMetadata(final LogSegmentMetadata segment) {
+    protected CompletableFuture<LogSegmentMetadata> updateSegmentMetadata(final LogSegmentMetadata segment) {
         Transaction<Object> txn = transaction();
         metadataStore.updateLogSegment(txn, segment);
-        return txn.execute().map(new AbstractFunction1<Void, LogSegmentMetadata>() {
-            @Override
-            public LogSegmentMetadata apply(Void value) {
-                return segment;
-            }
-        });
+        return txn.execute().thenApply((value) -> segment);
     }
 
-    protected Future<LogSegmentMetadata> addNewSegmentAndDeleteOldSegment(
+    protected CompletableFuture<LogSegmentMetadata> addNewSegmentAndDeleteOldSegment(
             final LogSegmentMetadata newSegment, LogSegmentMetadata oldSegment) {
         LOG.info("old segment {} new segment {}", oldSegment, newSegment);
         Transaction<Object> txn = transaction();
         addNewSegmentAndDeleteOldSegment(txn, newSegment, oldSegment);
-        return txn.execute().map(new AbstractFunction1<Void, LogSegmentMetadata>() {
-            @Override
-            public LogSegmentMetadata apply(Void value) {
-                return newSegment;
-            }
-        });
+        return txn.execute().thenApply((value) -> newSegment);
     }
 
     protected void addNewSegmentAndDeleteOldSegment(Transaction<Object> txn,

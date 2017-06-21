@@ -24,12 +24,11 @@ import org.apache.distributedlog.LogRecordWithDLSN;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
 import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.ZooKeeperClientBuilder;
 import org.apache.distributedlog.ZooKeeperClusterTestCase;
 import org.apache.distributedlog.impl.ZKLogSegmentMetadataStore;
 import org.apache.distributedlog.logsegment.LogSegmentMetadataStore;
-import org.apache.distributedlog.util.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
+import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
 import org.junit.After;
@@ -105,7 +104,7 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
 
         // Dryrun
         MetadataUpdater dryrunUpdater = new DryrunLogSegmentMetadataStoreUpdater(conf, metadataStore);
-        FutureUtils.result(dryrunUpdater.changeSequenceNumber(segment, 6L));
+        Utils.ioResult(dryrunUpdater.changeSequenceNumber(segment, 6L));
 
         segmentList = readLogSegments(ledgerPath);
         assertEquals(5, segmentList.size());
@@ -113,7 +112,7 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
         // Fix the inprogress log segments
 
         MetadataUpdater updater = LogSegmentMetadataStoreUpdater.createMetadataUpdater(conf, metadataStore);
-        FutureUtils.result(updater.changeSequenceNumber(segment, 6L));
+        Utils.ioResult(updater.changeSequenceNumber(segment, 6L));
 
         segmentList = readLogSegments(ledgerPath);
         assertEquals(6, segmentList.size());
@@ -156,19 +155,19 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
         // Dryrun
         MetadataUpdater dryrunUpdater = new DryrunLogSegmentMetadataStoreUpdater(conf, metadataStore);
         try {
-            FutureUtils.result(dryrunUpdater.updateLastRecord(completedLogSegment, badRecord));
+            Utils.ioResult(dryrunUpdater.updateLastRecord(completedLogSegment, badRecord));
             fail("Should fail on updating dlsn that in different log segment");
         } catch (IllegalArgumentException iae) {
             // expected
         }
         try {
-            FutureUtils.result(dryrunUpdater.updateLastRecord(inprogressLogSegment, goodRecord2));
+            Utils.ioResult(dryrunUpdater.updateLastRecord(inprogressLogSegment, goodRecord2));
             fail("Should fail on updating dlsn for an inprogress log segment");
         } catch (IllegalStateException ise) {
             // expected
         }
         LogSegmentMetadata updatedCompletedLogSegment =
-                FutureUtils.result(dryrunUpdater.updateLastRecord(completedLogSegment, goodRecord1));
+                Utils.ioResult(dryrunUpdater.updateLastRecord(completedLogSegment, goodRecord1));
         assertEquals(goodLastDLSN1, updatedCompletedLogSegment.getLastDLSN());
         assertEquals(goodRecord1.getTransactionId(), updatedCompletedLogSegment.getLastTxId());
         assertTrue(updatedCompletedLogSegment.isRecordLastPositioninThisSegment(goodRecord1));
@@ -187,18 +186,18 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
         // Fix the last dlsn
         MetadataUpdater updater = LogSegmentMetadataStoreUpdater.createMetadataUpdater(conf, metadataStore);
         try {
-            FutureUtils.result(updater.updateLastRecord(completedLogSegment, badRecord));
+            Utils.ioResult(updater.updateLastRecord(completedLogSegment, badRecord));
             fail("Should fail on updating dlsn that in different log segment");
         } catch (IllegalArgumentException iae) {
             // expected
         }
         try {
-            FutureUtils.result(updater.updateLastRecord(inprogressLogSegment, goodRecord2));
+            Utils.ioResult(updater.updateLastRecord(inprogressLogSegment, goodRecord2));
             fail("Should fail on updating dlsn for an inprogress log segment");
         } catch (IllegalStateException ise) {
             // expected
         }
-        updatedCompletedLogSegment = FutureUtils.result(updater.updateLastRecord(completedLogSegment, goodRecord1));
+        updatedCompletedLogSegment = Utils.ioResult(updater.updateLastRecord(completedLogSegment, goodRecord1));
         assertEquals(goodLastDLSN1, updatedCompletedLogSegment.getLastDLSN());
         assertEquals(goodRecord1.getTransactionId(), updatedCompletedLogSegment.getLastTxId());
         assertTrue(updatedCompletedLogSegment.isRecordLastPositioninThisSegment(goodRecord1));
@@ -245,28 +244,28 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
 
         // Dryrun
         MetadataUpdater dryrunUpdater = new DryrunLogSegmentMetadataStoreUpdater(conf, metadataStore);
-        FutureUtils.result(dryrunUpdater.setLogSegmentTruncated(segmentList.get(segmentToModify)));
+        Utils.ioResult(dryrunUpdater.setLogSegmentTruncated(segmentList.get(segmentToModify)));
 
         segmentList = readLogSegments(ledgerPath);
         assertEquals(false, segmentList.get(segmentToModify).isTruncated());
 
         // change truncation for the 1st log segment
         MetadataUpdater updater = LogSegmentMetadataStoreUpdater.createMetadataUpdater(conf, metadataStore);
-        FutureUtils.result(updater.setLogSegmentTruncated(segmentList.get(segmentToModify)));
+        Utils.ioResult(updater.setLogSegmentTruncated(segmentList.get(segmentToModify)));
 
         segmentList = readLogSegments(ledgerPath);
         assertEquals(true, segmentList.get(segmentToModify).isTruncated());
         assertEquals(false, segmentList.get(segmentToModify).isPartiallyTruncated());
 
         updater = LogSegmentMetadataStoreUpdater.createMetadataUpdater(conf, metadataStore);
-        FutureUtils.result(updater.setLogSegmentActive(segmentList.get(segmentToModify)));
+        Utils.ioResult(updater.setLogSegmentActive(segmentList.get(segmentToModify)));
 
         segmentList = readLogSegments(ledgerPath);
         assertEquals(false, segmentList.get(segmentToModify).isTruncated());
         assertEquals(false, segmentList.get(segmentToModify).isPartiallyTruncated());
 
         updater = LogSegmentMetadataStoreUpdater.createMetadataUpdater(conf, metadataStore);
-        FutureUtils.result(updater.setLogSegmentPartiallyTruncated(segmentList.get(segmentToModify),
+        Utils.ioResult(updater.setLogSegmentPartiallyTruncated(segmentList.get(segmentToModify),
                 segmentList.get(segmentToModify).getFirstDLSN()));
 
         segmentList = readLogSegments(ledgerPath);
@@ -274,7 +273,7 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
         assertEquals(true, segmentList.get(segmentToModify).isPartiallyTruncated());
 
         updater = LogSegmentMetadataStoreUpdater.createMetadataUpdater(conf, metadataStore);
-        FutureUtils.result(updater.setLogSegmentActive(segmentList.get(segmentToModify)));
+        Utils.ioResult(updater.setLogSegmentActive(segmentList.get(segmentToModify)));
 
         segmentList = readLogSegments(ledgerPath);
         assertEquals(false, segmentList.get(segmentToModify).isTruncated());

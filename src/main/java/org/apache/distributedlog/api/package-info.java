@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,43 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.util;
 
 /**
- * A simple limiter interface which tracks acquire/release of permits, for
- * example for tracking outstanding writes.
+ * DistributedLog NEW API.
+ *
+ * <p>This is the new Java8 {@link java.util.concurrent.CompletableFuture} based API. It is
+ * <strong>experimental</strong> and still under developing.
  */
-public interface PermitLimiter {
-
-    public static PermitLimiter NULL_PERMIT_LIMITER = new PermitLimiter() {
-        @Override
-        public boolean acquire() {
-            return true;
-        }
-        @Override
-        public void release(int permits) {
-        }
-
-        @Override
-        public void close() {
-
-        }
-    };
-
-    /**
-     * Acquire a permit.
-     *
-     * @return true if successfully acquire a permit, otherwise false.
-     */
-    boolean acquire();
-
-    /**
-     * Release a permit.
-     */
-    void release(int permits);
-
-    /**
-     * Close the resources created by the limiter
-     */
-    void close();
-}
+package org.apache.distributedlog.api;

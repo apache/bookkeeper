@@ -19,28 +19,24 @@ package org.apache.distributedlog.lock;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
-import com.twitter.concurrent.AsyncSemaphore;
-import org.apache.distributedlog.exceptions.LockingException;
-import org.apache.distributedlog.exceptions.OwnershipAcquireFailedException;
-import org.apache.distributedlog.exceptions.UnexpectedException;
-import org.apache.distributedlog.util.FutureUtils;
-import org.apache.distributedlog.util.FutureUtils.OrderedFutureEventListener;
-import org.apache.distributedlog.util.OrderedScheduler;
-import com.twitter.util.Function;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
-import com.twitter.util.Promise;
+import java.io.IOException;
+import java.util.Optional;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.distributedlog.exceptions.LockingException;
+import org.apache.distributedlog.exceptions.OwnershipAcquireFailedException;
+import org.apache.distributedlog.exceptions.UnexpectedException;
+import org.apache.distributedlog.common.concurrent.AsyncSemaphore;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.util.OrderedScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.runtime.AbstractFunction0;
-import scala.runtime.BoxedUnit;
-
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Distributed lock, using ZooKeeper.
@@ -78,22 +74,22 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
     private final long lockTimeout;
     private final DistributedLockContext lockContext = new DistributedLockContext();
 
-    private final AsyncSemaphore lockSemaphore = new AsyncSemaphore(1);
+    private final AsyncSemaphore lockSemaphore = new AsyncSemaphore(1, Optional.empty());
     // We have two lock acquire futures:
     // 1. lock acquire future: for the initial acquire op
     // 2. lock reacquire future: for reacquire necessary when session expires, lock is closed
-    private Future<ZKDistributedLock> lockAcquireFuture = null;
-    private Future<ZKDistributedLock> lockReacquireFuture = null;
+    private CompletableFuture<ZKDistributedLock> lockAcquireFuture = null;
+    private CompletableFuture<ZKDistributedLock> lockReacquireFuture = null;
     // following variable tracking the status of acquire process
     //   => create (internalLock) => tryLock (tryLockFuture) => waitForAcquire (lockWaiter)
     private SessionLock internalLock = null;
-    private Future<LockWaiter> tryLockFuture = null;
+    private CompletableFuture<LockWaiter> tryLockFuture = null;
     private LockWaiter lockWaiter = null;
     // exception indicating if the reacquire failed
     private LockingException lockReacquireException = null;
     // closeFuture
     private volatile boolean closed = false;
-    private Future<Void> closeFuture = null;
+    private CompletableFuture<Void> closeFuture = null;
 
     // A counter to track how many re-acquires happened during a lock's life cycle.
     private final AtomicInteger reacquireCount = new AtomicInteger(0);
@@ -136,25 +132,19 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
      * Asynchronously acquire the lock. Technically the try phase of this operation--which adds us to the waiter
      * list--is executed synchronously, but the lock wait itself doesn't block.
      */
-    public synchronized Future<ZKDistributedLock> asyncAcquire() {
+    public synchronized CompletableFuture<ZKDistributedLock> asyncAcquire() {
         if (null != lockAcquireFuture) {
-            return Future.exception(new UnexpectedException("Someone is already acquiring/acquired lock " + lockPath));
+            return FutureUtils.exception(new UnexpectedException("Someone is already acquiring/acquired lock " + lockPath));
         }
-        final Promise<ZKDistributedLock> promise =
-                new Promise<ZKDistributedLock>(new Function<Throwable, BoxedUnit>() {
-            @Override
-            public BoxedUnit apply(Throwable cause) {
-                lockStateExecutor.submit(lockPath, new Runnable() {
-                    @Override
-                    public void run() {
-                        asyncClose();
-                    }
-                });
-                return BoxedUnit.UNIT;
+        final CompletableFuture<ZKDistributedLock> promise = FutureUtils.createFuture();
+        promise.whenComplete((zkDistributedLock, throwable) -> {
+            if (null == throwable || !(throwable instanceof CancellationException)) {
+                return;
             }
+            lockStateExecutor.submit(lockPath, () -> asyncClose());
         });
         final Stopwatch stopwatch = Stopwatch.createStarted();
-        promise.addEventListener(new FutureEventListener<ZKDistributedLock>() {
+        promise.whenComplete(new FutureEventListener<ZKDistributedLock>() {
             @Override
             public void onSuccess(ZKDistributedLock lock) {
                 acquireStats.registerSuccessfulEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
@@ -176,41 +166,39 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
         return promise;
     }
 
-    void doAsyncAcquireWithSemaphore(final Promise<ZKDistributedLock> acquirePromise,
+    void doAsyncAcquireWithSemaphore(final CompletableFuture<ZKDistributedLock> acquirePromise,
                                      final long lockTimeout) {
-        lockSemaphore.acquireAndRun(new AbstractFunction0<Future<ZKDistributedLock>>() {
-            @Override
-            public Future<ZKDistributedLock> apply() {
-                doAsyncAcquire(acquirePromise, lockTimeout);
-                return acquirePromise;
-            }
+        lockSemaphore.acquireAndRun(() -> {
+            doAsyncAcquire(acquirePromise, lockTimeout);
+            return acquirePromise;
         });
     }
 
-    void doAsyncAcquire(final Promise<ZKDistributedLock> acquirePromise,
+    void doAsyncAcquire(final CompletableFuture<ZKDistributedLock> acquirePromise,
                         final long lockTimeout) {
         LOG.trace("Async Lock Acquire {}", lockPath);
         try {
             checkLockState();
         } catch (IOException ioe) {
-            FutureUtils.setException(acquirePromise, ioe);
+            FutureUtils.completeExceptionally(acquirePromise, ioe);
             return;
         }
 
         if (haveLock()) {
             // it already hold the lock
-            FutureUtils.setValue(acquirePromise, this);
+            FutureUtils.complete(acquirePromise, this);
             return;
         }
 
-        lockFactory.createLock(lockPath, lockContext).addEventListener(OrderedFutureEventListener.of(
-                new FutureEventListener<SessionLock>() {
+        lockFactory
+            .createLock(lockPath, lockContext)
+            .whenCompleteAsync(new FutureEventListener<SessionLock>() {
             @Override
             public void onSuccess(SessionLock lock) {
                 synchronized (ZKDistributedLock.this) {
                     if (closed) {
                         LOG.info("Skipping tryLocking lock {} since it is already closed", lockPath);
-                        FutureUtils.setException(acquirePromise, newLockClosedException());
+                        FutureUtils.completeExceptionally(acquirePromise, newLockClosedException());
                         return;
                     }
                 }
@@ -223,62 +211,64 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
 
             @Override
             public void onFailure(Throwable cause) {
-                FutureUtils.setException(acquirePromise, cause);
+                FutureUtils.completeExceptionally(acquirePromise, cause);
             }
-        }, lockStateExecutor, lockPath));
+        }, lockStateExecutor.chooseExecutor(lockPath));
     }
 
     void asyncTryLock(SessionLock lock,
-                      final Promise<ZKDistributedLock> acquirePromise,
+                      final CompletableFuture<ZKDistributedLock> acquirePromise,
                       final long lockTimeout) {
         if (null != tryLockFuture) {
-            tryLockFuture.cancel();
+            tryLockFuture.cancel(true);
         }
         tryLockFuture = lock.asyncTryLock(lockTimeout, TimeUnit.MILLISECONDS);
-        tryLockFuture.addEventListener(OrderedFutureEventListener.of(
-                new FutureEventListener<LockWaiter>() {
-                    @Override
-                    public void onSuccess(LockWaiter waiter) {
-                        synchronized (ZKDistributedLock.this) {
-                            if (closed) {
-                                LOG.info("Skipping acquiring lock {} since it is already closed", lockPath);
-                                waiter.getAcquireFuture().raise(new LockingException(lockPath, "lock is already closed."));
-                                FutureUtils.setException(acquirePromise, newLockClosedException());
-                                return;
-                            }
+        tryLockFuture.whenCompleteAsync(
+            new FutureEventListener<LockWaiter>() {
+                @Override
+                public void onSuccess(LockWaiter waiter) {
+                    synchronized (ZKDistributedLock.this) {
+                        if (closed) {
+                            LOG.info("Skipping acquiring lock {} since it is already closed", lockPath);
+                            waiter
+                                .getAcquireFuture()
+                                .completeExceptionally(new LockingException(lockPath, "lock is already closed."));
+                            FutureUtils.completeExceptionally(acquirePromise, newLockClosedException());
+                            return;
                         }
-                        tryLockFuture = null;
-                        lockWaiter = waiter;
-                        waitForAcquire(waiter, acquirePromise);
                     }
+                    tryLockFuture = null;
+                    lockWaiter = waiter;
+                    waitForAcquire(waiter, acquirePromise);
+                }
 
-                    @Override
-                    public void onFailure(Throwable cause) {
-                        FutureUtils.setException(acquirePromise, cause);
-                    }
-                }, lockStateExecutor, lockPath));
+                @Override
+                public void onFailure(Throwable cause) {
+                    FutureUtils.completeExceptionally(acquirePromise, cause);
+                }
+            }, lockStateExecutor.chooseExecutor(lockPath));
     }
 
     void waitForAcquire(final LockWaiter waiter,
-                        final Promise<ZKDistributedLock> acquirePromise) {
-        waiter.getAcquireFuture().addEventListener(OrderedFutureEventListener.of(
-                new FutureEventListener<Boolean>() {
-                    @Override
-                    public void onSuccess(Boolean acquired) {
-                        LOG.info("{} acquired lock {}", waiter, lockPath);
-                        if (acquired) {
-                            FutureUtils.setValue(acquirePromise, ZKDistributedLock.this);
-                        } else {
-                            FutureUtils.setException(acquirePromise,
-                                    new OwnershipAcquireFailedException(lockPath, waiter.getCurrentOwner()));
-                        }
+                        final CompletableFuture<ZKDistributedLock> acquirePromise) {
+        waiter.getAcquireFuture().whenCompleteAsync(
+            new FutureEventListener<Boolean>() {
+                @Override
+                public void onSuccess(Boolean acquired) {
+                    LOG.info("{} acquired lock {}", waiter, lockPath);
+                    if (acquired) {
+                        FutureUtils.complete(acquirePromise, ZKDistributedLock.this);
+                    } else {
+                        FutureUtils.completeExceptionally(acquirePromise,
+                                new OwnershipAcquireFailedException(lockPath, waiter.getCurrentOwner()));
                     }
+                }
 
-                    @Override
-                    public void onFailure(Throwable cause) {
-                        FutureUtils.setException(acquirePromise, cause);
-                    }
-                }, lockStateExecutor, lockPath));
+                @Override
+                public void onFailure(Throwable cause) {
+                    FutureUtils.completeExceptionally(acquirePromise, cause);
+                }
+            }, lockStateExecutor.chooseExecutor(lockPath));
     }
 
     /**
@@ -300,7 +290,7 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
      * @throws LockingException     if the lock attempt fails
      */
     public synchronized void checkOwnershipAndReacquire() throws LockingException {
-        if (null == lockAcquireFuture || !lockAcquireFuture.isDefined()) {
+        if (null == lockAcquireFuture || !lockAcquireFuture.isDone()) {
             throw new LockingException(lockPath, "check ownership before acquiring");
         }
 
@@ -322,7 +312,7 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
      * @throws LockingException     if the lock attempt fails
      */
     public synchronized void checkOwnership() throws LockingException {
-        if (null == lockAcquireFuture || !lockAcquireFuture.isDefined()) {
+        if (null == lockAcquireFuture || !lockAcquireFuture.isDone()) {
             throw new LockingException(lockPath, "check ownership before acquiring");
         }
         if (!haveLock()) {
@@ -336,12 +326,12 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
     }
 
     @VisibleForTesting
-    synchronized Future<ZKDistributedLock> getLockReacquireFuture() {
+    synchronized CompletableFuture<ZKDistributedLock> getLockReacquireFuture() {
         return lockReacquireFuture;
     }
 
     @VisibleForTesting
-    synchronized Future<ZKDistributedLock> getLockAcquireFuture() {
+    synchronized CompletableFuture<ZKDistributedLock> getLockAcquireFuture() {
         return lockAcquireFuture;
     }
 
@@ -360,71 +350,65 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
     }
 
     void closeWaiter(final LockWaiter waiter,
-                     final Promise<Void> closePromise) {
+                     final CompletableFuture<Void> closePromise) {
         if (null == waiter) {
             interruptTryLock(tryLockFuture, closePromise);
         } else {
-            waiter.getAcquireFuture().addEventListener(OrderedFutureEventListener.of(
-                    new FutureEventListener<Boolean>() {
-                        @Override
-                        public void onSuccess(Boolean value) {
-                            unlockInternalLock(closePromise);
-                        }
-                        @Override
-                        public void onFailure(Throwable cause) {
-                            unlockInternalLock(closePromise);
-                        }
-                    }, lockStateExecutor, lockPath));
-            FutureUtils.cancel(waiter.getAcquireFuture());
+            waiter.getAcquireFuture().whenCompleteAsync(
+                new FutureEventListener<Boolean>() {
+                    @Override
+                    public void onSuccess(Boolean value) {
+                        unlockInternalLock(closePromise);
+                    }
+                    @Override
+                    public void onFailure(Throwable cause) {
+                        unlockInternalLock(closePromise);
+                    }
+                }, lockStateExecutor.chooseExecutor(lockPath));
+            waiter.getAcquireFuture().cancel(true);
         }
     }
 
-    void interruptTryLock(final Future<LockWaiter> tryLockFuture,
-                          final Promise<Void> closePromise) {
+    void interruptTryLock(final CompletableFuture<LockWaiter> tryLockFuture,
+                          final CompletableFuture<Void> closePromise) {
         if (null == tryLockFuture) {
             unlockInternalLock(closePromise);
         } else {
-            tryLockFuture.addEventListener(OrderedFutureEventListener.of(
-                    new FutureEventListener<LockWaiter>() {
-                        @Override
-                        public void onSuccess(LockWaiter waiter) {
-                            closeWaiter(waiter, closePromise);
-                        }
-                        @Override
-                        public void onFailure(Throwable cause) {
-                            unlockInternalLock(closePromise);
-                        }
-                    }, lockStateExecutor, lockPath));
-            FutureUtils.cancel(tryLockFuture);
+            tryLockFuture.whenCompleteAsync(
+                new FutureEventListener<LockWaiter>() {
+                    @Override
+                    public void onSuccess(LockWaiter waiter) {
+                        closeWaiter(waiter, closePromise);
+                    }
+                    @Override
+                    public void onFailure(Throwable cause) {
+                        unlockInternalLock(closePromise);
+                    }
+                }, lockStateExecutor.chooseExecutor(lockPath));
+            tryLockFuture.cancel(true);
         }
     }
 
-    synchronized void unlockInternalLock(final Promise<Void> closePromise) {
+    synchronized void unlockInternalLock(final CompletableFuture<Void> closePromise) {
         if (internalLock == null) {
-            FutureUtils.setValue(closePromise, null);
+            FutureUtils.complete(closePromise, null);
         } else {
-            internalLock.asyncUnlock().ensure(new AbstractFunction0<BoxedUnit>() {
-                @Override
-                public BoxedUnit apply() {
-                    FutureUtils.setValue(closePromise, null);
-                    return BoxedUnit.UNIT;
-                }
-            });
+            internalLock.asyncUnlock().whenComplete((value, cause) -> closePromise.complete(null));
         }
     }
 
     @Override
-    public Future<Void> asyncClose() {
-        final Promise<Void> closePromise;
+    public CompletableFuture<Void> asyncClose() {
+        final CompletableFuture<Void> closePromise;
         synchronized (this) {
             if (closed) {
                 return closeFuture;
             }
             closed = true;
-            closeFuture = closePromise = new Promise<Void>();
+            closeFuture = closePromise = new CompletableFuture<Void>();
         }
-        final Promise<Void> closeWaiterFuture = new Promise<Void>();
-        closeWaiterFuture.addEventListener(OrderedFutureEventListener.of(new FutureEventListener<Void>() {
+        final CompletableFuture<Void> closeWaiterFuture = new CompletableFuture<Void>();
+        closeWaiterFuture.whenCompleteAsync(new FutureEventListener<Void>() {
             @Override
             public void onSuccess(Void value) {
                 complete();
@@ -435,9 +419,9 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
             }
 
             private void complete() {
-                FutureUtils.setValue(closePromise, null);
+                FutureUtils.complete(closePromise, null);
             }
-        }, lockStateExecutor, lockPath));
+        }, lockStateExecutor.chooseExecutor(lockPath));
         lockStateExecutor.submit(lockPath, new Runnable() {
             @Override
             public void run() {
@@ -449,7 +433,7 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
 
     void internalReacquireLock(final AtomicInteger numRetries,
                                final long lockTimeout,
-                               final Promise<ZKDistributedLock> reacquirePromise) {
+                               final CompletableFuture<ZKDistributedLock> reacquirePromise) {
         lockStateExecutor.submit(lockPath, new Runnable() {
             @Override
             public void run() {
@@ -460,25 +444,25 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
 
     void doInternalReacquireLock(final AtomicInteger numRetries,
                                  final long lockTimeout,
-                                 final Promise<ZKDistributedLock> reacquirePromise) {
+                                 final CompletableFuture<ZKDistributedLock> reacquirePromise) {
         internalTryRetries.inc();
-        Promise<ZKDistributedLock> tryPromise = new Promise<ZKDistributedLock>();
-        tryPromise.addEventListener(new FutureEventListener<ZKDistributedLock>() {
+        CompletableFuture<ZKDistributedLock> tryPromise = new CompletableFuture<ZKDistributedLock>();
+        tryPromise.whenComplete(new FutureEventListener<ZKDistributedLock>() {
             @Override
             public void onSuccess(ZKDistributedLock lock) {
-                FutureUtils.setValue(reacquirePromise, lock);
+                FutureUtils.complete(reacquirePromise, lock);
             }
 
             @Override
             public void onFailure(Throwable cause) {
                 if (cause instanceof OwnershipAcquireFailedException) {
                     // the lock has been acquired by others
-                    FutureUtils.setException(reacquirePromise, cause);
+                    FutureUtils.completeExceptionally(reacquirePromise, cause);
                 } else {
                     if (numRetries.getAndDecrement() > 0 && !closed) {
                         internalReacquireLock(numRetries, lockTimeout, reacquirePromise);
                     } else {
-                        FutureUtils.setException(reacquirePromise, cause);
+                        FutureUtils.completeExceptionally(reacquirePromise, cause);
                     }
                 }
             }
@@ -486,9 +470,9 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
         doAsyncAcquireWithSemaphore(tryPromise, 0);
     }
 
-    private Future<ZKDistributedLock> reacquireLock(boolean throwLockAcquireException) throws LockingException {
+    private CompletableFuture<ZKDistributedLock> reacquireLock(boolean throwLockAcquireException) throws LockingException {
         final Stopwatch stopwatch = Stopwatch.createStarted();
-        Promise<ZKDistributedLock> lockPromise;
+        CompletableFuture<ZKDistributedLock> lockPromise;
         synchronized (this) {
             if (closed) {
                 throw newLockClosedException();
@@ -504,8 +488,8 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
                 return lockReacquireFuture;
             }
             LOG.info("reacquiring lock at {}", lockPath);
-            lockReacquireFuture = lockPromise = new Promise<ZKDistributedLock>();
-            lockReacquireFuture.addEventListener(new FutureEventListener<ZKDistributedLock>() {
+            lockReacquireFuture = lockPromise = new CompletableFuture<ZKDistributedLock>();
+            lockReacquireFuture.whenComplete(new FutureEventListener<ZKDistributedLock>() {
                 @Override
                 public void onSuccess(ZKDistributedLock lock) {
                     // if re-acquire successfully, clear the state.

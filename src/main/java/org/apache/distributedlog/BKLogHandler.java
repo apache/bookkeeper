@@ -18,6 +18,27 @@
 package org.apache.distributedlog;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import org.apache.bookkeeper.stats.AlertStatsLogger;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.callback.LogSegmentNamesListener;
 import org.apache.distributedlog.exceptions.LogEmptyException;
 import org.apache.distributedlog.exceptions.LogSegmentNotFoundException;
@@ -31,34 +52,11 @@ import org.apache.distributedlog.logsegment.PerStreamLogSegmentCache;
 import org.apache.distributedlog.logsegment.LogSegmentFilter;
 import org.apache.distributedlog.logsegment.LogSegmentMetadataStore;
 import org.apache.distributedlog.metadata.LogStreamMetadataStore;
-import org.apache.distributedlog.util.FutureUtils;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
-import com.twitter.util.Function;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
-import com.twitter.util.Promise;
-import org.apache.bookkeeper.stats.AlertStatsLogger;
-import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.versioning.Version;
-import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * The base class about log handler on managing log segments.
@@ -171,25 +169,27 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
         return lockClientId;
     }
 
-    public Future<LogRecordWithDLSN> asyncGetFirstLogRecord() {
-        final Promise<LogRecordWithDLSN> promise = new Promise<LogRecordWithDLSN>();
-        streamMetadataStore.logExists(logMetadata.getUri(), logMetadata.getLogName())
-                .addEventListener(new FutureEventListener<Void>() {
+    public CompletableFuture<LogRecordWithDLSN> asyncGetFirstLogRecord() {
+        final CompletableFuture<LogRecordWithDLSN> promise = new CompletableFuture<LogRecordWithDLSN>();
+        streamMetadataStore.logExists(
+            logMetadata.getUri(),
+            logMetadata.getLogName()
+        ).whenComplete(new FutureEventListener<Void>() {
             @Override
             public void onSuccess(Void value) {
                 readLogSegmentsFromStore(
                         LogSegmentMetadata.COMPARATOR,
                         LogSegmentFilter.DEFAULT_FILTER,
                         null
-                ).addEventListener(new FutureEventListener<Versioned<List<LogSegmentMetadata>>>() {
+                ).whenComplete(new FutureEventListener<Versioned<List<LogSegmentMetadata>>>() {
 
                     @Override
                     public void onSuccess(Versioned<List<LogSegmentMetadata>> ledgerList) {
                         if (ledgerList.getValue().isEmpty()) {
-                            promise.setException(new LogEmptyException("Log " + getFullyQualifiedName() + " has no records"));
+                            promise.completeExceptionally(new LogEmptyException("Log " + getFullyQualifiedName() + " has no records"));
                             return;
                         }
-                        Future<LogRecordWithDLSN> firstRecord = null;
+                        CompletableFuture<LogRecordWithDLSN> firstRecord = null;
                         for (LogSegmentMetadata ledger : ledgerList.getValue()) {
                             if (!ledger.isTruncated() && (ledger.getRecordCount() > 0 || ledger.isInProgress())) {
                                 firstRecord = asyncReadFirstUserRecord(ledger, DLSN.InitialDLSN);
@@ -197,43 +197,45 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
                             }
                         }
                         if (null != firstRecord) {
-                            promise.become(firstRecord);
+                            FutureUtils.proxyTo(firstRecord, promise);
                         } else {
-                            promise.setException(new LogEmptyException("Log " + getFullyQualifiedName() + " has no records"));
+                            promise.completeExceptionally(new LogEmptyException("Log " + getFullyQualifiedName() + " has no records"));
                         }
                     }
 
                     @Override
                     public void onFailure(Throwable cause) {
-                        promise.setException(cause);
+                        promise.completeExceptionally(cause);
                     }
                 });
             }
 
             @Override
             public void onFailure(Throwable cause) {
-                promise.setException(cause);
+                promise.completeExceptionally(cause);
             }
         });
         return promise;
     }
 
-    public Future<LogRecordWithDLSN> getLastLogRecordAsync(final boolean recover, final boolean includeEndOfStream) {
-        final Promise<LogRecordWithDLSN> promise = new Promise<LogRecordWithDLSN>();
-        streamMetadataStore.logExists(logMetadata.getUri(), logMetadata.getLogName())
-                .addEventListener(new FutureEventListener<Void>() {
+    public CompletableFuture<LogRecordWithDLSN> getLastLogRecordAsync(final boolean recover, final boolean includeEndOfStream) {
+        final CompletableFuture<LogRecordWithDLSN> promise = new CompletableFuture<LogRecordWithDLSN>();
+        streamMetadataStore.logExists(
+            logMetadata.getUri(),
+            logMetadata.getLogName()
+        ).whenComplete(new FutureEventListener<Void>() {
             @Override
             public void onSuccess(Void value) {
                 readLogSegmentsFromStore(
                         LogSegmentMetadata.DESC_COMPARATOR,
                         LogSegmentFilter.DEFAULT_FILTER,
                         null
-                ).addEventListener(new FutureEventListener<Versioned<List<LogSegmentMetadata>>>() {
+                ).whenComplete(new FutureEventListener<Versioned<List<LogSegmentMetadata>>>() {
 
                     @Override
                     public void onSuccess(Versioned<List<LogSegmentMetadata>> ledgerList) {
                         if (ledgerList.getValue().isEmpty()) {
-                            promise.setException(
+                            promise.completeExceptionally(
                                     new LogEmptyException("Log " + getFullyQualifiedName() + " has no records"));
                             return;
                         }
@@ -247,49 +249,51 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
 
                     @Override
                     public void onFailure(Throwable cause) {
-                        promise.setException(cause);
+                        promise.completeExceptionally(cause);
                     }
                 });
             }
 
             @Override
             public void onFailure(Throwable cause) {
-                promise.setException(cause);
+                promise.completeExceptionally(cause);
             }
         });
         return promise;
     }
 
     private void asyncGetLastLogRecord(final Iterator<LogSegmentMetadata> ledgerIter,
-                                       final Promise<LogRecordWithDLSN> promise,
+                                       final CompletableFuture<LogRecordWithDLSN> promise,
                                        final boolean fence,
                                        final boolean includeControlRecord,
                                        final boolean includeEndOfStream) {
         if (ledgerIter.hasNext()) {
             LogSegmentMetadata metadata = ledgerIter.next();
-            asyncReadLastRecord(metadata, fence, includeControlRecord, includeEndOfStream).addEventListener(
-                    new FutureEventListener<LogRecordWithDLSN>() {
-                        @Override
-                        public void onSuccess(LogRecordWithDLSN record) {
-                            if (null == record) {
-                                asyncGetLastLogRecord(ledgerIter, promise, fence, includeControlRecord, includeEndOfStream);
-                            } else {
-                                promise.setValue(record);
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Throwable cause) {
-                            promise.setException(cause);
+            asyncReadLastRecord(
+                metadata, fence, includeControlRecord, includeEndOfStream
+            ).whenComplete(
+                new FutureEventListener<LogRecordWithDLSN>() {
+                    @Override
+                    public void onSuccess(LogRecordWithDLSN record) {
+                        if (null == record) {
+                            asyncGetLastLogRecord(ledgerIter, promise, fence, includeControlRecord, includeEndOfStream);
+                        } else {
+                            promise.complete(record);
                         }
                     }
+
+                    @Override
+                    public void onFailure(Throwable cause) {
+                                                         promise.completeExceptionally(cause);
+                                                                                              }
+                }
             );
         } else {
-            promise.setException(new LogEmptyException("Log " + getFullyQualifiedName() + " has no records"));
+            promise.completeExceptionally(new LogEmptyException("Log " + getFullyQualifiedName() + " has no records"));
         }
     }
 
-    private Future<LogRecordWithDLSN> asyncReadFirstUserRecord(LogSegmentMetadata ledger, DLSN beginDLSN) {
+    private CompletableFuture<LogRecordWithDLSN> asyncReadFirstUserRecord(LogSegmentMetadata ledger, DLSN beginDLSN) {
         return ReadUtils.asyncReadFirstUserRecord(
                 getFullyQualifiedName(),
                 ledger,
@@ -307,15 +311,17 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
      * beginDLSN and the second denoted by endPosition. Its up to the caller to ensure that endPosition refers to
      * position in the same ledger as beginDLSN.
      */
-    private Future<Long> asyncGetLogRecordCount(LogSegmentMetadata ledger, final DLSN beginDLSN, final long endPosition) {
-        return asyncReadFirstUserRecord(ledger, beginDLSN).map(new Function<LogRecordWithDLSN, Long>() {
-            public Long apply(final LogRecordWithDLSN beginRecord) {
-                long recordCount = 0;
-                if (null != beginRecord) {
-                    recordCount = endPosition + 1 - beginRecord.getLastPositionWithinLogSegment();
-                }
-                return recordCount;
+    private CompletableFuture<Long> asyncGetLogRecordCount(LogSegmentMetadata ledger,
+                                                           final DLSN beginDLSN,
+                                                           final long endPosition) {
+        return asyncReadFirstUserRecord(
+            ledger, beginDLSN
+        ).thenApply(beginRecord -> {
+            long recordCount = 0;
+            if (null != beginRecord) {
+                recordCount = endPosition + 1 - beginRecord.getLastPositionWithinLogSegment();
             }
+            return recordCount;
         });
     }
 
@@ -325,31 +331,29 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
      * an interior entry. For the last entry, if it is inprogress, we need to recover it and find the last user
      * entry.
      */
-    private Future<Long> asyncGetLogRecordCount(final LogSegmentMetadata ledger, final DLSN beginDLSN) {
+    private CompletableFuture<Long> asyncGetLogRecordCount(final LogSegmentMetadata ledger, final DLSN beginDLSN) {
         if (ledger.isInProgress() && ledger.isDLSNinThisSegment(beginDLSN)) {
-            return asyncReadLastUserRecord(ledger).flatMap(new Function<LogRecordWithDLSN, Future<Long>>() {
-                public Future<Long> apply(final LogRecordWithDLSN endRecord) {
+            return asyncReadLastUserRecord(ledger).thenCompose(
+                (Function<LogRecordWithDLSN, CompletableFuture<Long>>) endRecord -> {
                     if (null != endRecord) {
-                        return asyncGetLogRecordCount(ledger, beginDLSN, endRecord.getLastPositionWithinLogSegment() /* end position */);
+                        return asyncGetLogRecordCount(
+                            ledger, beginDLSN, endRecord.getLastPositionWithinLogSegment() /* end position */);
                     } else {
-                        return Future.value((long) 0);
+                        return FutureUtils.value((long) 0);
                     }
-                }
-            });
+                });
         } else if (ledger.isInProgress()) {
-            return asyncReadLastUserRecord(ledger).map(new Function<LogRecordWithDLSN, Long>() {
-                public Long apply(final LogRecordWithDLSN endRecord) {
-                    if (null != endRecord) {
-                        return (long) endRecord.getLastPositionWithinLogSegment();
-                    } else {
-                        return (long) 0;
-                    }
+            return asyncReadLastUserRecord(ledger).thenApply(endRecord -> {
+                if (null != endRecord) {
+                    return (long) endRecord.getLastPositionWithinLogSegment();
+                } else {
+                    return (long) 0;
                 }
             });
         } else if (ledger.isDLSNinThisSegment(beginDLSN)) {
             return asyncGetLogRecordCount(ledger, beginDLSN, ledger.getRecordCount() /* end position */);
         } else {
-            return Future.value((long) ledger.getRecordCount());
+            return FutureUtils.value((long) ledger.getRecordCount());
         }
     }
 
@@ -359,29 +363,26 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
      * @param beginDLSN dlsn marking the start of the range
      * @return the count of records present in the range
      */
-    public Future<Long> asyncGetLogRecordCount(final DLSN beginDLSN) {
+    public CompletableFuture<Long> asyncGetLogRecordCount(final DLSN beginDLSN) {
         return streamMetadataStore.logExists(logMetadata.getUri(), logMetadata.getLogName())
-                .flatMap(new Function<Void, Future<Long>>() {
-            public Future<Long> apply(Void done) {
+                .thenCompose(new Function<Void, CompletableFuture<Long>>() {
+            public CompletableFuture<Long> apply(Void done) {
 
                 return readLogSegmentsFromStore(
                         LogSegmentMetadata.COMPARATOR,
                         LogSegmentFilter.DEFAULT_FILTER,
                         null
-                ).flatMap(new Function<Versioned<List<LogSegmentMetadata>>, Future<Long>>() {
-                    public Future<Long> apply(Versioned<List<LogSegmentMetadata>> ledgerList) {
+                ).thenCompose(new Function<Versioned<List<LogSegmentMetadata>>, CompletableFuture<Long>>() {
+                    public CompletableFuture<Long> apply(Versioned<List<LogSegmentMetadata>> ledgerList) {
 
-                        List<Future<Long>> futureCounts = new ArrayList<Future<Long>>(ledgerList.getValue().size());
+                        List<CompletableFuture<Long>> futureCounts =
+                          Lists.newArrayListWithExpectedSize(ledgerList.getValue().size());
                         for (LogSegmentMetadata ledger : ledgerList.getValue()) {
                             if (ledger.getLogSegmentSequenceNumber() >= beginDLSN.getLogSegmentSequenceNo()) {
                                 futureCounts.add(asyncGetLogRecordCount(ledger, beginDLSN));
                             }
                         }
-                        return Future.collect(futureCounts).map(new Function<List<Long>, Long>() {
-                            public Long apply(List<Long> counts) {
-                                return sum(counts);
-                            }
-                        });
+                        return FutureUtils.collect(futureCounts).thenApply(counts -> sum(counts));
                     }
                 });
             }
@@ -397,15 +398,15 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
     }
 
     @Override
-    public Future<Void> asyncAbort() {
+    public CompletableFuture<Void> asyncAbort() {
         return asyncClose();
     }
 
-    public Future<LogRecordWithDLSN> asyncReadLastUserRecord(final LogSegmentMetadata l) {
+    public CompletableFuture<LogRecordWithDLSN> asyncReadLastUserRecord(final LogSegmentMetadata l) {
         return asyncReadLastRecord(l, false, false, false);
     }
 
-    public Future<LogRecordWithDLSN> asyncReadLastRecord(final LogSegmentMetadata l,
+    public CompletableFuture<LogRecordWithDLSN> asyncReadLastRecord(final LogSegmentMetadata l,
                                                          final boolean fence,
                                                          final boolean includeControl,
                                                          final boolean includeEndOfStream) {
@@ -422,7 +423,7 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
                 numRecordsScanned,
                 scheduler,
                 entryStore
-        ).addEventListener(new FutureEventListener<LogRecordWithDLSN>() {
+        ).whenComplete(new FutureEventListener<LogRecordWithDLSN>() {
             @Override
             public void onSuccess(LogRecordWithDLSN value) {
                 recoverLastEntryStats.registerSuccessfulEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
@@ -572,17 +573,17 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
      * @param logSegmentNamesListener
      * @return future represents the result of log segments
      */
-    public Future<Versioned<List<LogSegmentMetadata>>> readLogSegmentsFromStore(
+    public CompletableFuture<Versioned<List<LogSegmentMetadata>>> readLogSegmentsFromStore(
             final Comparator<LogSegmentMetadata> comparator,
             final LogSegmentFilter segmentFilter,
             final LogSegmentNamesListener logSegmentNamesListener) {
-        final Promise<Versioned<List<LogSegmentMetadata>>> readResult =
-                new Promise<Versioned<List<LogSegmentMetadata>>>();
+        final CompletableFuture<Versioned<List<LogSegmentMetadata>>> readResult =
+                new CompletableFuture<Versioned<List<LogSegmentMetadata>>>();
         metadataStore.getLogSegmentNames(logMetadata.getLogSegmentsPath(), logSegmentNamesListener)
-                .addEventListener(new FutureEventListener<Versioned<List<String>>>() {
+                .whenComplete(new FutureEventListener<Versioned<List<String>>>() {
                     @Override
                     public void onFailure(Throwable cause) {
-                        FutureUtils.setException(readResult, cause);
+                        readResult.completeExceptionally(cause);
                     }
 
                     @Override
@@ -596,7 +597,7 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
     protected void readLogSegmentsFromStore(final Versioned<List<String>> logSegmentNames,
                                             final Comparator<LogSegmentMetadata> comparator,
                                             final LogSegmentFilter segmentFilter,
-                                            final Promise<Versioned<List<LogSegmentMetadata>>> readResult) {
+                                            final CompletableFuture<Versioned<List<LogSegmentMetadata>>> readResult) {
         Set<String> segmentsReceived = new HashSet<String>();
         segmentsReceived.addAll(segmentFilter.filter(logSegmentNames.getValue()));
         Set<String> segmentsAdded;
@@ -619,12 +620,11 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
             try {
                 segmentList = getCachedLogSegments(comparator);
             } catch (UnexpectedException e) {
-                FutureUtils.setException(readResult, e);
+                readResult.completeExceptionally(e);
                 return;
             }
 
-            FutureUtils.setValue(readResult,
-                    new Versioned<List<LogSegmentMetadata>>(segmentList, logSegmentNames.getVersion()));
+            readResult.complete(new Versioned<List<LogSegmentMetadata>>(segmentList, logSegmentNames.getVersion()));
             return;
         }
 
@@ -646,7 +646,7 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
                 continue;
             }
             metadataStore.getLogSegment(logSegmentPath)
-                    .addEventListener(new FutureEventListener<LogSegmentMetadata>() {
+                    .whenComplete(new FutureEventListener<LogSegmentMetadata>() {
 
                         @Override
                         public void onSuccess(LogSegmentMetadata result) {
@@ -666,7 +666,7 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
                             } else {
                                 // fail fast
                                 if (1 == numFailures.incrementAndGet()) {
-                                    FutureUtils.setException(readResult, cause);
+                                    readResult.completeExceptionally(cause);
                                     return;
                                 }
                             }
@@ -689,7 +689,7 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
     private void completeReadLogSegmentsFromStore(final Set<String> removedSegments,
                                                   final Map<String, LogSegmentMetadata> addedSegments,
                                                   final Comparator<LogSegmentMetadata> comparator,
-                                                  final Promise<Versioned<List<LogSegmentMetadata>>> readResult,
+                                                  final CompletableFuture<Versioned<List<LogSegmentMetadata>>> readResult,
                                                   final Version logSegmentNamesVersion,
                                                   final AtomicInteger numChildren,
                                                   final AtomicInteger numFailures) {
@@ -705,11 +705,10 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
         try {
             segmentList = getCachedLogSegments(comparator);
         } catch (UnexpectedException e) {
-            FutureUtils.setException(readResult, e);
+            readResult.completeExceptionally(e);
             return;
         }
-        FutureUtils.setValue(readResult,
-            new Versioned<List<LogSegmentMetadata>>(segmentList, logSegmentNamesVersion));
+        readResult.complete(new Versioned<List<LogSegmentMetadata>>(segmentList, logSegmentNamesVersion));
     }
 
 }

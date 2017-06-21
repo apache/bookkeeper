@@ -17,12 +17,10 @@
  */
 package org.apache.distributedlog.lock;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import org.apache.distributedlog.exceptions.LockingException;
 import org.apache.distributedlog.exceptions.OwnershipAcquireFailedException;
-import com.twitter.util.Future;
-import scala.runtime.BoxedUnit;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * One time lock.
@@ -71,7 +69,7 @@ public interface SessionLock {
      * <i>tryLock</i> here is effectively the combination of following asynchronous calls.
      * <pre>
      *     ZKDistributedLock lock = ...;
-     *     Future<LockWaiter> attemptFuture = lock.asyncTryLock(...);
+     *     CompletableFuture<LockWaiter> attemptFuture = lock.asyncTryLock(...);
      *
      *     boolean acquired = waiter.waitForAcquireQuietly();
      *     if (acquired) {
@@ -106,7 +104,7 @@ public interface SessionLock {
      * @return lock waiter representing this attempt of acquiring lock.
      * @see #tryLock(long, TimeUnit)
      */
-    Future<LockWaiter> asyncTryLock(long timeout, TimeUnit unit);
+    CompletableFuture<LockWaiter> asyncTryLock(long timeout, TimeUnit unit);
 
     /**
      * Release a claimed lock.
@@ -121,6 +119,6 @@ public interface SessionLock {
      * @return future representing the result of unlock operation.
      * @see #unlock()
      */
-    Future<BoxedUnit> asyncUnlock();
+    CompletableFuture<Void> asyncUnlock();
 
 }

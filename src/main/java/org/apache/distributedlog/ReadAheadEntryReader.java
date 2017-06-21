@@ -21,6 +21,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Ticker;
 import com.google.common.collect.Lists;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledFuture;
+import java.util.function.Function;
 import org.apache.distributedlog.callback.LogSegmentListener;
 import org.apache.distributedlog.exceptions.AlreadyTruncatedTransactionException;
 import org.apache.distributedlog.exceptions.DLIllegalStateException;
@@ -32,19 +35,13 @@ import org.apache.distributedlog.io.AsyncCloseable;
 import org.apache.distributedlog.logsegment.LogSegmentEntryReader;
 import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
 import org.apache.distributedlog.logsegment.LogSegmentFilter;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
-import com.twitter.util.Function0;
-import com.twitter.util.Future;
-import com.twitter.util.FutureEventListener;
-import com.twitter.util.Futures;
-import com.twitter.util.Promise;
 import org.apache.bookkeeper.stats.AlertStatsLogger;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.Function1;
-import scala.runtime.AbstractFunction1;
-import scala.runtime.BoxedUnit;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -52,7 +49,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -75,12 +71,9 @@ class ReadAheadEntryReader implements
     // Static Functions
     //
 
-    private static AbstractFunction1<LogSegmentEntryReader, BoxedUnit> START_READER_FUNC = new AbstractFunction1<LogSegmentEntryReader, BoxedUnit>() {
-        @Override
-        public BoxedUnit apply(LogSegmentEntryReader reader) {
-            reader.start();
-            return BoxedUnit.UNIT;
-        }
+    private static Function<LogSegmentEntryReader, Void> START_READER_FUNC = reader -> {
+        reader.start();
+        return null;
     };
 
     //
@@ -91,7 +84,7 @@ class ReadAheadEntryReader implements
 
         private LogSegmentMetadata metadata;
         private final long startEntryId;
-        private Future<LogSegmentEntryReader> openFuture = null;
+        private CompletableFuture<LogSegmentEntryReader> openFuture = null;
         private LogSegmentEntryReader reader = null;
         private boolean isStarted = false;
         private boolean isClosed = false;
@@ -122,7 +115,7 @@ class ReadAheadEntryReader implements
             if (null != openFuture) {
                 return;
             }
-            openFuture = entryStore.openReader(metadata, startEntryId).addEventListener(this);
+            openFuture = entryStore.openReader(metadata, startEntryId).whenComplete(this);
         }
 
         synchronized boolean isReaderStarted() {
@@ -137,16 +130,16 @@ class ReadAheadEntryReader implements
             if (null != reader) {
                 reader.start();
             } else {
-                openFuture.onSuccess(START_READER_FUNC);
+                openFuture.thenApply(START_READER_FUNC);
             }
         }
 
-        synchronized Future<List<Entry.Reader>> readNext() {
+        synchronized CompletableFuture<List<Entry.Reader>> readNext() {
             if (null != reader) {
                 checkCatchingUpStatus(reader);
                 return reader.readNext(numReadAheadEntries);
             } else {
-                return openFuture.flatMap(readFunc);
+                return openFuture.thenCompose(readFunc);
             }
         }
 
@@ -155,14 +148,10 @@ class ReadAheadEntryReader implements
                 reader.onLogSegmentMetadataUpdated(segment);
                 this.metadata = segment;
             } else {
-                openFuture.onSuccess(new AbstractFunction1<LogSegmentEntryReader, BoxedUnit>() {
-                    @Override
-                    public BoxedUnit apply(LogSegmentEntryReader reader) {
-                        reader.onLogSegmentMetadataUpdated(segment);
-                        synchronized (SegmentReader.this) {
-                            SegmentReader.this.metadata = segment;
-                        }
-                        return BoxedUnit.UNIT;
+                openFuture.thenAccept(reader1 -> {
+                    reader1.onLogSegmentMetadataUpdated(segment);
+                    synchronized (SegmentReader.this) {
+                        SegmentReader.this.metadata = segment;
                     }
                 });
             }
@@ -185,28 +174,21 @@ class ReadAheadEntryReader implements
             return isClosed;
         }
 
-        synchronized Future<Void> close() {
+        synchronized CompletableFuture<Void> close() {
             if (null == openFuture) {
-                return Future.Void();
+                return FutureUtils.Void();
             }
-            return openFuture.flatMap(new AbstractFunction1<LogSegmentEntryReader, Future<Void>>() {
-                @Override
-                public Future<Void> apply(LogSegmentEntryReader reader) {
-                    return reader.asyncClose();
-                }
-            }).ensure(new Function0<BoxedUnit>() {
-                @Override
-                public BoxedUnit apply() {
+            return FutureUtils.ensure(
+                openFuture.thenCompose(reader1 -> reader1.asyncClose()),
+                () -> {
                     synchronized (SegmentReader.this) {
                         isClosed = true;
                     }
-                    return null;
-                }
-            });
+                });
         }
     }
 
-    private class ReadEntriesFunc extends AbstractFunction1<LogSegmentEntryReader, Future<List<Entry.Reader>>> {
+    private class ReadEntriesFunc implements Function<LogSegmentEntryReader, CompletableFuture<List<Entry.Reader>>> {
 
         private final int numEntries;
 
@@ -215,7 +197,7 @@ class ReadAheadEntryReader implements
         }
 
         @Override
-        public Future<List<Entry.Reader>> apply(LogSegmentEntryReader reader) {
+        public CompletableFuture<List<Entry.Reader>> apply(LogSegmentEntryReader reader) {
             checkCatchingUpStatus(reader);
             return reader.readNext(numEntries);
         }
@@ -244,14 +226,8 @@ class ReadAheadEntryReader implements
     //
     // Functions
     //
-    private final Function1<LogSegmentEntryReader, Future<List<Entry.Reader>>> readFunc;
-    private final Function0<BoxedUnit> removeClosedSegmentReadersFunc = new Function0<BoxedUnit>() {
-        @Override
-        public BoxedUnit apply() {
-            removeClosedSegmentReaders();
-            return BoxedUnit.UNIT;
-        }
-    };
+    private final Function<LogSegmentEntryReader, CompletableFuture<List<Entry.Reader>>> readFunc;
+    private final Runnable removeClosedSegmentReadersFunc = () -> removeClosedSegmentReaders();
 
     //
     // Resources
@@ -282,7 +258,7 @@ class ReadAheadEntryReader implements
     private final AtomicBoolean started = new AtomicBoolean(false);
     private boolean isInitialized = false;
     private boolean readAheadPaused = false;
-    private Promise<Void> closePromise = null;
+    private CompletableFuture<Void> closePromise = null;
     // segment readers
     private long currentSegmentSequenceNumber;
     private SegmentReader currentSegmentReader;
@@ -344,15 +320,12 @@ class ReadAheadEntryReader implements
 
     private ScheduledFuture<?> scheduleIdleReaderTaskIfNecessary() {
         if (idleWarnThresholdMillis < Integer.MAX_VALUE && idleWarnThresholdMillis > 0) {
-            return scheduler.scheduleAtFixedRate(streamName, new Runnable() {
-                @Override
-                public void run() {
-                    if (!isReaderIdle(idleWarnThresholdMillis, TimeUnit.MILLISECONDS)) {
-                        return;
-                    }
-                    // the readahead has been idle
-                    unsafeCheckIfReadAheadIsIdle();
+            return scheduler.scheduleAtFixedRate(streamName, () -> {
+                if (!isReaderIdle(idleWarnThresholdMillis, TimeUnit.MILLISECONDS)) {
+                    return;
                 }
+                // the readahead has been idle
+                unsafeCheckIfReadAheadIsIdle();
             }, idleWarnThresholdMillis, idleWarnThresholdMillis, TimeUnit.MILLISECONDS);
         }
         return null;
@@ -366,7 +339,7 @@ class ReadAheadEntryReader implements
                     LogSegmentMetadata.COMPARATOR,
                     LogSegmentFilter.DEFAULT_FILTER,
                     null
-            ).addEventListener(new FutureEventListener<Versioned<List<LogSegmentMetadata>>>() {
+            ).whenComplete(new FutureEventListener<Versioned<List<LogSegmentMetadata>>>() {
                 @Override
                 public void onFailure(Throwable cause) {
                     // do nothing here since it would be retried on next idle reader check task
@@ -459,13 +432,13 @@ class ReadAheadEntryReader implements
     }
 
     @Override
-    public Future<Void> asyncClose() {
-        final Promise<Void> closeFuture;
+    public CompletableFuture<Void> asyncClose() {
+        final CompletableFuture<Void> closeFuture;
         synchronized (this) {
             if (null != closePromise) {
                 return closePromise;
             }
-            closePromise = closeFuture = new Promise<Void>();
+            closePromise = closeFuture = new CompletableFuture<Void>();
         }
 
         // cancel the idle reader task
@@ -489,8 +462,8 @@ class ReadAheadEntryReader implements
         return closeFuture;
     }
 
-    private void unsafeAsyncClose(Promise<Void> closePromise) {
-        List<Future<Void>> closeFutures = Lists.newArrayListWithExpectedSize(
+    private void unsafeAsyncClose(CompletableFuture<Void> closePromise) {
+        List<CompletableFuture<Void>> closeFutures = Lists.newArrayListWithExpectedSize(
                 segmentReaders.size() + segmentReadersToClose.size() + 1);
         if (null != currentSegmentReader) {
             segmentReadersToClose.add(currentSegmentReader);
@@ -505,7 +478,9 @@ class ReadAheadEntryReader implements
         for (SegmentReader reader : segmentReadersToClose) {
             closeFutures.add(reader.close());
         }
-        Futures.collect(closeFutures).proxyTo(closePromise);
+        FutureUtils.proxyTo(
+            FutureUtils.collect(closeFutures).thenApply((value) -> null),
+            closePromise);
     }
 
     //
@@ -921,7 +896,9 @@ class ReadAheadEntryReader implements
     private void unsafeMoveToNextLogSegment() {
         if (null != currentSegmentReader) {
             segmentReadersToClose.add(currentSegmentReader);
-            currentSegmentReader.close().ensure(removeClosedSegmentReadersFunc);
+            FutureUtils.ensure(
+                currentSegmentReader.close(),
+                removeClosedSegmentReadersFunc);
             logger.debug("close current segment reader {}", currentSegmentReader.getSegment());
             currentSegmentReader = null;
         }
@@ -971,7 +948,7 @@ class ReadAheadEntryReader implements
     }
 
     private void unsafeReadNext(SegmentReader reader) {
-        reader.readNext().addEventListener(this);
+        reader.readNext().whenComplete(this);
     }
 
     @Override
