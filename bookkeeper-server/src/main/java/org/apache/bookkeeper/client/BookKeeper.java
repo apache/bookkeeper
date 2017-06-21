@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.client;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -98,6 +99,7 @@ public class BookKeeper implements AutoCloseable {
     private OpStatsLogger createOpLogger;
     private OpStatsLogger openOpLogger;
     private OpStatsLogger deleteOpLogger;
+    private OpStatsLogger recoverOpLogger;
     private OpStatsLogger readOpLogger;
     private OpStatsLogger addOpLogger;
     private OpStatsLogger writeLacOpLogger;
@@ -447,6 +449,11 @@ public class BookKeeper implements AutoCloseable {
         return ledgerManager;
     }
 
+    @VisibleForTesting
+    LedgerManager getUnderlyingLedgerManager() {
+        return ((CleanupLedgerManager) ledgerManager).getUnderlying();
+    }
+    
     LedgerIdGenerator getLedgerIdGenerator() {
         return ledgerIdGenerator;
     }
@@ -1243,6 +1250,7 @@ public class BookKeeper implements AutoCloseable {
         createOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.CREATE_OP);
         deleteOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.DELETE_OP);
         openOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.OPEN_OP);
+        recoverOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.RECOVER_OP);
         readOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_OP);
         addOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP);
         writeLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.WRITE_LAC_OP);
@@ -1254,6 +1262,7 @@ public class BookKeeper implements AutoCloseable {
     OpStatsLogger getCreateOpLogger() { return createOpLogger; }
     OpStatsLogger getOpenOpLogger() { return openOpLogger; }
     OpStatsLogger getDeleteOpLogger() { return deleteOpLogger; }
+    OpStatsLogger getRecoverOpLogger() { return recoverOpLogger; }
     OpStatsLogger getReadOpLogger() { return readOpLogger; }
     OpStatsLogger getAddOpLogger() { return addOpLogger; }
     OpStatsLogger getWriteLacOpLogger() { return writeLacOpLogger; }
