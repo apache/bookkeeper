@@ -48,6 +48,7 @@ interface LedgerCache extends Closeable {
 
     Long getLastAddConfirmed(long ledgerId) throws IOException;
     long updateLastAddConfirmed(long ledgerId, long lac) throws IOException;
+    Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer) throws IOException;
 
     void deleteLedger(long ledgerId) throws IOException;
 

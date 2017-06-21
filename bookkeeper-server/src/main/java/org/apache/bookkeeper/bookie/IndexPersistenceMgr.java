@@ -333,6 +333,18 @@ public class IndexPersistenceMgr {
             }
         }
     }
+    
+    Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer) throws IOException {
+        FileInfo fi = null;
+        try {
+            fi = getFileInfo(ledgerId, null);
+            return fi.waitForLastAddConfirmedUpdate(previoisLAC, observer);
+        } finally {
+            if (null != fi) {
+                fi.release();
+            }
+        }
+    }
 
     long updateLastAddConfirmed(long ledgerId, long lac) throws IOException {
         FileInfo fi = null;

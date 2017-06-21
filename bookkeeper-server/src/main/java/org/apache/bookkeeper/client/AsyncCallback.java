@@ -139,6 +139,22 @@ public interface AsyncCallback {
         void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx);
     }
 
+    public interface ReadLastConfirmedAndEntryCallback {
+        /**
+         * Callback definition for bookie operation that allows reading the last add confirmed
+         * along with an entry within the last add confirmed range
+         *
+         * @param rc Return code
+         * @param lastConfirmed The entry id of the last confirmed write or
+         *                      {@link LedgerHandle#INVALID_ENTRY_ID INVALID_ENTRY_ID}
+         *                      if no entry has been confirmed
+         * @param entry The entry since the lastAddConfirmed entry that was specified when the request
+         *              was initiated
+         * @param ctx context object
+         */
+        void readLastConfirmedAndEntryComplete(int rc, long lastConfirmed, LedgerEntry entry, Object ctx);
+    }
+
     public interface RecoverCallback {
         /**
          * Callback definition for bookie recover operations

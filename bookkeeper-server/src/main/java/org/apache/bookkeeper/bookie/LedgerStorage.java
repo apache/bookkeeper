@@ -118,6 +118,16 @@ public interface LedgerStorage {
     long getLastAddConfirmed(long ledgerId) throws IOException;
 
     /**
+     * Wait for last add confirmed update.
+     *
+     * @param previoisLAC - The threshold beyond which we would wait for the update
+     * @param observer  - Observer to notify on update
+     * @return
+     * @throws IOException
+     */
+    Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer) throws IOException;
+
+    /**
      * Flushes all data in the storage. Once this is called,
      * add data written to the LedgerStorage up until this point
      * has been persisted to perminant storage

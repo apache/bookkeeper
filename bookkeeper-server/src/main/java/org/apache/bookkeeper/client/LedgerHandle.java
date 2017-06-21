@@ -953,6 +953,81 @@ public class LedgerHandle implements AutoCloseable {
         new TryReadLastConfirmedOp(this, innercb, getLastAddConfirmed()).initiate();
     }
 
+
+    /**
+     * Asynchronous read next entry and the latest last add confirmed.
+     * If the next entryId is less than known last add confirmed, the call will read next entry directly.
+     * If the next entryId is ahead of known last add confirmed, the call will issue a long poll read
+     * to wait for the next entry <i>entryId</i>.
+     *
+     * The callback will return the latest last add confirmed and next entry if it is available within timeout period <i>timeOutInMillis</i>.
+     *
+     * @param entryId
+     *          next entry id to read
+     * @param timeOutInMillis
+     *          timeout period to wait for the entry id to be available (for long poll only)
+     * @param parallel
+     *          whether to issue the long poll reads in parallel
+     * @param cb
+     *          callback to return the result
+     * @param ctx
+     *          callback context
+     */
+    public void asyncReadLastConfirmedAndEntry(final long entryId,
+                                               final long timeOutInMillis,
+                                               final boolean parallel,
+                                               final AsyncCallback.ReadLastConfirmedAndEntryCallback cb,
+                                               final Object ctx) {
+        boolean isClosed;
+        long lac;
+        synchronized (this) {
+            isClosed = metadata.isClosed();
+            lac = metadata.getLastEntryId();
+        }
+        if (isClosed) {
+            if (entryId > lac) {
+                cb.readLastConfirmedAndEntryComplete(BKException.Code.OK, lac, null, ctx);
+                return;
+            }
+        } else {
+            lac = getLastAddConfirmed();
+        }
+        if (entryId <= lac) {
+            asyncReadEntries(entryId, entryId, new ReadCallback() {
+                @Override
+                public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
+                    if (BKException.Code.OK == rc) {
+                        if (seq.hasMoreElements()) {
+                            cb.readLastConfirmedAndEntryComplete(rc, getLastAddConfirmed(), seq.nextElement(), ctx);
+                        } else {
+                            cb.readLastConfirmedAndEntryComplete(rc, getLastAddConfirmed(), null, ctx);
+                        }
+                    } else {
+                        cb.readLastConfirmedAndEntryComplete(rc, INVALID_ENTRY_ID, null, ctx);
+                    }
+                }
+            }, ctx);
+            return;
+        }
+        // wait for entry <i>entryId</i>
+        ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback innercb = new ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback() {
+            AtomicBoolean completed = new AtomicBoolean(false);
+            @Override
+            public void readLastConfirmedAndEntryComplete(int rc, long lastAddConfirmed, LedgerEntry entry) {
+                if (rc == BKException.Code.OK) {
+                    if (completed.compareAndSet(false, true)) {
+                        cb.readLastConfirmedAndEntryComplete(rc, lastAddConfirmed, entry, ctx);
+                    }
+                } else {
+                    if (completed.compareAndSet(false, true)) {
+                        cb.readLastConfirmedAndEntryComplete(rc, INVALID_ENTRY_ID, null, ctx);
+                    }
+                }
+            }
+        };
+        new ReadLastConfirmedAndEntryOp(this, innercb, entryId - 1, timeOutInMillis, bk.scheduler).parallelRead(parallel).initiate();
+    }
+
     /**
      * Context objects for synchronous call to read last confirmed.
      */

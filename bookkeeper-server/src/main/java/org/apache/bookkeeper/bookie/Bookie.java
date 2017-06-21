@@ -1469,6 +1469,11 @@ public class Bookie extends BookieCriticalThread {
         LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
         return handle.getLastAddConfirmed();
     }
+    
+    public Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer) throws IOException {
+        LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
+        return handle.waitForLastAddConfirmedUpdate(previoisLAC, observer);
+    }
 
     // The rest of the code is test stuff
     static class CounterCallback implements WriteCallback {
