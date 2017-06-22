@@ -10,6 +10,13 @@ commands:
   description: Runs the autorecovery service daemon.
 - name: upgrade
   description: Upgrades the bookie's filesystem.
+  options:
+  - flag: --upgrade
+    description: Upgrade the filesystem.
+  - flag: --rollback
+    description: Rollback the filesystem to a previous version.
+  - flag: --finalize
+    description: Mark the upgrade as complete.
 - name: shell
   description: Runs the bookie's shell for admin commands.
 - name: help

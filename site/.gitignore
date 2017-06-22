@@ -4,3 +4,4 @@ vendor/bundle/
 .jekyll-metadata
 .bundle/
 .sass-cache/
+local-generated/

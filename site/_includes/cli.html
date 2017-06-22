@@ -32,7 +32,7 @@
 <h4>Commands</h4>
 
 {% for command in commands %}
-<h3 id="{{ command.name }}">{{ command.name }}</h3>
+<h3 id="{{ tool_name }}-{{ command.name }}">{{ command.name }}</h3>
 
 {{ command.description | markdownify }}
 

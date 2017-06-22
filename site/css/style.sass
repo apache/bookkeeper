@@ -11,7 +11,7 @@ $fa-font-path: "../fonts"
 @import vendor/bulma/bulma
 
 .highlighter-rouge
-  & + blockquote, & + h5
+  & + blockquote, & + h5, & + p
     margin-top: 1.5rem
 
 em
@@ -22,7 +22,7 @@ table
     td
       max-width: 300px
       white-space: normal
-      overflow-x: inherit
+      overflow-x: scroll
 
 .fa-stack-overflow
   &:hover
@@ -41,11 +41,8 @@ span.pop
 
 +sticky-footer
 
-.highlighter-rouge + p
-  margin-top: 1rem
-
 $base-font-size: 1rem
-$toc-left-padding: 2rem
+$docs-side-padding: 4rem
 
 // Popovers
 .popover-template
@@ -53,11 +50,9 @@ $toc-left-padding: 2rem
 
 .toc
   $toc-base-font-size: 1.2rem
-  padding-left: $toc-left-padding
+  position: fixed
 
   .section-nav
-    position: fixed
-
     .toc-entry
       &.toc-h2
         font-size: $toc-base-font-size
@@ -82,10 +77,10 @@ body
 
 .bk-docs-container
   margin-top: $docs-container-vertical-margin
-  margin-bottom: $docs-container-vertical-margin
+  margin-bottom: $docs-container-vertical-margin * 2
 
   .bk-docs-block
-    padding-left: 2rem
+    padding: 0 $docs-side-padding
 
     .docs-title
       .title + .subtitle

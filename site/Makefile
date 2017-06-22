@@ -14,11 +14,13 @@ setup:
 		--path vendor/bundle
 
 build: clean
-	${JEKYLL} build
+	${JEKYLL} build \
+		--config _config.yml
 
 javadoc:
 	scripts/javadoc-gen.sh
 
 serve: build
 	${JEKYLL} serve \
-		--incremental
+		--incremental \
+		--config _config.local.yml

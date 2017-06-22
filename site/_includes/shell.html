@@ -1,7 +1,7 @@
 {% assign commands = site.data.cli.shell.commands %}
 
 {% for command in commands %}
-<h3 id="{{ command.name }}">{{ command.name }}</h3>
+<h3 id="bookkeeper-shell-{{ command.name }}">{{ command.name }}</h3>
 
 {{ command.description | markdownify }}
 

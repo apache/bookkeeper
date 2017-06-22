@@ -73,8 +73,96 @@ There are, however, other ways that you can create a client object:
   BookKeeper bkClient = new BookKeeper(config, zkClient);
   ```
 
+* Using the `forConfig` method:
+
+  ```java
+  BookKeeper bkClient = BookKeeper.forConfig(conf).build();
+  ```
+
   > You can also pass in a Curator client object. TODO.
 
 ## Creating ledgers
 
+The easiest way to create a {% pop ledger %} using the Java client is via the `createLedger` method, which creates a new ledger synchronously and returns a [`LedgerHandle`](/api/org/apache/bookkeeper/client/LedgerHandle). You must specify at least a [`DigestType`](/api/org/apache/bookkeeper/client/BookKeeper.DigestType) and a password.
+
+Here's an example:
+
+```java
+byte[] password = "some-password".getBytes();
+LedgerHandle handle = bkClient.createLedger(BookKeeper.DigestType.MAC, password);
+```
+
+You can also create ledgers asynchronously
+
+### Create ledgers asynchronously
+
+```java
+class LedgerCreationCallback implements AsyncCallback.CreateCallback {
+    public void createComplete(int returnCode, LedgerHandle handle, Object ctx) {
+        System.out.println("Ledger successfully created");
+    }
+}
+
+client.asyncCreateLedger(
+        3,
+        2,
+        BookKeeper.DigestType.MAC,
+        password,
+        new LedgerCreationCallback(),
+        "some context"
+);
+```
+
 ## Adding entries to ledgers
+
+```java
+long entryId = ledger.addEntry("Some entry data".getBytes());
+```
+
+### Add entries asynchronously
+
+## Reading entries from ledgers
+
+```java
+Enumerator<LedgerEntry> entries = handle.readEntries(1, 99);
+```
+
+To read all possible entries from the ledger:
+
+```java
+Enumerator<LedgerEntry> entries =
+  handle.readEntries(0, handle.getLastAddConfirmed());
+
+while (entries.hasNextElement()) {
+    LedgerEntry entry = entries.nextElement();
+    System.out.println("Successfully read entry " + entry.getId());
+}
+```
+
+## Deleting ledgers
+
+{% pop Ledgers %} can also be deleted synchronously or asynchronously.
+
+```java
+long ledgerId = 1234;
+
+try {
+    bkClient.deleteLedger(ledgerId);
+} catch (Exception e) {
+  e.printStackTrace();
+}
+```
+
+### Delete entries asynchronously
+
+Exceptions thrown:
+
+*
+
+```java
+class DeleteEntryCallback implements AsyncCallback.DeleteCallback {
+    public void deleteComplete() {
+        System.out.println("Delete completed");
+    }
+}
+```

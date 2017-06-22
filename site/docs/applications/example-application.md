@@ -1,5 +1,5 @@
 ---
-title: Example BookKeeper application
+title: Example application
 javadoc_button: true
 ---
 

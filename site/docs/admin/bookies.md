@@ -1,5 +1,6 @@
 ---
 title: BookKeeper administration
+subtitle: A guide to deploying and administering BookKeeper
 ---
 
 This document is a guide to deploying, administering, and maintaining BookKeeper. It also discusses [best practices](#best-practices) and [common problems](#common-problems).
@@ -65,3 +66,82 @@ Parameter | Description | Default
 `ledgerDirectories` | The directories where the [ledger device](../../getting-started/concepts#ledger-device) stores the bookie's ledger entries (as a comma-separated list) | `/tmp/bk-data`
 
 > Ideally, the directories specified `journalDirectory` and `ledgerDirectories` should be on difference devices.
+
+## Logging
+
+BookKeeper uses [slf4j](http://www.slf4j.org/) for logging, with [log4j](https://logging.apache.org/log4j/2.x/) bindings enabled by default.
+
+To enable logging for a bookie, create a `log4j.properties` file and point the `BOOKIE_LOG_CONF` environment variable to the configuration file. Here's an example:
+
+```shell
+$ export BOOKIE_LOG_CONF=/some/path/log4j.properties
+$ bookkeeper-server/bin/bookkeeper bookie
+```
+
+## Upgrading
+
+From time to time you may need to make changes to the filesystem layout of bookies---changes that are incompatible with previous versions of BookKeeper and require that directories used with previous versions are upgraded. If a filesystem upgrade is required when updating BookKeeper, the bookie will fail to start and return an error like this:
+
+```
+2017-05-25 10:41:50,494 - ERROR - [main:Bookie@246] - Directory layout version is less than 3, upgrade needed
+```
+
+BookKeeper provides a utility for upgrading the filesystem. You can perform an upgrade using the [`upgrade`](../../reference/cli#bookkeeper-upgrade) command of the `bookkeeper` CLI tool. When running `bookkeeper upgrade` you need to specify one of three flags:
+
+Flag | Action
+:----|:------
+`--upgrade` | Performs an upgrade
+`--rollback` | Performs a rollback to the initial filesystem version
+`--finalize` | Marks the upgrade as complete
+
+### Upgrade pattern
+
+A standard upgrade pattern is to run an upgrade...
+
+```shell
+$ bookkeeper-server/bin/bookkeeper upgrade --upgrade
+```
+
+...then check that everything is working normally, then kill the bookie. If everything is okay, finalize the upgrade...
+
+```shell
+$ bookkeeper-server/bin/bookkeeper upgrade --finalize
+```
+
+...and then restart the server:
+
+```shell
+$ bookkeeper-server/bin/bookkeeper bookie
+```
+
+If something has gone wrong, you can always perform a rollback:
+
+```shell
+$ bookkeeper-server/bin/bookkeeper upgrade --rollback
+```
+
+## Formatting
+
+You can format bookie metadata in ZooKeeper using the [`metaformat`](../../reference/cli#bookkeeper-shell-metaformat) command of the [BookKeeper shell](../../reference/cli#the-bookkeeper-shell).
+
+By default, formatting is done in interactive mode, which prompts you to confirm the format operation if old data exists. You can disable confirmation using the `-nonInteractive` flag. If old data does exist, the format operation will abort *unless* you set the `-force` flag. Here's an example:
+
+```shell
+$ bookkeeper-server/bin/bookkeeper shell metaformat
+```
+
+You can format the local filesystem data on a bookie using the [`bookieformat`](../../reference/cli#bookkeeper-shell-bookieformat) command on each bookie. Here's an example:
+
+```shell
+$ bookkeeper-server/bin/bookkeeper shell bookieformat
+```
+
+> The `-force` and `-nonInteractive` flags are also available for the `bookieformat` command.
+
+## Autorecovery
+
+TODO
+
+### Disabling autorecovery during maintenance
+
+TODO
