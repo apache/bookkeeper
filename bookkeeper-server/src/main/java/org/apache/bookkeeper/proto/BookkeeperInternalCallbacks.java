@@ -87,7 +87,7 @@ public class BookkeeperInternalCallbacks {
         void operationComplete(int rc, T result);
     }
     
-        public static class TimedGenericCallback<T> implements GenericCallback<T> {
+    public static class TimedGenericCallback<T> implements GenericCallback<T> {
 
         final GenericCallback<T> cb;
         final int successRc;
@@ -111,7 +111,7 @@ public class BookkeeperInternalCallbacks {
             cb.operationComplete(rc, result);
         }
     }
-    
+
     public interface ReadEntryCallbackCtx {
         void setLastAddConfirmed(long lac);
         long getLastAddConfirmed();

@@ -23,9 +23,18 @@ package org.apache.bookkeeper.client;
 
 public interface BookKeeperClientStats {
     public final static String CLIENT_SCOPE = "bookkeeper_client";
+
+    // Metadata Operations
+
     public final static String CREATE_OP = "LEDGER_CREATE";
     public final static String DELETE_OP = "LEDGER_DELETE";
     public final static String OPEN_OP = "LEDGER_OPEN";
+    public final static String RECOVER_OP = "LEDGER_RECOVER";
+    public final static String LEDGER_RECOVER_READ_ENTRIES = "LEDGER_RECOVER_READ_ENTRIES";
+    public final static String LEDGER_RECOVER_ADD_ENTRIES = "LEDGER_RECOVER_ADD_ENTRIES";
+
+    // Data Operations
+
     public final static String ADD_OP = "ADD_ENTRY";
     public final static String READ_OP = "READ_ENTRY";
     public final static String WRITE_LAC_OP = "WRITE_LAC";

@@ -128,8 +128,8 @@ public class Bookie extends BookieCriticalThread {
     private final LedgerDirsManager ledgerDirsManager;
     private LedgerDirsManager indexDirsManager;
     
-    private final LedgerDirsMonitor ledgerMonitor;
-    private final LedgerDirsMonitor idxMonitor;
+    LedgerDirsMonitor ledgerMonitor;
+    LedgerDirsMonitor idxMonitor;
 
     // ZooKeeper client instance for the Bookie
     ZooKeeper zk;

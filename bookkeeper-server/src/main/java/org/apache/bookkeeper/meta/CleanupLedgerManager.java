@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.meta;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -77,6 +78,11 @@ public class CleanupLedgerManager implements LedgerManager {
 
     public CleanupLedgerManager(LedgerManager lm) {
         this.underlying = lm;
+    }
+
+    @VisibleForTesting
+    public LedgerManager getUnderlying() {
+        return underlying;
     }
 
     private void addCallback(GenericCallback callback) {
