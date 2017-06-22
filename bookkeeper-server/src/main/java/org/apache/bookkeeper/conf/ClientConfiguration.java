@@ -86,6 +86,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String GET_BOOKIE_INFO_INTERVAL_SECONDS = "getBookieInfoIntervalSeconds";
     protected final static String BOOKIE_MAX_MULTIPLE_FOR_WEIGHTED_PLACEMENT = "bookieMaxMultipleForWeightBasedPlacement";
     protected final static String GET_BOOKIE_INFO_TIMEOUT_SECS = "getBookieInfoTimeoutSecs";
+    protected final static String START_TLS_TIMEOUT_SECS = "startTLSTimeoutSecs";
 
     // Number Woker Threads
     protected final static String NUM_WORKER_THREADS = "numWorkerThreads";
@@ -1059,6 +1060,14 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Return the timeout value for startTLS request
+     * @return
+     */
+    public int getStartTLSTimeout() {
+        return getInteger(START_TLS_TIMEOUT_SECS, 10);
+    }
+
+    /**
      * Set whether or not disk weight based placement is enabled.
      *
      * @param isEnabled - boolean indicating enabled or not
@@ -1098,6 +1107,16 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setGetBookieInfoTimeout(int timeoutSecs) {
         setProperty(GET_BOOKIE_INFO_TIMEOUT_SECS, timeoutSecs);
+        return this;
+    }
+
+    /**
+     * Set the timeout value in secs for the START_TLS request
+     * @param timeout
+     * @return client configuration
+     */
+    public ClientConfiguration setStartTLSTimeout(int timeoutSecs) {
+        setProperty(START_TLS_TIMEOUT_SECS, timeoutSecs);
         return this;
     }
 

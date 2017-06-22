@@ -81,7 +81,7 @@ public interface ClientAuthProvider {
 
     /**
      * Callback to let the provider know that the underlying protocol is changed.
-     * For instance this will happen when a STARTTLS operation succeeds
+     * For instance this will happen when a START_TLS operation succeeds
      */
     default void onProtocolUpgrade() {
     }

@@ -49,8 +49,9 @@ import javax.net.ssl.TrustManagerFactory;
 public class SSLContextFactory implements SecurityHandlerFactory {
     private final static Logger LOG = LoggerFactory.getLogger(SSLContextFactory.class);
     private final static String SSLCONTEXT_HANDLER_NAME = "ssl";
-    private AbstractConfiguration conf;
-    SslHandler sslHandler;
+    private String[] protocols;
+    private String[] ciphers;
+    private SslContext sslContext;
 
     private String getPasswordFromFile(String path) throws IOException {
         FileInputStream pwdin = new FileInputStream(path);
@@ -147,23 +148,22 @@ public class SSLContextFactory implements SecurityHandlerFactory {
         return SslProvider.JDK;
     }
 
-    public SslHandler createClientHandle() throws SecurityException, KeyStoreException, NoSuchAlgorithmException,
+    public void createClientContext(AbstractConfiguration conf) throws SecurityException, KeyStoreException, NoSuchAlgorithmException,
             CertificateException, IOException, UnrecoverableKeyException {
         final SslContextBuilder sslContextBuilder;
         final ClientConfiguration clientConf;
         final SslProvider provider;
         final boolean Authentication;
-        final SslContext sslContext;
 
         KeyManagerFactory kmf = null;
         TrustManagerFactory tmf = null;
 
         // get key-store and trust-store locations and passwords
-        if (!(this.conf instanceof ClientConfiguration)) {
+        if (!(conf instanceof ClientConfiguration)) {
             throw new SecurityException("Client configruation not provided");
         }
 
-        clientConf = (ClientConfiguration) this.conf;
+        clientConf = (ClientConfiguration) conf;
         provider = getSslProvider(clientConf.getSSLProvider());
         Authentication = clientConf.getSSLClientAuthentication();
 
@@ -190,27 +190,24 @@ public class SSLContextFactory implements SecurityHandlerFactory {
         }
 
         sslContext = sslContextBuilder.build();
-
-        return sslContext.newHandler(PooledByteBufAllocator.DEFAULT);
     }
 
-    public SslHandler createServerHandle() throws SecurityException, KeyStoreException, NoSuchAlgorithmException,
+    public void createServerContext(AbstractConfiguration conf) throws SecurityException, KeyStoreException, NoSuchAlgorithmException,
             CertificateException, IOException, UnrecoverableKeyException {
         final SslContextBuilder sslContextBuilder;
         final ServerConfiguration serverConf;
         final SslProvider provider;
         final boolean Authentication;
-        final SslContext sslContext;
 
         KeyManagerFactory kmf = null;
         TrustManagerFactory tmf = null;
 
         // get key-store and trust-store locations and passwords
-        if (!(this.conf instanceof ServerConfiguration)) {
+        if (!(conf instanceof ServerConfiguration)) {
             throw new SecurityException("Server configruation not provided");
         }
 
-        serverConf = (ServerConfiguration) this.conf;
+        serverConf = (ServerConfiguration) conf;
         provider = getSslProvider(serverConf.getSSLProvider());
         Authentication = serverConf.getSSLClientAuthentication();
 
@@ -237,8 +234,6 @@ public class SSLContextFactory implements SecurityHandlerFactory {
         }
 
         sslContext = sslContextBuilder.build();
-
-        return sslContext.newHandler(PooledByteBufAllocator.DEFAULT);
     }
 
     @Override
@@ -246,30 +241,27 @@ public class SSLContextFactory implements SecurityHandlerFactory {
         String enabledProtocols = "";
         String enabledCiphers = "";
 
-        this.conf = conf;
         enabledCiphers = conf.getSslEnabledCipherSuites();
         enabledProtocols = conf.getSslEnabledProtocols();
 
         try {
             switch (type) {
             case Client:
-                sslHandler = createClientHandle();
+                createClientContext(conf);
                 break;
             case Server:
-                sslHandler = createServerHandle();
+                createServerContext(conf);
                 break;
             default:
                 throw new SecurityException(new IllegalArgumentException("Invalid NodeType"));
             }
 
             if (enabledProtocols != null && !enabledProtocols.isEmpty()) {
-                String[] protocols = enabledProtocols.split(",");
-                sslHandler.engine().setEnabledProtocols(protocols);
+                protocols = enabledProtocols.split(",");
             }
 
             if (enabledCiphers != null && !enabledCiphers.isEmpty()) {
-                String[] ciphers = enabledCiphers.split(",");
-                sslHandler.engine().setEnabledCipherSuites(ciphers);
+                ciphers = enabledCiphers.split(",");
             }
         } catch (KeyStoreException e) {
             throw new RuntimeException("Standard keystore type missing", e);
@@ -284,11 +276,18 @@ public class SSLContextFactory implements SecurityHandlerFactory {
         }
     }
 
-    public SslHandler getBookieHandler() throws SecurityException {
-        return sslHandler;
-    }
+    @Override
+    public SslHandler newSslHandler() {
+        SslHandler sslHandler = sslContext.newHandler(PooledByteBufAllocator.DEFAULT);
 
-    public SslHandler getClientHandler() throws SecurityException {
+        if (protocols != null && protocols.length != 0) {
+            sslHandler.engine().setEnabledProtocols(protocols);
+        }
+
+        if (ciphers != null && ciphers.length != 0) {
+            sslHandler.engine().setEnabledCipherSuites(ciphers);
+        }
+
         return sslHandler;
     }
 }

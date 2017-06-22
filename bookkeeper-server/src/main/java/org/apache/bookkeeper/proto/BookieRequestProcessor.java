@@ -34,6 +34,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.ssl.SecurityException;
 import org.apache.bookkeeper.ssl.SecurityHandlerFactory;
+import org.apache.bookkeeper.ssl.SecurityHandlerFactory.NodeType;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
@@ -114,7 +115,7 @@ public class BookieRequestProcessor implements RequestProcessor {
     final OpStatsLogger channelWriteStats;
 
     public BookieRequestProcessor(ServerConfiguration serverCfg, Bookie bookie,
-            StatsLogger statsLogger, SecurityHandlerFactory shFactory) {
+            StatsLogger statsLogger, SecurityHandlerFactory shFactory) throws SecurityException {
         this.serverCfg = serverCfg;
         this.bookie = bookie;
         this.readThreadPool =
@@ -124,6 +125,9 @@ public class BookieRequestProcessor implements RequestProcessor {
             createExecutor(this.serverCfg.getNumAddWorkerThreads(),
                            "BookieWriteThread-" + serverCfg.getBookiePort());
         this.shFactory = shFactory;
+        if (shFactory != null) {
+            shFactory.init(NodeType.Server, serverCfg);
+        }
         // Expose Stats
         this.statsEnabled = serverCfg.isStatisticsEnabled();
         this.addEntryStats = statsLogger.getOpStatsLogger(ADD_ENTRY);
@@ -289,38 +293,33 @@ public class BookieRequestProcessor implements RequestProcessor {
             c.writeAndFlush(response.build());
         } else {
             // there is no need to execute in a different thread as this operation is light
-            try {
-                SslHandler sslHandler = shFactory.getBookieHandler();
-                c.pipeline().addFirst("ssl", sslHandler);
+            SslHandler sslHandler = shFactory.newSslHandler();
+            c.pipeline().addFirst("ssl", sslHandler);
 
-                response.setStatus(BookkeeperProtocol.StatusCode.EOK);
-                BookkeeperProtocol.StartTLSResponse.Builder builder = BookkeeperProtocol.StartTLSResponse.newBuilder();
-                response.setStartTLSResponse(builder.build());
-                sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
-                    @Override
-                    public void operationComplete(Future<Channel> future) throws Exception {
-                        // notify the AuthPlugin the completion of the handshake, even in case of failure
-                        AuthHandler.ServerSideHandler authHandler = c.pipeline()
-                                .get(AuthHandler.ServerSideHandler.class);
-                        authHandler.authProvider.onProtocolUpgrade();
-                        if (future.isSuccess()) {
-                            LOG.info("Session is protected by: {}", sslHandler.engine().getSession().getCipherSuite());
-                        } else {
-                            LOG.info("SSL Handshake failure: {}", future.cause());
+            response.setStatus(BookkeeperProtocol.StatusCode.EOK);
+            BookkeeperProtocol.StartTLSResponse.Builder builder = BookkeeperProtocol.StartTLSResponse.newBuilder();
+            response.setStartTLSResponse(builder.build());
+            sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
+                @Override
+                public void operationComplete(Future<Channel> future) throws Exception {
+                    // notify the AuthPlugin the completion of the handshake, even in case of failure
+                    AuthHandler.ServerSideHandler authHandler = c.pipeline()
+                            .get(AuthHandler.ServerSideHandler.class);
+                    authHandler.authProvider.onProtocolUpgrade();
+                    if (future.isSuccess()) {
+                        LOG.info("Session is protected by: {}", sslHandler.engine().getSession().getCipherSuite());
+                    } else {
+                        LOG.error("SSL Handshake failure: {}", future.cause());
+                        BookkeeperProtocol.Response.Builder errResponse = BookkeeperProtocol.Response.newBuilder()
+                                .setHeader(r.getHeader()).setStatus(BookkeeperProtocol.StatusCode.EIO);
+                        c.writeAndFlush(errResponse.build());
+                        if (statsEnabled) {
+                            bkStats.getOpStats(BKStats.STATS_UNKNOWN).incrementFailedOps();
                         }
                     }
-                });
-                c.writeAndFlush(response.build());
-            } catch (SecurityException se) {
-                se.printStackTrace();
-                LOG.info("Unknown operation type {}", header.getOperation());
-                BookkeeperProtocol.Response.Builder errResponse = BookkeeperProtocol.Response.newBuilder()
-                        .setHeader(r.getHeader()).setStatus(BookkeeperProtocol.StatusCode.EIO);
-                c.writeAndFlush(errResponse.build());
-                if (statsEnabled) {
-                    bkStats.getOpStats(BKStats.STATS_UNKNOWN).incrementFailedOps();
                 }
-            }
+            });
+            c.writeAndFlush(response.build());
         }
     }
 

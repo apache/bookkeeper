@@ -291,7 +291,7 @@ class AuthHandler {
                                 authProviderFactory.getPluginName()));
                         }   break;
                     default:
-                        LOG.info("dropping received message {} from bookie {}", msg, ctx.channel());
+                        LOG.warn("dropping received message {} from bookie {}", msg, ctx.channel());
                         // else just drop the message,
                         // we're not authenticated so nothing should be coming through
                         break;
@@ -321,6 +321,7 @@ class AuthHandler {
                     BookieProtocol.Request req = (BookieProtocol.Request)msg;
                     if (BookkeeperProtocol.OperationType.AUTH.getNumber() == req.getOpCode()) {
                         super.write(ctx, msg, promise);
+                        super.flush(ctx);
                     } else {
                         waitingForAuth.add(msg);
                     }
@@ -351,7 +352,6 @@ class AuthHandler {
             }
 
             public void operationComplete(int rc, AuthToken newam) {
-                LOG.info("client sending auth request");
                 if (rc != BKException.Code.OK) {
                     authenticationError(ctx, rc);
                     return;
@@ -388,10 +388,8 @@ class AuthHandler {
                         }
                     }
                 } else {
+                    LOG.warn("Client authentication failed");
                     authenticationError(ctx, rc);
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Authentication failed on server side");
-                    }
                 }
             }
         }

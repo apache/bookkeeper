@@ -22,7 +22,6 @@ import org.apache.bookkeeper.conf.AbstractConfiguration;
 import io.netty.handler.ssl.SslHandler;
 
 public interface SecurityHandlerFactory {
-
     public enum NodeType {
         Unknown,
         Client,
@@ -30,8 +29,7 @@ public interface SecurityHandlerFactory {
     }
 
     public abstract String getHandlerName();
-    public abstract void init(NodeType type, AbstractConfiguration conf) throws SecurityException;
 
-    public abstract SslHandler getClientHandler() throws SecurityException;
-    public abstract SslHandler getBookieHandler() throws SecurityException;
+    public abstract void init(NodeType type, AbstractConfiguration conf) throws SecurityException;
+    public SslHandler newSslHandler();
 }

@@ -104,6 +104,8 @@ public abstract class BKException extends Exception {
             return new BKTimeoutException();
         case Code.LedgerIdOverflowException:
             return new BKLedgerIdOverflowException();
+        case Code.SecurityException:
+            return new BKSecurityException();
         default:
             return new BKUnexpectedConditionException();
         }
@@ -138,6 +140,7 @@ public abstract class BKException extends Exception {
         int AddEntryQuorumTimeoutException = -21;
         int DuplicateEntryIdException = -22;
         int TimeoutException = -23;
+        int SecurityException = -24;
 
         int IllegalOpException = -100;
         int LedgerFencedException = -101;
@@ -226,11 +229,18 @@ public abstract class BKException extends Exception {
             return "Add entry quorum wait timed out";
         case Code.TimeoutException:
             return "Bookie operation timeout";
+        case Code.SecurityException:
+            return "Failed to establish a secure connection";
         default:
             return "Unexpected condition";
         }
     }
 
+    public static class BKSecurityException extends BKException {
+        public BKSecurityException() {
+            super(Code.SecurityException);
+        }
+    }
     public static class BKReadException extends BKException {
         public BKReadException() {
             super(Code.ReadException);

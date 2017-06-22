@@ -28,7 +28,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -123,6 +123,7 @@ public class TestSSL extends BookKeeperClusterTestCase {
     @Test(timeout = 60000)
     public void testStartSSLServerNoKeyStore() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration().setSSLKeyStore(null);
+
         try {
             bs.add(startBookie(bookieConf));
             fail("Shouldn't have been able to start");
@@ -464,6 +465,7 @@ public class TestSSL extends BookKeeperClusterTestCase {
         int origNumBookies = numBookies;
 
         ServerConfiguration bookieConf = newServerConfiguration();
+        /*
         bookieConf.setSSLProviderFactoryClass(null);
         bs.add(startBookie(bookieConf));
         try {
@@ -474,6 +476,7 @@ public class TestSSL extends BookKeeperClusterTestCase {
         }
 
         bookieConf = newServerConfiguration();
+        */
         bookieConf.setSSLProviderFactoryClass(SSLContextFactory.class.getName());
         bs.add(startBookie(bookieConf));
         testClient(clientConf, origNumBookies + 1);
