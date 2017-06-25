@@ -32,6 +32,9 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.http.HttpServer;
+import org.apache.bookkeeper.http.ServerLoader;
+import org.apache.bookkeeper.http.ServerOptions;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -298,10 +301,24 @@ public class AutoRecoveryMain {
         try {
             final AutoRecoveryMain autoRecoveryMain = new AutoRecoveryMain(conf);
             autoRecoveryMain.start();
+            final HttpServer httpServer = ServerLoader.loadHttpServer(conf);
+            if (conf.isHttpServerEnabled()) {
+                ServerOptions serverOptions = new ServerOptions()
+                    .setPort(conf.getHttpServerPort())
+                    .setServerConf(conf)
+                    .setAutoRecovery(autoRecoveryMain);
+                if (httpServer != null) {
+                    httpServer.initialize(serverOptions);
+                    httpServer.startServer();
+                }
+            }
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 @Override
                 public void run() {
                     autoRecoveryMain.shutdown();
+                    if (httpServer != null && httpServer.isRunning()) {
+                        httpServer.stopServer();
+                    }
                     LOG.info("Shutdown AutoRecoveryMain successfully");
                 }
             });
