@@ -33,6 +33,9 @@ import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.http.HttpServer;
+import org.apache.bookkeeper.http.ServerLoader;
+import org.apache.bookkeeper.http.ServerOptions;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
@@ -75,6 +78,7 @@ public class BookieServer {
 
     // operation stats
     AutoRecoveryMain autoRecoveryMain = null;
+    HttpServer httpServer = null;
     private boolean isAutoRecoveryDaemonEnabled;
 
     // request processor
@@ -120,6 +124,17 @@ public class BookieServer {
         }
         if (isAutoRecoveryDaemonEnabled && this.autoRecoveryMain != null) {
             this.autoRecoveryMain.start();
+        }
+        if (conf.isHttpServerEnabled()) {
+            ServerOptions serverOptions = new ServerOptions()
+                .setPort(conf.getHttpServerPort())
+                .setBookieServer(this)
+                .setServerConf(conf);
+            this.httpServer = ServerLoader.loadHttpServer(conf);
+            if (this.httpServer != null) {
+                this.httpServer.initialize(serverOptions);
+                this.httpServer.startServer();
+            }
         }
         this.nettyServer.start();
 
@@ -171,6 +186,9 @@ public class BookieServer {
             this.autoRecoveryMain.shutdown();
         }
         this.requestProcessor.close();
+        if (this.httpServer != null && this.httpServer.isRunning()) {
+            this.httpServer.stopServer();
+        }
         running = false;
     }
 
