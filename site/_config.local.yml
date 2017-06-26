@@ -4,6 +4,7 @@ github_repo: https://github.com/apache/bookkeeper
 permalink: pretty
 bk_version: "4.5.0"
 destination: local-generated
+baseurl: /
 
 livereload: true
 

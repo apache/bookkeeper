@@ -15,13 +15,13 @@ layout: default
             {{ site.subtitle }}
           </h2>
           <div class="block">
-            <a class="button is-primary is-large" href="/docs/getting-started/installation">
+            <a class="button is-primary is-large" href="{{ site.baseurl }}docs/getting-started/installation">
               <span class="icon">
                 <i class="fa fa-download"></i>
               </span>
               <span>Get started</span>
             </a>
-            <a class="button is-large" href="/docs">
+            <a class="button is-large" href="{{ site.baseurl }}docs">
               <span class="icon"><i class="fa fa-book"></i></span><span>Documentation</span>
             </a>
             {% include javadoc-button.html %}
@@ -29,7 +29,7 @@ layout: default
         </div>
         <div class="column is-6">
           <div class="container">
-            <img src="/img/bk-logo.png">
+            <img src="{{ site.baseurl }}img/bk-logo.png">
           </div>
         </div>
       </div>
