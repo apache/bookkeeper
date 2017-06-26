@@ -84,7 +84,7 @@ public class SSLContextFactory implements SecurityHandlerFactory {
         return SSLCONTEXT_HANDLER_NAME;
     }
 
-    public KeyManagerFactory initKeyManagerFactory(String keyStoreType, String keyStoreLocation,
+    private KeyManagerFactory initKeyManagerFactory(String keyStoreType, String keyStoreLocation,
             String keyStorePasswordPath) throws SecurityException, KeyStoreException, NoSuchAlgorithmException,
             CertificateException, IOException, UnrecoverableKeyException {
         KeyManagerFactory kmf = null;
@@ -107,7 +107,7 @@ public class SSLContextFactory implements SecurityHandlerFactory {
         return kmf;
     }
 
-    public TrustManagerFactory initTrustManagerFactory(String trustStoreType, String trustStoreLocation,
+    private TrustManagerFactory initTrustManagerFactory(String trustStoreType, String trustStoreLocation,
             String trustStorePasswordPath)
             throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, SecurityException {
         TrustManagerFactory tmf;
@@ -130,7 +130,7 @@ public class SSLContextFactory implements SecurityHandlerFactory {
         return tmf;
     }
 
-    public SslProvider getSslProvider(String sslProvider) {
+    private SslProvider getSslProvider(String sslProvider) {
         if (sslProvider.trim().equalsIgnoreCase("OpenSSL")) {
             if (OpenSsl.isAvailable()) {
                 LOG.info("Security provider - OpenSSL");
@@ -148,7 +148,7 @@ public class SSLContextFactory implements SecurityHandlerFactory {
         return SslProvider.JDK;
     }
 
-    public void createClientContext(AbstractConfiguration conf) throws SecurityException, KeyStoreException, NoSuchAlgorithmException,
+    private void createClientContext(AbstractConfiguration conf) throws SecurityException, KeyStoreException, NoSuchAlgorithmException,
             CertificateException, IOException, UnrecoverableKeyException {
         final SslContextBuilder sslContextBuilder;
         final ClientConfiguration clientConf;
@@ -192,7 +192,7 @@ public class SSLContextFactory implements SecurityHandlerFactory {
         sslContext = sslContextBuilder.build();
     }
 
-    public void createServerContext(AbstractConfiguration conf) throws SecurityException, KeyStoreException, NoSuchAlgorithmException,
+    private void createServerContext(AbstractConfiguration conf) throws SecurityException, KeyStoreException, NoSuchAlgorithmException,
             CertificateException, IOException, UnrecoverableKeyException {
         final SslContextBuilder sslContextBuilder;
         final ServerConfiguration serverConf;
@@ -238,8 +238,8 @@ public class SSLContextFactory implements SecurityHandlerFactory {
 
     @Override
     public synchronized void init(NodeType type, AbstractConfiguration conf) throws SecurityException {
-        String enabledProtocols = "";
-        String enabledCiphers = "";
+        final String enabledProtocols;
+        final String enabledCiphers;
 
         enabledCiphers = conf.getSslEnabledCipherSuites();
         enabledProtocols = conf.getSslEnabledProtocols();
