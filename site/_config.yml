@@ -23,5 +23,6 @@ exclude:
 - Gemfile.lock
 - Makefile
 - vendor/bundle
+- local-generated
 - scripts
 - overview
