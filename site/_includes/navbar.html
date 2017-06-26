@@ -2,7 +2,7 @@
   <div class="container">
     <div class="nav-left bk-brand">
       <a class="nav-item" href="/">
-        <img src="/img/bk-logo.png" alt="Apache BookKeeper">
+        <img src="{{ site.baseurl }}img/bk-logo.png" alt="Apache BookKeeper">
         <h3>Apache BookKeeper</h3>
       </a>
     </div>
@@ -21,18 +21,18 @@
     </div>
 
     <div class="nav-right nav-menu">
-      <a class="nav-item is-tab{% if page.url == '/docs/' %} is-active{% endif %}" href="/docs">
+      <a class="nav-item is-tab{% if page.url == '{{ site.baseurl }}{{ site.baseurl }}docs/' %} is-active{% endif %}" href="{{ site.baseurl }}docs">
         Docs
       </a>
 
-      <a class="nav-item is-tab" href="/api">
+      <a class="nav-item is-tab" href="{{ site.baseurl }}api">
         Javadoc
       </a>
 
       <div class="nav-item">
         <div class="field is-grouped">
           <p class="control">
-            <a class="button is-primary" href="/docs/getting-started/installation">
+            <a class="button is-primary" href="{{ site.baseurl }}docs/getting-started/installation">
               <span class="icon">
                 <i class="fa fa-download"></i>
               </span>
