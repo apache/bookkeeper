@@ -27,7 +27,7 @@ import java.util.concurrent.CyclicBarrier;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.test.BaseTestCase;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,14 +38,14 @@ import static org.junit.Assert.*;
  * This unit test tests ledger fencing;
  *
  */
-public class TestFencing extends BaseTestCase {
+public class TestFencing extends BookKeeperClusterTestCase {
     private final static Logger LOG = LoggerFactory.getLogger(TestFencing.class);
 
-    DigestType digestType;
+    private final DigestType digestType;
 
-    public TestFencing(DigestType digestType) {
+    public TestFencing() {
         super(10);
-        this.digestType = digestType;
+        this.digestType = DigestType.CRC32;
     }
 
     /**
@@ -94,12 +94,14 @@ public class TestFencing extends BaseTestCase {
         private long lastConfirmedEntry = 0;
 
 
+        private final int tid;
         private final DigestType digestType;
         private final CyclicBarrier barrier;
 
-        LedgerOpenThread (DigestType digestType, long ledgerId, CyclicBarrier barrier)
+        LedgerOpenThread (int tid, DigestType digestType, long ledgerId, CyclicBarrier barrier)
                 throws Exception {
             super("TestFencing-LedgerOpenThread-" + threadCount++);
+            this.tid = tid;
             this.ledgerId = ledgerId;
             this.digestType = digestType;
             this.barrier = barrier;
@@ -107,6 +109,7 @@ public class TestFencing extends BaseTestCase {
 
         @Override
         public void run() {
+            LOG.info("Thread {} started.", tid);
             LedgerHandle lh = null;
             BookKeeper bk = null;
             try {
@@ -138,7 +141,7 @@ public class TestFencing extends BaseTestCase {
                 // just exit, test should spot bad last add confirmed
                 LOG.error("Exception occurred ", e);
             }
-            LOG.info("Thread exiting, lastConfirmedEntry = " + lastConfirmedEntry);
+            LOG.info("Thread {} exiting, lastConfirmedEntry = {}", tid, lastConfirmedEntry);
         }
 
         long getLastConfirmedEntry() {
@@ -180,7 +183,7 @@ public class TestFencing extends BaseTestCase {
         CyclicBarrier barrier = new CyclicBarrier(numRecovery+1);
         LedgerOpenThread threads[] = new LedgerOpenThread[numRecovery];
         for (int i = 0; i < numRecovery; i++) {
-            threads[i] = new LedgerOpenThread(digestType, writelh.getId(), barrier);
+            threads[i] = new LedgerOpenThread(i, digestType, writelh.getId(), barrier);
             threads[i].start();
         }
         latch.await();
@@ -219,12 +222,12 @@ public class TestFencing extends BaseTestCase {
          */
         LedgerHandle readlh = bkc.openLedgerNoRecovery(writelh.getId(),
                                                         digestType, "".getBytes());
-        // should not have triggered recovery and fencing
-
-        writelh.addEntry(tmp.getBytes());
         long numReadable = readlh.getLastAddConfirmed();
         LOG.error("numRead " + numReadable);
         readlh.readEntries(1, numReadable);
+
+        // should not have triggered recovery and fencing
+        writelh.addEntry(tmp.getBytes());
         try {
             readlh.readEntries(numReadable+1, numReadable+1);
             fail("Shouldn't have been able to read this far");
