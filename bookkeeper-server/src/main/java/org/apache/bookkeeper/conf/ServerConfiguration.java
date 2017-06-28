@@ -142,6 +142,8 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     // Bookie auth provider factory class name
     protected final static String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
+    
+    protected final static String MIN_USABLESIZE_FOR_INDEXFILE_CREATION = "minUsableSizeForIndexFileCreation";
 
     /**
      * Construct a default configuration object
@@ -1937,6 +1939,28 @@ public class ServerConfiguration extends AbstractConfiguration {
     @Override
     public ServerConfiguration setNettyMaxFrameSizeBytes(int maxSize) {
         super.setNettyMaxFrameSizeBytes(maxSize);
+        return this;
+    }
+    
+    /**
+     * Gets the minimum safe Usable size to be available in index directory for Bookie to create Index File while replaying 
+     * journal at the time of Bookie Start in Readonly Mode (in bytes)
+     * 
+     * @return
+     */
+    public long getMinUsableSizeForIndexFileCreation() {
+        return this.getLong(MIN_USABLESIZE_FOR_INDEXFILE_CREATION, 100 * 1024 * 1024L);
+    }
+
+    /**
+     * Sets the minimum safe Usable size to be available in index directory for Bookie to create Index File while replaying 
+     * journal at the time of Bookie Start in Readonly Mode (in bytes)
+     * 
+     * @param minUsableSizeForIndexFileCreation
+     * @return
+     */
+    public ServerConfiguration setMinUsableSizeForIndexFileCreation(long minUsableSizeForIndexFileCreation) {
+        this.setProperty(MIN_USABLESIZE_FOR_INDEXFILE_CREATION, Long.toString(minUsableSizeForIndexFileCreation));
         return this;
     }
 }
