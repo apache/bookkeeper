@@ -23,6 +23,9 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.annotations.Beta;
 
+import org.apache.bookkeeper.http.HttpServer;
+import org.apache.bookkeeper.http.TwitterHttpServer;
+import org.apache.bookkeeper.http.VertxHttpServer;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.util.BookKeeperConstants;
@@ -142,6 +145,12 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     // Bookie auth provider factory class name
     protected final static String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
+
+    // Http Server parameters
+    protected final static String HTTP_SERVER_ENABLED = "httpServerEnabled";
+    protected final static String HTTP_SERVER_PORT = "httpServerPort";
+    protected final static String HTTP_SERVER_CLASS = "httpServerClass";
+
 
     /**
      * Construct a default configuration object
@@ -1937,6 +1946,74 @@ public class ServerConfiguration extends AbstractConfiguration {
     @Override
     public ServerConfiguration setNettyMaxFrameSizeBytes(int maxSize) {
         super.setNettyMaxFrameSizeBytes(maxSize);
+        return this;
+    }
+
+    /**
+     * Sets that whether the http server can start along with auto-recovery service
+     *
+     * @param enabled
+     *            - true if need to start http server with auto-recovery
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setHttpServerEnabled(boolean enabled) {
+        setProperty(HTTP_SERVER_ENABLED, enabled);
+        return this;
+    }
+
+    /**
+     * Get whether the http server start with auto-recovery service or not
+     *
+     * @return true - if http server should start with auto-recovery service
+     */
+    public boolean isHttpServerEnabled() {
+        return getBoolean(HTTP_SERVER_ENABLED, false);
+    }
+
+    /**
+     * Set Http server port listening on
+     *
+     * @param port
+     *          Port to listen on
+     * @return server configuration
+     */
+    public ServerConfiguration setHttpServerPort(int port) {
+        setProperty(HTTP_SERVER_PORT, port);
+        return this;
+    }
+
+    /**
+     * Get the http server port
+     *
+     * @return http server port
+     */
+    public int getHttpServerPort() {
+        return getInt(HTTP_SERVER_PORT, 8080);
+    }
+
+    /**
+     * Get Http server Class.
+     *
+     * @return Http server class.
+     */
+    public Class<? extends HttpServer> getHttpServer()
+        throws ConfigurationException {
+        return ReflectionUtils.getClass(this, HTTP_SERVER_CLASS ,
+            VertxHttpServer.class,
+            HttpServer.class,
+            defaultLoader);
+    }
+
+    /**
+     * Set Http server Class.
+     *
+     * @param httpClass
+     *          Http server Class.
+     *
+     * @return server configuration
+     */
+    public ServerConfiguration setHttpServer(Class<? extends HttpServer> httpClass) {
+        setProperty(HTTP_SERVER_CLASS, httpClass.getName());
         return this;
     }
 }
