@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -27,11 +28,19 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.InetAddress;
 
+import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
+import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
+import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
@@ -327,25 +336,169 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Check disk full. Expected to throw NoWritableLedgerDirException
-     * during bookie initialisation.
+     * Check disk full. Expected to fail on start.
      */
     @Test(timeout = 30000)
-    public void testWithDiskFull() throws Exception {
+    public void testWithDiskFullReadOnlyDisabledOrForceGCAllowDisabled() throws Exception {
         File tmpDir = createTempDir("DiskCheck", "test");
         long usableSpace = tmpDir.getUsableSpace();
         long totalSpace = tmpDir.getTotalSpace();
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
                 .setZkServers(zkUtil.getZooKeeperConnectString())
                 .setZkTimeout(5000).setJournalDirName(tmpDir.getPath())
-                .setLedgerDirNames(new String[] { tmpDir.getPath() });
-        conf.setDiskUsageThreshold((1f - ((float) usableSpace / (float) totalSpace)) - 0.05f);
-        conf.setDiskUsageWarnThreshold((1f - ((float) usableSpace / (float) totalSpace)) - 0.25f);
+                .setLedgerDirNames(new String[] { tmpDir.getPath() })
+                .setDiskCheckInterval(1000)
+                .setDiskUsageThreshold((1.0f - ((float) usableSpace / (float) totalSpace)) * 0.999f)
+                .setDiskUsageWarnThreshold(0.0f);
+        
+        // if isForceGCAllowWhenNoSpace or readOnlyModeEnabled is not set and Bookie is 
+        // started when Disk is full, then it will fail to start with NoWritableLedgerDirException
+        
+        conf.setIsForceGCAllowWhenNoSpace(false)
+            .setReadOnlyModeEnabled(false);
         try {
             new Bookie(conf);
-        } catch (Exception e) {
+            fail("NoWritableLedgerDirException expected");
+        } catch(NoWritableLedgerDirException e) {
             // expected
         }
+        
+        conf.setIsForceGCAllowWhenNoSpace(true)
+            .setReadOnlyModeEnabled(false);
+        try {
+            new Bookie(conf);
+            fail("NoWritableLedgerDirException expected");
+        } catch(NoWritableLedgerDirException e) {
+            // expected
+        }
+        
+        conf.setIsForceGCAllowWhenNoSpace(false)
+            .setReadOnlyModeEnabled(true);
+        try {
+            new Bookie(conf);
+            fail("NoWritableLedgerDirException expected");
+        } catch(NoWritableLedgerDirException e) {
+            // expected
+        }
+    }
+    
+    /**
+     * Check disk full. Expected to start as read-only.
+     */
+    @Test(timeout = 30000)
+    public void testWithDiskFullReadOnlyEnabledAndForceGCAllowAllowed() throws Exception {
+        File tmpDir = createTempDir("DiskCheck", "test");
+        long usableSpace = tmpDir.getUsableSpace();
+        long totalSpace = tmpDir.getTotalSpace();
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+                .setZkServers(zkUtil.getZooKeeperConnectString())
+                .setZkTimeout(5000).setJournalDirName(tmpDir.getPath())
+                .setLedgerDirNames(new String[] { tmpDir.getPath() })
+                .setDiskCheckInterval(1000)
+                .setDiskUsageThreshold((1.0f - ((float) usableSpace / (float) totalSpace)) * 0.999f)
+                .setDiskUsageWarnThreshold(0.0f);
+        
+        // if isForceGCAllowWhenNoSpace and readOnlyModeEnabled are set, then Bookie should
+        // start with readonlymode when Disk is full (assuming there is no need for creation of index file
+        // while replaying the journal)
+        conf.setReadOnlyModeEnabled(true)
+            .setIsForceGCAllowWhenNoSpace(true);
+        final Bookie bk = new Bookie(conf);
+        bk.start();
+        Thread.sleep((conf.getDiskCheckInterval() * 2) + 100);
+        
+        assertTrue(bk.isReadOnly());
+        bk.shutdown();
+    }
+
+    class MockBookieServer extends BookieServer {
+        ServerConfiguration conf;
+
+        public MockBookieServer(ServerConfiguration conf) throws IOException, KeeperException, InterruptedException,
+                BookieException, UnavailableException, CompatibilityException {
+            super(conf);
+            this.conf = conf;
+        }
+
+        @Override
+        protected Bookie newBookie(ServerConfiguration conf)
+                throws IOException, KeeperException, InterruptedException, BookieException {
+            return new MockBookieWithNoopShutdown(conf, NullStatsLogger.INSTANCE);
+        }
+    }
+
+    class MockBookieWithNoopShutdown extends Bookie {
+        public MockBookieWithNoopShutdown(ServerConfiguration conf, StatsLogger statsLogger)
+                throws IOException, KeeperException, InterruptedException, BookieException {
+            super(conf, statsLogger);
+        }
+
+        // making Bookie Shutdown no-op. Ideally for this testcase we need to
+        // kill bookie abruptly to simulate the scenario where bookie is killed
+        // without execution of shutdownhook (and corresponding shutdown logic).
+        // Since there is no easy way to simulate abrupt kill of Bookie we are
+        // injecting noop Bookie Shutdown
+        @Override
+        synchronized int shutdown(int exitCode) {
+            return exitCode;
+        }
+    }
+    
+    @Test(timeout = 30000)
+    public void testWithDiskFullAndAbilityToCreateNewIndexFile() throws Exception {
+        File tmpDir = createTempDir("DiskCheck", "test");
+
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+                .setZkServers(zkUtil.getZooKeeperConnectString()).setZkTimeout(5000).setJournalDirName(tmpDir.getPath())
+                .setLedgerDirNames(new String[] { tmpDir.getPath() }).setDiskCheckInterval(1000)
+                .setLedgerStorageClass(SortedLedgerStorage.class.getName()).setAutoRecoveryDaemonEnabled(false);
+
+        BookieServer server = new MockBookieServer(conf);
+        server.start();
+        ClientConfiguration clientConf = new ClientConfiguration();
+        clientConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        BookKeeper bkClient = new BookKeeper(clientConf);
+        LedgerHandle lh = bkClient.createLedger(1, 1, 1, DigestType.CRC32, "passwd".getBytes());
+        long entryId = -1;
+        long numOfEntries = 5;
+        for (int i = 0; i < numOfEntries; i++) {
+            entryId = lh.addEntry("data".getBytes());
+        }
+        Assert.assertTrue("EntryId of the recently added entry should be 0", entryId == (numOfEntries - 1));
+        // We want to simulate the scenario where Bookie is killed abruptly, so
+        // SortedLedgerStorage's EntryMemTable and IndexInMemoryPageManager are
+        // not flushed and hence when bookie is restarted it will replay the
+        // journal. Since there is no easy way to kill the Bookie abruptly, we
+        // are injecting no-op shutdown.
+        server.shutdown();
+
+        long usableSpace = tmpDir.getUsableSpace();
+        long totalSpace = tmpDir.getTotalSpace();
+        conf.setDiskUsageThreshold((1.0f - ((float) usableSpace / (float) totalSpace)) * 0.999f)
+                .setDiskUsageWarnThreshold(0.0f).setReadOnlyModeEnabled(true).setIsForceGCAllowWhenNoSpace(true)
+                .setMinUsableSizeForIndexFileCreation(Long.MAX_VALUE);
+        server = new BookieServer(conf);
+        // Now we are trying to start the Bookie, which tries to replay the
+        // Journal. While replaying the Journal it tries to create the IndexFile
+        // for the ledger (whose entries are not flushed). but since we set
+        // minUsableSizeForIndexFileCreation to very high value, it wouldn't. be
+        // able to find any index dir when all discs are full
+        server.start();
+        Assert.assertFalse("Bookie should be Shutdown", server.getBookie().isRunning());
+        server.shutdown();
+
+        // Here we are setting MinUsableSizeForIndexFileCreation to very low
+        // value. So if index dirs are full then it will consider the dirs which
+        // have atleast MinUsableSizeForIndexFileCreation usable space for the
+        // creation of new Index file.
+        conf.setMinUsableSizeForIndexFileCreation(5 * 1024);
+        server = new BookieServer(conf);
+        server.start();
+        Thread.sleep((conf.getDiskCheckInterval() * 2) + 100);
+        Assert.assertTrue("Bookie should be up and running", server.getBookie().isRunning());
+        assertTrue(server.getBookie().isReadOnly());
+        server.shutdown();
+        bkClient.close();
     }
 
     /**
